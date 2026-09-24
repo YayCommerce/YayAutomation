@@ -45,3 +45,5 @@ export interface WpRestError {
     params?: Record<string, string>;
   };
 }
+
+export * from './workflow';
