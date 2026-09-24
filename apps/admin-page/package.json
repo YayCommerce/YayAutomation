@@ -52,6 +52,7 @@
     "@tanstack/react-table": "^8.21.3",
     "@wordpress/date": "^5.45.0",
     "@wordpress/i18n": "^6.11.0",
+    "@xyflow/react": "^12.11.6",
     "@yay-automation/types": "workspace:*",
     "@yay-automation/utils": "workspace:*",
     "class-variance-authority": "^0.7.1",

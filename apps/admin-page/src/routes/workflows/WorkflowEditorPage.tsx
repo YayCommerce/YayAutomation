@@ -4,9 +4,13 @@ import { __ } from '@wordpress/i18n';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useWorkflowQuery } from './editor/workflow.query';
+import { WorkflowCanvas } from './editor/WorkflowCanvas';
 
 export default function WorkflowEditorPage() {
-  const { workflowId } = useParams();
+  const { workflowId = '' } = useParams();
+  const { data: workflow, isPending, error } = useWorkflowQuery(workflowId);
 
   return (
     // Fill the viewport below the WP admin bar (32px) and plugin header (h-13.5).
@@ -17,12 +21,22 @@ export default function WorkflowEditorPage() {
             <ArrowLeft />
           </Link>
         </Button>
-        <span className="font-medium">{__('Untitled workflow', 'yay-automation')}</span>
-        <Badge variant="secondary">{workflowId}</Badge>
+        {workflow ? (
+          <>
+            <span className="font-medium">{workflow.name}</span>
+            <Badge variant="secondary">{workflow.status}</Badge>
+          </>
+        ) : (
+          <Skeleton className="h-5 w-40" />
+        )}
       </div>
 
-      <div className="text-muted-foreground flex flex-1 items-center justify-center">
-        {__('Canvas coming soon', 'yay-automation')}
+      <div className="min-h-0 flex-1 border-t">
+        {isPending && <Skeleton className="size-full rounded-none" />}
+        {error && (
+          <div className="text-muted-foreground flex size-full items-center justify-center">{error.message}</div>
+        )}
+        {workflow && <WorkflowCanvas graph={workflow.graph} />}
       </div>
     </div>
   );
