@@ -16,6 +16,8 @@ export function toFlowNodes(graph: WorkflowGraph): FlowNode[] {
     type: node.kind,
     position: node.position,
     data: node.data,
+    // Blocks keyboard delete (Backspace) for the trigger.
+    deletable: node.kind !== 'trigger',
   }));
 }
 
