@@ -18,6 +18,7 @@
 		<exclude name="WordPress.DB.PreparedSQL.InterpolatedNotPrepared" />
 		<exclude name="Squiz.Functions.MultiLineFunctionDeclaration.SpaceAfterFunction" />
 		<exclude name="WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase" />
+		<exclude name="Generic.Functions.CallTimePassByReference" />
 	</rule>
 	<rule ref="WordPress-Extra" />
 
