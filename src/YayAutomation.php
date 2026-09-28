@@ -13,6 +13,10 @@ final class YayAutomation {
         \YayAutomation\Engine\Register\RegisterFacade::get_instance();
         \YayAutomation\Engine\BEPages\AdminPage::get_instance();
         \YayAutomation\Engine\API\RestAPI::get_instance();
+        \YayAutomation\Engine\Workflows\WorkflowPostType::get_instance();
+        if ( class_exists( 'WooCommerce' ) ) {
+            \YayAutomation\Engine\Workflows\Runner::get_instance();
+        }
     }
 
     public static function initialize() {

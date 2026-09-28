@@ -43,3 +43,13 @@ if ( ! function_exists( 'YayAutomation\\init' ) ) {
     }
 }
 add_action( 'plugins_loaded', 'YayAutomation\\init' );
+
+// Orders are only read through WC_Order, so HPOS (custom order tables) is safe.
+add_action(
+    'before_woocommerce_init',
+    function () {
+        if ( class_exists( \Automattic\WooCommerce\Utilities\FeaturesUtil::class ) ) {
+            \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'custom_order_tables', YAY_AUTOMATION_FILE, true );
+        }
+    }
+);

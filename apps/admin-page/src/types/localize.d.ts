@@ -13,6 +13,13 @@ declare global {
         adminUrl: string;
         timezoneString: string;
         gmtOffset: number;
+        adminEmail: string;
+      };
+      wc: {
+        active: boolean;
+        /** Slugs without the `wc-` prefix. Empty when WooCommerce is inactive. */
+        orderStatuses: { value: string; label: string }[];
+        currencySymbol: string;
       };
     };
   }

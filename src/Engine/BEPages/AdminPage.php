@@ -5,6 +5,7 @@ namespace YayAutomation\Engine\BEPages;
 use YayAutomation\YayAutomation;
 use YayAutomation\Utils\SingletonTrait;
 use YayAutomation\Engine\Register\ScriptName;
+use YayAutomation\Engine\Blocks\OrderStatusChanged;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -79,6 +80,14 @@ class AdminPage {
                 'adminUrl'       => admin_url(),
                 'timezoneString' => get_option( 'timezone_string' ),
                 'gmtOffset'      => (float) get_option( 'gmt_offset', 0 ),
+                'adminEmail'     => get_option( 'admin_email' ),
+            ],
+            'wc'     => [
+                'active'         => class_exists( 'WooCommerce' ),
+                'orderStatuses'  => OrderStatusChanged::statuses(),
+                'currencySymbol' => function_exists( 'get_woocommerce_currency_symbol' )
+                    ? html_entity_decode( get_woocommerce_currency_symbol(), ENT_QUOTES, 'UTF-8' )
+                    : '',
             ],
         ];
 
