@@ -1,17 +1,14 @@
 import '@xyflow/react/dist/style.css';
 
-import { useMemo, useState, type CSSProperties } from 'react';
+import { useMemo, useState } from 'react';
 import { useStore } from '@tanstack/react-form';
 import { Background, Controls, ReactFlow, type NodeChange } from '@xyflow/react';
 
 import { useTheme } from '@/components/ui/theme-provider';
 import { useWorkflowFormContext } from './useWorkflowForm';
-import { toFlowEdges, toFlowNodes, type FlowNode } from './workflow.flow';
+import { canvasStyle, toFlowEdges, toFlowNodes, type FlowNode } from './workflow.flow';
 import { moveNode, removeNode } from './workflow.graph';
 import { nodeTypes } from './WorkflowNodeCard';
-
-// ReactFlow ships unlayered CSS, so Tailwind utilities can't override it; its CSS variables can.
-const canvasStyle = { '--xy-background-color': 'var(--muted)' } as CSSProperties;
 
 /** Canvas-only node state. Kept out of the form so selecting a node doesn't make the workflow dirty. */
 type NodeViewState = Pick<FlowNode, 'measured' | 'selected' | 'dragging'>;

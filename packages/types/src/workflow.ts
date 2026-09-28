@@ -41,3 +41,20 @@ export interface Workflow {
   status: WorkflowStatus;
   graph: WorkflowGraph;
 }
+
+/** Integration a template touches. Drives the icons on template cards. */
+export type WorkflowTemplateApp = 'woocommerce' | 'email' | 'automation';
+
+/** Pre-built workflow shown in the template library. "Use template" copies `graph` into a new draft. */
+export interface WorkflowTemplate {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  apps: WorkflowTemplateApp[];
+  /** Install count. Sort key for "Most popular". */
+  popularity: number;
+  /** ISO date. Sort key for "Newest". */
+  createdAt: string;
+  graph: WorkflowGraph;
+}

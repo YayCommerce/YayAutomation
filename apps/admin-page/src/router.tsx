@@ -2,6 +2,7 @@ import { createHashRouter, redirect } from 'react-router';
 
 import Layout from '@/routes/layout/Layout';
 import SettingsPage from '@/routes/settings/SettingsPage';
+import TemplatePreviewPage from '@/routes/workflows/TemplatePreviewPage';
 import WorkflowEditorPage from '@/routes/workflows/WorkflowEditorPage';
 import WorkflowListPage from '@/routes/workflows/WorkflowListPage';
 
@@ -20,6 +21,10 @@ export const router = createHashRouter([
           {
             index: true,
             element: <WorkflowListPage />,
+          },
+          {
+            path: 'templates/:templateId',
+            element: <TemplatePreviewPage />,
           },
           {
             path: ':workflowId',

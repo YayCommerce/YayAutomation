@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { getWorkflow, saveWorkflow } from './workflow.mock';
+import { createWorkflow, getWorkflow, saveWorkflow } from './workflow.mock';
 
 export const workflowKeys = {
   detail: (id: string) => ['workflow', id] as const,
@@ -23,5 +23,15 @@ export function useSaveWorkflowMutation() {
     onMutate: (workflow) => queryClient.cancelQueries({ queryKey: workflowKeys.detail(workflow.id) }),
     // Write the response into the cache so re-opening the editor shows the saved version immediately.
     onSuccess: (saved) => queryClient.setQueryData(workflowKeys.detail(saved.id), saved),
+  });
+}
+
+/** Creates a draft (blank or from a template). Seeds the detail cache so the editor renders without a skeleton. */
+export function useCreateWorkflowMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: createWorkflow,
+    onSuccess: (created) => queryClient.setQueryData(workflowKeys.detail(created.id), created),
   });
 }

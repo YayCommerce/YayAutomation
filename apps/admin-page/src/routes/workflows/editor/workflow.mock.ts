@@ -1,5 +1,7 @@
 import type { Workflow } from '@yay-automation/types';
 
+import { createId } from './workflow.graph';
+
 /**
  * In-memory stand-in for the REST API. Same async signatures a real `api.get/post` wrapper
  * would have, so swapping it out only touches `workflow.query.ts`.
@@ -46,7 +48,7 @@ const demoWorkflow: Workflow = {
 
 const db = new Map<string, Workflow>([[demoWorkflow.id, demoWorkflow]]);
 
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+export const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export async function getWorkflow(id: string): Promise<Workflow> {
   await delay(400);
@@ -55,6 +57,13 @@ export async function getWorkflow(id: string): Promise<Workflow> {
     throw new Error(`Workflow "${id}" not found`);
   }
   // Clone so callers never mutate the "server" copy.
+  return structuredClone(workflow);
+}
+
+export async function createWorkflow(input: Pick<Workflow, 'name' | 'graph'>): Promise<Workflow> {
+  await delay(400);
+  const workflow: Workflow = { id: createId('wf'), status: 'draft', ...structuredClone(input) };
+  db.set(workflow.id, workflow);
   return structuredClone(workflow);
 }
 

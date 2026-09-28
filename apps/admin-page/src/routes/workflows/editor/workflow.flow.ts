@@ -1,9 +1,13 @@
+import type { CSSProperties } from 'react';
 import type { Edge, Node } from '@xyflow/react';
 import type { WorkflowGraph, WorkflowNodeData, WorkflowNodeKind } from '@yay-automation/types';
 import { __ } from '@wordpress/i18n';
 
 /** ReactFlow node typed by our data + kind. `type` picks the component from `nodeTypes`. */
 export type FlowNode = Node<WorkflowNodeData, WorkflowNodeKind>;
+
+// ReactFlow ships unlayered CSS, so Tailwind utilities can't override it; its CSS variables can.
+export const canvasStyle = { '--xy-background-color': 'var(--muted)' } as CSSProperties;
 
 const branchLabels = {
   then: __('Then', 'yay-automation'),

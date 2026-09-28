@@ -6,13 +6,34 @@ import { __ } from '@wordpress/i18n';
  * `setFieldValue('graph', (graph) => …)`, so each edit is one atomic value change.
  */
 
-const ROW_GAP = 150;
-const BRANCH_OFFSET = 150;
+/** Layout grid for new nodes. Template graphs use the same grid so added steps line up. */
+export const ROW_GAP = 150;
+export const BRANCH_OFFSET = 150;
 
 const newTitles = {
   condition: __('New condition', 'yay-automation'),
   action: __('New action', 'yay-automation'),
 };
+
+/** Short unique id with a readable prefix. Not `crypto.randomUUID()`: it's undefined on non-HTTPS WP sites. */
+export function createId(prefix: string) {
+  return `${prefix}-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+}
+
+/** Graph for a workflow started from scratch: a single trigger to configure. */
+export function blankGraph(): WorkflowGraph {
+  return {
+    nodes: [
+      {
+        id: 'trigger',
+        kind: 'trigger',
+        position: { x: 0, y: 0 },
+        data: { title: __('Select a trigger', 'yay-automation') },
+      },
+    ],
+    edges: [],
+  };
+}
 
 /** True when the node's source handle (or condition branch) already has an outgoing edge. */
 export function hasChild(graph: WorkflowGraph, nodeId: string, branch?: WorkflowBranch) {
@@ -29,8 +50,7 @@ export function addNode(
   const parent = graph.nodes.find((node) => node.id === parentId);
   if (!parent) return graph;
 
-  // Not `crypto.randomUUID()`: it's undefined on non-HTTPS WP sites.
-  const id = `${kind}-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+  const id = createId(kind);
   const offsetX = branch === 'then' ? -BRANCH_OFFSET : branch === 'otherwise' ? BRANCH_OFFSET : 0;
 
   return {
