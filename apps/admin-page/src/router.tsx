@@ -23,6 +23,11 @@ export const router = createHashRouter([
             element: <WorkflowListPage />,
           },
           {
+            // Otherwise `templates` would match `:workflowId` and show "Workflow not found".
+            path: 'templates',
+            loader: () => redirect('/workflows?templates=1'),
+          },
+          {
             path: 'templates/:templateId',
             element: <TemplatePreviewPage />,
           },

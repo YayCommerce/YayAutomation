@@ -12,6 +12,8 @@ export function useTemplatesQuery() {
   return useQuery({
     queryKey: templateKeys.all,
     queryFn: getTemplates,
+    // One quick retry for a blip; the dialog offers "Try again" after that.
+    retry: 1,
   });
 }
 

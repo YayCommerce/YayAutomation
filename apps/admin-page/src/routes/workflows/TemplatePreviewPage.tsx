@@ -1,9 +1,11 @@
 import type { WorkflowTemplate } from '@yay-automation/types';
+import { Info } from 'lucide-react';
 import { useLocation, useNavigate, useParams } from 'react-router';
 import { __ } from '@wordpress/i18n';
 
 import { Badge } from '@/components/ui/badge';
-import { LoadingButton } from '@/components/ui/button';
+import { Button, LoadingButton } from '@/components/ui/button';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { toast } from '@/components/ui/sonner';
 import { EditorLayout, EditorPlaceholder, type EditorBackProps } from './editor/EditorLayout';
 import { ReadOnlyCanvas } from './editor/ReadOnlyCanvas';
@@ -52,15 +54,33 @@ export default function TemplatePreviewPage() {
         <>
           <span className="truncate font-medium">{template.name}</span>
           <Badge variant="primary-soft">{__('Template', 'yay-automation')}</Badge>
-          <LoadingButton
-            className="ml-auto"
-            size="sm"
-            loading={createMutation.isPending}
-            disabled={createMutation.isPending}
-            onClick={applyTemplate}
-          >
-            {__('Use template', 'yay-automation')}
-          </LoadingButton>
+          <div className="ml-auto flex shrink-0 items-center gap-2">
+            {/* Below md the side panel is hidden; the same details open in a sheet instead. */}
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="sm" className="md:hidden">
+                  <Info />
+                  {__('Details', 'yay-automation')}
+                </Button>
+              </SheetTrigger>
+              <SheetContent aria-describedby={undefined}>
+                <SheetHeader>
+                  <SheetTitle>{__('Template details', 'yay-automation')}</SheetTitle>
+                </SheetHeader>
+                <div className="min-h-0 flex-1 overflow-y-auto p-5">
+                  <TemplateDetails template={template} />
+                </div>
+              </SheetContent>
+            </Sheet>
+            <LoadingButton
+              size="sm"
+              loading={createMutation.isPending}
+              disabled={createMutation.isPending}
+              onClick={applyTemplate}
+            >
+              {__('Use template', 'yay-automation')}
+            </LoadingButton>
+          </div>
         </>
       }
     >
@@ -68,15 +88,18 @@ export default function TemplatePreviewPage() {
         <div className="min-w-0 flex-1">
           <ReadOnlyCanvas key={template.id} graph={template.graph} />
         </div>
-        <TemplateDetails template={template} />
+        <aside className="bg-background w-80 shrink-0 overflow-y-auto border-l p-5 max-md:hidden">
+          <TemplateDetails template={template} />
+        </aside>
       </div>
     </EditorLayout>
   );
 }
 
+/** Details body. Rendered in the side panel (md+) and in the "Details" sheet (below md). */
 function TemplateDetails({ template }: { template: WorkflowTemplate }) {
   return (
-    <aside className="bg-background w-80 shrink-0 space-y-6 overflow-y-auto border-l p-5 max-md:hidden">
+    <div className="space-y-6">
       <section>
         <h2 className="font-semibold">{__('About this template', 'yay-automation')}</h2>
         <p className="text-muted-foreground mt-2 text-sm">{template.description}</p>
@@ -115,6 +138,6 @@ function TemplateDetails({ template }: { template: WorkflowTemplate }) {
           })}
         </ol>
       </section>
-    </aside>
+    </div>
   );
 }

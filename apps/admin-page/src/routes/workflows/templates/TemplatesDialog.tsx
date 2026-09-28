@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react';
 import type { WorkflowTemplate } from '@yay-automation/types';
-import { Search, SearchX } from 'lucide-react';
+import { Search, SearchX, TriangleAlert } from 'lucide-react';
 import { Link } from 'react-router';
 import { __ } from '@wordpress/i18n';
 
+import { LoadingButton } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
-import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -32,8 +33,9 @@ export function TemplatesDialog({ open, onOpenChange }: { open: boolean; onOpenC
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
+        // Fixed height (capped on tall screens) so filtering doesn't resize and re-center the dialog.
         // Close icon sits on the primary hero, so it takes the hero's foreground color.
-        className="*:data-[slot=dialog-close]:text-primary-foreground/80 *:data-[slot=dialog-close]:hover:text-primary-foreground flex max-h-[calc(100vh-4rem)] flex-col gap-0 p-0 sm:max-w-6xl"
+        className="*:data-[slot=dialog-close]:text-primary-foreground/80 *:data-[slot=dialog-close]:hover:text-primary-foreground flex h-[min(calc(100vh-4rem),60rem)] flex-col gap-0 p-0 sm:max-w-6xl"
       >
         <TemplateLibrary />
       </DialogContent>
@@ -43,7 +45,7 @@ export function TemplatesDialog({ open, onOpenChange }: { open: boolean; onOpenC
 
 /** Split out so search/sort state resets each time the dialog opens. */
 function TemplateLibrary() {
-  const { data: templates, error } = useTemplatesQuery();
+  const { data: templates, error, refetch, isFetching } = useTemplatesQuery();
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState<SortKey>('popular');
 
@@ -77,6 +79,7 @@ function TemplateLibrary() {
             <Search />
           </InputGroupAddon>
           <InputGroupInput
+            disabled={!templates}
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             placeholder={__('Search templates', 'yay-automation')}
@@ -86,7 +89,7 @@ function TemplateLibrary() {
         <span className="text-muted-foreground text-sm whitespace-nowrap max-sm:hidden">
           {__('Sort by:', 'yay-automation')}
         </span>
-        <Select value={sort} onValueChange={(value) => setSort(value as SortKey)}>
+        <Select value={sort} onValueChange={(value) => setSort(value as SortKey)} disabled={!templates}>
           <SelectTrigger className="w-40" aria-label={__('Sort templates', 'yay-automation')}>
             <SelectValue />
           </SelectTrigger>
@@ -100,9 +103,23 @@ function TemplateLibrary() {
         </Select>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto p-6">
+      {/* `relative` keeps absolutely positioned descendants (sr-only labels) inside this scroll box. */}
+      <div className="relative min-h-0 flex-1 overflow-y-auto p-6">
         {error ? (
-          <p className="text-muted-foreground py-12 text-center text-sm">{error.message}</p>
+          <Empty className="py-12">
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <TriangleAlert />
+              </EmptyMedia>
+              <EmptyTitle>{__('Couldn’t load templates', 'yay-automation')}</EmptyTitle>
+              <EmptyDescription>{error.message}</EmptyDescription>
+            </EmptyHeader>
+            <EmptyContent>
+              <LoadingButton variant="outline" loading={isFetching} disabled={isFetching} onClick={() => refetch()}>
+                {__('Try again', 'yay-automation')}
+              </LoadingButton>
+            </EmptyContent>
+          </Empty>
         ) : !templates ? (
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {Array.from({ length: 6 }, (_, i) => (
