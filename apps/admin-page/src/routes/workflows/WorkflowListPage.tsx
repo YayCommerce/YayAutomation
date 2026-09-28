@@ -56,7 +56,7 @@ export default function WorkflowListPage() {
         <PageTitle>{__('Workflows', 'yay-automation')}</PageTitle>
         <div className="flex items-center gap-2">
           <Button variant="outline" onClick={() => setTemplatesOpen(true)}>
-            {__('Browse templates', 'yay-automation')}
+            {__('Template Library', 'yay-automation')}
           </Button>
           <Tooltip>
             {/* Disabled buttons swallow pointer events, so the span carries the tooltip. */}
@@ -85,7 +85,7 @@ export default function WorkflowListPage() {
         </EmptyHeader>
         <EmptyContent className="flex-row justify-center">
           <Button variant="secondary" onClick={() => setTemplatesOpen(true)}>
-            {__('Browse templates', 'yay-automation')}
+            {__('Template Library', 'yay-automation')}
           </Button>
           {createButton}
         </EmptyContent>
