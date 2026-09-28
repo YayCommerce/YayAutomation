@@ -47,5 +47,5 @@ Workflow list table (drafts not listed yet), Import, real triggers/actions, REST
 
 ## Meta
 
-- Target branch: jack/workflows-templates
+- Target branch: jack/workflows-ui
 - Base branch: main
