@@ -45,9 +45,16 @@ export const toDraft = ({ id, name, status, graph }: WorkflowDraft): WorkflowDra
 
 export const listWorkflows = () => request<Workflow[]>(api.get('workflows'));
 
-export const getWorkflow = (id: string) => request<Workflow>(api.get(`workflows/${id}`));
+/**
+ * Workflow ids are post ids. A non-numeric id can't exist and wouldn't match the REST route, so
+ * answer "not found" here instead of showing WordPress's generic "no route" error.
+ */
+export const getWorkflow = (id: string) =>
+  /^\d+$/.test(id)
+    ? request<Workflow>(api.get(`workflows/${id}`))
+    : Promise.reject(new ApiError(__('Workflow not found.', 'yay-automation'), 404));
 
-/** Creates on the first save, updates after that. */
+/** Creates when there's no `id` (a new draft), updates otherwise. */
 export const saveWorkflow = (draft: WorkflowDraft) =>
   request<Workflow>(
     draft.id

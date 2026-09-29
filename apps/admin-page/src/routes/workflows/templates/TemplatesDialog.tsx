@@ -58,7 +58,7 @@ function TemplateLibrary() {
       <div className="bg-primary text-primary-foreground flex items-center justify-between gap-6 p-8 sm:px-10">
         <div className="max-w-xl">
           <DialogTitle className="text-primary-foreground text-3xl font-semibold tracking-tight">
-            {__('Workflow templates', 'yay-automation')}
+            {__('Template Library', 'yay-automation')}
           </DialogTitle>
           <DialogDescription className="text-primary-foreground/85 mt-2 text-base">
             {__(

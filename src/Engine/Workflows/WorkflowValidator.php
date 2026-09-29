@@ -8,7 +8,8 @@ defined( 'ABSPATH' ) || exit;
 
 /**
  * Turns REST input into a storable workflow. Rejects malformed input first, then anything
- * `errors()` reports, whether the workflow is active or not.
+ * `errors()` reports, whether the workflow is active or not — except a save that only turns an
+ * active workflow off.
  * `errors()` mirrors `validateWorkflow()` in apps/admin-page/src/routes/workflows/validation.ts.
  */
 final class WorkflowValidator {
@@ -79,11 +80,12 @@ final class WorkflowValidator {
     }
 
     /**
-     * Problems that block saving. Codes match the TS `validateWorkflow()`:
-     * name_required, no_action, unreachable (per node), invalid_config (per node).
+     * Problems that block saving. Codes match the TS `validateWorkflow()`: name_required,
+     * no_action (on the trigger), unlinked (one issue, `nodeIds` = every step not reached from the
+     * trigger), invalid_config (per node).
      *
      * @param array $workflow Well-formed workflow (graph from `prepare_graph()`).
-     * @return array[] [ [ 'code' => string, 'message' => string, 'nodeId'? => string ], … ]
+     * @return array[] [ [ 'code' => string, 'message' => string, 'nodeId'? => string, 'nodeIds'? => string[] ], … ]
      */
     public static function errors( array $workflow ): array {
         $errors = [];
@@ -96,21 +98,29 @@ final class WorkflowValidator {
             ];
         }
         if ( ! in_array( Block::KIND_ACTION, array_column( $nodes, 'kind' ), true ) ) {
-            $errors[] = [
+            $error = [
                 'code'    => 'no_action',
                 'message' => __( 'Add an action to this workflow', 'yay-automation' ),
             ];
+            foreach ( $nodes as $node ) {
+                if ( Block::KIND_TRIGGER === $node['kind'] ) {
+                    $error['nodeId'] = $node['id'];
+                }
+            }
+            $errors[] = $error;
         }
 
         $reachable = self::reachable( $workflow['graph'] );
+        $unlinked  = array_values( array_diff( array_column( $nodes, 'id' ), array_keys( $reachable ) ) );
+        if ( $unlinked ) {
+            $errors[] = [
+                'code'    => 'unlinked',
+                'nodeIds' => $unlinked,
+                'message' => __( 'Remove or connect unlinked steps', 'yay-automation' ),
+            ];
+        }
+
         foreach ( $nodes as $node ) {
-            if ( ! isset( $reachable[ $node['id'] ] ) ) {
-                $errors[] = [
-                    'nodeId'  => $node['id'],
-                    'code'    => 'unreachable',
-                    'message' => __( 'This step isn’t connected to the trigger.', 'yay-automation' ),
-                ];
-            }
             $valid = BlockRegistry::get( $node['data']['block'] )->validate( $node['data']['config'] );
             if ( is_wp_error( $valid ) ) {
                 $errors[] = [
@@ -199,6 +209,10 @@ final class WorkflowValidator {
         }
 
         $edges = [];
+        // The editor builds a tree: each step has at most one parent, and each handle at most one
+        // child. Rejecting anything else also rules out cycles among steps reached from the trigger.
+        $has_parent = [];
+        $used_slots = [];
         foreach ( $graph['edges'] as $raw ) {
             $id     = is_array( $raw ) ? (string) ( $raw['id'] ?? '' ) : '';
             $source = $nodes[ (string) ( $raw['source'] ?? '' ) ] ?? null;
@@ -211,10 +225,15 @@ final class WorkflowValidator {
                 // Only condition steps branch, and they always name the branch.
                 && ( Block::KIND_CONDITION === $source['kind']
                     ? in_array( $handle, self::BRANCHES, true )
-                    : null === $handle );
+                    : null === $handle )
+                && ! isset( $has_parent[ $target['id'] ] )
+                && ! isset( $used_slots[ $source['id'] . '|' . $handle ] );
             if ( ! $valid ) {
                 return self::error( __( 'Invalid connection between steps.', 'yay-automation' ) );
             }
+
+            $has_parent[ $target['id'] ]                 = true;
+            $used_slots[ $source['id'] . '|' . $handle ] = true;
 
             $edges[ $id ] = [
                 'id'     => $id,

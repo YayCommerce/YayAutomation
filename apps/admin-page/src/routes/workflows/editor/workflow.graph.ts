@@ -16,14 +16,6 @@ export function createId(prefix: string) {
   return `${prefix}-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
 }
 
-/** Graph for a workflow started from scratch: a single trigger to configure. */
-export function blankGraph(): WorkflowGraph {
-  return {
-    nodes: [{ id: 'trigger', kind: 'trigger', position: { x: 0, y: 0 }, data: newNodeData('trigger') }],
-    edges: [],
-  };
-}
-
 /** True when the node's source handle (or condition branch) already has an outgoing edge. */
 export function hasChild(graph: WorkflowGraph, nodeId: string, branch?: WorkflowBranch) {
   return graph.edges.some((edge) => edge.source === nodeId && edge.sourceHandle === branch);
@@ -57,44 +49,17 @@ export function addNode(
 }
 
 /**
- * How deleting a node plays out: `none` for the trigger (it can't be removed), `branches` for a
- * condition with steps under it (they go too, so ask first), `simple` otherwise.
- */
-export function deletionKind(graph: WorkflowGraph, nodeId: string): 'none' | 'simple' | 'branches' {
-  const node = graph.nodes.find((n) => n.id === nodeId);
-  if (!node || node.kind === 'trigger') return 'none';
-  return node.kind === 'condition' && graph.edges.some((edge) => edge.source === nodeId) ? 'branches' : 'simple';
-}
-
-/**
- * Removes a node. A condition takes every step below it along. Any other node hands its single
- * child to its parent, on the same branch, so the flow stays connected. The trigger can't be removed.
+ * Removes just this node and its edges. Steps below it stay on the canvas, unlinked from the
+ * trigger, until the user deletes them or rebuilds the flow. The trigger can't be removed.
  */
 export function removeNode(graph: WorkflowGraph, nodeId: string): WorkflowGraph {
   const node = graph.nodes.find((n) => n.id === nodeId);
   if (!node || node.kind === 'trigger') return graph;
 
-  if (node.kind === 'condition') {
-    const removed = descendantsOf(graph, nodeId).add(nodeId);
-    return {
-      nodes: graph.nodes.filter((n) => !removed.has(n.id)),
-      edges: graph.edges.filter((edge) => !removed.has(edge.source) && !removed.has(edge.target)),
-    };
-  }
-
-  const incoming = graph.edges.find((edge) => edge.target === nodeId);
-  const outgoing = graph.edges.filter((edge) => edge.source === nodeId);
-  const edges = graph.edges.filter((edge) => edge.source !== nodeId && edge.target !== nodeId);
-  if (incoming && outgoing.length === 1) {
-    const child = outgoing[0].target;
-    edges.push({
-      id: `e-${incoming.source}-${child}`,
-      source: incoming.source,
-      target: child,
-      sourceHandle: incoming.sourceHandle,
-    });
-  }
-  return { nodes: graph.nodes.filter((n) => n.id !== nodeId), edges };
+  return {
+    nodes: graph.nodes.filter((n) => n.id !== nodeId),
+    edges: graph.edges.filter((edge) => edge.source !== nodeId && edge.target !== nodeId),
+  };
 }
 
 /** Ids of every node below `nodeId`, following edges. */

@@ -1,4 +1,4 @@
-import { Link, useLocation, useNavigate, useSearchParams } from 'react-router';
+import { useLocation, useNavigate, useSearchParams } from 'react-router';
 import { __ } from '@wordpress/i18n';
 
 import { Button } from '@/components/ui/button';
@@ -34,11 +34,17 @@ export default function WorkflowListPage() {
     }
   };
 
-  // Opens an unsaved draft; nothing is created until its first Save.
+  // Building a workflow from scratch isn't available yet; templates are the way in.
   const createButton = (
-    <Button asChild>
-      <Link to="/workflows/new">{__('Create workflow', 'yay-automation')}</Link>
-    </Button>
+    <Tooltip>
+      {/* Disabled buttons swallow pointer events, so the span carries the tooltip. */}
+      <TooltipTrigger asChild>
+        <span tabIndex={0}>
+          <Button disabled>{__('Create workflow', 'yay-automation')}</Button>
+        </span>
+      </TooltipTrigger>
+      <TooltipContent>{__('Coming soon', 'yay-automation')}</TooltipContent>
+    </Tooltip>
   );
 
   return (
@@ -49,17 +55,6 @@ export default function WorkflowListPage() {
           <Button variant="outline" onClick={() => setTemplatesOpen(true)}>
             {__('Template Library', 'yay-automation')}
           </Button>
-          <Tooltip>
-            {/* Disabled buttons swallow pointer events, so the span carries the tooltip. */}
-            <TooltipTrigger asChild>
-              <span tabIndex={0}>
-                <Button variant="outline" disabled>
-                  {__('Import', 'yay-automation')}
-                </Button>
-              </span>
-            </TooltipTrigger>
-            <TooltipContent>{__('Coming soon', 'yay-automation')}</TooltipContent>
-          </Tooltip>
           {createButton}
         </div>
       </div>

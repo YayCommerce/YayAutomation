@@ -6,7 +6,7 @@ export interface EditorState {
   openNodeId: string | null;
   /** Steps with a validation issue; they get the red "Error" header. */
   errorNodeIds: ReadonlySet<string>;
-  /** Deletes steps, asking first when a condition would take its branches with it. */
+  /** Deletes just these steps; anything below them stays on the canvas, unlinked. */
   requestDelete: (nodeIds: string[]) => void;
 }
 

@@ -50,7 +50,7 @@ export interface Workflow {
   updatedAt: string;
 }
 
-/** What the editor edits. No `id` until the first save creates the workflow. */
+/** Editable fields of a workflow. No `id` only in the create request. */
 export interface WorkflowDraft {
   id?: string;
   name: string;
@@ -61,7 +61,7 @@ export interface WorkflowDraft {
 /** Integration a template touches. Drives the icons on template cards. */
 export type WorkflowTemplateApp = 'woocommerce' | 'email' | 'automation';
 
-/** Pre-built workflow shown in the template library. "Use template" copies `graph` into an unsaved draft. */
+/** Pre-built workflow shown in the template library. "Use template" creates an inactive draft from `graph`. */
 export interface WorkflowTemplate {
   id: string;
   name: string;
@@ -76,11 +76,13 @@ export interface WorkflowTemplate {
 }
 
 /** Codes shared by the TS `validateWorkflow()` and PHP `WorkflowValidator::errors()`. */
-export type WorkflowIssueCode = 'name_required' | 'no_action' | 'unreachable' | 'invalid_config';
+export type WorkflowIssueCode = 'name_required' | 'no_action' | 'unlinked' | 'invalid_config';
 
 /** Something that blocks saving. `nodeId` is set when the issue belongs to one step. */
 export interface WorkflowIssue {
   code: WorkflowIssueCode;
   message: string;
   nodeId?: string;
+  /** `unlinked` only: every step not connected to the trigger. Workflow-level, so no `nodeId`. */
+  nodeIds?: string[];
 }

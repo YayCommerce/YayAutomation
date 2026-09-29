@@ -2,7 +2,6 @@ import { createHashRouter, redirect } from 'react-router';
 
 import Layout from '@/routes/layout/Layout';
 import SettingsPage from '@/routes/settings/SettingsPage';
-import NewWorkflowPage from '@/routes/workflows/NewWorkflowPage';
 import TemplatePreviewPage from '@/routes/workflows/TemplatePreviewPage';
 import WorkflowEditorPage from '@/routes/workflows/WorkflowEditorPage';
 import WorkflowListPage from '@/routes/workflows/WorkflowListPage';
@@ -31,11 +30,6 @@ export const router = createHashRouter([
           {
             path: 'templates/:templateId',
             element: <TemplatePreviewPage />,
-          },
-          {
-            // Static segment, so it outranks `:workflowId`.
-            path: 'new',
-            element: <NewWorkflowPage />,
           },
           {
             path: ':workflowId',

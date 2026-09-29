@@ -4,7 +4,7 @@ import { __ } from '@wordpress/i18n';
 import { BRANCH_OFFSET, ROW_GAP } from '../editor/workflow.graph';
 
 /**
- * The template library. Static: "Use template" copies a graph into an unsaved draft, so nothing
+ * The template library. Static: "Use template" creates an inactive draft from a copy of the graph, so nothing
  * here touches the server.
  */
 export const templates: WorkflowTemplate[] = [
@@ -38,8 +38,8 @@ export const templates: WorkflowTemplate[] = [
           data: {
             title: __('Order total is above your threshold', 'yay-automation'),
             block: 'order_total',
-            // No amount on purpose: the user sets it before the workflow can be activated.
-            config: { operator: 'gt', amount: null },
+            // Ships valid, so the draft has no issues; the user can adjust the amount.
+            config: { operator: 'gt', amount: 500 },
           },
         },
         {

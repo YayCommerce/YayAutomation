@@ -15,19 +15,29 @@ export function validateWorkflow({ name, graph }: Pick<WorkflowDraft, 'name' | '
   if (!name.replace(/<[^>]*>/g, '').trim()) {
     issues.push({ code: 'name_required', message: __('Enter a workflow name.', 'yay-automation') });
   }
+  const trigger = graph.nodes.find((node) => node.kind === 'trigger');
   if (!graph.nodes.some((node) => node.kind === 'action')) {
-    issues.push({ code: 'no_action', message: __('Add an action to this workflow', 'yay-automation') });
+    // Shown on the trigger: that's where the next step gets added.
+    issues.push({
+      code: 'no_action',
+      nodeId: trigger?.id,
+      message: __('Add an action to this workflow', 'yay-automation'),
+    });
   }
 
-  const reachable = reachableFromTrigger(graph);
+  // Steps left behind by a delete. One workflow-level issue for all of them; they only get their
+  // own (red header) issues for their own settings.
+  const reachable = trigger ? descendantsOf(graph, trigger.id).add(trigger.id) : new Set<string>();
+  const unlinked = graph.nodes.filter((node) => !reachable.has(node.id)).map((node) => node.id);
+  if (unlinked.length) {
+    issues.push({
+      code: 'unlinked',
+      nodeIds: unlinked,
+      message: __('Remove or connect unlinked steps', 'yay-automation'),
+    });
+  }
+
   for (const node of graph.nodes) {
-    if (!reachable.has(node.id)) {
-      issues.push({
-        code: 'unreachable',
-        nodeId: node.id,
-        message: __('This step isn’t connected to the trigger.', 'yay-automation'),
-      });
-    }
     const error = blocks[node.data.block].firstError(node.data.config);
     if (error) {
       issues.push({ code: 'invalid_config', nodeId: node.id, message: error });
@@ -36,16 +46,17 @@ export function validateWorkflow({ name, graph }: Pick<WorkflowDraft, 'name' | '
   return issues;
 }
 
-function reachableFromTrigger(graph: WorkflowGraph) {
-  const trigger = graph.nodes.find((node) => node.kind === 'trigger');
-  return trigger ? descendantsOf(graph, trigger.id).add(trigger.id) : new Set<string>();
-}
-
 /** For `useStore`: a fresh array each run, so compare contents to avoid re-rendering on every edit. */
 export function sameIssues(a: WorkflowIssue[], b: WorkflowIssue[]) {
   return (
     a.length === b.length &&
-    a.every((issue, i) => issue.code === b[i].code && issue.nodeId === b[i].nodeId && issue.message === b[i].message)
+    a.every(
+      (issue, i) =>
+        issue.code === b[i].code &&
+        issue.nodeId === b[i].nodeId &&
+        issue.message === b[i].message &&
+        issue.nodeIds?.join() === b[i].nodeIds?.join(),
+    )
   );
 }
 

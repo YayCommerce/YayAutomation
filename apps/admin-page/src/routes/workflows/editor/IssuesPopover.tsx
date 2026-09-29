@@ -8,7 +8,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 
 /**
  * "N issues" button next to Save. Lists what blocks saving; picking a step issue opens that step,
- * picking a workflow-level one runs `onSelectWorkflowIssue` (e.g. focus the name field).
+ * `unlinked` opens the first unlinked step, and other workflow-level issues run
+ * `onSelectWorkflowIssue` (e.g. focus the name field).
  */
 export function IssuesPopover({
   issues,
@@ -48,7 +49,8 @@ export function IssuesPopover({
           picked.current = null;
           if (!issue) return;
           event.preventDefault();
-          if (issue.nodeId) onSelectNode(issue.nodeId);
+          const nodeId = issue.nodeId ?? issue.nodeIds?.[0];
+          if (nodeId) onSelectNode(nodeId);
           else onSelectWorkflowIssue(issue);
         }}
       >

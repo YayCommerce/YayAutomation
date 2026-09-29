@@ -64,7 +64,7 @@ export function WorkflowCanvas({ onNodeClick }: { onNodeClick: (nodeId: string) 
       nodeTypes={nodeTypes}
       onNodesChange={onNodesChange}
       onNodeClick={(_, node) => onNodeClick(node.id)}
-      // Backspace: hand the selected nodes to our delete (reconnect or confirm), and stop ReactFlow's own.
+      // Backspace: same delete as the card's button (edges out of the form too), not ReactFlow's own.
       onBeforeDelete={async ({ nodes }) => {
         if (nodes.length) requestDelete(nodes.map((node) => node.id));
         return false;

@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useMemo, useRef, useState, type ReactNode } from 'react';
 import { useStore } from '@tanstack/react-form';
 import type { WorkflowDraft } from '@yay-automation/types';
 import { __ } from '@wordpress/i18n';
@@ -26,18 +26,13 @@ import { EditorLayout } from './EditorLayout';
 import { IssuesPopover } from './IssuesPopover';
 import { NodeConfigSheet } from './NodeConfigSheet';
 import { useWorkflowForm, WorkflowFormContext } from './useWorkflowForm';
-import { deletionKind, removeNode } from './workflow.graph';
+import { removeNode } from './workflow.graph';
 import { WorkflowCanvas } from './WorkflowCanvas';
 
-/**
- * Owns the form for one workflow, saved or not. Mount with a `key` per workflow (or per template
- * for drafts) so switching starts fresh.
- */
+/** Owns the form for one saved workflow. Mount with `key={workflow.id}` so switching starts fresh. */
 export function WorkflowEditor({ workflow }: { workflow: WorkflowDraft }) {
   const form = useWorkflowForm(workflow);
   const [openNodeId, setOpenNodeId] = useState<string | null>(null);
-  // Steps waiting for "delete its branches too?" confirmation (a condition with steps under it).
-  const [pendingDeleteIds, setPendingDeleteIds] = useState<string[]>([]);
   const nameInputRef = useRef<HTMLInputElement>(null);
 
   const isDirty = useStore(form.store, (state) => state.isDirty);
@@ -51,32 +46,19 @@ export function WorkflowEditor({ workflow }: { workflow: WorkflowDraft }) {
   );
   const saveBlocked = issues.length > 0 && !deactivateOnly;
 
-  const removeNodes = useCallback(
-    (nodeIds: string[]) =>
-      form.setFieldValue('graph', (graph) => nodeIds.reduce((next, id) => removeNode(next, id), graph)),
-    [form],
-  );
-
   const editorState = useMemo<EditorState>(
     () => ({
       openNodeId,
+      // Issues with a `nodeId` mark that step (its settings, or `no_action` on the trigger). The
+      // workflow-level `unlinked` issue has none, so unlinked steps aren't marked for it.
       errorNodeIds: new Set(issues.flatMap((issue) => (issue.nodeId ? [issue.nodeId] : []))),
-      requestDelete: (nodeIds) => {
-        const kinds = nodeIds.map((id) => deletionKind(form.state.values.graph, id));
-        const ids = nodeIds.filter((_, i) => kinds[i] !== 'none');
-        if (kinds.includes('branches')) setPendingDeleteIds(ids);
-        else if (ids.length) removeNodes(ids);
-      },
+      requestDelete: (nodeIds) =>
+        form.setFieldValue('graph', (graph) => nodeIds.reduce((next, id) => removeNode(next, id), graph)),
     }),
-    [form, openNodeId, issues, removeNodes],
+    [form, openNodeId, issues],
   );
 
-  const confirmDelete = () => {
-    removeNodes(pendingDeleteIds);
-    setPendingDeleteIds([]);
-  };
-
-  // Reads live form state, so the redirect after a first save (form just reset) isn't blocked.
+  // Reads live form state, so it always reflects the latest save.
   const leaveGuard = useRouteLeaveGuard(() => form.state.isDirty);
   useBeforeUnloadWarning(isDirty);
 
@@ -142,8 +124,7 @@ export function WorkflowEditor({ workflow }: { workflow: WorkflowDraft }) {
                     <WithTooltip content={saveBlocked && __('Fix the issues before saving.', 'yay-automation')}>
                       <Button
                         size="sm"
-                        // An unsaved draft can be saved as-is; a saved workflow only when changed.
-                        disabled={!(isDirty || !workflow.id) || isSubmitting || saveBlocked}
+                        disabled={!isDirty || isSubmitting || saveBlocked}
                         onClick={() => form.handleSubmit()}
                       >
                         {isSubmitting ? __('Saving…', 'yay-automation') : __('Save', 'yay-automation')}
@@ -159,23 +140,6 @@ export function WorkflowEditor({ workflow }: { workflow: WorkflowDraft }) {
         </EditorLayout>
 
         <NodeConfigSheet nodeId={openNodeId} onClose={() => setOpenNodeId(null)} />
-
-        <AlertDialog open={pendingDeleteIds.length > 0} onOpenChange={(open) => !open && setPendingDeleteIds([])}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>{__('Delete this condition and its branches?', 'yay-automation')}</AlertDialogTitle>
-              <AlertDialogDescription>
-                {__('Every step under this condition is deleted too.', 'yay-automation')}
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>{__('Cancel', 'yay-automation')}</AlertDialogCancel>
-              <Button variant="destructive" onClick={confirmDelete}>
-                {__('Delete', 'yay-automation')}
-              </Button>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
 
         <AlertDialog open={leaveGuard.showDialog} onOpenChange={(open) => !open && leaveGuard.cancelLeave()}>
           <AlertDialogContent>

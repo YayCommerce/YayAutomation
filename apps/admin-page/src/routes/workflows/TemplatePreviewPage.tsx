@@ -1,14 +1,15 @@
 import type { WorkflowTemplate } from '@yay-automation/types';
 import { Info } from 'lucide-react';
-import { Link, useLocation, useNavigate, useParams } from 'react-router';
+import { useLocation, useNavigate, useParams } from 'react-router';
 import { __ } from '@wordpress/i18n';
 
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Button, LoadingButton } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { blocks } from './blocks';
 import { EditorLayout, EditorPlaceholder, type EditorBackProps } from './editor/EditorLayout';
 import { ReadOnlyCanvas } from './editor/ReadOnlyCanvas';
+import { useCreateDraft } from './editor/useCreateDraft';
 import { kindMeta } from './editor/WorkflowNodeCard';
 import { LIBRARY_PATH, readLibraryNavState } from './templates/library.nav';
 import { appMeta, TemplateAppIcon } from './templates/TemplateApps';
@@ -19,6 +20,7 @@ export default function TemplatePreviewPage() {
   const template = findTemplate(templateId);
   const navigate = useNavigate();
   const location = useLocation();
+  const { createDraft, isCreating } = useCreateDraft();
 
   // Back returns to the open library. Opened from a card → pop that entry; otherwise (bookmark, reload) → link.
   const backProps: EditorBackProps = {
@@ -61,12 +63,14 @@ export default function TemplatePreviewPage() {
                 </div>
               </SheetContent>
             </Sheet>
-            {/* Opens an unsaved draft; nothing is created until its first Save. */}
-            <Button size="sm" asChild>
-              <Link to={`/workflows/new?template=${encodeURIComponent(template.id)}`}>
-                {__('Use template', 'yay-automation')}
-              </Link>
-            </Button>
+            <LoadingButton
+              size="sm"
+              loading={isCreating}
+              disabled={isCreating}
+              onClick={() => createDraft(template.name, template.graph)}
+            >
+              {__('Use template', 'yay-automation')}
+            </LoadingButton>
           </div>
         </>
       }

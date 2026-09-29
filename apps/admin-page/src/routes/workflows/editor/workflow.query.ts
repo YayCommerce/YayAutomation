@@ -31,8 +31,14 @@ export function useWorkflowQuery(id: string) {
   });
 }
 
-/** Creates (no `id` yet) or updates. */
-export function useSaveWorkflowMutation() {
+/**
+ * Creates (no `id` yet) or updates. `onSaved` / `onFailed` run even if the calling component has
+ * unmounted, unlike callbacks passed to `mutate()`.
+ */
+export function useSaveWorkflowMutation({
+  onSaved,
+  onFailed,
+}: { onSaved?: (saved: Workflow) => void; onFailed?: (error: Error) => void } = {}) {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -41,10 +47,13 @@ export function useSaveWorkflowMutation() {
     onMutate: (draft) =>
       draft.id ? queryClient.cancelQueries({ queryKey: workflowKeys.detail(draft.id) }) : undefined,
     onSuccess: (saved) => {
-      // Seeds the editor after the first save's redirect, and re-opening it later, without a refetch.
+      // Seeds the editor (right after a draft is created, and when re-opened) without a refetch.
       queryClient.setQueryData(workflowKeys.detail(saved.id), saved);
-      return queryClient.invalidateQueries({ queryKey: workflowKeys.list() });
+      // Not awaited: callers (e.g. opening a new draft) shouldn't wait for the list to refetch.
+      void queryClient.invalidateQueries({ queryKey: workflowKeys.list() });
+      onSaved?.(saved);
     },
+    onError: (error) => onFailed?.(error),
   });
 }
 

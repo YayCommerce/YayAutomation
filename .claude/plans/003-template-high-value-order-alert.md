@@ -23,8 +23,8 @@ Template Library → preview → Use template → configure → activate. When a
   - Ships unconfigured on purpose, so the user must set X.
   - Delete `template.mock.ts` and `template.query.ts`. Dialog and preview read the static list; drop the dialog's loading/error branches.
 - **Drafts and routing:**
-  - New `workflows/new` route, before `:workflowId`. `?template=<id>` seeds from a template; no param = blank graph with the trigger block preset. Unknown template id → not-found placeholder.
-  - "Use template" and "Create workflow" only navigate. Nothing is created until Save.
+  - New `workflows/new` route, before `:workflowId`. `?template=<id>` seeds from a template. Unknown template id → not-found placeholder.
+  - "Use template" only navigates. Nothing is created until Save.
   - First Save → `POST` → seed detail cache → `navigate('/workflows/:id', { replace: true })`. Later saves → `PUT`.
   - `addNode` assigns the kind's default block and its defaults.
 - **Editor:**
@@ -75,7 +75,7 @@ Template Library → preview → Use template → configure → activate. When a
    - Leaving an unsaved, edited draft creates nothing and shows the leave warning (in-app dialog and browser reload prompt).
    - Reload of `/workflows/new?template=…` and `/workflows/:id` works. Bad template id → not-found.
    - Rename in the toolbar → saved and shown in the list.
-   - Field validation errors, "Needs setup" badges, disabled Active switch, blank Create workflow.
+   - Field validation errors, "Needs setup" badges, disabled Active switch.
    - 002 library/preview history still correct (open, close, card → preview → back reopens the library).
    - Light and dark mode. `pnpm build` passes.
 3. Validation + summaries — Risk: 2 — shared workflow validation (TS + PHP), "N issues" popover, node error header and plain-language summaries, multi-status trigger, delete-with-reconnect. Keeps the current Save button and Active switch.
@@ -114,9 +114,11 @@ Template Library → preview → Use template → configure → activate. When a
      - `.claude/references/6-shopify-unlinked-condition.png` — an unlinked condition with its settings panel open.
      - `.claude/references/7-shopify-unlinked-error.png` — the "Remove or connect unlinked steps" issue.
      - Behavior deviations: no blue "Review" header on unlinked steps (Images 5–6), and issues stay in the "N issues" popover rather than a banner with "1 of N" paging (Image 7).
-   - **Drafts created up front:** "Use template" (preview) and "Create workflow" (list) `POST` an inactive workflow and open `/workflows/:id`, like Shopify Flow's Install. Buttons show a loading state. Blank drafts are named "Untitled workflow".
-     - Server: `POST` with issues is accepted only when `status` is `inactive`; `POST` active with issues → 400. `PUT` keeps the checkpoint 3 rule (400 with issues; deactivate-only exception).
-     - Remove `NewWorkflowPage`, the first-save redirect and the "record id if edited during first save" handling in `useWorkflowForm`. The `new` route redirects to `/workflows`.
+   - **Drafts created up front:** "Use template" (preview) `POST`s an inactive workflow and opens `/workflows/:id`, like Shopify Flow's Install. The button shows a loading state.
+     - Server: `POST` and `PUT` follow the same checkpoint 3 rule: 400 with issues, except a save that only turns an active workflow off. Templates ship valid, so "Use template" always succeeds.
+     - Remove `NewWorkflowPage`, the `new` route, the first-save redirect and the "record id if edited during first save" handling in `useWorkflowForm`. `router.tsx` goes back to its 002 version: `/workflows/new` never shipped, so it just falls through to `:workflowId`.
+   - **"Create workflow" stays as in 002, now inert:** disabled with its own "Coming soon" tooltip in the header and the empty state. Remove `blankGraph()` and the trigger's default block (`newNodeData` is for "+" steps only).
+   - **Import button removed** from the list page header (a disabled placeholder from 002).
    - **Template ships valid:** condition `order_total` `gt 500` (store currency) → "Order total is greater than $500".
    - **Delete removes only that step** (button or Backspace, one or several selected): the node and its edges. Descendants stay on the canvas, unlinked. No reconnect, no cascade, no confirmation dialog, no drag-to-connect. Users fix it by deleting unlinked steps or adding a step with the "+" under the trigger (or wherever a handle is free). Remove `deletionKind()` and the confirm dialog; keep `descendantsOf()` for reachability.
    - **Issues (TS `validateWorkflow()` and PHP `WorkflowValidator::errors()`):**
@@ -126,18 +128,17 @@ Template Library → preview → Use template → configure → activate. When a
    - Save / Active unchanged from checkpoint 3: disabled while there are issues; deactivate-only saves allowed.
    - Test:
      - Use template → draft appears in the list immediately, no issues (amount 500).
-     - Create workflow → blank draft in the list; trigger shows the Error header with "Add an action to this workflow".
+     - Create workflow (header and empty state) → disabled, "Coming soon" tooltip, nothing created.
      - Delete the condition → email action stays, unlinked → "Remove or connect unlinked steps"; Save and Active disabled; clicking the issue opens the email step.
      - Delete the unlinked action → only "Add an action…" remains → add an action under the trigger → Save enabled.
      - Delete a middle action in trigger → A → B → C → C stays unlinked (no reconnect); "+" appears under A.
      - Backspace with several steps selected → only those steps removed, no dialog.
-     - Old `/workflows/new` link → redirects to `/workflows`.
-     - Server: `POST` inactive draft with issues → 201; `POST` active with issues → 400; `PUT` with issues → 400; deactivate-only → 200; unlinked graph → a single `unlinked` issue with `nodeIds`.
+     - Server: `POST` with issues → 400 (inactive or active); valid `POST` → 201; `PUT` with issues → 400; deactivate-only → 200; unlinked graph → a single `unlinked` issue with `nodeIds`.
      - `/wcheck`: unlinked state and Error headers next to Images 5–7, light and dark. `pnpm build`, `php -l`, PHPCS pass.
 
 ## Out of Scope
 
-Other templates/blocks, delays, run log, dedupe, async queue, HTML email, multi-currency conversion, orders created directly in a status (`woocommerce_order_status_changed` needs a `from` status), WooCommerce-inactive notice in the UI. Checkpoint 3: "is" / "is not" operators, per-node descriptions, test-results tab, editing the stored `title`.
+Other templates/blocks, delays, run log, dedupe, async queue, HTML email, multi-currency conversion, orders created directly in a status (`woocommerce_order_status_changed` needs a `from` status), WooCommerce-inactive notice in the UI. Checkpoint 3: "is" / "is not" operators, per-node descriptions, test-results tab, editing the stored `title`. "Create workflow" (building from scratch): plan 003 only covers Template Library → High-value order alert → Use template; the button stays as in 002, disabled with "Coming soon".
 
 ## Meta
 
