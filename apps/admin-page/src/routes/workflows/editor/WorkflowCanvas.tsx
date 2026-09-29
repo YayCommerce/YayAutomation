@@ -13,7 +13,7 @@ import { nodeTypes } from './WorkflowNodeCard';
 /** Canvas-only node state. Kept out of the form so selecting a node doesn't make the workflow dirty. */
 type NodeViewState = Pick<FlowNode, 'measured' | 'selected' | 'dragging'>;
 
-export function WorkflowCanvas() {
+export function WorkflowCanvas({ onNodeClick }: { onNodeClick: (nodeId: string) => void }) {
   const { theme } = useTheme();
   const form = useWorkflowFormContext();
   const graph = useStore(form.store, (state) => state.values.graph);
@@ -60,6 +60,7 @@ export function WorkflowCanvas() {
       edges={edges}
       nodeTypes={nodeTypes}
       onNodesChange={onNodesChange}
+      onNodeClick={(_, node) => onNodeClick(node.id)}
       colorMode={theme}
       style={canvasStyle}
       nodesConnectable={false}

@@ -1,0 +1,52 @@
+import type { Workflow, WorkflowDraft } from '@yay-automation/types';
+import { HTTPError, type ResponsePromise } from 'ky';
+import { __ } from '@wordpress/i18n';
+
+import { api } from '@/lib/api/api';
+import { getErrorMsg } from '@/lib/helpers/response.helper';
+
+/** REST client for `yay-automation/v1/workflows`. Errors are rethrown as `ApiError` with the server's message. */
+
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    /** HTTP status; undefined for network errors and timeouts. */
+    readonly status?: number,
+  ) {
+    super(message);
+  }
+}
+
+async function request<T>(response: ResponsePromise): Promise<T> {
+  try {
+    return await response.json<T>();
+  } catch (error) {
+    let message: string | undefined;
+    try {
+      message = await getErrorMsg(error);
+    } catch {
+      // Error body isn't JSON (PHP fatal, proxy error page): fall back to the generic message.
+    }
+    throw new ApiError(
+      message || __('Something went wrong. Please try again.', 'yay-automation'),
+      error instanceof HTTPError ? error.response.status : undefined,
+    );
+  }
+}
+
+/** The editable fields of a workflow. Used for the form's values and as the request body. */
+export const toDraft = ({ id, name, status, graph }: WorkflowDraft): WorkflowDraft => ({ id, name, status, graph });
+
+export const listWorkflows = () => request<Workflow[]>(api.get('workflows'));
+
+export const getWorkflow = (id: string) => request<Workflow>(api.get(`workflows/${id}`));
+
+/** Creates on the first save, updates after that. */
+export const saveWorkflow = (draft: WorkflowDraft) =>
+  request<Workflow>(
+    draft.id
+      ? api.put(`workflows/${draft.id}`, { json: toDraft(draft) })
+      : api.post('workflows', { json: toDraft(draft) }),
+  );
+
+export const deleteWorkflow = (id: string) => request<{ deleted: boolean }>(api.delete(`workflows/${id}`));

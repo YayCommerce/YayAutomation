@@ -1,19 +1,17 @@
 import { useMemo, useState } from 'react';
 import type { WorkflowTemplate } from '@yay-automation/types';
-import { Search, SearchX, TriangleAlert } from 'lucide-react';
+import { Search, SearchX } from 'lucide-react';
 import { Link } from 'react-router';
 import { __ } from '@wordpress/i18n';
 
-import { LoadingButton } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
-import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Skeleton } from '@/components/ui/skeleton';
 import { TemplatesHeroIllustration } from '../WorkflowIllustrations';
 import type { LibraryNavState } from './library.nav';
-import { useTemplatesQuery } from './template.query';
 import { TemplateAppIcon } from './TemplateApps';
+import { templates } from './templates';
 
 type SortKey = 'popular' | 'newest' | 'name';
 
@@ -45,16 +43,15 @@ export function TemplatesDialog({ open, onOpenChange }: { open: boolean; onOpenC
 
 /** Split out so search/sort state resets each time the dialog opens. */
 function TemplateLibrary() {
-  const { data: templates, error, refetch, isFetching } = useTemplatesQuery();
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState<SortKey>('popular');
 
   const visible = useMemo(() => {
     const query = search.trim().toLowerCase();
-    return (templates ?? [])
+    return templates
       .filter((t) => !query || [t.name, t.description, t.category].some((text) => text.toLowerCase().includes(query)))
       .sort(compare[sort]);
-  }, [templates, search, sort]);
+  }, [search, sort]);
 
   return (
     <>
@@ -79,7 +76,6 @@ function TemplateLibrary() {
             <Search />
           </InputGroupAddon>
           <InputGroupInput
-            disabled={!templates}
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             placeholder={__('Search templates', 'yay-automation')}
@@ -89,7 +85,7 @@ function TemplateLibrary() {
         <span className="text-muted-foreground text-sm whitespace-nowrap max-sm:hidden">
           {__('Sort by:', 'yay-automation')}
         </span>
-        <Select value={sort} onValueChange={(value) => setSort(value as SortKey)} disabled={!templates}>
+        <Select value={sort} onValueChange={(value) => setSort(value as SortKey)}>
           <SelectTrigger className="w-40" aria-label={__('Sort templates', 'yay-automation')}>
             <SelectValue />
           </SelectTrigger>
@@ -105,28 +101,7 @@ function TemplateLibrary() {
 
       {/* `relative` keeps absolutely positioned descendants (sr-only labels) inside this scroll box. */}
       <div className="relative min-h-0 flex-1 overflow-y-auto p-6">
-        {error ? (
-          <Empty className="py-12">
-            <EmptyHeader>
-              <EmptyMedia variant="icon">
-                <TriangleAlert />
-              </EmptyMedia>
-              <EmptyTitle>{__('Couldn’t load templates', 'yay-automation')}</EmptyTitle>
-              <EmptyDescription>{error.message}</EmptyDescription>
-            </EmptyHeader>
-            <EmptyContent>
-              <LoadingButton variant="outline" loading={isFetching} disabled={isFetching} onClick={() => refetch()}>
-                {__('Try again', 'yay-automation')}
-              </LoadingButton>
-            </EmptyContent>
-          </Empty>
-        ) : !templates ? (
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {Array.from({ length: 6 }, (_, i) => (
-              <Skeleton key={i} className="h-48 rounded-lg" />
-            ))}
-          </div>
-        ) : visible.length === 0 ? (
+        {visible.length === 0 ? (
           <Empty className="py-12">
             <EmptyHeader>
               <EmptyMedia variant="icon">

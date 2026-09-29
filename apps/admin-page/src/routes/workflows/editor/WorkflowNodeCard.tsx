@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { MouseEvent, ReactNode } from 'react';
 import { useStore } from '@tanstack/react-form';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import type { WorkflowBranch, WorkflowNodeData, WorkflowNodeKind } from '@yay-automation/types';
@@ -6,6 +6,7 @@ import { GitBranch, Play, Plus, Trash2, Zap, type LucideIcon } from 'lucide-reac
 import { __ } from '@wordpress/i18n';
 
 import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -13,6 +14,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { blocks } from '../blocks';
 import { useWorkflowFormContext } from './useWorkflowForm';
 import type { FlowNode } from './workflow.flow';
 import { addNode, hasChild, removeNode } from './workflow.graph';
@@ -31,20 +33,24 @@ export function NodeCardView({
   type,
   data,
   selected,
+  className,
   children,
 }: {
   type: WorkflowNodeKind;
   data: WorkflowNodeData;
   selected?: boolean;
+  className?: string;
   children?: ReactNode;
 }) {
   const { label, icon: Icon } = kindMeta[type];
+  const summary = blocks[data.block].summary(data.config);
 
   return (
     <div
       className={cn(
         'group bg-card text-card-foreground relative w-60 rounded-lg border p-3 shadow-sm',
         selected ? 'border-primary' : 'border-border',
+        className,
       )}
     >
       {type !== 'trigger' && <Handle type="target" position={Position.Top} />}
@@ -54,7 +60,13 @@ export function NodeCardView({
         {label}
       </div>
       <div className="mt-1 font-medium">{data.title}</div>
-      {data.description && <div className="text-muted-foreground mt-0.5 text-xs">{data.description}</div>}
+      {summary ? (
+        <div className="text-muted-foreground mt-0.5 text-xs">{summary}</div>
+      ) : (
+        <Badge variant="warning-soft" className="mt-1.5">
+          {__('Needs setup', 'yay-automation')}
+        </Badge>
+      )}
 
       {type === 'condition' ? (
         <>
@@ -70,14 +82,20 @@ export function NodeCardView({
   );
 }
 
-/** Editable card: adds delete and "+" controls on top of the view. `nodeTypes` maps each kind here. */
+/**
+ * Editable card: adds delete and "+" controls on top of the view. `nodeTypes` maps each kind here.
+ * Clicking the card opens its settings (the canvas's `onNodeClick`), so the controls stop propagation.
+ */
 export function WorkflowNodeCard({ id, type, data, selected }: NodeProps<FlowNode>) {
   const form = useWorkflowFormContext();
 
-  const remove = () => form.setFieldValue('graph', (graph) => removeNode(graph, id));
+  const remove = (event: MouseEvent) => {
+    event.stopPropagation();
+    form.setFieldValue('graph', (graph) => removeNode(graph, id));
+  };
 
   return (
-    <NodeCardView type={type} data={data} selected={selected}>
+    <NodeCardView type={type} data={data} selected={selected} className="cursor-pointer">
       {type !== 'trigger' && (
         <Button
           variant="ghost"
@@ -123,11 +141,13 @@ function AddNodeButton({ nodeId, branch, left }: { nodeId: string; branch?: Work
           className="nodrag absolute top-full mt-3 size-6 -translate-x-1/2 rounded-full"
           style={{ left }}
           aria-label={__('Add step', 'yay-automation')}
+          onClick={(event) => event.stopPropagation()}
         >
           <Plus />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent>
+      {/* Portaled, but React events still bubble to the node; keep menu clicks from opening its settings. */}
+      <DropdownMenuContent onClick={(event) => event.stopPropagation()}>
         <DropdownMenuItem onSelect={() => add('condition')}>
           <GitBranch />
           {kindMeta.condition.label}

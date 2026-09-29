@@ -1,37 +1,61 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import type { Workflow } from '@yay-automation/types';
 
-import { createWorkflow, getWorkflow, saveWorkflow } from './workflow.mock';
+import { ApiError, deleteWorkflow, getWorkflow, listWorkflows, saveWorkflow } from './workflow.api';
 
 export const workflowKeys = {
-  detail: (id: string) => ['workflow', id] as const,
+  all: ['workflows'] as const,
+  list: () => [...workflowKeys.all, 'list'] as const,
+  detail: (id: string) => [...workflowKeys.all, 'detail', id] as const,
 };
 
-/** Server state: the last saved workflow. The editable draft lives in the form, not here. */
-export function useWorkflowQuery(id: string) {
+export function useWorkflowsQuery() {
   return useQuery({
-    queryKey: workflowKeys.detail(id),
-    queryFn: () => getWorkflow(id),
+    queryKey: workflowKeys.list(),
+    queryFn: listWorkflows,
   });
 }
 
+/** Server state: the last saved workflow. The editable draft lives in the form, not here. */
+export function useWorkflowQuery(id: string) {
+  const queryClient = useQueryClient();
+
+  return useQuery({
+    queryKey: workflowKeys.detail(id),
+    queryFn: () => getWorkflow(id),
+    // Opened from the list: the row already holds this workflow, so render it right away.
+    initialData: () => queryClient.getQueryData<Workflow[]>(workflowKeys.list())?.find((w) => w.id === id),
+    initialDataUpdatedAt: () => queryClient.getQueryState(workflowKeys.list())?.dataUpdatedAt,
+    // A missing workflow stays missing, so don't delay the message; retry anything else (blips, timeouts).
+    retry: (failureCount, error) => !(error instanceof ApiError && error.status === 404) && failureCount < 2,
+  });
+}
+
+/** Creates (no `id` yet) or updates. */
 export function useSaveWorkflowMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: saveWorkflow,
     // Stop an in-flight refetch from landing after the save and overwriting it with older data.
-    onMutate: (workflow) => queryClient.cancelQueries({ queryKey: workflowKeys.detail(workflow.id) }),
-    // Write the response into the cache so re-opening the editor shows the saved version immediately.
-    onSuccess: (saved) => queryClient.setQueryData(workflowKeys.detail(saved.id), saved),
+    onMutate: (draft) =>
+      draft.id ? queryClient.cancelQueries({ queryKey: workflowKeys.detail(draft.id) }) : undefined,
+    onSuccess: (saved) => {
+      // Seeds the editor after the first save's redirect, and re-opening it later, without a refetch.
+      queryClient.setQueryData(workflowKeys.detail(saved.id), saved);
+      return queryClient.invalidateQueries({ queryKey: workflowKeys.list() });
+    },
   });
 }
 
-/** Creates a draft (blank or from a template). Seeds the detail cache so the editor renders without a skeleton. */
-export function useCreateWorkflowMutation() {
+export function useDeleteWorkflowMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: createWorkflow,
-    onSuccess: (created) => queryClient.setQueryData(workflowKeys.detail(created.id), created),
+    mutationFn: (id: string) => deleteWorkflow(id),
+    onSuccess: (_, id) => {
+      queryClient.removeQueries({ queryKey: workflowKeys.detail(id) });
+      queryClient.setQueryData<Workflow[]>(workflowKeys.list(), (list) => list?.filter((w) => w.id !== id));
+    },
   });
 }

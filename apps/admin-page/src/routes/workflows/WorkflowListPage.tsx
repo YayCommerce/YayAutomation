@@ -1,20 +1,19 @@
-import { useLocation, useNavigate, useSearchParams } from 'react-router';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router';
 import { __ } from '@wordpress/i18n';
 
-import { Button, LoadingButton } from '@/components/ui/button';
+import { Button } from '@/components/ui/button';
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
-import { toast } from '@/components/ui/sonner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { PageCard, PageTitle } from '@/components/widget/PageWidget';
-import { blankGraph } from './editor/workflow.graph';
-import { useCreateWorkflowMutation } from './editor/workflow.query';
+import { useWorkflowsQuery } from './editor/workflow.query';
 import { readLibraryNavState, type LibraryNavState } from './templates/library.nav';
 import { TemplatesDialog } from './templates/TemplatesDialog';
 import { WorkflowsEmptyIllustration } from './WorkflowIllustrations';
+import { WorkflowsTable, WorkflowsTableSkeleton } from './WorkflowsTable';
 
 export default function WorkflowListPage() {
   const navigate = useNavigate();
-  const createMutation = useCreateWorkflowMutation();
+  const { data: workflows, error } = useWorkflowsQuery();
 
   // Library open state lives in the URL (`?templates=1`) so reload and "back" from a preview reopen it.
   const location = useLocation();
@@ -35,19 +34,11 @@ export default function WorkflowListPage() {
     }
   };
 
-  const createBlank = () =>
-    createMutation.mutate(
-      { name: __('Untitled workflow', 'yay-automation'), graph: blankGraph() },
-      {
-        onSuccess: (workflow) => navigate(`/workflows/${workflow.id}`),
-        onError: (err) => toast.error(err.message),
-      },
-    );
-
+  // Opens an unsaved draft; nothing is created until its first Save.
   const createButton = (
-    <LoadingButton loading={createMutation.isPending} disabled={createMutation.isPending} onClick={createBlank}>
-      {__('Create workflow', 'yay-automation')}
-    </LoadingButton>
+    <Button asChild>
+      <Link to="/workflows/new">{__('Create workflow', 'yay-automation')}</Link>
+    </Button>
   );
 
   return (
@@ -73,23 +64,35 @@ export default function WorkflowListPage() {
         </div>
       </div>
 
-      <Empty className="py-20">
-        <EmptyHeader className="max-w-md">
-          <EmptyMedia>
-            <WorkflowsEmptyIllustration />
-          </EmptyMedia>
-          <EmptyTitle className="text-base">{__('Get more work done in less time', 'yay-automation')}</EmptyTitle>
-          <EmptyDescription>
-            {__('Turn your store tasks into automated workflows so you can get back to business.', 'yay-automation')}
-          </EmptyDescription>
-        </EmptyHeader>
-        <EmptyContent className="flex-row justify-center">
-          <Button variant="secondary" onClick={() => setTemplatesOpen(true)}>
-            {__('Template Library', 'yay-automation')}
-          </Button>
-          {createButton}
-        </EmptyContent>
-      </Empty>
+      {error ? (
+        <p className="text-destructive py-20 text-center text-sm">{error.message}</p>
+      ) : !workflows ? (
+        <div className="mt-6">
+          <WorkflowsTableSkeleton />
+        </div>
+      ) : workflows.length > 0 ? (
+        <div className="mt-6">
+          <WorkflowsTable workflows={workflows} />
+        </div>
+      ) : (
+        <Empty className="py-20">
+          <EmptyHeader className="max-w-md">
+            <EmptyMedia>
+              <WorkflowsEmptyIllustration />
+            </EmptyMedia>
+            <EmptyTitle className="text-base">{__('Get more work done in less time', 'yay-automation')}</EmptyTitle>
+            <EmptyDescription>
+              {__('Turn your store tasks into automated workflows so you can get back to business.', 'yay-automation')}
+            </EmptyDescription>
+          </EmptyHeader>
+          <EmptyContent className="flex-row justify-center">
+            <Button variant="secondary" onClick={() => setTemplatesOpen(true)}>
+              {__('Template Library', 'yay-automation')}
+            </Button>
+            {createButton}
+          </EmptyContent>
+        </Empty>
+      )}
 
       <TemplatesDialog open={templatesOpen} onOpenChange={setTemplatesOpen} />
     </PageCard>

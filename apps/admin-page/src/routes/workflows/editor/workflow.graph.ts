@@ -1,5 +1,6 @@
 import type { WorkflowBranch, WorkflowGraph, WorkflowNodeKind } from '@yay-automation/types';
-import { __ } from '@wordpress/i18n';
+
+import { newNodeData } from '../blocks';
 
 /**
  * Pure graph updates: (graph, …args) → new graph. The form calls these through
@@ -10,11 +11,6 @@ import { __ } from '@wordpress/i18n';
 export const ROW_GAP = 150;
 export const BRANCH_OFFSET = 150;
 
-const newTitles = {
-  condition: __('New condition', 'yay-automation'),
-  action: __('New action', 'yay-automation'),
-};
-
 /** Short unique id with a readable prefix. Not `crypto.randomUUID()`: it's undefined on non-HTTPS WP sites. */
 export function createId(prefix: string) {
   return `${prefix}-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
@@ -23,14 +19,7 @@ export function createId(prefix: string) {
 /** Graph for a workflow started from scratch: a single trigger to configure. */
 export function blankGraph(): WorkflowGraph {
   return {
-    nodes: [
-      {
-        id: 'trigger',
-        kind: 'trigger',
-        position: { x: 0, y: 0 },
-        data: { title: __('Select a trigger', 'yay-automation') },
-      },
-    ],
+    nodes: [{ id: 'trigger', kind: 'trigger', position: { x: 0, y: 0 }, data: newNodeData('trigger') }],
     edges: [],
   };
 }
@@ -60,7 +49,7 @@ export function addNode(
         id,
         kind,
         position: { x: parent.position.x + offsetX, y: parent.position.y + ROW_GAP },
-        data: { title: newTitles[kind] },
+        data: newNodeData(kind),
       },
     ],
     edges: [...graph.edges, { id: `e-${parentId}-${id}`, source: parentId, target: id, sourceHandle: branch }],
@@ -82,5 +71,12 @@ export function moveNode(graph: WorkflowGraph, nodeId: string, position: { x: nu
   return {
     ...graph,
     nodes: graph.nodes.map((node) => (node.id === nodeId ? { ...node, position } : node)),
+  };
+}
+
+export function updateNodeConfig(graph: WorkflowGraph, nodeId: string, config: Record<string, unknown>): WorkflowGraph {
+  return {
+    ...graph,
+    nodes: graph.nodes.map((node) => (node.id === nodeId ? { ...node, data: { ...node.data, config } } : node)),
   };
 }

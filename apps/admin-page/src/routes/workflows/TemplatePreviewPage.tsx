@@ -1,26 +1,23 @@
 import type { WorkflowTemplate } from '@yay-automation/types';
 import { Info } from 'lucide-react';
-import { useLocation, useNavigate, useParams } from 'react-router';
+import { Link, useLocation, useNavigate, useParams } from 'react-router';
 import { __ } from '@wordpress/i18n';
 
 import { Badge } from '@/components/ui/badge';
-import { Button, LoadingButton } from '@/components/ui/button';
+import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { toast } from '@/components/ui/sonner';
 import { EditorLayout, EditorPlaceholder, type EditorBackProps } from './editor/EditorLayout';
 import { ReadOnlyCanvas } from './editor/ReadOnlyCanvas';
-import { useCreateWorkflowMutation } from './editor/workflow.query';
 import { kindMeta } from './editor/WorkflowNodeCard';
 import { LIBRARY_PATH, readLibraryNavState } from './templates/library.nav';
-import { useTemplateQuery } from './templates/template.query';
 import { appMeta, TemplateAppIcon } from './templates/TemplateApps';
+import { findTemplate } from './templates/templates';
 
 export default function TemplatePreviewPage() {
   const { templateId = '' } = useParams();
-  const { data: template, error } = useTemplateQuery(templateId);
+  const template = findTemplate(templateId);
   const navigate = useNavigate();
   const location = useLocation();
-  const createMutation = useCreateWorkflowMutation();
 
   // Back returns to the open library. Opened from a card → pop that entry; otherwise (bookmark, reload) → link.
   const backProps: EditorBackProps = {
@@ -35,17 +32,8 @@ export default function TemplatePreviewPage() {
   };
 
   if (!template) {
-    return <EditorPlaceholder error={error} {...backProps} />;
+    return <EditorPlaceholder error={new Error(__('Template not found.', 'yay-automation'))} {...backProps} />;
   }
-
-  const applyTemplate = () =>
-    createMutation.mutate(
-      { name: template.name, graph: template.graph },
-      {
-        onSuccess: (workflow) => navigate(`/workflows/${workflow.id}`),
-        onError: (err) => toast.error(err.message),
-      },
-    );
 
   return (
     <EditorLayout
@@ -72,14 +60,12 @@ export default function TemplatePreviewPage() {
                 </div>
               </SheetContent>
             </Sheet>
-            <LoadingButton
-              size="sm"
-              loading={createMutation.isPending}
-              disabled={createMutation.isPending}
-              onClick={applyTemplate}
-            >
-              {__('Use template', 'yay-automation')}
-            </LoadingButton>
+            {/* Opens an unsaved draft; nothing is created until its first Save. */}
+            <Button size="sm" asChild>
+              <Link to={`/workflows/new?template=${encodeURIComponent(template.id)}`}>
+                {__('Use template', 'yay-automation')}
+              </Link>
+            </Button>
           </div>
         </>
       }
