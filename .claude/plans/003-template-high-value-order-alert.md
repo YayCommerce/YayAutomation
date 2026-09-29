@@ -136,6 +136,34 @@ Template Library → preview → Use template → configure → activate. When a
      - Server: `POST` with issues → 400 (inactive or active); valid `POST` → 201; `PUT` with issues → 400; deactivate-only → 200; unlinked graph → a single `unlinked` issue with `nodeIds`.
      - `/wcheck`: unlinked state and Error headers next to Images 5–7, light and dark. `pnpm build`, `php -l`, PHPCS pass.
 
+5. Organize blocks by kind — Risk: 2 — file moves and PHP namespace changes so adding many triggers / conditions / actions later stays easy. No behavior, UI or API change.
+   - **Rules:** `git mv` for every moved file so history follows it; no behavior, UI or REST change. Public imports stay the same: consumers keep importing `blocks` and `newNodeData` from `routes/workflows/blocks`.
+   - **Frontend** (`apps/admin-page/src/routes/workflows/blocks/`):
+     - `core/`
+       - `types.ts`: `Block`, `BlockSpec`, `BlockFormProps`.
+       - `defineBlock.tsx`: `defineBlock()`, `PLACEHOLDER` (from `block.tsx`).
+       - `registry.ts`: `createRegistry(blockList, defaultFor)` → `{ blocks, newNodeData }`. Rejects duplicate ids; `defaultFor` maps condition / action to the block "+" adds.
+       - `fields/ConfigField.tsx` and `fields/useValidateOnMount.ts`: shared by all three forms. Anything used by one block stays in that block's folder (e.g. the status multi-select stays with the trigger).
+     - One folder per block, named after the block id in kebab-case:
+       - `triggers/order-status-changed/`, `conditions/order-total/`, `actions/send-admin-email/`.
+       - `schema.ts`: config type, Valibot schema, `defaults()`, `normalize()` (incl. the legacy single-status read).
+       - `Form.tsx`: the TanStack form.
+       - `index.ts`: `defineBlock({ id, kind, app, label, description, schema, defaults, normalize, summary, Form })`.
+     - `blocks/index.ts` only imports the blocks and registers them with `createRegistry`.
+     - New `app` field on block definitions, reusing `WorkflowTemplateApp`: `order_status_changed` / `order_total` → `'woocommerce'`, `send_admin_email` → `'email'`. Stored on `Block`, not rendered anywhere.
+   - **PHP** (`src/Engine/Blocks/`):
+     - `Core/`: `Block`, `Trigger`, `Condition`, `Action`, `BlockRegistry` → namespace `YayAutomation\Engine\Blocks\Core`.
+     - `Triggers/OrderStatusChanged`, `Conditions/OrderTotal`, `Actions/SendAdminEmail` → `…\Blocks\Triggers`, `…\Conditions`, `…\Actions`.
+     - Update `use` statements in `Runner`, `WorkflowValidator`, `WorkflowRepository`, `AdminPage` and the blocks themselves.
+     - Update comments that point at old paths (TS ↔ PHP "mirrors" references).
+   - Test:
+     - `tsc`, `pnpm build`, ESLint, `php -l`, PHPCS pass.
+     - `git log --follow` shows pre-move history for each moved file.
+     - REST: `GET /workflows` and the checkpoint 4 server tests unchanged.
+     - Browser: Use template → edit the condition (e.g. amount) → Save; summaries, issues and the Sheet forms work as before; no console errors.
+     - One real COD order above $500 (e.g. 13 × $39.50) moves to processing on an active template workflow → alert email in the YaySMTP log.
+   - Commit: `refactor(workflows): organize blocks by kind`.
+
 ## Out of Scope
 
 Other templates/blocks, delays, run log, dedupe, async queue, HTML email, multi-currency conversion, orders created directly in a status (`woocommerce_order_status_changed` needs a `from` status), WooCommerce-inactive notice in the UI. Checkpoint 3: "is" / "is not" operators, per-node descriptions, test-results tab, editing the stored `title`. "Create workflow" (building from scratch): plan 003 only covers Template Library → High-value order alert → Use template; the button stays as in 002, disabled with "Coming soon".
