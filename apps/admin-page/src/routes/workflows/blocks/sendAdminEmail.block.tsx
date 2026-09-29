@@ -164,8 +164,8 @@ export const sendAdminEmailBlock = defineBlock<SendAdminEmailConfig>({
     const emails = splitRecipients(recipients);
     return emails.length
       ? /* translators: %s: comma-separated email addresses */
-        sprintf(__('Email to %s', 'yay-automation'), emails.join(', '))
-      : __('Email to the site admin', 'yay-automation');
+        sprintf(__('Send an email to %s', 'yay-automation'), emails.join(', '))
+      : __('Send an email to the site admin', 'yay-automation');
   },
   Form: SendAdminEmailForm,
 });

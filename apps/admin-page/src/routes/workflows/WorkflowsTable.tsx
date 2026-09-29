@@ -25,8 +25,7 @@ import { useDeleteWorkflowMutation } from './editor/workflow.query';
 function triggerSummary(workflow: Workflow) {
   const trigger = workflow.graph.nodes.find((node) => node.kind === 'trigger');
   if (!trigger) return '—';
-  const block = blocks[trigger.data.block];
-  return block.summary(trigger.data.config) ?? block.label;
+  return blocks[trigger.data.block].summary(trigger.data.config);
 }
 
 function TableHeadRow() {

@@ -28,7 +28,7 @@ export const templates: WorkflowTemplate[] = [
           data: {
             title: __('Order moves to Processing', 'yay-automation'),
             block: 'order_status_changed',
-            config: { from: 'any', to: 'processing' },
+            config: { from: [], to: ['processing'] },
           },
         },
         {

@@ -1,4 +1,4 @@
-import type { BlockId, WorkflowGraph, WorkflowNodeData, WorkflowNodeKind } from '@yay-automation/types';
+import type { BlockId, WorkflowNodeData, WorkflowNodeKind } from '@yay-automation/types';
 
 import type { Block } from './block';
 import { orderStatusChangedBlock } from './orderStatusChanged.block';
@@ -24,13 +24,4 @@ const defaultBlock: Record<WorkflowNodeKind, BlockId> = {
 export function newNodeData(kind: WorkflowNodeKind): WorkflowNodeData {
   const block = blocks[defaultBlock[kind]];
   return { title: block.label, block: block.id, config: block.defaults() };
-}
-
-export function isConfigured(data: WorkflowNodeData) {
-  return blocks[data.block].isConfigured(data.config);
-}
-
-/** A workflow can be active only when this is true. The PHP validator enforces the same rule. */
-export function allConfigured(graph: WorkflowGraph) {
-  return graph.nodes.every((node) => isConfigured(node.data));
 }

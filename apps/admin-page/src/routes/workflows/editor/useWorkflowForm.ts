@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router';
 import { __ } from '@wordpress/i18n';
 
 import { toast } from '@/components/ui/sonner';
-import { toDraft } from './workflow.api';
+import { ApiError, toDraft } from './workflow.api';
 import { useSaveWorkflowMutation } from './workflow.query';
 
 /**
@@ -38,7 +38,11 @@ export function useWorkflowForm(workflow: WorkflowDraft) {
           navigate(`/workflows/${saved.id}`, { replace: true });
         }
       } catch (error) {
-        toast.error(error instanceof Error ? error.message : __('Could not save workflow', 'yay-automation'));
+        // Server-side validation lists what it rejected; show that, since the editor's own checks passed.
+        const issues = error instanceof ApiError ? error.issues : [];
+        toast.error(error instanceof Error ? error.message : __('Could not save workflow', 'yay-automation'), {
+          description: issues.length ? issues.map((issue) => issue.message).join(' ') : undefined,
+        });
       }
     },
   });

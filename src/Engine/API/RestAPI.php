@@ -104,7 +104,11 @@ class RestAPI {
     }
 
     public function update_workflow( \WP_REST_Request $request ) {
-        $workflow = WorkflowValidator::prepare( $request->get_json_params() );
+        $current = WorkflowRepository::find( (int) $request['id'] );
+        if ( ! $current ) {
+            return $this->not_found();
+        }
+        $workflow = WorkflowValidator::prepare( $request->get_json_params(), $current );
         if ( is_wp_error( $workflow ) ) {
             return $workflow;
         }

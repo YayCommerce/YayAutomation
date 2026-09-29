@@ -20,7 +20,7 @@ export function NodeConfigSheet({ nodeId, onClose }: { nodeId: string | null; on
         {node && block && (
           <>
             <SheetHeader>
-              <SheetTitle>{node.data.title}</SheetTitle>
+              <SheetTitle>{block.label}</SheetTitle>
               <SheetDescription>{block.description}</SheetDescription>
             </SheetHeader>
             <div className="min-h-0 flex-1 overflow-y-auto p-5">

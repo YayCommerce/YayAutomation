@@ -6,6 +6,7 @@ import { __ } from '@wordpress/i18n';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { blocks } from './blocks';
 import { EditorLayout, EditorPlaceholder, type EditorBackProps } from './editor/EditorLayout';
 import { ReadOnlyCanvas } from './editor/ReadOnlyCanvas';
 import { kindMeta } from './editor/WorkflowNodeCard';
@@ -118,7 +119,7 @@ function TemplateDetails({ template }: { template: WorkflowTemplate }) {
             return (
               <li key={node.id} className="flex items-start gap-2 text-sm">
                 <Icon className="text-muted-foreground mt-0.5 size-4 shrink-0" aria-label={label} />
-                {node.data.title}
+                {blocks[node.data.block].summary(node.data.config)}
               </li>
             );
           })}

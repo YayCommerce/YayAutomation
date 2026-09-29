@@ -2,6 +2,7 @@
 namespace YayAutomation\Engine\Workflows;
 
 use YayAutomation\Engine\Blocks\Block;
+use YayAutomation\Engine\Blocks\BlockRegistry;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -134,12 +135,21 @@ final class WorkflowRepository {
 
     private static function to_array( \WP_Post $post ): array {
         $graph = json_decode( (string) get_post_meta( $post->ID, self::META_GRAPH, true ), true );
-        if ( ! is_array( $graph ) ) {
+        if ( ! is_array( $graph ) || ! is_array( $graph['nodes'] ?? null ) || ! is_array( $graph['edges'] ?? null ) ) {
             $graph = [
                 'nodes' => [],
                 'edges' => [],
             ];
         }
+        // Re-sanitizing upgrades configs saved in an older shape (e.g. a single status string),
+        // so the editor and the runner only ever see the current one.
+        foreach ( $graph['nodes'] as &$node ) {
+            $block = BlockRegistry::get( (string) ( $node['data']['block'] ?? '' ) );
+            if ( $block ) {
+                $node['data']['config'] = $block->sanitize( $node['data']['config'] ?? [] );
+            }
+        }
+        unset( $node );
 
         return [
             'id'        => (string) $post->ID,

@@ -5,9 +5,10 @@ import { useStore } from '@tanstack/react-form';
 import { Background, Controls, ReactFlow, type NodeChange } from '@xyflow/react';
 
 import { useTheme } from '@/components/ui/theme-provider';
+import { useEditorContext } from './editor.context';
 import { useWorkflowFormContext } from './useWorkflowForm';
 import { canvasStyle, toFlowEdges, toFlowNodes, type FlowNode } from './workflow.flow';
-import { moveNode, removeNode } from './workflow.graph';
+import { moveNode } from './workflow.graph';
 import { nodeTypes } from './WorkflowNodeCard';
 
 /** Canvas-only node state. Kept out of the form so selecting a node doesn't make the workflow dirty. */
@@ -16,6 +17,7 @@ type NodeViewState = Pick<FlowNode, 'measured' | 'selected' | 'dragging'>;
 export function WorkflowCanvas({ onNodeClick }: { onNodeClick: (nodeId: string) => void }) {
   const { theme } = useTheme();
   const form = useWorkflowFormContext();
+  const { requestDelete } = useEditorContext();
   const graph = useStore(form.store, (state) => state.values.graph);
   const [viewState, setViewState] = useState<Record<string, NodeViewState>>({});
 
@@ -42,14 +44,15 @@ export function WorkflowCanvas({ onNodeClick }: { onNodeClick: (nodeId: string) 
       return next;
     });
 
-    // Workflow changes (move, delete) → form. Skipped otherwise, so selecting doesn't make the form dirty.
-    if (changes.some((change) => (change.type === 'position' && change.position) || change.type === 'remove')) {
+    // Moves → form. Skipped otherwise, so selecting doesn't make the form dirty. Deletes go through
+    // `onBeforeDelete` instead, so they follow the same rules as the card's delete button.
+    if (changes.some((change) => change.type === 'position' && change.position)) {
       form.setFieldValue('graph', (graph) =>
-        changes.reduce((next, change) => {
-          if (change.type === 'position' && change.position) return moveNode(next, change.id, change.position);
-          if (change.type === 'remove') return removeNode(next, change.id);
-          return next;
-        }, graph),
+        changes.reduce(
+          (next, change) =>
+            change.type === 'position' && change.position ? moveNode(next, change.id, change.position) : next,
+          graph,
+        ),
       );
     }
   };
@@ -61,6 +64,11 @@ export function WorkflowCanvas({ onNodeClick }: { onNodeClick: (nodeId: string) 
       nodeTypes={nodeTypes}
       onNodesChange={onNodesChange}
       onNodeClick={(_, node) => onNodeClick(node.id)}
+      // Backspace: hand the selected nodes to our delete (reconnect or confirm), and stop ReactFlow's own.
+      onBeforeDelete={async ({ nodes }) => {
+        if (nodes.length) requestDelete(nodes.map((node) => node.id));
+        return false;
+      }}
       colorMode={theme}
       style={canvasStyle}
       nodesConnectable={false}

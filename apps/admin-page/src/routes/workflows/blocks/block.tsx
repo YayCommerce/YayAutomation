@@ -1,5 +1,6 @@
 import { useEffect, useState, type ComponentType, type ReactNode } from 'react';
 import type { BlockId, WorkflowNodeKind } from '@yay-automation/types';
+import { CircleAlert } from 'lucide-react';
 import * as v from 'valibot';
 
 import { Field, FieldDescription, FieldError, FieldLabel } from '@/components/ui/field';
@@ -19,51 +20,61 @@ interface BlockSpec<TConfig extends Config> {
   label: string;
   description: string;
   /**
-   * The one source of truth for a valid config: field errors in the form and the "Needs setup" check.
-   * Must accept exactly what the PHP block's `validate()` accepts.
+   * The one source of truth for a valid config: field errors in the form and the workflow's
+   * `invalid_config` issue. Must accept exactly what the PHP block's `validate()` accepts.
    */
   schema: v.GenericSchema<TConfig>;
   defaults: () => TConfig;
-  /** One line shown on the node card. Only called with a valid config. */
+  /**
+   * Brings stored config into the current shape: fills missing keys and upgrades older formats.
+   * Mirrors the PHP block's `sanitize()`. Defaults to merging over `defaults()`.
+   */
+  normalize?: (config: Config) => TConfig;
+  /** Plain-language line for the node card. Gets incomplete config too, so show placeholders for gaps. */
   summary: (config: TConfig) => string;
   Form: ComponentType<BlockFormProps<TConfig>>;
 }
 
-/** A block with its config type erased, so one registry can hold them all. */
+/** A block with its config type erased, so one registry can hold them all. Every method normalizes first. */
 export interface Block {
   id: BlockId;
   kind: WorkflowNodeKind;
   label: string;
   description: string;
   defaults: () => Config;
-  isConfigured: (config: Config) => boolean;
-  /** Null while the config is invalid. */
-  summary: (config: Config) => string | null;
+  normalize: (config: Config) => Config;
+  /** The first validation message, or null when the config is valid. */
+  firstError: (config: Config) => string | null;
+  summary: (config: Config) => string;
   Form: ComponentType<BlockFormProps<Config>>;
 }
+
+/** Shown in summaries where a required value is still missing. */
+export const PLACEHOLDER = '…';
 
 export function defineBlock<TConfig extends Config>({
   schema,
   defaults,
+  normalize = (config) => ({ ...defaults(), ...config }) as TConfig,
   summary,
   Form,
   ...meta
 }: BlockSpec<TConfig>): Block {
   function BlockForm({ config, onChange }: BlockFormProps<Config>) {
-    // Stored config can miss keys (older data, hand-edited templates). Filled once, so the form's
-    // default values keep a stable identity.
-    const [initial] = useState(() => ({ ...defaults(), ...config }) as TConfig);
+    // Normalized once, so the form's default values keep a stable identity.
+    const [initial] = useState(() => normalize(config));
     return <Form config={initial} onChange={onChange as (config: TConfig) => void} />;
   }
 
   return {
     ...meta,
     defaults,
-    isConfigured: (config) => v.is(schema, config),
-    summary: (config) => {
-      const result = v.safeParse(schema, config);
-      return result.success ? summary(result.output) : null;
+    normalize,
+    firstError: (config) => {
+      const result = v.safeParse(schema, normalize(config));
+      return result.success ? null : result.issues[0].message;
     },
+    summary: (config) => summary(normalize(config)),
     Form: BlockForm,
   };
 }
@@ -78,7 +89,7 @@ export function useValidateOnMount(form: { validate: (cause: 'change') => unknow
   }, [form]);
 }
 
-/** Label, control, help text and errors for one config field. */
+/** Label, control, help text and error for one config field. Shows only the first error, with an icon. */
 export function ConfigField({
   label,
   htmlFor,
@@ -92,12 +103,19 @@ export function ConfigField({
   errors: ({ message?: string } | undefined)[];
   children: ReactNode;
 }) {
+  const error = errors.find((e) => e?.message)?.message;
+
   return (
-    <Field data-invalid={errors.length > 0}>
+    <Field data-invalid={!!error}>
       <FieldLabel htmlFor={htmlFor}>{label}</FieldLabel>
       {children}
+      {error && (
+        <FieldError className="flex items-center gap-1.5">
+          <CircleAlert className="size-3.5 shrink-0" aria-hidden />
+          {error}
+        </FieldError>
+      )}
       {description && <FieldDescription>{description}</FieldDescription>}
-      <FieldError errors={errors} />
     </Field>
   );
 }

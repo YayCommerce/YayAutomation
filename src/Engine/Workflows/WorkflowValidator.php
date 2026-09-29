@@ -7,8 +7,9 @@ use YayAutomation\Engine\Blocks\BlockRegistry;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Turns REST input into a storable workflow. Every workflow must be well-formed;
- * an active one must also have every step configured.
+ * Turns REST input into a storable workflow. Rejects malformed input first, then anything
+ * `errors()` reports, whether the workflow is active or not.
+ * `errors()` mirrors `validateWorkflow()` in apps/admin-page/src/routes/workflows/validation.ts.
  */
 final class WorkflowValidator {
 
@@ -17,18 +18,16 @@ final class WorkflowValidator {
     private const BRANCHES = [ 'then', 'otherwise' ];
 
     /**
-     * @param mixed $input Decoded JSON body: { name, status, graph }.
+     * @param mixed      $input   Decoded JSON body: { name, status, graph }.
+     * @param array|null $current Stored workflow when updating, null when creating.
      * @return array|\WP_Error [ 'name' => string, 'status' => string, 'graph' => array ]
      */
-    public static function prepare( $input ) {
+    public static function prepare( $input, ?array $current = null ) {
         if ( ! is_array( $input ) ) {
             return self::error( __( 'Invalid workflow.', 'yay-automation' ) );
         }
 
         $name = sanitize_text_field( (string) ( $input['name'] ?? '' ) );
-        if ( '' === $name ) {
-            return self::error( __( 'Enter a workflow name.', 'yay-automation' ) );
-        }
 
         $status = $input['status'] ?? 'inactive';
         if ( ! in_array( $status, self::STATUSES, true ) ) {
@@ -40,24 +39,116 @@ final class WorkflowValidator {
             return $graph;
         }
 
-        if ( 'active' === $status ) {
-            foreach ( $graph['nodes'] as $node ) {
-                $valid = BlockRegistry::get( $node['data']['block'] )->validate( $node['data']['config'] );
-                if ( is_wp_error( $valid ) ) {
-                    return self::error(
-                        /* translators: 1: step title, 2: validation message */
-                        sprintf( __( 'Configure "%1$s" before activating: %2$s', 'yay-automation' ), $node['data']['title'], $valid->get_error_message() ),
-                        $node['id']
-                    );
-                }
-            }
-        }
-
-        return [
+        $workflow = [
             'name'   => $name,
             'status' => $status,
             'graph'  => $graph,
         ];
+
+        $errors = self::errors( $workflow );
+        if ( $errors && ! self::only_deactivates( $workflow, $current ) ) {
+            return new \WP_Error(
+                'yay_automation_invalid_workflow',
+                /* translators: %d: number of issues */
+                sprintf( _n( 'Fix %d issue before saving.', 'Fix %d issues before saving.', count( $errors ), 'yay-automation' ), count( $errors ) ),
+                [
+                    'status' => 400,
+                    'errors' => $errors,
+                ]
+            );
+        }
+
+        return $workflow;
+    }
+
+    /**
+     * True when the save does nothing but turn an active workflow off. Allowed even with issues, so a
+     * workflow that became invalid (e.g. a status from a plugin that's gone) can always be stopped.
+     * Mirrors `onlyDeactivates()` in apps/admin-page/src/routes/workflows/validation.ts.
+     *
+     * @param array      $workflow Prepared input.
+     * @param array|null $current  Stored workflow, null when creating.
+     */
+    private static function only_deactivates( array $workflow, ?array $current ): bool {
+        return $current
+            && 'active' === $current['status']
+            && 'inactive' === $workflow['status']
+            && $workflow['name'] === $current['name']
+            // Loose ==: same keys and values, key order doesn't matter.
+            && $workflow['graph'] == $current['graph']; // phpcs:ignore Universal.Operators.StrictComparisons.LooseEqual
+    }
+
+    /**
+     * Problems that block saving. Codes match the TS `validateWorkflow()`:
+     * name_required, no_action, unreachable (per node), invalid_config (per node).
+     *
+     * @param array $workflow Well-formed workflow (graph from `prepare_graph()`).
+     * @return array[] [ [ 'code' => string, 'message' => string, 'nodeId'? => string ], … ]
+     */
+    public static function errors( array $workflow ): array {
+        $errors = [];
+        $nodes  = $workflow['graph']['nodes'];
+
+        if ( '' === $workflow['name'] ) {
+            $errors[] = [
+                'code'    => 'name_required',
+                'message' => __( 'Enter a workflow name.', 'yay-automation' ),
+            ];
+        }
+        if ( ! in_array( Block::KIND_ACTION, array_column( $nodes, 'kind' ), true ) ) {
+            $errors[] = [
+                'code'    => 'no_action',
+                'message' => __( 'Add an action to this workflow', 'yay-automation' ),
+            ];
+        }
+
+        $reachable = self::reachable( $workflow['graph'] );
+        foreach ( $nodes as $node ) {
+            if ( ! isset( $reachable[ $node['id'] ] ) ) {
+                $errors[] = [
+                    'nodeId'  => $node['id'],
+                    'code'    => 'unreachable',
+                    'message' => __( 'This step isn’t connected to the trigger.', 'yay-automation' ),
+                ];
+            }
+            $valid = BlockRegistry::get( $node['data']['block'] )->validate( $node['data']['config'] );
+            if ( is_wp_error( $valid ) ) {
+                $errors[] = [
+                    'nodeId'  => $node['id'],
+                    'code'    => 'invalid_config',
+                    'message' => $valid->get_error_message(),
+                ];
+            }
+        }
+        return $errors;
+    }
+
+    /**
+     * Node ids reachable from the trigger by following edges.
+     *
+     * @param array $graph Well-formed graph.
+     */
+    private static function reachable( array $graph ): array {
+        $queue = [];
+        foreach ( $graph['nodes'] as $node ) {
+            if ( Block::KIND_TRIGGER === $node['kind'] ) {
+                $queue[] = $node['id'];
+            }
+        }
+        $seen = [];
+        while ( $queue ) {
+            $id = array_shift( $queue );
+            if ( isset( $seen[ $id ] ) ) {
+                continue;
+            }
+            $seen[ $id ] = true;
+            foreach ( $graph['edges'] as $edge ) {
+                if ( $edge['source'] === $id ) {
+                    $queue[] = $edge['target'];
+                }
+            }
+        }
+        return $seen;
     }
 
     /**

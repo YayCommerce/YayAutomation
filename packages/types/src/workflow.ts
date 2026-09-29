@@ -74,3 +74,13 @@ export interface WorkflowTemplate {
   createdAt: string;
   graph: WorkflowGraph;
 }
+
+/** Codes shared by the TS `validateWorkflow()` and PHP `WorkflowValidator::errors()`. */
+export type WorkflowIssueCode = 'name_required' | 'no_action' | 'unreachable' | 'invalid_config';
+
+/** Something that blocks saving. `nodeId` is set when the issue belongs to one step. */
+export interface WorkflowIssue {
+  code: WorkflowIssueCode;
+  message: string;
+  nodeId?: string;
+}

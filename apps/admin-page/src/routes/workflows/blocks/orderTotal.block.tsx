@@ -5,7 +5,7 @@ import { __, sprintf } from '@wordpress/i18n';
 import { FieldGroup } from '@/components/ui/field';
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ConfigField, defineBlock, useValidateOnMount, type BlockFormProps } from './block';
+import { ConfigField, defineBlock, PLACEHOLDER, useValidateOnMount, type BlockFormProps } from './block';
 
 const operators = ['gt', 'gte', 'lt', 'lte'] as const;
 type Operator = (typeof operators)[number];
@@ -13,11 +13,11 @@ type Operator = (typeof operators)[number];
 /** Mirrors src/Engine/Blocks/OrderTotal.php. `amount` is null until the user enters one. */
 type OrderTotalConfig = { operator: Operator; amount: number | null };
 
-const operatorMeta: Record<Operator, { label: string; symbol: string }> = {
-  gt: { label: __('is more than', 'yay-automation'), symbol: '>' },
-  gte: { label: __('is at least', 'yay-automation'), symbol: '≥' },
-  lt: { label: __('is less than', 'yay-automation'), symbol: '<' },
-  lte: { label: __('is at most', 'yay-automation'), symbol: '≤' },
+const operatorLabels: Record<Operator, string> = {
+  gt: __('is greater than', 'yay-automation'),
+  gte: __('is greater than or equal to', 'yay-automation'),
+  lt: __('is less than', 'yay-automation'),
+  lte: __('is less than or equal to', 'yay-automation'),
 };
 
 const currencySymbol = window.yayAutomationMeta.wc.currencySymbol;
@@ -55,7 +55,7 @@ function OrderTotalForm({ config, onChange }: BlockFormProps<OrderTotalConfig>) 
               <SelectContent>
                 {operators.map((operator) => (
                   <SelectItem key={operator} value={operator}>
-                    {operatorMeta[operator].label}
+                    {operatorLabels[operator]}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -105,12 +105,11 @@ export const orderTotalBlock = defineBlock<OrderTotalConfig>({
   schema,
   defaults: () => ({ operator: 'gt', amount: null }),
   summary: ({ operator, amount }) =>
-    /* translators: 1: comparison symbol such as >, 2: currency symbol, 3: amount */
+    /* translators: 1: comparison such as "is greater than", 2: amount with currency symbol */
     sprintf(
-      __('Order total %1$s %2$s%3$s', 'yay-automation'),
-      operatorMeta[operator].symbol,
-      currencySymbol,
-      String(amount),
+      __('Order total %1$s %2$s', 'yay-automation'),
+      operatorLabels[operator] ?? PLACEHOLDER,
+      amount === null || Number.isNaN(amount) ? PLACEHOLDER : `${currencySymbol}${amount}`,
     ),
   Form: OrderTotalForm,
 });
