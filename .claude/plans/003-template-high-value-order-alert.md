@@ -78,10 +78,38 @@ Template Library → preview → Use template → configure → activate. When a
    - Field validation errors, "Needs setup" badges, disabled Active switch, blank Create workflow.
    - 002 library/preview history still correct (open, close, card → preview → back reopens the library).
    - Light and dark mode. `pnpm build` passes.
+3. Validation + summaries — Risk: 2 — shared workflow validation (TS + PHP), "N issues" popover, node error header and plain-language summaries, multi-status trigger, delete-with-reconnect. Keeps the current Save button and Active switch.
+   - Supersedes: checkpoint 1 test 'same payload inactive → 200' (now 400), and checkpoint 2's 'Needs setup' badge and active-only validation.
+   - **Visual references** (behavior follows this plan; visuals follow the images, built with YayUiKits components and theme tokens, not copied styling):
+     - `.claude/references/1-automatewoo-trigger-rules.png` — status multi-select with removable tags; operator wording.
+     - `.claude/references/2-shopify-node-error.png` — full-width red "Error" header above the node card.
+     - `.claude/references/3-shopify-condition-summary.png` — node body as a plain-language summary.
+     - `.claude/references/4-shopify-field-error.png` — required-field error under the input in the settings panel.
+   - **`validateWorkflow()`**, same rules in TS (`routes/workflows/validation.ts`) and PHP (`WorkflowValidator::errors()`). Returns `{ nodeId?, code, message }[]` with shared codes: `name_required`; `no_action` ("Add an action to this workflow"); `unreachable` (node not connected to the trigger); `invalid_config` (one per node, first block-schema message). Structural checks (one trigger, known blocks, valid edges) still 400 first.
+   - **Server:** every save with errors → 400 with `data.errors` (full list), active or inactive. Replaces the "inactive only needs to be well-formed" rule.
+   - **Toolbar:** Save disabled whenever `validateWorkflow()` has errors. An "N issues" button next to Save opens a kit `Popover` listing them. Node errors are prefixed with the node's block label (e.g. "Order total: Enter an amount"); workflow-level errors have no prefix. Clicking a node error selects the node and opens its Sheet; `name_required` focuses the name input.
+   - **Node card:** header = block label; body = `summary(config)` in plain language. `summary()` handles incomplete config with a placeholder (e.g. "Order total is greater than …") so it always reflects the current operator and statuses. Nodes with errors get a full-width red "Error" header (destructive tokens). The "Needs setup" badge is removed. Stored `data.title` stays in the data but isn't shown; the template preview's step list shows summaries.
+   - **Settings panel:** field errors under each input, styled like Image 4 (icon + destructive text).
+   - **Operators:** same four; labels "is greater than", "is greater than or equal to", "is less than", "is less than or equal to".
+   - **`order_status_changed`** → `{ from: string[], to: string[] }`. Empty `from` = any status (shown as an "Any" placeholder); `to` needs at least one. Multi-select with tags from `ComboboxTrigger`, `ComboboxBadge`/`ComboboxRemove`, `Popover`/`Command`, `ComboboxCheckbox`. Old single strings are normalized on read (`'any'` → `[]`, `'processing'` → `['processing']`): PHP in `sanitize()` (`matches()` / `validate()` work on arrays), TS in `defineBlock`.
+   - **Delete node** (button and Backspace via ReactFlow `onBeforeDelete`, one `deleteNode()`): a node with a single child reconnects that child to its parent, keeping the parent's branch handle. A condition with any children asks to confirm (AlertDialog), then removes the condition and all its descendants. A condition with no children deletes without asking. The trigger can't be deleted.
+   - Unchanged: leave guard, list page, email/runner logic apart from status matching.
+   - A template opened with an empty amount can't be saved until it's valid.
+   - Test:
+     - Template with empty amount → Save disabled, "1 issue" listed ("Order total: …"); clicking it selects the condition and opens its Sheet.
+     - Delete the condition → confirm → its email branch is removed too → "Add an action to this workflow", Save disabled.
+     - Delete the action only → "Add an action to this workflow".
+     - Delete a middle node with one child → the child reconnects to the parent.
+     - Change operator to ≤ → node summary updates live.
+     - Trigger `to` = [Processing, Completed] on real orders (YaySMTP log; customer jack.yaycommerce@gmail.com): → Processing sends, → Completed sends, → On hold doesn't.
+     - Workflow #1504 (single status strings) loads with Processing as a tag, saves, and still sends on a real order.
+     - Server 400 via `fetch` for each case, active and inactive: empty name, no action, unreachable node (made by editing the graph JSON), invalid config; response carries `data.errors` with matching codes.
+     - `/wcheck` screenshots of the error header, field error, multi-select tags and node summary, next to Images 1–4. Light and dark mode.
+     - `pnpm build`, `php -l`, PHPCS pass.
 
 ## Out of Scope
 
-Other templates/blocks, delays, run log, dedupe, async queue, HTML email, multi-currency conversion, orders created directly in a status (`woocommerce_order_status_changed` needs a `from` status), WooCommerce-inactive notice in the UI.
+Other templates/blocks, delays, run log, dedupe, async queue, HTML email, multi-currency conversion, orders created directly in a status (`woocommerce_order_status_changed` needs a `from` status), WooCommerce-inactive notice in the UI. Checkpoint 3: "is" / "is not" operators, per-node descriptions, test-results tab, editing the stored `title`.
 
 ## Meta
 
