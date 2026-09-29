@@ -107,6 +107,34 @@ Template Library → preview → Use template → configure → activate. When a
      - `/wcheck` screenshots of the error header, field error, multi-select tags and node summary, next to Images 1–4. Light and dark mode.
      - `pnpm build`, `php -l`, PHPCS pass.
 
+4. Shopify-style drafts — Risk: 2 — drafts created up front, valid template, delete-only-this-step with unlinked steps, workflow-level "unlinked" issue.
+   - Supersedes: checkpoint 3's delete rules (reconnect / cascade / confirm) and checkpoint 2's unsaved-draft flow (`/workflows/new`, first-save redirect).
+   - **Visual references** (behavior follows this plan; visuals follow the images, built with YayUiKits components and theme tokens):
+     - `.claude/references/5-shopify-unlinked-after-delete.png` — steps left on the canvas, unlinked from the trigger, after a delete.
+     - `.claude/references/6-shopify-unlinked-condition.png` — an unlinked condition with its settings panel open.
+     - `.claude/references/7-shopify-unlinked-error.png` — the "Remove or connect unlinked steps" issue.
+     - Behavior deviations: no blue "Review" header on unlinked steps (Images 5–6), and issues stay in the "N issues" popover rather than a banner with "1 of N" paging (Image 7).
+   - **Drafts created up front:** "Use template" (preview) and "Create workflow" (list) `POST` an inactive workflow and open `/workflows/:id`, like Shopify Flow's Install. Buttons show a loading state. Blank drafts are named "Untitled workflow".
+     - Server: `POST` with issues is accepted only when `status` is `inactive`; `POST` active with issues → 400. `PUT` keeps the checkpoint 3 rule (400 with issues; deactivate-only exception).
+     - Remove `NewWorkflowPage`, the first-save redirect and the "record id if edited during first save" handling in `useWorkflowForm`. The `new` route redirects to `/workflows`.
+   - **Template ships valid:** condition `order_total` `gt 500` (store currency) → "Order total is greater than $500".
+   - **Delete removes only that step** (button or Backspace, one or several selected): the node and its edges. Descendants stay on the canvas, unlinked. No reconnect, no cascade, no confirmation dialog, no drag-to-connect. Users fix it by deleting unlinked steps or adding a step with the "+" under the trigger (or wherever a handle is free). Remove `deletionKind()` and the confirm dialog; keep `descendantsOf()` for reachability.
+   - **Issues (TS `validateWorkflow()` and PHP `WorkflowValidator::errors()`):**
+     - Per-node `unreachable` → one workflow-level `unlinked` issue, "Remove or connect unlinked steps", with `nodeIds` (all unlinked steps) and no `nodeId`. No block prefix in the popover; unlinked steps get no Error header from it. Clicking it selects and opens `nodeIds[0]`.
+     - `no_action` gets `nodeId` = the trigger, so the trigger shows the Error header and the popover reads "Order status changed: Add an action to this workflow".
+     - `invalid_config` unchanged, including on unlinked steps. Every node type shows the Error header for its own issues.
+   - Save / Active unchanged from checkpoint 3: disabled while there are issues; deactivate-only saves allowed.
+   - Test:
+     - Use template → draft appears in the list immediately, no issues (amount 500).
+     - Create workflow → blank draft in the list; trigger shows the Error header with "Add an action to this workflow".
+     - Delete the condition → email action stays, unlinked → "Remove or connect unlinked steps"; Save and Active disabled; clicking the issue opens the email step.
+     - Delete the unlinked action → only "Add an action…" remains → add an action under the trigger → Save enabled.
+     - Delete a middle action in trigger → A → B → C → C stays unlinked (no reconnect); "+" appears under A.
+     - Backspace with several steps selected → only those steps removed, no dialog.
+     - Old `/workflows/new` link → redirects to `/workflows`.
+     - Server: `POST` inactive draft with issues → 201; `POST` active with issues → 400; `PUT` with issues → 400; deactivate-only → 200; unlinked graph → a single `unlinked` issue with `nodeIds`.
+     - `/wcheck`: unlinked state and Error headers next to Images 5–7, light and dark. `pnpm build`, `php -l`, PHPCS pass.
+
 ## Out of Scope
 
 Other templates/blocks, delays, run log, dedupe, async queue, HTML email, multi-currency conversion, orders created directly in a status (`woocommerce_order_status_changed` needs a `from` status), WooCommerce-inactive notice in the UI. Checkpoint 3: "is" / "is not" operators, per-node descriptions, test-results tab, editing the stored `title`.
