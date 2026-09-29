@@ -74,14 +74,18 @@ export function NodeCardView({
           selected ? 'border-primary' : error ? 'border-destructive/40' : 'border-border',
         )}
       >
-        <div className="flex items-start gap-2">
-          <div className="min-w-0 flex-1 font-medium">{block.label}</div>
-          <Icon className="text-muted-foreground mt-0.5 size-4 shrink-0" aria-label={kindLabel} />
-          {actions}
+        <div className="flex flex-col items-start gap-1.5">
+          <div className="text-muted-foreground flex items-center gap-1.5 text-xs">
+            <Icon className="text-muted-foreground mt-0.5 size-4 shrink-0" aria-label={kindLabel} />
+            {kindLabel}
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="min-w-0 flex-1 font-medium">{block.label}</div>
+          </div>
         </div>
-        <div className="text-muted-foreground mt-1 text-sm">{block.summary(data.config)}</div>
+        <div className="text-muted-foreground mt-1 text-xs">{block.summary(data.config)}</div>
       </div>
-
+      {actions && <div className="absolute top-1/2 left-full ml-1.5 -translate-y-1/2">{actions}</div>}
       {type === 'condition' ? (
         <>
           <Handle id="then" type="source" position={Position.Bottom} style={{ left: branchLeft.then }} />
