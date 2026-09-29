@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useForm } from '@tanstack/react-form';
-import * as v from 'valibot';
-import { __, sprintf } from '@wordpress/i18n';
+import { __ } from '@wordpress/i18n';
 
 import {
   ComboboxBadge,
@@ -13,51 +12,10 @@ import {
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { FieldGroup } from '@/components/ui/field';
 import { Popover, PopoverContent } from '@/components/ui/popover';
-import { ConfigField, defineBlock, PLACEHOLDER, useValidateOnMount, type BlockFormProps } from './block';
-
-/**
- * Mirrors src/Engine/Blocks/OrderStatusChanged.php. Statuses are slugs without the `wc-` prefix.
- * Empty `from` means any previous status.
- */
-type OrderStatusChangedConfig = { from: string[]; to: string[] };
-
-const statuses = window.yayAutomationMeta.wc.orderStatuses;
-
-const statusLabel = (value: string) => statuses.find((status) => status.value === value)?.label ?? value;
-
-/** Without WooCommerce there's nothing to check against; the PHP block skips the check too. */
-const isKnown = (value: string) => statuses.length === 0 || statuses.some((status) => status.value === value);
-
-const unknownStatus = __('Unknown order status.', 'yay-automation');
-
-const schema = v.object({
-  from: v.pipe(
-    v.array(v.string()),
-    v.check((list) => list.every(isKnown), unknownStatus),
-  ),
-  to: v.pipe(
-    v.array(v.string()),
-    v.minLength(1, __('Choose at least one status the order changes to.', 'yay-automation')),
-    v.check((list) => list.every(isKnown), unknownStatus),
-  ),
-});
-
-/**
- * Status list from stored config. Also reads the old single-string format ('any' or one status),
- * like the PHP block's `sanitize()`, so workflows saved before statuses became lists still load.
- */
-function toStatusList(raw: unknown): string[] {
-  if (typeof raw === 'string') return raw === 'any' || raw === '' ? [] : [raw];
-  if (!Array.isArray(raw)) return [];
-  return [...new Set(raw.filter((status): status is string => typeof status === 'string' && status !== ''))];
-}
-
-/** "A", "A or B", "A, B or C". */
-function orList(values: string[]) {
-  if (values.length < 2) return values.join('');
-  /* translators: 1: comma-separated list of statuses, 2: the last status */
-  return sprintf(__('%1$s or %2$s', 'yay-automation'), values.slice(0, -1).join(', '), values[values.length - 1]);
-}
+import { ConfigField } from '../../core/fields/ConfigField';
+import { useValidateOnMount } from '../../core/fields/useValidateOnMount';
+import type { BlockFormProps } from '../../core/types';
+import { schema, statuses, statusLabel, type OrderStatusChangedConfig } from './schema';
 
 function StatusMultiSelect({
   id,
@@ -113,7 +71,7 @@ function StatusMultiSelect({
   );
 }
 
-function OrderStatusChangedForm({ config, onChange }: BlockFormProps<OrderStatusChangedConfig>) {
+export function OrderStatusChangedForm({ config, onChange }: BlockFormProps<OrderStatusChangedConfig>) {
   const form = useForm({
     defaultValues: config,
     validators: { onChange: schema },
@@ -162,22 +120,3 @@ function OrderStatusChangedForm({ config, onChange }: BlockFormProps<OrderStatus
     </FieldGroup>
   );
 }
-
-export const orderStatusChangedBlock = defineBlock<OrderStatusChangedConfig>({
-  id: 'order_status_changed',
-  kind: 'trigger',
-  label: __('Order status changed', 'yay-automation'),
-  description: __('Runs when a WooCommerce order moves to a new status.', 'yay-automation'),
-  schema,
-  defaults: () => ({ from: [], to: [] }),
-  normalize: (config) => ({ from: toStatusList(config.from), to: toStatusList(config.to) }),
-  summary: ({ from, to }) => {
-    const target = to.length ? orList(to.map(statusLabel)) : PLACEHOLDER;
-    return from.length
-      ? /* translators: 1: previous order status(es), 2: new order status(es) */
-        sprintf(__('Order status changes from %1$s to %2$s', 'yay-automation'), orList(from.map(statusLabel)), target)
-      : /* translators: %s: new order status(es) */
-        sprintf(__('Order status changes to %s', 'yay-automation'), target);
-  },
-  Form: OrderStatusChangedForm,
-});

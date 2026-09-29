@@ -1,5 +1,9 @@
 <?php
-namespace YayAutomation\Engine\Blocks;
+namespace YayAutomation\Engine\Blocks\Core;
+
+use YayAutomation\Engine\Blocks\Actions\SendAdminEmail;
+use YayAutomation\Engine\Blocks\Triggers\OrderStatusChanged;
+use YayAutomation\Engine\Blocks\Conditions\OrderTotal;
 
 defined( 'ABSPATH' ) || exit;
 

@@ -1,5 +1,7 @@
 <?php
-namespace YayAutomation\Engine\Blocks;
+namespace YayAutomation\Engine\Blocks\Triggers;
+
+use YayAutomation\Engine\Blocks\Core\Trigger;
 
 defined( 'ABSPATH' ) || exit;
 

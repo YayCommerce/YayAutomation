@@ -7,7 +7,10 @@ export type WorkflowNodeKind = 'trigger' | 'condition' | 'action';
 /** Outgoing branch of a condition node. Used as the edge `sourceHandle`. */
 export type WorkflowBranch = 'then' | 'otherwise';
 
-/** Step type. Each id has a TS definition (admin app `blocks/`) and a PHP class (`src/Engine/Blocks/`). */
+/**
+ * Step type. Each id has a TS folder (admin app `blocks/<kind>/<id-in-kebab-case>/`) and a PHP class
+ * (`src/Engine/Blocks/<Kind>/`).
+ */
 export type BlockId = 'order_status_changed' | 'order_total' | 'send_admin_email';
 
 /** `type` (not `interface`) so it satisfies ReactFlow's `Record<string, unknown>` data constraint. */

@@ -1,11 +1,12 @@
 <?php
-namespace YayAutomation\Engine\Blocks;
+namespace YayAutomation\Engine\Blocks\Core;
 
 defined( 'ABSPATH' ) || exit;
 
 /**
- * One workflow step type. Mirrors a block in apps/admin-page/src/routes/workflows/blocks/ —
- * `validate()` must accept exactly what the TS Valibot schema accepts.
+ * One workflow step type. Mirrors a block folder in apps/admin-page/src/routes/workflows/blocks/
+ * (e.g. Triggers/OrderStatusChanged ↔ triggers/order-status-changed/). `validate()` must accept
+ * exactly what that folder's `schema.ts` accepts.
  *
  * Run context: [ 'order' => \WC_Order, 'from' => string, 'to' => string ].
  */

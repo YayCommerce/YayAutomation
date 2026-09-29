@@ -1,8 +1,8 @@
 <?php
 namespace YayAutomation\Engine\Workflows;
 
-use YayAutomation\Engine\Blocks\Block;
-use YayAutomation\Engine\Blocks\BlockRegistry;
+use YayAutomation\Engine\Blocks\Core\Block;
+use YayAutomation\Engine\Blocks\Core\BlockRegistry;
 
 defined( 'ABSPATH' ) || exit;
 

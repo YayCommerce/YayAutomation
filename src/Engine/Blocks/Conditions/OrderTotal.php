@@ -1,5 +1,7 @@
 <?php
-namespace YayAutomation\Engine\Blocks;
+namespace YayAutomation\Engine\Blocks\Conditions;
+
+use YayAutomation\Engine\Blocks\Core\Condition;
 
 defined( 'ABSPATH' ) || exit;
 

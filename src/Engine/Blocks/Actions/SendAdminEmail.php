@@ -1,5 +1,7 @@
 <?php
-namespace YayAutomation\Engine\Blocks;
+namespace YayAutomation\Engine\Blocks\Actions;
+
+use YayAutomation\Engine\Blocks\Core\Action;
 
 defined( 'ABSPATH' ) || exit;
 

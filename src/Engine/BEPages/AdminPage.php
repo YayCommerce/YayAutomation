@@ -5,7 +5,7 @@ namespace YayAutomation\Engine\BEPages;
 use YayAutomation\YayAutomation;
 use YayAutomation\Utils\SingletonTrait;
 use YayAutomation\Engine\Register\ScriptName;
-use YayAutomation\Engine\Blocks\OrderStatusChanged;
+use YayAutomation\Engine\Blocks\Triggers\OrderStatusChanged;
 
 defined( 'ABSPATH' ) || exit;
 

@@ -1,37 +1,15 @@
 import { useForm } from '@tanstack/react-form';
-import * as v from 'valibot';
-import { __, sprintf } from '@wordpress/i18n';
+import { __ } from '@wordpress/i18n';
 
 import { FieldGroup } from '@/components/ui/field';
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ConfigField, defineBlock, PLACEHOLDER, useValidateOnMount, type BlockFormProps } from './block';
+import { ConfigField } from '../../core/fields/ConfigField';
+import { useValidateOnMount } from '../../core/fields/useValidateOnMount';
+import type { BlockFormProps } from '../../core/types';
+import { currencySymbol, operatorLabels, operators, schema, type Operator, type OrderTotalConfig } from './schema';
 
-const operators = ['gt', 'gte', 'lt', 'lte'] as const;
-type Operator = (typeof operators)[number];
-
-/** Mirrors src/Engine/Blocks/OrderTotal.php. `amount` is null until the user enters one. */
-type OrderTotalConfig = { operator: Operator; amount: number | null };
-
-const operatorLabels: Record<Operator, string> = {
-  gt: __('is greater than', 'yay-automation'),
-  gte: __('is greater than or equal to', 'yay-automation'),
-  lt: __('is less than', 'yay-automation'),
-  lte: __('is less than or equal to', 'yay-automation'),
-};
-
-const currencySymbol = window.yayAutomationMeta.wc.currencySymbol;
-const amountError = __('Enter an amount of 0 or more.', 'yay-automation');
-
-const schema = v.object({
-  operator: v.picklist(operators, __('Choose a comparison.', 'yay-automation')),
-  amount: v.pipe(
-    v.nullable(v.number(amountError)),
-    v.check((amount) => amount !== null && amount >= 0, amountError),
-  ),
-});
-
-function OrderTotalForm({ config, onChange }: BlockFormProps<OrderTotalConfig>) {
+export function OrderTotalForm({ config, onChange }: BlockFormProps<OrderTotalConfig>) {
   const form = useForm({
     defaultValues: config,
     validators: { onChange: schema },
@@ -93,23 +71,3 @@ function OrderTotalForm({ config, onChange }: BlockFormProps<OrderTotalConfig>) 
     </FieldGroup>
   );
 }
-
-export const orderTotalBlock = defineBlock<OrderTotalConfig>({
-  id: 'order_total',
-  kind: 'condition',
-  label: __('Order total', 'yay-automation'),
-  description: __(
-    'Continues on the “Then” branch when the order total matches, otherwise on the “Otherwise” branch.',
-    'yay-automation',
-  ),
-  schema,
-  defaults: () => ({ operator: 'gt', amount: null }),
-  summary: ({ operator, amount }) =>
-    /* translators: 1: comparison such as "is greater than", 2: amount with currency symbol */
-    sprintf(
-      __('Order total %1$s %2$s', 'yay-automation'),
-      operatorLabels[operator] ?? PLACEHOLDER,
-      amount === null || Number.isNaN(amount) ? PLACEHOLDER : `${currencySymbol}${amount}`,
-    ),
-  Form: OrderTotalForm,
-});

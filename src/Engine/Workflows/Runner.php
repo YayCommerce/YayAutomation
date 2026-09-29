@@ -1,11 +1,11 @@
 <?php
 namespace YayAutomation\Engine\Workflows;
 
-use YayAutomation\Engine\Blocks\Action;
-use YayAutomation\Engine\Blocks\BlockRegistry;
-use YayAutomation\Engine\Blocks\Condition;
-use YayAutomation\Engine\Blocks\OrderStatusChanged;
-use YayAutomation\Engine\Blocks\Trigger;
+use YayAutomation\Engine\Blocks\Core\Action;
+use YayAutomation\Engine\Blocks\Core\BlockRegistry;
+use YayAutomation\Engine\Blocks\Core\Condition;
+use YayAutomation\Engine\Blocks\Triggers\OrderStatusChanged;
+use YayAutomation\Engine\Blocks\Core\Trigger;
 use YayAutomation\Utils\Logger;
 use YayAutomation\Utils\SingletonTrait;
 
