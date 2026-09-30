@@ -150,7 +150,8 @@ class RestAPI {
                 $live_graph = null;
                 if ( isset( $changes['graph'] ) ) {
                     $same_as_live = WorkflowValidator::same_graph( $changes['graph'], $current['graph'] );
-                    if ( 'active' === $current['status'] ) {
+                    // Once turned on, the saved content only changes through Apply: edits go to the draft.
+                    if ( $current['everActivated'] ) {
                         $draft = $same_as_live ? null : $changes['graph'];
                         if ( ! WorkflowValidator::same_graph( $draft, $current['draft'] ) ) {
                             WorkflowRepository::save_draft( $id, $draft );
@@ -168,7 +169,9 @@ class RestAPI {
     }
 
     /**
-     * Turning on needs a workflow without issues. Already active → returned as is.
+     * Turning on needs a workflow without issues, and a draft (if any) without issues too: a broken
+     * draft shouldn't sit behind a running workflow. The saved graph is what runs; the draft is kept.
+     * Already active → returned as is.
      *
      * @param \WP_REST_Request $request Request.
      */
@@ -180,14 +183,22 @@ class RestAPI {
                     return true;
                 }
                 $errors = WorkflowValidator::errors( $current );
+                if ( ! $errors && null !== $current['draft'] ) {
+                    $errors = WorkflowValidator::errors(
+                        [
+                            'name'  => $current['name'],
+                            'graph' => $current['draft'],
+                        ]
+                    );
+                }
                 return $errors ? WorkflowValidator::issues_error( $errors ) : WorkflowRepository::activate( $id );
             }
         );
     }
 
     /**
-     * Always allowed, even with issues. A draft becomes the workflow's content, so no edit is lost.
-     * Already inactive → returned as is.
+     * Always allowed, even with issues. The draft, if any, stays a draft. Already inactive → returned
+     * as is.
      *
      * @param \WP_REST_Request $request Request.
      */
@@ -198,13 +209,14 @@ class RestAPI {
                 if ( 'active' !== $current['status'] ) {
                     return true;
                 }
-                return WorkflowRepository::deactivate( $id, $current['draft'] );
+                return WorkflowRepository::deactivate( $id );
             }
         );
     }
 
     /**
-     * The draft replaces the live graph if it has no issues. No draft → 409.
+     * The draft replaces the live (or saved, when inactive) graph if it has no issues; the status
+     * doesn't change. No draft → 409.
      *
      * @param \WP_REST_Request $request Request.
      */

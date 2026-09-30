@@ -32,6 +32,7 @@ import { removeNode } from './workflow.graph';
 import { useWorkflowActionMutation, workflowKeys } from './workflow.query';
 import {
   ApplyChangesDialog,
+  DeleteStepDialog,
   DiscardChangesDialog,
   MoreActionsMenu,
   RenameWorkflowDialog,
@@ -56,9 +57,10 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
   const [openNodeId, setOpenNodeId] = useState<string | null>(null);
 
   const isActive = workflow.status === 'active';
-  // An active workflow's edits are unapplied changes as soon as they're made, not only once saved.
-  // (If they end up matching the live graph, the server clears the draft and Apply reports 409.)
-  const hasDraft = isActive && (workflow.draft !== null || autosave.status !== 'saved');
+  // Once turned on, edits go into a draft (active or not), and they're unapplied changes as soon as
+  // they're made, not only once saved. (If they end up matching the saved content, the server clears
+  // the draft and Apply reports 409.) Never turned on: edits change the workflow itself.
+  const hasDraft = workflow.everActivated && (workflow.draft !== null || autosave.status !== 'saved');
 
   // Reused across drag frames and compared by content, so the header re-renders only when issues change.
   const [selectIssues] = useState(createIssuesSelector);
@@ -80,11 +82,21 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
       // step `unlinked` lists (Images 17–18 mark unlinked steps too).
       issueNodeIds: new Set(issues.flatMap((issue) => (issue.nodeId ? [issue.nodeId] : (issue.nodeIds ?? [])))),
       issueMode: errorMode ? 'error' : 'review',
-      requestDelete: (nodeIds) =>
-        form.setFieldValue('graph', (graph) => nodeIds.reduce((next, id) => removeNode(next, id), graph)),
+      // Asks first (one dialog for several steps). The trigger can't be deleted.
+      requestDelete: (nodeIds) => {
+        const graph = form.state.values.graph;
+        const ids = nodeIds.filter((id) => graph.nodes.find((node) => node.id === id)?.kind !== 'trigger');
+        if (ids.length) setStepsToDelete(ids);
+      },
     }),
     [form, openNodeId, issues, errorMode],
   );
+  const [stepsToDelete, setStepsToDelete] = useState<string[] | null>(null);
+  const deleteSteps = () => {
+    const ids = stepsToDelete ?? [];
+    form.setFieldValue('graph', (graph) => ids.reduce((next, id) => removeNode(next, id), graph));
+    setStepsToDelete(null);
+  };
 
   const [confirm, setConfirm] = useState<ConfirmAction | null>(null);
   const [busy, setBusy] = useState(false);
@@ -175,30 +187,35 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
           title={
             <>
               <span className="truncate font-medium">{workflow.name}</span>
-              {/* Active: no badge, or Draft while there are unapplied changes. Off: Inactive or Draft. */}
-              {isActive ? (
-                hasDraft && <WorkflowStatusBadge state="draft" />
+              {/* Unapplied changes, or never turned on → Draft. Otherwise Inactive, or no badge when active. */}
+              {hasDraft ? (
+                <WorkflowStatusBadge state="draft" />
               ) : (
-                <WorkflowStatusBadge state={workflowState(workflow)} />
+                !isActive && <WorkflowStatusBadge state={workflowState(workflow)} />
               )}
             </>
           }
           actions={
             <>
               <MoreActionsMenu workflow={workflow} onDeleted={autosave.stop} />
-              {!isActive ? (
-                <Button size="sm" disabled={busy || blockedByIssues} onClick={() => setConfirm('turnOn')}>
-                  {__('Turn on workflow', 'yay-automation')}
-                </Button>
-              ) : hasDraft ? (
+              {hasDraft ? (
                 <>
                   <Button variant="outline" size="sm" disabled={busy} onClick={() => setConfirm('discard')}>
                     {__('Discard changes', 'yay-automation')}
                   </Button>
-                  <Button size="sm" disabled={busy || blockedByIssues} onClick={() => setConfirm('apply')}>
+                  {/* Only a running workflow asks first: applying to a saved one changes nothing live. */}
+                  <Button
+                    size="sm"
+                    disabled={busy || blockedByIssues}
+                    onClick={() => (isActive ? setConfirm('apply') : void applyChanges())}
+                  >
                     {__('Apply changes', 'yay-automation')}
                   </Button>
                 </>
+              ) : !isActive ? (
+                <Button size="sm" disabled={busy || blockedByIssues} onClick={() => setConfirm('turnOn')}>
+                  {__('Turn on workflow', 'yay-automation')}
+                </Button>
               ) : (
                 <Button variant="destructive" size="sm" disabled={busy} onClick={() => setConfirm('turnOff')}>
                   {__('Turn off workflow', 'yay-automation')}
@@ -250,6 +267,12 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
           onOpenChange={(open) => !open && setConfirm(null)}
           onConfirm={discardChanges}
           pending={busy}
+        />
+        <DeleteStepDialog
+          open={!!stepsToDelete}
+          onOpenChange={(open) => !open && setStepsToDelete(null)}
+          onConfirm={deleteSteps}
+          pending={false}
         />
         <TurnOffDialog
           open={confirm === 'turnOff'}

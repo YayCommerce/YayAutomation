@@ -1,5 +1,6 @@
 import type { WorkflowGraph } from '@yay-automation/types';
 import { useNavigate } from 'react-router';
+import { __ } from '@wordpress/i18n';
 
 import { toast } from '@/components/ui/sonner';
 import { useCreateWorkflowMutation } from './workflow.query';
@@ -10,7 +11,10 @@ export function useCreateDraft() {
   // Hook-level callbacks, not `mutate(…, { onSuccess })`: those are skipped if the page unmounts
   // mid-request (e.g. Back on the preview), which would create a draft with no feedback.
   const createMutation = useCreateWorkflowMutation({
-    onSaved: (workflow) => navigate(`/workflows/${workflow.id}/edit`),
+    onSaved: (workflow) => {
+      toast.success(__('Template installed', 'yay-automation'));
+      navigate(`/workflows/${workflow.id}/edit`);
+    },
     onFailed: (error) => toast.error(error.message),
   });
 

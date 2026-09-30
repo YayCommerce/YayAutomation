@@ -11,7 +11,8 @@ defined( 'ABSPATH' ) || exit;
  * Input must already be prepared by `WorkflowValidator`.
  *
  * - `_yay_automation_graph` is the live graph: the only one the runner reads.
- * - `_yay_automation_draft_graph` holds unapplied edits of an active workflow.
+ * - `_yay_automation_draft_graph` holds unapplied edits of a workflow that has ever been turned on
+ *   (active or not). It's kept across turning on and off.
  * - `post_modified` ("Last updated") moves with the live graph, status and name only; draft saves
  *   write meta alone, so they don't touch it.
  */
@@ -147,13 +148,12 @@ final class WorkflowRepository {
     }
 
     /**
-     * Turns off. A draft becomes the live graph in the same step, so no edit is lost.
+     * Turns off. The draft, if any, is kept.
      *
-     * @param int        $id    Post id of an existing workflow.
-     * @param array|null $draft The workflow's draft, if any.
+     * @param int $id Post id of an existing workflow.
      * @return true|\WP_Error
      */
-    public static function deactivate( int $id, ?array $draft ) {
+    public static function deactivate( int $id ) {
         $result = self::touch( $id );
         if ( is_wp_error( $result ) ) {
             return $result;
@@ -161,10 +161,6 @@ final class WorkflowRepository {
         // Workflows turned on before this meta existed get it here, so they turn "Inactive", not "Draft".
         self::mark_activated( $id );
         update_post_meta( $id, self::META_STATUS, 'inactive' );
-        if ( null !== $draft ) {
-            self::write_graph( $id, $draft );
-        }
-        self::save_draft( $id, null );
         return true;
     }
 

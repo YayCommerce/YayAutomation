@@ -1,11 +1,12 @@
-import { useState, type ReactNode } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { ControlButton } from '@xyflow/react';
 import type { Workflow } from '@yay-automation/types';
-import { ChevronLeft, Pencil } from 'lucide-react';
+import { ChevronLeft, CircleAlert, Pencil } from 'lucide-react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { __, sprintf } from '@wordpress/i18n';
 
 import { formatDateTime } from '@/lib/helpers/date.helper';
+import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/components/ui/sonner';
@@ -17,6 +18,7 @@ import { ApiError } from './editor/workflow.api';
 import { useWorkflowActionMutation, useWorkflowQuery } from './editor/workflow.query';
 import { MoreActionsMenu, TurnOffDialog, TurnOnDialog } from './editor/WorkflowActions';
 import { workflowState, WorkflowStatusBadge } from './editor/WorkflowStatusBadge';
+import { validateWorkflow } from './validation';
 
 export default function WorkflowOverviewPage() {
   const { workflowId = '' } = useParams();
@@ -42,8 +44,11 @@ function WorkflowOverview({ workflow }: { workflow: Workflow }) {
   const navigate = useNavigate();
   const editPath = `/workflows/${workflow.id}/edit`;
   const state = workflowState(workflow);
+  const isActive = state === 'active';
 
   const [turnOnOpen, setTurnOnOpen] = useState(false);
+  // Set by a Turn on that failed on issues; shows the error container until Turn on succeeds.
+  const [turnOnFailed, setTurnOnFailed] = useState(false);
   const activateMutation = useWorkflowActionMutation('activate');
   const deactivateMutation = useWorkflowActionMutation('deactivate');
 
@@ -53,20 +58,14 @@ function WorkflowOverview({ workflow }: { workflow: Workflow }) {
       {
         onSuccess: () => {
           setTurnOnOpen(false);
+          setTurnOnFailed(false);
           toast.success(__('Workflow turned on', 'yay-automation'));
         },
         onError: (error) => {
           setTurnOnOpen(false);
-          // Always say why it didn't turn on. With issues, also open the editor, where they're fixed.
-          toast.error(error.message, {
-            description:
-              error instanceof ApiError && error.issues.length
-                ? error.issues.map((issue) => issue.message).join(' ')
-                : undefined,
-          });
-          if (error instanceof ApiError && error.issues.length) {
-            navigate(editPath, { state: { showIssues: true } satisfies EditorNavState });
-          }
+          // Issues are explained by the error container, which leads to the editor; anything else is a toast.
+          if (error instanceof ApiError && error.issues.length) setTurnOnFailed(true);
+          else toast.error(error.message);
         },
       },
     );
@@ -87,21 +86,23 @@ function WorkflowOverview({ workflow }: { workflow: Workflow }) {
       },
     );
 
-  // Active: the live version, plus unapplied edits when there are any. Off: its one version, called
-  // "Saved workflow" once it has been turned on, "Draft" before that.
-  const tabs: { value: string; label: string; graph: Workflow['graph'] }[] =
-    state === 'active'
-      ? [
-          { value: 'live', label: __('Active workflow', 'yay-automation'), graph: workflow.graph },
-          ...(workflow.draft ? [{ value: 'draft', label: __('Draft', 'yay-automation'), graph: workflow.draft }] : []),
-        ]
-      : [
-          {
-            value: 'saved',
-            label: state === 'inactive' ? __('Saved workflow', 'yay-automation') : __('Draft', 'yay-automation'),
-            graph: workflow.graph,
-          },
-        ];
+  // The running or saved content, then unapplied edits when there are any. A workflow never turned on
+  // has just one version, and it's a draft.
+  const liveLabel = {
+    active: __('Active workflow', 'yay-automation'),
+    inactive: __('Saved workflow', 'yay-automation'),
+    draft: __('Draft', 'yay-automation'),
+  }[state];
+  const tabs: { value: string; label: string; graph: Workflow['graph'] }[] = [
+    { value: 'live', label: liveLabel, graph: workflow.graph },
+    ...(workflow.draft ? [{ value: 'draft', label: __('Draft', 'yay-automation'), graph: workflow.draft }] : []),
+  ];
+  // A saved workflow whose draft has issues can't be turned on (the server refuses too), so the
+  // button isn't offered. An active workflow can always be turned off.
+  const draftBlocksTurnOn = useMemo(
+    () => !isActive && !!workflow.draft && validateWorkflow({ name: workflow.name, graph: workflow.draft }).length > 0,
+    [isActive, workflow.draft, workflow.name],
+  );
   const [tab, setTab] = useState(tabs[0].value);
   // A tab can disappear (draft applied or discarded elsewhere); fall back to the first.
   const currentTab = tabs.some((t) => t.value === tab) ? tab : tabs[0].value;
@@ -111,7 +112,8 @@ function WorkflowOverview({ workflow }: { workflow: Workflow }) {
       title={
         <>
           <span className="truncate font-medium">{workflow.name}</span>
-          <WorkflowStatusBadge state={state} />
+          {/* Header badge is only Active / Inactive; "Draft" is the editor's word for unapplied work. */}
+          <WorkflowStatusBadge state={isActive ? 'active' : 'inactive'} />
         </>
       }
       actions={
@@ -123,14 +125,16 @@ function WorkflowOverview({ workflow }: { workflow: Workflow }) {
             </Link>
           </Button>
           <MoreActionsMenu workflow={workflow} />
-          {state === 'active' ? (
+          {isActive ? (
             <Button variant="destructive" size="sm" onClick={() => setTurnOffOpen(true)}>
               {__('Turn off workflow', 'yay-automation')}
             </Button>
           ) : (
-            <Button size="sm" onClick={() => setTurnOnOpen(true)}>
-              {__('Turn on workflow', 'yay-automation')}
-            </Button>
+            !draftBlocksTurnOn && (
+              <Button size="sm" onClick={() => setTurnOnOpen(true)}>
+                {__('Turn on workflow', 'yay-automation')}
+              </Button>
+            )
           )}
         </>
       }
@@ -143,6 +147,25 @@ function WorkflowOverview({ workflow }: { workflow: Workflow }) {
             formatDateTime(workflow.updatedAt),
           )}
         </p>
+        {turnOnFailed && !isActive && (
+          <Alert
+            destructive
+            className="border-destructive/30 bg-destructive/10 flex items-center gap-3 border [&>svg]:translate-y-0"
+          >
+            <CircleAlert />
+            <p className="min-w-0 flex-1">
+              <span className="font-medium">{__('Workflow contains errors', 'yay-automation')}</span>{' '}
+              {__('Before you can turn on this workflow, you need to make some corrections.', 'yay-automation')}
+            </p>
+            <Button
+              variant="destructive-soft"
+              size="sm"
+              onClick={() => navigate(editPath, { state: { showIssues: true } satisfies EditorNavState })}
+            >
+              {__('Edit workflow', 'yay-automation')}
+            </Button>
+          </Alert>
+        )}
         <Tabs
           value={currentTab}
           onValueChange={setTab}

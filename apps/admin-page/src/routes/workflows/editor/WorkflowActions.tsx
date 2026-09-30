@@ -304,7 +304,7 @@ export function ApplyChangesDialog(props: ConfirmProps) {
         'This workflow is turned on. Once you apply changes, they’ll take effect immediately.',
         'yay-automation',
       )}
-      confirmLabel={__('Apply changes', 'yay-automation')}
+      confirmLabel={__('Apply', 'yay-automation')}
     />
   );
 }
@@ -332,6 +332,18 @@ export function TurnOffDialog(props: ConfirmProps) {
       description={__('If you turn this workflow off, it stops running on new orders.', 'yay-automation')}
       confirmLabel={__('Turn off', 'yay-automation')}
       cancelLabel={__('Dismiss', 'yay-automation')}
+    />
+  );
+}
+
+export function DeleteStepDialog(props: ConfirmProps) {
+  return (
+    <ConfirmDialog
+      {...props}
+      title={__('Delete this step?', 'yay-automation')}
+      description={__('Deleting this step cannot be undone.', 'yay-automation')}
+      confirmLabel={__('Delete', 'yay-automation')}
+      destructive
     />
   );
 }
