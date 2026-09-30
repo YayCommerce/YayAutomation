@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { WorkflowGraph } from '@yay-automation/types';
 
 import type { WorkflowForm } from './useWorkflowForm';
-import { useUpdateWorkflowMutation } from './workflow.query';
+import { useAutosaveMutation } from './workflow.query';
 
 const DELAY_MS = 800;
 
@@ -19,7 +19,7 @@ export type AutosaveStatus = 'saved' | 'pending' | 'saving' | 'error';
  */
 export function useAutosave(form: WorkflowForm, workflowId: string) {
   // `mutateAsync` is stable across renders (the mutation object isn't), so the callbacks below are too.
-  const { mutateAsync: update } = useUpdateWorkflowMutation();
+  const { mutateAsync: update } = useAutosaveMutation();
 
   // What the server has. Compared by identity: every edit makes a new graph object.
   const savedRef = useRef<WorkflowGraph>(form.state.values.graph);

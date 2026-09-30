@@ -1,5 +1,5 @@
 import type { Workflow, WorkflowIssue } from '@yay-automation/types';
-import { HTTPError, type ResponsePromise } from 'ky';
+import { HTTPError, type Options, type ResponsePromise } from 'ky';
 import { __ } from '@wordpress/i18n';
 
 import { api } from '@/lib/api/api';
@@ -62,10 +62,13 @@ export const createWorkflow = ({ name, graph }: Pick<Workflow, 'name' | 'graph'>
 
 /**
  * Saves the name and/or graph; issues are allowed. The server puts the graph into the live workflow
- * when inactive, or into the draft when active.
+ * when inactive, or into the draft when active. `options` tunes the request (e.g. `retry`).
  */
-export const updateWorkflow = (id: string, changes: Partial<Pick<Workflow, 'name' | 'graph'>>) =>
-  request<Workflow>(api.put(`workflows/${id}`, { json: changes }));
+export const updateWorkflow = (
+  id: string,
+  changes: Partial<Pick<Workflow, 'name' | 'graph'>>,
+  options?: Pick<Options, 'retry'>,
+) => request<Workflow>(api.put(`workflows/${id}`, { ...options, json: changes }));
 
 /** 400 with `issues` when the workflow has any. */
 export const activateWorkflow = (id: string) => request<Workflow>(api.post(`workflows/${id}/activate`));

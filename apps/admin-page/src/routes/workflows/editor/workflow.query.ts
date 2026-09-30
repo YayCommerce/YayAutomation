@@ -84,6 +84,13 @@ export const useUpdateWorkflowMutation = (callbacks?: MutationCallbacks) =>
     callbacks,
   );
 
+/**
+ * Autosave's graph save. No ky retries: a failure shows at once (the status pill has Retry, and the
+ * next edit saves again), instead of after several seconds of silent retries, e.g. when leaving.
+ */
+export const useAutosaveMutation = () =>
+  useWorkflowMutation(({ id, graph }: Pick<Workflow, 'id' | 'graph'>) => updateWorkflow(id, { graph }, { retry: 0 }));
+
 const workflowActions = {
   activate: activateWorkflow,
   deactivate: deactivateWorkflow,
