@@ -292,8 +292,9 @@ class RestAPI {
                         [ 'status' => 409 ]
                     );
                 }
+                // It exists (checked under the lock), so a false here is a failed delete, not a 404.
                 if ( ! WorkflowRepository::delete( $id ) ) {
-                    return $this->not_found();
+                    return new \WP_Error( 'yay_automation_delete_failed', __( 'The workflow couldn’t be deleted. Try again.', 'yay-automation' ), [ 'status' => 500 ] );
                 }
                 return rest_ensure_response( [ 'deleted' => true ] );
             }

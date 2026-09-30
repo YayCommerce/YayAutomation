@@ -41,7 +41,7 @@ export default function WorkflowOverviewPage() {
 function WorkflowOverview({ workflow }: { workflow: Workflow }) {
   const navigate = useNavigate();
   const editPath = `/workflows/${workflow.id}/edit`;
-  const isActive = workflow.status === 'active';
+  const state = workflowState(workflow);
 
   const [turnOnOpen, setTurnOnOpen] = useState(false);
   const activateMutation = useWorkflowActionMutation('activate');
@@ -89,7 +89,6 @@ function WorkflowOverview({ workflow }: { workflow: Workflow }) {
 
   // Active: the live version, plus unapplied edits when there are any. Off: its one version, called
   // "Saved workflow" once it has been turned on, "Draft" before that.
-  const state = workflowState(workflow);
   const tabs: { value: string; label: string; graph: Workflow['graph'] }[] =
     state === 'active'
       ? [
@@ -124,7 +123,7 @@ function WorkflowOverview({ workflow }: { workflow: Workflow }) {
             </Link>
           </Button>
           <MoreActionsMenu workflow={workflow} />
-          {isActive ? (
+          {state === 'active' ? (
             <Button variant="destructive" size="sm" onClick={() => setTurnOffOpen(true)}>
               {__('Turn off workflow', 'yay-automation')}
             </Button>

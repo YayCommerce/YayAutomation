@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import type { Workflow } from '@yay-automation/types';
 import { ChevronDown, Pencil, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router';
@@ -33,7 +34,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/components/ui/sonner';
 import { ApiError } from './workflow.api';
-import { useDeleteWorkflowMutation, useUpdateWorkflowMutation } from './workflow.query';
+import { useDeleteWorkflowMutation, useUpdateWorkflowMutation, workflowKeys } from './workflow.query';
 
 /**
  * "More actions" menu: Rename and Delete. Delete returns to the list, after `onDeleted` (e.g. the
@@ -146,42 +147,51 @@ export function DeleteWorkflowDialog({
   onDeleted?: () => void;
 }) {
   const deleteMutation = useDeleteWorkflowMutation();
-  // The server said it's on, though this copy of it was off (turned on in another tab).
-  const [refused, setRefused] = useState(false);
-  const blocked = workflow?.status === 'active' || refused;
+  const queryClient = useQueryClient();
 
-  const close = () => {
-    setRefused(false);
-    onClose();
-  };
+  // What the dialog shows is fixed per opening: `workflow` turns null as it closes, and the content
+  // mustn't flip to the other view during the close animation.
+  const [shown, setShown] = useState<{ workflow: Workflow; refusedMessage: string | null } | null>(null);
+  if (workflow && workflow !== shown?.workflow) {
+    setShown({ workflow, refusedMessage: null });
+  }
+  // `refusedMessage`: the server said it's on, though this copy said off (turned on in another tab).
+  const blocked = shown?.workflow.status === 'active' || !!shown?.refusedMessage;
 
   const confirm = () => {
     if (!workflow) return;
     deleteMutation.mutate(workflow.id, {
       onSuccess: () => {
         toast.success(__('Workflow deleted', 'yay-automation'));
-        close();
+        onClose();
         onDeleted?.();
       },
       onError: (error) => {
-        if (error instanceof ApiError && error.code === 'yay_automation_delete_active') setRefused(true);
-        else toast.error(error.message);
+        if (error instanceof ApiError && error.code === 'yay_automation_delete_active') {
+          setShown({ workflow, refusedMessage: error.message });
+          // This copy was stale; refetch so the page shows it's on (and offers Turn off).
+          void queryClient.invalidateQueries({ queryKey: workflowKeys.all });
+        } else {
+          toast.error(error.message);
+        }
       },
     });
   };
 
   return (
-    <AlertDialog open={!!workflow} onOpenChange={(open) => !open && !deleteMutation.isPending && close()}>
+    <AlertDialog open={!!workflow} onOpenChange={(open) => !open && !deleteMutation.isPending && onClose()}>
       <AlertDialogContent>
         {blocked ? (
           <>
             <AlertDialogHeader>
               <AlertDialogTitle>{__('There was a problem deleting this workflow', 'yay-automation')}</AlertDialogTitle>
               <AlertDialogDescription>
-                {__(
-                  'Because this workflow is still turned on, it couldn’t be deleted. Turn it off and try again.',
-                  'yay-automation',
-                )}
+                {/* The server's wording when it refused; the same text otherwise (no request was made). */}
+                {shown?.refusedMessage ??
+                  __(
+                    'Because this workflow is still turned on, it couldn’t be deleted. Turn it off and try again.',
+                    'yay-automation',
+                  )}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
@@ -195,7 +205,7 @@ export function DeleteWorkflowDialog({
                 {sprintf(
                   /* translators: %s: workflow name */
                   __('Delete “%s”?', 'yay-automation'),
-                  workflow?.name ?? '',
+                  shown?.workflow.name ?? '',
                 )}
               </AlertDialogTitle>
               <AlertDialogDescription>{__('This can’t be undone.', 'yay-automation')}</AlertDialogDescription>
