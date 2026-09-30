@@ -24,22 +24,22 @@ Template → Install → edit → Turn on / Apply looks and behaves like Shopify
   - Workflows list: clicking anywhere on a row opens the Overview. The name link stays (keyboard, middle-click); the row's Delete action stops propagation.
 - **Data model (server):**
   - `_yay_automation_graph` = the live graph. The only graph `Runner` and `active_for_trigger()` read. `_yay_automation_trigger` changes only with the live graph.
-  - New `_yay_automation_draft_graph` = unapplied edits of an active workflow. Exists only while active.
+  - New `_yay_automation_draft_graph` = unapplied edits. Checkpoint 2: active workflows only. Checkpoint 5: any workflow that has ever been turned on (`everActivated`), active or inactive; kept across Turn on / Turn off.
   - New `_yay_automation_draft_updated` = when the draft was last saved.
   - Name isn't versioned; rename applies at once.
-  - `post_modified` = "Last updated" on the Overview. Every change to the live graph, status or name bumps it (inactive `PUT` with a graph, activate, deactivate, apply, rename) via `wp_update_post`. Draft-only saves write meta only and don't bump it.
+  - `post_modified` = "Last updated" on the Overview. Every change to the live graph, status or name bumps it (live-graph `PUT`, activate, deactivate, apply, rename) via `wp_update_post`. Draft-only saves write meta only and don't bump it.
   - Workflows saved before this plan have no draft meta: no migration.
-  - `Workflow` type gains `draft: WorkflowGraph | null`, `draftUpdatedAt: string | null`.
-- **REST** (all `can_manage`; structural errors — one trigger, known blocks, valid edges — always 400; every endpoint returns the full `Workflow`):
+  - `Workflow` type gains `draft: WorkflowGraph | null`, `draftUpdatedAt: string | null`, and (checkpoint 4) `everActivated: boolean`.
+- **REST** (all `can_manage`; structural errors — one trigger, known blocks, valid edges — always 400; every endpoint returns the full `Workflow`; every write runs under the per-workflow `GET_LOCK`):
   - `POST /workflows` → create, inactive. Issues allowed. `status` in the body ignored.
-  - `PUT /workflows/:id` `{ name?, graph? }`:
-    - Inactive: graph replaces the live graph.
-    - Active: graph goes into the draft. A draft identical to the live graph clears it.
-    - Issues allowed either way. `status` ignored.
-  - `POST /workflows/:id/activate` → `errors()` on the graph. Issues → 400 with `data.errors`; else status active.
-  - `POST /workflows/:id/deactivate` → always allowed. A draft, if any, becomes the graph and is cleared; status inactive.
-  - `POST /workflows/:id/apply` → `errors()` on the draft. Issues → 400 with `data.errors`; else draft becomes live and is cleared. No draft → 409.
+  - `PUT /workflows/:id` `{ name?, graph? }`, issues allowed, `status` ignored:
+    - Never turned on (`everActivated` false): the graph replaces the live graph.
+    - Ever turned on (active or inactive; checkpoint 5 — before, active only): the graph goes into the draft. A draft identical to the live graph clears it.
+  - `POST /workflows/:id/activate` → 400 with `data.errors` if the live graph has issues, or (checkpoint 5) if a draft exists and has issues. Otherwise status active; the live (saved) graph runs and the draft is kept.
+  - `POST /workflows/:id/deactivate` → always allowed; status inactive. Checkpoint 5: the draft is kept (checkpoint 2 merged it into the live graph).
+  - `POST /workflows/:id/apply` → `errors()` on the draft. Issues → 400 with `data.errors`; else the draft becomes the live graph and is cleared; status unchanged (checkpoint 5: also for inactive, ever-turned-on workflows). No draft → 409.
   - `DELETE /workflows/:id/draft` → drop the draft. Always 200.
+  - `DELETE /workflows/:id` → 409 while active (checkpoint 4).
   - `WorkflowValidator::prepare()` keeps structural checks only; the `errors()` gate moves to activate / apply. Remove `only_deactivates()` and TS `onlyDeactivates()`.
 - **Workflows list:** an active workflow with a draft shows a small "Unapplied changes" label next to its Active badge.
 - **Overview page** (Image 14):
@@ -138,6 +138,39 @@ Template → Install → edit → Turn on / Apply looks and behaves like Shopify
      - An Inactive workflow can be deleted.
      - Legacy fixture #1546 shows the right badge (Draft: never turned on).
      - `/wcheck` next to Images 19, 21, 22. `pnpm build`, `php -l`, PHPCS pass.
+
+5. Drafts for saved workflows, statuses, confirmations — Risk: 3
+   - **Visual references** (behavior follows this plan; visuals follow the images, built with YayUiKits components and theme tokens):
+     - `.claude/references/23-shopify-saved-invalid-draft.png` — Saved (inactive) workflow whose draft has issues: no Turn on, only Edit and More actions.
+     - `.claude/references/24-shopify-overview-turn-on-errors.png` — Overview error container after a failed Turn on.
+     - `.claude/references/25-shopify-edit-with-draft.png` — editor opening an existing draft: Draft badge, Discard / Apply.
+     - `.claude/references/26-shopify-overview-active-with-draft.png` — Active workflow with a draft: "Active workflow" + "Draft" tabs.
+   - **Status badges:** the workflows list and the Overview header show only "Active" or "Inactive" (a never-turned-on workflow shows "Inactive" there). Only the editor keeps its "Draft" badge. The list's "Unapplied changes" label shows for any workflow with a draft, active or inactive.
+   - **Overview error container** (Image 24): a failed Turn on on the Overview no longer opens the editor or shows a toast. Right under "Last updated on …": "Workflow contains errors" + "Before you can turn on this workflow, you need to make some corrections." + "Edit workflow" (opens `/edit` in error mode). Shown only after a failed Turn on; gone when the page is left or Turn on succeeds.
+   - **Drafts for every ever-turned-on workflow** (active or inactive):
+     - Never turned on: unchanged (edits autosave into the content; Draft badge in the editor; Turn on).
+     - Ever turned on: edits autosave into a separate draft; the Active / Saved content stays as is. The draft survives Turn on and Turn off (supersedes checkpoint 2's merge on Turn off).
+     - Overview tabs (Image 26): Active → "Active workflow" (+ "Draft" when a draft exists); Inactive and ever turned on → "Saved workflow" (+ "Draft" when a draft exists); never turned on → "Draft".
+     - Editor (Image 25): with a draft it opens the draft: Draft badge + "Discard changes", "Apply changes", ×. Also after × or closing the tab mid-edit. Without a draft: Active → no badge + "Turn off workflow"; Saved → Inactive badge + "Turn on workflow".
+     - Discard changes → confirm → back to the Active / Saved content; draft deleted.
+     - Apply changes on an Active workflow → "Apply changes?" / "This workflow is turned on. Once you apply changes, they'll take effect immediately." with "Cancel" and "Apply". Issues → error mode; none → the draft becomes live and is cleared.
+     - Apply changes on a Saved (inactive) workflow → no dialog. Issues → error mode; none → the draft becomes the saved content and is cleared; the workflow stays inactive.
+     - Server rules: see REST above (PUT → draft for ever-turned-on workflows; apply for inactive ever-turned-on; deactivate keeps the draft; activate turns on the saved content, keeps the draft).
+   - **Saved workflow with an invalid draft** (Image 23): inactive + a draft with issues (`validateWorkflow` on the draft; no Apply attempt needed) → the Overview hides "Turn on workflow", no extra message; only Edit and More actions. Active workflows always keep "Turn off workflow". Server: activate → 400 while the draft has issues. Fixing or discarding the draft brings Turn on back.
+   - **Install toast:** "Template installed" after Install creates the workflow (same style as the other toasts).
+   - **Delete step confirm:** the step's delete button or Backspace opens "Delete this step?" / "Deleting this step cannot be undone." with "Cancel" and "Delete" (destructive). Several selected steps → one dialog. Supersedes plan 003 checkpoint 4's "no confirmation dialog"; the rules themselves are unchanged (only that step is removed, children stay unlinked; the trigger can't be deleted).
+   - Test:
+     - List and Overview header show only Active / Inactive; the editor still shows Draft for a never-turned-on workflow. "Unapplied changes" shows for inactive workflows with a draft too.
+     - Overview Turn on with issues → error container, no toast, no navigation → "Edit workflow" → editor in error mode.
+     - Active + draft → Turn off → Overview "Saved workflow" + "Draft" tabs; Edit opens the draft with Discard / Apply. × mid-edit and a closed tab keep the draft.
+     - Discard restores the content. Apply on Active (dialog, Cancel / Apply) and on Saved (no dialog), each with and without issues.
+     - Saved + valid draft → Turn on → live is the saved content, the draft is still there.
+     - Saved + invalid draft → no Turn on on the Overview; activate via `fetch` → 400; fix or Discard → Turn on returns. Active + invalid draft → Turn off still shown.
+     - Install → "Template installed" toast.
+     - Delete a step via its button and via Backspace → dialog; Cancel keeps it; Delete removes only that step.
+     - A real COD order uses the live content while a draft exists.
+     - Never-turned-on workflows otherwise unchanged; legacy fixture #1546 still loads.
+     - `/wcheck` next to Images 23–26, light and dark. `pnpm build`, `php -l`, PHPCS pass.
 
 ## Out of Scope
 
