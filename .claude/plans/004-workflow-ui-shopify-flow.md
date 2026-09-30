@@ -172,6 +172,30 @@ Template → Install → edit → Turn on / Apply looks and behaves like Shopify
      - Never-turned-on workflows otherwise unchanged; legacy fixture #1546 still loads.
      - `/wcheck` next to Images 23–26, light and dark. `pnpm build`, `php -l`, PHPCS pass.
 
+6. Workflows list: tabs, selection, bulk actions — Risk: 2
+   - **Visual references** (layout follows the images, built with YayUiKits components and theme tokens):
+     - `.claude/references/27-table-with-checkboxes.png` — kit Table with a checkbox column and pagination.
+     - `.claude/references/28-bulk-actions-bar.png` — kit bulk actions bar.
+   - **Tabs** above the table: "All | Active | Inactive" (kit `Segmented`). Never-turned-on workflows count as Inactive. Switching tabs clears the selection and goes back to page 1.
+   - **Table** (kit `Table` in a bordered container, like Image 27): same columns and row content as now (Name, Status badge + "Unapplied changes", Trigger, Last updated, row trash button). New first column: checkboxes. The header checkbox selects / deselects every workflow in the current tab (all pages); indeterminate when some are selected. Row click still opens the Overview; the checkbox doesn't.
+   - **Pagination** (kit `Pagination`, bottom right): 10 per page, shown when the tab has more than 10 workflows. Selection is kept across pages.
+   - **Bulk actions bar** (kit `BulkActionBox`, bottom left, Image 28): only with 2+ selected. × (clear selection), "N selected", "Delete", and "Turn off" only if at least one selected workflow is active. Replaces the kit's "Bulk Actions" dropdown.
+   - **Bulk Turn off:** confirm "Turn off N workflows" / "If you turn these workflows off, the runs in progress will be cancelled." with "Dismiss" and "Turn off". Turns off only the selected active ones (`deactivate` per workflow); drafts are kept.
+   - **Bulk Delete:**
+     - All selected inactive → "Delete N workflows?" / "These workflows will be permanently deleted." with "Cancel" and "Delete" (destructive).
+     - Any selected active → "There was a problem deleting some workflows" / "Because one or more workflows are still turned on, they couldn't be deleted. Turn them off and try again." with only "Back". Nothing is deleted.
+     - Requests go one per workflow through `DELETE /workflows/:id`, so the server's 409 still guards each one. If the server refuses any (stale list), show the same "problem" dialog and refresh the list; ones the server accepted before that stay deleted (no bulk endpoint, so no all-or-nothing).
+   - **After a bulk action:** toast ("N workflows turned off" / "N workflows deleted"), selection cleared, list refreshed.
+   - **Single Turn off dialog** (editor and Overview): "Turn off workflow" / "If you turn this workflow off, the runs in progress will be cancelled." with "Dismiss" and "Turn off". No dialog mentions orders (future workflows won't all be order-based).
+   - Test:
+     - Tabs filter correctly (never-turned-on under Inactive) and clear the selection.
+     - 1 selected → no bar; 2+ → bar. Header checkbox selects all in the tab; indeterminate when partial.
+     - "Turn off" shown only when an active one is selected. Bulk Turn off confirm → only active ones off, drafts kept.
+     - Bulk Delete, all inactive → confirm → deleted. Mixed → problem dialog, nothing deleted. Stale active (turned on elsewhere) → server refuses → problem dialog, list refreshed.
+     - Row trash button still works. Pagination with more than 10 workflows.
+     - Single Turn off dialog shows the new text in the editor and Overview.
+     - Light and dark. `pnpm build`, ESLint pass.
+
 ## Out of Scope
 
 "Test your workflow / Select test event", Sidekick, Library dialog unchanged (keeps its existing search and sort); Apps/Categories filters, Add note / Export / Duplicate / Manage tags, "Version history" tab and the "…" menu, versioning beyond one live graph + one draft, new blocks or templates, Create workflow (stays "Coming soon").
