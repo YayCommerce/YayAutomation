@@ -61,11 +61,15 @@ function WorkflowOverview({ workflow }: { workflow: Workflow }) {
         },
         onError: (error) => {
           setTurnOnOpen(false);
-          // Issues are fixed in the editor, which opens showing them.
+          // Always say why it didn't turn on. With issues, also open the editor, where they're fixed.
+          toast.error(error.message, {
+            description:
+              error instanceof ApiError && error.issues.length
+                ? error.issues.map((issue) => issue.message).join(' ')
+                : undefined,
+          });
           if (error instanceof ApiError && error.issues.length) {
             navigate(editPath, { state: { showIssues: true } satisfies EditorNavState });
-          } else {
-            toast.error(error.message);
           }
         },
       },

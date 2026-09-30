@@ -133,40 +133,38 @@ class RestAPI {
     /**
      * `{ name?, graph? }`, issues allowed. The name applies at once. The graph replaces the live one
      * when inactive; when active it goes into the draft (cleared again if it matches the live graph).
-     * No-op changes aren't written, so they don't move "Last updated".
+     * No-op changes aren't written, so they don't move "Last updated" or the draft time.
      *
      * @param \WP_REST_Request $request Request.
      */
     public function update_workflow( \WP_REST_Request $request ) {
-        $id      = (int) $request['id'];
-        $current = WorkflowRepository::find( $id );
-        if ( ! $current ) {
-            return $this->not_found();
-        }
         $changes = WorkflowValidator::prepare_changes( $request->get_json_params() );
         if ( is_wp_error( $changes ) ) {
             return $changes;
         }
 
-        if ( isset( $changes['name'] ) && $changes['name'] !== $current['name'] ) {
-            $result = WorkflowRepository::rename( $id, $changes['name'] );
-            if ( is_wp_error( $result ) ) {
-                return $result;
-            }
-        }
-        if ( isset( $changes['graph'] ) ) {
-            // Loose ==: same keys and values, key order doesn't matter.
-            $same_as_live = $changes['graph'] == $current['graph']; // phpcs:ignore Universal.Operators.StrictComparisons.LooseEqual
-            if ( 'active' === $current['status'] ) {
-                WorkflowRepository::save_draft( $id, $same_as_live ? null : $changes['graph'] );
-            } elseif ( ! $same_as_live ) {
-                $result = WorkflowRepository::save_graph( $id, $changes['graph'] );
-                if ( is_wp_error( $result ) ) {
-                    return $result;
+        return $this->with_workflow(
+            (int) $request['id'],
+            function ( int $id, array $current ) use ( $changes ) {
+                $name       = isset( $changes['name'] ) && $changes['name'] !== $current['name'] ? $changes['name'] : null;
+                $live_graph = null;
+                if ( isset( $changes['graph'] ) ) {
+                    $same_as_live = WorkflowValidator::same_graph( $changes['graph'], $current['graph'] );
+                    if ( 'active' === $current['status'] ) {
+                        $draft = $same_as_live ? null : $changes['graph'];
+                        if ( ! WorkflowValidator::same_graph( $draft, $current['draft'] ) ) {
+                            WorkflowRepository::save_draft( $id, $draft );
+                        }
+                    } elseif ( ! $same_as_live ) {
+                        $live_graph = $changes['graph'];
+                    }
                 }
+                if ( null !== $name || null !== $live_graph ) {
+                    return WorkflowRepository::update_live( $id, $name, $live_graph );
+                }
+                return true;
             }
-        }
-        return WorkflowRepository::find( $id );
+        );
     }
 
     /**
@@ -175,41 +173,34 @@ class RestAPI {
      * @param \WP_REST_Request $request Request.
      */
     public function activate_workflow( \WP_REST_Request $request ) {
-        $id      = (int) $request['id'];
-        $current = WorkflowRepository::find( $id );
-        if ( ! $current ) {
-            return $this->not_found();
-        }
-        if ( 'active' !== $current['status'] ) {
-            $errors = WorkflowValidator::errors( $current );
-            if ( $errors ) {
-                return WorkflowValidator::issues_error( $errors );
+        return $this->with_workflow(
+            (int) $request['id'],
+            function ( int $id, array $current ) {
+                if ( 'active' === $current['status'] ) {
+                    return true;
+                }
+                $errors = WorkflowValidator::errors( $current );
+                return $errors ? WorkflowValidator::issues_error( $errors ) : WorkflowRepository::activate( $id );
             }
-            $result = WorkflowRepository::set_status( $id, 'active' );
-            if ( is_wp_error( $result ) ) {
-                return $result;
-            }
-        }
-        return WorkflowRepository::find( $id );
+        );
     }
 
     /**
      * Always allowed, even with issues. A draft becomes the workflow's content, so no edit is lost.
+     * Already inactive → returned as is.
      *
      * @param \WP_REST_Request $request Request.
      */
     public function deactivate_workflow( \WP_REST_Request $request ) {
-        $id      = (int) $request['id'];
-        $current = WorkflowRepository::find( $id );
-        if ( ! $current ) {
-            return $this->not_found();
-        }
-        $result = WorkflowRepository::set_status( $id, 'inactive', $current['draft'] );
-        if ( is_wp_error( $result ) ) {
-            return $result;
-        }
-        WorkflowRepository::save_draft( $id, null );
-        return WorkflowRepository::find( $id );
+        return $this->with_workflow(
+            (int) $request['id'],
+            function ( int $id, array $current ) {
+                if ( 'active' !== $current['status'] ) {
+                    return true;
+                }
+                return WorkflowRepository::deactivate( $id, $current['draft'] );
+            }
+        );
     }
 
     /**
@@ -218,29 +209,21 @@ class RestAPI {
      * @param \WP_REST_Request $request Request.
      */
     public function apply_workflow( \WP_REST_Request $request ) {
-        $id      = (int) $request['id'];
-        $current = WorkflowRepository::find( $id );
-        if ( ! $current ) {
-            return $this->not_found();
-        }
-        if ( null === $current['draft'] ) {
-            return new \WP_Error( 'yay_automation_no_draft', __( 'There are no changes to apply.', 'yay-automation' ), [ 'status' => 409 ] );
-        }
-        $errors = WorkflowValidator::errors(
-            [
-                'name'  => $current['name'],
-                'graph' => $current['draft'],
-            ]
+        return $this->with_workflow(
+            (int) $request['id'],
+            function ( int $id, array $current ) {
+                if ( null === $current['draft'] ) {
+                    return new \WP_Error( 'yay_automation_no_draft', __( 'There are no changes to apply.', 'yay-automation' ), [ 'status' => 409 ] );
+                }
+                $errors = WorkflowValidator::errors(
+                    [
+                        'name'  => $current['name'],
+                        'graph' => $current['draft'],
+                    ]
+                );
+                return $errors ? WorkflowValidator::issues_error( $errors ) : WorkflowRepository::apply_draft( $id, $current['draft'] );
+            }
         );
-        if ( $errors ) {
-            return WorkflowValidator::issues_error( $errors );
-        }
-        $result = WorkflowRepository::save_graph( $id, $current['draft'] );
-        if ( is_wp_error( $result ) ) {
-            return $result;
-        }
-        WorkflowRepository::save_draft( $id, null );
-        return WorkflowRepository::find( $id );
     }
 
     /**
@@ -249,12 +232,46 @@ class RestAPI {
      * @param \WP_REST_Request $request Request.
      */
     public function discard_draft( \WP_REST_Request $request ) {
-        $id = (int) $request['id'];
-        if ( ! WorkflowRepository::find( $id ) ) {
-            return $this->not_found();
+        return $this->with_workflow(
+            (int) $request['id'],
+            function ( int $id ) {
+                WorkflowRepository::save_draft( $id, null );
+                return true;
+            }
+        );
+    }
+
+    /**
+     * Runs `$change( $id, $current )` while holding a per-workflow lock, then returns the workflow
+     * as stored. Draft saves, apply and deactivate read then write the draft; without the lock an
+     * autosave landing mid-apply could be wiped, or leave a draft on an inactive workflow.
+     *
+     * @param int      $id     Workflow id.
+     * @param callable $change Returns true on success, or a WP_Error.
+     * @return array|\WP_Error
+     */
+    private function with_workflow( int $id, callable $change ) {
+        global $wpdb;
+        $lock = 'yay_automation_workflow_' . $id;
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        if ( '1' !== (string) $wpdb->get_var( $wpdb->prepare( 'SELECT GET_LOCK( %s, 10 )', $lock ) ) ) {
+            return new \WP_Error( 'yay_automation_busy', __( 'This workflow is being saved. Try again.', 'yay-automation' ), [ 'status' => 409 ] );
         }
-        WorkflowRepository::save_draft( $id, null );
-        return WorkflowRepository::find( $id );
+        try {
+            // Read inside the lock, so the change sees what the previous request wrote.
+            $current = WorkflowRepository::find( $id );
+            if ( ! $current ) {
+                return $this->not_found();
+            }
+            $result = $change( $id, $current );
+            if ( is_wp_error( $result ) ) {
+                return $result;
+            }
+            return WorkflowRepository::find( $id ) ?? $this->not_found();
+        } finally {
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+            $wpdb->query( $wpdb->prepare( 'SELECT RELEASE_LOCK( %s )', $lock ) );
+        }
     }
 
     public function delete_workflow( \WP_REST_Request $request ) {

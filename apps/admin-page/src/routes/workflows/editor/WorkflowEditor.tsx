@@ -39,9 +39,6 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
   // Reused across drag frames and compared by content, so the toolbar re-renders only when issues change.
   const [selectIssues] = useState(createIssuesSelector);
   const issues = useStore(form.store, (state) => selectIssues(state.values), sameIssues);
-  // Drafts save with issues; turning on (or saving while on) needs none.
-  const isActive = useStore(form.store, (state) => state.values.status === 'active');
-  const saveBlocked = issues.length > 0 && isActive;
 
   const editorState = useMemo<EditorState>(
     () => ({
@@ -118,15 +115,10 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
               {/* Subscribe re-renders only this button when dirty/submitting flip. */}
               <form.Subscribe selector={(state) => [state.isDirty, state.isSubmitting] as const}>
                 {([isDirty, isSubmitting]) => (
-                  <WithTooltip content={saveBlocked && __('Fix the issues before saving.', 'yay-automation')}>
-                    <Button
-                      size="sm"
-                      disabled={!isDirty || isSubmitting || saveBlocked}
-                      onClick={() => form.handleSubmit()}
-                    >
-                      {isSubmitting ? __('Saving…', 'yay-automation') : __('Save', 'yay-automation')}
-                    </Button>
-                  </WithTooltip>
+                  // Saves allow issues: an active workflow's edits go into its draft. Only turning on needs none.
+                  <Button size="sm" disabled={!isDirty || isSubmitting} onClick={() => form.handleSubmit()}>
+                    {isSubmitting ? __('Saving…', 'yay-automation') : __('Save', 'yay-automation')}
+                  </Button>
                 )}
               </form.Subscribe>
             </div>

@@ -38,7 +38,7 @@ final class WorkflowValidator {
 
     /**
      * Fields present in a PUT body. Absent keys stay absent; `status` is ignored (it changes only
-     * through activate / deactivate).
+     * through activate / deactivate). A name that sanitizes to empty is rejected.
      *
      * @param mixed $input Decoded JSON body: { name?, graph? }.
      * @return array|\WP_Error [ 'name'? => string, 'graph'? => array ]
@@ -50,6 +50,17 @@ final class WorkflowValidator {
         $changes = [];
         if ( array_key_exists( 'name', $input ) ) {
             $changes['name'] = self::prepare_name( $input['name'] );
+            // The name applies at once, also to an active workflow, which must stay free of issues.
+            if ( '' === $changes['name'] ) {
+                return self::issues_error(
+                    [
+                        [
+                            'code'    => 'name_required',
+                            'message' => __( 'Enter a workflow name.', 'yay-automation' ),
+                        ],
+                    ]
+                );
+            }
         }
         if ( array_key_exists( 'graph', $input ) ) {
             $graph = self::prepare_graph( $input['graph'] );
@@ -59,6 +70,22 @@ final class WorkflowValidator {
             $changes['graph'] = $graph;
         }
         return $changes;
+    }
+
+    /**
+     * True when both are the same graph. Both go through `prepare_graph()` (fixed key order and
+     * types), so strict === holds: unlike loose ==, '500' and '5e2' or '' and null stay different.
+     *
+     * @param array|null $a Graph, or null for none.
+     * @param array|null $b Graph, or null for none.
+     */
+    public static function same_graph( ?array $a, ?array $b ): bool {
+        if ( null === $a || null === $b ) {
+            return $a === $b;
+        }
+        $a = self::prepare_graph( $a );
+        $b = self::prepare_graph( $b );
+        return ! is_wp_error( $a ) && ! is_wp_error( $b ) && $a === $b;
     }
 
     /**

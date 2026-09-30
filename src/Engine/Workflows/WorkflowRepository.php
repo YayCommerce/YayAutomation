@@ -65,7 +65,8 @@ final class WorkflowRepository {
                 ],
             ]
         );
-        return array_map( [ self::class, 'to_array' ], $posts );
+        // The runner only ever uses the live graph.
+        return array_map( fn( \WP_Post $post ) => self::to_array( $post, false ), $posts );
     }
 
     /**
@@ -94,24 +95,23 @@ final class WorkflowRepository {
     }
 
     /**
-     * @param int    $id   Post id of an existing workflow.
-     * @param string $name Prepared name.
-     * @return true|\WP_Error
-     */
-    public static function rename( int $id, string $name ) {
-        return self::touch( $id, [ 'post_title' => wp_slash( $name ) ] );
-    }
-
-    /**
-     * Replaces the live graph.
+     * Changes the live workflow: name and/or graph. One post update, done first, so a failure
+     * leaves nothing half-written.
      *
-     * @param int   $id    Post id of an existing workflow.
-     * @param array $graph Prepared graph.
+     * @param int         $id    Post id of an existing workflow.
+     * @param string|null $name  Prepared name, or null to keep it.
+     * @param array|null  $graph Prepared graph, or null to keep it.
      * @return true|\WP_Error
      */
-    public static function save_graph( int $id, array $graph ) {
-        self::write_graph( $id, $graph );
-        return self::touch( $id );
+    public static function update_live( int $id, ?string $name, ?array $graph ) {
+        $result = self::touch( $id, null === $name ? [] : [ 'post_title' => wp_slash( $name ) ] );
+        if ( is_wp_error( $result ) ) {
+            return $result;
+        }
+        if ( null !== $graph ) {
+            self::write_graph( $id, $graph );
+        }
+        return true;
     }
 
     /**
@@ -131,17 +131,52 @@ final class WorkflowRepository {
     }
 
     /**
-     * @param int        $id     Post id of an existing workflow.
-     * @param string     $status 'active' | 'inactive'.
-     * @param array|null $graph  New live graph in the same step (e.g. a draft kept on turning off).
+     * @param int $id Post id of an existing workflow.
      * @return true|\WP_Error
      */
-    public static function set_status( int $id, string $status, ?array $graph = null ) {
-        update_post_meta( $id, self::META_STATUS, $status );
-        if ( null !== $graph ) {
-            self::write_graph( $id, $graph );
+    public static function activate( int $id ) {
+        $result = self::touch( $id );
+        if ( is_wp_error( $result ) ) {
+            return $result;
         }
-        return self::touch( $id );
+        update_post_meta( $id, self::META_STATUS, 'active' );
+        return true;
+    }
+
+    /**
+     * Turns off. A draft becomes the live graph in the same step, so no edit is lost.
+     *
+     * @param int        $id    Post id of an existing workflow.
+     * @param array|null $draft The workflow's draft, if any.
+     * @return true|\WP_Error
+     */
+    public static function deactivate( int $id, ?array $draft ) {
+        $result = self::touch( $id );
+        if ( is_wp_error( $result ) ) {
+            return $result;
+        }
+        update_post_meta( $id, self::META_STATUS, 'inactive' );
+        if ( null !== $draft ) {
+            self::write_graph( $id, $draft );
+        }
+        self::save_draft( $id, null );
+        return true;
+    }
+
+    /**
+     * Draft → live graph; the draft is cleared.
+     *
+     * @param int   $id    Post id of an existing workflow.
+     * @param array $draft The workflow's draft.
+     * @return true|\WP_Error
+     */
+    public static function apply_draft( int $id, array $draft ) {
+        $result = self::update_live( $id, null, $draft );
+        if ( is_wp_error( $result ) ) {
+            return $result;
+        }
+        self::save_draft( $id, null );
+        return true;
     }
 
     /**
@@ -182,10 +217,14 @@ final class WorkflowRepository {
         return $post && WorkflowPostType::NAME === $post->post_type ? $post : null;
     }
 
-    private static function to_array( \WP_Post $post ): array {
+    /**
+     * @param \WP_Post $post       Workflow post.
+     * @param bool     $with_draft False skips reading the draft (`draft` is then always null).
+     */
+    private static function to_array( \WP_Post $post, bool $with_draft = true ): array {
         $graph         = self::decode_graph( (string) get_post_meta( $post->ID, self::META_GRAPH, true ) );
-        $draft         = get_post_meta( $post->ID, self::META_DRAFT_GRAPH, true );
-        $draft_updated = get_post_meta( $post->ID, self::META_DRAFT_UPDATED, true );
+        $draft         = $with_draft ? get_post_meta( $post->ID, self::META_DRAFT_GRAPH, true ) : '';
+        $draft_updated = $with_draft ? get_post_meta( $post->ID, self::META_DRAFT_UPDATED, true ) : '';
 
         return [
             'id'             => (string) $post->ID,
