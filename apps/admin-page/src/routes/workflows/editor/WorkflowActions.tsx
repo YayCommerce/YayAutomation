@@ -231,7 +231,7 @@ export function DeleteWorkflowDialog({
   );
 }
 
-interface ConfirmProps {
+export interface ConfirmProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onConfirm: () => void;
@@ -240,7 +240,7 @@ interface ConfirmProps {
 }
 
 /** Confirm with Cancel and one action; stays open while `pending`. */
-function ConfirmDialog({
+export function ConfirmDialog({
   title,
   description,
   confirmLabel,
@@ -342,7 +342,7 @@ export function TurnOffDialog(props: ConfirmProps) {
     <ConfirmDialog
       {...props}
       title={__('Turn off workflow', 'yay-automation')}
-      description={__('If you turn this workflow off, it stops running on new orders.', 'yay-automation')}
+      description={__('If you turn this workflow off, the runs in progress will be cancelled.', 'yay-automation')}
       confirmLabel={__('Turn off', 'yay-automation')}
       cancelLabel={__('Dismiss', 'yay-automation')}
     />
