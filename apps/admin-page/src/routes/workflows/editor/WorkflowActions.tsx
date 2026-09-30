@@ -3,7 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import type { Workflow } from '@yay-automation/types';
 import { ChevronDown, Pencil, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router';
-import { __, sprintf } from '@wordpress/i18n';
+import { __, _n, sprintf } from '@wordpress/i18n';
 
 import {
   AlertDialog,
@@ -182,22 +182,8 @@ export function DeleteWorkflowDialog({
     <AlertDialog open={!!workflow} onOpenChange={(open) => !open && !deleteMutation.isPending && onClose()}>
       <AlertDialogContent>
         {blocked ? (
-          <>
-            <AlertDialogHeader>
-              <AlertDialogTitle>{__('There was a problem deleting this workflow', 'yay-automation')}</AlertDialogTitle>
-              <AlertDialogDescription>
-                {/* The server's wording when it refused; the same text otherwise (no request was made). */}
-                {shown?.refusedMessage ??
-                  __(
-                    'Because this workflow is still turned on, it couldn’t be deleted. Turn it off and try again.',
-                    'yay-automation',
-                  )}
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>{__('Back', 'yay-automation')}</AlertDialogCancel>
-            </AlertDialogFooter>
-          </>
+          // The server's wording when it refused; the shared text otherwise (no request was made).
+          <DeleteBlockedContent message={shown?.refusedMessage ?? undefined} />
         ) : (
           <>
             <AlertDialogHeader>
@@ -337,15 +323,61 @@ export function DiscardChangesDialog(props: ConfirmProps) {
   );
 }
 
-export function TurnOffDialog(props: ConfirmProps) {
+/** One workflow (no `count`), or `count` of them from the list's bulk actions. */
+export function TurnOffDialog({ count, ...props }: ConfirmProps & { count?: number }) {
   return (
     <ConfirmDialog
       {...props}
-      title={__('Turn off workflow', 'yay-automation')}
-      description={__('If you turn this workflow off, the runs in progress will be cancelled.', 'yay-automation')}
+      title={
+        count === undefined
+          ? __('Turn off workflow', 'yay-automation')
+          : sprintf(
+              /* translators: %d: number of workflows */
+              _n('Turn off %d workflow', 'Turn off %d workflows', count, 'yay-automation'),
+              count,
+            )
+      }
+      description={
+        count === undefined || count === 1
+          ? __('If you turn this workflow off, the runs in progress will be cancelled.', 'yay-automation')
+          : __('If you turn these workflows off, the runs in progress will be cancelled.', 'yay-automation')
+      }
       confirmLabel={__('Turn off', 'yay-automation')}
       cancelLabel={__('Dismiss', 'yay-automation')}
     />
+  );
+}
+
+/**
+ * "Couldn't delete: still turned on" body with a single Back button, for inside an AlertDialog.
+ * `several`: the list's bulk delete. `message`: the server's own wording, when it refused.
+ */
+export function DeleteBlockedContent({ several = false, message }: { several?: boolean; message?: string }) {
+  return (
+    <>
+      <AlertDialogHeader>
+        <AlertDialogTitle>
+          {several
+            ? __('There was a problem deleting some workflows', 'yay-automation')
+            : __('There was a problem deleting this workflow', 'yay-automation')}
+        </AlertDialogTitle>
+        <AlertDialogDescription>
+          {message ??
+            (several
+              ? __(
+                  'Because one or more workflows are still turned on, they couldn’t be deleted. Turn them off and try again.',
+                  'yay-automation',
+                )
+              : __(
+                  'Because this workflow is still turned on, it couldn’t be deleted. Turn it off and try again.',
+                  'yay-automation',
+                ))}
+        </AlertDialogDescription>
+      </AlertDialogHeader>
+      <AlertDialogFooter>
+        <AlertDialogCancel>{__('Back', 'yay-automation')}</AlertDialogCancel>
+      </AlertDialogFooter>
+    </>
   );
 }
 

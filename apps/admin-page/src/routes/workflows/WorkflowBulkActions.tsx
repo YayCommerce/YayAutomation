@@ -3,67 +3,89 @@ import { useQueryClient } from '@tanstack/react-query';
 import type { Workflow } from '@yay-automation/types';
 import { __, _n, sprintf } from '@wordpress/i18n';
 
-import {
-  AlertDialog,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import { AlertDialog, AlertDialogContent } from '@/components/ui/alert-dialog';
 import { BulkActionBox } from '@/components/ui/bulk-actions';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { toast } from '@/components/ui/sonner';
-import { ApiError, deactivateWorkflow, deleteWorkflow, getWorkflow } from './editor/workflow.api';
-import { workflowKeys } from './editor/workflow.query';
-import { ConfirmDialog } from './editor/WorkflowActions';
+import { ApiError, getWorkflow } from './editor/workflow.api';
+import { useDeleteWorkflowMutation, useWorkflowActionMutation, workflowKeys } from './editor/workflow.query';
+import { ConfirmDialog, DeleteBlockedContent, TurnOffDialog } from './editor/WorkflowActions';
 
 type Dialog = 'turnOff' | 'delete' | 'deleteBlocked';
 
+const errorMessage = (reason: unknown) => (reason instanceof Error ? reason.message : String(reason));
+
 /**
  * Bulk actions bar for the workflows list (shown with 2+ selected): clear, "N selected", Delete, and
- * Turn off when any selected workflow is on. Requests go one per workflow through the single
- * endpoints, so the server's rules (e.g. no deleting an active workflow) still apply to each.
+ * Turn off when any selected workflow is on. Requests go one per workflow, in parallel, through the
+ * same mutations as the single actions, so the server's rules (e.g. no deleting an active workflow)
+ * and the cache updates stay the same.
+ *
+ * `onDone(keepIds)`: after an action, only the workflows it couldn't handle stay selected.
  */
-export function WorkflowBulkActions({ selected, onClear }: { selected: Workflow[]; onClear: () => void }) {
+export function WorkflowBulkActions({
+  selected,
+  onClear,
+  onDone,
+}: {
+  selected: Workflow[];
+  onClear: () => void;
+  onDone: (keepIds: string[]) => void;
+}) {
   const queryClient = useQueryClient();
+  const deactivate = useWorkflowActionMutation('deactivate');
+  const remove = useDeleteWorkflowMutation();
   const [dialog, setDialog] = useState<Dialog | null>(null);
+  // Fixed when a dialog opens: the list refreshes while it's still open (and closing), which would
+  // otherwise change its counts under the user.
+  const [targets, setTargets] = useState<Workflow[]>([]);
   const [pending, setPending] = useState(false);
   const active = selected.filter((workflow) => workflow.status === 'active');
 
+  const open = (next: Dialog, workflows: Workflow[]) => {
+    setTargets(workflows);
+    setDialog(next);
+  };
   const refresh = () => queryClient.invalidateQueries({ queryKey: workflowKeys.all });
 
   const turnOff = async () => {
     setPending(true);
-    let done = 0;
-    let failure: string | null = null;
-    for (const workflow of active) {
-      try {
-        await deactivateWorkflow(workflow.id);
-        done++;
-      } catch (error) {
-        failure = error instanceof Error ? error.message : String(error);
-      }
-    }
+    const results = await Promise.allSettled(targets.map((workflow) => deactivate.mutateAsync({ id: workflow.id })));
+    const failed = targets.filter((_, i) => results[i].status === 'rejected');
+    const done = targets.length - failed.length;
     await refresh();
     setPending(false);
     setDialog(null);
     if (done) {
       /* translators: %d: number of workflows */
       toast.success(sprintf(_n('%d workflow turned off', '%d workflows turned off', done, 'yay-automation'), done));
-      onClear();
     }
-    if (failure) toast.error(failure);
+    if (failed.length) {
+      const reason = results.find((result) => result.status === 'rejected')?.reason;
+      toast.error(
+        sprintf(
+          /* translators: %d: number of workflows */
+          _n(
+            '%d workflow couldn’t be turned off',
+            '%d workflows couldn’t be turned off',
+            failed.length,
+            'yay-automation',
+          ),
+          failed.length,
+        ),
+        { description: errorMessage(reason) },
+      );
+    }
+    onDone(failed.map((workflow) => workflow.id));
   };
 
-  const remove = async () => {
+  const deleteAll = async () => {
     setPending(true);
     // All or nothing: this list can be stale (a workflow turned on in another tab), so re-read every
     // selected workflow first and delete none if any is on. The server's 409 stays as the last guard.
     try {
-      const current = await Promise.all(selected.map((workflow) => getWorkflow(workflow.id)));
+      const current = await Promise.all(targets.map((workflow) => getWorkflow(workflow.id)));
       if (current.some((workflow) => workflow.status === 'active')) {
         await refresh();
         setPending(false);
@@ -73,37 +95,42 @@ export function WorkflowBulkActions({ selected, onClear }: { selected: Workflow[
     } catch (error) {
       setPending(false);
       setDialog(null);
-      toast.error(error instanceof Error ? error.message : String(error));
+      toast.error(errorMessage(error));
       return;
     }
 
-    let done = 0;
-    let refused = false;
-    let failure: string | null = null;
-    for (const workflow of selected) {
-      try {
-        await deleteWorkflow(workflow.id);
-        queryClient.removeQueries({ queryKey: workflowKeys.detail(workflow.id) });
-        done++;
-      } catch (error) {
-        // Turned on between the check above and this request: the server keeps it.
-        if (error instanceof ApiError && error.code === 'yay_automation_delete_active') refused = true;
-        else failure = error instanceof Error ? error.message : String(error);
-      }
-    }
+    const results = await Promise.allSettled(targets.map((workflow) => remove.mutateAsync(workflow.id)));
+    // Turned on between the check above and its delete: the server keeps it.
+    const refused = targets.filter((_, i) => {
+      const result = results[i];
+      return (
+        result.status === 'rejected' &&
+        result.reason instanceof ApiError &&
+        result.reason.code === 'yay_automation_delete_active'
+      );
+    });
+    const failed = targets.filter((_, i) => results[i].status === 'rejected' && !refused.includes(targets[i]));
+    const done = targets.length - refused.length - failed.length;
     await refresh();
     setPending(false);
+    setDialog(refused.length ? 'deleteBlocked' : null);
     if (done) {
       /* translators: %d: number of workflows */
       toast.success(sprintf(_n('%d workflow deleted', '%d workflows deleted', done, 'yay-automation'), done));
     }
-    if (failure) toast.error(failure);
-    if (refused) {
-      setDialog('deleteBlocked');
-    } else {
-      setDialog(null);
-      if (done) onClear();
+    if (failed.length) {
+      const index = targets.indexOf(failed[0]);
+      const result = results[index];
+      toast.error(
+        sprintf(
+          /* translators: %d: number of workflows */
+          _n('%d workflow couldn’t be deleted', '%d workflows couldn’t be deleted', failed.length, 'yay-automation'),
+          failed.length,
+        ),
+        { description: result.status === 'rejected' ? errorMessage(result.reason) : undefined },
+      );
     }
+    onDone([...refused, ...failed].map((workflow) => workflow.id));
   };
 
   return (
@@ -118,7 +145,7 @@ export function WorkflowBulkActions({ selected, onClear }: { selected: Workflow[
         </span>
         <Separator orientation="vertical" className="ml-2 h-5!" />
         {active.length > 0 && (
-          <Button variant="ghost" size="sm" onClick={() => setDialog('turnOff')}>
+          <Button variant="ghost" size="sm" onClick={() => open('turnOff', active)}>
             {__('Turn off', 'yay-automation')}
           </Button>
         )}
@@ -127,59 +154,36 @@ export function WorkflowBulkActions({ selected, onClear }: { selected: Workflow[
           size="sm"
           className="text-destructive hover:text-destructive"
           // Any selected workflow still on → explain instead of offering to delete.
-          onClick={() => setDialog(active.length ? 'deleteBlocked' : 'delete')}
+          onClick={() => open(active.length ? 'deleteBlocked' : 'delete', selected)}
         >
           {__('Delete', 'yay-automation')}
         </Button>
       </BulkActionBox>
 
-      <ConfirmDialog
+      <TurnOffDialog
         open={dialog === 'turnOff'}
-        onOpenChange={(open) => !open && setDialog(null)}
+        onOpenChange={(isOpen) => !isOpen && setDialog(null)}
         onConfirm={() => void turnOff()}
         pending={pending}
-        title={sprintf(
-          /* translators: %d: number of workflows */
-          _n('Turn off %d workflow', 'Turn off %d workflows', active.length, 'yay-automation'),
-          active.length,
-        )}
-        description={_n(
-          'If you turn this workflow off, the runs in progress will be cancelled.',
-          'If you turn these workflows off, the runs in progress will be cancelled.',
-          active.length,
-          'yay-automation',
-        )}
-        confirmLabel={__('Turn off', 'yay-automation')}
-        cancelLabel={__('Dismiss', 'yay-automation')}
+        count={targets.length}
       />
       <ConfirmDialog
         open={dialog === 'delete'}
-        onOpenChange={(open) => !open && setDialog(null)}
-        onConfirm={() => void remove()}
+        onOpenChange={(isOpen) => !isOpen && setDialog(null)}
+        onConfirm={() => void deleteAll()}
         pending={pending}
         title={sprintf(
           /* translators: %d: number of workflows */
-          _n('Delete %d workflow?', 'Delete %d workflows?', selected.length, 'yay-automation'),
-          selected.length,
+          _n('Delete %d workflow?', 'Delete %d workflows?', targets.length, 'yay-automation'),
+          targets.length,
         )}
         description={__('These workflows will be permanently deleted.', 'yay-automation')}
         confirmLabel={__('Delete', 'yay-automation')}
         destructive
       />
-      <AlertDialog open={dialog === 'deleteBlocked'} onOpenChange={(open) => !open && setDialog(null)}>
+      <AlertDialog open={dialog === 'deleteBlocked'} onOpenChange={(isOpen) => !isOpen && setDialog(null)}>
         <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{__('There was a problem deleting some workflows', 'yay-automation')}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {__(
-                'Because one or more workflows are still turned on, they couldn’t be deleted. Turn them off and try again.',
-                'yay-automation',
-              )}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{__('Back', 'yay-automation')}</AlertDialogCancel>
-          </AlertDialogFooter>
+          <DeleteBlockedContent several />
         </AlertDialogContent>
       </AlertDialog>
     </>

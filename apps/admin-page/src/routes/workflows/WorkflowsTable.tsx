@@ -79,8 +79,9 @@ export function WorkflowsTable({ workflows }: { workflows: Workflow[] }) {
     <Checkbox
       checked={allChecked ? true : someChecked ? 'indeterminate' : false}
       disabled={!inTab.length}
-      // The kit draws a check for "indeterminate" too; give it the checked colors so it reads as partly selected.
-      className="data-[state=indeterminate]:border-primary data-[state=indeterminate]:bg-primary data-[state=indeterminate]:text-primary-foreground"
+      // The kit draws a check for "indeterminate" too (YayUiKits follow-up); a lighter fill keeps "some
+      // selected" apart from "all selected".
+      className="data-[state=indeterminate]:border-primary data-[state=indeterminate]:bg-primary/40 data-[state=indeterminate]:text-primary-foreground"
       onCheckedChange={() => setSelectedIds(allChecked ? new Set() : new Set(inTab.map((workflow) => workflow.id)))}
       aria-label={__('Select all workflows', 'yay-automation')}
     />
@@ -121,12 +122,15 @@ export function WorkflowsTable({ workflows }: { workflows: Workflow[] }) {
                 key={workflow.id}
                 className="cursor-pointer"
                 // The whole row opens the Overview. The name link keeps keyboard and middle-click access;
-                // the link, checkbox and Delete button handle their own clicks.
+                // the link, the whole checkbox cell and the Delete button handle their own clicks.
                 onClick={(event) => {
-                  if (!(event.target as HTMLElement).closest('a, button')) navigate(`/workflows/${workflow.id}`);
+                  if (!(event.target as HTMLElement).closest('a, button, [data-row-select]')) {
+                    navigate(`/workflows/${workflow.id}`);
+                  }
                 }}
               >
-                <TableCell>
+                {/* A near miss on the checkbox mustn't open the Overview and lose the selection. */}
+                <TableCell data-row-select>
                   <Checkbox
                     checked={selectedIds.has(workflow.id)}
                     onCheckedChange={(checked) => toggle(workflow.id, checked === true)}
@@ -181,7 +185,11 @@ export function WorkflowsTable({ workflows }: { workflows: Workflow[] }) {
           (selected.length > 1 || inTab.length > PAGE_SIZE) && 'mt-4',
         )}
       >
-        <WorkflowBulkActions selected={selected} onClear={clearSelection} />
+        <WorkflowBulkActions
+          selected={selected}
+          onClear={clearSelection}
+          onDone={(keepIds) => setSelectedIds(new Set(keepIds))}
+        />
         {inTab.length > PAGE_SIZE && (
           <Pagination
             pageIndex={pageIndex}
