@@ -13,7 +13,7 @@ export function useCreateDraft() {
   // Hook-level callbacks, not `mutate(…, { onSuccess })`: those are skipped if the page unmounts
   // mid-request (e.g. Back on the preview), which would create a draft with no feedback.
   const saveMutation = useSaveWorkflowMutation({
-    onSaved: (workflow) => navigate(`/workflows/${workflow.id}`),
+    onSaved: (workflow) => navigate(`/workflows/${workflow.id}/edit`),
     onFailed: (error) => toast.error(error.message),
   });
 

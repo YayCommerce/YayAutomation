@@ -1,36 +1,44 @@
 import type { MouseEventHandler, ReactNode } from 'react';
-import { ArrowLeft } from 'lucide-react';
+import { Workflow, X } from 'lucide-react';
 import { Link } from 'react-router';
 import { __ } from '@wordpress/i18n';
 
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 
-export interface EditorBackProps {
-  backTo?: string;
-  backLabel?: string;
+export interface EditorCloseProps {
+  closeTo?: string;
+  closeLabel?: string;
   /** Runs before navigation. Call `preventDefault()` to handle it yourself (e.g. `navigate(-1)`). */
-  onBack?: MouseEventHandler<HTMLAnchorElement>;
+  onClose?: MouseEventHandler<HTMLAnchorElement>;
 }
 
-/** Full-height editor shell: toolbar row + canvas area. Shared by the editor and template preview. */
+/**
+ * Full-height editor shell: header row + canvas area. Shared by the editor and template preview.
+ * Header = app icon + `title` on the left, `actions` then × on the right.
+ */
 export function EditorLayout({
-  toolbar,
+  title,
+  actions,
   children,
-  backTo = '/workflows',
-  backLabel = __('Back to workflows', 'yay-automation'),
-  onBack,
-}: EditorBackProps & { toolbar: ReactNode; children: ReactNode }) {
+  closeTo = '/workflows',
+  closeLabel = __('Close', 'yay-automation'),
+  onClose,
+}: EditorCloseProps & { title: ReactNode; actions?: ReactNode; children: ReactNode }) {
   return (
     // Fill the viewport below the WP admin bar (32px) and plugin header (h-13.5).
     <div className="flex h-[calc(100vh-32px-3.375rem)] flex-col">
-      <div className="bg-background flex h-12 shrink-0 items-center gap-3 border-t px-4">
+      <div className="bg-background flex h-12 shrink-0 items-center gap-2 border-t px-4">
+        <span className="bg-primary/10 text-primary flex size-6 shrink-0 items-center justify-center rounded-md">
+          <Workflow className="size-3.5" aria-hidden />
+        </span>
+        <div className="flex min-w-0 flex-1 items-center gap-2">{title}</div>
+        {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
         <Button variant="ghost" size="icon-sm" asChild>
-          <Link to={backTo} aria-label={backLabel} onClick={onBack}>
-            <ArrowLeft />
+          <Link to={closeTo} aria-label={closeLabel} onClick={onClose}>
+            <X />
           </Link>
         </Button>
-        {toolbar}
       </div>
 
       <div className="min-h-0 flex-1 border-t">{children}</div>
@@ -39,9 +47,9 @@ export function EditorLayout({
 }
 
 /** Loading or error state for a page built on `EditorLayout`. */
-export function EditorPlaceholder({ error, ...backProps }: EditorBackProps & { error: Error | null }) {
+export function EditorPlaceholder({ error, ...closeProps }: EditorCloseProps & { error: Error | null }) {
   return (
-    <EditorLayout {...backProps} toolbar={!error && <Skeleton className="h-5 w-48" />}>
+    <EditorLayout {...closeProps} title={!error && <Skeleton className="h-5 w-48" />}>
       {error ? (
         <div className="text-muted-foreground flex size-full items-center justify-center">{error.message}</div>
       ) : (

@@ -66,74 +66,73 @@ export function WorkflowEditor({ workflow }: { workflow: WorkflowDraft }) {
     <WorkflowFormContext.Provider value={form}>
       <EditorContext.Provider value={editorState}>
         <EditorLayout
-          toolbar={
-            <>
-              <form.Field name="name">
-                {(field) => (
-                  <Input
-                    ref={nameInputRef}
-                    className="h-8 w-72 max-w-full font-medium"
-                    value={field.state.value}
-                    onChange={(event) => field.handleChange(event.target.value)}
-                    onBlur={field.handleBlur}
-                    aria-label={__('Workflow name', 'yay-automation')}
-                    aria-invalid={issues.some((issue) => issue.code === 'name_required')}
-                  />
-                )}
+          title={
+            <form.Field name="name">
+              {(field) => (
+                <Input
+                  ref={nameInputRef}
+                  className="h-8 w-72 max-w-full font-medium"
+                  value={field.state.value}
+                  onChange={(event) => field.handleChange(event.target.value)}
+                  onBlur={field.handleBlur}
+                  aria-label={__('Workflow name', 'yay-automation')}
+                  aria-invalid={issues.some((issue) => issue.code === 'name_required')}
+                />
+              )}
+            </form.Field>
+          }
+          actions={
+            <div className="flex items-center gap-4">
+              <form.Field name="status">
+                {(field) => {
+                  const active = field.state.value === 'active';
+                  // Turning on needs a workflow without issues. Turning off is always possible, and a
+                  // save that only turns it off goes through even with issues.
+                  const disabled = !active && issues.length > 0;
+                  return (
+                    <WithTooltip content={disabled && __('Fix the issues before activating.', 'yay-automation')}>
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          id="workflow-active"
+                          size="sm"
+                          checked={active}
+                          disabled={disabled}
+                          onCheckedChange={(checked) => field.handleChange(checked ? 'active' : 'inactive')}
+                        />
+                        <Label htmlFor="workflow-active" className="text-sm">
+                          {active ? __('Active', 'yay-automation') : __('Inactive', 'yay-automation')}
+                        </Label>
+                      </div>
+                    </WithTooltip>
+                  );
+                }}
               </form.Field>
 
-              <div className="ml-auto flex shrink-0 items-center gap-4">
-                <form.Field name="status">
-                  {(field) => {
-                    const active = field.state.value === 'active';
-                    // Turning on needs a workflow without issues. Turning off is always possible, and a
-                    // save that only turns it off goes through even with issues.
-                    const disabled = !active && issues.length > 0;
-                    return (
-                      <WithTooltip content={disabled && __('Fix the issues before activating.', 'yay-automation')}>
-                        <div className="flex items-center gap-2">
-                          <Switch
-                            id="workflow-active"
-                            size="sm"
-                            checked={active}
-                            disabled={disabled}
-                            onCheckedChange={(checked) => field.handleChange(checked ? 'active' : 'inactive')}
-                          />
-                          <Label htmlFor="workflow-active" className="text-sm">
-                            {active ? __('Active', 'yay-automation') : __('Inactive', 'yay-automation')}
-                          </Label>
-                        </div>
-                      </WithTooltip>
-                    );
-                  }}
-                </form.Field>
+              <IssuesPopover
+                issues={issues}
+                labelFor={(nodeId) => {
+                  const node = form.state.values.graph.nodes.find((n) => n.id === nodeId);
+                  return node ? blocks[node.data.block].label : '';
+                }}
+                onSelectNode={setOpenNodeId}
+                onSelectWorkflowIssue={(issue) => issue.code === 'name_required' && nameInputRef.current?.focus()}
+              />
 
-                <IssuesPopover
-                  issues={issues}
-                  labelFor={(nodeId) => {
-                    const node = form.state.values.graph.nodes.find((n) => n.id === nodeId);
-                    return node ? blocks[node.data.block].label : '';
-                  }}
-                  onSelectNode={setOpenNodeId}
-                  onSelectWorkflowIssue={(issue) => issue.code === 'name_required' && nameInputRef.current?.focus()}
-                />
-
-                {/* Subscribe re-renders only this button when dirty/submitting flip. */}
-                <form.Subscribe selector={(state) => [state.isDirty, state.isSubmitting] as const}>
-                  {([isDirty, isSubmitting]) => (
-                    <WithTooltip content={saveBlocked && __('Fix the issues before saving.', 'yay-automation')}>
-                      <Button
-                        size="sm"
-                        disabled={!isDirty || isSubmitting || saveBlocked}
-                        onClick={() => form.handleSubmit()}
-                      >
-                        {isSubmitting ? __('Saving…', 'yay-automation') : __('Save', 'yay-automation')}
-                      </Button>
-                    </WithTooltip>
-                  )}
-                </form.Subscribe>
-              </div>
-            </>
+              {/* Subscribe re-renders only this button when dirty/submitting flip. */}
+              <form.Subscribe selector={(state) => [state.isDirty, state.isSubmitting] as const}>
+                {([isDirty, isSubmitting]) => (
+                  <WithTooltip content={saveBlocked && __('Fix the issues before saving.', 'yay-automation')}>
+                    <Button
+                      size="sm"
+                      disabled={!isDirty || isSubmitting || saveBlocked}
+                      onClick={() => form.handleSubmit()}
+                    >
+                      {isSubmitting ? __('Saving…', 'yay-automation') : __('Save', 'yay-automation')}
+                    </Button>
+                  </WithTooltip>
+                )}
+              </form.Subscribe>
+            </div>
           }
         >
           <WorkflowCanvas onNodeClick={setOpenNodeId} />

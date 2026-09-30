@@ -1,16 +1,16 @@
-import type { WorkflowTemplate } from '@yay-automation/types';
-import { Info } from 'lucide-react';
-import { useLocation, useNavigate, useParams } from 'react-router';
+import { useState, type MouseEventHandler } from 'react';
+import type { WorkflowTemplate, WorkflowTemplateApp } from '@yay-automation/types';
+import { ChevronDown } from 'lucide-react';
+import { Link, useLocation, useNavigate, useParams } from 'react-router';
 import { __ } from '@wordpress/i18n';
 
+import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button, LoadingButton } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { blocks } from './blocks';
-import { EditorLayout, EditorPlaceholder, type EditorBackProps } from './editor/EditorLayout';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { EditorLayout, EditorPlaceholder, type EditorCloseProps } from './editor/EditorLayout';
 import { ReadOnlyCanvas } from './editor/ReadOnlyCanvas';
 import { useCreateDraft } from './editor/useCreateDraft';
-import { kindMeta } from './editor/WorkflowNodeCard';
 import { LIBRARY_PATH, readLibraryNavState } from './templates/library.nav';
 import { appMeta, TemplateAppIcon } from './templates/TemplateApps';
 import { findTemplate } from './templates/templates';
@@ -22,113 +22,98 @@ export default function TemplatePreviewPage() {
   const location = useLocation();
   const { createDraft, isCreating } = useCreateDraft();
 
-  // Back returns to the open library. Opened from a card → pop that entry; otherwise (bookmark, reload) → link.
-  const backProps: EditorBackProps = {
-    backTo: LIBRARY_PATH,
-    backLabel: __('Back to templates', 'yay-automation'),
-    onBack: (event) => {
-      if (readLibraryNavState(location.state).fromLibrary) {
-        event.preventDefault();
-        navigate(-1);
-      }
-    },
+  // × and "More templates" return to the open library. Opened from a card → pop that entry;
+  // otherwise (bookmark, reload) → link.
+  const toLibrary: MouseEventHandler<HTMLAnchorElement> = (event) => {
+    if (readLibraryNavState(location.state).fromLibrary) {
+      event.preventDefault();
+      navigate(-1);
+    }
+  };
+  const closeProps: EditorCloseProps = {
+    closeTo: LIBRARY_PATH,
+    closeLabel: __('Back to templates', 'yay-automation'),
+    onClose: toLibrary,
   };
 
   if (!template) {
-    return <EditorPlaceholder error={new Error(__('Template not found.', 'yay-automation'))} {...backProps} />;
+    return <EditorPlaceholder error={new Error(__('Template not found.', 'yay-automation'))} {...closeProps} />;
   }
 
   return (
     <EditorLayout
-      {...backProps}
-      toolbar={
+      {...closeProps}
+      title={
         <>
           <span className="truncate font-medium">{template.name}</span>
           <Badge variant="primary-soft">{__('Template', 'yay-automation')}</Badge>
-          <div className="ml-auto flex shrink-0 items-center gap-2">
-            {/* Below md the side panel is hidden; the same details open in a sheet instead. */}
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="outline" size="sm" className="md:hidden">
-                  <Info />
-                  {__('Details', 'yay-automation')}
-                </Button>
-              </SheetTrigger>
-              <SheetContent aria-describedby={undefined}>
-                <SheetHeader>
-                  <SheetTitle>{__('Template details', 'yay-automation')}</SheetTitle>
-                </SheetHeader>
-                <div className="min-h-0 flex-1 overflow-y-auto p-5">
-                  <TemplateDetails template={template} />
-                </div>
-              </SheetContent>
-            </Sheet>
-            <LoadingButton
-              size="sm"
-              loading={isCreating}
-              disabled={isCreating}
-              onClick={() => createDraft(template.name, template.graph)}
-            >
-              {__('Use template', 'yay-automation')}
-            </LoadingButton>
-          </div>
         </>
       }
+      actions={
+        <LoadingButton
+          size="sm"
+          loading={isCreating}
+          disabled={isCreating}
+          onClick={() => createDraft(template.name, template.graph)}
+        >
+          {__('Install', 'yay-automation')}
+        </LoadingButton>
+      }
     >
-      <div className="flex size-full">
-        <div className="min-w-0 flex-1">
-          <ReadOnlyCanvas key={template.id} graph={template.graph} />
-        </div>
-        <aside className="bg-background w-80 shrink-0 overflow-y-auto border-l p-5 max-md:hidden">
-          <TemplateDetails template={template} />
-        </aside>
+      <div className="relative size-full">
+        {/* The About panel covers the bottom-left corner, where the zoom controls usually sit. */}
+        <ReadOnlyCanvas key={template.id} graph={template.graph} controlsPosition="bottom-right" />
+
+        <Button variant="outline" size="sm" className="absolute top-4 right-4" asChild>
+          <Link to={LIBRARY_PATH} onClick={toLibrary}>
+            {__('More templates', 'yay-automation')}
+          </Link>
+        </Button>
+
+        <AboutTemplate template={template} className="absolute bottom-4 left-4" />
       </div>
     </EditorLayout>
   );
 }
 
-/** Details body. Rendered in the side panel (md+) and in the "Details" sheet (below md). */
-function TemplateDetails({ template }: { template: WorkflowTemplate }) {
+function AboutTemplate({ template, className }: { template: WorkflowTemplate; className?: string }) {
+  const [open, setOpen] = useState(true);
+
   return (
-    <div className="space-y-6">
-      <section>
-        <h2 className="font-semibold">{__('About this template', 'yay-automation')}</h2>
-        <p className="text-muted-foreground mt-2 text-sm">{template.description}</p>
-      </section>
-
-      <section>
-        <h3 className="text-muted-foreground text-xs font-medium uppercase">{__('Category', 'yay-automation')}</h3>
-        <Badge variant="secondary" className="mt-2">
-          {template.category}
-        </Badge>
-      </section>
-
-      <section>
-        <h3 className="text-muted-foreground text-xs font-medium uppercase">{__('Apps', 'yay-automation')}</h3>
-        <ul className="mt-2 space-y-2">
-          {template.apps.map((app) => (
-            <li key={app} className="flex items-center gap-2 text-sm">
-              <TemplateAppIcon app={app} />
-              {appMeta[app].label}
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <section>
-        <h3 className="text-muted-foreground text-xs font-medium uppercase">{__('Steps', 'yay-automation')}</h3>
-        <ol className="mt-2 space-y-2">
-          {template.graph.nodes.map((node) => {
-            const { label, icon: Icon } = kindMeta[node.kind];
-            return (
-              <li key={node.id} className="flex items-start gap-2 text-sm">
-                <Icon className="text-muted-foreground mt-0.5 size-4 shrink-0" aria-label={label} />
-                {blocks[node.data.block].summary(node.data.config)}
-              </li>
-            );
-          })}
-        </ol>
-      </section>
-    </div>
+    <Collapsible
+      open={open}
+      onOpenChange={setOpen}
+      className={cn('bg-card text-card-foreground w-96 max-w-[calc(100%-2rem)] rounded-lg border shadow-md', className)}
+    >
+      <CollapsibleTrigger className="flex w-full cursor-pointer items-center justify-between gap-2 px-4 py-3 text-sm font-semibold">
+        {__('About this template', 'yay-automation')}
+        <ChevronDown className={cn('size-4 transition-transform', open && 'rotate-180')} aria-hidden />
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        <div className="flex flex-col gap-4 px-4 pb-4">
+          <p className="text-muted-foreground text-sm">{template.description}</p>
+          <section>
+            <h3 className="text-sm font-semibold">{__('Apps used', 'yay-automation')}</h3>
+            <ul className="mt-2 space-y-2">
+              {template.apps.map((app) => (
+                <li key={app} className="flex items-center gap-2 rounded-md border px-3 py-2 text-sm">
+                  <TemplateAppIcon app={app} />
+                  <span className="min-w-0 flex-1 truncate font-medium">{appMeta[app].label}</span>
+                  <InstallState app={app} />
+                </li>
+              ))}
+            </ul>
+          </section>
+        </div>
+      </CollapsibleContent>
+    </Collapsible>
   );
+}
+
+/** WooCommerce is the only app that can be missing; the others ship with WordPress or this plugin. */
+function InstallState({ app }: { app: WorkflowTemplateApp }) {
+  if (app === 'woocommerce' && !window.yayAutomationMeta.wc.active) {
+    return <Badge variant="warning-soft">{__('Not installed', 'yay-automation')}</Badge>;
+  }
+  return <Badge variant="dimmed">{__('Installed', 'yay-automation')}</Badge>;
 }

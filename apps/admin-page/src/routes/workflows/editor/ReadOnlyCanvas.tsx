@@ -1,7 +1,7 @@
 import '@xyflow/react/dist/style.css';
 
 import { useMemo } from 'react';
-import { Background, Controls, ReactFlow } from '@xyflow/react';
+import { Background, Controls, ReactFlow, type PanelPosition } from '@xyflow/react';
 import type { WorkflowGraph } from '@yay-automation/types';
 
 import { useTheme } from '@/components/ui/theme-provider';
@@ -12,7 +12,14 @@ import { readOnlyNodeTypes } from './WorkflowNodeCard';
  * Same look as the editor canvas, but view-only: pan and zoom only. Uncontrolled (`default*` props)
  * since nothing is written back. Mount with a `key` if `graph` can change.
  */
-export function ReadOnlyCanvas({ graph }: { graph: WorkflowGraph }) {
+export function ReadOnlyCanvas({
+  graph,
+  controlsPosition,
+}: {
+  graph: WorkflowGraph;
+  /** Moves the zoom controls out of the way of overlays (e.g. the preview's About panel). */
+  controlsPosition?: PanelPosition;
+}) {
   const { theme } = useTheme();
   const nodes = useMemo(() => toFlowNodes(graph), [graph]);
   const edges = useMemo(() => toFlowEdges(graph), [graph]);
@@ -31,7 +38,7 @@ export function ReadOnlyCanvas({ graph }: { graph: WorkflowGraph }) {
       fitView
     >
       <Background />
-      <Controls showInteractive={false} />
+      <Controls showInteractive={false} position={controlsPosition} />
     </ReactFlow>
   );
 }
