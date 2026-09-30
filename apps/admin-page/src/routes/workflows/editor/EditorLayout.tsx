@@ -29,9 +29,7 @@ export function EditorLayout({
     // Fill the viewport below the WP admin bar (32px) and plugin header (h-13.5).
     <div className="flex h-[calc(100vh-32px-3.375rem)] flex-col">
       <div className="bg-background flex h-12 shrink-0 items-center gap-2 border-t px-4">
-        <span className="bg-primary/10 text-primary flex size-6 shrink-0 items-center justify-center rounded-md">
-          <Workflow className="size-3.5" aria-hidden />
-        </span>
+        <WorkflowAppIcon />
         <div className="flex min-w-0 flex-1 items-center gap-2">{title}</div>
         {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
         <Button variant="ghost" size="icon-sm" asChild>
@@ -43,6 +41,15 @@ export function EditorLayout({
 
       <div className="min-h-0 flex-1 border-t">{children}</div>
     </div>
+  );
+}
+
+/** Small app tile at the start of the editor and Overview headers. */
+export function WorkflowAppIcon() {
+  return (
+    <span className="bg-primary/10 text-primary flex size-6 shrink-0 items-center justify-center rounded-md">
+      <Workflow className="size-3.5" aria-hidden />
+    </span>
   );
 }
 

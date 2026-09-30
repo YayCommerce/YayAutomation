@@ -5,8 +5,8 @@ import { blocks } from './blocks';
 import { descendantsOf } from './editor/workflow.graph';
 
 /**
- * Everything that blocks saving. Same rules and codes as PHP `WorkflowValidator::errors()`, which
- * rejects the save with a 400 if any slip through.
+ * Everything that blocks turning a workflow on or applying its draft (saves allow them). Same rules
+ * and codes as PHP `WorkflowValidator::errors()`, which rejects activate / apply with a 400.
  */
 export function validateWorkflow({ name, graph }: Pick<WorkflowDraft, 'name' | 'graph'>): WorkflowIssue[] {
   const issues: WorkflowIssue[] = [];
@@ -82,32 +82,4 @@ export function createIssuesSelector() {
     last = { name: values.name, edges: values.graph.edges, data, issues };
     return issues;
   };
-}
-
-/**
- * True when the only change from the saved workflow is turning it off. Such a save is allowed even
- * with issues, so a workflow that became invalid can always be stopped. Same rule as PHP
- * `WorkflowValidator::only_deactivates()`.
- */
-export function onlyDeactivates(values: WorkflowDraft, saved: WorkflowDraft) {
-  return (
-    !!saved.id &&
-    saved.status === 'active' &&
-    values.status === 'inactive' &&
-    values.name === saved.name &&
-    sameValue(values.graph, saved.graph)
-  );
-}
-
-/** Deep equality for JSON-like data; key order doesn't matter (config objects get rebuilt by forms). */
-function sameValue(a: unknown, b: unknown): boolean {
-  if (a === b) return true;
-  if (typeof a !== 'object' || typeof b !== 'object' || a === null || b === null) return false;
-  if (Array.isArray(a) !== Array.isArray(b)) return false;
-  const aKeys = Object.keys(a).filter((key) => (a as Record<string, unknown>)[key] !== undefined);
-  const bKeys = Object.keys(b).filter((key) => (b as Record<string, unknown>)[key] !== undefined);
-  return (
-    aKeys.length === bKeys.length &&
-    aKeys.every((key) => sameValue((a as Record<string, unknown>)[key], (b as Record<string, unknown>)[key]))
-  );
 }

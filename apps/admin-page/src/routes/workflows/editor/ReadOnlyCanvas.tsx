@@ -1,6 +1,6 @@
 import '@xyflow/react/dist/style.css';
 
-import { useMemo } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import { Background, Controls, ReactFlow, type PanelPosition } from '@xyflow/react';
 import type { WorkflowGraph } from '@yay-automation/types';
 
@@ -15,10 +15,13 @@ import { readOnlyNodeTypes } from './WorkflowNodeCard';
 export function ReadOnlyCanvas({
   graph,
   controlsPosition,
+  controls,
 }: {
   graph: WorkflowGraph;
   /** Moves the zoom controls out of the way of overlays (e.g. the preview's About panel). */
   controlsPosition?: PanelPosition;
+  /** Extra `ControlButton`s after zoom and fit (e.g. the Overview's edit button). */
+  controls?: ReactNode;
 }) {
   const { theme } = useTheme();
   const nodes = useMemo(() => toFlowNodes(graph), [graph]);
@@ -38,7 +41,9 @@ export function ReadOnlyCanvas({
       fitView
     >
       <Background />
-      <Controls showInteractive={false} position={controlsPosition} />
+      <Controls showInteractive={false} position={controlsPosition}>
+        {controls}
+      </Controls>
     </ReactFlow>
   );
 }

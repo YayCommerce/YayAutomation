@@ -1,26 +1,16 @@
 import { useState } from 'react';
 import type { Workflow } from '@yay-automation/types';
 import { Trash2 } from 'lucide-react';
-import { Link } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import { __, sprintf } from '@wordpress/i18n';
 
 import { formatDateTime } from '@/lib/helpers/date.helper';
-import {
-  AlertDialog,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
-import { Button, LoadingButton } from '@/components/ui/button';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { toast } from '@/components/ui/sonner';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { blocks } from './blocks';
-import { useDeleteWorkflowMutation } from './editor/workflow.query';
+import { DeleteWorkflowDialog } from './editor/WorkflowActions';
 
 function triggerSummary(workflow: Workflow) {
   const trigger = workflow.graph.nodes.find((node) => node.kind === 'trigger');
@@ -44,18 +34,7 @@ function TableHeadRow() {
 
 export function WorkflowsTable({ workflows }: { workflows: Workflow[] }) {
   const [pendingDelete, setPendingDelete] = useState<Workflow | null>(null);
-  const deleteMutation = useDeleteWorkflowMutation();
-
-  const confirmDelete = () => {
-    if (!pendingDelete) return;
-    deleteMutation.mutate(pendingDelete.id, {
-      onSuccess: () => {
-        toast.success(__('Workflow deleted', 'yay-automation'));
-        setPendingDelete(null);
-      },
-      onError: (error) => toast.error(error.message),
-    });
-  };
+  const navigate = useNavigate();
 
   return (
     <>
@@ -65,18 +44,29 @@ export function WorkflowsTable({ workflows }: { workflows: Workflow[] }) {
         </TableHeader>
         <TableBody>
           {workflows.map((workflow) => (
-            <TableRow key={workflow.id}>
+            <TableRow
+              key={workflow.id}
+              className="cursor-pointer"
+              // The whole row opens the Overview. The name link keeps keyboard and middle-click access;
+              // the link and Delete button handle their own clicks.
+              onClick={(event) => {
+                if (!(event.target as HTMLElement).closest('a, button')) navigate(`/workflows/${workflow.id}`);
+              }}
+            >
               <TableCell>
                 <Link to={`/workflows/${workflow.id}`} className="hover:text-primary font-medium">
                   {workflow.name}
                 </Link>
               </TableCell>
               <TableCell>
-                {workflow.status === 'active' ? (
-                  <Badge variant="success-soft">{__('Active', 'yay-automation')}</Badge>
-                ) : (
-                  <Badge variant="secondary">{__('Inactive', 'yay-automation')}</Badge>
-                )}
+                <div className="flex items-center gap-1.5">
+                  {workflow.status === 'active' ? (
+                    <Badge variant="success-soft">{__('Active', 'yay-automation')}</Badge>
+                  ) : (
+                    <Badge variant="secondary">{__('Inactive', 'yay-automation')}</Badge>
+                  )}
+                  {workflow.draft && <Badge variant="warning-soft">{__('Unapplied changes', 'yay-automation')}</Badge>}
+                </div>
               </TableCell>
               <TableCell className="text-muted-foreground">{triggerSummary(workflow)}</TableCell>
               <TableCell className="text-muted-foreground">{formatDateTime(workflow.updatedAt)}</TableCell>
@@ -99,38 +89,7 @@ export function WorkflowsTable({ workflows }: { workflows: Workflow[] }) {
         </TableBody>
       </Table>
 
-      <AlertDialog
-        open={!!pendingDelete}
-        // Stays open while deleting, so a failure can be retried.
-        onOpenChange={(open) => !open && !deleteMutation.isPending && setPendingDelete(null)}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              {sprintf(
-                /* translators: %s: workflow name */
-                __('Delete “%s”?', 'yay-automation'),
-                pendingDelete?.name ?? '',
-              )}
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              {__('The workflow stops running right away. This can’t be undone.', 'yay-automation')}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleteMutation.isPending}>{__('Cancel', 'yay-automation')}</AlertDialogCancel>
-            {/* Not AlertDialogAction: that closes the dialog before the request finishes. */}
-            <LoadingButton
-              variant="destructive"
-              loading={deleteMutation.isPending}
-              disabled={deleteMutation.isPending}
-              onClick={confirmDelete}
-            >
-              {__('Delete', 'yay-automation')}
-            </LoadingButton>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DeleteWorkflowDialog workflow={pendingDelete} onClose={() => setPendingDelete(null)} />
     </>
   );
 }

@@ -7,80 +7,88 @@ use YayAutomation\Engine\Blocks\Core\BlockRegistry;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Turns REST input into a storable workflow. Rejects malformed input first, then anything
- * `errors()` reports, whether the workflow is active or not — except a save that only turns an
- * active workflow off.
+ * Turns REST input into storable workflow parts. Saves only reject malformed input (one trigger,
+ * known blocks, valid edges); issues from `errors()` are allowed there and only block turning a
+ * workflow on or applying a draft.
  * `errors()` mirrors `validateWorkflow()` in apps/admin-page/src/routes/workflows/validation.ts.
  */
 final class WorkflowValidator {
 
-    public const STATUSES = [ 'inactive', 'active' ];
-
     private const BRANCHES = [ 'then', 'otherwise' ];
 
     /**
-     * @param mixed      $input   Decoded JSON body: { name, status, graph }.
-     * @param array|null $current Stored workflow when updating, null when creating.
-     * @return array|\WP_Error [ 'name' => string, 'status' => string, 'graph' => array ]
+     * New workflow from the POST body. Always created inactive, whatever `status` says.
+     *
+     * @param mixed $input Decoded JSON body: { name, graph }.
+     * @return array|\WP_Error [ 'name' => string, 'graph' => array ]
      */
-    public static function prepare( $input, ?array $current = null ) {
+    public static function prepare_new( $input ) {
         if ( ! is_array( $input ) ) {
             return self::error( __( 'Invalid workflow.', 'yay-automation' ) );
         }
-
-        $name = sanitize_text_field( (string) ( $input['name'] ?? '' ) );
-
-        $status = $input['status'] ?? 'inactive';
-        if ( ! in_array( $status, self::STATUSES, true ) ) {
-            return self::error( __( 'Invalid workflow status.', 'yay-automation' ) );
-        }
-
         $graph = self::prepare_graph( $input['graph'] ?? null );
         if ( is_wp_error( $graph ) ) {
             return $graph;
         }
-
-        $workflow = [
-            'name'   => $name,
-            'status' => $status,
-            'graph'  => $graph,
+        return [
+            'name'  => self::prepare_name( $input['name'] ?? '' ),
+            'graph' => $graph,
         ];
-
-        $errors = self::errors( $workflow );
-        if ( $errors && ! self::only_deactivates( $workflow, $current ) ) {
-            return new \WP_Error(
-                'yay_automation_invalid_workflow',
-                /* translators: %d: number of issues */
-                sprintf( _n( 'Fix %d issue before saving.', 'Fix %d issues before saving.', count( $errors ), 'yay-automation' ), count( $errors ) ),
-                [
-                    'status' => 400,
-                    'errors' => $errors,
-                ]
-            );
-        }
-
-        return $workflow;
     }
 
     /**
-     * True when the save does nothing but turn an active workflow off. Allowed even with issues, so a
-     * workflow that became invalid (e.g. a status from a plugin that's gone) can always be stopped.
-     * Mirrors `onlyDeactivates()` in apps/admin-page/src/routes/workflows/validation.ts.
+     * Fields present in a PUT body. Absent keys stay absent; `status` is ignored (it changes only
+     * through activate / deactivate).
      *
-     * @param array      $workflow Prepared input.
-     * @param array|null $current  Stored workflow, null when creating.
+     * @param mixed $input Decoded JSON body: { name?, graph? }.
+     * @return array|\WP_Error [ 'name'? => string, 'graph'? => array ]
      */
-    private static function only_deactivates( array $workflow, ?array $current ): bool {
-        return $current
-            && 'active' === $current['status']
-            && 'inactive' === $workflow['status']
-            && $workflow['name'] === $current['name']
-            // Loose ==: same keys and values, key order doesn't matter.
-            && $workflow['graph'] == $current['graph']; // phpcs:ignore Universal.Operators.StrictComparisons.LooseEqual
+    public static function prepare_changes( $input ) {
+        if ( ! is_array( $input ) ) {
+            return self::error( __( 'Invalid workflow.', 'yay-automation' ) );
+        }
+        $changes = [];
+        if ( array_key_exists( 'name', $input ) ) {
+            $changes['name'] = self::prepare_name( $input['name'] );
+        }
+        if ( array_key_exists( 'graph', $input ) ) {
+            $graph = self::prepare_graph( $input['graph'] );
+            if ( is_wp_error( $graph ) ) {
+                return $graph;
+            }
+            $changes['graph'] = $graph;
+        }
+        return $changes;
     }
 
     /**
-     * Problems that block saving. Codes match the TS `validateWorkflow()`: name_required,
+     * 400 listing everything `errors()` found, for turning on or applying a draft.
+     *
+     * @param array[] $errors From `errors()`.
+     */
+    public static function issues_error( array $errors ): \WP_Error {
+        return new \WP_Error(
+            'yay_automation_invalid_workflow',
+            /* translators: %d: number of issues */
+            sprintf( _n( 'Fix %d issue first.', 'Fix %d issues first.', count( $errors ), 'yay-automation' ), count( $errors ) ),
+            [
+                'status' => 400,
+                'errors' => $errors,
+            ]
+        );
+    }
+
+    /**
+     * Empty is allowed here; `errors()` reports it as name_required.
+     *
+     * @param mixed $name Raw name.
+     */
+    private static function prepare_name( $name ): string {
+        return sanitize_text_field( is_scalar( $name ) ? (string) $name : '' );
+    }
+
+    /**
+     * Problems that block turning a workflow on or applying a draft. Codes match the TS `validateWorkflow()`: name_required,
      * no_action (on the trigger), unlinked (one issue, `nodeIds` = every step not reached from the
      * trigger), invalid_config (per node).
      *

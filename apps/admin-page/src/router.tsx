@@ -5,6 +5,7 @@ import SettingsPage from '@/routes/settings/SettingsPage';
 import TemplatePreviewPage from '@/routes/workflows/TemplatePreviewPage';
 import WorkflowEditorPage from '@/routes/workflows/WorkflowEditorPage';
 import WorkflowListPage from '@/routes/workflows/WorkflowListPage';
+import WorkflowOverviewPage from '@/routes/workflows/WorkflowOverviewPage';
 
 export const router = createHashRouter([
   {
@@ -33,7 +34,7 @@ export const router = createHashRouter([
           },
           {
             path: ':workflowId',
-            element: <WorkflowEditorPage />,
+            element: <WorkflowOverviewPage />,
           },
           {
             path: ':workflowId/edit',

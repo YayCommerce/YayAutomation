@@ -7,14 +7,21 @@ use YayAutomation\Engine\Blocks\Core\BlockRegistry;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Workflow CRUD over the private post type. Returned arrays match the TS `Workflow` type.
- * Input must already be prepared by `WorkflowValidator::prepare()`.
+ * Workflow storage over the private post type. Returned arrays match the TS `Workflow` type.
+ * Input must already be prepared by `WorkflowValidator`.
+ *
+ * - `_yay_automation_graph` is the live graph: the only one the runner reads.
+ * - `_yay_automation_draft_graph` holds unapplied edits of an active workflow.
+ * - `post_modified` ("Last updated") moves with the live graph, status and name only; draft saves
+ *   write meta alone, so they don't touch it.
  */
 final class WorkflowRepository {
 
-    private const META_STATUS  = '_yay_automation_status';
-    private const META_GRAPH   = '_yay_automation_graph';
-    private const META_TRIGGER = '_yay_automation_trigger';
+    private const META_STATUS        = '_yay_automation_status';
+    private const META_GRAPH         = '_yay_automation_graph';
+    private const META_TRIGGER       = '_yay_automation_trigger';
+    private const META_DRAFT_GRAPH   = '_yay_automation_draft_graph';
+    private const META_DRAFT_UPDATED = '_yay_automation_draft_updated';
 
     public static function all(): array {
         $posts = get_posts(
@@ -62,47 +69,79 @@ final class WorkflowRepository {
     }
 
     /**
-     * @param array $workflow Prepared workflow.
+     * New inactive workflow.
+     *
+     * @param string $name  Prepared name.
+     * @param array  $graph Prepared graph.
      * @return array|\WP_Error
      */
-    public static function create( array $workflow ) {
+    public static function create( string $name, array $graph ) {
         $id = wp_insert_post(
             [
                 'post_type'   => WorkflowPostType::NAME,
                 'post_status' => 'publish',
                 // wp_insert_post() unslashes its input.
-                'post_title'  => wp_slash( $workflow['name'] ),
+                'post_title'  => wp_slash( $name ),
             ],
             true
         );
         if ( is_wp_error( $id ) ) {
             return $id;
         }
-        self::save_meta( $id, $workflow );
+        update_post_meta( $id, self::META_STATUS, 'inactive' );
+        self::write_graph( $id, $graph );
         return self::find( $id );
     }
 
     /**
-     * @param int   $id       Post id.
-     * @param array $workflow Prepared workflow.
-     * @return array|\WP_Error|null Null when the workflow doesn't exist.
+     * @param int    $id   Post id of an existing workflow.
+     * @param string $name Prepared name.
+     * @return true|\WP_Error
      */
-    public static function update( int $id, array $workflow ) {
-        if ( ! self::get_post( $id ) ) {
-            return null;
+    public static function rename( int $id, string $name ) {
+        return self::touch( $id, [ 'post_title' => wp_slash( $name ) ] );
+    }
+
+    /**
+     * Replaces the live graph.
+     *
+     * @param int   $id    Post id of an existing workflow.
+     * @param array $graph Prepared graph.
+     * @return true|\WP_Error
+     */
+    public static function save_graph( int $id, array $graph ) {
+        self::write_graph( $id, $graph );
+        return self::touch( $id );
+    }
+
+    /**
+     * Sets or (null) clears the draft. Meta only: the live workflow and `post_modified` are untouched.
+     *
+     * @param int        $id    Post id of an existing workflow.
+     * @param array|null $graph Prepared graph, or null to clear.
+     */
+    public static function save_draft( int $id, ?array $graph ): void {
+        if ( null === $graph ) {
+            delete_post_meta( $id, self::META_DRAFT_GRAPH );
+            delete_post_meta( $id, self::META_DRAFT_UPDATED );
+            return;
         }
-        $result = wp_update_post(
-            [
-                'ID'         => $id,
-                'post_title' => wp_slash( $workflow['name'] ),
-            ],
-            true
-        );
-        if ( is_wp_error( $result ) ) {
-            return $result;
+        update_post_meta( $id, self::META_DRAFT_GRAPH, wp_slash( wp_json_encode( $graph ) ) );
+        update_post_meta( $id, self::META_DRAFT_UPDATED, gmdate( 'c' ) );
+    }
+
+    /**
+     * @param int        $id     Post id of an existing workflow.
+     * @param string     $status 'active' | 'inactive'.
+     * @param array|null $graph  New live graph in the same step (e.g. a draft kept on turning off).
+     * @return true|\WP_Error
+     */
+    public static function set_status( int $id, string $status, ?array $graph = null ) {
+        update_post_meta( $id, self::META_STATUS, $status );
+        if ( null !== $graph ) {
+            self::write_graph( $id, $graph );
         }
-        self::save_meta( $id, $workflow );
-        return self::find( $id );
+        return self::touch( $id );
     }
 
     /**
@@ -114,18 +153,28 @@ final class WorkflowRepository {
         return self::get_post( $id ) && wp_delete_post( $id, true );
     }
 
-    private static function save_meta( int $id, array $workflow ) {
+    private static function write_graph( int $id, array $graph ): void {
         $trigger = '';
-        foreach ( $workflow['graph']['nodes'] as $node ) {
+        foreach ( $graph['nodes'] as $node ) {
             if ( Block::KIND_TRIGGER === $node['kind'] ) {
                 $trigger = $node['data']['block'];
             }
         }
-
-        update_post_meta( $id, self::META_STATUS, $workflow['status'] );
         update_post_meta( $id, self::META_TRIGGER, $trigger );
         // update_post_meta() unslashes, which would eat the backslashes in JSON escapes.
-        update_post_meta( $id, self::META_GRAPH, wp_slash( wp_json_encode( $workflow['graph'] ) ) );
+        update_post_meta( $id, self::META_GRAPH, wp_slash( wp_json_encode( $graph ) ) );
+    }
+
+    /**
+     * Updates the post, which also moves `post_modified` to now.
+     *
+     * @param int   $id     Post id.
+     * @param array $fields Extra post fields, slashed.
+     * @return true|\WP_Error
+     */
+    private static function touch( int $id, array $fields = [] ) {
+        $result = wp_update_post( [ 'ID' => $id ] + $fields, true );
+        return is_wp_error( $result ) ? $result : true;
     }
 
     private static function get_post( int $id ): ?\WP_Post {
@@ -134,9 +183,25 @@ final class WorkflowRepository {
     }
 
     private static function to_array( \WP_Post $post ): array {
-        $graph = json_decode( (string) get_post_meta( $post->ID, self::META_GRAPH, true ), true );
+        $graph         = self::decode_graph( (string) get_post_meta( $post->ID, self::META_GRAPH, true ) );
+        $draft         = get_post_meta( $post->ID, self::META_DRAFT_GRAPH, true );
+        $draft_updated = get_post_meta( $post->ID, self::META_DRAFT_UPDATED, true );
+
+        return [
+            'id'             => (string) $post->ID,
+            'name'           => $post->post_title,
+            'status'         => 'active' === get_post_meta( $post->ID, self::META_STATUS, true ) ? 'active' : 'inactive',
+            'graph'          => $graph,
+            'draft'          => $draft ? self::decode_graph( (string) $draft ) : null,
+            'updatedAt'      => get_post_modified_time( 'c', true, $post ),
+            'draftUpdatedAt' => $draft_updated ? $draft_updated : null,
+        ];
+    }
+
+    private static function decode_graph( string $json ): array {
+        $graph = json_decode( $json, true );
         if ( ! is_array( $graph ) || ! is_array( $graph['nodes'] ?? null ) || ! is_array( $graph['edges'] ?? null ) ) {
-            $graph = [
+            return [
                 'nodes' => [],
                 'edges' => [],
             ];
@@ -150,13 +215,6 @@ final class WorkflowRepository {
             }
         }
         unset( $node );
-
-        return [
-            'id'        => (string) $post->ID,
-            'name'      => $post->post_title,
-            'status'    => 'active' === get_post_meta( $post->ID, self::META_STATUS, true ) ? 'active' : 'inactive',
-            'graph'     => $graph,
-            'updatedAt' => get_post_modified_time( 'c', true, $post ),
-        ];
+        return $graph;
     }
 }

@@ -4,7 +4,7 @@ import { __ } from '@wordpress/i18n';
 import { BRANCH_OFFSET, ROW_GAP } from '../editor/workflow.graph';
 
 /**
- * The template library. Static: "Use template" creates an inactive draft from a copy of the graph, so nothing
+ * The template library. Static: Install creates an inactive draft from a copy of the graph, so nothing
  * here touches the server.
  */
 export const templates: WorkflowTemplate[] = [

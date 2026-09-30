@@ -1,24 +1,31 @@
 import { createContext, useContext } from 'react';
 import { useForm } from '@tanstack/react-form';
-import type { WorkflowDraft } from '@yay-automation/types';
+import type { Workflow } from '@yay-automation/types';
 import { __ } from '@wordpress/i18n';
 
 import { toast } from '@/components/ui/sonner';
 import { ApiError, toDraft } from './workflow.api';
-import { useSaveWorkflowMutation } from './workflow.query';
+import { useUpdateWorkflowMutation, useWorkflowActionMutation } from './workflow.query';
 
 /**
  * The editable draft. Query holds what's saved; the form holds what's being changed,
  * and gives us dirty tracking + submit for free.
  */
-export function useWorkflowForm(workflow: WorkflowDraft) {
-  const saveMutation = useSaveWorkflowMutation();
+export function useWorkflowForm(workflow: Workflow) {
+  const updateMutation = useUpdateWorkflowMutation();
+  const activateMutation = useWorkflowActionMutation('activate');
+  const deactivateMutation = useWorkflowActionMutation('deactivate');
 
   return useForm({
-    defaultValues: workflow,
+    defaultValues: toDraft(workflow),
     onSubmit: async ({ value, formApi }) => {
       try {
-        const saved = await saveMutation.mutateAsync(value);
+        const { id } = workflow;
+        let saved = await updateMutation.mutateAsync({ id, name: value.name, graph: value.graph });
+        // Status only changes through its own endpoints; turning on is rejected while there are issues.
+        if (value.status !== saved.status) {
+          saved = await (value.status === 'active' ? activateMutation : deactivateMutation).mutateAsync({ id });
+        }
         // Saved values become the new defaults, so the form is clean again. Skipped if the user
         // kept editing during the request (values changed identity), so those edits stay dirty.
         if (formApi.state.values === value) {

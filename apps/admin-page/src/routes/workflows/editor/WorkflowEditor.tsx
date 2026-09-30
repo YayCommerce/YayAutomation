@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState, type ReactNode } from 'react';
 import { useStore } from '@tanstack/react-form';
-import type { WorkflowDraft } from '@yay-automation/types';
+import type { Workflow } from '@yay-automation/types';
 import { __ } from '@wordpress/i18n';
 
 import { useBeforeUnloadWarning } from '@/hooks/useBeforeUnloadWarning';
@@ -20,7 +20,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { blocks } from '../blocks';
-import { createIssuesSelector, onlyDeactivates, sameIssues } from '../validation';
+import { createIssuesSelector, sameIssues } from '../validation';
 import { EditorContext, type EditorState } from './editor.context';
 import { EditorLayout } from './EditorLayout';
 import { IssuesPopover } from './IssuesPopover';
@@ -30,7 +30,7 @@ import { removeNode } from './workflow.graph';
 import { WorkflowCanvas } from './WorkflowCanvas';
 
 /** Owns the form for one saved workflow. Mount with `key={workflow.id}` so switching starts fresh. */
-export function WorkflowEditor({ workflow }: { workflow: WorkflowDraft }) {
+export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
   const form = useWorkflowForm(workflow);
   const [openNodeId, setOpenNodeId] = useState<string | null>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
@@ -39,12 +39,9 @@ export function WorkflowEditor({ workflow }: { workflow: WorkflowDraft }) {
   // Reused across drag frames and compared by content, so the toolbar re-renders only when issues change.
   const [selectIssues] = useState(createIssuesSelector);
   const issues = useStore(form.store, (state) => selectIssues(state.values), sameIssues);
-  // Turning an active workflow off, and nothing else, is allowed even with issues (server agrees).
-  const deactivateOnly = useStore(
-    form.store,
-    (state) => !!form.options.defaultValues && onlyDeactivates(state.values, form.options.defaultValues),
-  );
-  const saveBlocked = issues.length > 0 && !deactivateOnly;
+  // Drafts save with issues; turning on (or saving while on) needs none.
+  const isActive = useStore(form.store, (state) => state.values.status === 'active');
+  const saveBlocked = issues.length > 0 && isActive;
 
   const editorState = useMemo<EditorState>(
     () => ({

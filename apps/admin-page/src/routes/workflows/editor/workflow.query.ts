@@ -1,7 +1,18 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { Workflow } from '@yay-automation/types';
+import type { Workflow, WorkflowDraft } from '@yay-automation/types';
 
-import { ApiError, deleteWorkflow, getWorkflow, listWorkflows, saveWorkflow } from './workflow.api';
+import {
+  activateWorkflow,
+  ApiError,
+  applyDraft,
+  createWorkflow,
+  deactivateWorkflow,
+  deleteWorkflow,
+  discardDraft,
+  getWorkflow,
+  listWorkflows,
+  updateWorkflow,
+} from './workflow.api';
 
 export const workflowKeys = {
   all: ['workflows'] as const,
@@ -31,21 +42,26 @@ export function useWorkflowQuery(id: string) {
   });
 }
 
+interface MutationCallbacks {
+  onSaved?: (saved: Workflow) => void;
+  onFailed?: (error: Error) => void;
+}
+
 /**
- * Creates (no `id` yet) or updates. `onSaved` / `onFailed` run even if the calling component has
- * unmounted, unlike callbacks passed to `mutate()`.
+ * Any request that returns the updated workflow. Seeds the detail cache with the result and refreshes
+ * the list. `onSaved` / `onFailed` run even if the calling component has unmounted, unlike callbacks
+ * passed to `mutate()`.
  */
-export function useSaveWorkflowMutation({
-  onSaved,
-  onFailed,
-}: { onSaved?: (saved: Workflow) => void; onFailed?: (error: Error) => void } = {}) {
+function useWorkflowMutation<V extends { id?: string }>(
+  mutationFn: (variables: V) => Promise<Workflow>,
+  { onSaved, onFailed }: MutationCallbacks = {},
+) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: saveWorkflow,
+    mutationFn,
     // Stop an in-flight refetch from landing after the save and overwriting it with older data.
-    onMutate: (draft) =>
-      draft.id ? queryClient.cancelQueries({ queryKey: workflowKeys.detail(draft.id) }) : undefined,
+    onMutate: ({ id }) => (id ? queryClient.cancelQueries({ queryKey: workflowKeys.detail(id) }) : undefined),
     onSuccess: (saved) => {
       // Seeds the editor (right after a draft is created, and when re-opened) without a refetch.
       queryClient.setQueryData(workflowKeys.detail(saved.id), saved);
@@ -56,6 +72,29 @@ export function useSaveWorkflowMutation({
     onError: (error) => onFailed?.(error),
   });
 }
+
+type CreateVariables = Pick<WorkflowDraft, 'name' | 'graph'> & { id?: never };
+
+export const useCreateWorkflowMutation = (callbacks?: MutationCallbacks) =>
+  useWorkflowMutation<CreateVariables>(createWorkflow, callbacks);
+
+export const useUpdateWorkflowMutation = (callbacks?: MutationCallbacks) =>
+  useWorkflowMutation(
+    ({ id, ...changes }: { id: string } & Partial<Pick<WorkflowDraft, 'name' | 'graph'>>) =>
+      updateWorkflow(id, changes),
+    callbacks,
+  );
+
+const workflowActions = {
+  activate: activateWorkflow,
+  deactivate: deactivateWorkflow,
+  apply: applyDraft,
+  discard: discardDraft,
+};
+
+/** Turn on / off, apply or discard the draft. Activate and apply reject with `ApiError.issues`. */
+export const useWorkflowActionMutation = (action: keyof typeof workflowActions, callbacks?: MutationCallbacks) =>
+  useWorkflowMutation(({ id }: { id: string }) => workflowActions[action](id), callbacks);
 
 export function useDeleteWorkflowMutation() {
   const queryClient = useQueryClient();

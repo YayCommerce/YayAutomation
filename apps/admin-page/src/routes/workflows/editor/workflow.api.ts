@@ -40,8 +40,16 @@ async function request<T>(response: ResponsePromise): Promise<T> {
   }
 }
 
-/** The editable fields of a workflow. Used for the form's values and as the request body. */
-export const toDraft = ({ id, name, status, graph }: WorkflowDraft): WorkflowDraft => ({ id, name, status, graph });
+/**
+ * The editable fields of a workflow, used for the form's values. An active workflow's edits live in
+ * its draft, so that's what gets edited when there is one.
+ */
+export const toDraft = ({ id, name, status, graph, draft }: Workflow): WorkflowDraft => ({
+  id,
+  name,
+  status,
+  graph: draft ?? graph,
+});
 
 export const listWorkflows = () => request<Workflow[]>(api.get('workflows'));
 
@@ -54,12 +62,26 @@ export const getWorkflow = (id: string) =>
     ? request<Workflow>(api.get(`workflows/${id}`))
     : Promise.reject(new ApiError(__('Workflow not found.', 'yay-automation'), 404));
 
-/** Creates when there's no `id` (a new draft), updates otherwise. */
-export const saveWorkflow = (draft: WorkflowDraft) =>
-  request<Workflow>(
-    draft.id
-      ? api.put(`workflows/${draft.id}`, { json: toDraft(draft) })
-      : api.post('workflows', { json: toDraft(draft) }),
-  );
+/** New inactive workflow. Issues are allowed. */
+export const createWorkflow = ({ name, graph }: Pick<WorkflowDraft, 'name' | 'graph'>) =>
+  request<Workflow>(api.post('workflows', { json: { name, graph } }));
+
+/**
+ * Saves the name and/or graph; issues are allowed. The server puts the graph into the live workflow
+ * when inactive, or into the draft when active.
+ */
+export const updateWorkflow = (id: string, changes: Partial<Pick<WorkflowDraft, 'name' | 'graph'>>) =>
+  request<Workflow>(api.put(`workflows/${id}`, { json: changes }));
+
+/** 400 with `issues` when the workflow has any. */
+export const activateWorkflow = (id: string) => request<Workflow>(api.post(`workflows/${id}/activate`));
+
+/** Always allowed. A draft, if any, becomes the workflow's content. */
+export const deactivateWorkflow = (id: string) => request<Workflow>(api.post(`workflows/${id}/deactivate`));
+
+/** Draft → live. 400 with `issues` when the draft has any; 409 without a draft. */
+export const applyDraft = (id: string) => request<Workflow>(api.post(`workflows/${id}/apply`));
+
+export const discardDraft = (id: string) => request<Workflow>(api.delete(`workflows/${id}/draft`));
 
 export const deleteWorkflow = (id: string) => request<{ deleted: boolean }>(api.delete(`workflows/${id}`));
