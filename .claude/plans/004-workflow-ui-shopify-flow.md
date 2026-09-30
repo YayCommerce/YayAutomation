@@ -115,6 +115,30 @@ Template → Install → edit → Turn on / Apply looks and behaves like Shopify
    - Leave guard only while a save is pending or failed.
    - `/wcheck` screenshots next to Images 9–18, light and dark. `pnpm build`, `php -l`, PHPCS pass.
 
+4. Delete guard, Turn off confirm, Inactive state — Risk: 2
+   - **Visual references** (behavior follows this plan; visuals follow the images, built with YayUiKits components and theme tokens):
+     - `.claude/references/19-shopify-delete-active-blocked.png` — delete blocked on an active workflow.
+     - `.claude/references/20-yay-delete-active-current.png` — current (wrong) behaviour: the delete confirm on an active workflow.
+     - `.claude/references/21-shopify-turn-off-confirm.png` — Turn off confirm.
+     - `.claude/references/22-shopify-overview-inactive.png` — Overview of a workflow that was turned on before and is now off.
+   - **Active workflows can't be deleted:**
+     - Delete (editor, Overview, list) on an active workflow shows an alert instead of the delete confirm: title "There was a problem deleting this workflow", text "Because this workflow is still turned on, it couldn't be deleted. Turn it off and try again.", one "Back" button.
+     - Server: `DELETE /workflows/:id` on an active workflow → 409 with that message, inside the per-workflow lock.
+   - **Turn off asks first** (editor and Overview): title "Turn off workflow", text "If you turn this workflow off, it stops running on new orders.", buttons "Dismiss" and "Turn off".
+   - **Draft vs Inactive:**
+     - `_yay_automation_activated_at` meta, set on the first activate. Workflows active before this checkpoint count as activated; deactivate also sets it when missing.
+     - `Workflow` gains `activatedAt: string | null`.
+     - Badges (Overview, editor, list): Active / Inactive (turned on before, now off) / Draft (never turned on).
+     - Overview tabs: never turned on → "Draft"; Inactive → "Saved workflow"; Active → "Active workflow" plus "Draft" with unapplied changes (unchanged).
+     - Editor header for an Inactive workflow: Inactive badge, More actions, Turn on workflow, ×.
+   - Test:
+     - Delete an active workflow from the editor, Overview and list → alert, nothing deleted. `DELETE` via `fetch` → 409.
+     - Turn off → confirm → Dismiss keeps it active; Turn off makes it Inactive.
+     - Overview after turning off: Inactive badge and "Saved workflow" tab. A freshly installed workflow still shows Draft. Turn on again → Active.
+     - An Inactive workflow can be deleted.
+     - Legacy fixture #1546 shows the right badge (Draft: never turned on).
+     - `/wcheck` next to Images 19, 21, 22. `pnpm build`, `php -l`, PHPCS pass.
+
 ## Out of Scope
 
 "Test your workflow / Select test event", Sidekick, Library dialog unchanged (keeps its existing search and sort); Apps/Categories filters, Add note / Export / Duplicate / Manage tags, "Version history" tab and the "…" menu, versioning beyond one live graph + one draft, new blocks or templates, Create workflow (stays "Coming soon").
