@@ -34,8 +34,11 @@ import { Label } from '@/components/ui/label';
 import { toast } from '@/components/ui/sonner';
 import { useDeleteWorkflowMutation, useUpdateWorkflowMutation } from './workflow.query';
 
-/** "More actions" menu: Rename and Delete. Delete returns to the list. Shared by the Overview and editor. */
-export function MoreActionsMenu({ workflow }: { workflow: Workflow }) {
+/**
+ * "More actions" menu: Rename and Delete. Delete returns to the list, after `onDeleted` (e.g. the
+ * editor stopping autosave). Shared by the Overview and editor.
+ */
+export function MoreActionsMenu({ workflow, onDeleted }: { workflow: Workflow; onDeleted?: () => void }) {
   const navigate = useNavigate();
   const [dialog, setDialog] = useState<'rename' | 'delete' | null>(null);
 
@@ -66,7 +69,10 @@ export function MoreActionsMenu({ workflow }: { workflow: Workflow }) {
       <DeleteWorkflowDialog
         workflow={dialog === 'delete' ? workflow : null}
         onClose={() => setDialog(null)}
-        onDeleted={() => navigate('/workflows')}
+        onDeleted={() => {
+          onDeleted?.();
+          navigate('/workflows');
+        }}
       />
     </>
   );
@@ -180,26 +186,31 @@ export function DeleteWorkflowDialog({
   );
 }
 
-/** "Ready to turn on…?" confirm. `onConfirm` runs the activation; the dialog stays open while `pending`. */
-export function TurnOnDialog({
+interface ConfirmProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onConfirm: () => void;
+  /** Keeps the dialog open, buttons disabled, while the action runs. */
+  pending: boolean;
+}
+
+/** Confirm with Cancel and one action; stays open while `pending`. */
+function ConfirmDialog({
+  title,
+  description,
+  confirmLabel,
+  destructive,
   open,
   onOpenChange,
   onConfirm,
   pending,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onConfirm: () => void;
-  pending: boolean;
-}) {
+}: ConfirmProps & { title: string; description: string; confirmLabel: string; destructive?: boolean }) {
   return (
     <Dialog open={open} onOpenChange={(next) => !pending && onOpenChange(next)}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{__('Ready to turn on your automation workflow?', 'yay-automation')}</DialogTitle>
-          <DialogDescription>
-            {__('Turning on the workflow will activate the automation.', 'yay-automation')}
-          </DialogDescription>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
         <DialogFooter>
           <DialogClose asChild>
@@ -207,11 +218,56 @@ export function TurnOnDialog({
               {__('Cancel', 'yay-automation')}
             </Button>
           </DialogClose>
-          <LoadingButton loading={pending} disabled={pending} onClick={onConfirm}>
-            {__('Turn on', 'yay-automation')}
+          <LoadingButton
+            variant={destructive ? 'destructive' : 'primary'}
+            loading={pending}
+            disabled={pending}
+            onClick={onConfirm}
+          >
+            {confirmLabel}
           </LoadingButton>
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+export function TurnOnDialog(props: ConfirmProps) {
+  return (
+    <ConfirmDialog
+      {...props}
+      title={__('Ready to turn on your automation workflow?', 'yay-automation')}
+      description={__('Turning on the workflow will activate the automation.', 'yay-automation')}
+      confirmLabel={__('Turn on', 'yay-automation')}
+    />
+  );
+}
+
+export function ApplyChangesDialog(props: ConfirmProps) {
+  return (
+    <ConfirmDialog
+      {...props}
+      title={__('Apply changes?', 'yay-automation')}
+      description={__(
+        'This workflow is turned on. Once you apply changes, they’ll take effect immediately.',
+        'yay-automation',
+      )}
+      confirmLabel={__('Apply changes', 'yay-automation')}
+    />
+  );
+}
+
+export function DiscardChangesDialog(props: ConfirmProps) {
+  return (
+    <ConfirmDialog
+      {...props}
+      title={__('Discard changes?', 'yay-automation')}
+      description={__(
+        'Your unapplied changes will be deleted. The workflow keeps running as it is now.',
+        'yay-automation',
+      )}
+      confirmLabel={__('Discard changes', 'yay-automation')}
+      destructive
+    />
   );
 }

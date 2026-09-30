@@ -2,7 +2,7 @@ import type { MouseEvent, ReactNode } from 'react';
 import { useStore } from '@tanstack/react-form';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import type { WorkflowBranch, WorkflowNodeData, WorkflowNodeKind } from '@yay-automation/types';
-import { CircleAlert, GitBranch, Play, Plus, Trash2, Zap, type LucideIcon } from 'lucide-react';
+import { CircleAlert, GitBranch, Info, Play, Plus, Trash2, Zap, type LucideIcon } from 'lucide-react';
 import { __ } from '@wordpress/i18n';
 
 import { cn } from '@/lib/utils';
@@ -14,7 +14,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { blocks } from '../blocks';
-import { useEditorContext } from './editor.context';
+import { useEditorContext, type IssueMode } from './editor.context';
 import { useWorkflowFormContext } from './useWorkflowForm';
 import type { FlowNode } from './workflow.flow';
 import { addNode, hasChild } from './workflow.graph';
@@ -30,13 +30,14 @@ const branchLeft: Record<WorkflowBranch, string> = { then: '30%', otherwise: '70
 
 /**
  * Card body + handles. No form access, so it also renders on the read-only template preview.
- * Header = block label, body = plain-language summary. `error` adds the red "Error" header above it.
+ * Header = block label, body = plain-language summary. `issue` adds a blue "Review" or red "Error"
+ * header above it.
  */
 export function NodeCardView({
   type,
   data,
   selected,
-  error,
+  issue,
   className,
   actions,
   children,
@@ -44,7 +45,7 @@ export function NodeCardView({
   type: WorkflowNodeKind;
   data: WorkflowNodeData;
   selected?: boolean;
-  error?: boolean;
+  issue?: IssueMode;
   className?: string;
   /** Extra controls in the header row, after the kind icon. */
   actions?: ReactNode;
@@ -59,19 +60,32 @@ export function NodeCardView({
 
       {/* Out of flow, tucked under the card's top edge: showing or hiding it never moves the card or
           its handles. The opaque base keeps the tint readable over the canvas and the incoming edge. */}
-      {error && (
+      {issue && (
         <div className="bg-card absolute inset-x-0 bottom-full -mb-2 overflow-hidden rounded-t-lg">
-          <div className="bg-destructive/15 text-destructive flex items-center gap-1.5 px-3 pt-1.5 pb-3.5 text-xs font-medium">
-            <CircleAlert className="size-3.5" aria-hidden />
-            {__('Error', 'yay-automation')}
-          </div>
+          {issue === 'error' ? (
+            <div className="bg-destructive/15 text-destructive flex items-center gap-1.5 px-3 pt-1.5 pb-3.5 text-xs font-medium">
+              <CircleAlert className="size-3.5" aria-hidden />
+              {__('Error', 'yay-automation')}
+            </div>
+          ) : (
+            <div className="bg-primary/15 text-primary flex items-center gap-1.5 px-3 pt-1.5 pb-3.5 text-xs font-medium">
+              <Info className="size-3.5" aria-hidden />
+              {__('Review', 'yay-automation')}
+            </div>
+          )}
         </div>
       )}
 
       <div
         className={cn(
           'bg-card text-card-foreground relative rounded-lg border p-3 shadow-sm',
-          selected ? 'border-primary' : error ? 'border-destructive/40' : 'border-border',
+          selected
+            ? 'border-primary'
+            : issue === 'error'
+              ? 'border-destructive/40'
+              : issue === 'review'
+                ? 'border-primary/40'
+                : 'border-border',
         )}
       >
         <div className="flex flex-col items-start gap-1.5">
@@ -105,7 +119,7 @@ export function NodeCardView({
  * Clicking the card opens its settings (the canvas's `onNodeClick`), so the controls stop propagation.
  */
 export function WorkflowNodeCard({ id, type, data, selected }: NodeProps<FlowNode>) {
-  const { openNodeId, errorNodeIds, requestDelete } = useEditorContext();
+  const { openNodeId, issueNodeIds, issueMode, requestDelete } = useEditorContext();
 
   const remove = (event: MouseEvent) => {
     event.stopPropagation();
@@ -117,7 +131,7 @@ export function WorkflowNodeCard({ id, type, data, selected }: NodeProps<FlowNod
       type={type}
       data={data}
       selected={selected || openNodeId === id}
-      error={errorNodeIds.has(id)}
+      issue={issueNodeIds.has(id) ? issueMode : undefined}
       className="cursor-pointer"
       actions={
         type !== 'trigger' && (

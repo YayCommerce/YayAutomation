@@ -1,4 +1,4 @@
-import type { WorkflowDraft, WorkflowGraph, WorkflowIssue } from '@yay-automation/types';
+import type { Workflow, WorkflowGraph, WorkflowIssue } from '@yay-automation/types';
 import { __ } from '@wordpress/i18n';
 
 import { blocks } from './blocks';
@@ -8,7 +8,7 @@ import { descendantsOf } from './editor/workflow.graph';
  * Everything that blocks turning a workflow on or applying its draft (saves allow them). Same rules
  * and codes as PHP `WorkflowValidator::errors()`, which rejects activate / apply with a 400.
  */
-export function validateWorkflow({ name, graph }: Pick<WorkflowDraft, 'name' | 'graph'>): WorkflowIssue[] {
+export function validateWorkflow({ name, graph }: Pick<Workflow, 'name' | 'graph'>): WorkflowIssue[] {
   const issues: WorkflowIssue[] = [];
 
   // The server runs sanitize_text_field(), which drops tags, so `<b></b>` counts as empty there too.
@@ -67,7 +67,7 @@ export function sameIssues(a: WorkflowIssue[], b: WorkflowIssue[]) {
 export function createIssuesSelector() {
   let last: { name: string; edges: WorkflowGraph['edges']; data: unknown[]; issues: WorkflowIssue[] } | null = null;
 
-  return (values: Pick<WorkflowDraft, 'name' | 'graph'>) => {
+  return (values: Pick<Workflow, 'name' | 'graph'>) => {
     const data = values.graph.nodes.map((node) => node.data);
     if (
       last &&

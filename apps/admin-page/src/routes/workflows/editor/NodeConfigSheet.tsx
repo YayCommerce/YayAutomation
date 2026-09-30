@@ -5,7 +5,7 @@ import { blocks } from '../blocks';
 import { useWorkflowFormContext } from './useWorkflowForm';
 import { updateNodeConfig } from './workflow.graph';
 
-/** Settings for the clicked step. Edits go straight into the workflow draft; Save persists them. */
+/** Settings for the clicked step. Edits go straight into the form; autosave persists them. */
 export function NodeConfigSheet({ nodeId, onClose }: { nodeId: string | null; onClose: () => void }) {
   const form = useWorkflowFormContext();
   // Null when nothing is open, or the node was deleted while its sheet was open.

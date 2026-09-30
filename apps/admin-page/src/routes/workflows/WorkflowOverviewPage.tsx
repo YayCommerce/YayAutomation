@@ -11,16 +11,12 @@ import { Button, LoadingButton } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/components/ui/sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import type { EditorNavState } from './editor/editor.context';
 import { WorkflowAppIcon } from './editor/EditorLayout';
 import { ReadOnlyCanvas } from './editor/ReadOnlyCanvas';
 import { ApiError } from './editor/workflow.api';
 import { useWorkflowActionMutation, useWorkflowQuery } from './editor/workflow.query';
 import { MoreActionsMenu, TurnOnDialog } from './editor/WorkflowActions';
-
-/** Set when the Overview's Turn on failed on issues, so the editor opens straight in error mode. */
-export interface EditorNavState {
-  showIssues?: boolean;
-}
 
 export default function WorkflowOverviewPage() {
   const { workflowId = '' } = useParams();

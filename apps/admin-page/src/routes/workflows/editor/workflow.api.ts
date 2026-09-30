@@ -1,4 +1,4 @@
-import type { Workflow, WorkflowDraft, WorkflowIssue } from '@yay-automation/types';
+import type { Workflow, WorkflowIssue } from '@yay-automation/types';
 import { HTTPError, type ResponsePromise } from 'ky';
 import { __ } from '@wordpress/i18n';
 
@@ -40,17 +40,6 @@ async function request<T>(response: ResponsePromise): Promise<T> {
   }
 }
 
-/**
- * The editable fields of a workflow, used for the form's values. An active workflow's edits live in
- * its draft, so that's what gets edited when there is one.
- */
-export const toDraft = ({ id, name, status, graph, draft }: Workflow): WorkflowDraft => ({
-  id,
-  name,
-  status,
-  graph: draft ?? graph,
-});
-
 export const listWorkflows = () => request<Workflow[]>(api.get('workflows'));
 
 /**
@@ -63,14 +52,14 @@ export const getWorkflow = (id: string) =>
     : Promise.reject(new ApiError(__('Workflow not found.', 'yay-automation'), 404));
 
 /** New inactive workflow. Issues are allowed. */
-export const createWorkflow = ({ name, graph }: Pick<WorkflowDraft, 'name' | 'graph'>) =>
+export const createWorkflow = ({ name, graph }: Pick<Workflow, 'name' | 'graph'>) =>
   request<Workflow>(api.post('workflows', { json: { name, graph } }));
 
 /**
  * Saves the name and/or graph; issues are allowed. The server puts the graph into the live workflow
  * when inactive, or into the draft when active.
  */
-export const updateWorkflow = (id: string, changes: Partial<Pick<WorkflowDraft, 'name' | 'graph'>>) =>
+export const updateWorkflow = (id: string, changes: Partial<Pick<Workflow, 'name' | 'graph'>>) =>
   request<Workflow>(api.put(`workflows/${id}`, { json: changes }));
 
 /** 400 with `issues` when the workflow has any. */

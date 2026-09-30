@@ -1,10 +1,10 @@
-import { useMemo, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useStore } from '@tanstack/react-form';
 import type { Workflow } from '@yay-automation/types';
+import { useBlocker, useLocation, useNavigate } from 'react-router';
 import { __ } from '@wordpress/i18n';
 
 import { useBeforeUnloadWarning } from '@/hooks/useBeforeUnloadWarning';
-import { useRouteLeaveGuard } from '@/hooks/useRouteLeaveGuard';
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -14,133 +14,259 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
+import { Button, LoadingButton } from '@/components/ui/button';
+import { toast } from '@/components/ui/sonner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { blocks } from '../blocks';
 import { createIssuesSelector, sameIssues } from '../validation';
-import { EditorContext, type EditorState } from './editor.context';
+import { EditorContext, type EditorNavState, type EditorState } from './editor.context';
 import { EditorLayout } from './EditorLayout';
-import { IssuesPopover } from './IssuesPopover';
+import { IssueBanner } from './IssueBanner';
 import { NodeConfigSheet } from './NodeConfigSheet';
+import { SaveStatus } from './SaveStatus';
+import { useAutosave } from './useAutosave';
 import { useWorkflowForm, WorkflowFormContext } from './useWorkflowForm';
+import { ApiError } from './workflow.api';
 import { removeNode } from './workflow.graph';
+import { useWorkflowActionMutation } from './workflow.query';
+import { ApplyChangesDialog, DiscardChangesDialog, MoreActionsMenu, TurnOnDialog } from './WorkflowActions';
 import { WorkflowCanvas } from './WorkflowCanvas';
 
-/** Owns the form for one saved workflow. Mount with `key={workflow.id}` so switching starts fresh. */
+type ConfirmAction = 'turnOn' | 'apply' | 'discard';
+
+/**
+ * Edits one saved workflow; changes autosave. Mount with `key={workflow.id}` so switching starts fresh.
+ * `workflow` is the server copy, kept current by the mutations; the form holds the graph being edited.
+ */
 export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
   const form = useWorkflowForm(workflow);
+  const autosave = useAutosave(form, workflow.id);
+  const navigate = useNavigate();
+  const location = useLocation();
   const [openNodeId, setOpenNodeId] = useState<string | null>(null);
-  const nameInputRef = useRef<HTMLInputElement>(null);
 
-  const isDirty = useStore(form.store, (state) => state.isDirty);
-  // Reused across drag frames and compared by content, so the toolbar re-renders only when issues change.
+  const isActive = workflow.status === 'active';
+  // An active workflow's edits are unapplied changes as soon as they're made, not only once saved.
+  const hasDraft = isActive && (workflow.draft !== null || autosave.status !== 'saved');
+
+  // Reused across drag frames and compared by content, so the header re-renders only when issues change.
   const [selectIssues] = useState(createIssuesSelector);
-  const issues = useStore(form.store, (state) => selectIssues(state.values), sameIssues);
+  const issues = useStore(
+    form.store,
+    (state) => selectIssues({ name: workflow.name, graph: state.values.graph }),
+    sameIssues,
+  );
+
+  // Blue "Review" until Turn on / Apply fails, then red "Error" + banner until one succeeds. Opened
+  // from a failed Turn on elsewhere → starts in error mode.
+  const [errorMode, setErrorMode] = useState(() => !!(location.state as EditorNavState | null)?.showIssues);
+  const blockedByIssues = errorMode && issues.length > 0;
 
   const editorState = useMemo<EditorState>(
     () => ({
       openNodeId,
       // Issues with a `nodeId` mark that step (its settings, or `no_action` on the trigger). The
       // workflow-level `unlinked` issue has none, so unlinked steps aren't marked for it.
-      errorNodeIds: new Set(issues.flatMap((issue) => (issue.nodeId ? [issue.nodeId] : []))),
+      issueNodeIds: new Set(issues.flatMap((issue) => (issue.nodeId ? [issue.nodeId] : []))),
+      issueMode: errorMode ? 'error' : 'review',
       requestDelete: (nodeIds) =>
         form.setFieldValue('graph', (graph) => nodeIds.reduce((next, id) => removeNode(next, id), graph)),
     }),
-    [form, openNodeId, issues],
+    [form, openNodeId, issues, errorMode],
   );
 
-  // Reads live form state, so it always reflects the latest save.
-  const leaveGuard = useRouteLeaveGuard(() => form.state.isDirty);
-  useBeforeUnloadWarning(isDirty);
+  const [confirm, setConfirm] = useState<ConfirmAction | null>(null);
+  const [busy, setBusy] = useState(false);
+  const activate = useWorkflowActionMutation('activate');
+  const deactivate = useWorkflowActionMutation('deactivate');
+  const apply = useWorkflowActionMutation('apply');
+  const discard = useWorkflowActionMutation('discard');
+
+  /** Saves pending edits, then runs `action`. Turn on / Apply failing on issues → error mode. */
+  const run = async (action: () => Promise<Workflow>, success: string) => {
+    setBusy(true);
+    try {
+      if (!(await autosave.flush())) {
+        toast.error(__('Couldn’t save your latest changes. Try again.', 'yay-automation'));
+        return;
+      }
+      await action();
+      setErrorMode(false);
+      toast.success(success);
+    } catch (error) {
+      // The banner lists what the editor sees; if the server found something the editor didn't, say it.
+      if (error instanceof ApiError && error.issues.length && issues.length) {
+        setErrorMode(true);
+      } else {
+        toast.error(error instanceof Error ? error.message : String(error));
+      }
+    } finally {
+      setBusy(false);
+      setConfirm(null);
+    }
+  };
+
+  const turnOn = () => run(() => activate.mutateAsync({ id: workflow.id }), __('Workflow turned on', 'yay-automation'));
+  const applyChanges = () => run(() => apply.mutateAsync({ id: workflow.id }), __('Changes applied', 'yay-automation'));
+  const turnOff = () =>
+    run(() => deactivate.mutateAsync({ id: workflow.id }), __('Workflow turned off', 'yay-automation'));
+
+  const discardChanges = async () => {
+    setBusy(true);
+    try {
+      // Unsent edits are what's being discarded; only wait for a request already out.
+      await autosave.settle();
+      const saved = await discard.mutateAsync({ id: workflow.id });
+      autosave.reset(saved.graph);
+      setErrorMode(false);
+      toast.success(__('Changes discarded', 'yay-automation'));
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : String(error));
+    } finally {
+      setBusy(false);
+      setConfirm(null);
+    }
+  };
+
+  // Show the error-mode hand-off once; a reload shouldn't reopen in error mode.
+  useEffect(() => {
+    if ((location.state as EditorNavState | null)?.showIssues) {
+      navigate(location.pathname, { replace: true, state: null });
+    }
+  }, [location, navigate]);
+
+  // Leaving waits for a pending save; only a failed save asks before leaving.
+  const [leaveDialog, setLeaveDialog] = useState(false);
+  const blocker = useBlocker(() => autosave.statusRef.current !== 'saved');
+  // Latest blocker for the async callback; the effect runs once per block, not on every re-render.
+  const blockerRef = useRef(blocker);
+  useEffect(() => {
+    blockerRef.current = blocker;
+  });
+  const { flush } = autosave;
+  useEffect(() => {
+    if (blocker.state !== 'blocked') return;
+    void flush().then((ok) => {
+      if (blockerRef.current.state !== 'blocked') return;
+      if (ok) blockerRef.current.proceed();
+      else setLeaveDialog(true);
+    });
+  }, [blocker.state, flush]);
+  useBeforeUnloadWarning(autosave.status !== 'saved');
+
+  const lastChanged = (hasDraft && workflow.draftUpdatedAt) || workflow.updatedAt;
 
   return (
     <WorkflowFormContext.Provider value={form}>
       <EditorContext.Provider value={editorState}>
         <EditorLayout
+          closeTo={`/workflows/${workflow.id}`}
+          closeLabel={__('Close editor', 'yay-automation')}
           title={
-            <form.Field name="name">
-              {(field) => (
-                <Input
-                  ref={nameInputRef}
-                  className="h-8 w-72 max-w-full font-medium"
-                  value={field.state.value}
-                  onChange={(event) => field.handleChange(event.target.value)}
-                  onBlur={field.handleBlur}
-                  aria-label={__('Workflow name', 'yay-automation')}
-                  aria-invalid={issues.some((issue) => issue.code === 'name_required')}
-                />
-              )}
-            </form.Field>
+            <>
+              <span className="truncate font-medium">{workflow.name}</span>
+              {(!isActive || hasDraft) && <Badge variant="primary-soft">{__('Draft', 'yay-automation')}</Badge>}
+            </>
           }
           actions={
-            <div className="flex items-center gap-4">
-              <form.Field name="status">
-                {(field) => {
-                  const active = field.state.value === 'active';
-                  // Turning on needs a workflow without issues. Turning off is always possible, and a
-                  // save that only turns it off goes through even with issues.
-                  const disabled = !active && issues.length > 0;
-                  return (
-                    <WithTooltip content={disabled && __('Fix the issues before activating.', 'yay-automation')}>
-                      <div className="flex items-center gap-2">
-                        <Switch
-                          id="workflow-active"
-                          size="sm"
-                          checked={active}
-                          disabled={disabled}
-                          onCheckedChange={(checked) => field.handleChange(checked ? 'active' : 'inactive')}
-                        />
-                        <Label htmlFor="workflow-active" className="text-sm">
-                          {active ? __('Active', 'yay-automation') : __('Inactive', 'yay-automation')}
-                        </Label>
-                      </div>
-                    </WithTooltip>
-                  );
-                }}
-              </form.Field>
-
-              <IssuesPopover
+            <>
+              <MoreActionsMenu workflow={workflow} onDeleted={autosave.stop} />
+              {!isActive ? (
+                <WithTooltip content={blockedByIssues && __('Fix the errors to turn on.', 'yay-automation')}>
+                  <Button size="sm" disabled={busy || blockedByIssues} onClick={() => setConfirm('turnOn')}>
+                    {__('Turn on workflow', 'yay-automation')}
+                  </Button>
+                </WithTooltip>
+              ) : hasDraft ? (
+                <>
+                  <Button variant="outline" size="sm" disabled={busy} onClick={() => setConfirm('discard')}>
+                    {__('Discard changes', 'yay-automation')}
+                  </Button>
+                  <WithTooltip content={blockedByIssues && __('Fix the errors to apply.', 'yay-automation')}>
+                    <Button size="sm" disabled={busy || blockedByIssues} onClick={() => setConfirm('apply')}>
+                      {__('Apply changes', 'yay-automation')}
+                    </Button>
+                  </WithTooltip>
+                </>
+              ) : (
+                <LoadingButton variant="destructive" size="sm" loading={busy} disabled={busy} onClick={turnOff}>
+                  {__('Turn off workflow', 'yay-automation')}
+                </LoadingButton>
+              )}
+            </>
+          }
+        >
+          <div className="relative size-full">
+            <WorkflowCanvas onNodeClick={setOpenNodeId} />
+            {errorMode && (
+              <IssueBanner
                 issues={issues}
                 labelFor={(nodeId) => {
                   const node = form.state.values.graph.nodes.find((n) => n.id === nodeId);
                   return node ? blocks[node.data.block].label : '';
                 }}
-                onSelectNode={setOpenNodeId}
-                onSelectWorkflowIssue={(issue) => issue.code === 'name_required' && nameInputRef.current?.focus()}
+                onView={setOpenNodeId}
+                className="absolute top-4 right-4 z-10"
               />
-
-              {/* Subscribe re-renders only this button when dirty/submitting flip. */}
-              <form.Subscribe selector={(state) => [state.isDirty, state.isSubmitting] as const}>
-                {([isDirty, isSubmitting]) => (
-                  // Saves allow issues: an active workflow's edits go into its draft. Only turning on needs none.
-                  <Button size="sm" disabled={!isDirty || isSubmitting} onClick={() => form.handleSubmit()}>
-                    {isSubmitting ? __('Saving…', 'yay-automation') : __('Save', 'yay-automation')}
-                  </Button>
-                )}
-              </form.Subscribe>
-            </div>
-          }
-        >
-          <WorkflowCanvas onNodeClick={setOpenNodeId} />
+            )}
+            <SaveStatus
+              status={autosave.status}
+              error={autosave.error}
+              lastChanged={lastChanged}
+              onRetry={() => void autosave.flush()}
+              className="absolute right-4 bottom-6 z-10"
+            />
+          </div>
         </EditorLayout>
 
         <NodeConfigSheet nodeId={openNodeId} onClose={() => setOpenNodeId(null)} />
 
-        <AlertDialog open={leaveGuard.showDialog} onOpenChange={(open) => !open && leaveGuard.cancelLeave()}>
+        <TurnOnDialog
+          open={confirm === 'turnOn'}
+          onOpenChange={(open) => !open && setConfirm(null)}
+          onConfirm={turnOn}
+          pending={busy}
+        />
+        <ApplyChangesDialog
+          open={confirm === 'apply'}
+          onOpenChange={(open) => !open && setConfirm(null)}
+          onConfirm={applyChanges}
+          pending={busy}
+        />
+        <DiscardChangesDialog
+          open={confirm === 'discard'}
+          onOpenChange={(open) => !open && setConfirm(null)}
+          onConfirm={discardChanges}
+          pending={busy}
+        />
+
+        <AlertDialog
+          open={leaveDialog}
+          onOpenChange={(open) => {
+            if (open) return;
+            setLeaveDialog(false);
+            blocker.reset?.();
+          }}
+        >
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>{__('Leave without saving?', 'yay-automation')}</AlertDialogTitle>
               <AlertDialogDescription>
-                {__('Your changes to this workflow will be lost.', 'yay-automation')}
+                {__('Your latest changes couldn’t be saved and will be lost.', 'yay-automation')}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>{__('Stay', 'yay-automation')}</AlertDialogCancel>
               {/* Not AlertDialogAction: that also fires onOpenChange(false), which would reset the blocker. */}
-              <Button variant="destructive" onClick={leaveGuard.confirmLeave}>
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  setLeaveDialog(false);
+                  autosave.stop();
+                  blocker.proceed?.();
+                }}
+              >
                 {__('Leave', 'yay-automation')}
               </Button>
             </AlertDialogFooter>

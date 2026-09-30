@@ -58,14 +58,6 @@ export interface Workflow {
   draftUpdatedAt: string | null;
 }
 
-/** What the editor edits: the workflow's name and status, and its draft (or live graph without one). */
-export interface WorkflowDraft {
-  id: string;
-  name: string;
-  status: WorkflowStatus;
-  graph: WorkflowGraph;
-}
-
 /** Integration a template touches. Drives the icons on template cards. */
 export type WorkflowTemplateApp = 'woocommerce' | 'email' | 'automation';
 

@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { Workflow, WorkflowDraft } from '@yay-automation/types';
+import type { Workflow } from '@yay-automation/types';
 
 import {
   activateWorkflow,
@@ -73,15 +73,14 @@ function useWorkflowMutation<V extends { id?: string }>(
   });
 }
 
-type CreateVariables = Pick<WorkflowDraft, 'name' | 'graph'> & { id?: never };
+type CreateVariables = Pick<Workflow, 'name' | 'graph'> & { id?: never };
 
 export const useCreateWorkflowMutation = (callbacks?: MutationCallbacks) =>
   useWorkflowMutation<CreateVariables>(createWorkflow, callbacks);
 
 export const useUpdateWorkflowMutation = (callbacks?: MutationCallbacks) =>
   useWorkflowMutation(
-    ({ id, ...changes }: { id: string } & Partial<Pick<WorkflowDraft, 'name' | 'graph'>>) =>
-      updateWorkflow(id, changes),
+    ({ id, ...changes }: { id: string } & Partial<Pick<Workflow, 'name' | 'graph'>>) => updateWorkflow(id, changes),
     callbacks,
   );
 
