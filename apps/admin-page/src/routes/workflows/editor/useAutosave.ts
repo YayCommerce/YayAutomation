@@ -15,7 +15,7 @@ export type AutosaveStatus = 'saved' | 'pending' | 'saving' | 'error';
 
 /**
  * Saves the form's graph shortly after each change, one request at a time. The server decides where
- * the graph goes (live when inactive, the draft when active).
+ * the graph goes (the draft once the workflow has ever been turned on, the workflow itself before).
  */
 export function useAutosave(form: WorkflowForm, workflowId: string) {
   // `mutateAsync` is stable across renders (the mutation object isn't), so the callbacks below are too.

@@ -11,7 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { blocks } from './blocks';
 import { DeleteWorkflowDialog } from './editor/WorkflowActions';
-import { WorkflowStatusBadge } from './editor/WorkflowStatusBadge';
+import { onOffState, WorkflowStatusBadge } from './editor/WorkflowStatusBadge';
 
 function triggerSummary(workflow: Workflow) {
   const trigger = workflow.graph.nodes.find((node) => node.kind === 'trigger');
@@ -61,8 +61,7 @@ export function WorkflowsTable({ workflows }: { workflows: Workflow[] }) {
               </TableCell>
               <TableCell>
                 <div className="flex items-center gap-1.5">
-                  {/* Only Active / Inactive here; "Draft" is the editor's word for unapplied work. */}
-                  <WorkflowStatusBadge state={workflow.status === 'active' ? 'active' : 'inactive'} />
+                  <WorkflowStatusBadge state={onOffState(workflow)} />
                   {workflow.draft && <Badge variant="warning-soft">{__('Unapplied changes', 'yay-automation')}</Badge>}
                 </div>
               </TableCell>

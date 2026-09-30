@@ -4,8 +4,9 @@ import { ChevronLeft, ChevronRight, CircleAlert, Eye, Pencil } from 'lucide-reac
 import { __, sprintf } from '@wordpress/i18n';
 
 import { cn } from '@/lib/utils';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { ErrorAlert } from './ErrorAlert';
 
 const issueKey = (issue: WorkflowIssue) => `${issue.code}|${issue.nodeId ?? ''}`;
 
@@ -39,10 +40,7 @@ export function IssueBanner({
   const show = (index: number) => setShown({ key: issueKey(issues[index]), index });
 
   return (
-    <Alert
-      destructive
-      className={cn('border-destructive/30 bg-destructive/10 w-md max-w-[calc(100%-2rem)] border shadow-sm', className)}
-    >
+    <ErrorAlert className={cn('w-md max-w-[calc(100%-2rem)] shadow-sm', className)}>
       <CircleAlert />
       <AlertTitle className="line-clamp-none font-normal">
         {issue.nodeId ? __('Correct the error for this workflow step:', 'yay-automation') : issue.message}
@@ -110,6 +108,6 @@ export function IssueBanner({
           </div>
         )}
       </AlertDescription>
-    </Alert>
+    </ErrorAlert>
   );
 }

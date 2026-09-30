@@ -132,7 +132,8 @@ class RestAPI {
 
     /**
      * `{ name?, graph? }`, issues allowed. The name applies at once. The graph replaces the live one
-     * when inactive; when active it goes into the draft (cleared again if it matches the live graph).
+     * while the workflow has never been turned on; after that it goes into the draft, active or not
+     * (cleared again if it matches the live graph).
      * No-op changes aren't written, so they don't move "Last updated" or the draft time.
      *
      * @param \WP_REST_Request $request Request.
@@ -256,7 +257,7 @@ class RestAPI {
     /**
      * Runs `$change( $id, $current )` while holding a per-workflow lock, then returns the workflow
      * as stored. Draft saves, apply and deactivate read then write the draft; without the lock an
-     * autosave landing mid-apply could be wiped, or leave a draft on an inactive workflow.
+     * autosave landing mid-apply could be wiped, or a draft cleared by apply could reappear.
      *
      * @param int      $id     Workflow id.
      * @param callable $change Returns true on success, a WP_Error, or a WP_REST_Response to send as is

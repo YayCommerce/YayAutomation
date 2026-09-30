@@ -6,18 +6,18 @@ import { Link, useNavigate, useParams } from 'react-router';
 import { __, sprintf } from '@wordpress/i18n';
 
 import { formatDateTime } from '@/lib/helpers/date.helper';
-import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/components/ui/sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { EditorNavState } from './editor/editor.context';
 import { WorkflowAppIcon } from './editor/EditorLayout';
+import { ErrorAlert } from './editor/ErrorAlert';
 import { ReadOnlyCanvas } from './editor/ReadOnlyCanvas';
 import { ApiError } from './editor/workflow.api';
 import { useWorkflowActionMutation, useWorkflowQuery } from './editor/workflow.query';
 import { MoreActionsMenu, TurnOffDialog, TurnOnDialog } from './editor/WorkflowActions';
-import { workflowState, WorkflowStatusBadge } from './editor/WorkflowStatusBadge';
+import { onOffState, workflowState, WorkflowStatusBadge } from './editor/WorkflowStatusBadge';
 import { validateWorkflow } from './validation';
 
 export default function WorkflowOverviewPage() {
@@ -112,8 +112,7 @@ function WorkflowOverview({ workflow }: { workflow: Workflow }) {
       title={
         <>
           <span className="truncate font-medium">{workflow.name}</span>
-          {/* Header badge is only Active / Inactive; "Draft" is the editor's word for unapplied work. */}
-          <WorkflowStatusBadge state={isActive ? 'active' : 'inactive'} />
+          <WorkflowStatusBadge state={onOffState(workflow)} />
         </>
       }
       actions={
@@ -148,10 +147,7 @@ function WorkflowOverview({ workflow }: { workflow: Workflow }) {
           )}
         </p>
         {turnOnFailed && !isActive && (
-          <Alert
-            destructive
-            className="border-destructive/30 bg-destructive/10 flex items-center gap-3 border [&>svg]:translate-y-0"
-          >
+          <ErrorAlert className="flex items-center gap-3 [&>svg]:translate-y-0">
             <CircleAlert />
             <p className="min-w-0 flex-1">
               <span className="font-medium">{__('Workflow contains errors', 'yay-automation')}</span>{' '}
@@ -164,7 +160,7 @@ function WorkflowOverview({ workflow }: { workflow: Workflow }) {
             >
               {__('Edit workflow', 'yay-automation')}
             </Button>
-          </Alert>
+          </ErrorAlert>
         )}
         <Tabs
           value={currentTab}

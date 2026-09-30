@@ -3,8 +3,8 @@ import { useForm } from '@tanstack/react-form';
 import type { Workflow } from '@yay-automation/types';
 
 /**
- * The graph being edited: an active workflow's draft, or its live graph when there's none (always
- * the live graph while inactive). The query holds what's saved; autosave sends the form's graph.
+ * The graph being edited: the workflow's draft, or its live / saved graph when there's none. The
+ * query holds what's saved; autosave sends the form's graph.
  * Name and status aren't edited here: they change through their own requests.
  */
 export function useWorkflowForm(workflow: Workflow) {
