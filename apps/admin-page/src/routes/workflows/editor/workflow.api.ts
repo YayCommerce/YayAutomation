@@ -14,6 +14,8 @@ export class ApiError extends Error {
     readonly status?: number,
     /** What the server's workflow validation rejected (400 `data.errors`). */
     readonly issues: WorkflowIssue[] = [],
+    /** WP_Error code, e.g. `yay_automation_no_draft`. */
+    readonly code?: string,
   ) {
     super(message);
   }
@@ -25,10 +27,12 @@ async function request<T>(response: ResponsePromise): Promise<T> {
   } catch (error) {
     let message: string | undefined;
     let issues: WorkflowIssue[] = [];
+    let code: string | undefined;
     try {
       message = await getErrorMsg(error);
-      const errors = (await getErrorJson(error))?.data?.errors;
-      if (Array.isArray(errors)) issues = errors;
+      const json = await getErrorJson(error);
+      if (Array.isArray(json?.data?.errors)) issues = json.data.errors;
+      if (typeof json?.code === 'string') code = json.code;
     } catch {
       // Error body isn't JSON (PHP fatal, proxy error page): fall back to the generic message.
     }
@@ -36,6 +40,7 @@ async function request<T>(response: ResponsePromise): Promise<T> {
       message || __('Something went wrong. Please try again.', 'yay-automation'),
       error instanceof HTTPError ? error.response.status : undefined,
       issues,
+      code,
     );
   }
 }

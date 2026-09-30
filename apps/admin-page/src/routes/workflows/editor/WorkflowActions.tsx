@@ -78,7 +78,8 @@ export function MoreActionsMenu({ workflow, onDeleted }: { workflow: Workflow; o
   );
 }
 
-function RenameWorkflowDialog({ workflow, onClose }: { workflow: Workflow; onClose: () => void }) {
+/** Mount it to open it; it starts from the current name and calls `onClose` when done. */
+export function RenameWorkflowDialog({ workflow, onClose }: { workflow: Workflow; onClose: () => void }) {
   const [name, setName] = useState(workflow.name);
   const updateMutation = useUpdateWorkflowMutation();
 
