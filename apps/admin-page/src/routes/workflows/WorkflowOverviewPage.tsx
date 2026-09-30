@@ -199,6 +199,7 @@ function WorkflowOverview({ workflow }: { workflow: Workflow }) {
         onOpenChange={setTurnOnOpen}
         onConfirm={turnOn}
         pending={activateMutation.isPending}
+        hasDraft={!!workflow.draft}
       />
       <TurnOffDialog
         open={turnOffOpen}

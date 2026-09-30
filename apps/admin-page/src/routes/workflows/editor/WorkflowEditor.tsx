@@ -255,6 +255,7 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
           onOpenChange={(open) => !open && setConfirm(null)}
           onConfirm={turnOn}
           pending={busy}
+          hasDraft={hasDraft}
         />
         <ApplyChangesDialog
           open={confirm === 'apply'}

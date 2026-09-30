@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useState, type FormEvent, type ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import type { Workflow } from '@yay-automation/types';
 import { ChevronDown, Pencil, Trash2 } from 'lucide-react';
@@ -252,7 +252,7 @@ function ConfirmDialog({
   pending,
 }: ConfirmProps & {
   title: string;
-  description: string;
+  description: ReactNode;
   confirmLabel: string;
   cancelLabel?: string;
   destructive?: boolean;
@@ -284,12 +284,25 @@ function ConfirmDialog({
   );
 }
 
-export function TurnOnDialog(props: ConfirmProps) {
+/** `hasDraft`: Turn on runs the saved content, so say the draft isn't included. */
+export function TurnOnDialog({ hasDraft, ...props }: ConfirmProps & { hasDraft?: boolean }) {
   return (
     <ConfirmDialog
       {...props}
       title={__('Ready to turn on your automation workflow?', 'yay-automation')}
-      description={__('Turning on the workflow will activate the automation.', 'yay-automation')}
+      description={
+        <>
+          {__('Turning on the workflow will activate the automation.', 'yay-automation')}
+          {hasDraft && (
+            <span className="mt-2 block">
+              {__(
+                'Your unapplied draft changes won’t be turned on. Apply them first to include them.',
+                'yay-automation',
+              )}
+            </span>
+          )}
+        </>
+      }
       confirmLabel={__('Turn on', 'yay-automation')}
     />
   );
