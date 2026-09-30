@@ -16,7 +16,7 @@ import { BulkActionBox } from '@/components/ui/bulk-actions';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { toast } from '@/components/ui/sonner';
-import { ApiError, deactivateWorkflow, deleteWorkflow } from './editor/workflow.api';
+import { ApiError, deactivateWorkflow, deleteWorkflow, getWorkflow } from './editor/workflow.api';
 import { workflowKeys } from './editor/workflow.query';
 import { ConfirmDialog } from './editor/WorkflowActions';
 
@@ -60,6 +60,23 @@ export function WorkflowBulkActions({ selected, onClear }: { selected: Workflow[
 
   const remove = async () => {
     setPending(true);
+    // All or nothing: this list can be stale (a workflow turned on in another tab), so re-read every
+    // selected workflow first and delete none if any is on. The server's 409 stays as the last guard.
+    try {
+      const current = await Promise.all(selected.map((workflow) => getWorkflow(workflow.id)));
+      if (current.some((workflow) => workflow.status === 'active')) {
+        await refresh();
+        setPending(false);
+        setDialog('deleteBlocked');
+        return;
+      }
+    } catch (error) {
+      setPending(false);
+      setDialog(null);
+      toast.error(error instanceof Error ? error.message : String(error));
+      return;
+    }
+
     let done = 0;
     let refused = false;
     let failure: string | null = null;
@@ -69,7 +86,7 @@ export function WorkflowBulkActions({ selected, onClear }: { selected: Workflow[
         queryClient.removeQueries({ queryKey: workflowKeys.detail(workflow.id) });
         done++;
       } catch (error) {
-        // Turned on since this list loaded: the server keeps it.
+        // Turned on between the check above and this request: the server keeps it.
         if (error instanceof ApiError && error.code === 'yay_automation_delete_active') refused = true;
         else failure = error instanceof Error ? error.message : String(error);
       }

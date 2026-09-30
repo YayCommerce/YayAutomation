@@ -184,7 +184,7 @@ Template → Install → edit → Turn on / Apply looks and behaves like Shopify
    - **Bulk Delete:**
      - All selected inactive → "Delete N workflows?" / "These workflows will be permanently deleted." with "Cancel" and "Delete" (destructive).
      - Any selected active → "There was a problem deleting some workflows" / "Because one or more workflows are still turned on, they couldn't be deleted. Turn them off and try again." with only "Back". Nothing is deleted.
-     - Requests go one per workflow through `DELETE /workflows/:id`, so the server's 409 still guards each one. If the server refuses any (stale list), show the same "problem" dialog and refresh the list; ones the server accepted before that stay deleted (no bulk endpoint, so no all-or-nothing).
+     - All or nothing: before any `DELETE`, the selected workflows are re-read (`GET /workflows/:id`); if any is active now (stale list), show the same "problem" dialog, refresh the list, and delete nothing. Deletes then go one per workflow through `DELETE /workflows/:id`, whose 409 stays as the last guard (a workflow turned on between the check and its delete).
    - **After a bulk action:** toast ("N workflows turned off" / "N workflows deleted"), selection cleared, list refreshed.
    - **Single Turn off dialog** (editor and Overview): "Turn off workflow" / "If you turn this workflow off, the runs in progress will be cancelled." with "Dismiss" and "Turn off". No dialog mentions orders (future workflows won't all be order-based).
    - Test:
