@@ -22,6 +22,8 @@ final class WorkflowRepository {
     private const META_TRIGGER       = '_yay_automation_trigger';
     private const META_DRAFT_GRAPH   = '_yay_automation_draft_graph';
     private const META_DRAFT_UPDATED = '_yay_automation_draft_updated';
+    // When the workflow was first turned on. Tells "Inactive" (turned off) from "Draft" (never on).
+    private const META_ACTIVATED_AT = '_yay_automation_activated_at';
 
     public static function all(): array {
         $posts = get_posts(
@@ -140,6 +142,7 @@ final class WorkflowRepository {
             return $result;
         }
         update_post_meta( $id, self::META_STATUS, 'active' );
+        self::mark_activated( $id );
         return true;
     }
 
@@ -155,6 +158,8 @@ final class WorkflowRepository {
         if ( is_wp_error( $result ) ) {
             return $result;
         }
+        // Workflows turned on before this meta existed get it here, so they turn "Inactive", not "Draft".
+        self::mark_activated( $id );
         update_post_meta( $id, self::META_STATUS, 'inactive' );
         if ( null !== $draft ) {
             self::write_graph( $id, $draft );
@@ -186,6 +191,12 @@ final class WorkflowRepository {
      */
     public static function delete( int $id ): bool {
         return self::get_post( $id ) && wp_delete_post( $id, true );
+    }
+
+    private static function mark_activated( int $id ): void {
+        if ( ! get_post_meta( $id, self::META_ACTIVATED_AT, true ) ) {
+            update_post_meta( $id, self::META_ACTIVATED_AT, gmdate( 'c' ) );
+        }
     }
 
     private static function write_graph( int $id, array $graph ): void {
@@ -225,15 +236,19 @@ final class WorkflowRepository {
         $graph         = self::decode_graph( (string) get_post_meta( $post->ID, self::META_GRAPH, true ) );
         $draft         = $with_draft ? get_post_meta( $post->ID, self::META_DRAFT_GRAPH, true ) : '';
         $draft_updated = $with_draft ? get_post_meta( $post->ID, self::META_DRAFT_UPDATED, true ) : '';
+        $active        = 'active' === get_post_meta( $post->ID, self::META_STATUS, true );
+        $activated_at  = get_post_meta( $post->ID, self::META_ACTIVATED_AT, true );
 
         return [
             'id'             => (string) $post->ID,
             'name'           => $post->post_title,
-            'status'         => 'active' === get_post_meta( $post->ID, self::META_STATUS, true ) ? 'active' : 'inactive',
+            'status'         => $active ? 'active' : 'inactive',
             'graph'          => $graph,
             'draft'          => $draft ? self::decode_graph( (string) $draft ) : null,
             'updatedAt'      => get_post_modified_time( 'c', true, $post ),
             'draftUpdatedAt' => $draft_updated ? $draft_updated : null,
+            // Active without the meta: turned on before the meta existed; still counts.
+            'everActivated'  => $active || (bool) $activated_at,
         ];
     }
 

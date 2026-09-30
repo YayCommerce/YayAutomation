@@ -6,8 +6,7 @@ import { Link, useNavigate, useParams } from 'react-router';
 import { __, sprintf } from '@wordpress/i18n';
 
 import { formatDateTime } from '@/lib/helpers/date.helper';
-import { Badge } from '@/components/ui/badge';
-import { Button, LoadingButton } from '@/components/ui/button';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/components/ui/sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -16,7 +15,8 @@ import { WorkflowAppIcon } from './editor/EditorLayout';
 import { ReadOnlyCanvas } from './editor/ReadOnlyCanvas';
 import { ApiError } from './editor/workflow.api';
 import { useWorkflowActionMutation, useWorkflowQuery } from './editor/workflow.query';
-import { MoreActionsMenu, TurnOnDialog } from './editor/WorkflowActions';
+import { MoreActionsMenu, TurnOffDialog, TurnOnDialog } from './editor/WorkflowActions';
+import { workflowState, WorkflowStatusBadge } from './editor/WorkflowStatusBadge';
 
 export default function WorkflowOverviewPage() {
   const { workflowId = '' } = useParams();
@@ -71,22 +71,38 @@ function WorkflowOverview({ workflow }: { workflow: Workflow }) {
       },
     );
 
+  const [turnOffOpen, setTurnOffOpen] = useState(false);
   const turnOff = () =>
     deactivateMutation.mutate(
       { id: workflow.id },
       {
-        onSuccess: () => toast.success(__('Workflow turned off', 'yay-automation')),
-        onError: (error) => toast.error(error.message),
+        onSuccess: () => {
+          setTurnOffOpen(false);
+          toast.success(__('Workflow turned off', 'yay-automation'));
+        },
+        onError: (error) => {
+          setTurnOffOpen(false);
+          toast.error(error.message);
+        },
       },
     );
 
-  // Active: the live version, plus unapplied edits when there are any. Inactive: one version, the draft.
-  const tabs: { value: string; label: string; graph: Workflow['graph'] }[] = isActive
-    ? [
-        { value: 'live', label: __('Active workflow', 'yay-automation'), graph: workflow.graph },
-        ...(workflow.draft ? [{ value: 'draft', label: __('Draft', 'yay-automation'), graph: workflow.draft }] : []),
-      ]
-    : [{ value: 'draft', label: __('Draft', 'yay-automation'), graph: workflow.graph }];
+  // Active: the live version, plus unapplied edits when there are any. Off: its one version, called
+  // "Saved workflow" once it has been turned on, "Draft" before that.
+  const state = workflowState(workflow);
+  const tabs: { value: string; label: string; graph: Workflow['graph'] }[] =
+    state === 'active'
+      ? [
+          { value: 'live', label: __('Active workflow', 'yay-automation'), graph: workflow.graph },
+          ...(workflow.draft ? [{ value: 'draft', label: __('Draft', 'yay-automation'), graph: workflow.draft }] : []),
+        ]
+      : [
+          {
+            value: 'saved',
+            label: state === 'inactive' ? __('Saved workflow', 'yay-automation') : __('Draft', 'yay-automation'),
+            graph: workflow.graph,
+          },
+        ];
   const [tab, setTab] = useState(tabs[0].value);
   // A tab can disappear (draft applied or discarded elsewhere); fall back to the first.
   const currentTab = tabs.some((t) => t.value === tab) ? tab : tabs[0].value;
@@ -96,11 +112,7 @@ function WorkflowOverview({ workflow }: { workflow: Workflow }) {
       title={
         <>
           <span className="truncate font-medium">{workflow.name}</span>
-          {isActive ? (
-            <Badge variant="success-soft">{__('Active', 'yay-automation')}</Badge>
-          ) : (
-            <Badge variant="primary-soft">{__('Draft', 'yay-automation')}</Badge>
-          )}
+          <WorkflowStatusBadge state={state} />
         </>
       }
       actions={
@@ -113,15 +125,9 @@ function WorkflowOverview({ workflow }: { workflow: Workflow }) {
           </Button>
           <MoreActionsMenu workflow={workflow} />
           {isActive ? (
-            <LoadingButton
-              variant="destructive"
-              size="sm"
-              loading={deactivateMutation.isPending}
-              disabled={deactivateMutation.isPending}
-              onClick={turnOff}
-            >
+            <Button variant="destructive" size="sm" onClick={() => setTurnOffOpen(true)}>
               {__('Turn off workflow', 'yay-automation')}
-            </LoadingButton>
+            </Button>
           ) : (
             <Button size="sm" onClick={() => setTurnOnOpen(true)}>
               {__('Turn on workflow', 'yay-automation')}
@@ -175,6 +181,12 @@ function WorkflowOverview({ workflow }: { workflow: Workflow }) {
         onOpenChange={setTurnOnOpen}
         onConfirm={turnOn}
         pending={activateMutation.isPending}
+      />
+      <TurnOffDialog
+        open={turnOffOpen}
+        onOpenChange={setTurnOffOpen}
+        onConfirm={turnOff}
+        pending={deactivateMutation.isPending}
       />
     </OverviewLayout>
   );

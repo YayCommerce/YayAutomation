@@ -16,8 +16,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Badge } from '@/components/ui/badge';
-import { Button, LoadingButton } from '@/components/ui/button';
+import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/sonner';
 import { blocks } from '../blocks';
 import { createIssuesSelector, sameIssues } from '../validation';
@@ -36,11 +35,13 @@ import {
   DiscardChangesDialog,
   MoreActionsMenu,
   RenameWorkflowDialog,
+  TurnOffDialog,
   TurnOnDialog,
 } from './WorkflowActions';
 import { WorkflowCanvas } from './WorkflowCanvas';
+import { workflowState, WorkflowStatusBadge } from './WorkflowStatusBadge';
 
-type ConfirmAction = 'turnOn' | 'apply' | 'discard';
+type ConfirmAction = 'turnOn' | 'turnOff' | 'apply' | 'discard';
 
 /**
  * Edits one saved workflow; changes autosave. Mount with `key={workflow.id}` so switching starts fresh.
@@ -174,7 +175,12 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
           title={
             <>
               <span className="truncate font-medium">{workflow.name}</span>
-              {(!isActive || hasDraft) && <Badge variant="primary-soft">{__('Draft', 'yay-automation')}</Badge>}
+              {/* Active: no badge, or Draft while there are unapplied changes. Off: Inactive or Draft. */}
+              {isActive ? (
+                hasDraft && <WorkflowStatusBadge state="draft" />
+              ) : (
+                <WorkflowStatusBadge state={workflowState(workflow)} />
+              )}
             </>
           }
           actions={
@@ -194,9 +200,9 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
                   </Button>
                 </>
               ) : (
-                <LoadingButton variant="destructive" size="sm" loading={busy} disabled={busy} onClick={turnOff}>
+                <Button variant="destructive" size="sm" disabled={busy} onClick={() => setConfirm('turnOff')}>
                   {__('Turn off workflow', 'yay-automation')}
-                </LoadingButton>
+                </Button>
               )}
             </>
           }
@@ -243,6 +249,12 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
           open={confirm === 'discard'}
           onOpenChange={(open) => !open && setConfirm(null)}
           onConfirm={discardChanges}
+          pending={busy}
+        />
+        <TurnOffDialog
+          open={confirm === 'turnOff'}
+          onOpenChange={(open) => !open && setConfirm(null)}
+          onConfirm={turnOff}
           pending={busy}
         />
 

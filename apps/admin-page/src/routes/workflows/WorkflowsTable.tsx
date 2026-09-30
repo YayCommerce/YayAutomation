@@ -11,6 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { blocks } from './blocks';
 import { DeleteWorkflowDialog } from './editor/WorkflowActions';
+import { workflowState, WorkflowStatusBadge } from './editor/WorkflowStatusBadge';
 
 function triggerSummary(workflow: Workflow) {
   const trigger = workflow.graph.nodes.find((node) => node.kind === 'trigger');
@@ -60,11 +61,7 @@ export function WorkflowsTable({ workflows }: { workflows: Workflow[] }) {
               </TableCell>
               <TableCell>
                 <div className="flex items-center gap-1.5">
-                  {workflow.status === 'active' ? (
-                    <Badge variant="success-soft">{__('Active', 'yay-automation')}</Badge>
-                  ) : (
-                    <Badge variant="secondary">{__('Inactive', 'yay-automation')}</Badge>
-                  )}
+                  <WorkflowStatusBadge state={workflowState(workflow)} />
                   {workflow.draft && <Badge variant="warning-soft">{__('Unapplied changes', 'yay-automation')}</Badge>}
                 </div>
               </TableCell>

@@ -127,7 +127,7 @@ Template → Install → edit → Turn on / Apply looks and behaves like Shopify
    - **Turn off asks first** (editor and Overview): title "Turn off workflow", text "If you turn this workflow off, it stops running on new orders.", buttons "Dismiss" and "Turn off".
    - **Draft vs Inactive:**
      - `_yay_automation_activated_at` meta, set on the first activate. Workflows active before this checkpoint count as activated; deactivate also sets it when missing.
-     - `Workflow` gains `activatedAt: string | null`.
+     - `Workflow` gains `everActivated: boolean` (the UI only needs whether it was ever turned on).
      - Badges (Overview, editor, list): Active / Inactive (turned on before, now off) / Draft (never turned on).
      - Overview tabs: never turned on → "Draft"; Inactive → "Saved workflow"; Active → "Active workflow" plus "Draft" with unapplied changes (unchanged).
      - Editor header for an Inactive workflow: Inactive badge, More actions, Turn on workflow, ×.

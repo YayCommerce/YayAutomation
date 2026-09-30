@@ -32,6 +32,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/components/ui/sonner';
+import { ApiError } from './workflow.api';
 import { useDeleteWorkflowMutation, useUpdateWorkflowMutation } from './workflow.query';
 
 /**
@@ -131,7 +132,10 @@ export function RenameWorkflowDialog({ workflow, onClose }: { workflow: Workflow
   );
 }
 
-/** Confirms and deletes `workflow`; closed while it's null. Stays open while deleting, so a failure can be retried. */
+/**
+ * Confirms and deletes `workflow`; closed while it's null. Stays open while deleting, so a failure can
+ * be retried. An active workflow can't be deleted: it shows why instead (the server refuses too).
+ */
 export function DeleteWorkflowDialog({
   workflow,
   onClose,
@@ -142,46 +146,76 @@ export function DeleteWorkflowDialog({
   onDeleted?: () => void;
 }) {
   const deleteMutation = useDeleteWorkflowMutation();
+  // The server said it's on, though this copy of it was off (turned on in another tab).
+  const [refused, setRefused] = useState(false);
+  const blocked = workflow?.status === 'active' || refused;
+
+  const close = () => {
+    setRefused(false);
+    onClose();
+  };
 
   const confirm = () => {
     if (!workflow) return;
     deleteMutation.mutate(workflow.id, {
       onSuccess: () => {
         toast.success(__('Workflow deleted', 'yay-automation'));
-        onClose();
+        close();
         onDeleted?.();
       },
-      onError: (error) => toast.error(error.message),
+      onError: (error) => {
+        if (error instanceof ApiError && error.code === 'yay_automation_delete_active') setRefused(true);
+        else toast.error(error.message);
+      },
     });
   };
 
   return (
-    <AlertDialog open={!!workflow} onOpenChange={(open) => !open && !deleteMutation.isPending && onClose()}>
+    <AlertDialog open={!!workflow} onOpenChange={(open) => !open && !deleteMutation.isPending && close()}>
       <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>
-            {sprintf(
-              /* translators: %s: workflow name */
-              __('Delete “%s”?', 'yay-automation'),
-              workflow?.name ?? '',
-            )}
-          </AlertDialogTitle>
-          <AlertDialogDescription>
-            {__('The workflow stops running right away. This can’t be undone.', 'yay-automation')}
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel disabled={deleteMutation.isPending}>{__('Cancel', 'yay-automation')}</AlertDialogCancel>
-          {/* Not AlertDialogAction: that closes the dialog before the request finishes. */}
-          <LoadingButton
-            variant="destructive"
-            loading={deleteMutation.isPending}
-            disabled={deleteMutation.isPending}
-            onClick={confirm}
-          >
-            {__('Delete', 'yay-automation')}
-          </LoadingButton>
-        </AlertDialogFooter>
+        {blocked ? (
+          <>
+            <AlertDialogHeader>
+              <AlertDialogTitle>{__('There was a problem deleting this workflow', 'yay-automation')}</AlertDialogTitle>
+              <AlertDialogDescription>
+                {__(
+                  'Because this workflow is still turned on, it couldn’t be deleted. Turn it off and try again.',
+                  'yay-automation',
+                )}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>{__('Back', 'yay-automation')}</AlertDialogCancel>
+            </AlertDialogFooter>
+          </>
+        ) : (
+          <>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                {sprintf(
+                  /* translators: %s: workflow name */
+                  __('Delete “%s”?', 'yay-automation'),
+                  workflow?.name ?? '',
+                )}
+              </AlertDialogTitle>
+              <AlertDialogDescription>{__('This can’t be undone.', 'yay-automation')}</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={deleteMutation.isPending}>
+                {__('Cancel', 'yay-automation')}
+              </AlertDialogCancel>
+              {/* Not AlertDialogAction: that closes the dialog before the request finishes. */}
+              <LoadingButton
+                variant="destructive"
+                loading={deleteMutation.isPending}
+                disabled={deleteMutation.isPending}
+                onClick={confirm}
+              >
+                {__('Delete', 'yay-automation')}
+              </LoadingButton>
+            </AlertDialogFooter>
+          </>
+        )}
       </AlertDialogContent>
     </AlertDialog>
   );
@@ -200,12 +234,19 @@ function ConfirmDialog({
   title,
   description,
   confirmLabel,
+  cancelLabel = __('Cancel', 'yay-automation'),
   destructive,
   open,
   onOpenChange,
   onConfirm,
   pending,
-}: ConfirmProps & { title: string; description: string; confirmLabel: string; destructive?: boolean }) {
+}: ConfirmProps & {
+  title: string;
+  description: string;
+  confirmLabel: string;
+  cancelLabel?: string;
+  destructive?: boolean;
+}) {
   return (
     <Dialog open={open} onOpenChange={(next) => !pending && onOpenChange(next)}>
       <DialogContent className="sm:max-w-md">
@@ -216,7 +257,7 @@ function ConfirmDialog({
         <DialogFooter>
           <DialogClose asChild>
             <Button variant="outline" disabled={pending}>
-              {__('Cancel', 'yay-automation')}
+              {cancelLabel}
             </Button>
           </DialogClose>
           <LoadingButton
@@ -269,6 +310,18 @@ export function DiscardChangesDialog(props: ConfirmProps) {
       )}
       confirmLabel={__('Discard changes', 'yay-automation')}
       destructive
+    />
+  );
+}
+
+export function TurnOffDialog(props: ConfirmProps) {
+  return (
+    <ConfirmDialog
+      {...props}
+      title={__('Turn off workflow', 'yay-automation')}
+      description={__('If you turn this workflow off, it stops running on new orders.', 'yay-automation')}
+      confirmLabel={__('Turn off', 'yay-automation')}
+      cancelLabel={__('Dismiss', 'yay-automation')}
     />
   );
 }

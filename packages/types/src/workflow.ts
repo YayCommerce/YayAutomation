@@ -56,6 +56,8 @@ export interface Workflow {
   updatedAt: string;
   /** ISO date of the last draft save; null without a draft. */
   draftUpdatedAt: string | null;
+  /** Turned on at least once. Inactive + false = "Draft" (never on); inactive + true = "Inactive". */
+  everActivated: boolean;
 }
 
 /** Integration a template touches. Drives the icons on template cards. */

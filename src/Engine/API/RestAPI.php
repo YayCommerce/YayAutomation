@@ -247,8 +247,9 @@ class RestAPI {
      * autosave landing mid-apply could be wiped, or leave a draft on an inactive workflow.
      *
      * @param int      $id     Workflow id.
-     * @param callable $change Returns true on success, or a WP_Error.
-     * @return array|\WP_Error
+     * @param callable $change Returns true on success, a WP_Error, or a WP_REST_Response to send as is
+     *                         (e.g. after a delete, when there's no workflow left to return).
+     * @return array|\WP_Error|\WP_REST_Response
      */
     private function with_workflow( int $id, callable $change ) {
         global $wpdb;
@@ -264,7 +265,7 @@ class RestAPI {
                 return $this->not_found();
             }
             $result = $change( $id, $current );
-            if ( is_wp_error( $result ) ) {
+            if ( is_wp_error( $result ) || $result instanceof \WP_REST_Response ) {
                 return $result;
             }
             return WorkflowRepository::find( $id ) ?? $this->not_found();
@@ -274,11 +275,29 @@ class RestAPI {
         }
     }
 
+    /**
+     * Permanent delete. An active workflow must be turned off first (409), so a running automation
+     * can't disappear by accident.
+     *
+     * @param \WP_REST_Request $request Request.
+     */
     public function delete_workflow( \WP_REST_Request $request ) {
-        if ( ! WorkflowRepository::delete( (int) $request['id'] ) ) {
-            return $this->not_found();
-        }
-        return rest_ensure_response( [ 'deleted' => true ] );
+        return $this->with_workflow(
+            (int) $request['id'],
+            function ( int $id, array $current ) {
+                if ( 'active' === $current['status'] ) {
+                    return new \WP_Error(
+                        'yay_automation_delete_active',
+                        __( 'Because this workflow is still turned on, it couldn’t be deleted. Turn it off and try again.', 'yay-automation' ),
+                        [ 'status' => 409 ]
+                    );
+                }
+                if ( ! WorkflowRepository::delete( $id ) ) {
+                    return $this->not_found();
+                }
+                return rest_ensure_response( [ 'deleted' => true ] );
+            }
+        );
     }
 
     private function not_found(): \WP_Error {
