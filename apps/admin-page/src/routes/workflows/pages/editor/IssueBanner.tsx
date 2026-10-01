@@ -6,7 +6,7 @@ import { __, sprintf } from '@wordpress/i18n';
 import { cn } from '@/lib/utils';
 import { AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { ErrorAlert } from './ErrorAlert';
+import { ErrorAlert } from '../../shared/ui/ErrorAlert';
 
 const issueKey = (issue: WorkflowIssue) => `${issue.code}|${issue.nodeId ?? ''}`;
 

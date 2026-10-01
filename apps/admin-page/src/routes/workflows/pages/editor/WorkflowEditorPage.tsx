@@ -1,8 +1,8 @@
 import { useParams } from 'react-router';
 
-import { EditorPlaceholder } from './editor/EditorLayout';
-import { useWorkflowQuery } from './editor/workflow.query';
-import { WorkflowEditor } from './editor/WorkflowEditor';
+import { useWorkflowQuery } from '../../api/workflow.query';
+import { EditorPlaceholder } from '../../shared/layout/EditorLayout';
+import { WorkflowEditor } from './WorkflowEditor';
 
 export default function WorkflowEditorPage() {
   const { workflowId = '' } = useParams();

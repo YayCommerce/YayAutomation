@@ -8,9 +8,9 @@ import { BulkActionBox } from '@/components/ui/bulk-actions';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { toast } from '@/components/ui/sonner';
-import { ApiError, getWorkflow } from './editor/workflow.api';
-import { useDeleteWorkflowMutation, useWorkflowActionMutation, workflowKeys } from './editor/workflow.query';
-import { ConfirmDialog, DeleteBlockedContent, TurnOffDialog } from './editor/WorkflowActions';
+import { ApiError, getWorkflow } from '../../api/workflow.api';
+import { useDeleteWorkflowMutation, useWorkflowActionMutation, workflowKeys } from '../../api/workflow.query';
+import { ConfirmDialog, DeleteBlockedContent, TurnOffDialog } from '../../shared/actions/WorkflowActions';
 
 type Dialog = 'turnOff' | 'delete' | 'deleteBlocked';
 

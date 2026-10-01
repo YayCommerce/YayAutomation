@@ -8,10 +8,10 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/compone
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { TemplatesHeroIllustration } from '../WorkflowIllustrations';
-import type { LibraryNavState } from './library.nav';
-import { TemplateAppIcon } from './TemplateApps';
-import { templates } from './templates';
+import type { LibraryNavState } from '../../../shared/nav/library.nav';
+import { TemplateAppIcon } from '../../../shared/ui/TemplateApps';
+import { TemplatesHeroIllustration } from '../../../shared/ui/WorkflowIllustrations';
+import { templates } from '../../../templates';
 
 type SortKey = 'popular' | 'newest' | 'name';
 

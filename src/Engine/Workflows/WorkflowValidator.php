@@ -10,7 +10,7 @@ defined( 'ABSPATH' ) || exit;
  * Turns REST input into storable workflow parts. Saves only reject malformed input (one trigger,
  * known blocks, valid edges); issues from `errors()` are allowed there and only block turning a
  * workflow on or applying a draft.
- * `errors()` mirrors `validateWorkflow()` in apps/admin-page/src/routes/workflows/validation.ts.
+ * `errors()` mirrors `validateWorkflow()` in apps/admin-page/src/routes/workflows/model/validation.ts.
  */
 final class WorkflowValidator {
 

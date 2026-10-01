@@ -13,9 +13,9 @@ import { Pagination } from '@/components/ui/pagination';
 import { Segmented, SegmentedItem } from '@/components/ui/segmented';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { blocks } from './blocks';
-import { DeleteWorkflowDialog } from './editor/WorkflowActions';
-import { onOffState, WorkflowStatusBadge } from './editor/WorkflowStatusBadge';
+import { blocks } from '../../blocks';
+import { DeleteWorkflowDialog } from '../../shared/actions/WorkflowActions';
+import { onOffState, WorkflowStatusBadge } from '../../shared/ui/WorkflowStatusBadge';
 import { WorkflowBulkActions } from './WorkflowBulkActions';
 
 const PAGE_SIZE = 10;

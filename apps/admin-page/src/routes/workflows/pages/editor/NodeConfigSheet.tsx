@@ -1,9 +1,9 @@
 import { useStore } from '@tanstack/react-form';
 
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { blocks } from '../blocks';
+import { blocks } from '../../blocks';
+import { updateNodeConfig } from '../../model/graph';
 import { useWorkflowFormContext } from './useWorkflowForm';
-import { updateNodeConfig } from './workflow.graph';
 
 /** Settings for the clicked step. Edits go straight into the form; autosave persists them. */
 export function NodeConfigSheet({ nodeId, onClose }: { nodeId: string | null; onClose: () => void }) {

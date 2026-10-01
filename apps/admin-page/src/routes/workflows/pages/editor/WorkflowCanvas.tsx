@@ -5,10 +5,10 @@ import { useStore } from '@tanstack/react-form';
 import { Background, Controls, ReactFlow, type NodeChange } from '@xyflow/react';
 
 import { useTheme } from '@/components/ui/theme-provider';
+import { moveNode } from '../../model/graph';
+import { canvasStyle, toFlowEdges, toFlowNodes, type FlowNode } from '../../shared/canvas/flow';
 import { useEditorContext } from './editor.context';
 import { useWorkflowFormContext } from './useWorkflowForm';
-import { canvasStyle, toFlowEdges, toFlowNodes, type FlowNode } from './workflow.flow';
-import { moveNode } from './workflow.graph';
 import { nodeTypes } from './WorkflowNodeCard';
 
 /** Canvas-only node state. Kept out of the form so selecting a node doesn't make the workflow dirty. */

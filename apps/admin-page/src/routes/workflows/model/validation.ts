@@ -1,8 +1,8 @@
 import type { Workflow, WorkflowGraph, WorkflowIssue } from '@yay-automation/types';
 import { __ } from '@wordpress/i18n';
 
-import { blocks } from './blocks';
-import { descendantsOf } from './editor/workflow.graph';
+import { blocks } from '../blocks';
+import { descendantsOf } from './graph';
 
 /**
  * Everything that blocks turning a workflow on or applying its draft (saves allow them). Same rules

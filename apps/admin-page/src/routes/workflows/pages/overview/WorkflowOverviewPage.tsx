@@ -10,15 +10,15 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/components/ui/sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import type { EditorNavState } from './editor/editor.context';
-import { WorkflowAppIcon } from './editor/EditorLayout';
-import { ErrorAlert } from './editor/ErrorAlert';
-import { ReadOnlyCanvas } from './editor/ReadOnlyCanvas';
-import { ApiError } from './editor/workflow.api';
-import { useWorkflowActionMutation, useWorkflowQuery } from './editor/workflow.query';
-import { MoreActionsMenu, TurnOffDialog, TurnOnDialog } from './editor/WorkflowActions';
-import { onOffState, workflowState, WorkflowStatusBadge } from './editor/WorkflowStatusBadge';
-import { validateWorkflow } from './validation';
+import { ApiError } from '../../api/workflow.api';
+import { useWorkflowActionMutation, useWorkflowQuery } from '../../api/workflow.query';
+import { validateWorkflow } from '../../model/validation';
+import { MoreActionsMenu, TurnOffDialog, TurnOnDialog } from '../../shared/actions/WorkflowActions';
+import { ReadOnlyCanvas } from '../../shared/canvas/ReadOnlyCanvas';
+import { WorkflowAppIcon } from '../../shared/layout/EditorLayout';
+import type { EditorNavState } from '../../shared/nav/editor.nav';
+import { ErrorAlert } from '../../shared/ui/ErrorAlert';
+import { onOffState, workflowState, WorkflowStatusBadge } from '../../shared/ui/WorkflowStatusBadge';
 
 export default function WorkflowOverviewPage() {
   const { workflowId = '' } = useParams();

@@ -33,8 +33,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/components/ui/sonner';
-import { ApiError } from './workflow.api';
-import { useDeleteWorkflowMutation, useUpdateWorkflowMutation, workflowKeys } from './workflow.query';
+import { ApiError } from '../../api/workflow.api';
+import { useDeleteWorkflowMutation, useUpdateWorkflowMutation, workflowKeys } from '../../api/workflow.query';
 
 /**
  * "More actions" menu: Rename and Delete. Delete returns to the list, after `onDeleted` (e.g. the

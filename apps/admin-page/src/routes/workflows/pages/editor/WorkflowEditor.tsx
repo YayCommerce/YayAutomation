@@ -18,18 +18,11 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/sonner';
-import { blocks } from '../blocks';
-import { createIssuesSelector, sameIssues } from '../validation';
-import { EditorContext, type EditorNavState, type EditorState } from './editor.context';
-import { EditorLayout } from './EditorLayout';
-import { IssueBanner } from './IssueBanner';
-import { NodeConfigSheet } from './NodeConfigSheet';
-import { SaveStatus } from './SaveStatus';
-import { useAutosave } from './useAutosave';
-import { useWorkflowForm, WorkflowFormContext } from './useWorkflowForm';
-import { ApiError } from './workflow.api';
-import { removeNode } from './workflow.graph';
-import { useWorkflowActionMutation, workflowKeys } from './workflow.query';
+import { ApiError } from '../../api/workflow.api';
+import { useWorkflowActionMutation, workflowKeys } from '../../api/workflow.query';
+import { blocks } from '../../blocks';
+import { removeNode } from '../../model/graph';
+import { createIssuesSelector, sameIssues } from '../../model/validation';
 import {
   ApplyChangesDialog,
   DeleteStepDialog,
@@ -38,9 +31,17 @@ import {
   RenameWorkflowDialog,
   TurnOffDialog,
   TurnOnDialog,
-} from './WorkflowActions';
+} from '../../shared/actions/WorkflowActions';
+import { EditorLayout } from '../../shared/layout/EditorLayout';
+import { type EditorNavState } from '../../shared/nav/editor.nav';
+import { workflowState, WorkflowStatusBadge } from '../../shared/ui/WorkflowStatusBadge';
+import { EditorContext, type EditorState } from './editor.context';
+import { IssueBanner } from './IssueBanner';
+import { NodeConfigSheet } from './NodeConfigSheet';
+import { SaveStatus } from './SaveStatus';
+import { useAutosave } from './useAutosave';
+import { useWorkflowForm, WorkflowFormContext } from './useWorkflowForm';
 import { WorkflowCanvas } from './WorkflowCanvas';
-import { workflowState, WorkflowStatusBadge } from './WorkflowStatusBadge';
 
 type ConfirmAction = 'turnOn' | 'turnOff' | 'apply' | 'discard';
 
