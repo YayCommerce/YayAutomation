@@ -7,12 +7,7 @@ import { __ } from '@wordpress/i18n';
 import { cn } from '@/lib/utils';
 import { blocks } from '../../blocks';
 import type { FlowNode } from './flow';
-
-/**
- * How a step with issues is marked. `review` (blue) until Turn on or Apply fails on it, then `error`
- * (red) for the rest of the editing session.
- */
-export type IssueMode = 'review' | 'error';
+import type { IssueMode } from './types';
 
 export const kindMeta: Record<WorkflowNodeKind, { label: string; icon: LucideIcon }> = {
   trigger: { label: __('Trigger', 'yay-automation'), icon: Zap },

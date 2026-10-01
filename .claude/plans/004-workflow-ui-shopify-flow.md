@@ -199,7 +199,7 @@ Template → Install → edit → Turn on / Apply looks and behaves like Shopify
 7. Restructure workflows folder — Risk: 2 — file moves only; no UI, API or behaviour change. Goal: many templates and pages later stay easy to maintain.
    - **Target structure** (`apps/admin-page/src/routes/workflows/`):
      - `api/`: `workflow.api.ts`, `workflow.query.ts`, `useCreateDraft.ts` (from `editor/`).
-     - `model/`: `graph.ts` (← `editor/workflow.graph.ts`), `validation.ts` (← `validation.ts`). No React.
+     - `model/`: `graph.ts` (← `editor/workflow.graph.ts`), `validation.ts` (← `validation.ts`), `structure.ts` (the server's shape checks, for the template check). No React code.
      - `blocks/`: unchanged.
      - `templates/`:
        - `core/types.ts` (template spec type), `core/defineTemplate.ts`, `core/registry.ts` (`createTemplateRegistry(list)` → `{ templates, findTemplate }`; rejects duplicate ids; in development, asserts every template's graph passes `validateWorkflow()` with zero issues and throws otherwise).
@@ -220,10 +220,10 @@ Template → Install → edit → Turn on / Apply looks and behaves like Shopify
    - **Rules** (also in `.claude/docs/context-dev-convention.md`):
      - Imports go one way: `pages/` → `shared/` → `api/`, `model/`, `blocks/`, `templates/`. Pages never import from another page's folder. `shared/` never imports `pages/`. `blocks/` and `templates/` never import `pages/` or `shared/`.
      - Within the bottom layer: `model/` may import `blocks/`; `templates/` may import `model/` and `blocks/`; `blocks/` imports nothing else from `workflows/`; `api/` imports nothing else from `workflows/`.
-     - `model/` has no React (no components, hooks or React types).
+     - `model/` files have no React (no components, hooks or React types). They read block schemas through `blocks/`, whose registry also loads the block forms, so `model/` still pulls React in indirectly; splitting block schemas from forms is a follow-up.
      - New template = new folder in `templates/` + one line in `templates/index.ts`.
      - Page-only components live in that page's folder; move to `shared/` only when a second page needs them.
-   - **Template check:** dev-time assert in `templates/core/registry.ts` (no new dependencies): in development, a template whose graph has issues throws on load with the template id and the issues.
+   - **Template check:** dev-time assert in `templates/core/registry.ts` (no new dependencies): in development, a template whose graph fails the server's shape checks (`model/structure.ts`, mirrors PHP `prepare_graph()`) or has issues (`validateWorkflow()`) throws on load with the template id and the problems.
    - `git mv` for every moved file; split files keep history on the larger part. No UI, API or behaviour change.
    - Test:
      - `tsc`, `pnpm build`, ESLint pass.

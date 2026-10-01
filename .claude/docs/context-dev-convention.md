@@ -24,7 +24,7 @@ Without it, WP loads the prod build in `assets/dist/admin-page/`.
 
 ## Workflows folder (`apps/admin-page/src/routes/workflows/`)
 
-- `api/` REST client + query hooks · `model/` graph and validation (no React) · `blocks/` one folder per block · `templates/` one folder per template · `pages/` one folder per page · `shared/` code used by two or more pages.
+- `api/` REST client + query hooks · `model/` graph and validation (no React code; block schemas come through `blocks/`, whose registry also loads the block forms) · `blocks/` one folder per block · `templates/` one folder per template · `pages/` one folder per page · `shared/` code used by two or more pages.
 - Imports go one way: `pages/` → `shared/` → `api/`, `model/`, `blocks/`, `templates/`. Pages never import from another page's folder; `shared/` never imports `pages/`; `blocks/` and `templates/` never import `pages/` or `shared/`.
 - Bottom layer: `model/` may import `blocks/`; `templates/` may import `model/` and `blocks/`; `blocks/` and `api/` import nothing else from `workflows/`.
 - New template = new folder in `templates/` + one line in `templates/index.ts`. In development the registry throws if a template's graph has issues.
