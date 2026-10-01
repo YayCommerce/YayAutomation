@@ -196,6 +196,42 @@ Template → Install → edit → Turn on / Apply looks and behaves like Shopify
      - Single Turn off dialog shows the new text in the editor and Overview.
      - Light and dark. `pnpm build`, ESLint pass.
 
+7. Restructure workflows folder — Risk: 2 — file moves only; no UI, API or behaviour change. Goal: many templates and pages later stay easy to maintain.
+   - **Target structure** (`apps/admin-page/src/routes/workflows/`):
+     - `api/`: `workflow.api.ts`, `workflow.query.ts`, `useCreateDraft.ts` (from `editor/`).
+     - `model/`: `graph.ts` (← `editor/workflow.graph.ts`), `validation.ts` (← `validation.ts`). No React.
+     - `blocks/`: unchanged.
+     - `templates/`:
+       - `core/types.ts` (template spec type), `core/defineTemplate.ts`, `core/registry.ts` (`createTemplateRegistry(list)` → `{ templates, findTemplate }`; rejects duplicate ids; in development, asserts every template's graph passes `validateWorkflow()` with zero issues and throws otherwise).
+       - `high-value-order-alert/index.ts` (← `templates/templates.ts`, `git mv` so history follows, then trimmed to the one template).
+       - `index.ts`: only imports the templates and registers them.
+     - `pages/`:
+       - `list/`: `WorkflowListPage.tsx`, `WorkflowsTable.tsx`, `WorkflowBulkActions.tsx` (the empty state stays inline in `WorkflowListPage`); `list/library/TemplatesDialog.tsx` (only the list page renders the library; the preview's "More templates" and × navigate to `/workflows?templates=list`).
+       - `template-preview/TemplatePreviewPage.tsx`.
+       - `overview/WorkflowOverviewPage.tsx`.
+       - `editor/`: `WorkflowEditorPage.tsx`, `WorkflowEditor.tsx`, `WorkflowCanvas.tsx`, `WorkflowNodeCard.tsx` (editable card, "+" button, `nodeTypes`), `NodeConfigSheet.tsx`, `IssueBanner.tsx`, `SaveStatus.tsx`, `editor.context.ts`, `useWorkflowForm.ts`, `useAutosave.ts`.
+     - `shared/`:
+       - `canvas/`: `ReadOnlyCanvas.tsx`, `NodeCardView.tsx` (split out of `WorkflowNodeCard.tsx`: `NodeCardView`, `kindMeta`, `branchLeft`, `readOnlyNodeTypes`, and the `IssueMode` type), `flow.ts` (← `editor/workflow.flow.ts`, incl. `canvasStyle`; it uses React/@xyflow types, so it isn't `model/`).
+       - `layout/`: `EditorLayout.tsx` (incl. `WorkflowAppIcon`, `EditorPlaceholder`).
+       - `actions/`: `WorkflowActions.tsx` and its dialogs.
+       - `ui/`: `WorkflowStatusBadge.tsx`, `ErrorAlert.tsx`, `WorkflowIllustrations.tsx`, `TemplateApps.tsx` (used by the preview and the library).
+       - `nav/`: `library.nav.ts` (`LIBRARY_PATH` = `/workflows?templates=list`), `editor.nav.ts` (`EditorNavState`, the Overview → editor hand-off, moved out of `editor.context.ts`).
+     - `router.tsx` imports the pages from `pages/`.
+   - **Rules** (also in `.claude/docs/context-dev-convention.md`):
+     - Imports go one way: `pages/` → `shared/` → `api/`, `model/`, `blocks/`, `templates/`. Pages never import from another page's folder. `shared/` never imports `pages/`. `blocks/` and `templates/` never import `pages/` or `shared/`.
+     - Within the bottom layer: `model/` may import `blocks/`; `templates/` may import `model/` and `blocks/`; `blocks/` imports nothing else from `workflows/`; `api/` imports nothing else from `workflows/`.
+     - `model/` has no React (no components, hooks or React types).
+     - New template = new folder in `templates/` + one line in `templates/index.ts`.
+     - Page-only components live in that page's folder; move to `shared/` only when a second page needs them.
+   - **Template check:** dev-time assert in `templates/core/registry.ts` (no new dependencies): in development, a template whose graph has issues throws on load with the template id and the issues.
+   - `git mv` for every moved file; split files keep history on the larger part. No UI, API or behaviour change.
+   - Test:
+     - `tsc`, `pnpm build`, ESLint pass.
+     - Import rules: a grep finds no import that breaks them.
+     - Browser smoke of every route: list (tabs, selection, bulk Turn off / Delete), library (open via `?templates=list`, close, Back), preview (More templates, ×, Install), Overview, editor (edit + autosave, Turn on, Apply, Discard, delete step).
+     - Template check: the current template loads without the assert firing; a temporarily broken copy (e.g. empty amount) throws in development (reverted, not committed).
+     - `git log --follow` shows history for moved files.
+
 ## Out of Scope
 
 "Test your workflow / Select test event", Sidekick, Library dialog unchanged (keeps its existing search and sort); Apps/Categories filters, Add note / Export / Duplicate / Manage tags, "Version history" tab and the "…" menu, versioning beyond one live graph + one draft, new blocks or templates, Create workflow (stays "Coming soon").
