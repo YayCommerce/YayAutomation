@@ -10,7 +10,7 @@ import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/in
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { LibraryNavState } from '../../../shared/nav/library.nav';
 import { TemplateAppIcon } from '../../../shared/ui/TemplateApps';
-import { TemplatesHeroIllustration } from '../../../shared/ui/WorkflowIllustrations';
+import { TemplatesHeroIllustration } from '../WorkflowIllustrations';
 import { templates } from '../../../templates';
 
 type SortKey = 'popular' | 'newest' | 'name';

@@ -206,7 +206,7 @@ Template → Install → edit → Turn on / Apply looks and behaves like Shopify
        - `high-value-order-alert/index.ts` (← `templates/templates.ts`, `git mv` so history follows, then trimmed to the one template).
        - `index.ts`: only imports the templates and registers them.
      - `pages/`:
-       - `list/`: `WorkflowListPage.tsx`, `WorkflowsTable.tsx`, `WorkflowBulkActions.tsx` (the empty state stays inline in `WorkflowListPage`); `list/library/TemplatesDialog.tsx` (only the list page renders the library; the preview's "More templates" and × navigate to `/workflows?templates=list`).
+       - `list/`: `WorkflowListPage.tsx`, `WorkflowsTable.tsx`, `WorkflowBulkActions.tsx`, `WorkflowIllustrations.tsx` (only the list page and its library use them; the empty state stays inline in `WorkflowListPage`); `list/library/TemplatesDialog.tsx` (only the list page renders the library; the preview's "More templates" and × navigate to `/workflows?templates=list`).
        - `template-preview/TemplatePreviewPage.tsx`.
        - `overview/WorkflowOverviewPage.tsx`.
        - `editor/`: `WorkflowEditorPage.tsx`, `WorkflowEditor.tsx`, `WorkflowCanvas.tsx`, `WorkflowNodeCard.tsx` (editable card, "+" button, `nodeTypes`), `NodeConfigSheet.tsx`, `IssueBanner.tsx`, `SaveStatus.tsx`, `editor.context.ts`, `useWorkflowForm.ts`, `useAutosave.ts`.
@@ -214,7 +214,7 @@ Template → Install → edit → Turn on / Apply looks and behaves like Shopify
        - `canvas/`: `ReadOnlyCanvas.tsx`, `NodeCardView.tsx` (split out of `WorkflowNodeCard.tsx`: `NodeCardView`, `kindMeta`, `branchLeft`, `readOnlyNodeTypes`, and the `IssueMode` type), `flow.ts` (← `editor/workflow.flow.ts`, incl. `canvasStyle`; it uses React/@xyflow types, so it isn't `model/`).
        - `layout/`: `EditorLayout.tsx` (incl. `WorkflowAppIcon`, `EditorPlaceholder`).
        - `actions/`: `WorkflowActions.tsx` and its dialogs.
-       - `ui/`: `WorkflowStatusBadge.tsx`, `ErrorAlert.tsx`, `WorkflowIllustrations.tsx`, `TemplateApps.tsx` (used by the preview and the library).
+       - `ui/`: `WorkflowStatusBadge.tsx`, `ErrorAlert.tsx`, `TemplateApps.tsx` (used by the preview and the library).
        - `nav/`: `library.nav.ts` (`LIBRARY_PATH` = `/workflows?templates=list`), `editor.nav.ts` (`EditorNavState`, the Overview → editor hand-off, moved out of `editor.context.ts`).
      - `router.tsx` imports the pages from `pages/`.
    - **Rules** (also in `.claude/docs/context-dev-convention.md`):

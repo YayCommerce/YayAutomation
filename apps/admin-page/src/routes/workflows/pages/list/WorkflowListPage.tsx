@@ -7,7 +7,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { PageCard, PageTitle } from '@/components/widget/PageWidget';
 import { useWorkflowsQuery } from '../../api/workflow.query';
 import { readLibraryNavState, type LibraryNavState } from '../../shared/nav/library.nav';
-import { WorkflowsEmptyIllustration } from '../../shared/ui/WorkflowIllustrations';
+import { WorkflowsEmptyIllustration } from './WorkflowIllustrations';
 import { TemplatesDialog } from './library/TemplatesDialog';
 import { WorkflowsTable, WorkflowsTableSkeleton } from './WorkflowsTable';
 
