@@ -2,7 +2,7 @@
 
 ## Goal
 
-`#/workflows` empty state, template library modal (`?templates=1`), read-only template preview page, and "Use template" → draft workflow in the existing editor.
+`#/workflows` empty state, template library modal (`?templates=list`), read-only template preview page, and "Use template" → draft workflow in the existing editor.
 
 ## Approach
 
@@ -15,14 +15,14 @@
   - Centered `Empty` state with an inline SVG illustration in theme tokens.
   - "Create workflow" creates a blank draft (one placeholder trigger) and opens the editor. Replaces the `/workflows/new` link, which currently errors.
 - **Templates modal** (`TemplatesDialog`), matching Image 2:
-  - Open state via `useSearchParams` → `?templates=1`.
+  - Open state via `useSearchParams` → `?templates=list`.
   - Wide `Dialog`: hero banner (title, subtitle, inline SVG), `InputGroup` search, Sort `Select` (Most popular, Newest, Name A–Z).
   - Responsive 1/2/3-col card grid: name, 3-line clamped description, category, app icons (lucide).
   - Search over name, description, category. Search and sort are local state. Empty-results state.
   - Card click → `/workflows/templates/:templateId`.
 - **Read-only canvas:** split `WorkflowNodeCard` into a presentational `NodeCardView` (card + handles, no form context) and the editable wrapper (delete, `+` menu). New `ReadOnlyCanvas`: ReactFlow with view-only `nodeTypes`, same background, controls and theme. No drag, select or connect.
 - **Preview page** (`TemplatePreviewPage`):
-  - Uses `EditorLayout` with a new `backTo` prop → `/workflows?templates=1` so the modal reopens.
+  - Uses `EditorLayout` with a new `backTo` prop → `/workflows?templates=list` so the modal reopens.
   - Toolbar: name, "Template" badge, "Use template" on the right with pending state.
   - Body: canvas left, `w-80` details panel right (description, category, apps, step list).
   - Loading skeleton and not-found state.
@@ -33,7 +33,7 @@
 
 1. Workflows UI — Risk: 2 — everything above. Test:
    - `#/workflows` matches Image 1; Import disabled with "Coming soon" tooltip.
-   - Template Library sets `?templates=1`; reload keeps the modal open.
+   - Template Library sets `?templates=list`; reload keeps the modal open.
    - Search filters, sort reorders, nonsense query shows empty results.
    - Card → preview with read-only canvas (no drag, `+` or delete) and side panel.
    - Back reopens the modal.

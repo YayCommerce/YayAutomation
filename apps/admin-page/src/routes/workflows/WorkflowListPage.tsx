@@ -15,10 +15,10 @@ export default function WorkflowListPage() {
   const navigate = useNavigate();
   const { data: workflows, error } = useWorkflowsQuery();
 
-  // Library open state lives in the URL (`?templates=1`) so reload and "back" from a preview reopen it.
+  // Library open state lives in the URL (`?templates=list`) so reload and "back" from a preview reopen it.
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
-  const templatesOpen = searchParams.get('templates') === '1';
+  const templatesOpen = searchParams.get('templates') === 'list';
   const setTemplatesOpen = (open: boolean) => {
     if (open) {
       // Pushed, so browser Back closes the library.
@@ -29,7 +29,7 @@ export default function WorkflowListPage() {
       // Pop the entry we pushed rather than stacking a closed copy on top of it.
       navigate(-1);
     } else {
-      // Landed here with `?templates=1` (link, reload): nothing to pop, so just drop the param.
+      // Landed here with `?templates=list` (link, reload): nothing to pop, so just drop the param.
       setSearchParams((prev) => withTemplates(prev, false), { replace: true });
     }
   };
@@ -96,7 +96,7 @@ export default function WorkflowListPage() {
 
 function withTemplates(prev: URLSearchParams, open: boolean) {
   const params = new URLSearchParams(prev);
-  if (open) params.set('templates', '1');
+  if (open) params.set('templates', 'list');
   else params.delete('templates');
   return params;
 }

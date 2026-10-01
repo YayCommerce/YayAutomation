@@ -4,10 +4,10 @@
  * so the browser Back button keeps matching what the user sees.
  */
 
-export const LIBRARY_PATH = '/workflows?templates=1';
+export const LIBRARY_PATH = '/workflows?templates=list';
 
 export interface LibraryNavState {
-  /** Set on the `?templates=1` entry pushed by opening the library. */
+  /** Set on the `?templates=list` entry pushed by opening the library. */
   libraryOpened?: boolean;
   /** Set on the preview entry pushed by clicking a template card. */
   fromLibrary?: boolean;
