@@ -198,7 +198,7 @@ Template → Install → edit → Turn on / Apply looks and behaves like Shopify
 
 7. Restructure workflows folder — Risk: 2 — file moves only; no UI, API or behaviour change. Goal: many templates and pages later stay easy to maintain.
    - **Target structure** (`apps/admin-page/src/routes/workflows/`):
-     - `api/`: `workflow.api.ts`, `workflow.query.ts`, `useCreateDraft.ts` (from `editor/`).
+     - `api/`: `workflow.api.ts`, `workflow.query.ts` (from `editor/`).
      - `model/`: `graph.ts` (← `editor/workflow.graph.ts`), `validation.ts` (← `validation.ts`), `structure.ts` (the server's shape checks, for the template check). No React code.
      - `blocks/`: unchanged.
      - `templates/`:
@@ -207,7 +207,7 @@ Template → Install → edit → Turn on / Apply looks and behaves like Shopify
        - `index.ts`: only imports the templates and registers them.
      - `pages/`:
        - `list/`: `WorkflowListPage.tsx`, `WorkflowsTable.tsx`, `WorkflowBulkActions.tsx`, `WorkflowIllustrations.tsx` (only the list page and its library use them; the empty state stays inline in `WorkflowListPage`); `list/library/TemplatesDialog.tsx` (only the list page renders the library; the preview's "More templates" and × navigate to `/workflows?templates=list`).
-       - `template-preview/TemplatePreviewPage.tsx`.
+       - `template-preview/`: `TemplatePreviewPage.tsx`, `useCreateDraft.ts` (Install; only this page uses it).
        - `overview/WorkflowOverviewPage.tsx`.
        - `editor/`: `WorkflowEditorPage.tsx`, `WorkflowEditor.tsx`, `WorkflowCanvas.tsx`, `WorkflowNodeCard.tsx` (editable card, "+" button, `nodeTypes`), `NodeConfigSheet.tsx`, `IssueBanner.tsx`, `SaveStatus.tsx`, `editor.context.ts`, `useWorkflowForm.ts`, `useAutosave.ts`.
      - `shared/`:

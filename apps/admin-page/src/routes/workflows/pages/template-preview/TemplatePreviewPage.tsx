@@ -8,12 +8,12 @@ import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button, LoadingButton } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { useCreateDraft } from '../../api/useCreateDraft';
 import { ReadOnlyCanvas } from '../../shared/canvas/ReadOnlyCanvas';
 import { EditorLayout, EditorPlaceholder, type EditorCloseProps } from '../../shared/layout/EditorLayout';
 import { LIBRARY_PATH, readLibraryNavState } from '../../shared/nav/library.nav';
 import { appMeta, TemplateAppIcon } from '../../shared/ui/TemplateApps';
 import { findTemplate } from '../../templates';
+import { useCreateDraft } from './useCreateDraft';
 
 export default function TemplatePreviewPage() {
   const { templateId = '' } = useParams();

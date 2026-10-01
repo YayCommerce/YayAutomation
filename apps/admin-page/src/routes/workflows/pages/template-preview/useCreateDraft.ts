@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router';
 import { __ } from '@wordpress/i18n';
 
 import { toast } from '@/components/ui/sonner';
-import { useCreateWorkflowMutation } from './workflow.query';
+import { useCreateWorkflowMutation } from '../../api/workflow.query';
 
 /** Creates an inactive draft right away and opens it in the editor, like Shopify Flow's Install. */
 export function useCreateDraft() {
