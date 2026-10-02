@@ -155,7 +155,7 @@ export function WorkflowsTable({ workflows }: { workflows: Workflow[] }) {
                   </div>
                 </TableCell>
                 <TableCell className="text-muted-foreground">{triggerSummary(workflow)}</TableCell>
-                <TableCell className="text-muted-foreground">{formatDateTime(workflow.updatedAt)}</TableCell>
+                <TableCell className="text-muted-foreground">{formatDateTime(workflow.lastVersionAt)}</TableCell>
                 <TableCell>
                   <Button
                     variant="ghost"

@@ -58,6 +58,30 @@ export interface Workflow {
   draftUpdatedAt: string | null;
   /** Turned on at least once. Inactive + false = "Draft" (never on); inactive + true = "Inactive". */
   everActivated: boolean;
+  /** ISO date of the newest version (draft saves included): "Last updated". */
+  lastVersionAt: string;
+}
+
+export type WorkflowVersionAction = 'created' | 'edited' | 'activated' | 'deactivated';
+
+/** One entry of a workflow's version history. */
+export interface WorkflowVersion {
+  id: string;
+  /** Last thing done to this version. */
+  action: WorkflowVersionAction;
+  /** Display name of who did it; null when that user has been deleted. */
+  user: string | null;
+  /** ISO date of that action. */
+  createdAt: string;
+  graph: WorkflowGraph;
+  /** `draft`: the unapplied draft, or the content of a never-turned-on workflow. `active`: running now. */
+  status: 'draft' | 'active' | null;
+}
+
+/** A page of `GET /workflows/:id/versions`, newest first. */
+export interface WorkflowVersionsPage {
+  items: WorkflowVersion[];
+  hasMore: boolean;
 }
 
 /** Integration a template touches. Drives the icons on template cards. */

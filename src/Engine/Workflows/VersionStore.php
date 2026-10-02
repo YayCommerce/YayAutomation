@@ -124,7 +124,7 @@ final class VersionStore {
     }
 
     /**
-     * Newest first. Returns up to PER_PAGE + 1 rows, so the caller can tell whether a next page exists.
+     * Newest change first (a draft edited in place moves up). Returns up to PER_PAGE + 1 rows, so the caller can tell whether a next page exists.
      *
      * @param int $workflow_id Workflow post id.
      * @param int $page        1-based.
@@ -136,7 +136,7 @@ final class VersionStore {
         return $wpdb->get_results(
             $wpdb->prepare(
                 // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-                "SELECT id, action, graph, user_id, updated_at FROM {$table} WHERE workflow_id = %d ORDER BY id DESC LIMIT %d OFFSET %d",
+                "SELECT id, action, graph, user_id, updated_at FROM {$table} WHERE workflow_id = %d ORDER BY updated_at DESC, id DESC LIMIT %d OFFSET %d",
                 $workflow_id,
                 self::PER_PAGE + 1,
                 ( max( 1, $page ) - 1 ) * self::PER_PAGE

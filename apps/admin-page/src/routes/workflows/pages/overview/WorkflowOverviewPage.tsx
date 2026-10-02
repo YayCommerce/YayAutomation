@@ -1,11 +1,10 @@
 import { useMemo, useState, type ReactNode } from 'react';
-import { ControlButton } from '@xyflow/react';
 import type { Workflow } from '@yay-automation/types';
 import { ChevronLeft, CircleAlert, Pencil } from 'lucide-react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { __, sprintf } from '@wordpress/i18n';
 
-import { formatDateTime } from '@/lib/helpers/date.helper';
+import { formatDate, formatTime } from '@/lib/helpers/date.helper';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/components/ui/sonner';
@@ -19,6 +18,8 @@ import { WorkflowAppIcon } from '../../shared/layout/EditorLayout';
 import type { EditorNavState } from '../../shared/nav/editor.nav';
 import { ErrorAlert } from '../../shared/ui/ErrorAlert';
 import { onOffState, workflowState, WorkflowStatusBadge } from '../../shared/ui/WorkflowStatusBadge';
+import { VersionHistory } from './VersionHistory';
+import { WorkflowRuns } from './WorkflowRuns';
 
 export default function WorkflowOverviewPage() {
   const { workflowId = '' } = useParams();
@@ -38,6 +39,17 @@ export default function WorkflowOverviewPage() {
     </OverviewLayout>
   );
 }
+
+const HISTORY_TAB = 'history';
+
+// Shopify-style pills: the selected tab is a gray pill, no card or shadow. Focus ring stays
+// keyboard-only (the kit's `focus-visible` styles).
+const pillTabClass =
+  'flex-none rounded-full px-3 py-1.5 data-[state=active]:bg-foreground/10 data-[state=active]:text-foreground data-[state=active]:shadow-none dark:data-[state=active]:border-transparent dark:data-[state=active]:bg-foreground/10';
+
+// Fixed height so React Flow has room to fit the graph. `flex-none` overrides the kit's `flex-1`
+// (basis 0%): with no fixed card height that basis collapses the panel to 0px.
+const canvasPanelClass = 'h-[clamp(280px,38vh,420px)] flex-none overflow-hidden rounded-md';
 
 /** Read-only summary of a saved workflow: the live version, plus unapplied changes when there are any. */
 function WorkflowOverview({ workflow }: { workflow: Workflow }) {
@@ -104,8 +116,9 @@ function WorkflowOverview({ workflow }: { workflow: Workflow }) {
     [isActive, workflow.draft, workflow.name],
   );
   const [tab, setTab] = useState(tabs[0].value);
+  const [historyPage, setHistoryPage] = useState(1);
   // A tab can disappear (draft applied or discarded elsewhere); fall back to the first.
-  const currentTab = tabs.some((t) => t.value === tab) ? tab : tabs[0].value;
+  const currentTab = tab === HISTORY_TAB || tabs.some((t) => t.value === tab) ? tab : tabs[0].value;
 
   return (
     <OverviewLayout
@@ -138,12 +151,13 @@ function WorkflowOverview({ workflow }: { workflow: Workflow }) {
         </>
       }
     >
-      <div className="flex size-full flex-col gap-3 p-4">
+      <div className="flex flex-col gap-3 p-4">
         <p className="text-muted-foreground text-sm">
           {sprintf(
-            /* translators: %s: date and time */
-            __('Last updated on %s', 'yay-automation'),
-            formatDateTime(workflow.updatedAt),
+            /* translators: 1: date, 2: time */
+            __('Last updated on %1$s at %2$s', 'yay-automation'),
+            formatDate(workflow.lastVersionAt),
+            formatTime(workflow.lastVersionAt),
           )}
         </p>
         {turnOnFailed && !isActive && (
@@ -162,36 +176,38 @@ function WorkflowOverview({ workflow }: { workflow: Workflow }) {
             </Button>
           </ErrorAlert>
         )}
-        <Tabs
-          value={currentTab}
-          onValueChange={setTab}
-          className="bg-card min-h-0 flex-1 gap-3 rounded-lg border p-3 shadow-xs"
-        >
-          <TabsList>
+        <Tabs value={currentTab} onValueChange={setTab} className="bg-card gap-3 rounded-lg border p-3 shadow-xs">
+          <TabsList className="h-auto bg-transparent p-0">
             {tabs.map((t) => (
-              <TabsTrigger key={t.value} value={t.value}>
+              <TabsTrigger key={t.value} value={t.value} className={pillTabClass}>
                 {t.label}
               </TabsTrigger>
             ))}
+            <TabsTrigger value={HISTORY_TAB} className={pillTabClass}>
+              {__('Version history', 'yay-automation')}
+            </TabsTrigger>
           </TabsList>
           {tabs.map((t) => (
-            <TabsContent key={t.value} value={t.value} className="min-h-0 overflow-hidden rounded-md">
+            <TabsContent key={t.value} value={t.value} className={canvasPanelClass}>
               <ReadOnlyCanvas
                 key={t.value}
                 graph={t.graph}
                 controls={
-                  <ControlButton
-                    onClick={() => navigate(editPath)}
-                    title={__('Edit workflow', 'yay-automation')}
-                    aria-label={__('Edit workflow', 'yay-automation')}
-                  >
-                    <Pencil />
-                  </ControlButton>
+                  <Button variant="outline" size="icon-sm" className="bg-card" asChild>
+                    <Link to={editPath} aria-label={__('Edit workflow', 'yay-automation')}>
+                      <Pencil />
+                    </Link>
+                  </Button>
                 }
               />
             </TabsContent>
           ))}
+          <TabsContent value={HISTORY_TAB}>
+            <VersionHistory workflow={workflow} page={historyPage} onPageChange={setHistoryPage} />
+          </TabsContent>
         </Tabs>
+        {/* Run logging doesn't exist yet, so there are never runs to list. */}
+        <WorkflowRuns runs={[]} />
       </div>
 
       <TurnOnDialog
@@ -229,7 +245,7 @@ function OverviewLayout({ title, actions, children }: { title: ReactNode; action
         <div className="flex min-w-0 flex-1 items-center gap-2">{title}</div>
         {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
       </div>
-      <div className="min-h-0 flex-1">{children}</div>
+      <div className="min-h-0 flex-1 overflow-y-auto">{children}</div>
     </div>
   );
 }

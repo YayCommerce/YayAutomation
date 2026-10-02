@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react';
-import type { Edge, Node } from '@xyflow/react';
+import { MarkerType, type Edge, type Node } from '@xyflow/react';
 import type { WorkflowGraph, WorkflowNodeData, WorkflowNodeKind } from '@yay-automation/types';
 import { __ } from '@wordpress/i18n';
 
@@ -32,5 +32,6 @@ export function toFlowEdges(graph: WorkflowGraph): Edge[] {
     target: edge.target,
     sourceHandle: edge.sourceHandle,
     label: edge.sourceHandle ? branchLabels[edge.sourceHandle] : undefined,
+    markerEnd: { type: MarkerType.ArrowClosed },
   }));
 }

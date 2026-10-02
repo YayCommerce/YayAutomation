@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Workflow } from '@yay-automation/types';
 
 import {
@@ -10,6 +10,7 @@ import {
   deleteWorkflow,
   discardDraft,
   getWorkflow,
+  listVersions,
   listWorkflows,
   updateWorkflow,
 } from './workflow.api';
@@ -18,6 +19,8 @@ export const workflowKeys = {
   all: ['workflows'] as const,
   list: () => [...workflowKeys.all, 'list'] as const,
   detail: (id: string) => [...workflowKeys.all, 'detail', id] as const,
+  versions: (id: string) => [...workflowKeys.all, 'versions', id] as const,
+  versionsPage: (id: string, page: number) => [...workflowKeys.versions(id), page] as const,
 };
 
 export function useWorkflowsQuery() {
@@ -39,6 +42,15 @@ export function useWorkflowQuery(id: string) {
     initialDataUpdatedAt: () => queryClient.getQueryState(workflowKeys.list())?.dataUpdatedAt,
     // A missing workflow stays missing, so don't delay the message; retry anything else (blips, timeouts).
     retry: (failureCount, error) => !(error instanceof ApiError && error.status === 404) && failureCount < 2,
+  });
+}
+
+/** One page of version history. Keeps showing the previous page while the next one loads. */
+export function useWorkflowVersionsQuery(id: string, page: number) {
+  return useQuery({
+    queryKey: workflowKeys.versionsPage(id, page),
+    queryFn: () => listVersions(id, page),
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -67,6 +79,8 @@ function useWorkflowMutation<V extends { id?: string }>(
       queryClient.setQueryData(workflowKeys.detail(saved.id), saved);
       // Not awaited: callers (e.g. opening a new draft) shouldn't wait for the list to refetch.
       void queryClient.invalidateQueries({ queryKey: workflowKeys.list() });
+      // Every save can add or change a version.
+      void queryClient.invalidateQueries({ queryKey: workflowKeys.versions(saved.id) });
       onSaved?.(saved);
     },
     onError: (error) => onFailed?.(error),
@@ -109,6 +123,7 @@ export function useDeleteWorkflowMutation() {
     mutationFn: (id: string) => deleteWorkflow(id),
     onSuccess: (_, id) => {
       queryClient.removeQueries({ queryKey: workflowKeys.detail(id) });
+      queryClient.removeQueries({ queryKey: workflowKeys.versions(id) });
       queryClient.setQueryData<Workflow[]>(workflowKeys.list(), (list) => list?.filter((w) => w.id !== id));
     },
   });

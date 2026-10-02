@@ -272,16 +272,29 @@ class RestAPI {
     }
 
     /**
-     * One page of versions, newest first: `{ items, hasMore }`. Under the lock, because the first read
-     * of a workflow saved before versions existed seeds its rows.
+     * One page of versions, newest first: `{ items, hasMore }`. A workflow saved before versions
+     * existed gets its rows seeded first, under the lock; later reads don't wait for saves.
      *
      * @param \WP_REST_Request $request Request.
      */
     public function list_versions( \WP_REST_Request $request ) {
-        return $this->with_workflow(
-            (int) $request['id'],
-            fn( int $id ) => rest_ensure_response( WorkflowRepository::versions( $id, (int) $request['page'] ) )
-        );
+        $id = (int) $request['id'];
+        if ( ! WorkflowRepository::find( $id ) ) {
+            return $this->not_found();
+        }
+        if ( ! WorkflowRepository::has_versions( $id ) ) {
+            $seeded = $this->with_workflow(
+                $id,
+                function ( int $id ) {
+                    WorkflowRepository::seed_versions( $id );
+                    return true;
+                }
+            );
+            if ( is_wp_error( $seeded ) ) {
+                return $seeded;
+            }
+        }
+        return rest_ensure_response( WorkflowRepository::versions( $id, (int) $request['page'] ) );
     }
 
     /**

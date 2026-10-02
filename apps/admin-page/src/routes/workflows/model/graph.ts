@@ -8,7 +8,9 @@ import { newNodeData } from '../blocks';
  */
 
 /** Layout grid for new nodes. Template graphs use the same grid so added steps line up. */
-export const ROW_GAP = 150;
+// Top-to-top: a one-line card is ~74px tall, leaving ~45px of edge. Kept tight so a three-step graph
+// fits a ~340px read-only canvas at ≥0.8 zoom.
+export const ROW_GAP = 120;
 export const BRANCH_OFFSET = 150;
 
 /** Short unique id with a readable prefix. Not `crypto.randomUUID()`: it's undefined on non-HTTPS WP sites. */

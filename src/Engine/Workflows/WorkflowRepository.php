@@ -43,12 +43,33 @@ final class WorkflowRepository {
         );
 
         $last_version = VersionStore::last_updated( wp_list_pluck( $posts, 'ID' ) );
-        return array_map( fn( \WP_Post $post ) => self::to_array( $post, true, $last_version[ $post->ID ] ?? null ), $posts );
+        $workflows    = array_map( fn( \WP_Post $post ) => self::to_array( $post, true, $last_version[ $post->ID ] ?? null ), $posts );
+        // Newest "Last updated" first, the date the list shows. ISO dates in UTC sort as strings.
+        usort( $workflows, fn( array $a, array $b ) => strcmp( $b['lastVersionAt'], $a['lastVersionAt'] ) );
+        return $workflows;
     }
 
     public static function find( int $id ): ?array {
         $post = self::get_post( $id );
         return $post ? self::to_array( $post, true, VersionStore::last_updated( [ $id ] )[ $id ] ?? null ) : null;
+    }
+
+    /**
+     * False for a workflow saved before versions existed, until `seed_versions()` (or any write) runs.
+     *
+     * @param int $id Post id.
+     */
+    public static function has_versions( int $id ): bool {
+        return (bool) self::live_version( $id );
+    }
+
+    /**
+     * Seeds the versions of a workflow saved before versions existed; no-op otherwise.
+     *
+     * @param int $id Post id of an existing workflow.
+     */
+    public static function seed_versions( int $id ): void {
+        self::ensure_versions( $id );
     }
 
     /**
@@ -59,7 +80,6 @@ final class WorkflowRepository {
      * @return array{items: array[], hasMore: bool}
      */
     public static function versions( int $id, int $page ): array {
-        self::ensure_versions( $id );
         $workflow = self::find( $id );
         $live     = self::live_version( $id );
         $draft    = self::draft_version( $id );

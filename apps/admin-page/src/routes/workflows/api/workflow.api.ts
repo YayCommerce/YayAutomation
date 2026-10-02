@@ -1,4 +1,4 @@
-import type { Workflow, WorkflowIssue } from '@yay-automation/types';
+import type { Workflow, WorkflowIssue, WorkflowVersionsPage } from '@yay-automation/types';
 import { HTTPError, type Options, type ResponsePromise } from 'ky';
 import { __ } from '@wordpress/i18n';
 
@@ -82,3 +82,7 @@ export const applyDraft = (id: string) => request<Workflow>(api.post(`workflows/
 export const discardDraft = (id: string) => request<Workflow>(api.delete(`workflows/${id}/draft`));
 
 export const deleteWorkflow = (id: string) => request<{ deleted: boolean }>(api.delete(`workflows/${id}`));
+
+/** Version history, newest first, 10 per page. `page` is 1-based. */
+export const listVersions = (id: string, page: number) =>
+  request<WorkflowVersionsPage>(api.get(`workflows/${id}/versions`, { searchParams: { page } }));
