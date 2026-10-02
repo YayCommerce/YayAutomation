@@ -89,6 +89,14 @@ class AdminPage {
                     ? html_entity_decode( get_woocommerce_currency_symbol(), ENT_QUOTES, 'UTF-8' )
                     : '',
             ],
+            'docs'   => [
+                /**
+                 * Link under the empty "Workflow runs" section on a workflow's page.
+                 *
+                 * @param string $url Docs URL.
+                 */
+                'workflowRuns' => esc_url_raw( apply_filters( 'yay_automation_workflow_runs_docs_url', 'https://docs.yaycommerce.com/' ) ),
+            ],
         ];
 
         wp_localize_script( ScriptName::PAGE_ADMIN, 'yayAutomationMeta', $meta );

@@ -21,6 +21,10 @@ declare global {
         orderStatuses: { value: string; label: string }[];
         currencySymbol: string;
       };
+      docs: {
+        /** Filter `yay_automation_workflow_runs_docs_url`. */
+        workflowRuns: string;
+      };
     };
   }
 }

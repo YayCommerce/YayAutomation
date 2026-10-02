@@ -90,6 +90,23 @@ class RestAPI {
                 'permission_callback' => [ $this, 'can_manage' ],
             ]
         );
+
+        register_rest_route(
+            self::REST_NAMESPACE,
+            '/workflows/(?P<id>\d+)/versions',
+            [
+                'methods'             => \WP_REST_Server::READABLE,
+                'callback'            => [ $this, 'list_versions' ],
+                'permission_callback' => [ $this, 'can_manage' ],
+                'args'                => [
+                    'page' => [
+                        'type'    => 'integer',
+                        'minimum' => 1,
+                        'default' => 1,
+                    ],
+                ],
+            ]
+        );
     }
 
     public function can_manage() {
@@ -251,6 +268,19 @@ class RestAPI {
                 WorkflowRepository::save_draft( $id, null );
                 return true;
             }
+        );
+    }
+
+    /**
+     * One page of versions, newest first: `{ items, hasMore }`. Under the lock, because the first read
+     * of a workflow saved before versions existed seeds its rows.
+     *
+     * @param \WP_REST_Request $request Request.
+     */
+    public function list_versions( \WP_REST_Request $request ) {
+        return $this->with_workflow(
+            (int) $request['id'],
+            fn( int $id ) => rest_ensure_response( WorkflowRepository::versions( $id, (int) $request['page'] ) )
         );
     }
 
