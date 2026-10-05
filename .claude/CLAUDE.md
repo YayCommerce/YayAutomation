@@ -11,7 +11,7 @@ WordPress plugin: automation workflows + template library. UX reference: Shopify
 ## Layout
 
 - `yay-automation.php` — plugin bootstrap
-- `src/` — PHP backend, namespace `YayAutomation\`
+- `includes/` — PHP backend, namespace `YayAutomation\`
 - `apps/admin-page/` — React admin app
 - `packages/` — shared TS (`@yay-automation/utils`, `@yay-automation/types`)
 
@@ -24,10 +24,6 @@ pnpm lint:fix
 ```
 
 Admin page: `/wp-admin/admin.php?page=yay-automation`
-
-## Apps
-
-@.claude/admin-page.md
 
 ## Docs
 
