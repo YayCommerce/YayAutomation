@@ -1,4 +1,4 @@
-import { useLocation, useNavigate, useSearchParams } from 'react-router';
+import { useSearchParams } from 'react-router';
 import { __ } from '@wordpress/i18n';
 
 import { Button } from '@/components/ui/button';
@@ -6,32 +6,20 @@ import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTi
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { PageCard, PageTitle } from '@/components/widget/PageWidget';
 import { useWorkflowsQuery } from '../../api/workflow.query';
-import { readLibraryNavState, type LibraryNavState } from '../../shared/nav/library.nav';
 import { TemplatesDialog } from './library/TemplatesDialog';
 import { WorkflowsEmptyIllustration } from './WorkflowIllustrations';
 import { WorkflowsTable, WorkflowsTableSkeleton } from './WorkflowsTable';
 
 export default function WorkflowListPage() {
-  const navigate = useNavigate();
   const { data: workflows, error } = useWorkflowsQuery();
 
   // Library open state lives in the URL (`?templates=list`) so reload and "back" from a preview reopen it.
-  const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const templatesOpen = searchParams.get('templates') === 'list';
   const setTemplatesOpen = (open: boolean) => {
-    if (open) {
-      // Pushed, so browser Back closes the library.
-      setSearchParams((prev) => withTemplates(prev, true), {
-        state: { libraryOpened: true } satisfies LibraryNavState,
-      });
-    } else if (readLibraryNavState(location.state).libraryOpened) {
-      // Pop the entry we pushed rather than stacking a closed copy on top of it.
-      navigate(-1);
-    } else {
-      // Landed here with `?templates=list` (link, reload): nothing to pop, so just drop the param.
-      setSearchParams((prev) => withTemplates(prev, false), { replace: true });
-    }
+    // Opening pushes, so browser Back closes the library. Closing always lands on the bare list:
+    // popping with `navigate(-1)` could land on whatever came before (e.g. another `?templates=list`).
+    setSearchParams((prev) => withTemplates(prev, open), { replace: !open });
   };
 
   // Building a workflow from scratch isn't available yet; templates are the way in.

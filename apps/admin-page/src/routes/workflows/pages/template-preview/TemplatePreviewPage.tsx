@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button, LoadingButton } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ReadOnlyCanvas } from '../../shared/canvas/ReadOnlyCanvas';
-import { EditorLayout, EditorPlaceholder, type EditorCloseProps } from '../../shared/layout/EditorLayout';
+import { EditorLayout, EditorPlaceholder } from '../../shared/layout/EditorLayout';
 import { LIBRARY_PATH, readLibraryNavState } from '../../shared/nav/library.nav';
 import { appMeta, TemplateAppIcon } from '../../shared/ui/TemplateApps';
 import { findTemplate } from '../../templates';
@@ -22,27 +22,21 @@ export default function TemplatePreviewPage() {
   const location = useLocation();
   const { createDraft, isCreating } = useCreateDraft();
 
-  // × and "More templates" return to the open library. Opened from a card → pop that entry;
-  // otherwise (bookmark, reload) → link.
+  // "More templates" returns to the open library. Opened from a card → pop that entry;
+  // otherwise (bookmark, reload) → link. × leaves the flow for the workflow list (EditorLayout default).
   const toLibrary: MouseEventHandler<HTMLAnchorElement> = (event) => {
     if (readLibraryNavState(location.state).fromLibrary) {
       event.preventDefault();
       navigate(-1);
     }
   };
-  const closeProps: EditorCloseProps = {
-    closeTo: LIBRARY_PATH,
-    closeLabel: __('Back to templates', 'yay-automation'),
-    onClose: toLibrary,
-  };
 
   if (!template) {
-    return <EditorPlaceholder error={new Error(__('Template not found.', 'yay-automation'))} {...closeProps} />;
+    return <EditorPlaceholder error={new Error(__('Template not found.', 'yay-automation'))} />;
   }
 
   return (
     <EditorLayout
-      {...closeProps}
       title={
         <>
           <span className="truncate font-medium">{template.name}</span>
@@ -94,7 +88,8 @@ function AboutTemplate({ template, className }: { template: WorkflowTemplate; cl
           <p className="text-muted-foreground text-sm">{template.description}</p>
           <section>
             <h3 className="text-sm font-semibold">{__('Apps used', 'yay-automation')}</h3>
-            <ul className="mt-2 space-y-2">
+            {/* Gap, not `space-y-*`: WP admin's `li { margin-bottom }` beats its zero-specificity margins. */}
+            <ul className="mt-2 flex flex-col gap-2">
               {template.apps.map((app) => (
                 <li key={app} className="flex items-center gap-2 rounded-md border px-3 py-2 text-sm">
                   <TemplateAppIcon app={app} />
@@ -110,10 +105,17 @@ function AboutTemplate({ template, className }: { template: WorkflowTemplate; cl
   );
 }
 
-/** WooCommerce is the only app that can be missing; the others ship with WordPress or this plugin. */
+/**
+ * WooCommerce is the only plugin a template depends on, so it's the only real install check. Email
+ * (`wp_mail()`) ships with WordPress and the automation app is this plugin: both are "Built-in".
+ */
 function InstallState({ app }: { app: WorkflowTemplateApp }) {
-  if (app === 'woocommerce' && !window.yayAutomationMeta.wc.active) {
-    return <Badge variant="warning-soft">{__('Not installed', 'yay-automation')}</Badge>;
+  if (app !== 'woocommerce') {
+    return <Badge variant="dimmed">{__('Built-in', 'yay-automation')}</Badge>;
   }
-  return <Badge variant="dimmed">{__('Installed', 'yay-automation')}</Badge>;
+  return window.yayAutomationMeta.wc.active ? (
+    <Badge variant="dimmed">{__('Installed', 'yay-automation')}</Badge>
+  ) : (
+    <Badge variant="warning-soft">{__('Not installed', 'yay-automation')}</Badge>
+  );
 }

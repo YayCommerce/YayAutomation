@@ -32,9 +32,10 @@ export function EditorLayout({
         <WorkflowAppIcon />
         <div className="flex min-w-0 flex-1 items-center gap-2">{title}</div>
         {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
-        <Button variant="ghost" size="icon-sm" asChild>
+        {/* Round outline, same height as the `sm` actions beside it. `outline` carries the dark-mode colors. */}
+        <Button variant="outline" size="icon-sm" className="rounded-full" asChild>
           <Link to={closeTo} aria-label={closeLabel} onClick={onClose}>
-            <X />
+            <X strokeWidth={2.5} />
           </Link>
         </Button>
       </div>
