@@ -14,6 +14,7 @@ One-time setup verification. Not part of the dev loop.
 node --version
 pnpm --version
 php --version
+composer --version
 ```
 
 Report any missing tools.
@@ -24,6 +25,8 @@ Report any missing tools.
 
 ```bash
 pnpm install
+composer install                 # needs GitHub access to YayCommerce/yaycommerce-plugin-admin-shell
+./vendor/bin/yaycommerce-update  # builds vendor-prefixed/ (scoped admin-shell)
 ```
 
 ---

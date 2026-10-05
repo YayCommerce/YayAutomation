@@ -3,6 +3,9 @@ PROJECT_PATH=$(pwd)
 BUILD_PATH="${PROJECT_PATH}/release"
 DEST_PATH="$BUILD_PATH/$PLUGIN_SLUG"
 
+echo "Rebuilding scoped admin-shell..."
+./vendor/bin/yaycommerce-prerelease || exit 1
+
 echo "Generating build directory..."
 rm -rf "$BUILD_PATH"
 mkdir -p "$DEST_PATH"
@@ -15,17 +18,23 @@ pnpm build || exit 1
 echo "Syncing files..."
 rsync -rc --exclude-from="$PROJECT_PATH/.distignore" "$PROJECT_PATH/" "$DEST_PATH/" --delete --delete-excluded
 
+# Ship only the runtime autoloader: drop dev packages + unscoped admin-shell, rebuild a no-dev classmap.
+find "$DEST_PATH/vendor" -mindepth 1 -maxdepth 1 ! -name autoload.php ! -name composer -exec rm -rf {} +
+cp "$PROJECT_PATH/composer.json" "$PROJECT_PATH/composer.lock" "$DEST_PATH/"
+composer dump-autoload --optimize --classmap-authoritative --no-dev --working-dir="$DEST_PATH" || exit 1
+rm -f "$DEST_PATH/composer.json" "$DEST_PATH/composer.lock"
+
 # Check if tools directory exists before running lint
-if [ -d "tools" ]; then
+if command -v phpcbf >/dev/null 2>&1; then
     echo "Run lint"
-    cd tools
-    composer run cbf ../release
-    cd ..
+    phpcbf --standard="$PROJECT_PATH/phpcs.xml" "$DEST_PATH" || true
+else
+    echo "Skipping lint: phpcbf not found."
 fi
 
 # Remove development code
 sed -i "" "/'YAY_AUTOMATION_IS_DEVELOPMENT', true/d" "$DEST_PATH/yay-automation.php"
-rm -f "$DEST_PATH/src/Engine/Register/RegisterDev.php"
+rm -f "$DEST_PATH/includes/Engine/Register/RegisterDev.php"
 
 echo "Generating zip file..."
 cd "$BUILD_PATH" || exit

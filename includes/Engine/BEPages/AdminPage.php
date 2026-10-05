@@ -21,32 +21,14 @@ class AdminPage {
     public $hook_suffix = null;
 
     protected function __construct() {
-        add_action( 'admin_menu', [ $this, 'admin_menu' ], 10 );
+        // The submenu itself is registered by AdminShell (see YayAutomationLicenseAdapter).
+        add_action( 'admin_menu', [ $this, 'admin_menu' ], 99 );
         add_filter( 'admin_body_class', [ $this, 'admin_body_class' ] );
         add_action( 'admin_enqueue_scripts', [ $this, 'admin_enqueue_scripts' ] );
-        add_filter( 'plugin_action_links_' . YAY_AUTOMATION_BASE_NAME, [ $this, 'add_action_links' ] );
-    }
-
-    public function add_action_links( $links ) {
-        $links = array_merge(
-            [
-                '<a href="' . esc_url( admin_url( 'admin.php?page=' . self::MENU_SLUG ) ) . '">' . __( 'Workflows', 'yay-automation' ) . '</a>',
-            ],
-            $links
-        );
-        return $links;
     }
 
     public function admin_menu() {
-        $this->hook_suffix = add_menu_page(
-            __( 'YayAutomation', 'yay-automation' ),
-            __( 'YayAutomation', 'yay-automation' ),
-            self::CAPABILITY,
-            self::MENU_SLUG,
-            [ $this, 'render_page' ],
-            'dashicons-randomize',
-            30
-        );
+        $this->hook_suffix = get_plugin_page_hookname( self::MENU_SLUG, 'yaycommerce' );
         add_action( 'load-' . $this->hook_suffix, [ $this, 'on_load_page' ] );
     }
 

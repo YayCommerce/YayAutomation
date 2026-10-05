@@ -1,14 +1,21 @@
 # PHP Backend
 
-`src/` maps to namespace `YayAutomation\` via `autoloader.php`.
+`src/` maps to namespace `YayAutomation\` via `autoloader.php`. Composer (`vendor/autoload.php`) loads the scoped admin-shell.
 
 ## Key Paths
 
 - `yay-automation.php` — constants, autoloader, `plugins_loaded` boot
 - `src/YayAutomation.php` — entry; wire new engine classes here; `is_prod()`
-- `src/Engine/BEPages/AdminPage.php` — menu, capability, `yayAutomationMeta`, mount div
+- `src/Engine/BEPages/AdminPage.php` — slug, capability, `yayAutomationMeta`, mount div. Hook suffix: `yaycommerce_page_yay-automation`
+- `src/YayAutomationLicenseAdapter.php` — submenu under YayCommerce via `yaycommerce/admin-shell` (Lite). Registered in `YayAutomation::register_admin_menu()`
+- `src/YayAutomationProLicenseAdapter.php` — license adapter, not registered (`TODO: EDD setup`)
 - `src/Engine/API/RestAPI.php` — routes under `yay-automation/v1`
 - `src/Engine/Register/` — script loading; `RegisterDev.php` is stripped from the release zip
+
+## Admin shell
+
+- `composer install` then `./vendor/bin/yaycommerce-update` → `vendor-prefixed/` (namespace `YayAutomationScoped\`). Both `vendor/` and `vendor-prefixed/` are gitignored.
+- Do not call `add_menu_page`. AdminShell owns the YayCommerce menu, Help, Recommended Plugins, and the plugin action/row links.
 
 ## Rules
 

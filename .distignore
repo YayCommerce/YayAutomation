@@ -17,6 +17,10 @@ pnpm-workspace.yaml
 release.sh
 README.md
 
+/vendor/bin
+/vendor/yaycommerce
+scoper.inc.php
+
 /apps
 /packages
 /release
