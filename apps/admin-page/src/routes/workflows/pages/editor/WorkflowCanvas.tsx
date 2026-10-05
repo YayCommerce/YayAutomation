@@ -2,22 +2,33 @@ import '@xyflow/react/dist/style.css';
 
 import { useMemo, useState } from 'react';
 import { useStore } from '@tanstack/react-form';
-import { Background, Controls, ReactFlow, type NodeChange } from '@xyflow/react';
+import { Background, Controls, ReactFlow, type FitViewOptions, type NodeChange } from '@xyflow/react';
 
 import { useTheme } from '@/components/ui/theme-provider';
 import { moveNode } from '../../model/graph';
 import { canvasStyle, toFlowEdges, toFlowNodes, type FlowNode } from '../../shared/canvas/flow';
 import { useEditorContext } from './editor.context';
+import { PANEL_WIDTH } from './StepPanel';
 import { useWorkflowFormContext } from './useWorkflowForm';
 import { nodeTypes } from './WorkflowNodeCard';
 
 /** Canvas-only node state. Kept out of the form so selecting a node doesn't make the workflow dirty. */
 type NodeViewState = Pick<FlowNode, 'measured' | 'selected' | 'dragging'>;
 
-export function WorkflowCanvas({ onNodeClick }: { onNodeClick: (nodeId: string) => void }) {
+/** Clear of the step panel: for the first fit and the zoom controls. */
+const besidePanel = PANEL_WIDTH + 24;
+
+/** `onPaneClick`: a click on empty canvas, which closes the step panel like in Shopify Flow. */
+export function WorkflowCanvas({ panelOpen, onPaneClick }: { panelOpen: boolean; onPaneClick: () => void }) {
   const { theme } = useTheme();
   const form = useWorkflowFormContext();
-  const { requestDelete } = useEditorContext();
+  const { openPanel, requestDelete } = useEditorContext();
+  // Decided once: fitting only happens on mount.
+  // Never zoomed in past 100%: a small graph would otherwise blow up to fill the screen.
+  const [fitViewOptions] = useState<FitViewOptions>(() => ({
+    maxZoom: 1,
+    padding: panelOpen ? { left: `${besidePanel}px`, x: 0.2, y: 0.2 } : 0.2,
+  }));
   const graph = useStore(form.store, (state) => state.values.graph);
   const [viewState, setViewState] = useState<Record<string, NodeViewState>>({});
 
@@ -63,7 +74,8 @@ export function WorkflowCanvas({ onNodeClick }: { onNodeClick: (nodeId: string) 
       edges={edges}
       nodeTypes={nodeTypes}
       onNodesChange={onNodesChange}
-      onNodeClick={(_, node) => onNodeClick(node.id)}
+      onNodeClick={(_, node) => openPanel(node.id)}
+      onPaneClick={onPaneClick}
       // Backspace: same delete as the card's button (edges out of the form too), not ReactFlow's own.
       onBeforeDelete={async ({ nodes }) => {
         if (nodes.length) requestDelete(nodes.map((node) => node.id));
@@ -73,9 +85,10 @@ export function WorkflowCanvas({ onNodeClick }: { onNodeClick: (nodeId: string) 
       style={canvasStyle}
       nodesConnectable={false}
       fitView
+      fitViewOptions={fitViewOptions}
     >
       <Background />
-      <Controls showInteractive={false} />
+      <Controls showInteractive={false} style={panelOpen ? { left: besidePanel } : undefined} />
     </ReactFlow>
   );
 }

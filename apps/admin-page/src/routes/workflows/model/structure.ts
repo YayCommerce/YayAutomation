@@ -1,4 +1,4 @@
-import type { WorkflowGraph } from '@yay-automation/types';
+import type { BlockId, WorkflowGraph } from '@yay-automation/types';
 
 import { blocks } from '../blocks';
 
@@ -8,7 +8,7 @@ const BRANCHES = ['then', 'otherwise'];
 /**
  * Why the server would reject this graph's shape on save, one message per problem (empty = fine).
  * Same rules as PHP `WorkflowValidator::prepare_graph()`: valid unique step ids, known blocks of the
- * right kind, exactly one trigger, and edges that form a tree (only conditions branch, and always
+ * right kind (or none yet on a trigger or action), exactly one trigger, and edges that form a tree (only conditions branch, and always
  * name the branch; one parent per step; one child per handle).
  *
  * The editor can't produce a bad shape, so this guards hand-written graphs (templates). Run it before
@@ -21,9 +21,12 @@ export function structureErrors(graph: WorkflowGraph): string[] {
 
   for (const node of graph.nodes) {
     if (!ID.test(node.id) || kinds.has(node.id)) errors.push(`Invalid or duplicate step id "${node.id}"`);
-    const block = blocks[node.data.block] as (typeof blocks)[keyof typeof blocks] | undefined;
-    if (!block) errors.push(`Step "${node.id}": unknown block "${node.data.block}"`);
-    else if (block.kind !== node.kind) errors.push(`Step "${node.id}": block "${block.id}" isn't a ${node.kind}`);
+    // A trigger or action may be added before its block is chosen; a condition has just one block.
+    const block = node.data.block === null ? null : (blocks[node.data.block] as (typeof blocks)[BlockId] | undefined);
+    if (block === undefined) errors.push(`Step "${node.id}": unknown block "${node.data.block}"`);
+    else if (block === null && node.kind === 'condition') errors.push(`Step "${node.id}": a condition needs its block`);
+    else if (block && block.kind !== node.kind)
+      errors.push(`Step "${node.id}": block "${block.id}" isn't a ${node.kind}`);
     if (node.kind === 'trigger') triggers++;
     kinds.set(node.id, node.kind);
   }

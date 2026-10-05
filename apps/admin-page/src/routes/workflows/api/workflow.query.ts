@@ -87,7 +87,7 @@ function useWorkflowMutation<V extends { id?: string }>(
   });
 }
 
-type CreateVariables = Pick<Workflow, 'name' | 'graph'> & { id?: never };
+type CreateVariables = Partial<Pick<Workflow, 'name' | 'graph'>> & { id?: never };
 
 export const useCreateWorkflowMutation = (callbacks?: MutationCallbacks) =>
   useWorkflowMutation<CreateVariables>(createWorkflow, callbacks);

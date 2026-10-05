@@ -1,7 +1,8 @@
-import type { Workflow, WorkflowGraph, WorkflowIssue } from '@yay-automation/types';
-import { __ } from '@wordpress/i18n';
+import type { Workflow, WorkflowGraph, WorkflowIssue, WorkflowNode } from '@yay-automation/types';
+import { __, sprintf } from '@wordpress/i18n';
 
-import { blocks } from '../blocks';
+import { blockOf } from '../blocks';
+import { alwaysAvailable, itemLabel } from '../blocks/core/data';
 import { descendantsOf } from './graph';
 
 /**
@@ -16,6 +17,10 @@ export function validateWorkflow({ name, graph }: Pick<Workflow, 'name' | 'graph
     issues.push({ code: 'name_required', message: __('Enter a workflow name.', 'yay-automation') });
   }
   const trigger = graph.nodes.find((node) => node.kind === 'trigger');
+  const triggerBlock = trigger && blockOf(trigger.data);
+  if (trigger && !triggerBlock) {
+    issues.push({ code: 'no_trigger', nodeId: trigger.id, message: __('Select a trigger', 'yay-automation') });
+  }
   if (!graph.nodes.some((node) => node.kind === 'action')) {
     // Shown on the trigger: that's where the next step gets added.
     issues.push({
@@ -37,13 +42,37 @@ export function validateWorkflow({ name, graph }: Pick<Workflow, 'name' | 'graph
     });
   }
 
+  // Data the steps can read. Unknown until a trigger is chosen; no_trigger covers that case.
+  const available = triggerBlock ? availableData(triggerBlock.provides) : null;
   for (const node of graph.nodes) {
-    const error = blocks[node.data.block].firstError(node.data.config);
-    if (error) {
-      issues.push({ code: 'invalid_config', nodeId: node.id, message: error });
-    }
+    const issue = stepIssue(node, available);
+    if (issue) issues.push({ ...issue, nodeId: node.id });
   }
   return issues;
+}
+
+/** Data items a step can read when the trigger supplies `provides`. */
+export const availableData = (provides: string[]) => [...provides, ...alwaysAvailable];
+
+/** The one issue of a step's own settings. Mirrors PHP `WorkflowValidator::step_error()`. */
+function stepIssue(node: WorkflowNode, available: string[] | null): Omit<WorkflowIssue, 'nodeId'> | null {
+  const block = blockOf(node.data);
+  if (!block) {
+    return node.kind === 'action' ? { code: 'no_block', message: __('Select an action', 'yay-automation') } : null;
+  }
+
+  const error = block.firstError(node.data.config);
+  if (error) return { code: 'invalid_config', message: error };
+
+  const missing = available && block.uses(node.data.config).find((item) => !available.includes(item));
+  if (missing) {
+    return {
+      code: 'missing_data',
+      /* translators: %s: data item, e.g. "Order" */
+      message: sprintf(__("Uses %s data, which the trigger doesn't provide.", 'yay-automation'), itemLabel(missing)),
+    };
+  }
+  return null;
 }
 
 /** For `useStore`: a fresh array each run, so compare contents to avoid re-rendering on every edit. */

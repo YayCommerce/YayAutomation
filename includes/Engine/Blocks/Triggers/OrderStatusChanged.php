@@ -1,12 +1,15 @@
 <?php
 namespace YayAutomation\Engine\Blocks\Triggers;
 
-use YayAutomation\Engine\Blocks\Core\Trigger;
+use YayAutomation\Engine\Data\OrderData;
 
 defined( 'ABSPATH' ) || exit;
 
-/** Config: [ 'from' => status[] (empty = any), 'to' => status[] ]. Statuses are slugs without the `wc-` prefix. */
-class OrderStatusChanged extends Trigger {
+/**
+ * Config: [ 'from' => status[], 'to' => status[], 'only_checkout' => bool ]. Empty `from` / `to`
+ * means any status. Statuses are slugs without the `wc-` prefix. Event args add `from` and `to`.
+ */
+class OrderStatusChanged extends OrderTrigger {
 
     public const ID = 'order_status_changed';
 
@@ -14,39 +17,18 @@ class OrderStatusChanged extends Trigger {
         return self::ID;
     }
 
-    /**
-     * Registered WooCommerce order statuses as [ [ 'value' => 'processing', 'label' => 'Processing' ], … ].
-     * Empty when WooCommerce isn't loaded.
-     */
-    public static function statuses(): array {
-        if ( ! function_exists( 'wc_get_order_statuses' ) ) {
-            return [];
-        }
-        $statuses = [];
-        foreach ( wc_get_order_statuses() as $slug => $label ) {
-            $statuses[] = [
-                'value' => self::strip_prefix( $slug ),
-                'label' => $label,
-            ];
-        }
-        return $statuses;
-    }
-
     public function sanitize( $config ): array {
         $config = is_array( $config ) ? $config : [];
 
         return [
-            'from' => self::status_list( $config['from'] ?? [] ),
-            'to'   => self::status_list( $config['to'] ?? [] ),
+            'from'          => self::status_list( $config['from'] ?? [] ),
+            'to'            => self::status_list( $config['to'] ?? [] ),
+            'only_checkout' => ! empty( $config['only_checkout'] ),
         ];
     }
 
     public function validate( array $config ) {
-        if ( ! $config['to'] ) {
-            return $this->invalid( __( 'Choose at least one status the order changes to.', 'yay-automation' ) );
-        }
-
-        $known = wp_list_pluck( self::statuses(), 'value' );
+        $known = array_keys( OrderData::statuses() );
         // Without WooCommerce there's nothing to check against; the trigger just never fires.
         if ( $known && array_diff( array_merge( $config['from'], $config['to'] ), $known ) ) {
             return $this->invalid( __( 'Unknown order status.', 'yay-automation' ) );
@@ -54,38 +36,60 @@ class OrderStatusChanged extends Trigger {
         return true;
     }
 
-    /**
-     * Empty `from` means any previous status.
-     *
-     * @param array $context Run context, see Block.
-     * @param array $config  Sanitized, valid config.
-     */
+    public function listen( callable $emit ): void {
+        add_action(
+            'woocommerce_order_status_changed',
+            function ( $order_id, $from, $to ) use ( $emit ) {
+                $emit(
+                    [
+                        'order_id' => (int) $order_id,
+                        'from'     => (string) $from,
+                        'to'       => (string) $to,
+                    ]
+                );
+            },
+            20,
+            3
+        );
+    }
+
+    public function context( array $args ): ?array {
+        $context = parent::context( $args );
+        return $context ? $context + [
+            'from' => (string) ( $args['from'] ?? '' ),
+            'to'   => (string) ( $args['to'] ?? '' ),
+        ] : null;
+    }
+
     public function matches( array $context, array $config ): bool {
+        $order = $context[ OrderData::ID ];
         return ( ! $config['from'] || in_array( $context['from'], $config['from'], true ) )
-            && in_array( $context['to'], $config['to'], true );
+            && ( ! $config['to'] || in_array( $context['to'], $config['to'], true ) )
+            && ( ! $config['only_checkout'] || self::from_checkout( $order ) );
     }
 
     /**
-     * Status list from raw input. Also reads the old single-string format ('any' or one status),
-     * so workflows saved before statuses became lists keep working.
+     * Placed by a shopper at checkout, not created in the admin, over REST or by an import.
      *
-     * @param mixed $raw Array of statuses, or a legacy string.
+     * @param \WC_Order $order Order.
+     */
+    private static function from_checkout( \WC_Order $order ): bool {
+        return in_array( $order->get_created_via(), [ 'checkout', 'store-api' ], true ) || (bool) $order->get_cart_hash();
+    }
+
+    /**
+     * Status list from raw input.
+     *
+     * @param mixed $raw Array of statuses.
      */
     private static function status_list( $raw ): array {
-        if ( is_string( $raw ) ) {
-            $raw = 'any' === $raw ? [] : [ $raw ];
-        }
         $list = [];
         foreach ( is_array( $raw ) ? $raw : [] as $status ) {
-            $status = is_string( $status ) ? self::strip_prefix( sanitize_key( $status ) ) : '';
+            $status = is_string( $status ) ? OrderData::status_slug( $status ) : '';
             if ( '' !== $status ) {
                 $list[] = $status;
             }
         }
         return array_values( array_unique( $list ) );
-    }
-
-    private static function strip_prefix( string $status ): string {
-        return 0 === strpos( $status, 'wc-' ) ? substr( $status, 3 ) : $status;
     }
 }

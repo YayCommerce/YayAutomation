@@ -1,6 +1,8 @@
 import type { ComponentType } from 'react';
-import type { BlockId, WorkflowNodeKind, WorkflowTemplateApp } from '@yay-automation/types';
+import type { BlockId, WorkflowNodeKind, WorkflowPlugin } from '@yay-automation/types';
 import type * as v from 'valibot';
+
+import type { BlockMeta } from '@/types/localize';
 
 export type Config = Record<string, unknown>;
 
@@ -9,14 +11,14 @@ export interface BlockFormProps<TConfig> {
   config: TConfig;
   /** Called on every change, so the workflow draft always holds the latest values. */
   onChange: (config: TConfig) => void;
+  /** Data items this step can read: what the trigger supplies plus the always-available ones. */
+  available: string[];
 }
 
-/** What a block folder passes to `defineBlock()`. */
+/** What a block folder passes to `defineBlock()`. Plugin and data facts come from PHP (`BlockMeta`). */
 export interface BlockSpec<TConfig extends Config> {
   id: BlockId;
   kind: WorkflowNodeKind;
-  /** Integration the block belongs to. Not shown yet; kept for filtering once there are many blocks. */
-  app: WorkflowTemplateApp;
   label: string;
   description: string;
   /**
@@ -26,26 +28,41 @@ export interface BlockSpec<TConfig extends Config> {
   schema: v.GenericSchema<TConfig>;
   defaults: () => TConfig;
   /**
-   * Brings stored config into the current shape: fills missing keys and upgrades older formats.
-   * Mirrors the PHP block's `sanitize()`. Defaults to merging over `defaults()`.
+   * Brings stored config into the current shape: fills missing keys. Mirrors the PHP block's
+   * `sanitize()`. Defaults to merging over `defaults()`.
    */
   normalize?: (config: Config) => TConfig;
+  /**
+   * Data items the step reads with this config. Mirrors the PHP block's `uses()`. Defaults to the
+   * block's `requires` plus the items of every merge tag in the config's text.
+   */
+  uses?: (config: TConfig) => string[];
   /** Plain-language line for the node card. Gets incomplete config too, so show placeholders for gaps. */
   summary: (config: TConfig) => string;
-  Form: ComponentType<BlockFormProps<TConfig>>;
+  /** Omitted when the block has nothing to configure. */
+  Form?: ComponentType<BlockFormProps<TConfig>>;
 }
 
 /** A block with its config type erased, so one registry can hold them all. Every method normalizes first. */
 export interface Block {
   id: BlockId;
   kind: WorkflowNodeKind;
-  app: WorkflowTemplateApp;
   label: string;
   description: string;
+  /** Triggers and actions. */
+  plugin?: WorkflowPlugin;
+  /** Triggers: data items every run has. */
+  provides: string[];
+  /** Actions: data items needed whatever the config; the picker dims the action without them. */
+  requires: string[];
+  /** Actions: picker section. */
+  category?: BlockMeta['category'];
   defaults: () => Config;
   normalize: (config: Config) => Config;
   /** The first validation message, or null when the config is valid. */
   firstError: (config: Config) => string | null;
+  /** Data items the step reads, `site` excluded. */
+  uses: (config: Config) => string[];
   summary: (config: Config) => string;
-  Form: ComponentType<BlockFormProps<Config>>;
+  Form?: ComponentType<BlockFormProps<Config>>;
 }

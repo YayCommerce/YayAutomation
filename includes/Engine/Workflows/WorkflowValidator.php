@@ -3,6 +3,7 @@ namespace YayAutomation\Engine\Workflows;
 
 use YayAutomation\Engine\Blocks\Core\Block;
 use YayAutomation\Engine\Blocks\Core\BlockRegistry;
+use YayAutomation\Engine\Data\DataRegistry;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -16,23 +17,45 @@ final class WorkflowValidator {
 
     private const BRANCHES = [ 'then', 'otherwise' ];
 
+    private const KINDS = [ Block::KIND_TRIGGER, Block::KIND_CONDITION, Block::KIND_ACTION ];
+
     /**
-     * New workflow from the POST body. Always created inactive, whatever `status` says.
+     * New workflow from the POST body. Always created inactive, whatever `status` says. Without a
+     * graph it's a blank "New workflow": one trigger step, not chosen yet.
      *
-     * @param mixed $input Decoded JSON body: { name, graph }.
+     * @param mixed $input Decoded JSON body: { name?, graph? }.
      * @return array|\WP_Error [ 'name' => string, 'graph' => array ]
      */
     public static function prepare_new( $input ) {
-        if ( ! is_array( $input ) ) {
-            return self::error( __( 'Invalid workflow.', 'yay-automation' ) );
-        }
-        $graph = self::prepare_graph( $input['graph'] ?? null );
+        $input = is_array( $input ) ? $input : [];
+        $graph = self::prepare_graph( $input['graph'] ?? self::blank_graph() );
         if ( is_wp_error( $graph ) ) {
             return $graph;
         }
         return [
-            'name'  => self::prepare_name( $input['name'] ?? '' ),
+            'name'  => array_key_exists( 'name', $input ) ? self::prepare_name( $input['name'] ) : __( 'New workflow', 'yay-automation' ),
             'graph' => $graph,
+        ];
+    }
+
+    private static function blank_graph(): array {
+        return [
+            'nodes' => [
+                [
+                    'id'       => 'trigger',
+                    'kind'     => Block::KIND_TRIGGER,
+                    'position' => [
+                        'x' => 0,
+                        'y' => 0,
+                    ],
+                    'data'     => [
+                        'description' => '',
+                        'block'       => null,
+                        'config'      => [],
+                    ],
+                ],
+            ],
+            'edges' => [],
         ];
     }
 
@@ -115,16 +138,24 @@ final class WorkflowValidator {
     }
 
     /**
-     * Problems that block turning a workflow on or applying a draft. Codes match the TS `validateWorkflow()`: name_required,
-     * no_action (on the trigger), unlinked (one issue, `nodeIds` = every step not reached from the
-     * trigger), invalid_config (per node).
+     * Problems that block turning a workflow on or applying a draft. Codes match the TS `validateWorkflow()`:
+     * name_required, no_trigger (trigger not chosen), no_action (on the trigger), unlinked (one issue,
+     * `nodeIds` = every step not reached from the trigger), and per step: no_block (action not chosen),
+     * invalid_config, missing_data (uses data the trigger doesn't supply).
      *
      * @param array $workflow Well-formed workflow (graph from `prepare_graph()`).
      * @return array[] [ [ 'code' => string, 'message' => string, 'nodeId'? => string, 'nodeIds'? => string[] ], … ]
      */
     public static function errors( array $workflow ): array {
-        $errors = [];
-        $nodes  = $workflow['graph']['nodes'];
+        $errors  = [];
+        $nodes   = $workflow['graph']['nodes'];
+        $trigger = null;
+        foreach ( $nodes as $node ) {
+            if ( Block::KIND_TRIGGER === $node['kind'] ) {
+                $trigger = $node;
+            }
+        }
+        $trigger_block = $trigger && $trigger['data']['block'] ? BlockRegistry::get( $trigger['data']['block'] ) : null;
 
         if ( '' === $workflow['name'] ) {
             $errors[] = [
@@ -132,17 +163,19 @@ final class WorkflowValidator {
                 'message' => __( 'Enter a workflow name.', 'yay-automation' ),
             ];
         }
+        if ( $trigger && ! $trigger_block ) {
+            $errors[] = [
+                'code'    => 'no_trigger',
+                'nodeId'  => $trigger['id'],
+                'message' => __( 'Select a trigger', 'yay-automation' ),
+            ];
+        }
         if ( ! in_array( Block::KIND_ACTION, array_column( $nodes, 'kind' ), true ) ) {
-            $error = [
+            $errors[] = [
                 'code'    => 'no_action',
+                'nodeId'  => $trigger['id'],
                 'message' => __( 'Add an action to this workflow', 'yay-automation' ),
             ];
-            foreach ( $nodes as $node ) {
-                if ( Block::KIND_TRIGGER === $node['kind'] ) {
-                    $error['nodeId'] = $node['id'];
-                }
-            }
-            $errors[] = $error;
         }
 
         $reachable = self::reachable( $workflow['graph'] );
@@ -155,17 +188,50 @@ final class WorkflowValidator {
             ];
         }
 
+        // Data the steps can read. Unknown until a trigger is chosen; no_trigger covers that case.
+        $available = $trigger_block ? array_merge( $trigger_block->provides(), DataRegistry::ALWAYS ) : null;
         foreach ( $nodes as $node ) {
-            $valid = BlockRegistry::get( $node['data']['block'] )->validate( $node['data']['config'] );
-            if ( is_wp_error( $valid ) ) {
-                $errors[] = [
-                    'nodeId'  => $node['id'],
-                    'code'    => 'invalid_config',
-                    'message' => $valid->get_error_message(),
-                ];
+            $error = self::step_error( $node, $available );
+            if ( $error ) {
+                $errors[] = $error + [ 'nodeId' => $node['id'] ];
             }
         }
         return $errors;
+    }
+
+    /**
+     * The one issue of a step's own settings, or null. The trigger's empty block is no_trigger, reported above.
+     *
+     * @param array      $node      Well-formed node.
+     * @param array|null $available Data items the trigger supplies, null without a trigger.
+     */
+    private static function step_error( array $node, ?array $available ): ?array {
+        $block = $node['data']['block'] ? BlockRegistry::get( $node['data']['block'] ) : null;
+        if ( ! $block ) {
+            return Block::KIND_ACTION === $node['kind'] ? [
+                'code'    => 'no_block',
+                'message' => __( 'Select an action', 'yay-automation' ),
+            ] : null;
+        }
+
+        $valid = $block->validate( $node['data']['config'] );
+        if ( is_wp_error( $valid ) ) {
+            return [
+                'code'    => 'invalid_config',
+                'message' => $valid->get_error_message(),
+            ];
+        }
+
+        $missing = null === $available ? [] : array_diff( $block->uses( $node['data']['config'] ), $available );
+        if ( $missing ) {
+            $item = DataRegistry::items()[ reset( $missing ) ] ?? null;
+            return [
+                'code'    => 'missing_data',
+                /* translators: %s: data item, e.g. "Order" */
+                'message' => sprintf( __( 'Uses %s data, which the trigger doesn\'t provide.', 'yay-automation' ), $item ? $item->label() : reset( $missing ) ),
+            ];
+        }
+        return null;
     }
 
     /**
@@ -213,10 +279,13 @@ final class WorkflowValidator {
                 return self::error( __( 'Invalid or duplicate step id.', 'yay-automation' ) );
             }
 
-            $kind  = (string) ( $raw['kind'] ?? '' );
-            $data  = is_array( $raw['data'] ?? null ) ? $raw['data'] : [];
-            $block = BlockRegistry::get( (string) ( $data['block'] ?? '' ) );
-            if ( ! $block || $block->kind() !== $kind ) {
+            $kind     = (string) ( $raw['kind'] ?? '' );
+            $data     = is_array( $raw['data'] ?? null ) ? $raw['data'] : [];
+            $block_id = $data['block'] ?? null;
+            // A trigger or action may be added before its block is chosen; a condition has just one block.
+            $block = null === $block_id ? null : BlockRegistry::get( (string) $block_id );
+            $known = $block ? $block->kind() === $kind : ( null === $block_id && Block::KIND_CONDITION !== $kind );
+            if ( ! in_array( $kind, self::KINDS, true ) || ! $known ) {
                 return self::error( __( 'Unknown step type.', 'yay-automation' ), $id );
             }
             if ( Block::KIND_TRIGGER === $kind ) {
@@ -232,9 +301,9 @@ final class WorkflowValidator {
                     'y' => is_numeric( $position['y'] ?? null ) ? (float) $position['y'] : 0.0,
                 ],
                 'data'     => [
-                    'title'  => sanitize_text_field( (string) ( $data['title'] ?? '' ) ),
-                    'block'  => $block->id(),
-                    'config' => $block->sanitize( $data['config'] ?? [] ),
+                    'description' => sanitize_textarea_field( is_scalar( $data['description'] ?? null ) ? (string) $data['description'] : '' ),
+                    'block'       => $block ? $block->id() : null,
+                    'config'      => $block ? $block->sanitize( $data['config'] ?? [] ) : [],
                 ],
             ];
         }//end foreach

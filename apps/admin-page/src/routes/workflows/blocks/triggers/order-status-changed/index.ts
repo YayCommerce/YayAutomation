@@ -1,6 +1,6 @@
 import { __, sprintf } from '@wordpress/i18n';
 
-import { defineBlock, PLACEHOLDER } from '../../core/defineBlock';
+import { defineBlock } from '../../core/defineBlock';
 import { OrderStatusChangedForm } from './Form';
 import { defaults, normalize, schema, statusLabel, type OrderStatusChangedConfig } from './schema';
 
@@ -14,14 +14,16 @@ function orList(values: string[]) {
 export const orderStatusChangedBlock = defineBlock<OrderStatusChangedConfig>({
   id: 'order_status_changed',
   kind: 'trigger',
-  app: 'woocommerce',
   label: __('Order status changed', 'yay-automation'),
-  description: __('Runs when a WooCommerce order moves to a new status.', 'yay-automation'),
+  description: __(
+    'Triggers after an order changes status occurs. Set the workflow to run on certain status changes with the trigger options',
+    'yay-automation',
+  ),
   schema,
   defaults,
   normalize,
   summary: ({ from, to }) => {
-    const target = to.length ? orList(to.map(statusLabel)) : PLACEHOLDER;
+    const target = to.length ? orList(to.map(statusLabel)) : __('any status', 'yay-automation');
     return from.length
       ? /* translators: 1: previous order status(es), 2: new order status(es) */
         sprintf(__('Order status changes from %1$s to %2$s', 'yay-automation'), orList(from.map(statusLabel)), target)

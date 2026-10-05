@@ -88,9 +88,9 @@ Build workflows from scratch in a Shopify-Flow-style editor: "Create workflow" o
 
 ## Checkpoints
 
-1. Engine + REST — Risk: 3 — data registry, operators, trigger self-registration + Action Scheduler + loop guard, Order Created / Order Status Changed, generic Condition, variable renderer, 4 actions, graph model (nullable block, description, new issues), create endpoint, localized meta, remove OrderTotal. Test: REST in console + place/advance orders and check emails/notes/logs.
-2. Editor shell — Risk: 2 — left panel, trigger picker, empty/selected card states, hover swap/delete, "+" gating, Add description, Create workflow flow, read-only canvas. Test in browser (light + dark).
-3. Condition + actions UI — Risk: 2 — rule builder, variable list, action picker with dimming, 4 action forms with Add variable, template update, template library plugins. Test in browser + run the template end to end.
+1. Engine + blocks — Risk: 3 — PHP: data registry, operators, trigger self-registration + Action Scheduler + loop guard (causal chain), Order Created / Order Status Changed, generic Condition, variable renderer, 4 actions, graph model (nullable block, description, new issues), create endpoint, localized meta, remove OrderTotal. TS mirrors: shared types, model validation, every block folder (schemas, summaries, forms incl. the criteria rule builder, variable list, Add variable), template update, plugins derived for the template library. Test: REST + orders run through Action Scheduler.
+2. Editor shell — Risk: 2 — left panel, trigger picker, action picker (plugin → category sections, dimmed when unsupported), empty/selected card states, hover swap/delete, "+" gating, Add description, Create workflow flow, read-only canvas. Test in browser (light + dark).
+3. Polish + end-to-end — Risk: 2 — browser pass over the full flow (create → pick trigger → condition → action → turn on → place order), install the template and run it, fix what the pass turns up.
 
 ## Out of Scope
 

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useForm } from '@tanstack/react-form';
 import { __ } from '@wordpress/i18n';
 
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   ComboboxBadge,
   ComboboxCheckbox,
@@ -10,7 +11,7 @@ import {
   ComboboxTrigger,
 } from '@/components/ui/combobox';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { FieldGroup } from '@/components/ui/field';
+import { Field, FieldContent, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Popover, PopoverContent } from '@/components/ui/popover';
 import { ConfigField } from '../../core/fields/ConfigField';
 import { useValidateOnMount } from '../../core/fields/useValidateOnMount';
@@ -86,7 +87,7 @@ export function OrderStatusChangedForm({ config, onChange }: BlockFormProps<Orde
           <ConfigField
             label={__('Status changes from', 'yay-automation')}
             htmlFor="block-status-from"
-            description={__('Leave empty to run whatever the previous status was.', 'yay-automation')}
+            description={__('Leave empty for any previous status.', 'yay-automation')}
             errors={field.state.meta.errors}
           >
             <StatusMultiSelect
@@ -105,16 +106,40 @@ export function OrderStatusChangedForm({ config, onChange }: BlockFormProps<Orde
           <ConfigField
             label={__('Status changes to', 'yay-automation')}
             htmlFor="block-status-to"
+            description={__('Leave empty for any new status.', 'yay-automation')}
             errors={field.state.meta.errors}
           >
             <StatusMultiSelect
               id="block-status-to"
               value={field.state.value}
               onChange={field.handleChange}
-              placeholder={__('Choose statuses', 'yay-automation')}
+              placeholder={__('Any status', 'yay-automation')}
               invalid={!field.state.meta.isValid}
             />
           </ConfigField>
+        )}
+      </form.Field>
+
+      <form.Field name="only_checkout">
+        {(field) => (
+          <Field orientation="horizontal">
+            <Checkbox
+              id="block-status-checkout"
+              checked={field.state.value}
+              onCheckedChange={(checked) => field.handleChange(checked === true)}
+            />
+            <FieldContent>
+              <FieldLabel htmlFor="block-status-checkout">
+                {__('Only run for checkout orders', 'yay-automation')}
+              </FieldLabel>
+              <FieldDescription>
+                {__(
+                  'Skips orders created by admin, REST API, import tools, and other non-checkout sources.',
+                  'yay-automation',
+                )}
+              </FieldDescription>
+            </FieldContent>
+          </Field>
         )}
       </form.Field>
     </FieldGroup>

@@ -1,6 +1,6 @@
-import type { WorkflowBranch, WorkflowGraph, WorkflowNodeKind } from '@yay-automation/types';
+import type { BlockId, WorkflowBranch, WorkflowGraph, WorkflowNodeData, WorkflowNodeKind } from '@yay-automation/types';
 
-import { newNodeData } from '../blocks';
+import { newNodeData, withBlock } from '../blocks';
 
 /**
  * Pure graph updates: (graph, …args) → new graph. The form calls these through
@@ -8,10 +8,10 @@ import { newNodeData } from '../blocks';
  */
 
 /** Layout grid for new nodes. Template graphs use the same grid so added steps line up. */
-// Top-to-top: a one-line card is ~74px tall, leaving ~45px of edge. Kept tight so a three-step graph
-// fits a ~340px read-only canvas at ≥0.8 zoom.
-export const ROW_GAP = 120;
-export const BRANCH_OFFSET = 150;
+// Top-to-top: a one-line card is ~74px tall, leaving room for a clear edge and the "+" below it.
+// Branches sit far enough apart that two 280px cards side by side keep a gap.
+export const ROW_GAP = 170;
+export const BRANCH_OFFSET = 180;
 
 /** Short unique id with a readable prefix. Not `crypto.randomUUID()`: it's undefined on non-HTTPS WP sites. */
 export function createId(prefix: string) {
@@ -29,11 +29,12 @@ export function addNode(
   parentId: string,
   kind: Exclude<WorkflowNodeKind, 'trigger'>,
   branch?: WorkflowBranch,
+  /** Pass one to know the new step's id (e.g. to open its panel). */
+  id = createId(kind),
 ): WorkflowGraph {
   const parent = graph.nodes.find((node) => node.id === parentId);
   if (!parent) return graph;
 
-  const id = createId(kind);
   const offsetX = branch === 'then' ? -BRANCH_OFFSET : branch === 'otherwise' ? BRANCH_OFFSET : 0;
 
   return {
@@ -87,9 +88,24 @@ export function moveNode(graph: WorkflowGraph, nodeId: string, position: { x: nu
   };
 }
 
-export function updateNodeConfig(graph: WorkflowGraph, nodeId: string, config: Record<string, unknown>): WorkflowGraph {
+/** Applies `change` to one node's data. */
+function updateNodeData(
+  graph: WorkflowGraph,
+  nodeId: string,
+  change: (data: WorkflowNodeData) => WorkflowNodeData,
+): WorkflowGraph {
   return {
     ...graph,
-    nodes: graph.nodes.map((node) => (node.id === nodeId ? { ...node, data: { ...node.data, config } } : node)),
+    nodes: graph.nodes.map((node) => (node.id === nodeId ? { ...node, data: change(node.data) } : node)),
   };
 }
+
+export const updateNodeConfig = (graph: WorkflowGraph, nodeId: string, config: Record<string, unknown>) =>
+  updateNodeData(graph, nodeId, (data) => ({ ...data, config }));
+
+export const updateNodeDescription = (graph: WorkflowGraph, nodeId: string, description: string) =>
+  updateNodeData(graph, nodeId, (data) => ({ ...data, description }));
+
+/** Chooses (or swaps) a trigger's or action's block; its config resets to that block's defaults. */
+export const setNodeBlock = (graph: WorkflowGraph, nodeId: string, block: BlockId) =>
+  updateNodeData(graph, nodeId, (data) => withBlock(data, block));

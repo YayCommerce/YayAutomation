@@ -38,8 +38,6 @@ if ( ! defined( 'YAY_AUTOMATION_VERSION' ) ) {
 }
 
 if ( ! function_exists( 'YayAutomation\\plugin_init' ) ) {
-    // Composer: scoped admin-shell (vendor-prefixed/). Its classmap is authoritative, so
-    // autoloader.php still resolves YayAutomation\ classes added after the last dump.
     require_once YAY_AUTOMATION_PLUGIN_DIR . 'vendor/autoload.php';
     function plugin_init() {
         \YayAutomationScoped\YayCommerce\AdminShell\AdminShell::boot();
