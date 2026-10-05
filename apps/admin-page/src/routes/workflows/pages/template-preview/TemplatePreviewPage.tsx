@@ -62,7 +62,7 @@ export default function TemplatePreviewPage() {
     >
       <div className="relative size-full">
         {/* The About panel covers the bottom-left corner, where the zoom controls usually sit. */}
-        <ReadOnlyCanvas key={template.id} graph={template.graph} controlsPosition="bottom-right" />
+        <ReadOnlyCanvas key={template.id} graph={template.graph} controlsPosition="bottom-right" maxZoom={2} />
 
         <Button variant="outline" size="sm" className="absolute top-4 right-4" asChild>
           <Link to={LIBRARY_PATH} onClick={toLibrary}>

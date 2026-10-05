@@ -12,10 +12,11 @@ import { useTheme } from '@/components/ui/theme-provider';
 import { canvasStyle, toFlowEdges, toFlowNodes } from './flow';
 import { readOnlyNodeTypes } from './NodeCardView';
 
-// Zoom out as far as needed so the whole graph fits on narrow screens, but never zoom small graphs
-// in past 100%.
+// Zoom out as far as needed so the whole graph fits on narrow screens. By default never zoom small
+// graphs in past 100%.
 const MIN_ZOOM = 0.2;
-const fitViewOptions = { minZoom: MIN_ZOOM, maxZoom: 1, padding: 0.2, duration: 0 };
+
+type FitViewOptions = { minZoom: number; maxZoom: number; padding: number; duration: number };
 
 /**
  * Same look as the editor canvas, but view-only: pan and zoom only. Uncontrolled (`default*` props)
@@ -25,14 +26,18 @@ export function ReadOnlyCanvas({
   graph,
   controlsPosition = 'bottom-left',
   controls,
+  maxZoom = 1,
 }: {
   graph: WorkflowGraph;
   /** Moves the zoom controls out of the way of overlays (e.g. the preview's About panel). */
   controlsPosition?: PanelPosition;
   /** Extra buttons before zoom and fit (e.g. the Overview's edit button). */
   controls?: ReactNode;
+  /** Largest zoom fit may reach. Full-page canvases pass 2 (the editor's default) to fill the space. */
+  maxZoom?: number;
 }) {
   const { theme } = useTheme();
+  const fitViewOptions = useMemo(() => ({ minZoom: MIN_ZOOM, maxZoom, padding: 0.2, duration: 0 }), [maxZoom]);
   const nodes = useMemo(() => toFlowNodes(graph), [graph]);
   const edges = useMemo(() => toFlowEdges(graph), [graph]);
 
@@ -52,11 +57,11 @@ export function ReadOnlyCanvas({
       minZoom={MIN_ZOOM}
       proOptions={{ hideAttribution: true }}
     >
-      <FitOnResize />
+      <FitOnResize fitViewOptions={fitViewOptions} />
       <Background />
       <Panel position={controlsPosition} className="flex items-center gap-2">
         {controls}
-        <CanvasControls />
+        <CanvasControls fitViewOptions={fitViewOptions} />
       </Panel>
     </ReactFlow>
   );
@@ -67,7 +72,7 @@ export function ReadOnlyCanvas({
  * mounting at 0px) would leave the graph off-screen. Refits whenever React Flow's measured size
  * changes, debounced so dragging a window edge refits once.
  */
-function FitOnResize() {
+function FitOnResize({ fitViewOptions }: { fitViewOptions: FitViewOptions }) {
   const { fitView } = useReactFlow();
   const width = useStore((s) => s.width);
   const height = useStore((s) => s.height);
@@ -76,13 +81,13 @@ function FitOnResize() {
     if (!width || !height) return;
     const timer = window.setTimeout(() => void fitView(fitViewOptions), 100);
     return () => window.clearTimeout(timer);
-  }, [fitView, width, height]);
+  }, [fitView, fitViewOptions, width, height]);
 
   return null;
 }
 
 /** Zoom out / in as one group, then fit. */
-function CanvasControls() {
+function CanvasControls({ fitViewOptions }: { fitViewOptions: FitViewOptions }) {
   const { zoomIn, zoomOut, fitView } = useReactFlow();
 
   return (
