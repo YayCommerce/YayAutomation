@@ -31,7 +31,7 @@ final class YayAutomation {
 
     public function before_woocommerce_init() {
         if ( class_exists( \Automattic\WooCommerce\Utilities\FeaturesUtil::class ) ) {
-            \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'custom_order_tables', YAYBULKORDER_FILE, true );
+            \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'custom_order_tables', YAY_AUTOMATION_FILE, true );
         }
     }
 

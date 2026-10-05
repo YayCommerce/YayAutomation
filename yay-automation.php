@@ -42,14 +42,14 @@ if ( ! function_exists( 'YayAutomation\\plugin_init' ) ) {
     // autoloader.php still resolves YayAutomation\ classes added after the last dump.
     require_once YAY_AUTOMATION_PLUGIN_DIR . 'vendor/autoload.php';
     function plugin_init() {
-        \YayBulkOrderScoped\YayCommerce\AdminShell\AdminShell::boot();
+        \YayAutomationScoped\YayCommerce\AdminShell\AdminShell::boot();
 
         if ( ! function_exists( 'WC' ) ) {
             add_action(
                 'admin_notices',
                 function () {
                     /* translators: %s: Woocommerce link */
-                    echo '<div class="error"><p><strong>' . sprintf( esc_html__( 'YayBulkOrder is enabled but not effective. It requires %s in order to work', 'yay-bulk-order' ), '<a href="' . esc_url( admin_url( 'plugin-install.php?s=woocommerce&tab=search&type=term' ) ) . '">WooCommerce</a>' ) . '</strong></p></div>';
+                    echo '<div class="error"><p><strong>' . sprintf( esc_html__( 'YayAutomation is enabled but not effective. It requires %s in order to work', 'yay-automation' ), '<a href="' . esc_url( admin_url( 'plugin-install.php?s=woocommerce&tab=search&type=term' ) ) . '">WooCommerce</a>' ) . '</strong></p></div>';
                 }
             );
             return;
