@@ -7,17 +7,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { AddVariable } from '../../core/fields/AddVariable';
 import { ConfigField } from '../../core/fields/ConfigField';
+import { useMarkInvalid } from '../../core/fields/feedback';
 import { useValidateOnMount } from '../../core/fields/useValidateOnMount';
 import type { BlockFormProps } from '../../core/types';
 import { schema, type AddOrderNoteConfig } from './schema';
 
-export function AddOrderNoteForm({ config, onChange, available }: BlockFormProps<AddOrderNoteConfig>) {
+export function AddOrderNoteForm({ config, onChange }: BlockFormProps<AddOrderNoteConfig>) {
   const form = useForm({
     defaultValues: config,
     validators: { onChange: schema },
     listeners: { onChange: ({ formApi }) => onChange(formApi.state.values) },
   });
   useValidateOnMount(form);
+  const markInvalid = useMarkInvalid();
   const noteRef = useRef<HTMLTextAreaElement>(null);
 
   return (
@@ -55,14 +57,9 @@ export function AddOrderNoteForm({ config, onChange, available }: BlockFormProps
               value={field.state.value}
               onChange={(event) => field.handleChange(event.target.value)}
               onBlur={field.handleBlur}
-              aria-invalid={!field.state.meta.isValid}
+              aria-invalid={markInvalid(field.state.meta)}
             />
-            <AddVariable
-              available={available}
-              inputRef={noteRef}
-              value={field.state.value}
-              onChange={field.handleChange}
-            />
+            <AddVariable inputRef={noteRef} value={field.state.value} onChange={field.handleChange} />
           </ConfigField>
         )}
       </form.Field>

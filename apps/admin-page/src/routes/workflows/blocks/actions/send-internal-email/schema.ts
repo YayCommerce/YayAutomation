@@ -16,8 +16,8 @@ export const schema = withKnownVariables(
         __('Enter valid email addresses, separated by commas.', 'yay-automation'),
       ),
     ),
-    subject: required(__('Enter a subject.', 'yay-automation')),
-    message: required(__('Enter a message.', 'yay-automation')),
+    subject: required(),
+    message: required(),
   }),
   ['subject', 'message'],
 );

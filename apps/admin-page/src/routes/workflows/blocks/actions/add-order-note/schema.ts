@@ -1,5 +1,4 @@
 import * as v from 'valibot';
-import { __ } from '@wordpress/i18n';
 
 import { required, withKnownVariables } from '../../core/fields/schema';
 
@@ -8,7 +7,7 @@ export type AddOrderNoteConfig = { note: string; type: 'private' | 'customer' };
 
 export const schema = withKnownVariables(
   v.object({
-    note: required(__('Enter a note.', 'yay-automation')),
+    note: required(),
     type: v.picklist(['private', 'customer']),
   }),
   ['note'],

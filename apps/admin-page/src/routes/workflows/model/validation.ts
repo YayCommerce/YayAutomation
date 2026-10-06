@@ -18,16 +18,12 @@ export function validateWorkflow({ name, graph }: Pick<Workflow, 'name' | 'graph
   }
   const trigger = graph.nodes.find((node) => node.kind === 'trigger');
   const triggerBlock = trigger && blockOf(trigger.data);
-  if (trigger && !triggerBlock) {
-    issues.push({ code: 'no_trigger', nodeId: trigger.id, message: __('Select a trigger', 'yay-automation') });
+  // Workflow-level: no step to point at, like Shopify Flow.
+  if (!triggerBlock) {
+    issues.push({ code: 'no_trigger', message: __('Add a trigger to this workflow', 'yay-automation') });
   }
   if (!graph.nodes.some((node) => node.kind === 'action')) {
-    // Shown on the trigger: that's where the next step gets added.
-    issues.push({
-      code: 'no_action',
-      nodeId: trigger?.id,
-      message: __('Add an action to this workflow', 'yay-automation'),
-    });
+    issues.push({ code: 'no_action', message: __('Add an action to this workflow', 'yay-automation') });
   }
 
   // Steps left behind by a delete. One workflow-level issue for all of them; they only get their

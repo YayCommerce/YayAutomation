@@ -11,8 +11,6 @@ export interface BlockFormProps<TConfig> {
   config: TConfig;
   /** Called on every change, so the workflow draft always holds the latest values. */
   onChange: (config: TConfig) => void;
-  /** Data items this step can read: what the trigger supplies plus the always-available ones. */
-  available: string[];
 }
 
 /** What a block folder passes to `defineBlock()`. Plugin and data facts come from PHP (`BlockMeta`). */

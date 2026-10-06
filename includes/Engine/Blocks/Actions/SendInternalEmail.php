@@ -51,10 +51,10 @@ class SendInternalEmail extends Action {
             }
         }
         if ( '' === $config['subject'] ) {
-            return $this->invalid( __( 'Enter a subject.', 'yay-automation' ) );
+            return $this->required();
         }
         if ( '' === $config['message'] ) {
-            return $this->invalid( __( 'Enter a message.', 'yay-automation' ) );
+            return $this->required();
         }
         return $this->unknown_variable( $config['subject'], $config['message'] ) ?? true;
     }

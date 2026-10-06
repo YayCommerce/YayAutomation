@@ -19,7 +19,21 @@ import { useEditorContext } from './editor.context';
 import { useWorkflowFormContext } from './useWorkflowForm';
 
 /** Round outline control, like the "+" buttons. `nodrag` stops ReactFlow from treating a click as a drag start. */
-const roundButton = 'nodrag size-6 rounded-full';
+const roundButton = 'nodrag size-8 rounded-full';
+
+/**
+ * Hidden until the card is hovered (or the control is focused / its menu open), then fades and grows
+ * in, like Shopify Flow. `slideFrom` adds a short slide toward its resting place.
+ */
+const onHover = (slideFrom: 'left' | 'top') =>
+  [
+    // `!`: the kit button's own `transition-default` would otherwise decide what animates.
+    'opacity-0 scale-75 transition-[opacity,scale,translate,color,background-color,border-color]! duration-200! ease-out! motion-reduce:transition-none!',
+    slideFrom === 'left' ? '-translate-x-1.5' : '-translate-y-1.5',
+    'group-hover:opacity-100 group-hover:scale-100 group-hover:translate-0',
+    'focus-visible:opacity-100 focus-visible:scale-100 focus-visible:translate-0',
+    'data-[state=open]:opacity-100 data-[state=open]:scale-100 data-[state=open]:translate-0',
+  ].join(' ');
 
 /**
  * Editable card: adds a hover control on its right (swap the trigger, delete any other step) and "+"
@@ -27,9 +41,9 @@ const roundButton = 'nodrag size-6 rounded-full';
  * `onNodeClick`), so the controls stop propagation.
  */
 export function WorkflowNodeCard({ id, type, data, selected }: NodeProps<FlowNode>) {
-  const { openNodeId, openPanel, issueNodeIds, requestDelete } = useEditorContext();
-  // Steps hang off a chosen trigger: its data decides what they can use.
-  const canAdd = type !== 'trigger' || !!data.block;
+  const { openNodeId, openPanel, issueModes, requestDelete } = useEditorContext();
+  // Steps hang off a chosen trigger (its data decides what they can use) or a chosen action.
+  const canAdd = type === 'condition' || !!data.block;
 
   const control =
     type === 'trigger' ? (
@@ -37,7 +51,7 @@ export function WorkflowNodeCard({ id, type, data, selected }: NodeProps<FlowNod
         <Button
           variant="outline"
           size="icon-sm"
-          className={`${roundButton} opacity-0 group-hover:opacity-100 focus-visible:opacity-100`}
+          className={`${roundButton} ${onHover('left')}`}
           aria-label={__('Change trigger', 'yay-automation')}
           onClick={(event: MouseEvent) => {
             event.stopPropagation();
@@ -51,7 +65,7 @@ export function WorkflowNodeCard({ id, type, data, selected }: NodeProps<FlowNod
       <Button
         variant="outline"
         size="icon-sm"
-        className={`${roundButton} opacity-0 group-hover:opacity-100 focus-visible:opacity-100`}
+        className={`${roundButton} ${onHover('left')}`}
         aria-label={__('Delete step', 'yay-automation')}
         onClick={(event: MouseEvent) => {
           event.stopPropagation();
@@ -67,7 +81,7 @@ export function WorkflowNodeCard({ id, type, data, selected }: NodeProps<FlowNod
       type={type}
       data={data}
       selected={selected || openNodeId === id}
-      issue={issueNodeIds.has(id)}
+      issue={issueModes.get(id)}
       className="cursor-pointer"
       actions={control}
     >
@@ -101,18 +115,23 @@ function AddNodeButton({ nodeId, branch, left }: { nodeId: string; branch?: Work
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="outline"
-          size="icon-sm"
-          className={`${roundButton} absolute top-full mt-3 -translate-x-1/2`}
-          style={{ left }}
-          aria-label={__('Add step', 'yay-automation')}
-          onClick={(event) => event.stopPropagation()}
-        >
-          <Plus />
-        </Button>
-      </DropdownMenuTrigger>
+      {/* The padding bridges the gap under the card, so the pointer can reach "+" without losing the hover. */}
+      <div
+        className="nodrag absolute top-full -translate-x-1/2 pt-3"
+        style={{ left }}
+        onClick={(event) => event.stopPropagation()}
+      >
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="outline"
+            size="icon-sm"
+            className={`${roundButton} ${onHover('top')}`}
+            aria-label={__('Add step', 'yay-automation')}
+          >
+            <Plus />
+          </Button>
+        </DropdownMenuTrigger>
+      </div>
       {/* Portaled, but React events still bubble to the node; keep menu clicks from opening its settings. */}
       <DropdownMenuContent onClick={(event) => event.stopPropagation()}>
         <DropdownMenuItem onSelect={() => add('condition')}>

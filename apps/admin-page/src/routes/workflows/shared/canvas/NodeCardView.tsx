@@ -1,12 +1,15 @@
 import type { ReactNode } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import type { WorkflowBranch, WorkflowNodeData, WorkflowNodeKind } from '@yay-automation/types';
-import { CircleAlert, GitBranch, Play, Zap, type LucideIcon } from 'lucide-react';
+import { Check, CircleAlert, GitBranch, Info, Play, X, Zap, type LucideIcon } from 'lucide-react';
 import { __ } from '@wordpress/i18n';
 
 import { cn } from '@/lib/utils';
-import { blockOf } from '../../blocks';
+import { blockOf, SummaryText } from '../../blocks';
 import { sourceHandleStyle, targetHandleStyle, type FlowNode } from './flow';
+
+/** How a step card marks an issue: blue "Review" (left unfinished) or red "Error" (after a failed Turn on / Apply). */
+export type IssueMode = 'review' | 'error';
 
 export const kindMeta: Record<WorkflowNodeKind, { label: string; icon: LucideIcon; choose: string }> = {
   trigger: { label: __('Trigger', 'yay-automation'), icon: Zap, choose: __('Select a trigger', 'yay-automation') },
@@ -23,7 +26,7 @@ export const branchLeft: Record<WorkflowBranch, string> = { then: '30%', otherwi
 
 /**
  * Card body + handles. No form access, so it also renders on the read-only template preview.
- * Header = kind icon + block label, body = plain-language summary. `issue` adds a red "Error" header above it.
+ * Header = kind icon + block label, body = plain-language summary. `issue` adds a blue "Review" or red "Error" header above it.
  */
 export function NodeCardView({
   type,
@@ -37,7 +40,7 @@ export function NodeCardView({
   type: WorkflowNodeKind;
   data: WorkflowNodeData;
   selected?: boolean;
-  issue?: boolean;
+  issue?: IssueMode;
   className?: string;
   /** Extra controls in the header row, after the kind icon. */
   actions?: ReactNode;
@@ -54,10 +57,17 @@ export function NodeCardView({
           its handles. The opaque base keeps the tint readable over the canvas and the incoming edge. */}
       {issue && (
         <div className="bg-card absolute inset-x-0 bottom-full -mb-2 overflow-hidden rounded-t-xl">
-          <div className="bg-destructive/15 text-destructive flex items-center gap-1.5 px-3 pt-1.5 pb-3.5 text-xs font-medium">
-            <CircleAlert className="size-3.5" aria-hidden />
-            {__('Error', 'yay-automation')}
-          </div>
+          {issue === 'error' ? (
+            <div className="bg-destructive/15 text-destructive flex items-center gap-1.5 px-3 pt-1.5 pb-3.5 text-xs font-medium">
+              <CircleAlert className="size-3.5" aria-hidden />
+              {__('Error', 'yay-automation')}
+            </div>
+          ) : (
+            <div className="bg-primary/15 text-primary flex items-center gap-1.5 px-3 pt-1.5 pb-3.5 text-xs font-medium">
+              <Info className="size-3.5" aria-hidden />
+              {__('Review', 'yay-automation')}
+            </div>
+          )}
         </div>
       )}
 
@@ -67,9 +77,11 @@ export function NodeCardView({
           // Selected: a dark outline, like Shopify Flow. A ring, so the card keeps its size.
           selected
             ? 'border-foreground/70 ring-foreground/70 shadow-md ring-1'
-            : issue
+            : issue === 'error'
               ? 'border-destructive/40'
-              : 'border-border',
+              : issue === 'review'
+                ? 'border-primary/40'
+                : 'border-border',
         )}
       >
         <div className="flex items-start gap-2">
@@ -78,10 +90,24 @@ export function NodeCardView({
         </div>
         {/* Not chosen yet: the kind's prompt, muted. Summaries may span lines (a condition's criteria). */}
         <div className={cn('mt-2 text-sm whitespace-pre-line', !block && 'text-muted-foreground')}>
-          {block ? block.summary(data.config) : choose}
+          {block ? <SummaryText text={block.summary(data.config)} /> : choose}
         </div>
+        {/* Branch names right above their tabs, like Shopify Flow. */}
+        {type === 'condition' && (
+          <div className="relative mt-3 h-5 text-sm" aria-hidden>
+            <span className="absolute flex -translate-x-1/2 items-center gap-1" style={{ left: branchLeft.then }}>
+              <Check className="size-3.5" />
+              {__('True', 'yay-automation')}
+            </span>
+            <span className="absolute flex -translate-x-1/2 items-center gap-1" style={{ left: branchLeft.otherwise }}>
+              <X className="size-3.5" />
+              {__('False', 'yay-automation')}
+            </span>
+          </div>
+        )}
       </div>
-      {actions && <div className="absolute top-1/2 left-full ml-1.5 -translate-y-1/2">{actions}</div>}
+      {/* Padding, not margin: the pointer crosses into the control without leaving the card's hover. */}
+      {actions && <div className="absolute top-1/2 left-full -translate-y-1/2 pl-2">{actions}</div>}
       {type === 'condition' ? (
         <>
           <Handle

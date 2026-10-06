@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react';
-import { MarkerType, type Edge, type Node } from '@xyflow/react';
+import type { Edge, Node } from '@xyflow/react';
 import type { WorkflowGraph, WorkflowNodeData, WorkflowNodeKind } from '@yay-automation/types';
 import { __ } from '@wordpress/i18n';
 
@@ -10,7 +10,10 @@ export type FlowNode = Node<WorkflowNodeData, WorkflowNodeKind>;
 
 // ReactFlow ships unlayered CSS, so Tailwind utilities can't override it; its CSS variables and
 // inline styles can.
-const lineColor = 'color-mix(in oklab, var(--muted-foreground) 55%, transparent)';
+export const lineColor = 'color-mix(in oklab, var(--muted-foreground) 55%, transparent)';
+
+/** Id of the arrowhead marker every edge ends with, defined by `EdgeArrowDefs`. */
+export const EDGE_ARROW_ID = 'yay-automation-edge-arrow';
 
 export const canvasStyle = {
   '--xy-background-color': 'var(--muted)',
@@ -63,10 +66,12 @@ function isPending(data: WorkflowNodeData) {
 }
 
 /**
- * Dashed lines with an open arrow, like Shopify Flow. A line into a step that isn't set up yet
- * runs (ReactFlow's `animated` dashes) until it is.
+ * Curved lines (`CurvedEdge`) ending in an open arrow (`EdgeArrowDefs`), like Shopify Flow: the last
+ * stretch always runs straight down into the card, so the arrow lines up with it. In the editor they're dashed,
+ * and a line into a step that isn't set up yet runs (ReactFlow's `animated` dashes) until it is;
+ * read-only canvases (overview, template preview) draw them solid.
  */
-export function toFlowEdges(graph: WorkflowGraph): Edge[] {
+export function toFlowEdges(graph: WorkflowGraph, { editing = false } = {}): Edge[] {
   const pending = new Set(graph.nodes.filter((node) => isPending(node.data)).map((node) => node.id));
   return graph.edges.map((edge) => ({
     id: edge.id,
@@ -74,8 +79,9 @@ export function toFlowEdges(graph: WorkflowGraph): Edge[] {
     target: edge.target,
     sourceHandle: edge.sourceHandle,
     label: edge.sourceHandle ? branchLabels[edge.sourceHandle] : undefined,
-    animated: pending.has(edge.target),
-    style: { strokeDasharray: '5 5', strokeWidth: 1.5 },
-    markerEnd: { type: MarkerType.Arrow, color: lineColor, width: 16, height: 16 },
+    type: 'curved',
+    animated: editing && pending.has(edge.target),
+    style: editing ? { strokeDasharray: '5 5', strokeWidth: 1.5 } : { strokeWidth: 1.5 },
+    markerEnd: EDGE_ARROW_ID,
   }));
 }

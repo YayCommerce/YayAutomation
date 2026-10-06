@@ -14,6 +14,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Field, FieldContent, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Popover, PopoverContent } from '@/components/ui/popover';
 import { ConfigField } from '../../core/fields/ConfigField';
+import { useMarkInvalid } from '../../core/fields/feedback';
 import { useValidateOnMount } from '../../core/fields/useValidateOnMount';
 import type { BlockFormProps } from '../../core/types';
 import { schema, statuses, statusLabel, type OrderStatusChangedConfig } from './schema';
@@ -79,6 +80,7 @@ export function OrderStatusChangedForm({ config, onChange }: BlockFormProps<Orde
     listeners: { onChange: ({ formApi }) => onChange(formApi.state.values) },
   });
   useValidateOnMount(form);
+  const markInvalid = useMarkInvalid();
 
   return (
     <FieldGroup>
@@ -95,7 +97,7 @@ export function OrderStatusChangedForm({ config, onChange }: BlockFormProps<Orde
               value={field.state.value}
               onChange={field.handleChange}
               placeholder={__('Any status', 'yay-automation')}
-              invalid={!field.state.meta.isValid}
+              invalid={markInvalid(field.state.meta)}
             />
           </ConfigField>
         )}
@@ -114,7 +116,7 @@ export function OrderStatusChangedForm({ config, onChange }: BlockFormProps<Orde
               value={field.state.value}
               onChange={field.handleChange}
               placeholder={__('Any status', 'yay-automation')}
-              invalid={!field.state.meta.isValid}
+              invalid={markInvalid(field.state.meta)}
             />
           </ConfigField>
         )}

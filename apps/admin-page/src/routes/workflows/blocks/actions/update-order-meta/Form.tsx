@@ -6,17 +6,19 @@ import { FieldGroup } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { AddVariable } from '../../core/fields/AddVariable';
 import { ConfigField } from '../../core/fields/ConfigField';
+import { useMarkInvalid } from '../../core/fields/feedback';
 import { useValidateOnMount } from '../../core/fields/useValidateOnMount';
 import type { BlockFormProps } from '../../core/types';
 import { schema, type UpdateOrderMetaConfig } from './schema';
 
-export function UpdateOrderMetaForm({ config, onChange, available }: BlockFormProps<UpdateOrderMetaConfig>) {
+export function UpdateOrderMetaForm({ config, onChange }: BlockFormProps<UpdateOrderMetaConfig>) {
   const form = useForm({
     defaultValues: config,
     validators: { onChange: schema },
     listeners: { onChange: ({ formApi }) => onChange(formApi.state.values) },
   });
   useValidateOnMount(form);
+  const markInvalid = useMarkInvalid();
   const valueRef = useRef<HTMLInputElement>(null);
 
   return (
@@ -34,7 +36,7 @@ export function UpdateOrderMetaForm({ config, onChange, available }: BlockFormPr
               value={field.state.value}
               onChange={(event) => field.handleChange(event.target.value)}
               onBlur={field.handleBlur}
-              aria-invalid={!field.state.meta.isValid}
+              aria-invalid={markInvalid(field.state.meta)}
             />
           </ConfigField>
         )}
@@ -53,14 +55,9 @@ export function UpdateOrderMetaForm({ config, onChange, available }: BlockFormPr
               value={field.state.value}
               onChange={(event) => field.handleChange(event.target.value)}
               onBlur={field.handleBlur}
-              aria-invalid={!field.state.meta.isValid}
+              aria-invalid={markInvalid(field.state.meta)}
             />
-            <AddVariable
-              available={available}
-              inputRef={valueRef}
-              value={field.state.value}
-              onChange={field.handleChange}
-            />
+            <AddVariable inputRef={valueRef} value={field.state.value} onChange={field.handleChange} />
           </ConfigField>
         )}
       </form.Field>

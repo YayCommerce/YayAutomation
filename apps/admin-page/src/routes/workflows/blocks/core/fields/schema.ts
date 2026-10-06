@@ -1,12 +1,13 @@
 import * as v from 'valibot';
+import { __ } from '@wordpress/i18n';
 
 import { unknownVariable } from '../data';
 
-/** A string that isn't blank. */
-export const required = (message: string) =>
+/** A string that isn't blank. Same message as PHP `Block::required()`, like Shopify Flow's. */
+export const required = () =>
   v.pipe(
     v.string(),
-    v.check((value) => value.trim() !== '', message),
+    v.check((value) => value.trim() !== '', __('This field is required', 'yay-automation')),
   );
 
 /**

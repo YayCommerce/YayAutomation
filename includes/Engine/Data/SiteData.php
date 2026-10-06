@@ -16,6 +16,10 @@ final class SiteData extends DataItem {
         return __( 'Site', 'yay-automation' );
     }
 
+    public function description(): string {
+        return __( 'Your WordPress site: its name and address. Available in every workflow.', 'yay-automation' );
+    }
+
     protected function define(): array {
         return [
             'name' => [

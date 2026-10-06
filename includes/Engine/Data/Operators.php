@@ -31,27 +31,28 @@ final class Operators {
      * @param string $type     Field type.
      * @param string $operator Supported by the type.
      * @param mixed  $actual   Field value: float for numbers, `Y-m-d` for dates, string otherwise.
-     * @param string $expected Value from the rule, as typed.
+     * @param mixed  $expected Value from the rule as typed, or another field's value.
      */
-    public static function compare( string $type, string $operator, $actual, string $expected ): bool {
+    public static function compare( string $type, string $operator, $actual, $expected ): bool {
         if ( DataItem::TYPE_NUMBER === $type ) {
             return self::compare_numbers( $operator, (float) $actual, (float) $expected );
         }
 
         $actual   = (string) $actual;
         $lower    = strtolower( $actual );
-        $expected = strtolower( $expected );
+        $expected = strtolower( (string) $expected );
         switch ( $operator ) {
             case 'equal':
                 return $lower === $expected;
             case 'not_equal':
                 return $lower !== $expected;
+            // An empty needle always matches; checked first since PHP 7.4's strpos() rejects it.
             case 'contains':
-                return false !== strpos( $lower, $expected );
+                return '' === $expected || false !== strpos( $lower, $expected );
             case 'not_contains':
-                return false === strpos( $lower, $expected );
+                return '' !== $expected && false === strpos( $lower, $expected );
             case 'starts_with':
-                return 0 === strpos( $lower, $expected );
+                return '' === $expected || 0 === strpos( $lower, $expected );
             case 'ends_with':
                 return '' === $expected || substr( $lower, -strlen( $expected ) ) === $expected;
             case 'is_empty':

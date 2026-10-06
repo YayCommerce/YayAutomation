@@ -12,12 +12,10 @@ type TextControl = HTMLInputElement | HTMLTextAreaElement;
  * (at the end when the field was never focused) and puts the cursor after it.
  */
 export function AddVariable({
-  available,
   inputRef,
   value,
   onChange,
 }: {
-  available: string[];
   inputRef: RefObject<TextControl | null>;
   value: string;
   onChange: (value: string) => void;
@@ -47,7 +45,7 @@ export function AddVariable({
 
   return (
     <div className="flex justify-end">
-      <VariablePicker available={available} onSelect={insert}>
+      <VariablePicker onSelect={insert}>
         <Button type="button" variant="link" size="sm" className="h-auto px-0">
           {__('Add variable', 'yay-automation')}
         </Button>

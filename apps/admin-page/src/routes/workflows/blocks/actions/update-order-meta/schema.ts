@@ -1,5 +1,4 @@
 import * as v from 'valibot';
-import { __ } from '@wordpress/i18n';
 
 import { required, withKnownVariables } from '../../core/fields/schema';
 
@@ -8,7 +7,7 @@ export type UpdateOrderMetaConfig = { key: string; value: string };
 
 export const schema = withKnownVariables(
   v.object({
-    key: required(__('Enter a field name.', 'yay-automation')),
+    key: required(),
     value: v.string(),
   }),
   ['value'],

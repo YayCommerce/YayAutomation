@@ -1,6 +1,6 @@
 import { __, sprintf } from '@wordpress/i18n';
 
-import { defineBlock, PLACEHOLDER } from '../../core/defineBlock';
+import { defineBlock, value } from '../../core/defineBlock';
 import { UpdateOrderMetaForm } from './Form';
 import { defaults, schema, type UpdateOrderMetaConfig } from './schema';
 
@@ -11,8 +11,8 @@ export const updateOrderMetaBlock = defineBlock<UpdateOrderMetaConfig>({
   description: __('Set a custom field (meta) on the order.', 'yay-automation'),
   schema,
   defaults,
-  summary: ({ key, value }) =>
+  summary: ({ key, value: fieldValue }) =>
     /* translators: 1: custom field name, 2: value */
-    sprintf(__('Set the order field %1$s to %2$s', 'yay-automation'), key.trim() || PLACEHOLDER, value || '""'),
+    sprintf(__('Set the order field %1$s to %2$s', 'yay-automation'), value(key), value(fieldValue)),
   Form: UpdateOrderMetaForm,
 });

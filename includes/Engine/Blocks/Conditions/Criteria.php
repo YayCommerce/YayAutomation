@@ -10,14 +10,18 @@ defined( 'ABSPATH' ) || exit;
 
 /**
  * The one condition block: a list of criteria joined by AND (`all`) or OR (`any`).
- * Config: [ 'match' => 'all'|'any', 'rules' => [ [ 'field' => 'order.total', 'operator' => 'greater_or_equal', 'value' => '500' ], … ] ].
- * Values are stored as typed in the form and cast by the field type when compared.
+ * Config: [ 'match' => 'all'|'any', 'rules' => [ [ 'field' => 'order.total', 'operator' => 'greater_or_equal', 'value' => '500', 'valueType' => 'value' ], … ] ].
+ * `valueType` 'value': `value` is stored as typed and cast by the field type when compared. 'variable':
+ * `value` is another field's key, compared with that field's value (same type; numbers, text, dates).
  */
 class Criteria extends Condition {
 
     public const ID = 'condition';
 
     private const MATCHES = [ 'all', 'any' ];
+
+    /** Types whose value may be another variable. Option lists keep their own options. */
+    private const VARIABLE_VALUE_TYPES = [ DataItem::TYPE_NUMBER, DataItem::TYPE_STRING, DataItem::TYPE_DATE ];
 
     public function id(): string {
         return self::ID;
@@ -27,11 +31,14 @@ class Criteria extends Condition {
         $config = is_array( $config ) ? $config : [];
         $rules  = [];
         foreach ( is_array( $config['rules'] ?? null ) ? $config['rules'] : [] as $rule ) {
-            $rule    = is_array( $rule ) ? $rule : [];
-            $rules[] = [
-                'field'    => (string) preg_replace( '/[^a-z_.]/', '', self::scalar( $rule['field'] ?? '' ) ),
-                'operator' => sanitize_key( self::scalar( $rule['operator'] ?? '' ) ),
-                'value'    => sanitize_text_field( self::scalar( $rule['value'] ?? '' ) ),
+            $rule     = is_array( $rule ) ? $rule : [];
+            $variable = 'variable' === ( $rule['valueType'] ?? '' );
+            $value    = self::scalar( $rule['value'] ?? '' );
+            $rules[]  = [
+                'field'     => self::field_key( self::scalar( $rule['field'] ?? '' ) ),
+                'operator'  => sanitize_key( self::scalar( $rule['operator'] ?? '' ) ),
+                'value'     => $variable ? self::field_key( $value ) : sanitize_text_field( $value ),
+                'valueType' => $variable ? 'variable' : 'value',
             ];
         }
         return [
@@ -41,8 +48,8 @@ class Criteria extends Condition {
     }
 
     public function validate( array $config ) {
-        if ( ! $config['rules'] ) {
-            return $this->invalid( __( 'Add at least one criteria.', 'yay-automation' ) );
+        if ( ! array_filter( array_column( $config['rules'], 'field' ) ) ) {
+            return $this->invalid( __( 'Criteria is required. Add a criteria for comparison, or remove this condition.', 'yay-automation' ) );
         }
         foreach ( $config['rules'] as $rule ) {
             $error = $this->rule_error( $rule );
@@ -54,14 +61,26 @@ class Criteria extends Condition {
     }
 
     public function uses( array $config ): array {
-        $items = array_map( fn( array $rule ) => DataRegistry::item_of( $rule['field'] ), $config['rules'] );
+        $keys = [];
+        foreach ( $config['rules'] as $rule ) {
+            $keys[] = $rule['field'];
+            if ( 'variable' === $rule['valueType'] && Operators::needs_value( $rule['operator'] ) ) {
+                $keys[] = $rule['value'];
+            }
+        }
+        $items = array_map( [ DataRegistry::class, 'item_of' ], array_filter( $keys ) );
         return array_values( array_diff( array_unique( $items ), DataRegistry::ALWAYS ) );
     }
 
     public function evaluate( array $context, array $config ): bool {
         foreach ( $config['rules'] as $rule ) {
             $field  = DataRegistry::field( $rule['field'] );
-            $result = Operators::compare( $field['type'], $rule['operator'], DataRegistry::value( $rule['field'], $context ), $rule['value'] );
+            $expected = 'variable' === $rule['valueType'] && Operators::needs_value( $rule['operator'] )
+                ? DataRegistry::value( $rule['value'], $context )
+                : $rule['value'];
+            // Comparing with a variable that has no value (e.g. no paid date yet) never matches.
+            $result = null !== $expected
+                && Operators::compare( $field['type'], $rule['operator'], DataRegistry::value( $rule['field'], $context ), $expected );
             if ( 'any' === $config['match'] && $result ) {
                 return true;
             }
@@ -89,9 +108,22 @@ class Criteria extends Condition {
             return null;
         }
 
+        if ( 'variable' === $rule['valueType'] ) {
+            $other = DataRegistry::field( $rule['value'] );
+            $fits  = $other && $other['conditional'] && $other['type'] === $field['type']
+                && in_array( $field['type'], self::VARIABLE_VALUE_TYPES, true );
+            return $fits ? null : __( 'Choose a variable to compare with.', 'yay-automation' );
+        }
+
         $value = $rule['value'];
         if ( '' === $value ) {
-            return __( 'Enter a value for each criteria.', 'yay-automation' );
+            /* translators: %s: variable, e.g. "Order total" */
+            $required = sprintf( __( '%s is required.', 'yay-automation' ), $field['label'] );
+            // Text can be checked for blank instead.
+            return DataItem::TYPE_STRING === $field['type']
+                /* translators: %s: comparison name, "Is empty" */
+                ? $required . ' ' . sprintf( __( 'Select the "%s" operator to check for blank values.', 'yay-automation' ), __( 'Is empty', 'yay-automation' ) )
+                : $required;
         }
         if ( DataItem::TYPE_NUMBER === $field['type'] && ! is_numeric( $value ) ) {
             return __( 'Enter a number.', 'yay-automation' );
@@ -105,6 +137,15 @@ class Criteria extends Condition {
             return __( 'Choose one of the listed values.', 'yay-automation' );
         }
         return null;
+    }
+
+    /**
+     * A field key as stored: `item.field`, lowercase letters and underscores.
+     *
+     * @param string $key Raw key.
+     */
+    private static function field_key( string $key ): string {
+        return (string) preg_replace( '/[^a-z_.]/', '', $key );
     }
 
     /**

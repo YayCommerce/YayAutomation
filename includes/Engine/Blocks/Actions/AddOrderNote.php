@@ -46,7 +46,7 @@ class AddOrderNote extends Action {
 
     public function validate( array $config ) {
         if ( '' === $config['note'] ) {
-            return $this->invalid( __( 'Enter a note.', 'yay-automation' ) );
+            return $this->required();
         }
         return $this->unknown_variable( $config['note'] ) ?? true;
     }

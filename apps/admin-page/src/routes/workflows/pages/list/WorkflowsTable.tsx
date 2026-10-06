@@ -13,7 +13,7 @@ import { Pagination } from '@/components/ui/pagination';
 import { Segmented, SegmentedItem } from '@/components/ui/segmented';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { blockOf } from '../../blocks';
+import { blockOf, SummaryText } from '../../blocks';
 import { DeleteWorkflowDialog } from '../../shared/actions/WorkflowActions';
 import { onOffState, WorkflowStatusBadge } from '../../shared/ui/WorkflowStatusBadge';
 import { WorkflowBulkActions } from './WorkflowBulkActions';
@@ -25,7 +25,7 @@ type Tab = 'all' | 'active' | 'inactive';
 function triggerSummary(workflow: Workflow) {
   const trigger = workflow.graph.nodes.find((node) => node.kind === 'trigger');
   const block = trigger && blockOf(trigger.data);
-  return block ? block.summary(trigger.data.config) : '—';
+  return block ? <SummaryText text={block.summary(trigger.data.config)} /> : '—';
 }
 
 function TableHeadRow({ select }: { select: ReactNode }) {

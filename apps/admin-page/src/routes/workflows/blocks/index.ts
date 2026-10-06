@@ -8,6 +8,7 @@ import { orderCreatedBlock } from './triggers/order-created';
 import { orderStatusChangedBlock } from './triggers/order-status-changed';
 
 export type { Block } from './core/types';
+export { SummaryText } from './core/defineBlock';
 
 /**
  * Every block the editor knows. To add one: create its folder under triggers/, conditions/ or

@@ -1,6 +1,6 @@
 import { __, sprintf } from '@wordpress/i18n';
 
-import { defineBlock, PLACEHOLDER } from '../../core/defineBlock';
+import { defineBlock, value } from '../../core/defineBlock';
 import { AddOrderNoteForm } from './Form';
 import { defaults, schema, type AddOrderNoteConfig } from './schema';
 
@@ -16,7 +16,7 @@ export const addOrderNoteBlock = defineBlock<AddOrderNoteConfig>({
       type === 'customer'
         ? /* translators: %s: note text */ __('Add a note to the customer: %s', 'yay-automation')
         : /* translators: %s: note text */ __('Add a private note: %s', 'yay-automation'),
-      note.trim() || PLACEHOLDER,
+      value(note),
     ),
   Form: AddOrderNoteForm,
 });

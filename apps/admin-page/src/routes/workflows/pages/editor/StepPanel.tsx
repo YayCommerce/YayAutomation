@@ -7,6 +7,8 @@ import { __, sprintf } from '@wordpress/i18n';
 
 import { Button } from '@/components/ui/button';
 import { blockOf } from '../../blocks';
+import { FeedbackContext, type Feedback } from '../../blocks/core/fields/feedback';
+import { VariableScopeContext } from '../../blocks/core/fields/variableScope';
 import { setNodeBlock, updateNodeConfig } from '../../model/graph';
 import { availableData } from '../../model/validation';
 import { kindMeta } from '../../shared/canvas/NodeCardView';
@@ -14,8 +16,11 @@ import { plugins } from '../../shared/ui/PluginIcon';
 import { BlockPicker } from './BlockPicker';
 import { useWorkflowFormContext } from './useWorkflowForm';
 
-/** Floats over the left of the canvas; the canvas stays usable beside it. */
-export const PANEL_WIDTH = 420;
+/**
+ * Panel width for a canvas this wide: roomy on desktops (like Shopify Flow's 480px), narrower on
+ * laptops and tablets so the graph keeps some room beside it.
+ */
+export const panelWidthFor = (canvasWidth: number) => (canvasWidth >= 1200 ? 480 : canvasWidth >= 900 ? 420 : 360);
 
 const pickerTitles = {
   trigger: __('Select trigger', 'yay-automation'),
@@ -35,29 +40,37 @@ const kindOfPlugin = (node: WorkflowNode, plugin: string) =>
 export function StepPanel({
   nodeId,
   picking,
+  feedback,
+  closable,
   onPicked,
   onClose,
 }: {
   nodeId: string;
   picking: boolean;
+  /** How the form shows its errors (see `Feedback`). */
+  feedback: Feedback;
+  /** False for a new workflow's first trigger picker: a trigger must be chosen first. */
+  closable: boolean;
   onPicked: () => void;
   onClose: () => void;
 }) {
   const form = useWorkflowFormContext();
   // Null when the step was deleted while its panel was open.
   const node = useStore(form.store, (state) => state.values.graph.nodes.find((n) => n.id === nodeId) ?? null);
-  // The trigger's data decides which variables and actions the step can use.
-  const provides = useStore(form.store, (state) => {
+  // The trigger decides which variables and actions the step can use.
+  const triggerBlock = useStore(form.store, (state) => {
     const trigger = state.values.graph.nodes.find((n) => n.kind === 'trigger');
-    return (trigger && blockOf(trigger.data)?.provides) ?? [];
+    return trigger ? blockOf(trigger.data) : undefined;
   });
+  const provides = triggerBlock?.provides ?? [];
+  const triggerLabel = triggerBlock?.label ?? null;
   if (!node) return null;
 
   const block = blockOf(node.data);
   const available = availableData(provides);
   const update = (change: (graph: WorkflowGraph) => WorkflowGraph) => form.setFieldValue('graph', change);
 
-  const close = (
+  const close = closable && (
     <Button variant="ghost" size="icon-sm" aria-label={__('Close', 'yay-automation')} onClick={onClose}>
       <X />
     </Button>
@@ -106,13 +119,16 @@ export function StepPanel({
 
       <div className="min-h-0 flex-1 overflow-y-auto p-4">
         {block.Form ? (
-          // Keyed by step and block, so switching either starts a fresh form.
-          <block.Form
-            key={`${node.id}:${block.id}`}
-            config={node.data.config}
-            onChange={(config) => update((graph) => updateNodeConfig(graph, node.id, config))}
-            available={available}
-          />
+          <FeedbackContext.Provider value={feedback}>
+            <VariableScopeContext.Provider value={{ available, trigger: triggerLabel }}>
+              {/* Keyed by step and block, so switching either starts a fresh form. */}
+              <block.Form
+                key={`${node.id}:${block.id}`}
+                config={node.data.config}
+                onChange={(config) => update((graph) => updateNodeConfig(graph, node.id, config))}
+              />
+            </VariableScopeContext.Provider>
+          </FeedbackContext.Provider>
         ) : (
           <p className="text-muted-foreground text-sm">
             {__("This trigger doesn't require any configuration.", 'yay-automation')}
@@ -127,19 +143,27 @@ export function StepPanel({
  * The panel's card. Slides in from the left when it opens and back out when it closes, like Shopify
  * Flow; switching steps only swaps the content. Render inside `AnimatePresence`.
  */
-export function StepPanelFrame({ children }: { children: ReactNode }) {
+export function StepPanelFrame({ width, children }: { width: number; children: ReactNode }) {
   return (
     // ReactFlow's Backspace-to-delete listens on the whole document; `nokey` makes it ignore keys
     // pressed in here (buttons, selects), so editing never deletes the selected step.
     <m.aside
+      data-step-panel
       initial={{ x: '-110%' }}
       animate={{ x: 0 }}
       exit={{ x: '-110%' }}
       transition={{ type: 'tween', ease: 'easeOut', duration: 0.25 }}
-      className="nokey bg-card text-card-foreground absolute inset-y-3 left-3 z-20 flex max-w-[calc(100%-1.5rem)] flex-col rounded-xl border shadow-lg"
-      style={{ width: PANEL_WIDTH }}
+      // While "Add a variable" is open (`data-dimmed`, set by the picker): lifted above the dialog
+      // overlay and dimmed by its own layer, so only the element being edited stays bright.
+      className="nokey bg-card text-card-foreground group/panel absolute inset-y-3 left-3 z-20 flex max-w-[calc(100%-1.5rem)] flex-col rounded-xl border shadow-lg data-[dimmed=on]:z-100002"
+      style={{ width }}
     >
       {children}
+      <div
+        aria-hidden
+        // `-inset-px`: over the panel's border too, so no light edge shows around the dimmed panel.
+        className="pointer-events-none absolute -inset-px z-10 hidden rounded-xl bg-black/50 group-data-[dimmed=on]/panel:block"
+      />
     </m.aside>
   );
 }

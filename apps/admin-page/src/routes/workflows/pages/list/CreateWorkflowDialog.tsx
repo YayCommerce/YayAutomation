@@ -1,6 +1,7 @@
-import { ArrowUp, LayoutTemplate, Sparkles, Zap } from 'lucide-react';
+import { ArrowUp, LayoutTemplate, Loader2, Sparkles, Zap } from 'lucide-react';
 import { __ } from '@wordpress/i18n';
 
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -79,9 +80,21 @@ export function CreateWorkflowDialog({
           </div>
 
           <div className="flex gap-2">
-            <Button variant="secondary" size="sm" className={startButton} disabled={creating} onClick={onSelectTrigger}>
-              <Zap />
-              {__('Select a trigger', 'yay-automation')}
+            {/* While the workflow is being created a spinner takes the label's place; the hidden label
+                keeps the button's width. */}
+            <Button
+              variant="secondary"
+              size="sm"
+              className={cn(startButton, 'relative disabled:opacity-100')}
+              disabled={creating}
+              aria-busy={creating}
+              onClick={onSelectTrigger}
+            >
+              <span className={cn('flex items-center gap-1.5', creating && 'invisible')}>
+                <Zap />
+                {__('Select a trigger', 'yay-automation')}
+              </span>
+              {creating && <Loader2 className="absolute animate-spin" aria-hidden />}
             </Button>
             <Button variant="secondary" size="sm" className={startButton} onClick={onBrowseTemplates}>
               <LayoutTemplate />

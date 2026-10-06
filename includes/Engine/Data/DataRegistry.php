@@ -100,9 +100,10 @@ final class DataRegistry {
                 $fields[] = $client;
             }
             $items[] = [
-                'id'     => $item->id(),
-                'label'  => $item->label(),
-                'fields' => $fields,
+                'id'          => $item->id(),
+                'label'       => $item->label(),
+                'description' => $item->description(),
+                'fields'      => $fields,
             ];
         }
         return $items;

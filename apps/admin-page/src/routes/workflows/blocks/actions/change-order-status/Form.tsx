@@ -4,6 +4,7 @@ import { __ } from '@wordpress/i18n';
 import { FieldGroup } from '@/components/ui/field';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ConfigField } from '../../core/fields/ConfigField';
+import { useMarkInvalid } from '../../core/fields/feedback';
 import { useValidateOnMount } from '../../core/fields/useValidateOnMount';
 import type { BlockFormProps } from '../../core/types';
 import { statuses } from '../../triggers/order-status-changed/schema';
@@ -16,6 +17,7 @@ export function ChangeOrderStatusForm({ config, onChange }: BlockFormProps<Chang
     listeners: { onChange: ({ formApi }) => onChange(formApi.state.values) },
   });
   useValidateOnMount(form);
+  const markInvalid = useMarkInvalid();
 
   return (
     <FieldGroup>
@@ -27,7 +29,7 @@ export function ChangeOrderStatusForm({ config, onChange }: BlockFormProps<Chang
             errors={field.state.meta.errors}
           >
             <Select value={field.state.value} onValueChange={field.handleChange}>
-              <SelectTrigger id="block-order-status" className="w-full" aria-invalid={!field.state.meta.isValid}>
+              <SelectTrigger id="block-order-status" className="w-full" aria-invalid={markInvalid(field.state.meta)}>
                 <SelectValue placeholder={__('Choose a status', 'yay-automation')} />
               </SelectTrigger>
               <SelectContent>

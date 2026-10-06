@@ -16,6 +16,10 @@ final class OrderData extends DataItem {
         return __( 'Order', 'yay-automation' );
     }
 
+    public function description(): string {
+        return __( 'The WooCommerce order that started this workflow: its number, totals, status, payment, shipping and items.', 'yay-automation' );
+    }
+
     /**
      * Registered order statuses as slug (no `wc-` prefix) => label. Empty without WooCommerce.
      */

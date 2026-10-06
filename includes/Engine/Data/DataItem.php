@@ -30,6 +30,9 @@ abstract class DataItem {
 
     abstract public function label(): string;
 
+    /** One line for the "Add a variable" list. */
+    abstract public function description(): string;
+
     /** @return array[] Field definitions keyed by field key. */
     abstract protected function define(): array;
 

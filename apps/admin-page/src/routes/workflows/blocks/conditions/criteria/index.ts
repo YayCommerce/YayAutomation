@@ -26,9 +26,13 @@ const phrases: Record<string, string> = {
 };
 
 /** "Order total is greater than or equal to 500"; placeholders for the parts still missing. */
-function describe({ field: key, operator, value }: Rule) {
+function describe({ field: key, operator, value, valueType }: Rule) {
   const field = fieldByKey(key);
-  const shown = needsValue(operator) ? (field?.options?.find((option) => option.value === value)?.label ?? value) : '';
+  const shown = !needsValue(operator)
+    ? ''
+    : valueType === 'variable'
+      ? (fieldByKey(value)?.label ?? '')
+      : (field?.options?.find((option) => option.value === value)?.label ?? value);
   /* translators: 1: variable, 2: comparison, e.g. "is greater than", 3: value */
   return sprintf(
     __('%1$s %2$s %3$s', 'yay-automation'),
@@ -46,7 +50,13 @@ export const criteriaBlock = defineBlock<CriteriaConfig>({
   schema,
   defaults,
   normalize,
-  uses: ({ rules }) => rules.filter((rule) => rule.field).map((rule) => itemOf(rule.field)),
+  // The variable on the left, and the one on the right when comparing two.
+  uses: ({ rules }) =>
+    rules.flatMap((rule) =>
+      [rule.field, rule.valueType === 'variable' && needsValue(rule.operator) ? rule.value : '']
+        .filter(Boolean)
+        .map(itemOf),
+    ),
   // One line per criteria with the AND / OR between them; the card keeps the line breaks.
   summary: ({ match, rules }) => {
     const started = rules.filter((rule) => rule.field);

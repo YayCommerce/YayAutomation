@@ -1,6 +1,6 @@
 import { __, sprintf } from '@wordpress/i18n';
 
-import { defineBlock, PLACEHOLDER } from '../../core/defineBlock';
+import { defineBlock, value } from '../../core/defineBlock';
 import { statusLabel } from '../../triggers/order-status-changed/schema';
 import { ChangeOrderStatusForm } from './Form';
 import { defaults, schema, type ChangeOrderStatusConfig } from './schema';
@@ -14,6 +14,6 @@ export const changeOrderStatusBlock = defineBlock<ChangeOrderStatusConfig>({
   defaults,
   /* translators: %s: order status */
   summary: ({ status }) =>
-    sprintf(__('Change the order status to %s', 'yay-automation'), status ? statusLabel(status) : PLACEHOLDER),
+    sprintf(__('Change the order status to %s', 'yay-automation'), value(status ? statusLabel(status) : '')),
   Form: ChangeOrderStatusForm,
 });

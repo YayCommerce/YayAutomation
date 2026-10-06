@@ -27,6 +27,8 @@ export type DataFieldType = 'number' | 'string' | 'enum' | 'date';
 export interface DataItemMeta {
   id: string;
   label: string;
+  /** One line for the "Add a variable" list. */
+  description: string;
   fields: {
     /** Full key, e.g. `order.total`. */
     key: string;

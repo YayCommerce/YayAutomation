@@ -138,7 +138,7 @@ final class WorkflowValidator {
 
     /**
      * Problems that block turning a workflow on or applying a draft. Codes match the TS `validateWorkflow()`:
-     * name_required, no_trigger (trigger not chosen), no_action (on the trigger), unlinked (one issue,
+     * name_required, no_trigger (trigger not chosen), no_action (both workflow-level), unlinked (one issue,
      * `nodeIds` = every step not reached from the trigger), and per step: no_block (action not chosen),
      * invalid_config, missing_data (uses data the trigger doesn't supply).
      *
@@ -162,17 +162,16 @@ final class WorkflowValidator {
                 'message' => __( 'Enter a workflow name.', 'yay-automation' ),
             ];
         }
-        if ( $trigger && ! $trigger_block ) {
+        // Workflow-level: no step to point at, like Shopify Flow.
+        if ( ! $trigger_block ) {
             $errors[] = [
                 'code'    => 'no_trigger',
-                'nodeId'  => $trigger['id'],
-                'message' => __( 'Select a trigger', 'yay-automation' ),
+                'message' => __( 'Add a trigger to this workflow', 'yay-automation' ),
             ];
         }
         if ( ! in_array( Block::KIND_ACTION, array_column( $nodes, 'kind' ), true ) ) {
             $errors[] = [
                 'code'    => 'no_action',
-                'nodeId'  => $trigger['id'],
                 'message' => __( 'Add an action to this workflow', 'yay-automation' ),
             ];
         }

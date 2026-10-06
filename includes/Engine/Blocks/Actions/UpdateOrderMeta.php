@@ -40,7 +40,7 @@ class UpdateOrderMeta extends Action {
 
     public function validate( array $config ) {
         if ( '' === $config['key'] ) {
-            return $this->invalid( __( 'Enter a field name.', 'yay-automation' ) );
+            return $this->required();
         }
         return $this->unknown_variable( $config['value'] ) ?? true;
     }

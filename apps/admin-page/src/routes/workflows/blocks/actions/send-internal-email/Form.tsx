@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { AddVariable } from '../../core/fields/AddVariable';
 import { ConfigField } from '../../core/fields/ConfigField';
+import { useMarkInvalid } from '../../core/fields/feedback';
 import { useValidateOnMount } from '../../core/fields/useValidateOnMount';
 import type { BlockFormProps } from '../../core/types';
 import { schema, type SendInternalEmailConfig } from './schema';
@@ -15,13 +16,14 @@ import { schema, type SendInternalEmailConfig } from './schema';
 const { adminEmail } = window.yayAutomationMeta.wp;
 const sender = window.yayAutomationMeta.automation.email;
 
-export function SendInternalEmailForm({ config, onChange, available }: BlockFormProps<SendInternalEmailConfig>) {
+export function SendInternalEmailForm({ config, onChange }: BlockFormProps<SendInternalEmailConfig>) {
   const form = useForm({
     defaultValues: config,
     validators: { onChange: schema },
     listeners: { onChange: ({ formApi }) => onChange(formApi.state.values) },
   });
   useValidateOnMount(form);
+  const markInvalid = useMarkInvalid();
   const subjectRef = useRef<HTMLInputElement>(null);
   const messageRef = useRef<HTMLTextAreaElement>(null);
 
@@ -56,7 +58,7 @@ export function SendInternalEmailForm({ config, onChange, available }: BlockForm
               placeholder={adminEmail}
               onChange={(event) => field.handleChange(event.target.value)}
               onBlur={field.handleBlur}
-              aria-invalid={!field.state.meta.isValid}
+              aria-invalid={markInvalid(field.state.meta)}
             />
           </ConfigField>
         )}
@@ -75,14 +77,9 @@ export function SendInternalEmailForm({ config, onChange, available }: BlockForm
               value={field.state.value}
               onChange={(event) => field.handleChange(event.target.value)}
               onBlur={field.handleBlur}
-              aria-invalid={!field.state.meta.isValid}
+              aria-invalid={markInvalid(field.state.meta)}
             />
-            <AddVariable
-              available={available}
-              inputRef={subjectRef}
-              value={field.state.value}
-              onChange={field.handleChange}
-            />
+            <AddVariable inputRef={subjectRef} value={field.state.value} onChange={field.handleChange} />
           </ConfigField>
         )}
       </form.Field>
@@ -101,14 +98,9 @@ export function SendInternalEmailForm({ config, onChange, available }: BlockForm
               value={field.state.value}
               onChange={(event) => field.handleChange(event.target.value)}
               onBlur={field.handleBlur}
-              aria-invalid={!field.state.meta.isValid}
+              aria-invalid={markInvalid(field.state.meta)}
             />
-            <AddVariable
-              available={available}
-              inputRef={messageRef}
-              value={field.state.value}
-              onChange={field.handleChange}
-            />
+            <AddVariable inputRef={messageRef} value={field.state.value} onChange={field.handleChange} />
           </ConfigField>
         )}
       </form.Field>

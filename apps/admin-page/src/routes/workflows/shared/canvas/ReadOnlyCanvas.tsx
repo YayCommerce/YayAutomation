@@ -9,6 +9,8 @@ import { __ } from '@wordpress/i18n';
 import { Button } from '@/components/ui/button';
 import { ButtonGroup } from '@/components/ui/button-group';
 import { useTheme } from '@/components/ui/theme-provider';
+import { edgeTypes } from './CurvedEdge';
+import { EdgeArrowDefs } from './EdgeArrow';
 import { canvasStyle, toFlowEdges, toFlowNodes } from './flow';
 import { readOnlyNodeTypes } from './NodeCardView';
 
@@ -46,6 +48,7 @@ export function ReadOnlyCanvas({
       defaultNodes={nodes}
       defaultEdges={edges}
       nodeTypes={readOnlyNodeTypes}
+      edgeTypes={edgeTypes}
       colorMode={theme}
       style={canvasStyle}
       nodesDraggable={false}
@@ -59,6 +62,7 @@ export function ReadOnlyCanvas({
     >
       <FitOnResize fitViewOptions={fitViewOptions} />
       <Background />
+      <EdgeArrowDefs />
       <Panel position={controlsPosition} className="flex items-center gap-2">
         {controls}
         <CanvasControls fitViewOptions={fitViewOptions} />

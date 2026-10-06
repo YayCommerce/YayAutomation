@@ -19,6 +19,10 @@ final class CustomerData extends DataItem {
         return __( 'Customer', 'yay-automation' );
     }
 
+    public function description(): string {
+        return __( 'The person who placed the order, from its billing details. Works for guests too.', 'yay-automation' );
+    }
+
     /** Countries as code => name. Empty without WooCommerce. */
     public static function countries(): array {
         return function_exists( 'WC' ) ? WC()->countries->get_countries() : [];

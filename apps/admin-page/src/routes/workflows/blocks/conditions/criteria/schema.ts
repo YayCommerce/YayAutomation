@@ -1,27 +1,48 @@
 import * as v from 'valibot';
-import { __ } from '@wordpress/i18n';
+import { __, sprintf } from '@wordpress/i18n';
 
-import { fieldByKey, needsValue, operatorsFor } from '../../core/data';
+import { fieldByKey, needsValue, operatorLabels, operatorsFor, type DataField } from '../../core/data';
 
 /**
  * Mirrors includes/Engine/Blocks/Conditions/Criteria.php: criteria joined by AND (`all`) or OR (`any`).
- * Values are kept as typed and cast by the field type when compared.
+ * `valueType: 'value'` compares with `value` as typed (cast by the field type); `'variable'` compares
+ * with another field, whose key `value` holds.
  */
-export type Rule = { field: string; operator: string; value: string };
+export type Rule = { field: string; operator: string; value: string; valueType: 'value' | 'variable' };
 export type CriteriaConfig = { match: 'all' | 'any'; rules: Rule[] };
 
-export const emptyRule = (): Rule => ({ field: '', operator: '', value: '' });
+export const emptyRule = (): Rule => ({ field: '', operator: '', value: '', valueType: 'value' });
+
+/** Types whose value may be another variable. Option lists keep their own options. */
+export const VARIABLE_VALUE_TYPES: DataField['type'][] = ['number', 'string', 'date'];
+
+/** Fields a rule on `field` may compare with: same type, usable in conditions. */
+export const comparableWith = (field: DataField) => (other: DataField) =>
+  other.conditional && other.type === field.type && VARIABLE_VALUE_TYPES.includes(field.type);
 
 /** Why one criteria can't run, or null. Same checks, order and messages as PHP `Criteria::rule_error()`. */
-export function ruleError({ field: key, operator, value }: Rule): string | null {
+function ruleError({ field: key, operator, value, valueType }: Rule): string | null {
   const field = fieldByKey(key);
   if (!field?.conditional) return __('Choose a variable for each criteria.', 'yay-automation');
   if (!operatorsFor(field.type).includes(operator))
     return __('Choose a comparison for each criteria.', 'yay-automation');
   if (!needsValue(operator)) return null;
 
+  if (valueType === 'variable') {
+    const other = fieldByKey(value);
+    return other && comparableWith(field)(other) ? null : __('Choose a variable to compare with.', 'yay-automation');
+  }
+
   // PHP trims values on save.
-  if (value.trim() === '') return __('Enter a value for each criteria.', 'yay-automation');
+  if (value.trim() === '') {
+    /* translators: %s: variable, e.g. "Order total" */
+    const required = sprintf(__('%s is required.', 'yay-automation'), field.label);
+    // Text can be checked for blank instead.
+    return field.type === 'string'
+      ? /* translators: %s: comparison name, "Is empty" */
+        `${required} ${sprintf(__('Select the "%s" operator to check for blank values.', 'yay-automation'), operatorLabels.is_empty)}`
+      : required;
+  }
   if (field.type === 'number' && !/^\s*[+-]?(\d+\.?\d*|\.\d+)(e[+-]?\d+)?\s*$/i.test(value)) {
     return __('Enter a number.', 'yay-automation');
   }
@@ -33,17 +54,38 @@ export function ruleError({ field: key, operator, value }: Rule): string | null 
   return null;
 }
 
+/** No criteria has a variable yet. */
+export const criteriaRequired = __(
+  'Criteria is required. Add a criteria for comparison, or remove this condition.',
+  'yay-automation',
+);
+
+/**
+ * The error of each criteria, in order (null when fine). With no variable chosen anywhere, the
+ * first one carries "Criteria is required". Same order as PHP `Criteria::validate()`.
+ */
+export const criteriaErrors = (rules: Rule[]): (string | null)[] =>
+  rules.some((rule) => rule.field) ? rules.map(ruleError) : rules.map((_, i) => (i === 0 ? criteriaRequired : null));
+
+/** The condition's first error, or null. No criteria at all also needs one. */
+const criteriaError = (rules: Rule[]) =>
+  rules.length ? (criteriaErrors(rules).find(Boolean) ?? null) : criteriaRequired;
+
 export const schema = v.pipe(
   v.object({
     match: v.picklist(['all', 'any']),
-    rules: v.array(v.object({ field: v.string(), operator: v.string(), value: v.string() })),
+    rules: v.array(
+      v.object({
+        field: v.string(),
+        operator: v.string(),
+        value: v.string(),
+        valueType: v.picklist(['value', 'variable']),
+      }),
+    ),
   }),
   v.rawCheck(({ dataset, addIssue }) => {
     if (!dataset.typed) return;
-    const { rules } = dataset.value;
-    const error = rules.length
-      ? rules.map(ruleError).find(Boolean)
-      : __('Add at least one criteria.', 'yay-automation');
+    const error = criteriaError(dataset.value.rules);
     if (error) addIssue({ message: error });
   }),
 );
@@ -58,6 +100,7 @@ export const normalize = (config: Record<string, unknown>): CriteriaConfig => ({
         field: String(rule?.field ?? ''),
         operator: String(rule?.operator ?? ''),
         value: String(rule?.value ?? ''),
+        valueType: rule?.valueType === 'variable' ? 'variable' : 'value',
       }))
     : [],
 });

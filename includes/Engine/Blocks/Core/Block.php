@@ -51,6 +51,11 @@ abstract class Block {
         return [];
     }
 
+    /** A required field is blank. One message for all, like Shopify Flow's; mirrored by the TS `required()`. */
+    protected function required(): \WP_Error {
+        return $this->invalid( __( 'This field is required', 'yay-automation' ) );
+    }
+
     protected function invalid( string $message ): \WP_Error {
         return new \WP_Error( 'yay_automation_invalid_config', $message );
     }

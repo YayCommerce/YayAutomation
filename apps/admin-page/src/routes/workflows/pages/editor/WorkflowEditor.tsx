@@ -7,6 +7,7 @@ import { useLocation, useNavigate } from 'react-router';
 import { __ } from '@wordpress/i18n';
 
 import { useBeforeUnloadWarning } from '@/hooks/useBeforeUnloadWarning';
+import { useElementWidth } from '@/hooks/useElementWidth';
 import { useRouteLeaveGuard } from '@/hooks/useRouteLeaveGuard';
 import {
   AlertDialog,
@@ -40,8 +41,10 @@ import { workflowState, WorkflowStatusBadge } from '../../shared/ui/WorkflowStat
 import { EditorContext, type EditorState } from './editor.context';
 import { IssueBanner } from './IssueBanner';
 import { SaveStatus } from './SaveStatus';
-import { StepPanel, StepPanelFrame } from './StepPanel';
+import { panelWidthFor, StepPanel, StepPanelFrame } from './StepPanel';
 import { useAutosave } from './useAutosave';
+import { useIssueFeedback } from './useIssueFeedback';
+import { useStepPanel } from './useStepPanel';
 import { useWorkflowForm, WorkflowFormContext } from './useWorkflowForm';
 import { WorkflowCanvas } from './WorkflowCanvas';
 
@@ -57,12 +60,9 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const location = useLocation();
-  // A new workflow opens on its trigger picker, like Shopify Flow.
-  const [panel, setPanel] = useState<{ nodeId: string; picking: boolean } | null>(() => {
-    const trigger = workflow.graph.nodes.find((node) => node.kind === 'trigger');
-    return trigger && !trigger.data.block ? { nodeId: trigger.id, picking: false } : null;
-  });
-  const openNodeId = panel?.nodeId ?? null;
+  // The panel narrows with the canvas, so the graph keeps room beside it on laptops and tablets.
+  const [canvasRef, canvasWidth] = useElementWidth<HTMLDivElement>();
+  const panelWidth = panelWidthFor(canvasWidth);
 
   const isActive = workflow.status === 'active';
   // Once turned on, edits go into a draft (active or not), and they're unapplied changes as soon as
@@ -78,20 +78,21 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
     sameIssues,
   );
 
-  // Steps carry no markers while being built. Turn on / Apply failing on issues turns on error mode:
-  // red "Error" headers + banner until one succeeds. Opened from a failed Turn on elsewhere → starts in it.
-  const [errorMode, setErrorMode] = useState(() => !!(location.state as EditorNavState | null)?.showIssues);
+  // Quiet → blue "review" → red "error", like Shopify Flow. Opened from a failed Turn on elsewhere → starts red.
+  const { errorMode, setErrorMode, feedbackFor, markVisited, issueModes } = useIssueFeedback(
+    issues,
+    !!(location.state as EditorNavState | null)?.showIssues,
+  );
   const blockedByIssues = errorMode && issues.length > 0;
+
+  const { panel, setPanel, showPanel, locked: panelLocked } = useStepPanel(form, markVisited);
+  const openNodeId = panel?.nodeId ?? null;
 
   const editorState = useMemo<EditorState>(
     () => ({
       openNodeId,
-      openPanel: (nodeId, picking = false) => setPanel({ nodeId, picking }),
-      // In error mode, marks each step an issue belongs to: its own settings, `no_action` on the
-      // trigger, and every step `unlinked` lists.
-      issueNodeIds: errorMode
-        ? new Set(issues.flatMap((issue) => (issue.nodeId ? [issue.nodeId] : (issue.nodeIds ?? []))))
-        : new Set<string>(),
+      openPanel: (nodeId, picking = false) => showPanel({ nodeId, picking }),
+      issueModes,
       // Asks first (one dialog for several steps). The trigger can't be deleted.
       requestDelete: (nodeIds) => {
         const graph = form.state.values.graph;
@@ -99,7 +100,7 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
         if (ids.length) setStepsToDelete(ids);
       },
     }),
-    [form, openNodeId, issues, errorMode],
+    [form, openNodeId, showPanel, issueModes],
   );
   const [stepsToDelete, setStepsToDelete] = useState<string[] | null>(null);
   const deleteSteps = () => {
@@ -236,17 +237,22 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
           }
         >
           {/* Clipped, so the panel slides in from the canvas edge. */}
-          <div className="relative size-full overflow-hidden">
-            <WorkflowCanvas panelOpen={!!panel} onPaneClick={() => setPanel(null)} />
+          <div ref={canvasRef} className="relative size-full overflow-hidden">
+            <WorkflowCanvas
+              panelInset={panel ? panelWidth + 24 : 0}
+              onPaneClick={() => !panelLocked && showPanel(null)}
+            />
             <AnimatePresence>
               {panel && (
-                <StepPanelFrame key="panel">
+                <StepPanelFrame key="panel" width={panelWidth}>
                   <StepPanel
                     key={panel.nodeId}
                     nodeId={panel.nodeId}
                     picking={panel.picking}
+                    feedback={feedbackFor(panel.nodeId)}
+                    closable={!panelLocked}
                     onPicked={() => setPanel({ nodeId: panel.nodeId, picking: false })}
-                    onClose={() => setPanel(null)}
+                    onClose={() => showPanel(null)}
                   />
                 </StepPanelFrame>
               )}
@@ -258,9 +264,11 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
                   const node = form.state.values.graph.nodes.find((n) => n.id === nodeId);
                   return node ? (blockOf(node.data)?.label ?? kindMeta[node.kind].label) : '';
                 }}
-                onView={(nodeId) => setPanel({ nodeId, picking: false })}
+                onView={(nodeId) => showPanel({ nodeId, picking: false })}
                 onRename={() => setRenaming(true)}
-                className="absolute top-4 right-4 z-10"
+                // Clear of the step panel on the left.
+                className="absolute top-4 right-4 z-10 min-w-60"
+                style={panel ? { maxWidth: `calc(100% - ${panelWidth + 48}px)` } : undefined}
               />
             )}
             <SaveStatus

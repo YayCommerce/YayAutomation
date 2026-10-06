@@ -1,6 +1,6 @@
 import { __, sprintf } from '@wordpress/i18n';
 
-import { defineBlock, PLACEHOLDER } from '../../core/defineBlock';
+import { defineBlock, value } from '../../core/defineBlock';
 import { splitRecipients } from '../../core/fields/email';
 import { SendInternalEmailForm } from './Form';
 import { defaults, schema, type SendInternalEmailConfig } from './schema';
@@ -21,8 +21,8 @@ export const sendInternalEmailBlock = defineBlock<SendInternalEmailConfig>({
     /* translators: 1: recipient email address(es), 2: email subject */
     sprintf(
       __('Send email to %1$s with the following subject: %2$s', 'yay-automation'),
-      splitRecipients(recipients).join(', ') || adminEmail,
-      subject.trim() || PLACEHOLDER,
+      value(splitRecipients(recipients).join(', ') || adminEmail),
+      value(subject),
     ),
   Form: SendInternalEmailForm,
 });
