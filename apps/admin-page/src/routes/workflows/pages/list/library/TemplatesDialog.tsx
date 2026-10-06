@@ -9,8 +9,8 @@ import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { LibraryNavState } from '../../../shared/nav/library.nav';
-import { TemplateAppIcon } from '../../../shared/ui/TemplateApps';
-import { templates } from '../../../templates';
+import { PluginIcon } from '../../../shared/ui/PluginIcon';
+import { pluginsOf, templates } from '../../../templates';
 import { TemplatesHeroIllustration } from '../WorkflowIllustrations';
 
 type SortKey = 'popular' | 'newest' | 'name';
@@ -135,8 +135,8 @@ function TemplateCard({ template }: { template: WorkflowTemplate }) {
       <div className="mt-auto flex items-center justify-between gap-3 pt-6">
         <span className="text-muted-foreground text-sm">{template.category}</span>
         <div className="flex gap-1.5">
-          {template.apps.map((app) => (
-            <TemplateAppIcon key={app} app={app} />
+          {pluginsOf(template.graph).map((plugin) => (
+            <PluginIcon key={plugin} plugin={plugin} />
           ))}
         </div>
       </div>

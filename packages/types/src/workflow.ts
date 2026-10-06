@@ -9,14 +9,21 @@ export type WorkflowBranch = 'then' | 'otherwise';
 
 /**
  * Step type. Each id has a TS folder (admin app `blocks/<kind>/<id-in-kebab-case>/`) and a PHP class
- * (`src/Engine/Blocks/<Kind>/`).
+ * (`includes/Engine/Blocks/<Kind>/`).
  */
-export type BlockId = 'order_status_changed' | 'order_total' | 'send_admin_email';
+export type BlockId =
+  | 'order_created'
+  | 'order_status_changed'
+  | 'condition'
+  | 'send_internal_email'
+  | 'change_order_status'
+  | 'add_order_note'
+  | 'update_order_meta';
 
 /** `type` (not `interface`) so it satisfies ReactFlow's `Record<string, unknown>` data constraint. */
 export type WorkflowNodeData = {
-  title: string;
-  block: BlockId;
+  /** Null on a trigger or action step whose block isn't chosen yet. */
+  block: BlockId | null;
   /** Block-specific settings. Validated by the block's schema; may be incomplete while inactive. */
   config: Record<string, unknown>;
 };
@@ -84,8 +91,8 @@ export interface WorkflowVersionsPage {
   hasMore: boolean;
 }
 
-/** Integration a template touches. Drives the icons on template cards. */
-export type WorkflowTemplateApp = 'woocommerce' | 'email' | 'automation';
+/** Plugin that triggers and actions are grouped under (PHP `Engine\Plugins`). */
+export type WorkflowPlugin = 'woocommerce';
 
 /** Pre-built workflow shown in the template library. Install creates an inactive draft from `graph`. */
 export interface WorkflowTemplate {
@@ -93,7 +100,6 @@ export interface WorkflowTemplate {
   name: string;
   description: string;
   category: string;
-  apps: WorkflowTemplateApp[];
   /** Install count. Sort key for "Most popular". */
   popularity: number;
   /** ISO date. Sort key for "Newest". */
@@ -102,7 +108,14 @@ export interface WorkflowTemplate {
 }
 
 /** Codes shared by the TS `validateWorkflow()` and PHP `WorkflowValidator::errors()`. */
-export type WorkflowIssueCode = 'name_required' | 'no_action' | 'unlinked' | 'invalid_config';
+export type WorkflowIssueCode =
+  | 'name_required'
+  | 'no_trigger'
+  | 'no_action'
+  | 'unlinked'
+  | 'no_block'
+  | 'invalid_config'
+  | 'missing_data';
 
 /** Something that blocks turning on or applying changes. `nodeId` is set when the issue belongs to one step. */
 export interface WorkflowIssue {

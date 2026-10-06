@@ -1,18 +1,24 @@
 import type { ReactNode } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import type { WorkflowBranch, WorkflowNodeData, WorkflowNodeKind } from '@yay-automation/types';
-import { CircleAlert, GitBranch, Info, Play, Zap, type LucideIcon } from 'lucide-react';
+import { Check, CircleAlert, GitBranch, Info, Play, X, Zap, type LucideIcon } from 'lucide-react';
 import { __ } from '@wordpress/i18n';
 
 import { cn } from '@/lib/utils';
-import { blocks } from '../../blocks';
-import type { FlowNode } from './flow';
-import type { IssueMode } from './types';
+import { blockOf, SummaryText } from '../../blocks';
+import { sourceHandleStyle, targetHandleStyle, type FlowNode } from './flow';
 
-export const kindMeta: Record<WorkflowNodeKind, { label: string; icon: LucideIcon }> = {
-  trigger: { label: __('Trigger', 'yay-automation'), icon: Zap },
-  condition: { label: __('Condition', 'yay-automation'), icon: GitBranch },
-  action: { label: __('Action', 'yay-automation'), icon: Play },
+/** How a step card marks an issue: blue "Review" (left unfinished) or red "Error" (after a failed Turn on / Apply). */
+export type IssueMode = 'review' | 'error';
+
+export const kindMeta: Record<WorkflowNodeKind, { label: string; icon: LucideIcon; choose: string }> = {
+  trigger: { label: __('Trigger', 'yay-automation'), icon: Zap, choose: __('Select a trigger', 'yay-automation') },
+  condition: {
+    label: __('Condition', 'yay-automation'),
+    icon: GitBranch,
+    choose: __('Select condition', 'yay-automation'),
+  },
+  action: { label: __('Action', 'yay-automation'), icon: Play, choose: __('Select an action', 'yay-automation') },
 };
 
 /** Where each condition branch leaves the card. Shared by the handles and their "+" buttons. */
@@ -20,8 +26,7 @@ export const branchLeft: Record<WorkflowBranch, string> = { then: '30%', otherwi
 
 /**
  * Card body + handles. No form access, so it also renders on the read-only template preview.
- * Header = block label + kind icon, body = plain-language summary. `issue` adds a blue "Review" or red "Error"
- * header above it.
+ * Header = kind icon + block label, body = plain-language summary. `issue` adds a blue "Review" or red "Error" header above it.
  */
 export function NodeCardView({
   type,
@@ -41,17 +46,17 @@ export function NodeCardView({
   actions?: ReactNode;
   children?: ReactNode;
 }) {
-  const { label: kindLabel, icon: Icon } = kindMeta[type];
-  const block = blocks[data.block];
+  const { label: kindLabel, icon: Icon, choose } = kindMeta[type];
+  const block = blockOf(data);
 
   return (
-    <div className={cn('group relative w-70', className)}>
-      {type !== 'trigger' && <Handle type="target" position={Position.Top} />}
+    <div className={cn('group relative w-80', className)}>
+      {type !== 'trigger' && <Handle type="target" position={Position.Top} style={targetHandleStyle} />}
 
       {/* Out of flow, tucked under the card's top edge: showing or hiding it never moves the card or
           its handles. The opaque base keeps the tint readable over the canvas and the incoming edge. */}
       {issue && (
-        <div className="bg-card absolute inset-x-0 bottom-full -mb-2 overflow-hidden rounded-t-lg">
+        <div className="bg-card absolute inset-x-0 bottom-full -mb-2 overflow-hidden rounded-t-xl">
           {issue === 'error' ? (
             <div className="bg-destructive/15 text-destructive flex items-center gap-1.5 px-3 pt-1.5 pb-3.5 text-xs font-medium">
               <CircleAlert className="size-3.5" aria-hidden />
@@ -68,9 +73,10 @@ export function NodeCardView({
 
       <div
         className={cn(
-          'bg-card text-card-foreground relative rounded-lg border p-3 shadow-sm',
+          'bg-card text-card-foreground relative rounded-xl border p-4 shadow-sm',
+          // Selected: a dark outline, like Shopify Flow. A ring, so the card keeps its size.
           selected
-            ? 'border-primary'
+            ? 'border-foreground/70 ring-foreground/70 shadow-md ring-1'
             : issue === 'error'
               ? 'border-destructive/40'
               : issue === 'review'
@@ -79,19 +85,46 @@ export function NodeCardView({
         )}
       >
         <div className="flex items-start gap-2">
-          <div className="min-w-0 flex-1 text-sm font-semibold">{block.label}</div>
           <Icon className="text-muted-foreground mt-0.5 size-4 shrink-0" role="img" aria-label={kindLabel} />
+          <div className="min-w-0 flex-1 text-sm font-semibold">{block?.label ?? kindLabel}</div>
         </div>
-        <div className="mt-2 text-sm">{block.summary(data.config)}</div>
+        {/* Not chosen yet: the kind's prompt, muted. Summaries may span lines (a condition's criteria). */}
+        <div className={cn('mt-2 text-sm whitespace-pre-line', !block && 'text-muted-foreground')}>
+          {block ? <SummaryText text={block.summary(data.config)} /> : choose}
+        </div>
+        {/* Branch names right above their tabs, like Shopify Flow. */}
+        {type === 'condition' && (
+          <div className="relative mt-3 h-5 text-sm" aria-hidden>
+            <span className="absolute flex -translate-x-1/2 items-center gap-1" style={{ left: branchLeft.then }}>
+              <Check className="size-3.5" />
+              {__('True', 'yay-automation')}
+            </span>
+            <span className="absolute flex -translate-x-1/2 items-center gap-1" style={{ left: branchLeft.otherwise }}>
+              <X className="size-3.5" />
+              {__('False', 'yay-automation')}
+            </span>
+          </div>
+        )}
       </div>
-      {actions && <div className="absolute top-1/2 left-full ml-1.5 -translate-y-1/2">{actions}</div>}
+      {/* Padding, not margin: the pointer crosses into the control without leaving the card's hover. */}
+      {actions && <div className="absolute top-1/2 left-full -translate-y-1/2 pl-2">{actions}</div>}
       {type === 'condition' ? (
         <>
-          <Handle id="then" type="source" position={Position.Bottom} style={{ left: branchLeft.then }} />
-          <Handle id="otherwise" type="source" position={Position.Bottom} style={{ left: branchLeft.otherwise }} />
+          <Handle
+            id="then"
+            type="source"
+            position={Position.Bottom}
+            style={{ ...sourceHandleStyle, left: branchLeft.then }}
+          />
+          <Handle
+            id="otherwise"
+            type="source"
+            position={Position.Bottom}
+            style={{ ...sourceHandleStyle, left: branchLeft.otherwise }}
+          />
         </>
       ) : (
-        <Handle type="source" position={Position.Bottom} />
+        <Handle type="source" position={Position.Bottom} style={sourceHandleStyle} />
       )}
 
       {children}

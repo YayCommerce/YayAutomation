@@ -8,7 +8,8 @@ defined( 'ABSPATH' ) || exit;
  * (e.g. Triggers/OrderStatusChanged ↔ triggers/order-status-changed/). `validate()` must accept
  * exactly what that folder's `schema.ts` accepts.
  *
- * Run context: [ 'order' => \WC_Order, 'from' => string, 'to' => string ].
+ * Run context: data item id => object (see Engine/Data), plus trigger-specific keys
+ * (e.g. `from` / `to` for status changes).
  */
 abstract class Block {
 
@@ -34,6 +35,26 @@ abstract class Block {
      * @return true|\WP_Error
      */
     abstract public function validate( array $config );
+
+    /**
+     * Data items (see Engine/Data) this step reads with the given config. The trigger must supply
+     * them; otherwise the workflow gets a `missing_data` issue.
+     *
+     * @param array $config Output of `sanitize()`.
+     */
+    public function uses( array $config ): array {
+        return [];
+    }
+
+    /** Extra facts for the admin app, merged into this block's entry of `BlockRegistry::to_client()`. */
+    public function client_meta(): array {
+        return [];
+    }
+
+    /** A required field is blank. One message for all, like Shopify Flow's; mirrored by the TS `required()`. */
+    protected function required(): \WP_Error {
+        return $this->invalid( __( 'This field is required', 'yay-automation' ) );
+    }
 
     protected function invalid( string $message ): \WP_Error {
         return new \WP_Error( 'yay_automation_invalid_config', $message );

@@ -57,8 +57,9 @@ export const getWorkflow = (id: string) =>
     : Promise.reject(new ApiError(__('Workflow not found.', 'yay-automation'), 404));
 
 /** New inactive workflow. Issues are allowed. */
-export const createWorkflow = ({ name, graph }: Pick<Workflow, 'name' | 'graph'>) =>
-  request<Workflow>(api.post('workflows', { json: { name, graph } }));
+/** Without a name and graph the server creates a blank "New workflow" with an unchosen trigger. */
+export const createWorkflow = (workflow: Partial<Pick<Workflow, 'name' | 'graph'>> = {}) =>
+  request<Workflow>(api.post('workflows', { json: workflow }));
 
 /**
  * Saves the name and/or graph; issues are allowed. The server puts the graph into the live workflow
