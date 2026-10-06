@@ -33,7 +33,25 @@
 
   "prettier.ignorePath": "./apps/admin-page/.prettierignore",
 
+  // Claude worktrees: hide from explorer, quick open, search, and file watching
+  "files.exclude": { "**/.claude/worktrees": true },
+  "files.watcherExclude": { "**/.claude/worktrees/**": true },
+
   "intelephense.environment.includePaths": ["../../.."],
+  // Intelephense defaults + worktrees (setting this replaces the defaults)
+  "intelephense.files.exclude": [
+    "**/.git/**",
+    "**/.svn/**",
+    "**/.hg/**",
+    "**/CVS/**",
+    "**/.DS_Store/**",
+    "**/node_modules/**",
+    "**/bower_components/**",
+    "**/vendor/**/{Tests,tests}/**",
+    "**/.history/**",
+    "**/vendor/**/vendor/**",
+    "**/.claude/worktrees/**"
+  ],
   "intelephense.stubs": [
     "wordpress",
     "apache",
