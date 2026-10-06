@@ -15,11 +15,11 @@ export function createRegistry(list: Block[], conditionBlock: BlockId) {
 
   /** Data for a fresh step: triggers and actions start unchosen, a condition with its defaults. */
   function newNodeData(kind: WorkflowNodeKind): WorkflowNodeData {
-    if (kind !== 'condition') return { description: '', block: null, config: {} };
-    return { description: '', block: conditionBlock, config: blocks[conditionBlock].defaults() };
+    if (kind !== 'condition') return { block: null, config: {} };
+    return { block: conditionBlock, config: blocks[conditionBlock].defaults() };
   }
 
-  /** Data after choosing a block for a trigger or action step: its defaults, the note kept. Re-picking the same block keeps its settings. */
+  /** Data after choosing a block for a trigger or action step: its defaults. Re-picking the same block keeps its settings. */
   function withBlock(data: WorkflowNodeData, id: BlockId): WorkflowNodeData {
     return data.block === id ? data : { ...data, block: id, config: blocks[id].defaults() };
   }

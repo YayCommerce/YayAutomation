@@ -23,7 +23,7 @@ export const branchLeft: Record<WorkflowBranch, string> = { then: '30%', otherwi
 
 /**
  * Card body + handles. No form access, so it also renders on the read-only template preview.
- * Header = block label + kind icon, body = plain-language summary. `issue` adds a red "Error" header above it.
+ * Header = kind icon + block label, body = plain-language summary. `issue` adds a red "Error" header above it.
  */
 export function NodeCardView({
   type,
@@ -47,13 +47,13 @@ export function NodeCardView({
   const block = blockOf(data);
 
   return (
-    <div className={cn('group relative w-70', className)}>
+    <div className={cn('group relative w-80', className)}>
       {type !== 'trigger' && <Handle type="target" position={Position.Top} style={targetHandleStyle} />}
 
       {/* Out of flow, tucked under the card's top edge: showing or hiding it never moves the card or
           its handles. The opaque base keeps the tint readable over the canvas and the incoming edge. */}
       {issue && (
-        <div className="bg-card absolute inset-x-0 bottom-full -mb-2 overflow-hidden rounded-t-lg">
+        <div className="bg-card absolute inset-x-0 bottom-full -mb-2 overflow-hidden rounded-t-xl">
           <div className="bg-destructive/15 text-destructive flex items-center gap-1.5 px-3 pt-1.5 pb-3.5 text-xs font-medium">
             <CircleAlert className="size-3.5" aria-hidden />
             {__('Error', 'yay-automation')}
@@ -63,13 +63,18 @@ export function NodeCardView({
 
       <div
         className={cn(
-          'bg-card text-card-foreground relative rounded-lg border p-3 shadow-sm',
-          selected ? 'border-primary' : issue ? 'border-destructive/40' : 'border-border',
+          'bg-card text-card-foreground relative rounded-xl border p-4 shadow-sm',
+          // Selected: a dark outline, like Shopify Flow. A ring, so the card keeps its size.
+          selected
+            ? 'border-foreground/70 ring-foreground/70 shadow-md ring-1'
+            : issue
+              ? 'border-destructive/40'
+              : 'border-border',
         )}
       >
         <div className="flex items-start gap-2">
-          <div className="min-w-0 flex-1 text-sm font-semibold">{block?.label ?? kindLabel}</div>
           <Icon className="text-muted-foreground mt-0.5 size-4 shrink-0" role="img" aria-label={kindLabel} />
+          <div className="min-w-0 flex-1 text-sm font-semibold">{block?.label ?? kindLabel}</div>
         </div>
         {/* Not chosen yet: the kind's prompt, muted. Summaries may span lines (a condition's criteria). */}
         <div className={cn('mt-2 text-sm whitespace-pre-line', !block && 'text-muted-foreground')}>

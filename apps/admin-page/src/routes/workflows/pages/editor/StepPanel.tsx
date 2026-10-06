@@ -1,14 +1,13 @@
-import { useState, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { useStore } from '@tanstack/react-form';
 import type { BlockId, WorkflowGraph, WorkflowNode } from '@yay-automation/types';
-import { MessageSquareText, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { m } from 'motion/react';
 import { __, sprintf } from '@wordpress/i18n';
 
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 import { blockOf } from '../../blocks';
-import { setNodeBlock, updateNodeConfig, updateNodeDescription } from '../../model/graph';
+import { setNodeBlock, updateNodeConfig } from '../../model/graph';
 import { availableData } from '../../model/validation';
 import { kindMeta } from '../../shared/canvas/NodeCardView';
 import { plugins } from '../../shared/ui/PluginIcon';
@@ -31,8 +30,7 @@ const kindOfPlugin = (node: WorkflowNode, plugin: string) =>
 
 /**
  * Content of the open step's panel (inside `StepPanelFrame`): its block picker while a trigger or
- * action has none (or `picking`, to swap), then the block's header, a description note and its
- * settings. Edits go straight into the form; autosave persists them.
+ * action has none (or `picking`, to swap), then the block's header and settings. Edits go straight into the form; autosave persists them.
  */
 export function StepPanel({
   nodeId,
@@ -106,14 +104,6 @@ export function StepPanel({
         {close}
       </div>
 
-      <div className="border-b px-4 py-2">
-        <StepDescription
-          key={node.id}
-          value={node.data.description}
-          onChange={(description) => update((graph) => updateNodeDescription(graph, node.id, description))}
-        />
-      </div>
-
       <div className="min-h-0 flex-1 overflow-y-auto p-4">
         {block.Form ? (
           // Keyed by step and block, so switching either starts a fresh form.
@@ -151,31 +141,5 @@ export function StepPanelFrame({ children }: { children: ReactNode }) {
     >
       {children}
     </m.aside>
-  );
-}
-
-/** "Add description" until there's a note; then the note, editable in place. */
-function StepDescription({ value, onChange }: { value: string; onChange: (value: string) => void }) {
-  const [editing, setEditing] = useState(false);
-
-  if (!editing && !value) {
-    return (
-      <Button variant="ghost" size="sm" className="-ml-2" onClick={() => setEditing(true)}>
-        <MessageSquareText />
-        {__('Add description', 'yay-automation')}
-      </Button>
-    );
-  }
-  return (
-    <Textarea
-      autoFocus={editing}
-      autoSize
-      rows={2}
-      value={value}
-      placeholder={__('What this step is for', 'yay-automation')}
-      aria-label={__('Description', 'yay-automation')}
-      onChange={(event) => onChange(event.target.value)}
-      onBlur={() => setEditing(false)}
-    />
   );
 }

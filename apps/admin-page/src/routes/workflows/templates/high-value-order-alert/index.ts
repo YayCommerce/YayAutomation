@@ -20,14 +20,13 @@ export default defineTemplate({
         id: 'trigger',
         kind: 'trigger',
         position: { x: 0, y: 0 },
-        data: { description: '', block: 'order_created', config: {} },
+        data: { block: 'order_created', config: {} },
       },
       {
         id: 'condition',
         kind: 'condition',
         position: { x: 0, y: ROW_GAP },
         data: {
-          description: '',
           block: 'condition',
           // Ships valid, so the draft has no issues; the user can adjust the amount.
           config: { match: 'all', rules: [{ field: 'order.total', operator: 'greater_or_equal', value: '500' }] },
@@ -38,7 +37,6 @@ export default defineTemplate({
         kind: 'action',
         position: { x: -BRANCH_OFFSET, y: ROW_GAP * 2 },
         data: {
-          description: '',
           block: 'send_internal_email',
           config: {
             // Blank: the site admin email.

@@ -22,8 +22,6 @@ export type BlockId =
 
 /** `type` (not `interface`) so it satisfies ReactFlow's `Record<string, unknown>` data constraint. */
 export type WorkflowNodeData = {
-  /** Free note on the step ("Add description"). */
-  description: string;
   /** Null on a trigger or action step whose block isn't chosen yet. */
   block: BlockId | null;
   /** Block-specific settings. Validated by the block's schema; may be incomplete while inactive. */

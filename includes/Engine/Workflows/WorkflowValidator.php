@@ -49,9 +49,8 @@ final class WorkflowValidator {
                         'y' => 0,
                     ],
                     'data'     => [
-                        'description' => '',
-                        'block'       => null,
-                        'config'      => [],
+                        'block'  => null,
+                        'config' => [],
                     ],
                 ],
             ],
@@ -301,9 +300,8 @@ final class WorkflowValidator {
                     'y' => is_numeric( $position['y'] ?? null ) ? (float) $position['y'] : 0.0,
                 ],
                 'data'     => [
-                    'description' => sanitize_textarea_field( is_scalar( $data['description'] ?? null ) ? (string) $data['description'] : '' ),
-                    'block'       => $block ? $block->id() : null,
-                    'config'      => $block ? $block->sanitize( $data['config'] ?? [] ) : [],
+                    'block'  => $block ? $block->id() : null,
+                    'config' => $block ? $block->sanitize( $data['config'] ?? [] ) : [],
                 ],
             ];
         }//end foreach

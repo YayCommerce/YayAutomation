@@ -9,9 +9,9 @@ import { newNodeData, withBlock } from '../blocks';
 
 /** Layout grid for new nodes. Template graphs use the same grid so added steps line up. */
 // Top-to-top: a one-line card is ~74px tall, leaving room for a clear edge and the "+" below it.
-// Branches sit far enough apart that two 280px cards side by side keep a gap.
+// Branches sit far enough apart that two 320px cards side by side keep a gap.
 export const ROW_GAP = 170;
-export const BRANCH_OFFSET = 180;
+export const BRANCH_OFFSET = 200;
 
 /** Short unique id with a readable prefix. Not `crypto.randomUUID()`: it's undefined on non-HTTPS WP sites. */
 export function createId(prefix: string) {
@@ -102,9 +102,6 @@ function updateNodeData(
 
 export const updateNodeConfig = (graph: WorkflowGraph, nodeId: string, config: Record<string, unknown>) =>
   updateNodeData(graph, nodeId, (data) => ({ ...data, config }));
-
-export const updateNodeDescription = (graph: WorkflowGraph, nodeId: string, description: string) =>
-  updateNodeData(graph, nodeId, (data) => ({ ...data, description }));
 
 /** Chooses (or swaps) a trigger's or action's block; its config resets to that block's defaults. */
 export const setNodeBlock = (graph: WorkflowGraph, nodeId: string, block: BlockId) =>
