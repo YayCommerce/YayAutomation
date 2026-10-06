@@ -13,11 +13,13 @@ WordPress plugin: automation workflows + template library. UX reference: Shopify
 - `yay-automation.php` — plugin bootstrap
 - `includes/` — PHP backend, namespace `YayAutomation\`
 - `apps/admin-page/` — React admin app
+- `dev/` — team scripts (`./run.sh`), personal `.env.local`; not shipped
 - `packages/` — shared TS (`@yay-automation/utils`, `@yay-automation/types`)
 
 ## Commands
 
 ```bash
+./run.sh        # team scripts in dev/scripts (setup, release, claude-workflow / cw)
 pnpm dev        # Vite :3020
 pnpm build      # typecheck + build
 pnpm lint:fix

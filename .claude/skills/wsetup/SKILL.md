@@ -25,8 +25,7 @@ Report any missing tools.
 
 ```bash
 pnpm install
-composer install                 # needs GitHub access to YayCommerce/yaycommerce-plugin-admin-shell
-./vendor/bin/yaycommerce-update  # builds vendor-prefixed/ (scoped admin-shell)
+./run.sh setup                   # composer install + vendor-prefixed/; needs GitHub access to YayCommerce/yaycommerce-plugin-admin-shell
 ```
 
 ---
@@ -42,7 +41,7 @@ pnpm build
 ## Step 4 — PHP lint
 
 ```bash
-find src yay-automation.php autoloader.php -name '*.php' -exec php -l {} \; | grep -v '^No syntax errors'
+find includes yay-automation.php -name '*.php' -exec php -l {} \; | grep -v '^No syntax errors'
 ```
 
 Empty output = pass.
