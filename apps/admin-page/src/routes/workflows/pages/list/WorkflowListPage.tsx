@@ -1,11 +1,13 @@
-import { useSearchParams } from 'react-router';
+import { useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router';
 import { __ } from '@wordpress/i18n';
 
 import { Button } from '@/components/ui/button';
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { toast } from '@/components/ui/sonner';
 import { PageCard, PageTitle } from '@/components/widget/PageWidget';
-import { useWorkflowsQuery } from '../../api/workflow.query';
+import { useCreateWorkflowMutation, useWorkflowsQuery } from '../../api/workflow.query';
+import { CreateWorkflowDialog } from './CreateWorkflowDialog';
 import { TemplatesDialog } from './library/TemplatesDialog';
 import { WorkflowsEmptyIllustration } from './WorkflowIllustrations';
 import { WorkflowsTable, WorkflowsTableSkeleton } from './WorkflowsTable';
@@ -22,18 +24,14 @@ export default function WorkflowListPage() {
     setSearchParams((prev) => withTemplates(prev, open), { replace: !open });
   };
 
-  // Building a workflow from scratch isn't available yet; templates are the way in.
-  const createButton = (
-    <Tooltip>
-      {/* Disabled buttons swallow pointer events, so the span carries the tooltip. */}
-      <TooltipTrigger asChild>
-        <span tabIndex={0}>
-          <Button disabled>{__('Create workflow', 'yay-automation')}</Button>
-        </span>
-      </TooltipTrigger>
-      <TooltipContent>{__('Coming soon', 'yay-automation')}</TooltipContent>
-    </Tooltip>
-  );
+  // "Select a trigger" saves a blank "New workflow" right away and opens it on its trigger picker, like Shopify Flow.
+  const [createOpen, setCreateOpen] = useState(false);
+  const navigate = useNavigate();
+  const createMutation = useCreateWorkflowMutation({
+    onSaved: (workflow) => navigate(`/workflows/${workflow.id}/edit`),
+    onFailed: (error) => toast.error(error.message),
+  });
+  const createButton = <Button onClick={() => setCreateOpen(true)}>{__('Create workflow', 'yay-automation')}</Button>;
 
   return (
     <PageCard>
@@ -77,6 +75,16 @@ export default function WorkflowListPage() {
         </Empty>
       )}
 
+      <CreateWorkflowDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        creating={createMutation.isPending}
+        onSelectTrigger={() => createMutation.mutate({})}
+        onBrowseTemplates={() => {
+          setCreateOpen(false);
+          setTemplatesOpen(true);
+        }}
+      />
       <TemplatesDialog open={templatesOpen} onOpenChange={setTemplatesOpen} />
     </PageCard>
   );

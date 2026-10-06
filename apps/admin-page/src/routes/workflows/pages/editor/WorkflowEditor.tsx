@@ -2,10 +2,12 @@ import { useEffect, useMemo, useState } from 'react';
 import { useStore } from '@tanstack/react-form';
 import { useQueryClient } from '@tanstack/react-query';
 import type { Workflow } from '@yay-automation/types';
+import { AnimatePresence } from 'motion/react';
 import { useLocation, useNavigate } from 'react-router';
 import { __ } from '@wordpress/i18n';
 
 import { useBeforeUnloadWarning } from '@/hooks/useBeforeUnloadWarning';
+import { useElementWidth } from '@/hooks/useElementWidth';
 import { useRouteLeaveGuard } from '@/hooks/useRouteLeaveGuard';
 import {
   AlertDialog,
@@ -20,7 +22,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/sonner';
 import { ApiError } from '../../api/workflow.api';
 import { useWorkflowActionMutation, workflowKeys } from '../../api/workflow.query';
-import { blocks } from '../../blocks';
+import { blockOf } from '../../blocks';
 import { removeNode } from '../../model/graph';
 import { createIssuesSelector, sameIssues } from '../../model/validation';
 import {
@@ -32,14 +34,17 @@ import {
   TurnOffDialog,
   TurnOnDialog,
 } from '../../shared/actions/WorkflowActions';
+import { kindMeta } from '../../shared/canvas/NodeCardView';
 import { EditorLayout } from '../../shared/layout/EditorLayout';
 import { type EditorNavState } from '../../shared/nav/editor.nav';
 import { workflowState, WorkflowStatusBadge } from '../../shared/ui/WorkflowStatusBadge';
 import { EditorContext, type EditorState } from './editor.context';
 import { IssueBanner } from './IssueBanner';
-import { NodeConfigSheet } from './NodeConfigSheet';
 import { SaveStatus } from './SaveStatus';
+import { panelWidthFor, StepPanel, StepPanelFrame } from './StepPanel';
 import { useAutosave } from './useAutosave';
+import { useIssueFeedback } from './useIssueFeedback';
+import { useStepPanel } from './useStepPanel';
 import { useWorkflowForm, WorkflowFormContext } from './useWorkflowForm';
 import { WorkflowCanvas } from './WorkflowCanvas';
 
@@ -55,7 +60,9 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const location = useLocation();
-  const [openNodeId, setOpenNodeId] = useState<string | null>(null);
+  // The panel narrows with the canvas, so the graph keeps room beside it on laptops and tablets.
+  const [canvasRef, canvasWidth] = useElementWidth<HTMLDivElement>();
+  const panelWidth = panelWidthFor(canvasWidth);
 
   const isActive = workflow.status === 'active';
   // Once turned on, edits go into a draft (active or not), and they're unapplied changes as soon as
@@ -71,18 +78,21 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
     sameIssues,
   );
 
-  // Blue "Review" until Turn on / Apply fails, then red "Error" + banner until one succeeds. Opened
-  // from a failed Turn on elsewhere → starts in error mode.
-  const [errorMode, setErrorMode] = useState(() => !!(location.state as EditorNavState | null)?.showIssues);
+  // Quiet → blue "review" → red "error", like Shopify Flow. Opened from a failed Turn on elsewhere → starts red.
+  const { errorMode, setErrorMode, feedbackFor, markVisited, issueModes } = useIssueFeedback(
+    issues,
+    !!(location.state as EditorNavState | null)?.showIssues,
+  );
   const blockedByIssues = errorMode && issues.length > 0;
+
+  const { panel, setPanel, showPanel, locked: panelLocked } = useStepPanel(form, markVisited);
+  const openNodeId = panel?.nodeId ?? null;
 
   const editorState = useMemo<EditorState>(
     () => ({
       openNodeId,
-      // Marks each step an issue belongs to: its own settings, `no_action` on the trigger, and every
-      // step `unlinked` lists (Images 17–18 mark unlinked steps too).
-      issueNodeIds: new Set(issues.flatMap((issue) => (issue.nodeId ? [issue.nodeId] : (issue.nodeIds ?? [])))),
-      issueMode: errorMode ? 'error' : 'review',
+      openPanel: (nodeId, picking = false) => showPanel({ nodeId, picking }),
+      issueModes,
       // Asks first (one dialog for several steps). The trigger can't be deleted.
       requestDelete: (nodeIds) => {
         const graph = form.state.values.graph;
@@ -90,13 +100,14 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
         if (ids.length) setStepsToDelete(ids);
       },
     }),
-    [form, openNodeId, issues, errorMode],
+    [form, openNodeId, showPanel, issueModes],
   );
   const [stepsToDelete, setStepsToDelete] = useState<string[] | null>(null);
   const deleteSteps = () => {
     const ids = stepsToDelete ?? [];
     form.setFieldValue('graph', (graph) => ids.reduce((next, id) => removeNode(next, id), graph));
     setStepsToDelete(null);
+    if (panel && ids.includes(panel.nodeId)) setPanel(null);
   };
 
   const [confirm, setConfirm] = useState<ConfirmAction | null>(null);
@@ -225,18 +236,39 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
             </>
           }
         >
-          <div className="relative size-full">
-            <WorkflowCanvas onNodeClick={setOpenNodeId} />
+          {/* Clipped, so the panel slides in from the canvas edge. */}
+          <div ref={canvasRef} className="relative size-full overflow-hidden">
+            <WorkflowCanvas
+              panelInset={panel ? panelWidth + 24 : 0}
+              onPaneClick={() => !panelLocked && showPanel(null)}
+            />
+            <AnimatePresence>
+              {panel && (
+                <StepPanelFrame key="panel" width={panelWidth}>
+                  <StepPanel
+                    key={panel.nodeId}
+                    nodeId={panel.nodeId}
+                    picking={panel.picking}
+                    feedback={feedbackFor(panel.nodeId)}
+                    closable={!panelLocked}
+                    onPicked={() => setPanel({ nodeId: panel.nodeId, picking: false })}
+                    onClose={() => showPanel(null)}
+                  />
+                </StepPanelFrame>
+              )}
+            </AnimatePresence>
             {errorMode && (
               <IssueBanner
                 issues={issues}
                 labelFor={(nodeId) => {
                   const node = form.state.values.graph.nodes.find((n) => n.id === nodeId);
-                  return node ? blocks[node.data.block].label : '';
+                  return node ? (blockOf(node.data)?.label ?? kindMeta[node.kind].label) : '';
                 }}
-                onView={setOpenNodeId}
+                onView={(nodeId) => showPanel({ nodeId, picking: false })}
                 onRename={() => setRenaming(true)}
-                className="absolute top-4 right-4 z-10"
+                // Clear of the step panel on the left.
+                className="absolute top-4 right-4 z-10 min-w-60"
+                style={panel ? { maxWidth: `calc(100% - ${panelWidth + 48}px)` } : undefined}
               />
             )}
             <SaveStatus
@@ -248,8 +280,6 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
             />
           </div>
         </EditorLayout>
-
-        <NodeConfigSheet nodeId={openNodeId} onClose={() => setOpenNodeId(null)} />
 
         <TurnOnDialog
           open={confirm === 'turnOn'}

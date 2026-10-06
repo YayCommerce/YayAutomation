@@ -1,15 +1,15 @@
 import { createContext, useContext } from 'react';
 
-import type { IssueMode } from '../../shared/canvas/types';
+import type { IssueMode } from '../../shared/canvas/NodeCardView';
 
 /** Editor state that canvas nodes need but that isn't part of the workflow itself. */
 export interface EditorState {
-  /** Step whose settings sheet is open; highlighted like a selection. */
+  /** Step whose panel is open; highlighted like a selection. */
   openNodeId: string | null;
-  /** Steps with a validation issue; they get a "Review" or "Error" header, per `issueMode`. */
-  issueNodeIds: ReadonlySet<string>;
-  /** `review` until Turn on or Apply fails on issues, then `error` for the rest of the editing session. */
-  issueMode: IssueMode;
+  /** Opens a step's panel; `picking` shows the block picker even when a block is chosen (swap). */
+  openPanel: (nodeId: string, picking?: boolean) => void;
+  /** Steps showing an issue: blue "Review" (left unfinished) or red "Error" (after a failed Turn on / Apply). */
+  issueModes: ReadonlyMap<string, IssueMode>;
   /** Asks to delete these steps (one confirm); anything below them stays on the canvas, unlinked. */
   requestDelete: (nodeIds: string[]) => void;
 }

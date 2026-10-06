@@ -1,5 +1,5 @@
 import { useState, type MouseEventHandler } from 'react';
-import type { WorkflowTemplate, WorkflowTemplateApp } from '@yay-automation/types';
+import type { WorkflowPlugin, WorkflowTemplate } from '@yay-automation/types';
 import { ChevronDown } from 'lucide-react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router';
 import { __ } from '@wordpress/i18n';
@@ -11,8 +11,8 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { ReadOnlyCanvas } from '../../shared/canvas/ReadOnlyCanvas';
 import { EditorLayout, EditorPlaceholder } from '../../shared/layout/EditorLayout';
 import { LIBRARY_PATH, readLibraryNavState } from '../../shared/nav/library.nav';
-import { appMeta, TemplateAppIcon } from '../../shared/ui/TemplateApps';
-import { findTemplate } from '../../templates';
+import { PluginIcon, plugins } from '../../shared/ui/PluginIcon';
+import { findTemplate, pluginsOf } from '../../templates';
 import { useCreateDraft } from './useCreateDraft';
 
 export default function TemplatePreviewPage() {
@@ -87,14 +87,14 @@ function AboutTemplate({ template, className }: { template: WorkflowTemplate; cl
         <div className="flex flex-col gap-4 px-4 pb-4">
           <p className="text-muted-foreground text-sm">{template.description}</p>
           <section>
-            <h3 className="text-sm font-semibold">{__('Apps used', 'yay-automation')}</h3>
+            <h3 className="text-sm font-semibold">{__('Plugins used', 'yay-automation')}</h3>
             {/* Gap, not `space-y-*`: WP admin's `li { margin-bottom }` beats its zero-specificity margins. */}
             <ul className="mt-2 flex flex-col gap-2">
-              {template.apps.map((app) => (
-                <li key={app} className="flex items-center gap-2 rounded-md border px-3 py-2 text-sm">
-                  <TemplateAppIcon app={app} />
-                  <span className="min-w-0 flex-1 truncate font-medium">{appMeta[app].label}</span>
-                  <InstallState app={app} />
+              {pluginsOf(template.graph).map((plugin) => (
+                <li key={plugin} className="flex items-center gap-2 rounded-md border px-3 py-2 text-sm">
+                  <PluginIcon plugin={plugin} />
+                  <span className="min-w-0 flex-1 truncate font-medium">{plugins[plugin].label}</span>
+                  <InstallState plugin={plugin} />
                 </li>
               ))}
             </ul>
@@ -105,15 +105,8 @@ function AboutTemplate({ template, className }: { template: WorkflowTemplate; cl
   );
 }
 
-/**
- * WooCommerce is the only plugin a template depends on, so it's the only real install check. Email
- * (`wp_mail()`) ships with WordPress and the automation app is this plugin: both are "Built-in".
- */
-function InstallState({ app }: { app: WorkflowTemplateApp }) {
-  if (app !== 'woocommerce') {
-    return <Badge variant="dimmed">{__('Built-in', 'yay-automation')}</Badge>;
-  }
-  return window.yayAutomationMeta.wc.active ? (
+function InstallState({ plugin }: { plugin: WorkflowPlugin }) {
+  return plugins[plugin].active ? (
     <Badge variant="dimmed">{__('Installed', 'yay-automation')}</Badge>
   ) : (
     <Badge variant="warning-soft">{__('Not installed', 'yay-automation')}</Badge>

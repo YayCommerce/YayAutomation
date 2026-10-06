@@ -350,7 +350,7 @@ final class WorkflowRepository {
         $trigger = '';
         foreach ( $graph['nodes'] as $node ) {
             if ( Block::KIND_TRIGGER === $node['kind'] ) {
-                $trigger = $node['data']['block'];
+                $trigger = (string) $node['data']['block'];
             }
         }
         update_post_meta( $id, self::META_TRIGGER, $trigger );
@@ -410,8 +410,8 @@ final class WorkflowRepository {
                 'edges' => [],
             ];
         }
-        // Re-sanitizing upgrades configs saved in an older shape (e.g. a single status string),
-        // so the editor and the runner only ever see the current one.
+        // Re-sanitizing brings configs saved in an older shape up to date, so the editor and the
+        // runner only ever see the current one.
         foreach ( $graph['nodes'] as &$node ) {
             $block = BlockRegistry::get( (string) ( $node['data']['block'] ?? '' ) );
             if ( $block ) {

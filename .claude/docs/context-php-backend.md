@@ -11,6 +11,10 @@
 - `includes/YayAutomationProLicenseAdapter.php` — license adapter, not registered (`TODO: EDD setup`)
 - `includes/Engine/API/RestAPI.php` — routes under `yay-automation/v1`
 - `includes/Engine/Register/` — script loading; `RegisterDev.php` is stripped from the release zip
+- `includes/Engine/Data/` — data items (order, customer, site): typed fields, condition operators, `{{ item.field }}` merge tags. The admin app reads them from `yayAutomationMeta.automation`.
+- `includes/Engine/Blocks/` — one class per step type, listed in `Core/BlockRegistry.php`. Triggers hook their own events (`listen()`) and declare `provides`; actions declare `plugin`, `category`, `requires`. Each mirrors a TS folder in `apps/admin-page/src/routes/workflows/blocks/`.
+- `includes/Engine/Plugins.php` — plugin groups for the editor's pickers.
+- `includes/Engine/Workflows/Runner.php` — queues matching workflows through Action Scheduler at shutdown and runs them; a workflow never re-runs in its own causal chain.
 
 ## Admin shell
 
@@ -20,6 +24,7 @@
 ## Rules
 
 - Classes use `includes/Utils/SingletonTrait.php` and add hooks in the constructor.
+- `vendor/` is dumped classmap-authoritative: after adding a PHP class, run `composer dump-autoload`.
 - Every REST route needs `permission_callback` (see `RestAPI::can_manage`).
 - Changing `yayAutomationMeta` → update `apps/admin-page/src/types/localize.d.ts`.
 - Style: `phpcs.xml` (WPCS, 4 spaces, PHP 7.4+).

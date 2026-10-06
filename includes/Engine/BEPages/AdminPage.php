@@ -5,7 +5,12 @@ namespace YayAutomation\Engine\BEPages;
 use YayAutomation\YayAutomation;
 use YayAutomation\Utils\SingletonTrait;
 use YayAutomation\Engine\Register\ScriptName;
-use YayAutomation\Engine\Blocks\Triggers\OrderStatusChanged;
+use YayAutomation\Engine\Blocks\Actions\SendInternalEmail;
+use YayAutomation\Engine\Blocks\Core\BlockRegistry;
+use YayAutomation\Engine\Data\DataRegistry;
+use YayAutomation\Engine\Data\OrderData;
+use YayAutomation\Engine\Data\Operators;
+use YayAutomation\Engine\Plugins;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -50,11 +55,11 @@ class AdminPage {
 
         // Shape must match apps/admin-page/src/types/localize.d.ts.
         $meta = [
-            'plugin' => [
+            'plugin'     => [
                 'pluginUrl' => YAY_AUTOMATION_PLUGIN_URL,
                 'version'   => YAY_AUTOMATION_VERSION,
             ],
-            'wp'     => [
+            'wp'         => [
                 'restRoot'       => esc_url_raw( rest_url() ),
                 'restBase'       => 'yay-automation/v1',
                 'restNonce'      => wp_create_nonce( 'wp_rest' ),
@@ -64,14 +69,22 @@ class AdminPage {
                 'gmtOffset'      => (float) get_option( 'gmt_offset', 0 ),
                 'adminEmail'     => get_option( 'admin_email' ),
             ],
-            'wc'     => [
+            'wc'         => [
                 'active'         => class_exists( 'WooCommerce' ),
-                'orderStatuses'  => OrderStatusChanged::statuses(),
+                'orderStatuses'  => self::options( OrderData::statuses() ),
                 'currencySymbol' => function_exists( 'get_woocommerce_currency_symbol' )
                     ? html_entity_decode( get_woocommerce_currency_symbol(), ENT_QUOTES, 'UTF-8' )
                     : '',
             ],
-            'docs'   => [
+            'automation' => [
+                'plugins'   => Plugins::to_client(),
+                'blocks'    => BlockRegistry::to_client(),
+                'data'      => DataRegistry::to_client(),
+                'operators' => Operators::BY_TYPE,
+                'always'    => DataRegistry::ALWAYS,
+                'email'     => SendInternalEmail::sender(),
+            ],
+            'docs'       => [
                 /**
                  * Link under the empty "Workflow runs" section on a workflow's page.
                  *
@@ -87,6 +100,22 @@ class AdminPage {
         if ( YayAutomation::is_prod() ) {
             wp_enqueue_style( ScriptName::STYLE_ADMIN );
         }
+    }
+
+    /**
+     * value => label map as a list, so JSON keeps the order.
+     *
+     * @param array $options value => label.
+     */
+    private static function options( array $options ): array {
+        $list = [];
+        foreach ( $options as $value => $label ) {
+            $list[] = [
+                'value' => (string) $value,
+                'label' => $label,
+            ];
+        }
+        return $list;
     }
 
     public function render_page() {
