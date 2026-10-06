@@ -26,10 +26,11 @@ assets/dist/       # Build output (gitignored)
 
 ```bash
 pnpm install
+./run.sh setup  # PHP deps: vendor/ + vendor-prefixed/ (pnpm dev runs it if missing)
 pnpm dev        # Vite on :3020 — needs YAY_AUTOMATION_IS_DEVELOPMENT in wp-config.php
 pnpm build      # typecheck + build
 pnpm lint:fix
-bash release.sh # zip → release/yay-automation.zip
+./run.sh release  # zip → release/yay-automation.zip
 ```
 
 ```php

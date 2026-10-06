@@ -1,13 +1,23 @@
+#!/bin/bash
+# Build the distribution zip: release/yay-automation.zip
+cd "$(dirname "$0")/../.." || exit 1
+[[ -f yay-automation.php ]] || { echo "Not the plugin root: $(pwd)"; exit 1; }
+
 PLUGIN_SLUG="yay-automation"
 PROJECT_PATH=$(pwd)
 BUILD_PATH="${PROJECT_PATH}/release"
 DEST_PATH="$BUILD_PATH/$PLUGIN_SLUG"
 
+if [[ ! -f vendor/autoload.php ]]; then
+    echo "Installing Composer dependencies..."
+    composer install || exit 1
+fi
+
 echo "Rebuilding scoped admin-shell..."
 ./vendor/bin/yaycommerce-prerelease || exit 1
 
 echo "Generating build directory..."
-rm -rf "$BUILD_PATH"
+[[ -n $PLUGIN_SLUG && -d $BUILD_PATH ]] && rm -rf "$BUILD_PATH"
 mkdir -p "$DEST_PATH"
 
 echo "Installing JS dependencies..."

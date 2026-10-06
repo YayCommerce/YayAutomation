@@ -14,7 +14,7 @@
 
 ## Admin shell
 
-- `composer install` then `./vendor/bin/yaycommerce-update` → `vendor-prefixed/` (namespace `YayAutomationScoped\`). Both `vendor/` and `vendor-prefixed/` are gitignored.
+- `./run.sh setup` (`composer install` + `./vendor/bin/yaycommerce-update`; `pnpm dev` runs it when `vendor/autoload.php` is missing) → `vendor-prefixed/` (namespace `YayAutomationScoped\`). Both `vendor/` and `vendor-prefixed/` are gitignored.
 - Do not call `add_menu_page`. AdminShell owns the YayCommerce menu, Help, Recommended Plugins, and the plugin action/row links.
 
 ## Rules

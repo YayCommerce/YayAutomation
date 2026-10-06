@@ -35,7 +35,7 @@ If build fails: show last 40 lines, ask user to fix or auto-fix if clearly scope
 ## Step 3 — Zip
 
 ```bash
-bash release.sh
+./run.sh release
 ```
 
 ---

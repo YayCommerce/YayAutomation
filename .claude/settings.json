@@ -11,12 +11,29 @@
           },
           {
             "type": "command",
-            "command": "root=$(git rev-parse --show-toplevel) && cd \"$root\" && out=$(find src yay-automation.php autoloader.php -name '*.php' -exec php -l {} \\; 2>&1 | grep -v '^No syntax errors'); if [ -n \"$out\" ]; then jq -n --arg r \"$out\" '{decision:\"block\",reason:(\"PHP lint failed:\\n\" + $r)}'; fi",
+            "command": "root=$(git rev-parse --show-toplevel) && cd \"$root\" && out=$(find includes yay-automation.php -name '*.php' -exec php -l {} \\; 2>&1 | grep -v '^No syntax errors'); if [ -n \"$out\" ]; then jq -n --arg r \"$out\" '{decision:\"block\",reason:(\"PHP lint failed:\\n\" + $r)}'; fi",
             "timeout": 30,
             "statusMessage": "Linting PHP..."
           }
         ]
       }
     ]
+  },
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:github.com)"
+    ],
+    "deny": [
+      "Bash(gh repo *)",
+      "Bash(gh secret *)",
+      "Bash(gh variable *)"
+    ],
+    "ask": [
+      "Bash(gh pr merge *)"
+    ]
+  },
+  "skillOverrides": {
+    "wsetup": "user-invocable-only",
+    "wdist": "user-invocable-only"
   }
 }
