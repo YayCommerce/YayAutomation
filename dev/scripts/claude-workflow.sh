@@ -128,29 +128,28 @@ cleanup() {
   git -C "$ROOT" worktree prune -v
 }
 
-PS3="Choose #: "
-select c in \
-  "Start server (mobile can spawn worktree sessions)" \
-  "Session here (current folder and branch, no worktree)" \
-  "New task session in a new worktree" \
-  "Session on a branch (creates worktree if missing)" \
-  "Resume a session in a worktree (e.g. started on mobile)" \
-  "Status" \
-  "Attach to tmux" \
-  "Clean up finished sessions" \
-  "Stop everything for this repo" \
-  "Quit"; do
-  case $REPLY in
-    1) start_server ;;
-    2) here_session ;;
-    3) new_session ;;
-    4) branch_session ;;
-    5) resume_session ;;
-    6) status ;;
-    7) ensure_tmux; attach ;;
-    8) cleanup ;;
-    9) tmux list-sessions -F '#S' 2>/dev/null | grep -E "^$TS(-[0-9]+)?\$" | xargs -n1 tmux kill-session -t && echo "Stopped." ;;
-    *) ;;
-  esac
-  break
-done
+print -l \
+  "  1) Session here (current folder and branch, no worktree)" \
+  "  2) New task session in a new worktree" \
+  "  3) Session on a branch (creates worktree if missing)" \
+  "  4) Resume a session in a worktree (e.g. started on mobile)" \
+  "  5) Attach to tmux" \
+  "  6) Clean up finished sessions" \
+  "  ------" \
+  "  s) Start server (mobile can spawn worktree sessions)" \
+  "  x) Stop everything for this repo" \
+  " ls) List tmux windows, worktrees and Claude processes" \
+  "  q) Quit"
+printf "Choose: "; read -r REPLY
+case $REPLY in
+  s) start_server ;;
+  1) here_session ;;
+  2) new_session ;;
+  3) branch_session ;;
+  4) resume_session ;;
+  5) ensure_tmux; attach ;;
+  6) cleanup ;;
+  ls) status ;;
+  x) tmux list-sessions -F '#S' 2>/dev/null | grep -E "^$TS(-[0-9]+)?\$" | xargs -n1 tmux kill-session -t && echo "Stopped." ;;
+  *) ;;
+esac
