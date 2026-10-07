@@ -3,11 +3,13 @@ import { Slot } from '@radix-ui/react-slot';
 import { ArrowLeft, ChevronRight, Search, Zap } from 'lucide-react';
 import { __, sprintf } from '@wordpress/i18n';
 
+import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
 import { dataItems, type DataField } from '../data';
+import { comingSoonLabel, isPendingField } from '../pending';
 import { useVariableScope } from './variableScope';
 
 const MODAL_WIDTH = 512;
@@ -218,14 +220,23 @@ export function VariablePicker({
   );
 }
 
+/** A field whose PHP side isn't built yet shows "Coming soon" and can't be picked. */
 function FieldRow({ field, onPick }: { field: DataField; onPick: (key: string) => void }) {
+  const comingSoon = isPendingField(field.key);
   return (
     <button
       type="button"
       onClick={() => onPick(field.key)}
-      className="hover:bg-accent flex w-full cursor-pointer flex-col border-b px-4 py-2.5 text-left"
+      disabled={comingSoon}
+      className={cn(
+        'flex w-full flex-col border-b px-4 py-2.5 text-left',
+        comingSoon ? 'cursor-not-allowed opacity-50' : 'hover:bg-accent cursor-pointer',
+      )}
     >
-      <span className="text-sm">{field.label}</span>
+      <span className="flex items-center gap-2 text-sm">
+        {field.label}
+        {comingSoon && <Badge variant="dimmed">{comingSoonLabel}</Badge>}
+      </span>
       <span className="text-muted-foreground font-mono text-xs">{field.key}</span>
     </button>
   );

@@ -1,17 +1,21 @@
 import { useMemo, useState } from 'react';
-import type { WorkflowTemplate } from '@yay-automation/types';
+import type { TemplateCategory, WorkflowPlugin, WorkflowTemplate } from '@yay-automation/types';
 import { Search, SearchX } from 'lucide-react';
 import { Link } from 'react-router';
-import { __ } from '@wordpress/i18n';
+import { __, _n, sprintf } from '@wordpress/i18n';
 
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { comingSoonLabel } from '../../../blocks/core/pending';
 import type { LibraryNavState } from '../../../shared/nav/library.nav';
 import { PluginIcon } from '../../../shared/ui/PluginIcon';
-import { pluginsOf, templates } from '../../../templates';
+import { categoryLabels, isComingSoon, pluginsOf, templates } from '../../../templates';
 import { TemplatesHeroIllustration } from '../WorkflowIllustrations';
+import { CategoryFilter, PluginsFilter } from './LibraryFilters';
 
 type SortKey = 'popular' | 'newest' | 'name';
 
@@ -41,17 +45,33 @@ export function TemplatesDialog({ open, onOpenChange }: { open: boolean; onOpenC
   );
 }
 
-/** Split out so search/sort state resets each time the dialog opens. */
+/** Categories that have templates, in `categoryLabels` order. */
+const categories = (Object.keys(categoryLabels) as TemplateCategory[]).filter((category) =>
+  templates.some((t) => t.category === category),
+);
+
+/** Plugins the templates use. */
+const templatePlugins = [...new Set(templates.flatMap((t) => pluginsOf(t.graph)))];
+
+/** Split out so search/sort/filter state resets each time the dialog opens. */
 function TemplateLibrary() {
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState<SortKey>('popular');
+  const [category, setCategory] = useState<TemplateCategory | null>(null);
+  const [pluginFilter, setPluginFilter] = useState<WorkflowPlugin[]>([]);
 
   const visible = useMemo(() => {
     const query = search.trim().toLowerCase();
     return templates
-      .filter((t) => !query || [t.name, t.description, t.category].some((text) => text.toLowerCase().includes(query)))
+      .filter((t) => !category || t.category === category)
+      .filter((t) => !pluginFilter.length || pluginsOf(t.graph).some((plugin) => pluginFilter.includes(plugin)))
+      .filter(
+        (t) =>
+          !query ||
+          [t.name, t.description, categoryLabels[t.category]].some((text) => text.toLowerCase().includes(query)),
+      )
       .sort(compare[sort]);
-  }, [search, sort]);
+  }, [search, sort, category, pluginFilter]);
 
   return (
     <>
@@ -99,8 +119,31 @@ function TemplateLibrary() {
         </Select>
       </div>
 
+      <div className="bg-background flex flex-wrap items-center gap-2 border-b px-6 py-2.5">
+        <PluginsFilter options={templatePlugins} value={pluginFilter} onChange={setPluginFilter} />
+        <CategoryFilter options={categories} value={category} onChange={setCategory} />
+        {(category || pluginFilter.length > 0) && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setCategory(null);
+              setPluginFilter([]);
+            }}
+          >
+            {__('Clear all', 'yay-automation')}
+          </Button>
+        )}
+      </div>
+
       {/* `relative` keeps absolutely positioned descendants (sr-only labels) inside this scroll box. */}
       <div className="relative min-h-0 flex-1 overflow-y-auto p-6">
+        <p className="text-muted-foreground mb-4 text-sm">
+          {
+            /* translators: %d: number of templates shown */
+            sprintf(_n('%d template', '%d templates', visible.length, 'yay-automation'), visible.length)
+          }
+        </p>
         {visible.length === 0 ? (
           <Empty className="py-12">
             <EmptyHeader>
@@ -108,7 +151,7 @@ function TemplateLibrary() {
                 <SearchX />
               </EmptyMedia>
               <EmptyTitle>{__('No templates found', 'yay-automation')}</EmptyTitle>
-              <EmptyDescription>{__('Try a different search term.', 'yay-automation')}</EmptyDescription>
+              <EmptyDescription>{__('Try a different search term or filter.', 'yay-automation')}</EmptyDescription>
             </EmptyHeader>
           </Empty>
         ) : (
@@ -130,10 +173,13 @@ function TemplateCard({ template }: { template: WorkflowTemplate }) {
       state={{ fromLibrary: true } satisfies LibraryNavState}
       className="bg-card text-card-foreground hover:border-primary focus-visible:border-primary flex min-h-48 flex-col rounded-lg border p-5 shadow-xs transition-colors outline-none hover:shadow-sm"
     >
-      <div className="font-semibold">{template.name}</div>
+      <div className="flex items-start justify-between gap-2">
+        <span className="font-semibold">{template.name}</span>
+        {isComingSoon(template.graph) && <Badge variant="dimmed">{comingSoonLabel}</Badge>}
+      </div>
       <p className="text-muted-foreground mt-2 line-clamp-3 text-sm">{template.description}</p>
       <div className="mt-auto flex items-center justify-between gap-3 pt-6">
-        <span className="text-muted-foreground text-sm">{template.category}</span>
+        <span className="text-muted-foreground text-sm">{categoryLabels[template.category]}</span>
         <div className="flex gap-1.5">
           {pluginsOf(template.graph).map((plugin) => (
             <PluginIcon key={plugin} plugin={plugin} />

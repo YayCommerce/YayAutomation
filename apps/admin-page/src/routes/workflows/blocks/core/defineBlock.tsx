@@ -3,6 +3,7 @@ import * as v from 'valibot';
 import { __ } from '@wordpress/i18n';
 
 import { alwaysAvailable, itemOf, variableKeys } from './data';
+import { automationMeta, isPendingBlock } from './pending';
 import type { Block, BlockFormProps, BlockSpec, Config } from './types';
 
 // Invisible characters around a part of a summary mark how `SummaryText` shows it, so summaries
@@ -51,7 +52,7 @@ export function defineBlock<TConfig extends Config>({
   Form,
   ...spec
 }: BlockSpec<TConfig>): Block {
-  const meta = window.yayAutomationMeta.automation.blocks[spec.id];
+  const meta = automationMeta.blocks[spec.id];
   const requires = meta.requires ?? [];
 
   /** Default `uses`: what the action always needs, plus the items of its merge tags. */
@@ -72,6 +73,7 @@ export function defineBlock<TConfig extends Config>({
     provides: meta.provides ?? [],
     requires,
     category: meta.category,
+    comingSoon: isPendingBlock(spec.id),
     defaults,
     normalize,
     firstError: (config) => {

@@ -13,15 +13,15 @@ export interface BlockMeta {
   kind: WorkflowNodeKind;
   /** Triggers and actions. */
   plugin?: WorkflowPlugin;
-  /** Triggers: data items every run has. */
+  /** Data items the step adds: a trigger's for every run, an action's for the steps below it. */
   provides?: string[];
   /** Actions: picker section. */
-  category?: 'email' | 'order';
+  category?: 'email' | 'order' | 'coupon';
   /** Actions: data items needed whatever the config. */
   requires?: string[];
 }
 
-export type DataFieldType = 'number' | 'string' | 'enum' | 'date';
+export type DataFieldType = 'number' | 'string' | 'enum' | 'date' | 'boolean';
 
 /** PHP `DataRegistry::to_client()`: one data item and its fields. */
 export interface DataItemMeta {
@@ -66,7 +66,8 @@ declare global {
       };
       automation: {
         plugins: PluginMeta[];
-        blocks: Record<BlockId, BlockMeta>;
+        /** Blocks PHP has built; the admin may list more (see `blocks/core/pending.ts`). */
+        blocks: Partial<Record<BlockId, BlockMeta>>;
         data: DataItemMeta[];
         /** Operator ids per field type. Labels live in the admin app. */
         operators: Record<DataFieldType, string[]>;

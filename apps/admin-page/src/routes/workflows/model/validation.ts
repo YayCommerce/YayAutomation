@@ -38,17 +38,49 @@ export function validateWorkflow({ name, graph }: Pick<Workflow, 'name' | 'graph
     });
   }
 
-  // Data the steps can read. Unknown until a trigger is chosen; no_trigger covers that case.
-  const available = triggerBlock ? availableData(triggerBlock.provides) : null;
+  // Data each step can read. Unknown until a trigger is chosen; no_trigger covers that case.
+  const availableAt = availableData(graph);
   for (const node of graph.nodes) {
-    const issue = stepIssue(node, available);
+    const issue = stepIssue(node, availableAt?.(node.id) ?? null);
     if (issue) issues.push({ ...issue, nodeId: node.id });
   }
   return issues;
 }
 
-/** Data items a step can read when the trigger supplies `provides`. */
-export const availableData = (provides: string[]) => [...provides, ...alwaysAvailable];
+/**
+ * Data items each step can read: what the trigger supplies, what the actions above it add (e.g. a
+ * coupon), and the always-available ones. Steps not linked to the trigger get the trigger's data.
+ * Null until a trigger is chosen. PHP `WorkflowValidator` still reads only the trigger's data; only
+ * coming-soon actions provide data so far (see `pending.ts`).
+ */
+export function availableData(graph: WorkflowGraph): ((nodeId: string) => string[]) | null {
+  const trigger = graph.nodes.find((node) => node.kind === 'trigger');
+  const triggerBlock = trigger && blockOf(trigger.data);
+  if (!trigger || !triggerBlock) return null;
+
+  const base = [...new Set([...triggerBlock.provides, ...alwaysAvailable])];
+  const nodes = new Map(graph.nodes.map((node) => [node.id, node]));
+  const children = new Map<string, string[]>();
+  for (const { source, target } of graph.edges) children.set(source, [...(children.get(source) ?? []), target]);
+  const byNode = new Map([[trigger.id, base]]);
+  const queue = [trigger.id];
+  while (queue.length) {
+    const id = queue.shift()!;
+    const node = nodes.get(id)!;
+    const added = node.kind === 'action' ? (blockOf(node.data)?.provides ?? []) : [];
+    const below = added.length ? [...new Set([...byNode.get(id)!, ...added])] : byNode.get(id)!;
+    for (const target of children.get(id) ?? []) {
+      if (!byNode.has(target) && nodes.has(target)) {
+        byNode.set(target, below);
+        queue.push(target);
+      }
+    }
+  }
+  return (nodeId) => byNode.get(nodeId) ?? base;
+}
+
+/** Same items in the same order. For `useStore`, which would otherwise re-render on every new array. */
+export const sameItems = (a: string[], b: string[]) => a.length === b.length && a.every((item, i) => item === b[i]);
 
 /** The one issue of a step's own settings. Mirrors PHP `WorkflowValidator::step_error()`. */
 function stepIssue(node: WorkflowNode, available: string[] | null): Omit<WorkflowIssue, 'nodeId'> | null {
@@ -65,7 +97,10 @@ function stepIssue(node: WorkflowNode, available: string[] | null): Omit<Workflo
     return {
       code: 'missing_data',
       /* translators: %s: data item, e.g. "Order" */
-      message: sprintf(__("Uses %s data, which the trigger doesn't provide.", 'yay-automation'), itemLabel(missing)),
+      message: sprintf(
+        __('Uses %s data, which neither the trigger nor a step above provides.', 'yay-automation'),
+        itemLabel(missing),
+      ),
     };
   }
   return null;

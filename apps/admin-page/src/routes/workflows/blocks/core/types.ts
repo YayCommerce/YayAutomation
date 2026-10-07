@@ -49,12 +49,14 @@ export interface Block {
   description: string;
   /** Triggers and actions. */
   plugin?: WorkflowPlugin;
-  /** Triggers: data items every run has. */
+  /** Data items the step adds: a trigger's for every run, an action's for the steps below it. */
   provides: string[];
   /** Actions: data items needed whatever the config; the picker dims the action without them. */
   requires: string[];
   /** Actions: picker section. */
   category?: BlockMeta['category'];
+  /** Its PHP side isn't built yet: shown but can't be picked (see `pending.ts`). */
+  comingSoon: boolean;
   defaults: () => Config;
   normalize: (config: Config) => Config;
   /** The first validation message, or null when the config is valid. */

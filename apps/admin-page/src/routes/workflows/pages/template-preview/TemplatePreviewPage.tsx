@@ -8,11 +8,13 @@ import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button, LoadingButton } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { comingSoonLabel } from '../../blocks/core/pending';
 import { ReadOnlyCanvas } from '../../shared/canvas/ReadOnlyCanvas';
 import { EditorLayout, EditorPlaceholder } from '../../shared/layout/EditorLayout';
 import { LIBRARY_PATH, readLibraryNavState } from '../../shared/nav/library.nav';
 import { PluginIcon, plugins } from '../../shared/ui/PluginIcon';
-import { findTemplate, pluginsOf } from '../../templates';
+import { findTemplate, isComingSoon, pluginsOf } from '../../templates';
 import { useCreateDraft } from './useCreateDraft';
 
 export default function TemplatePreviewPage() {
@@ -44,14 +46,28 @@ export default function TemplatePreviewPage() {
         </>
       }
       actions={
-        <LoadingButton
-          size="sm"
-          loading={isCreating}
-          disabled={isCreating}
-          onClick={() => createDraft(template.name, template.graph)}
-        >
-          {__('Install', 'yay-automation')}
-        </LoadingButton>
+        isComingSoon(template.graph) ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              {/* Disabled buttons swallow pointer events, so a wrapper carries the tooltip. */}
+              <span tabIndex={0}>
+                <Button size="sm" disabled>
+                  {__('Install', 'yay-automation')}
+                </Button>
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>{comingSoonLabel}</TooltipContent>
+          </Tooltip>
+        ) : (
+          <LoadingButton
+            size="sm"
+            loading={isCreating}
+            disabled={isCreating}
+            onClick={() => createDraft(template.name, template.graph)}
+          >
+            {__('Install', 'yay-automation')}
+          </LoadingButton>
+        )
       }
     >
       <div className="relative size-full">

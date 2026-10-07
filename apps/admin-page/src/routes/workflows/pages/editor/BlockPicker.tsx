@@ -10,6 +10,7 @@ import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/in
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { blocks, type Block } from '../../blocks';
 import { itemLabel } from '../../blocks/core/data';
+import { comingSoonLabel } from '../../blocks/core/pending';
 import { PluginIcon, plugins } from '../../shared/ui/PluginIcon';
 
 type PickableKind = 'trigger' | 'action';
@@ -17,6 +18,7 @@ type PickableKind = 'trigger' | 'action';
 const categoryLabels: Record<NonNullable<Block['category']>, string> = {
   email: __('Email', 'yay-automation'),
   order: __('Order', 'yay-automation'),
+  coupon: __('Coupons', 'yay-automation'),
 };
 
 const searchLabels: Record<PickableKind, string> = {
@@ -29,7 +31,7 @@ const matches = (text: string, query: string) => text.toLowerCase().includes(que
 /**
  * Picks a trigger or action block: active plugins first (icon, name, count), then that plugin's
  * blocks. Searching from the plugin list searches every block. With `available` (actions), blocks
- * needing data the trigger doesn't supply are dimmed and can't be picked.
+ * needing data the step can't read are dimmed and can't be picked; so are blocks still coming soon.
  */
 export function BlockPicker({
   kind,
@@ -63,9 +65,14 @@ export function BlockPicker({
           block={block}
           showPlugin={!plugin}
           disabledReason={
-            missing &&
-            /* translators: %s: data item, e.g. "Order" */
-            sprintf(__('Requires %s data. Choose a trigger that provides it.', 'yay-automation'), itemLabel(missing))
+            block.comingSoon
+              ? comingSoonLabel
+              : missing &&
+                /* translators: %s: data item, e.g. "Order" */
+                sprintf(
+                  __('Requires %s data. Choose a trigger or add a step above that provides it.', 'yay-automation'),
+                  itemLabel(missing),
+                )
           }
           onPick={() => onPick(block.id)}
         />
@@ -184,7 +191,10 @@ function BlockRow({
     <PickerRow onClick={onPick} disabled={!!disabledReason}>
       {showPlugin && <PluginIcon plugin={block.plugin!} />}
       <span className="min-w-0 flex-1">
-        <span className="block font-medium">{block.label}</span>
+        <span className="flex items-center gap-2 font-medium">
+          {block.label}
+          {block.comingSoon && <Badge variant="dimmed">{comingSoonLabel}</Badge>}
+        </span>
         <span className="text-muted-foreground block text-xs">{block.description}</span>
       </span>
     </PickerRow>
