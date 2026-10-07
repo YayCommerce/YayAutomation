@@ -104,7 +104,7 @@ export function StepPanel({
   }
   if (!block) return null;
 
-  const { icon: Icon } = kindMeta[node.kind];
+  const Icon = block.icon ?? kindMeta[node.kind].icon;
   return (
     <>
       <div className="flex items-start gap-3 border-b p-4">

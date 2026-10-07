@@ -1,4 +1,5 @@
 import { createTemplateRegistry } from './core/registry';
+import { crossSellCoupon, crossSellFirstTime, crossSellRepeat, upsellAfter30Days } from './cross-sell-upsell';
 import { firstOrderDiscount, firstOrderFreeShipping } from './first-order-thank-you';
 import highValueOrderAlert from './high-value-order-alert';
 
@@ -14,4 +15,8 @@ export const { templates, findTemplate } = createTemplateRegistry([
   highValueOrderAlert,
   firstOrderDiscount,
   firstOrderFreeShipping,
+  crossSellFirstTime,
+  crossSellRepeat,
+  crossSellCoupon,
+  upsellAfter30Days,
 ]);

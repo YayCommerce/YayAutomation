@@ -19,6 +19,7 @@ const categoryLabels: Record<NonNullable<Block['category']>, string> = {
   email: __('Email', 'yay-automation'),
   order: __('Order', 'yay-automation'),
   coupon: __('Coupons', 'yay-automation'),
+  flow: __('Flow', 'yay-automation'),
 };
 
 const searchLabels: Record<PickableKind, string> = {

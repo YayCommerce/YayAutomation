@@ -32,9 +32,43 @@ const blockExtras: Partial<Record<BlockId, Partial<BlockMeta>>> = {
 const blocks: Partial<Record<BlockId, BlockMeta>> = {
   send_email: { kind: 'action', plugin: 'woocommerce', category: 'email', requires: [] },
   generate_coupon: { kind: 'action', plugin: 'woocommerce', category: 'coupon', requires: [], provides: ['coupon'] },
+  wait: { kind: 'action', plugin: 'yayautomation', category: 'flow', requires: [] },
 };
 
 const data: DataItemMeta[] = [
+  {
+    id: 'order',
+    label: __('Order', 'yay-automation'),
+    description: '',
+    fields: [
+      // Cross-sells / upsells of the order's products, minus what the order already has.
+      {
+        key: 'order.has_cross_sells',
+        label: __('Order has cross-sell products', 'yay-automation'),
+        type: 'boolean',
+        conditional: true,
+      },
+      {
+        key: 'order.has_upsells',
+        label: __('Order has upsell products', 'yay-automation'),
+        type: 'boolean',
+        conditional: true,
+      },
+      // Shown as a product grid (image, name, price, link).
+      {
+        key: 'order.cross_sell_products',
+        label: __('Cross-sell products', 'yay-automation'),
+        type: 'string',
+        conditional: false,
+      },
+      {
+        key: 'order.upsell_products',
+        label: __('Upsell products', 'yay-automation'),
+        type: 'string',
+        conditional: false,
+      },
+    ],
+  },
   {
     id: 'customer',
     label: __('Customer', 'yay-automation'),

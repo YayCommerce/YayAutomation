@@ -18,6 +18,7 @@ export type BlockId =
   | 'send_email'
   | 'send_internal_email'
   | 'generate_coupon'
+  | 'wait'
   | 'change_order_status'
   | 'add_order_note'
   | 'update_order_meta';

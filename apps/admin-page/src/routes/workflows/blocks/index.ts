@@ -4,6 +4,7 @@ import { generateCouponBlock } from './actions/generate-coupon';
 import { sendEmailBlock } from './actions/send-email';
 import { sendInternalEmailBlock } from './actions/send-internal-email';
 import { updateOrderMetaBlock } from './actions/update-order-meta';
+import { waitBlock } from './actions/wait';
 import { criteriaBlock } from './conditions/criteria';
 import { createRegistry } from './core/registry';
 import { orderCreatedBlock } from './triggers/order-created';
@@ -27,6 +28,7 @@ export const { blocks, newNodeData, withBlock, blockOf } = createRegistry(
     addOrderNoteBlock,
     updateOrderMetaBlock,
     generateCouponBlock,
+    waitBlock,
   ],
   'condition',
 );
