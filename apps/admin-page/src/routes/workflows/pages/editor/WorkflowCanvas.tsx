@@ -47,10 +47,10 @@ export function WorkflowCanvas({ panelInset, onPaneClick }: { panelInset: number
   const [viewState, setViewState] = useState<Record<string, NodeViewState>>({});
 
   // Controlled ReactFlow needs `measured` on every node it gets back, hence the merge.
-  const nodes = useMemo(
-    () => toFlowNodes(graph).map((node) => ({ ...node, ...viewState[node.id] })),
-    [graph, viewState],
-  );
+  const nodes = useMemo(() => {
+    const heights = Object.fromEntries(Object.entries(viewState).map(([id, state]) => [id, state.measured?.height]));
+    return toFlowNodes(graph, heights).map((node) => ({ ...node, ...viewState[node.id] }));
+  }, [graph, viewState]);
   const edges = useMemo(() => toFlowEdges(graph, { editing: true }), [graph]);
 
   const onNodesChange = (changes: NodeChange<FlowNode>[]) => {

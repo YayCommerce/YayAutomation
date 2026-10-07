@@ -48,11 +48,50 @@ const branchLabels = {
   otherwise: __('Otherwise', 'yay-automation'),
 };
 
-export function toFlowNodes(graph: WorkflowGraph): FlowNode[] {
+/**
+ * Least room between a card's bottom and the top of a step below it: the edge, its Then / Otherwise
+ * label and the "+" button. What `ROW_GAP` leaves under a one-line card.
+ */
+const MIN_EDGE_GAP = 96;
+
+/**
+ * Where to draw each step: pushed down when it sits closer than `MIN_EDGE_GAP` below its parent's
+ * bottom (a card grew, e.g. a condition with several criteria). Parents are placed first, so a push
+ * reaches the steps below. Never moves a step up; stored positions stay as they are.
+ *
+ * @param heights Measured card heights by node id; a card not measured yet pushes nothing.
+ */
+export function spacedPositions(graph: WorkflowGraph, heights: Record<string, number | undefined>) {
+  const parent = new Map(graph.edges.map((edge) => [edge.target, edge.source]));
+  const children = new Map<string, string[]>();
+  for (const { source, target } of graph.edges) children.set(source, [...(children.get(source) ?? []), target]);
+  const stored = new Map(graph.nodes.map((node) => [node.id, node.position]));
+
+  const placed = new Map<string, { x: number; y: number }>();
+  const queue = graph.nodes.filter((node) => !parent.has(node.id)).map((node) => node.id);
+  for (const id of queue) placed.set(id, stored.get(id)!);
+  while (queue.length) {
+    const id = queue.shift()!;
+    const { y } = placed.get(id)!;
+    const height = heights[id];
+    for (const child of children.get(id) ?? []) {
+      const position = stored.get(child);
+      if (!position || placed.has(child)) continue;
+      const min = height === undefined ? -Infinity : y + height + MIN_EDGE_GAP;
+      placed.set(child, { x: position.x, y: Math.max(position.y, min) });
+      queue.push(child);
+    }
+  }
+  return placed;
+}
+
+/** `heights`: measured card heights, to space steps out (see `spacedPositions`). */
+export function toFlowNodes(graph: WorkflowGraph, heights: Record<string, number | undefined> = {}): FlowNode[] {
+  const positions = spacedPositions(graph, heights);
   return graph.nodes.map((node) => ({
     id: node.id,
     type: node.kind,
-    position: node.position,
+    position: positions.get(node.id) ?? node.position,
     data: node.data,
     // Blocks keyboard delete (Backspace) for the trigger.
     deletable: node.kind !== 'trigger',
