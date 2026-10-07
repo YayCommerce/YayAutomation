@@ -84,7 +84,7 @@ export const firstOrderDiscount = defineTemplate({
   id: 'first-order-thank-you-discount',
   name: __('First-order thank-you: % off next order', 'yay-automation'),
   description: __(
-    'Thank customers when their first order is completed and give them 10% off their next order, so they come back.',
+    'Thank customers when their first order is completed, with a 10% off coupon for their next order, valid for 30 days.',
     'yay-automation',
   ),
   category: 'post_purchase',
@@ -100,7 +100,7 @@ export const firstOrderFreeShipping = defineTemplate({
   id: 'first-order-thank-you-free-shipping',
   name: __('First-order thank-you: free shipping', 'yay-automation'),
   description: __(
-    'Thank customers when their first order is completed and give them free shipping on their next order, so they come back.',
+    'Thank customers when their first order is completed, with a free shipping coupon for their next order, valid for 30 days.',
     'yay-automation',
   ),
   category: 'post_purchase',
