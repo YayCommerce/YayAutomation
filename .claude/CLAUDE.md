@@ -37,5 +37,6 @@ Read the matching doc before a non-trivial task.
 | `.claude/docs/context-ui-components.md`  | component, ui, variant, theming, dark mode, YayUiKits                |
 | `.claude/docs/context-php-backend.md`    | PHP, REST, endpoint, admin menu, enqueue, localize, dev mode         |
 | `.claude/docs/ops-release.md`            | release, version, zip, dist                                          |
+| `docs/ROADMAP-v1.0.md`                   | roadmap, v1.0, milestone, template plan (planned work, not yet built) |
 
 **Docs rule:** reference paths, don't copy code. Document only what exists.
