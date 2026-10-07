@@ -13,7 +13,7 @@ import { comparableWith, VARIABLE_VALUE_TYPES, type Rule } from './schema';
 export const softButton = 'hover:bg-primary/10 hover:text-primary';
 
 /** For the picker's "Types: …" line. */
-const typeLabels: Record<DataField['type'], string> = {
+const typeLabels: Partial<Record<DataField['type'], string>> = {
   number: __('Number', 'yay-automation'),
   string: __('Text', 'yay-automation'),
   date: __('Date', 'yay-automation'),

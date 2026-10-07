@@ -1,7 +1,15 @@
 import '@xyflow/react/dist/style.css';
 
 import { useEffect, useMemo, type ReactNode } from 'react';
-import { Background, Panel, ReactFlow, useReactFlow, useStore, type PanelPosition } from '@xyflow/react';
+import {
+  Background,
+  Panel,
+  ReactFlow,
+  useNodesInitialized,
+  useReactFlow,
+  useStore,
+  type PanelPosition,
+} from '@xyflow/react';
 import type { WorkflowGraph } from '@yay-automation/types';
 import { Maximize2, Minus, Plus } from 'lucide-react';
 import { __ } from '@wordpress/i18n';
@@ -11,7 +19,7 @@ import { ButtonGroup } from '@/components/ui/button-group';
 import { useTheme } from '@/components/ui/theme-provider';
 import { edgeTypes } from './CurvedEdge';
 import { EdgeArrowDefs } from './EdgeArrow';
-import { canvasStyle, toFlowEdges, toFlowNodes } from './flow';
+import { canvasStyle, spacedPositions, toFlowEdges, toFlowNodes } from './flow';
 import { readOnlyNodeTypes } from './NodeCardView';
 
 // Zoom out as far as needed so the whole graph fits on narrow screens. By default never zoom small
@@ -61,6 +69,7 @@ export function ReadOnlyCanvas({
       proOptions={{ hideAttribution: true }}
     >
       <FitOnResize fitViewOptions={fitViewOptions} />
+      <SpaceOutOnMeasure graph={graph} fitViewOptions={fitViewOptions} />
       <Background />
       <EdgeArrowDefs />
       <Panel position={controlsPosition} className="flex items-center gap-2">
@@ -86,6 +95,27 @@ function FitOnResize({ fitViewOptions }: { fitViewOptions: FitViewOptions }) {
     const timer = window.setTimeout(() => void fitView(fitViewOptions), 100);
     return () => window.clearTimeout(timer);
   }, [fitView, fitViewOptions, width, height]);
+
+  return null;
+}
+
+/**
+ * Card heights are only known once rendered: then space the steps out (`spacedPositions`) and fit
+ * again, since the graph may have grown taller.
+ */
+function SpaceOutOnMeasure({ graph, fitViewOptions }: { graph: WorkflowGraph; fitViewOptions: FitViewOptions }) {
+  const { getNodes, setNodes, fitView } = useReactFlow();
+  const initialized = useNodesInitialized();
+
+  useEffect(() => {
+    if (!initialized) return;
+    const heights = Object.fromEntries(getNodes().map((node) => [node.id, node.measured?.height]));
+    const positions = spacedPositions(graph, heights);
+    setNodes((nodes) => nodes.map((node) => ({ ...node, position: positions.get(node.id) ?? node.position })));
+    // Next frame: after React Flow has applied the new positions.
+    const frame = requestAnimationFrame(() => void fitView(fitViewOptions));
+    return () => cancelAnimationFrame(frame);
+  }, [initialized, graph, getNodes, setNodes, fitView, fitViewOptions]);
 
   return null;
 }

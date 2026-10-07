@@ -15,7 +15,10 @@ export type BlockId =
   | 'order_created'
   | 'order_status_changed'
   | 'condition'
+  | 'send_email'
   | 'send_internal_email'
+  | 'generate_coupon'
+  | 'wait'
   | 'change_order_status'
   | 'add_order_note'
   | 'update_order_meta';
@@ -92,14 +95,17 @@ export interface WorkflowVersionsPage {
 }
 
 /** Plugin that triggers and actions are grouped under (PHP `Engine\Plugins`). */
-export type WorkflowPlugin = 'woocommerce';
+export type WorkflowPlugin = 'woocommerce' | 'yayautomation';
+
+/** Library chip a template is filed under. Labels live in the admin app. */
+export type TemplateCategory = 'recover_carts' | 'post_purchase' | 'customer_lifecycle' | 'alerts';
 
 /** Pre-built workflow shown in the template library. Install creates an inactive draft from `graph`. */
 export interface WorkflowTemplate {
   id: string;
   name: string;
   description: string;
-  category: string;
+  category: TemplateCategory;
   /** Install count. Sort key for "Most popular". */
   popularity: number;
   /** ISO date. Sort key for "Newest". */

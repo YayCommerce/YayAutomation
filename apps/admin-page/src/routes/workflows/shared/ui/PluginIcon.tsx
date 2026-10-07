@@ -1,16 +1,20 @@
 import type { WorkflowPlugin } from '@yay-automation/types';
-import { ShoppingCart, type LucideIcon } from 'lucide-react';
+import { ShoppingCart, Workflow, type LucideIcon } from 'lucide-react';
 
 import type { PluginMeta } from '@/types/localize';
 import { cn } from '@/lib/utils';
+import { automationMeta } from '../../blocks/core/pending';
 
 /** Plugin facts from PHP (`Engine\Plugins`), by id. */
-export const plugins = Object.fromEntries(
-  window.yayAutomationMeta.automation.plugins.map((plugin) => [plugin.id, plugin]),
-) as Record<WorkflowPlugin, PluginMeta>;
+export const plugins = Object.fromEntries(automationMeta.plugins.map((plugin) => [plugin.id, plugin])) as Record<
+  WorkflowPlugin,
+  PluginMeta
+>;
 
 const looks: Record<WorkflowPlugin, { icon: LucideIcon; className: string }> = {
   woocommerce: { icon: ShoppingCart, className: 'bg-primary/10 text-primary' },
+  // Same look as the app's own icon in the header.
+  yayautomation: { icon: Workflow, className: 'bg-primary text-primary-foreground' },
 };
 
 /** Small tinted tile for one plugin. */

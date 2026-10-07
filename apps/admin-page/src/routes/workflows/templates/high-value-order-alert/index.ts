@@ -11,7 +11,7 @@ export default defineTemplate({
     'Email the store team when an order above an amount you choose is placed, so big orders get attention fast.',
     'yay-automation',
   ),
-  category: __('Order management', 'yay-automation'),
+  category: 'alerts',
   popularity: 0,
   createdAt: '2026-09-28',
   graph: {

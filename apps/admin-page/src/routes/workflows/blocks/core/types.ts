@@ -1,5 +1,6 @@
 import type { ComponentType } from 'react';
 import type { BlockId, WorkflowNodeKind, WorkflowPlugin } from '@yay-automation/types';
+import type { LucideIcon } from 'lucide-react';
 import type * as v from 'valibot';
 
 import type { BlockMeta } from '@/types/localize';
@@ -37,6 +38,8 @@ export interface BlockSpec<TConfig extends Config> {
   uses?: (config: TConfig) => string[];
   /** Plain-language line for the node card. Gets incomplete config too, so show placeholders for gaps. */
   summary: (config: TConfig) => string;
+  /** Replaces the step kind's icon on the card and in the panel header (e.g. a clock for Wait). */
+  icon?: LucideIcon;
   /** Omitted when the block has nothing to configure. */
   Form?: ComponentType<BlockFormProps<TConfig>>;
 }
@@ -49,12 +52,14 @@ export interface Block {
   description: string;
   /** Triggers and actions. */
   plugin?: WorkflowPlugin;
-  /** Triggers: data items every run has. */
+  /** Data items the step adds: a trigger's for every run, an action's for the steps below it. */
   provides: string[];
   /** Actions: data items needed whatever the config; the picker dims the action without them. */
   requires: string[];
   /** Actions: picker section. */
   category?: BlockMeta['category'];
+  /** Its PHP side isn't built yet: shown but can't be picked (see `pending.ts`). */
+  comingSoon: boolean;
   defaults: () => Config;
   normalize: (config: Config) => Config;
   /** The first validation message, or null when the config is valid. */
@@ -62,5 +67,6 @@ export interface Block {
   /** Data items the step reads, `site` excluded. */
   uses: (config: Config) => string[];
   summary: (config: Config) => string;
+  icon?: LucideIcon;
   Form?: ComponentType<BlockFormProps<Config>>;
 }

@@ -46,8 +46,9 @@ export function NodeCardView({
   actions?: ReactNode;
   children?: ReactNode;
 }) {
-  const { label: kindLabel, icon: Icon, choose } = kindMeta[type];
+  const { label: kindLabel, icon: kindIcon, choose } = kindMeta[type];
   const block = blockOf(data);
+  const Icon = block?.icon ?? kindIcon;
 
   return (
     <div className={cn('group relative w-80', className)}>

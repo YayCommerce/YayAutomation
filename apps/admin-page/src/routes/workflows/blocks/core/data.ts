@@ -1,6 +1,7 @@
 import { __, sprintf } from '@wordpress/i18n';
 
 import type { DataFieldType, DataItemMeta } from '@/types/localize';
+import { automationMeta, isPendingField } from './pending';
 
 /**
  * Data items and their fields, from PHP `DataRegistry` (labels, types and options live there).
@@ -9,7 +10,7 @@ import type { DataFieldType, DataItemMeta } from '@/types/localize';
 
 export type DataField = DataItemMeta['fields'][number];
 
-const meta = window.yayAutomationMeta.automation;
+const meta = automationMeta;
 
 export const dataItems = meta.data;
 
@@ -28,8 +29,11 @@ export const itemLabel = (id: string) => dataItems.find((item) => item.id === id
 /** Operator ids for a field type, from PHP `Operators::BY_TYPE`. */
 export const operatorsFor = (type: DataFieldType) => meta.operators[type];
 
-/** Operators that compare against nothing. Mirrors PHP `Operators::needs_value()`. */
-export const needsValue = (operator: string) => operator !== 'is_empty' && operator !== 'is_not_empty';
+/**
+ * Operators that compare against nothing. Mirrors PHP `Operators::needs_value()`, which doesn't
+ * have the boolean ones yet (see `pending.ts`).
+ */
+export const needsValue = (operator: string) => !['is_empty', 'is_not_empty', 'is_true', 'is_false'].includes(operator);
 
 export const operatorLabels: Record<string, string> = {
   equal: __('Equal to', 'yay-automation'),
@@ -48,6 +52,8 @@ export const operatorLabels: Record<string, string> = {
   is_not: __('Is not', 'yay-automation'),
   before: __('Before', 'yay-automation'),
   after: __('After', 'yay-automation'),
+  is_true: __('Is true', 'yay-automation'),
+  is_false: __('Is false', 'yay-automation'),
 };
 
 /** Same pattern as PHP `Variables::PATTERN`. Spaces inside the braces are optional. */
@@ -59,10 +65,22 @@ export const variableKeys = (text: string) => [...new Set([...text.matchAll(VARI
 /** Merge tag for a key, as inserted by "Add variable". */
 export const variableTag = (key: string) => `{{ ${key} }}`;
 
-/** Error for the first merge tag no data item defines, or null. Mirrors PHP `Action::unknown_variable()`. */
+/**
+ * Error for the first merge tag no data item defines, or null. Mirrors PHP `Action::unknown_variable()`,
+ * so fields PHP doesn't have yet count as unknown too.
+ */
 export function unknownVariable(...texts: string[]) {
+  return firstUnknown(texts, false);
+}
+
+/** `unknownVariable()` for a block still coming soon: fields PHP doesn't have yet are fine there. */
+export function unknownVariableAllowingPending(...texts: string[]) {
+  return firstUnknown(texts, true);
+}
+
+function firstUnknown(texts: string[], allowPending: boolean) {
   for (const text of texts) {
-    const unknown = variableKeys(text).find((key) => !fieldByKey(key));
+    const unknown = variableKeys(text).find((key) => !fieldByKey(key) || (!allowPending && isPendingField(key)));
     if (unknown) {
       /* translators: %s: merge tag, e.g. {{ order.foo }} */
       return sprintf(__('Unknown variable: %s', 'yay-automation'), variableTag(unknown));

@@ -7,10 +7,11 @@ import { __, sprintf } from '@wordpress/i18n';
 
 import { Button } from '@/components/ui/button';
 import { blockOf } from '../../blocks';
+import { alwaysAvailable } from '../../blocks/core/data';
 import { FeedbackContext, type Feedback } from '../../blocks/core/fields/feedback';
 import { VariableScopeContext } from '../../blocks/core/fields/variableScope';
 import { setNodeBlock, updateNodeConfig } from '../../model/graph';
-import { availableData } from '../../model/validation';
+import { availableData, sameItems } from '../../model/validation';
 import { kindMeta } from '../../shared/canvas/NodeCardView';
 import { plugins } from '../../shared/ui/PluginIcon';
 import { BlockPicker } from './BlockPicker';
@@ -27,11 +28,16 @@ const pickerTitles = {
   action: __('Select action', 'yay-automation'),
 };
 
-/** "WooCommerce trigger", "WooCommerce action". */
+/** "WooCommerce trigger", "YayAutomation condition", "WooCommerce action". */
 const kindOfPlugin = (node: WorkflowNode, plugin: string) =>
-  node.kind === 'trigger'
-    ? /* translators: %s: plugin name */ sprintf(__('%s trigger', 'yay-automation'), plugin)
-    : /* translators: %s: plugin name */ sprintf(__('%s action', 'yay-automation'), plugin);
+  ({
+    /* translators: %s: plugin name */
+    trigger: sprintf(__('%s trigger', 'yay-automation'), plugin),
+    /* translators: %s: plugin name */
+    condition: sprintf(__('%s condition', 'yay-automation'), plugin),
+    /* translators: %s: plugin name */
+    action: sprintf(__('%s action', 'yay-automation'), plugin),
+  })[node.kind];
 
 /**
  * Content of the open step's panel (inside `StepPanelFrame`): its block picker while a trigger or
@@ -62,12 +68,15 @@ export function StepPanel({
     const trigger = state.values.graph.nodes.find((n) => n.kind === 'trigger');
     return trigger ? blockOf(trigger.data) : undefined;
   });
-  const provides = triggerBlock?.provides ?? [];
+  const available = useStore(
+    form.store,
+    (state) => availableData(state.values.graph)?.(nodeId) ?? alwaysAvailable,
+    sameItems,
+  );
   const triggerLabel = triggerBlock?.label ?? null;
   if (!node) return null;
 
   const block = blockOf(node.data);
-  const available = availableData(provides);
   const update = (change: (graph: WorkflowGraph) => WorkflowGraph) => form.setFieldValue('graph', change);
 
   const close = closable && (
@@ -95,7 +104,7 @@ export function StepPanel({
   }
   if (!block) return null;
 
-  const { icon: Icon } = kindMeta[node.kind];
+  const Icon = block.icon ?? kindMeta[node.kind].icon;
   return (
     <>
       <div className="flex items-start gap-3 border-b p-4">

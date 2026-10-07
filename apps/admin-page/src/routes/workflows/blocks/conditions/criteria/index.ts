@@ -23,6 +23,8 @@ const phrases: Record<string, string> = {
   is_not: __('is not', 'yay-automation'),
   before: __('is before', 'yay-automation'),
   after: __('is after', 'yay-automation'),
+  is_true: __('is true', 'yay-automation'),
+  is_false: __('is false', 'yay-automation'),
 };
 
 /** "Order total is greater than or equal to 500"; placeholders for the parts still missing. */
