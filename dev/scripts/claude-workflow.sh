@@ -17,13 +17,19 @@ REPO=$(basename "$ROOT")
 TS=$(echo "$REPO" | tr 'A-Z.' 'a-z-')   # tmux session name
 SERVER="$TS-$DEVICE"
 
-ensure_tmux() { tmux has-session -t "$TS" 2>/dev/null || tmux new-session -d -s "$TS" -n home -c "$ROOT"; }
+# Options are per-session (not -g) so they don't touch the user's other tmux sessions.
+# history-limit only applies to panes created after it is set, so set it at creation.
+ensure_tmux() {
+  tmux has-session -t "$TS" 2>/dev/null || tmux new-session -d -s "$TS" -n home -c "$ROOT" \
+    ';' set-option -t "$TS" history-limit 50000 ';' set-option -t "$TS" mouse on
+}
 has_window() { tmux list-windows -t "$TS" -F '#W' 2>/dev/null | grep -qx "$1"; }
 # Each terminal gets its own session in a group with $TS: same windows,
 # independent current window. Auto-removed when the terminal detaches.
 attach() {
   local -a sel; [[ -n $1 ]] && sel=(';' select-window -t "$1")
-  tmux new-session -t "$TS" -s "$TS-$$" ';' set-option destroy-unattached on $sel
+  # Grouped sessions take options from global defaults, not $TS, so set mouse here too.
+  tmux new-session -t "$TS" -s "$TS-$$" ';' set-option destroy-unattached on ';' set-option mouse on $sel
 }
 slug() { echo "$1" | sed -E 's#^(feature|fix|dev)/##; s#[^A-Za-z0-9]+#-#g' | tr 'A-Z' 'a-z'; }
 
