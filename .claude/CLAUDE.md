@@ -40,5 +40,6 @@ Read the matching doc before a non-trivial task.
 | `docs/ROADMAP-v1.0.md`                   | roadmap, v1.0, milestone, template plan (planned work, not yet built) |
 | `docs/ROADMAP-dev.md`                    | dev roadmap, build order, tasks, F0/F1/F2, v1.1, v1.2, v2.0 (planned work, not yet built) |
 | `docs/workflow-core-design.md`           | workflow core, runtime, runs, steps, data layer, templates, modules, health check, decisions (planned, not yet built) |
+| `docs/workflow-core-decisions.md`        | why, decision, rationale, rejected options, trade-off, explain to dev |
 
 **Docs rule:** reference paths, don't copy code. Document only what exists.

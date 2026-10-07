@@ -1,6 +1,6 @@
 # Dev Roadmap — Workflow Core + v1.0 and beyond
 
-**Owner:** Jack · **Status:** Planning · **Product scope:** [ROADMAP-v1.0.md](ROADMAP-v1.0.md) · **Design and decisions:** [workflow-core-design.md](workflow-core-design.md)
+**Owner:** Jack · **Status:** Planning · **Product scope:** [ROADMAP-v1.0.md](ROADMAP-v1.0.md) · **Design:** [workflow-core-design.md](workflow-core-design.md) · **Why:** [workflow-core-decisions.md](workflow-core-decisions.md)
 
 ## Goal
 

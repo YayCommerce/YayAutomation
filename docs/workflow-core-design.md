@@ -2,7 +2,7 @@
 
 **Status:** Planned, not yet built · **Decisions confirmed:** 2026-10-07 · **Roadmap:** [ROADMAP-dev.md](ROADMAP-dev.md) · **Product scope:** [ROADMAP-v1.0.md](ROADMAP-v1.0.md)
 
-"Workflow Core" is the code that stores, checks and runs workflows. It is not called "engine": in this repo `includes/Engine/` means WP/WC glue. This doc holds the decisions and the interfaces. The roadmap refers to sections here as `design §N`.
+"Workflow Core" is the code that stores, checks and runs workflows. It is not called "engine": in this repo `includes/Engine/` means WP/WC glue. This doc holds the decisions and the interfaces; the reasons behind them are in [workflow-core-decisions.md](workflow-core-decisions.md). The roadmap refers to sections here as `design §N`.
 
 ## §0 Current state (v0.1)
 
@@ -159,7 +159,7 @@ Settings → Health check finds problems and proposes a fix the site owner can a
 
 ## §11 Decision log
 
-All confirmed 2026-10-07.
+All confirmed 2026-10-07. Reasons, rejected options and costs: [workflow-core-decisions.md](workflow-core-decisions.md).
 
 | ID | Decision | Section |
 |---|---|---|
