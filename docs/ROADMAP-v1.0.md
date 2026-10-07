@@ -1,6 +1,6 @@
 # Workflow page UI Roadmap — YayAutomation v1.0
 
-**Release date:** estimated after M1 · **Status:** Planning · **Technical plan:** kept by the developer, available on request
+**Release date:** estimated after M1 · **Status:** Planning · **Technical plan:** [ROADMAP-dev.md](ROADMAP-dev.md) · [workflow-core-design.md](workflow-core-design.md)
 
 ## Goal
 

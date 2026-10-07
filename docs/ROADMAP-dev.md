@@ -1,0 +1,242 @@
+# Dev Roadmap — Workflow Core + v1.0 and beyond
+
+**Owner:** Jack · **Status:** Planning · **Product scope:** [ROADMAP-v1.0.md](ROADMAP-v1.0.md) · **Design:** [workflow-core-design.md](workflow-core-design.md) · **Why:** [workflow-core-decisions.md](workflow-core-decisions.md)
+
+## Goal
+
+One ordered list of backend and UI work, from the v0.1 code to v2.0. [ROADMAP-v1.0.md](ROADMAP-v1.0.md) says *what* each page gets. This roadmap says *how and in which order* it gets built. `design §N` points to a section of [workflow-core-design.md](workflow-core-design.md).
+
+Sizes are proposals until Jack estimates after M1, as ROADMAP-v1.0 says. **S** ≤ 3 days · **M** ≈ 1–2 weeks · **L** ≈ 3–4 weeks.
+
+## Build order
+
+**F0 → F1 → M1 → M2 → F2 → M7 → M8 → M3 → M4 → M5 → M6 → M9** → v1.1 → v1.2 → v2.0 → Public API
+
+Changes from the ROADMAP-v1.0 order:
+- **F0 and F1 come first.** M1 needs step outputs, templates and the new step contract. M2 needs stored runs. Building M1/M2 on the v0.1 runner means building them twice.
+- **F2 comes after M2.** The CPT → table migration must ship before v1.0, while there's no merchant data yet.
+- **M6 stays after M8.** The inactive-customer trigger reuses M8's scheduled scan.
+
+| # | Phase | Size | Risk | Depends on |
+|---|---|---|---|---|
+| F0 | Move and rename | S | 1 | — |
+| F1 | Workflow Core foundation | L | 3 | F0 |
+| M1 | Customer emails + coupons | L | 3 | F1 |
+| M2 | Wait + run history | L | 3 | F1 |
+| F2 | Workflows table | M | 3 | F1 |
+| M7 | Cart tracking + Settings + Health check | L | 3 | F1 |
+| M8 | Abandoned cart + checkout | L | 2 | M1, M2, M7 |
+| M3 | Review request | M | 2 | M2 |
+| M4 | Welcome series | S | 2 | M2 |
+| M5 | High-value order alert | S | 1 | — |
+| M6 | Win-back | M | 2 | M8 |
+| M9 | Release hardening | M | 2 | all |
+| v1.1 | Control flow | L+ | 3 | v1.0 |
+| v1.2 | Yay ecosystem + Pro connectors | L+ | 3 | v1.1 |
+| v2.0 | AI | L+ | 3 | v1.2 |
+| API | Public extension API | M | 2 | v1.2 stable |
+
+Risk scale as in ROADMAP-v1.0: 1 = easy to undo · 2 = new logic · 3 = stores data, runs in the background, emails shoppers or creates coupons.
+
+---
+
+## F0 — Move and rename · S (1 day)
+
+Do it when no feature branch is open: it touches every file, so it's cheapest as one quick PR that everyone rebases on once.
+
+- **F0.1** Move `includes/Engine/{Workflows,Blocks,Data}` and `Engine/Plugins.php` to `includes/Workflow/`, then run `composer dump-autoload`. *(design §1)*
+- **F0.2** Rename Blocks → Steps: PHP classes, `apps/admin-page/src/routes/workflows/blocks/` → `steps/`, types, `.claude/docs/context-php-backend.md`.
+- **F0.3** No behaviour change. Check: `pnpm build`, phpcs, manual run of both triggers and all 4 actions.
+
+## F1 — Workflow Core foundation · L (~3 weeks)
+
+**Backend**
+- **F1.1 Storage** *(§2)*
+  - `runs`, `run_steps`, `trigger_claims` tables with upgrades.
+  - Saved versions never change; runs pin their version.
+- **F1.2 Data layer v2** *(§4)*
+  - Types incl. boolean, money, list, entity.
+  - Entity types order, customer, site with relations (`order.customer`, `order.items`).
+  - `RefResolver` and `Scope`. Port `OrderData`, `CustomerData`, `SiteData`.
+- **F1.3 Templates tier 1** *(§6)*
+  - PHP parser, renderer, filter registry (`default`, `date`, `money`, `upper`, `lower`, `join`).
+  - Replaces `Data/Variables.php`. Old `{{ item.field }}` tags keep working.
+- **F1.4 Step contract** *(§5)*
+  - `Step` base, `Field` builder, `outputs()`, `StepResult`, summary templates.
+  - Catalog in `yayAutomationMeta`; update `apps/admin-page/src/types/localize.d.ts`.
+- **F1.5 Executor** *(§3)*
+  - Dispatcher replaces `Runner` collect / flush. Worker: Action Scheduler hook + row lock.
+  - Cursor walk, slices, per-step error policy (stop / continue).
+  - Causation (`parent_run_id`, `root_run_id`, `depth`) replaces the in-memory chain.
+- **F1.6 Validator v2** *(§4, §6)*
+  - Available variables per step; type checks; template checks.
+  - Same issue codes as today (`no_trigger`, `unlinked`, `invalid_config`, `missing_data`, …).
+- **F1.7 Modules** *(§8)* — manifest with tier and on/off switch; the registry reads it.
+- **F1.8 Runs REST** — list and detail endpoints (the UI comes in M2).
+
+**UI**
+- **F1.9 Step forms** *(§5)*
+  - Generic `StepForm` with widgets: text, textarea, emails, select, multiselect, toggle, number, notice.
+  - valibot rules built from the catalog.
+  - `defineStep( { id, Form } )` for core; internal `registerStepPanel`.
+- **F1.10 Port the 7 steps**
+  - Simple steps move to the generic form; delete their `schema.ts` / `Form.tsx`.
+  - Condition keeps its custom form, using the `rules` field type.
+- **F1.11 Template checks in TS** *(§6)* — parser only: errors and autocomplete.
+- **F1.12 "Add a variable"** — lists the step's available variables, incl. step outputs and dotted paths.
+
+**Done when:** both triggers and all 4 actions behave as today; every run and step is stored; `pnpm build` and phpcs pass.
+
+## M1 — Customer emails + coupons · L · risk 3
+
+**Backend**
+- **M1.1 Send email** — WooCommerce email look; To defaults to the customer; subject, heading, message; unsubscribe link added automatically.
+- **M1.2 Generate coupon** — outputs `code`, `amount`, `expires_at`; limited to the customer's email; single use.
+- **M1.3 Unsubscribe** — storage, token link, confirmation page in the store theme; unsubscribed customers are skipped, with the reason in run history.
+- **M1.4 Yes/no fields** — `customer.is_first_order`, `customer.unsubscribed`.
+- **M1.5 Preview + Send test REST** — render with a sample scope: a recent order, or made-up data labelled "Sample data".
+- **M1.6 Email block: coupon box.**
+
+**UI**
+- **M1.7 Send email panel** (core custom form) — fields with "Add a variable", Preview, Send test, unsubscribe note.
+- **M1.8 Generate coupon** — generic form; card reads e.g. "10 % off, expires in 7 days".
+- **M1.9 Condition** — Is true / Is false for yes/no fields, no value needed.
+- **M1.10 Warning before Turn on** — a step uses a coupon with no Generate coupon above it.
+- **M1.11 Template Library** — category filters.
+- **M1.12 Template preview** — Other versions and Steps.
+
+**Templates:** First-order thank-you ×2.
+
+## M2 — Wait + run history · L · risk 3
+
+**Backend**
+- **M2.1 Wait step** — number + unit (minutes, hours, days); the run moves to waiting and resumes through Action Scheduler.
+- **M2.2 Cancel on Turn off / Apply** *(§3)* — cancel waiting runs, return the count.
+- **M2.3 Runs REST** — status filter, paging, step results.
+- **M2.4 List stats** — runs in the last 30 days, last run.
+- **M2.5 Email block: product grid** — cross-sell / upsell sources.
+
+**UI**
+- **M2.6 Wait** — form and card ("Wait 1 hour", clock icon).
+- **M2.7 Overview: runs table** — started, subject, status, steps run; loading and empty states.
+- **M2.8 Run detail** — each step with result and time; links to the order or customer.
+- **M2.9 Turn off / Apply dialog** — says how many waiting runs will be cancelled.
+- **M2.10 Workflow list** — Runs and Last run columns, status filter.
+
+**Templates:** Cross-sell / upsell ×4.
+
+## F2 — Workflows table · M (3–5 days)
+
+- **F2.1** `workflows` + `workflow_versions` tables; repository rewritten onto them. *(§2)*
+- **F2.2** One-time migration from the CPT, then remove the CPT.
+- **F2.3** Check: list, editor, versions and runs work on migrated workflows.
+
+## M7 — Cart tracking + Settings + Health check · L · risk 3
+
+**Backend**
+- **M7.1 Cart tracking** — carts table; logged-in customers and guests; email captured at checkout (classic + block).
+- **M7.2 Restore link** — refills the cart and opens checkout.
+- **M7.3 Settings** — storage and REST.
+- **M7.4 Retention and privacy** — cleanup of carts and runs; personal data exporter and eraser.
+- **M7.5 Health check v1** *(§9)*.
+
+**UI**
+- **M7.6 Settings page** — Cart tracking, Emails, Run history.
+- **M7.7 Health check panel** — each problem with its proposed fix.
+- **M7.8 Store front** — message when a restore link's cart is gone.
+
+## M8 — Abandoned cart + checkout · L · risk 2
+
+**Backend**
+- **M8.1 Scheduler + query triggers** *(§3)* — batches and `trigger_claims`. Shared by M6 and the v1.1 Interval trigger.
+- **M8.2 Cart entity type** *(§4)*.
+- **M8.3 Triggers** — Cart abandoned, Checkout abandoned; a cart never starts both.
+- **M8.4 Exit condition** — stop the run when an order is placed for the cart or customer.
+- **M8.5 Email blocks** — cart items, "Restore my cart" button.
+
+**UI**
+- **M8.6 Trigger panels** — notes, plus a warning when cart tracking is off.
+- **M8.7 Exit condition setting.**
+- **M8.8 Templates UI** — "Needs cart tracking" badge, "Before you start" in the preview.
+
+**Templates:** Abandoned cart ×3, Abandoned checkout ×2.
+
+## M3 — Review request · M · risk 2
+
+- **M3.1 BE** — `products_not_reviewed` data and the "Leave a review" email block.
+- **M3.2 UI** — "Before you start": turn on product reviews.
+- **Templates:** Review request ×2.
+
+## M4 — Welcome series · S · risk 2
+
+- **M4.1 BE** — Customer account created trigger (customer entity from `WC_Customer`).
+- **M4.2 UI** — Customers section in the trigger picker; welcome email block.
+- **Templates:** Welcome ×2.
+
+## M5 — High-value order alert · S · risk 1
+
+- **M5.1** — Move the template to "order starts processing" (Order status changed config).
+- **Templates:** High-value order alert ×1.
+
+## M6 — Win-back · M · risk 2
+
+- **M6.1 BE** — Customer inactive query trigger, checked daily in batches (reuses M8.1).
+- **M6.2 UI** — trigger panel: days (default 90), "Checked once a day".
+- **Templates:** Win-back ×2.
+
+## M9 — Release hardening · M
+
+- **M9.1** End-to-end test of all 18 templates; classic and block checkout; light and dark admin.
+- **M9.2** Translations and release build.
+- **M9.3** Turn off modules not ready for release. *(§8)*
+- **M9.4** Release checklist items picked in ROADMAP-v1.0.
+
+---
+
+## v1.1 — Control flow · L+
+
+- **V11.1 For each** — body / done handles, saved cursor per item, limits; container card in the editor. *(§3, §7)*
+- **V11.2 Get data** — Get orders / customers / products / coupons with filters, returning lists.
+- **V11.3 Interval trigger** — every N minutes / hours / days, at a time, on weekdays; reuses M8.1; schedule UI.
+- **V11.4 Call workflow** — action + "Called by workflow" trigger with typed inputs; depth limit. *(§3)*
+- **V11.5 Manual runs** — Manual trigger, Run now, Test run on a picked order; dry run via `simulate()`.
+- **V11.6 More control steps** — Switch, Set variable, Stop, A/B split.
+- **V11.7 Retries** — backoff; replay a failed run from the failed step (button in run detail).
+- **V11.8 Product items** — the v1.1 list in ROADMAP-v1.0: Branched post-purchase, Nth order reward, alerts, order tags.
+
+## v1.2 — Yay ecosystem + Pro connectors · L+
+
+- **V12.1 Pro modules** — YayAutomation Pro registers its modules and multi-plugin templates. *(§8)*
+- **V12.2 Yay plugins** — register their steps and templates through the internal registry and `registerStepPanel`. *(§5)*
+- **V12.3 Feature directory** — "Install X to use this" in the pickers and the template library. *(§8)*
+- **V12.4 Connector basics** — credentials store, connector settings UI.
+- **V12.5 Connectors** — webhook in, HTTP request, Slack, Google Sheets, SMS; CSV source and export.
+- **V12.6 Templates tier 2** — "Show if" on email blocks. *(§6)*
+
+## v2.0 — AI · L+
+
+- **V20.1** Choose the provider *(§10)*; turn the catalog into JSON Schema for structured output.
+- **V20.2** Generate a draft workflow from a prompt, a business profile or Woo reports, using the feature directory. Always saved as a draft.
+- **V20.3** Review / lint a workflow; explain a failed run from `run_steps`.
+- **V20.4** AI steps: AI condition (smart judgement), generate text, extract / classify. Each has a budget, timeout and fallback branch.
+- **V20.5 UI** — AI box in the Create workflow dialog (replaces "Coming soon"), review panel, "Explain" on a run.
+
+## Public extension API · M
+
+After the Pro connectors and Yay integrations are stable. *(§10)*
+
+- Freeze the registry, the step contract and `registerStepPanel` as v1.
+- Developer docs and an example add-on.
+
+---
+
+## Risks
+
+| Risk | Impact | Mitigation |
+|---|---|---|
+| F0 + F1 push M1 back ~3 weeks | First visible v1.0 feature comes later | M1 and M2 get shorter on the new base; nothing is built twice |
+| F0 rename while a branch is open | Painful merge conflicts | Do F0 when no branch is open; merge it the same day |
+| WP-Cron off or late, large stores | Waits run late, slow sites | Health check (M7.5), batches, limits, rate limit |
+| Personal data in run history | Privacy complaints | Retention setting, exporter / eraser, small snapshots |
+| Internal API changes break Yay plugins | Broken integrations | One owner for the registry; public API only after it's stable |
+| One developer for everything | Dates slip | Estimates after M1; cut candidates as in ROADMAP-v1.0 |

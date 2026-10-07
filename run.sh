@@ -1,8 +1,8 @@
 #!/bin/bash
 # Single entry point for team scripts in dev/scripts/.
-#   ./run.sh               list commands
-#   ./run.sh <cmd> [args]  run dev/scripts/<cmd>.sh
-#   ./run.sh cw            alias for claude-workflow
+#   ./run.sh                 list commands
+#   ./run.sh <cmd> [args]    run dev/scripts/<cmd>.sh
+#   ./run.sh <alias> [args]  short name, see ALIASES below
 cd "$(dirname "$0")" || exit 1
 [[ -f yay-automation.php ]] || { echo "Not the plugin root: $(pwd)"; exit 1; }
 
@@ -19,19 +19,24 @@ while IFS='=' read -r key val; do
   [[ -z ${!key+x} ]] && export "$key=$val"
 done < dev/.env.local
 
+# Short aliases: alias=command
+ALIASES=(cw=claude-workflow)
+
 if [[ -z $1 ]]; then
   echo "Usage: ./run.sh <command> [args]"
   for f in dev/scripts/*.sh; do
-    printf "  %-16s %s\n" "$(basename "$f" .sh)" "$(sed -n '2s/^# //p' "$f")"
+    name=$(basename "$f" .sh)
+    for a in "${ALIASES[@]}"; do
+      [[ ${a#*=} == "$name" ]] && name+=" (${a%%=*})"
+    done
+    printf "  %-22s %s\n" "$name" "$(sed -n '2s/^# //p' "$f")"
   done
-  echo "Aliases: cw = claude-workflow"
   exit 0
 fi
 
-# Short aliases: alias=command
-case $1 in
-  cw) set -- claude-workflow "${@:2}" ;;
-esac
+for a in "${ALIASES[@]}"; do
+  [[ $1 == "${a%%=*}" ]] && set -- "${a#*=}" "${@:2}"
+done
 
 script="dev/scripts/$1.sh"
 [[ -f $script ]] || { echo "Unknown command: $1. Run ./run.sh to list commands."; exit 1; }
