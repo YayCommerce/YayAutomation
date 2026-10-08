@@ -34,7 +34,11 @@ abstract class Action extends Block {
      */
     abstract public function run( array $context, array $config );
 
-    /** What `requires()` says, plus the items of every merge tag in the config's text. */
+    /**
+     * What `requires()` says, plus the items of every merge tag in the config's text.
+     *
+     * @param array $config Step config.
+     */
     public function uses( array $config ): array {
         $items = $this->requires();
         foreach ( $config as $value ) {

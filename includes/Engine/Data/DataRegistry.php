@@ -33,7 +33,7 @@ final class DataRegistry {
      */
     public static function field( string $key ): ?array {
         list( $item, $field ) = array_pad( explode( '.', $key, 2 ), 2, '' );
-        $item = self::items()[ $item ] ?? null;
+        $item                 = self::items()[ $item ] ?? null;
         return $item ? ( $item->fields()[ $field ] ?? null ) : null;
     }
 
@@ -105,7 +105,7 @@ final class DataRegistry {
                 'description' => $item->description(),
                 'fields'      => $fields,
             ];
-        }
+        }//end foreach
         return $items;
     }
 

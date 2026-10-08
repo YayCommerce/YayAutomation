@@ -74,7 +74,7 @@ class Criteria extends Condition {
 
     public function evaluate( array $context, array $config ): bool {
         foreach ( $config['rules'] as $rule ) {
-            $field  = DataRegistry::field( $rule['field'] );
+            $field    = DataRegistry::field( $rule['field'] );
             $expected = 'variable' === $rule['valueType'] && Operators::needs_value( $rule['operator'] )
                 ? DataRegistry::value( $rule['value'], $context )
                 : $rule['value'];

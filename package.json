@@ -6,6 +6,9 @@
     "build": "pnpm -r build",
     "lint": "pnpm -r lint",
     "lint:fix": "pnpm -r lint:fix",
+    "lint:php": "dev/tools/lintphp/vendor/bin/phpcs",
+    "lint:php:fix": "dev/tools/lintphp/vendor/bin/phpcbf",
+    "test": "pnpm -r test",
     "format": "pnpm -r format",
     "analyze": "pnpm -F @yay-automation/admin analyze"
   },

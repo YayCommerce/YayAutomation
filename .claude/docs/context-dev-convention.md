@@ -18,8 +18,9 @@ Without it, WP loads the prod build in `assets/dist/admin-page/`.
 
 ## Verify
 
-- `pnpm build` must pass — Stop hook in `.claude/settings.json` enforces build + `php -l`.
-- `pnpm lint:fix` before commit.
+- Stop hook (`.claude/hooks/stop-check.sh`) runs on uncommitted changes and blocks on failure: `pnpm build` + `pnpm test` when `apps/` or `packages/` change, `php -l` + phpcs on changed PHP files. A change set that passed is skipped.
+- `pnpm lint:fix` and `pnpm lint:php:fix` before commit. CI (`.github/workflows/ci.yml`) runs lint, lint:php, test and build on every PR to `develop`.
+- A change in behavior adds or updates a test (Vitest, `*.test.ts` next to the code). Tests read PHP's meta from `apps/admin-page/src/test/fixtures/meta.json`; run `./run.sh meta-fixture` after changing what PHP sends.
 - UI change → `/wcheck`. REST change → `fetch('/wp-json/yay-automation/v1/…')` in console.
 
 ## Workflows folder (`apps/admin-page/src/routes/workflows/`)

@@ -39,7 +39,7 @@ final class YayAutomation {
         \YayAutomationScoped\YayCommerce\AdminShell\AdminShell::boot();
         \YayAutomationScoped\YayCommerce\AdminShell\AdminShell::register_plugin(
             new YayAutomationLicenseAdapter()
-            // new YayAutomationProLicenseAdapter()
+            // Pro adds YayAutomationProLicenseAdapter here.
         );
     }
 

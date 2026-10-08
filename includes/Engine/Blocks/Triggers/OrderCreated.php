@@ -51,7 +51,11 @@ class OrderCreated extends OrderTrigger {
         );
     }
 
-    /** Runs at the end of the request, once the order is fully saved. */
+    /**
+     * Runs at the end of the request, once the order is fully saved.
+     *
+     * @param array $args Event args, with `order_id`.
+     */
     public function claim( array $args ): bool {
         $order = self::order( $args['order_id'] ?? 0 );
         if ( ! $order || self::is_draft( $order->get_status() ) || $order->get_meta( self::META_FIRED ) ) {

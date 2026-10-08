@@ -44,7 +44,7 @@ Risk scale as in ROADMAP-v1.0: 1 = easy to undo · 2 = new logic · 3 = stores d
 
 Do it when no feature branch is open: it touches every file, so it's cheapest as one quick PR that everyone rebases on once.
 
-- **F0.0 Verify baseline** *([plan-infra](plan-infra.md))*, its own PR before F0.1:
+- **F0.0 Verify baseline** *([plan-infra](plan-infra.md))*, the first checkpoint and commit of the F0 branch, before F0.1:
   - phpcs inside the project (`dev/tools/lintphp`), `pnpm lint:php`, the 12 current errors fixed.
   - Vitest with first tests on `model/` and the template registry; `pnpm test`.
   - Stop hook adds tests; CI on `develop`: lint → lint:php → test → build.

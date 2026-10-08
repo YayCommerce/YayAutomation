@@ -21,7 +21,7 @@ class RegisterDev {
     public function render_dev_refresh() {
         $port = defined( 'YAY_AUTOMATION_VITE_PORT' ) ? \YAY_AUTOMATION_VITE_PORT : 3020;
         echo '<script type="module">
-        import RefreshRuntime from "http://localhost:' . $port . '/@react-refresh"
+        import RefreshRuntime from "http://localhost:' . (int) $port . '/@react-refresh"
         RefreshRuntime.injectIntoGlobalHook(window)
         window.$RefreshReg$ = () => {}
         window.$RefreshSig$ = () => (type) => type

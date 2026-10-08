@@ -1,6 +1,7 @@
 /release
 /assets/dist
 /vendor/
+/dev/tools/*/vendor/
 .vscode/*
 !.vscode/extensions.json
 !.vscode/settings.json

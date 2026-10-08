@@ -54,15 +54,15 @@ abstract class DataItem {
     /**
      * Plain or HTML text of a field.
      *
-     * @param array  $field  From `fields()`.
-     * @param mixed  $object The item's object from the run context.
-     * @param bool   $html   Return escaped HTML instead of plain text.
+     * @param array $field       From `fields()`.
+     * @param mixed $item_object The item's object from the run context.
+     * @param bool  $html        Return escaped HTML instead of plain text.
      */
-    public static function display( array $field, $object, bool $html ): string {
+    public static function display( array $field, $item_object, bool $html ): string {
         if ( $field['display'] ) {
-            return (string) ( $field['display'] )( $object, $html );
+            return (string) ( $field['display'] )( $item_object, $html );
         }
-        $text = (string) ( $field['value'] )( $object );
+        $text = (string) ( $field['value'] )( $item_object );
         if ( self::TYPE_ENUM === $field['type'] ) {
             $text = (string) ( ( $field['options'] )()[ $text ] ?? $text );
         }

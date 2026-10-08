@@ -5,15 +5,9 @@
         "hooks": [
           {
             "type": "command",
-            "command": "root=$(git rev-parse --show-toplevel) && if ! cd \"$root\" && pnpm build > /tmp/yayautomation-build.txt 2>&1; then jq -n --arg r \"$(tail -40 /tmp/yayautomation-build.txt)\" '{decision:\"block\",reason:(\"Build failed — fix errors before finishing:\\n\" + $r)}'; fi",
-            "timeout": 120,
-            "statusMessage": "Checking build..."
-          },
-          {
-            "type": "command",
-            "command": "root=$(git rev-parse --show-toplevel) && cd \"$root\" && out=$(find includes yay-automation.php -name '*.php' -exec php -l {} \\; 2>&1 | grep -v '^No syntax errors'); if [ -n \"$out\" ]; then jq -n --arg r \"$out\" '{decision:\"block\",reason:(\"PHP lint failed:\\n\" + $r)}'; fi",
-            "timeout": 30,
-            "statusMessage": "Linting PHP..."
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/stop-check.sh",
+            "timeout": 240,
+            "statusMessage": "Checking changes..."
           }
         ]
       }

@@ -26,7 +26,11 @@ abstract class OrderTrigger extends Trigger {
         return 'order:' . (int) ( $args['order_id'] ?? 0 );
     }
 
-    /** The order is also the customer: its billing details work for guests too. */
+    /**
+     * The order is also the customer: its billing details work for guests too.
+     *
+     * @param array $args Event args, with `order_id`.
+     */
     public function context( array $args ): ?array {
         $order = self::order( $args['order_id'] ?? 0 );
         return $order ? [

@@ -95,8 +95,8 @@ class Runner {
                 }
             } catch ( \Throwable $e ) {
                 Logger::error( "Could not queue workflows for {$trigger->id()}: " . $e->getMessage(), [ 'args' => $event['args'] ] );
-            }
-        }
+            }//end try
+        }//end foreach
     }
 
     /**

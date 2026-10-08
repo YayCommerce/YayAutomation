@@ -3,3 +3,5 @@ node_modules
 .turbo
 .yarn
 .vscode
+# Written by ./run.sh meta-fixture (PHP json_encode)
+src/test/fixtures/

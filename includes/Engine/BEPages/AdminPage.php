@@ -53,8 +53,20 @@ class AdminPage {
             return;
         }
 
+        wp_localize_script( ScriptName::PAGE_ADMIN, 'yayAutomationMeta', self::client_meta() );
+
+        wp_enqueue_script( ScriptName::PAGE_ADMIN );
+        if ( YayAutomation::is_prod() ) {
+            wp_enqueue_style( ScriptName::STYLE_ADMIN );
+        }
+    }
+
+    /**
+     * `window.yayAutomationMeta`. Also read by `dev/scripts/meta-fixture.sh` for the admin app's tests.
+     */
+    public static function client_meta(): array {
         // Shape must match apps/admin-page/src/types/localize.d.ts.
-        $meta = [
+        return [
             'plugin'     => [
                 'pluginUrl' => YAY_AUTOMATION_PLUGIN_URL,
                 'version'   => YAY_AUTOMATION_VERSION,
@@ -93,17 +105,10 @@ class AdminPage {
                 'workflowRuns' => esc_url_raw( apply_filters( 'yay_automation_workflow_runs_docs_url', 'https://docs.yaycommerce.com/' ) ),
             ],
         ];
-
-        wp_localize_script( ScriptName::PAGE_ADMIN, 'yayAutomationMeta', $meta );
-
-        wp_enqueue_script( ScriptName::PAGE_ADMIN );
-        if ( YayAutomation::is_prod() ) {
-            wp_enqueue_style( ScriptName::STYLE_ADMIN );
-        }
     }
 
     /**
-     * value => label map as a list, so JSON keeps the order.
+     * A value => label map as a list, so JSON keeps the order.
      *
      * @param array $options value => label.
      */

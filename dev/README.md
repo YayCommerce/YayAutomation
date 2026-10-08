@@ -9,7 +9,8 @@ Run everything through `./run.sh` in the plugin root. It works from any folder.
 | Command | What it does |
 | --- | --- |
 | `./run.sh` | List commands |
-| `./run.sh setup` | `composer install` + scoped admin-shell → `vendor/autoload.php`, `vendor-prefixed/`. `pnpm dev` runs it if `vendor/autoload.php` is missing. |
+| `./run.sh setup` | `composer install` + scoped admin-shell → `vendor/autoload.php`, `vendor-prefixed/`, plus the PHP lint tools in `dev/tools/lintphp`. `pnpm dev` runs it if `vendor/autoload.php` is missing. |
+| `./run.sh meta-fixture` | Write `apps/admin-page/src/test/fixtures/meta.json` (PHP's `window.yayAutomationMeta`) from the local site with wp-cli. Run after changing what PHP sends. |
 | `./run.sh release` | Build `release/yay-automation.zip` |
 | `./run.sh claude-workflow` (alias `cw`) | Claude work menu: tmux + Remote Control sessions. macOS, needs `zsh`, `tmux`, `claude`. |
 
