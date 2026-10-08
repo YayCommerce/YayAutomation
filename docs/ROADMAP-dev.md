@@ -62,7 +62,8 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
   - PHP parser, renderer, filter registry (`default`, `date`, `money`, `upper`, `lower`, `join`).
   - Replaces `Data/Variables.php`. Old `{{ item.field }}` tags keep working.
 - **F1.4 Step contract** *(§5)*
-  - `Step` base, `Field` builder, `outputs()`, `StepResult`, summary templates.
+  - `Step` base, `Field` builder, `outputs()`, `StepResult`, summary templates, `icon()` name *(L5)*.
+  - Plugin logo: one SVG per plugin, `currentColor`, cleaned with `wp_kses` *(L5)*.
   - Catalog in `yayAutomationMeta`; update `apps/admin-page/src/types/localize.d.ts`.
 - **F1.5 Executor** *(§3)*
   - Dispatcher replaces `Runner` collect / flush. Worker: Action Scheduler hook + row lock.
@@ -71,12 +72,15 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 - **F1.6 Validator v2** *(§4, §6)*
   - Available variables per step; type checks; template checks.
   - Same issue codes as today (`no_trigger`, `unlinked`, `invalid_config`, `missing_data`, …).
+  - An issue on a step names the field it's about (`field`), so the editor can say "Add order note needs a note" *([plan-identity](plan-identity.md))*.
+  - Validator and REST messages use the plan-identity wording (Activate / Deactivate, Update, no "turn on / turn off").
 - **F1.7 Modules** *(§8)* — manifest with tier and on/off switch; the registry reads it.
-- **F1.8 Runs REST** — list and detail endpoints (the UI comes in M2).
+- **F1.8 Runs REST** — list and detail endpoints (the UI comes in M2). Workflow responses also return `activatedAt`, for "Active since …" on the overview *([plan-identity](plan-identity.md))*.
 
 **UI**
 - **F1.9 Step forms** *(§5)*
   - Generic `StepForm` with widgets: text, textarea, emails, select, multiselect, toggle, number, notice.
+  - Read-only lines (e.g. "From" in Send internal email) use `notice`, not a new widget *([plan-identity](plan-identity.md))*.
   - valibot rules built from the catalog.
   - `defineStep( { id, Form } )` for core; internal `registerStepPanel`.
 - **F1.10 Port the 7 steps**

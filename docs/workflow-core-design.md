@@ -91,6 +91,7 @@ Custom tables replace the CPT and post meta. Upgrades use `dbDelta` + a DB versi
 
 ```
 Step:   id() label() plugin() module()
+        icon(): string           a name from core's step icon list, e.g. "mail" (L5)
         fields(): Field[]        settings, rules, widgets
         validate( config )       optional extra checks the field rules can't express
         outputs(): Field[]       what later steps can use
@@ -106,6 +107,7 @@ Step:   id() label() plugin() module()
   - Core step with a complex form (Send email, Condition rules) → `defineStep( { id, Form } )`, imported directly. No global call, fully typed.
   - Plugin step with a custom form → `window.yayAutomation.registerStepPanel( id, Panel )`. Internal until §10.
   - Both put the form in the same registry. Props: `{ config, onChange, errors }`.
+- **Icons (L5).** A step's `icon()` is a name from a fixed list in core (lucide icons, about 40), never an SVG. The editor draws it in the step's tile, tinted by kind (trigger, condition, action), on the canvas, in the picker, the panel header, template cards and the preview. A missing icon is added to core's list, not shipped by the plugin.
 - The `rules` field type is ours: its checks are written in PHP (`Criteria`) and TS. Plugins never write validation in JS.
 
 ## §6 Templates · L3
@@ -135,6 +137,7 @@ Our own small template module. **No Liquid or other template library, now or lat
   - Moving something between Lite and Pro = change its manifest entry.
   - Turning off a module keeps unfinished work out of a release.
 - **Each Yay plugin owns its steps, templates and data types**, registered into Workflow Core. **YayAutomation Pro** owns templates that combine several plugins.
+- **Plugin logo (L5).** Each plugin registers one logo: an SVG that uses `currentColor`, cleaned with `wp_kses` in PHP. It marks who provides a step or template (template cards, library sidebar, picker), never what a step does. One per plugin, not per step.
 - **Feature directory:** a static list in core of every known step and template, its plugin, and where to install it. The editor shows "Install X to use this"; the AI uses it to suggest features.
 
 ## §9 Health check · P6
@@ -176,6 +179,7 @@ All confirmed 2026-10-07. Reasons, rejected options and costs: [workflow-core-de
 | C11 | Scheduled / query triggers fan out per subject with `trigger_claims` | §3 |
 | L2 | Step settings defined in PHP; editor checks built from them; small generic form; core imports custom forms; plugins use `registerStepPanel` | §5 |
 | L3 | Own template module, tiers 1 → 2 → escape valve; no Liquid | §6 |
+| L5 | Step icons: a lucide name from core's list; plugin logos: one SVG per plugin | §5, §8 |
 | L4 | Jack builds everything: F0 rename, then F1 foundation before M1; F2 workflows table after M2 | [ROADMAP-dev.md](ROADMAP-dev.md) |
 | P1 | Runtime free; modules with tier + switch | §8 |
 | P2 | Yay plugins own their steps; Pro owns multi-plugin templates; feature directory | §8 |
