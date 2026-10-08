@@ -1,6 +1,6 @@
 # YayAutomation
 
-WordPress plugin for automation workflows: a visual workflow builder plus a template library. UX reference: Shopify Flow.
+WordPress plugin for automation workflows: a visual workflow builder plus a template library.
 
 Scaffolded from [YayUiKits](../YayUiKits/README.md) conventions.
 

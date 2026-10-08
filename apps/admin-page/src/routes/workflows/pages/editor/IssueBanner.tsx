@@ -11,7 +11,7 @@ import { ErrorAlert } from '../../shared/ui/ErrorAlert';
 const issueKey = (issue: WorkflowIssue) => `${issue.code}|${issue.nodeId ?? ''}`;
 
 /**
- * Error-mode banner, like Shopify Flow's: one issue at a time, with "1 of N" paging on the right.
+ * Error-mode banner: one issue at a time, with "1 of N" paging on the right.
  * A step issue names the step and links to it; `unlinked` links to its first step; `name_required`
  * offers Rename; other workflow-level issues (no trigger, no action) are just their message.
  */

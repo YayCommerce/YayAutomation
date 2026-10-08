@@ -14,7 +14,7 @@ import type { DataFieldType, DataItemMeta, PluginMeta, StepMeta } from '@/types/
  * in `WorkflowValidator` (`availableData()`).
  */
 
-/** YayAutomation's own steps (Condition, later Wait) are grouped under it, like Shopify Flow's. */
+/** YayAutomation's own steps (Condition, later Wait) are grouped under it. */
 const plugins: PluginMeta[] = [
   {
     id: 'yayautomation',

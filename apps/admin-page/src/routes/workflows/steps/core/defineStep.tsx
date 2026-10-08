@@ -11,10 +11,10 @@ import type { Config, Step, StepFormProps, StepSpec } from './types';
 const EMPTY_MARK = '\u2060';
 const VALUE_MARK = '\u2061';
 
-/** Shown in summaries where a required value is still missing: an italic "Empty", like Shopify Flow. */
+/** Shown in summaries where a required value is still missing: an italic "Empty". */
 export const PLACEHOLDER = `${EMPTY_MARK}${__('Empty', 'yay-automation')}${EMPTY_MARK}`;
 
-/** A configured value in a summary, shown bold like Shopify Flow's; blank → the italic placeholder. */
+/** A configured value in a summary, shown bold; blank → the italic placeholder. */
 export const value = (text: string) => (text.trim() ? `${VALUE_MARK}${text}${VALUE_MARK}` : PLACEHOLDER);
 
 const MARKED = new RegExp(

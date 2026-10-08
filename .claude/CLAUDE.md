@@ -1,6 +1,6 @@
 # YayAutomation
 
-WordPress plugin: automation workflows + template library. UX reference: Shopify Flow.
+WordPress plugin: automation workflows + template library. Inspired by Shopify Flow, Klaviyo, AutomateWoo.
 
 ## Conventions
 

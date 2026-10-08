@@ -35,7 +35,7 @@ const fitOptions = (inset: number): FitViewOptions => ({
 
 /**
  * `panelInset`: px the open step panel covers on the left (0 when closed).
- * `onPaneClick`: a click on empty canvas, which closes the step panel like in Shopify Flow.
+ * `onPaneClick`: a click on empty canvas, which closes the step panel.
  */
 export function WorkflowCanvas({ panelInset, onPaneClick }: { panelInset: number; onPaneClick: () => void }) {
   const { theme } = useTheme();

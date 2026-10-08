@@ -5,7 +5,7 @@ import { __ } from '@wordpress/i18n';
 import { toast } from '@/components/ui/sonner';
 import { useCreateWorkflowMutation } from '../../api/workflow.query';
 
-/** Creates an inactive draft right away and opens it in the editor, like Shopify Flow's Install. */
+/** Creates an inactive draft right away and opens it in the editor. */
 export function useCreateDraft() {
   const navigate = useNavigate();
   // Hook-level callbacks, not `mutate(…, { onSuccess })`: those are skipped if the page unmounts

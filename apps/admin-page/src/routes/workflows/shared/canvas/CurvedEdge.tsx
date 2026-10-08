@@ -4,7 +4,7 @@ import { BaseEdge, type EdgeProps } from '@xyflow/react';
 const LEAD = 14;
 
 /**
- * Shopify-Flow-style line: straight down out of the card, an S-curve with vertical ends, then straight
+ * Line between cards: straight down out of the card, an S-curve with vertical ends, then straight
  * down into the next card. Cards in one column get a plain vertical line. Dashes, animation, arrow
  * and label come from the edge's props as usual.
  */

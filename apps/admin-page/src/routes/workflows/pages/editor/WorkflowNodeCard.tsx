@@ -23,7 +23,7 @@ const roundButton = 'nodrag size-8 rounded-full';
 
 /**
  * Hidden until the card is hovered (or the control is focused / its menu open), then fades and grows
- * in, like Shopify Flow. `slideFrom` adds a short slide toward its resting place.
+ * in. `slideFrom` adds a short slide toward its resting place.
  */
 const onHover = (slideFrom: 'left' | 'top') =>
   [

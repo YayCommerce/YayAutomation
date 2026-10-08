@@ -24,7 +24,7 @@ export default function WorkflowListPage() {
     setSearchParams((prev) => withTemplates(prev, open), { replace: !open });
   };
 
-  // "Select a trigger" saves a blank "New workflow" right away and opens it on its trigger picker, like Shopify Flow.
+  // "Select a trigger" saves a blank "New workflow" right away and opens it on its trigger picker.
   const [createOpen, setCreateOpen] = useState(false);
   const navigate = useNavigate();
   const createMutation = useCreateWorkflowMutation({

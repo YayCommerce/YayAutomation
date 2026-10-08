@@ -42,7 +42,7 @@ export default function WorkflowOverviewPage() {
 
 const HISTORY_TAB = 'history';
 
-// Shopify-style pills: the selected tab is a gray pill, no card or shadow. Focus ring stays
+// Pill tabs: the selected tab is a gray pill, no card or shadow. Focus ring stays
 // keyboard-only (the kit's `focus-visible` styles).
 const pillTabClass =
   'flex-none rounded-full px-3 py-1.5 data-[state=active]:bg-foreground/10 data-[state=active]:text-foreground data-[state=active]:shadow-none dark:data-[state=active]:border-transparent dark:data-[state=active]:bg-foreground/10';

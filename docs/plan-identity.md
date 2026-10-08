@@ -1,15 +1,15 @@
 # Plan: Editor Identity
 
-Status: design in review (mock v2). **On hold until F0 merges.** This branch holds the plan only; no code until then.
+Status: design in review (mock v2). F0 merged 2026-10-08, so code can start; see [Phases](#phases).
 
 ## Goal
 
-The workflow editor was built to mirror Shopify Flow. Code comments say so: `grep -rni shopify apps/admin-page/src` finds about 21 hits.
+The workflow editor was built to mirror the product that inspired it (see `.claude/CLAUDE.md`).
 
 Give it its own identity, so that:
 
-- **Visual:** no screenshot can be mistaken for Shopify Flow.
-- **Wording:** all user-facing copy is in our own voice and uses WordPress/WooCommerce terms. No string matches Shopify Flow's wording.
+- **Visual:** no screenshot can be mistaken for that product.
+- **Wording:** all user-facing copy is in our own voice and uses WordPress/WooCommerce terms. No string matches that product's wording.
 - **Behavior:** stays the same. The canvas keeps its top-to-bottom flow, its curved lines and arrows.
 - **Scope:** every workflow screen, not only the editor. Some page layouts change: create dialog, Template Library, template preview, list row actions (agreed with the leader, 2026-10-08). ROADMAP-v1.0, ROADMAP-dev, design and decisions use the new wording.
 
@@ -19,12 +19,12 @@ Use YayUiKits (see `.claude/docs/context-ui-components.md`). Design first, then 
 
 Ordered from strongest to weakest signal. Layout direction is also a strong signal, but it's out of scope: top-to-bottom is generic and isn't anyone's signature.
 
-1. **Node shape:** Flow uses wide white cards. Make uses circles. n8n uses square tiles with the label below.
-2. **Color:** Flow is grey, white and black. Make colors by app. n8n uses a per-node accent.
-3. **Lines and branches:** Flow uses S-curves, and True/False tabs inside the condition card.
+1. **Node shape:** the reference product uses wide white cards. Make uses circles. n8n uses square tiles with the label below.
+2. **Color:** the reference product is grey, white and black. Make colors by app. n8n uses a per-node accent.
+3. **Lines and branches:** the reference product uses S-curves, and True/False tabs inside the condition card.
 4. **Copy:** "Turn on", "Review", "Select a trigger", "True/False".
 
-## Current Flow-like traits
+## Current traits shared with the reference product
 
 | Trait | Where |
 | --- | --- |
@@ -51,13 +51,13 @@ Interactions like click-to-open or the add buttons are standard UX, so they're n
 Keep the layout and card structure. Change colors, the selected state, line style and issue markers to YayUiKits styling.
 
 - **Pros:** fast. No behavior change.
-- **Cons:** may still read as "Flow, reskinned".
+- **Cons:** may still read as the reference product, reskinned.
 
 ### B. Borrow specific patterns (medium)
 
 Keep the top-to-bottom layout. Redesign the card and the lines.
 
-Borrow a pattern only if it adds value for the user, like clearer reading, faster editing or less clutter. Being different from Flow is not a reason on its own. Candidates to evaluate:
+Borrow a pattern only if it adds value for the user, like clearer reading, faster editing or less clutter. Being different from the reference product is not a reason on its own. Candidates to evaluate:
 
 - **Zapier / n8n:** step numbers; one icon per block (Woo, email, note) instead of a generic kind icon.
 - **Make:** branch labels (Yes/No) on the lines, not inside the card.
@@ -94,10 +94,10 @@ Confirmed 2026-10-07.
 | "Add a variable" button under the field | "Insert variable" on the label row |
 | Variable picker with raw ids | Names with step tiles, trigger named, merge-tag key per field |
 | Condition "IF / AND / Add criteria" | "Take the Yes path when all of these match" + "Add rule" + "Otherwise the No path runs" |
-| Start page: prompt box, "Or", two round buttons | Same flow as Shopify, own look: "What do you want to automate?", example prompts, two start cards (Browse templates, Choose a trigger). Enter opens an assistant panel that shows its progress (stoppable) while placeholder cards pulse on the canvas, then the drafted workflow, with a "Before you activate" checklist. AI box shows "Coming soon" until v2.0 |
+| Start page: prompt box, "Or", two round buttons | Same flow as the reference product, own look: "What do you want to automate?", example prompts, two start cards (Browse templates, Choose a trigger). Enter opens an assistant panel that shows its progress (stoppable) while placeholder cards pulse on the canvas, then the drafted workflow, with a "Before you activate" checklist. AI box shows "Coming soon" until v2.0 |
 | Library: blue hero, dashed filter pills, text cards | Category sidebar with counts and "Show more", plugin search, installed first; filter chips above the grid; cards open with a strip of step tiles, then the description (2 lines); plugin icons only (up to 3 + "+N", name on hover) |
 | Preview: floating About box, "More templates" | Breadcrumb to the library; docked side panel: what it does, plugins, next step. **Layout change, this page only** |
-| Overview: gray pill tabs, Flow's empty-runs copy | Summary row (status, trigger, runs, last run), underline tabs, own empty state |
+| Overview: gray pill tabs, borrowed empty-runs copy | Summary row (status, trigger, runs, last run), underline tabs, own empty state |
 
 Full wording list: see the mock's Wording section. The main ones:
 
@@ -136,8 +136,8 @@ All in ROADMAP-dev F1 (confirmed 2026-10-08):
 ## Done when
 
 - [ ] Design approved before code changes.
-- [ ] A side-by-side screenshot with Shopify Flow is not mistaken for it by someone outside the team.
-- [ ] No user-facing string matches Shopify Flow's wording.
-- [ ] No "like Shopify Flow" comments left in code.
+- [ ] A side-by-side screenshot with the reference product is not mistaken for it by someone outside the team.
+- [ ] No user-facing string matches the reference product's wording.
+- [x] No comments in code name another product (done 2026-10-08).
 - [ ] Light and dark mode both checked. Read-only template preview (`shared/canvas/ReadOnlyCanvas.tsx`) matches the editor.
 - [ ] Behavior unchanged; canvas layout unchanged. Page layouts match the approved mock.
