@@ -74,7 +74,7 @@ Custom tables replace the CPT and post meta. Upgrades use `dbDelta` + a DB versi
 - **Errors.** Each step has a policy: stop the run (default) or continue. Retries come in v1.1.
 - **Loop safety.** `parent_run_id`, `root_run_id`, `depth` replace the in-memory chain. Max depth, a per-workflow rate limit that pauses a runaway workflow, and a max loop size.
 - **Scheduled and query triggers.** A schedule fans out to one run per matching subject, in batches. `trigger_claims` stops duplicates ("once per customer per 90 days"). This generalises the `_yay_automation_order_created` order meta in `OrderCreated::claim()`.
-- **Cancel.** Turn off and Apply changes cancel waiting runs (v1.0 rule). The API returns the count for the UI.
+- **Cancel.** Deactivate and Update cancel waiting runs (v1.0 rule). The API returns the count for the UI.
 
 ## §4 Data layer · C6, C7
 
@@ -83,7 +83,7 @@ Custom tables replace the CPT and post meta. Upgrades use `dbDelta` + a DB versi
 - **Scope** paths: `trigger.*` (with `order` / `customer` shortcuts), `steps.<id>.*`, `loop.item` / `loop.index`, `vars.*`, `workflow.*`, `run.*`, `site.*`.
 - **Refs, loaded lazily.** Entities are stored as `{type: 'order', id: 12}` and loaded on demand, cached per slice. Facts only true at trigger time (status from / to, cart contents, event payload) are snapshotted. Data is fresh after a long Wait, and rows stay small.
 - **Gone entity.** If an order or customer was deleted, the step is skipped and run history says why.
-- **Available variables per step.** Each step declares outputs. The Validator walks the steps above each step to list what it can use. "Add a variable" and the template checks use the same list.
+- **Available variables per step.** Each step declares outputs. The Validator walks the steps above each step to list what it can use. "Insert variable" and the template checks use the same list.
 
 ## §5 Step contract · L2
 
@@ -91,6 +91,7 @@ Custom tables replace the CPT and post meta. Upgrades use `dbDelta` + a DB versi
 
 ```
 Step:   id() label() plugin() module()
+        icon(): string           a name from core's step icon list, e.g. "mail" (L5)
         fields(): Field[]        settings, rules, widgets
         validate( config )       optional extra checks the field rules can't express
         outputs(): Field[]       what later steps can use
@@ -100,12 +101,13 @@ Step:   id() label() plugin() module()
 
 - **Field vocabulary** (kept small): text, textarea, emails, select, multiselect, toggle, number, number_unit, notice, rules (core only). Modifiers: `required`, `variables`, `placeholder`, `help`, `show_if`. A form that needs more gets a custom panel, not a new word.
 - **Catalog.** Steps, fields, outputs and data types go to the admin app through `yayAutomationMeta` (and to the AI in v2.0).
-- **Editor checks.** Automation builds valibot rules from the PHP fields. Validation always runs in Automation, never in a panel. Rules only in PHP `validate()` show up as the step's issue after a save, and still block Turn on.
+- **Editor checks.** Automation builds valibot rules from the PHP fields. Validation always runs in Automation, never in a panel. Rules only in PHP `validate()` show up as the step's issue after a save, and still block Activate.
 - **Forms.**
   - No custom form → the generic `StepForm` draws one from the fields. A simple step from a Yay plugin needs PHP only.
   - Core step with a complex form (Send email, Condition rules) → `defineStep( { id, Form } )`, imported directly. No global call, fully typed.
   - Plugin step with a custom form → `window.yayAutomation.registerStepPanel( id, Panel )`. Internal until §10.
   - Both put the form in the same registry. Props: `{ config, onChange, errors }`.
+- **Icons (L5).** A step's `icon()` is a name from a fixed list in core (lucide icons, about 40), never an SVG. The editor draws it in the step's tile, tinted by kind (trigger, condition, action), on the canvas, in the picker, the panel header, template cards and the preview. A missing icon is added to core's list, not shipped by the plugin.
 - The `rules` field type is ours: its checks are written in PHP (`Criteria`) and TS. Plugins never write validation in JS.
 
 ## §6 Templates · L3
@@ -135,6 +137,7 @@ Our own small template module. **No Liquid or other template library, now or lat
   - Moving something between Lite and Pro = change its manifest entry.
   - Turning off a module keeps unfinished work out of a release.
 - **Each Yay plugin owns its steps, templates and data types**, registered into Workflow Core. **YayAutomation Pro** owns templates that combine several plugins.
+- **Plugin logo (L5).** Each plugin registers one logo: an SVG that uses `currentColor`, cleaned with `wp_kses` in PHP. It marks who provides a step or template (template cards, library sidebar, picker), never what a step does. One per plugin, not per step.
 - **Feature directory:** a static list in core of every known step and template, its plugin, and where to install it. The editor shows "Install X to use this"; the AI uses it to suggest features.
 
 ## §9 Health check · P6
@@ -153,13 +156,13 @@ Settings → Health check finds problems and proposes a fix the site owner can a
 
 | ID | Topic | Decision |
 |---|---|---|
-| P3 | Waiting runs on Apply changes | Always cancel in v1.0. Revisit after v1.0 |
+| P3 | Waiting runs on Update | Always cancel in v1.0. Revisit after v1.0 |
 | P4 | Public extension API | Last: after Pro connectors and Yay integrations are stable. Until then the registry, step contract and `registerStepPanel` are internal |
 | P5 | AI provider | Not decided. v1.0 only keeps a provider interface open |
 
 ## §11 Decision log
 
-All confirmed 2026-10-07. Reasons, rejected options and costs: [workflow-core-decisions.md](workflow-core-decisions.md).
+All confirmed 2026-10-07, except L5 (2026-10-08). Reasons, rejected options and costs: [workflow-core-decisions.md](workflow-core-decisions.md).
 
 | ID | Decision | Section |
 |---|---|---|
@@ -177,9 +180,10 @@ All confirmed 2026-10-07. Reasons, rejected options and costs: [workflow-core-de
 | L2 | Step settings defined in PHP; editor checks built from them; small generic form; core imports custom forms; plugins use `registerStepPanel` | §5 |
 | L3 | Own template module, tiers 1 → 2 → escape valve; no Liquid | §6 |
 | L4 | Jack builds everything: F0 rename, then F1 foundation before M1; F2 workflows table after M2 | [ROADMAP-dev.md](ROADMAP-dev.md) |
+| L5 | Step icons: a lucide name from core's list; plugin logos: one SVG per plugin | §5, §8 |
 | P1 | Runtime free; modules with tier + switch | §8 |
 | P2 | Yay plugins own their steps; Pro owns multi-plugin templates; feature directory | §8 |
-| P3 | Cancel waiting runs on Apply in v1.0 | §10 |
+| P3 | Cancel waiting runs on Update in v1.0 | §10 |
 | P4 | Public extension API last | §10 |
 | P5 | AI provider deferred | §10 |
 | P6 | Settings → Health check | §9 |

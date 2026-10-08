@@ -25,9 +25,10 @@ Each note: **Decision** · **Why** · **Rejected** · **Cost** · **For devs** (
 | [L2](#l2-step-settings-defined-in-php) | Step settings defined in PHP | Owner |
 | [L3](#l3-own-template-module-no-liquid) | Own template module, no Liquid | Owner |
 | [L4](#l4-foundation-before-m1) | Foundation before M1 | Owner |
+| [L5](#l5-step-icons-and-plugin-logos) | Step icons by name, plugin logos as SVG | Owner |
 | [P1](#p1-runtime-free-modules-with-tiers) | Runtime free; modules with tiers | Owner |
 | [P2](#p2-yay-plugins-own-their-steps) | Yay plugins own their steps | Owner |
-| [P3–P6](#p3p6-smaller-decisions) | Cancel on Apply, API last, AI later, Health check | Owner |
+| [P3–P6](#p3p6-smaller-decisions) | Cancel on Update, API last, AI later, Health check | Owner |
 
 "High" = recommended and accepted as-is. "Owner" = debated and decided by the product owner.
 
@@ -67,7 +68,7 @@ Each note: **Decision** · **Why** · **Rejected** · **Cost** · **For devs** (
 **Why.** Almost everything on the roadmap needs it:
 - Wait (a run must survive for days)
 - Run history and run detail (M2)
-- Cancel on Turn off (v1.0 release rule 4)
+- Cancel on Deactivate (v1.0 release rule 4)
 - Retries and replay (v1.1)
 - AI "explain this failure" (v2.0)
 
@@ -132,7 +133,7 @@ Today errors only go to the WooCommerce log, which merchants never open.
 - M1 needs it right away: Generate coupon → coupon code in the next email.
 - Yes/no conditions (first order, unsubscribed) need booleans.
 - For each needs lists.
-- The Validator can work out exactly which variables each step may use. That powers "Add a variable shows only what this step can use" (v1.0) and template checks.
+- The Validator can work out exactly which variables each step may use. That powers "Insert variable shows only what this step can use" (v1.0) and template checks.
 
 **Cost.** The largest part of F1: a data layer rewrite.
 
@@ -192,7 +193,7 @@ Today errors only go to the WooCommerce log, which merchants never open.
 
 **Why not.**
 - None of the 18 v1.0 templates need it. Shopify Flow and Klaviyo don't merge branches either.
-- The real cost is variables, not drawing. After a merge, a coupon made in only one branch may not exist, so the Validator, "Add a variable" and the AI would all need "maybe exists" logic.
+- The real cost is variables, not drawing. After a merge, a coupon made in only one branch may not exist, so the Validator, "Insert variable" and the AI would all need "maybe exists" logic.
 - Call workflow (v1.1) covers shared steps: put them in their own workflow.
 
 **Cost.** Some step duplication for complex workflows.
@@ -208,7 +209,7 @@ Today errors only go to the WooCommerce log, which merchants never open.
 - Other plugins use `registerStepPanel()`.
 
 **Why.**
-- Today each step's rules are written twice: PHP `validate()` and TS `schema.ts`, kept in sync by hand. A mismatch means the editor says OK but Turn on fails, or the reverse.
+- Today each step's rules are written twice: PHP `validate()` and TS `schema.ts`, kept in sync by hand. A mismatch means the editor says OK but Activate fails, or the reverse.
 - One source fixes that and also:
   - Translations live in one place.
   - Options like order statuses come straight from PHP.
@@ -287,6 +288,32 @@ Today errors only go to the WooCommerce log, which merchants never open.
 
 **For devs.** Until F1 is done, don't start M1 work that touches steps or emails. M1 UI pieces that don't touch the engine (Template Library filters, preview "Other versions") can fill gaps.
 
+## L5. Step icons and plugin logos
+
+**Decided 2026-10-08.** Source: [plan-identity.md](plan-identity.md).
+
+**Decision.** Two kinds of icon, two formats:
+- **Step icon** = what a step does (mail, coupon, clock). The step's `icon()` returns a name from a fixed list in core (lucide, about 40 icons).
+- **Plugin logo** = who provides it (WooCommerce, YayMail). Each plugin registers one SVG that uses `currentColor`; PHP cleans it with `wp_kses`.
+
+**Why.**
+- Since L2, a step can be PHP only, so the editor can't know its icon unless the catalog sends it.
+- A name keeps every step icon in one style, lets the editor tint it by kind and theme, and carries no markup, so nothing to sanitize.
+- Lucide has no brand logos, and a plugin needs its own mark in the library and picker. One SVG per plugin is enough.
+
+**Rejected.**
+- **SVG for every step:** mixed styles, colors that break in dark mode, and markup to sanitize for each step.
+- **Lucide names for plugins too:** no brand logos.
+- **Any lucide name, loaded on demand:** pulls the whole icon set into the admin bundle.
+
+**Cost.**
+- Core owns the step icon list; a plugin that needs a new icon asks core to add it.
+- Each Yay plugin needs a small logo that works in light and dark.
+
+**For devs.**
+- New step: `icon()` returns a name from the list. Never return SVG or a URL.
+- New plugin: register one logo SVG with `currentColor`. Don't hard-code colors.
+
 ## P1. Runtime free; modules with tiers
 
 **Decision.** The runtime is 100% free. Steps, templates and features belong to modules. A manifest gives each module its tier (`lite` / `pro`) and an on/off switch.
@@ -316,7 +343,7 @@ Today errors only go to the WooCommerce log, which merchants never open.
 
 | ID | Decision | Why |
 |---|---|---|
-| P3 | Turn off / Apply changes always cancel waiting runs in v1.0 | Safe and simple; v1.0 release rule 4. "Finish on the old version" can come later, as runs already pin versions (C8) |
+| P3 | Deactivate / Update always cancel waiting runs in v1.0 | Safe and simple; v1.0 release rule 4. "Finish on the old version" can come later, as runs already pin versions (C8) |
 | P4 | Public extension API comes last, after Pro connectors and Yay integrations are stable | A public API is a promise. Freezing it before our own plugins have used it would lock in mistakes |
 | P5 | AI provider not chosen yet | It depends on price, privacy and WP's own AI work in 2027. v1.0 only keeps a provider interface open |
 | P6 | Settings → Health check | WP-Cron, big stores and email delivery are the top reasons "it doesn't work". Detecting them and proposing a fix saves support time |

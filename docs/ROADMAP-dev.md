@@ -40,17 +40,22 @@ Risk scale as in ROADMAP-v1.0: 1 = easy to undo · 2 = new logic · 3 = stores d
 
 ---
 
-## F0 — Move and rename · S (1 day)
+## F0 — Move and rename · S (1 day + ½ day baseline)
 
 Do it when no feature branch is open: it touches every file, so it's cheapest as one quick PR that everyone rebases on once.
 
+- **F0.0 Verify baseline** *([plan-infra](plan-infra.md))*, its own PR before F0.1:
+  - phpcs inside the project (`dev/tools/lintphp`), `pnpm lint:php`, the 12 current errors fixed.
+  - Vitest with first tests on `model/` and the template registry; `pnpm test`.
+  - Stop hook adds tests; CI on `develop`: lint → lint:php → test → build.
 - **F0.1** Move `includes/Engine/{Workflows,Blocks,Data}` and `Engine/Plugins.php` to `includes/Workflow/`, then run `composer dump-autoload`. *(design §1)*
 - **F0.2** Rename Blocks → Steps: PHP classes, `apps/admin-page/src/routes/workflows/blocks/` → `steps/`, types, `.claude/docs/context-php-backend.md`.
-- **F0.3** No behaviour change. Check: `pnpm build`, phpcs, manual run of both triggers and all 4 actions.
+- **F0.3** No behaviour change. Check: `pnpm build`, `pnpm lint:php`, `pnpm test` (same results as before F0), manual run of both triggers and all 4 actions.
 
 ## F1 — Workflow Core foundation · L (~3 weeks)
 
 **Backend**
+- **F1.0 PHPUnit** *([plan-infra](plan-infra.md))* — plain unit tests, no WordPress loaded (`dev/tools/phpunit`); CI step. First tests: template parser, Validator v2, Scope.
 - **F1.1 Storage** *(§2)*
   - `runs`, `run_steps`, `trigger_claims` tables with upgrades.
   - Saved versions never change; runs pin their version.
@@ -62,7 +67,9 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
   - PHP parser, renderer, filter registry (`default`, `date`, `money`, `upper`, `lower`, `join`).
   - Replaces `Data/Variables.php`. Old `{{ item.field }}` tags keep working.
 - **F1.4 Step contract** *(§5)*
-  - `Step` base, `Field` builder, `outputs()`, `StepResult`, summary templates.
+  - `Step` base, `Field` builder, `outputs()`, `StepResult`, summary templates, `icon()` name *(L5)*.
+  - Plugin logo: one SVG per plugin, `currentColor`, cleaned with `wp_kses` *(L5)*.
+  - Parity test: the PHP catalog and what TS expects can't drift *([plan-infra](plan-infra.md))*.
   - Catalog in `yayAutomationMeta`; update `apps/admin-page/src/types/localize.d.ts`.
 - **F1.5 Executor** *(§3)*
   - Dispatcher replaces `Runner` collect / flush. Worker: Action Scheduler hook + row lock.
@@ -71,21 +78,24 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 - **F1.6 Validator v2** *(§4, §6)*
   - Available variables per step; type checks; template checks.
   - Same issue codes as today (`no_trigger`, `unlinked`, `invalid_config`, `missing_data`, …).
+  - An issue on a step names the field it's about (`field`), so the editor can say "Add order note needs a note" *([plan-identity](plan-identity.md))*.
+  - Validator and REST messages use the plan-identity wording (Activate / Deactivate, Update).
 - **F1.7 Modules** *(§8)* — manifest with tier and on/off switch; the registry reads it.
-- **F1.8 Runs REST** — list and detail endpoints (the UI comes in M2).
+- **F1.8 Runs REST** — list and detail endpoints (the UI comes in M2). Workflow responses also return `activatedAt`, for "Active since …" on the overview *([plan-identity](plan-identity.md))*.
 
 **UI**
 - **F1.9 Step forms** *(§5)*
   - Generic `StepForm` with widgets: text, textarea, emails, select, multiselect, toggle, number, notice.
+  - Read-only lines (e.g. "From" in Send internal email) use `notice`, not a new widget *([plan-identity](plan-identity.md))*.
   - valibot rules built from the catalog.
   - `defineStep( { id, Form } )` for core; internal `registerStepPanel`.
 - **F1.10 Port the 7 steps**
   - Simple steps move to the generic form; delete their `schema.ts` / `Form.tsx`.
   - Condition keeps its custom form, using the `rules` field type.
 - **F1.11 Template checks in TS** *(§6)* — parser only: errors and autocomplete.
-- **F1.12 "Add a variable"** — lists the step's available variables, incl. step outputs and dotted paths.
+- **F1.12 "Insert variable"** — lists the step's available variables, incl. step outputs and dotted paths.
 
-**Done when:** both triggers and all 4 actions behave as today; every run and step is stored; `pnpm build` and phpcs pass.
+**Done when:** both triggers and all 4 actions behave as today; every run and step is stored; `pnpm build`, `pnpm lint:php`, `pnpm test` and PHPUnit pass in CI.
 
 ## M1 — Customer emails + coupons · L · risk 3
 
@@ -98,10 +108,10 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 - **M1.6 Email block: coupon box.**
 
 **UI**
-- **M1.7 Send email panel** (core custom form) — fields with "Add a variable", Preview, Send test, unsubscribe note.
+- **M1.7 Send email panel** (core custom form) — fields with "Insert variable", Preview, Send test, unsubscribe note.
 - **M1.8 Generate coupon** — generic form; card reads e.g. "10 % off, expires in 7 days".
 - **M1.9 Condition** — Is true / Is false for yes/no fields, no value needed.
-- **M1.10 Warning before Turn on** — a step uses a coupon with no Generate coupon above it.
+- **M1.10 Warning before Activate** — a step uses a coupon with no Generate coupon above it.
 - **M1.11 Template Library** — category filters.
 - **M1.12 Template preview** — Other versions and Steps.
 
@@ -111,7 +121,7 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 
 **Backend**
 - **M2.1 Wait step** — number + unit (minutes, hours, days); the run moves to waiting and resumes through Action Scheduler.
-- **M2.2 Cancel on Turn off / Apply** *(§3)* — cancel waiting runs, return the count.
+- **M2.2 Cancel on Deactivate / Update** *(§3)* — cancel waiting runs, return the count.
 - **M2.3 Runs REST** — status filter, paging, step results.
 - **M2.4 List stats** — runs in the last 30 days, last run.
 - **M2.5 Email block: product grid** — cross-sell / upsell sources.
@@ -120,7 +130,7 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 - **M2.6 Wait** — form and card ("Wait 1 hour", clock icon).
 - **M2.7 Overview: runs table** — started, subject, status, steps run; loading and empty states.
 - **M2.8 Run detail** — each step with result and time; links to the order or customer.
-- **M2.9 Turn off / Apply dialog** — says how many waiting runs will be cancelled.
+- **M2.9 Deactivate / Update dialog** — says how many waiting runs will be cancelled.
 - **M2.10 Workflow list** — Runs and Last run columns, status filter.
 
 **Templates:** Cross-sell / upsell ×4.
