@@ -10,7 +10,8 @@ Give it its own identity, so that:
 
 - **Visual:** no screenshot can be mistaken for Shopify Flow.
 - **Wording:** all user-facing copy is in our own voice and uses WordPress/WooCommerce terms. No string matches Shopify Flow's wording.
-- **Behavior and layout:** stay the same. The canvas keeps its top-to-bottom flow.
+- **Behavior:** stays the same. The canvas keeps its top-to-bottom flow, its curved lines and arrows.
+- **Scope:** every workflow screen, not only the editor. Some page layouts change: create dialog, Template Library, template preview, list row actions (agreed with the leader, 2026-10-08). ROADMAP-v1.0, ROADMAP-dev, design and decisions use the new wording.
 
 Use YayUiKits (see `.claude/docs/context-ui-components.md`). Design first, then refactor.
 
@@ -139,4 +140,4 @@ All in ROADMAP-dev F1 (confirmed 2026-10-08):
 - [ ] No user-facing string matches Shopify Flow's wording.
 - [ ] No "like Shopify Flow" comments left in code.
 - [ ] Light and dark mode both checked. Read-only template preview (`shared/canvas/ReadOnlyCanvas.tsx`) matches the editor.
-- [ ] Behavior and layout unchanged.
+- [ ] Behavior unchanged; canvas layout unchanged. Page layouts match the approved mock.

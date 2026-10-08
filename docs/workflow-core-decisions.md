@@ -28,7 +28,7 @@ Each note: **Decision** · **Why** · **Rejected** · **Cost** · **For devs** (
 | [L5](#l5-step-icons-and-plugin-logos) | Step icons by name, plugin logos as SVG | Owner |
 | [P1](#p1-runtime-free-modules-with-tiers) | Runtime free; modules with tiers | Owner |
 | [P2](#p2-yay-plugins-own-their-steps) | Yay plugins own their steps | Owner |
-| [P3–P6](#p3p6-smaller-decisions) | Cancel on Apply, API last, AI later, Health check | Owner |
+| [P3–P6](#p3p6-smaller-decisions) | Cancel on Update, API last, AI later, Health check | Owner |
 
 "High" = recommended and accepted as-is. "Owner" = debated and decided by the product owner.
 
@@ -68,7 +68,7 @@ Each note: **Decision** · **Why** · **Rejected** · **Cost** · **For devs** (
 **Why.** Almost everything on the roadmap needs it:
 - Wait (a run must survive for days)
 - Run history and run detail (M2)
-- Cancel on Turn off (v1.0 release rule 4)
+- Cancel on Deactivate (v1.0 release rule 4)
 - Retries and replay (v1.1)
 - AI "explain this failure" (v2.0)
 
@@ -133,7 +133,7 @@ Today errors only go to the WooCommerce log, which merchants never open.
 - M1 needs it right away: Generate coupon → coupon code in the next email.
 - Yes/no conditions (first order, unsubscribed) need booleans.
 - For each needs lists.
-- The Validator can work out exactly which variables each step may use. That powers "Add a variable shows only what this step can use" (v1.0) and template checks.
+- The Validator can work out exactly which variables each step may use. That powers "Insert variable shows only what this step can use" (v1.0) and template checks.
 
 **Cost.** The largest part of F1: a data layer rewrite.
 
@@ -193,7 +193,7 @@ Today errors only go to the WooCommerce log, which merchants never open.
 
 **Why not.**
 - None of the 18 v1.0 templates need it. Shopify Flow and Klaviyo don't merge branches either.
-- The real cost is variables, not drawing. After a merge, a coupon made in only one branch may not exist, so the Validator, "Add a variable" and the AI would all need "maybe exists" logic.
+- The real cost is variables, not drawing. After a merge, a coupon made in only one branch may not exist, so the Validator, "Insert variable" and the AI would all need "maybe exists" logic.
 - Call workflow (v1.1) covers shared steps: put them in their own workflow.
 
 **Cost.** Some step duplication for complex workflows.
@@ -209,7 +209,7 @@ Today errors only go to the WooCommerce log, which merchants never open.
 - Other plugins use `registerStepPanel()`.
 
 **Why.**
-- Today each step's rules are written twice: PHP `validate()` and TS `schema.ts`, kept in sync by hand. A mismatch means the editor says OK but Turn on fails, or the reverse.
+- Today each step's rules are written twice: PHP `validate()` and TS `schema.ts`, kept in sync by hand. A mismatch means the editor says OK but Activate fails, or the reverse.
 - One source fixes that and also:
   - Translations live in one place.
   - Options like order statuses come straight from PHP.
@@ -343,7 +343,7 @@ Today errors only go to the WooCommerce log, which merchants never open.
 
 | ID | Decision | Why |
 |---|---|---|
-| P3 | Turn off / Apply changes always cancel waiting runs in v1.0 | Safe and simple; v1.0 release rule 4. "Finish on the old version" can come later, as runs already pin versions (C8) |
+| P3 | Deactivate / Update always cancel waiting runs in v1.0 | Safe and simple; v1.0 release rule 4. "Finish on the old version" can come later, as runs already pin versions (C8) |
 | P4 | Public extension API comes last, after Pro connectors and Yay integrations are stable | A public API is a promise. Freezing it before our own plugins have used it would lock in mistakes |
 | P5 | AI provider not chosen yet | It depends on price, privacy and WP's own AI work in 2027. v1.0 only keeps a provider interface open |
 | P6 | Settings → Health check | WP-Cron, big stores and email delivery are the top reasons "it doesn't work". Detecting them and proposing a fix saves support time |

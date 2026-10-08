@@ -4,7 +4,9 @@
 
 ## Goal
 
-This roadmap describes the Workflow pages for v1.0, page by page: what each page has today, what v1.0 adds, and in which milestone. v1.0 ships 8 ready-to-use workflows as 18 templates. A store owner can install any template, turn it on and get results with no setup beyond reviewing the email text. The 5 abandoned cart and checkout templates also need cart tracking turned on in Settings; the template preview and editor point to it.
+This roadmap describes the Workflow pages for v1.0, page by page: what each page has today, what v1.0 adds, and in which milestone. v1.0 ships 8 ready-to-use workflows as 18 templates. A store owner can use any template, activate it and get results with no setup beyond reviewing the email text. The 5 abandoned cart and checkout templates also need cart tracking turned on in Settings; the template preview and editor point to it.
+
+Wording and page layouts follow [plan-identity.md](plan-identity.md) (Activate / Deactivate, Update, Use template, Insert variable, Yes / No). "Today" lines describe the current UI with its current words.
 
 We chose these 8 because they cover what merchants install an automation plugin for. Recovering abandoned carts and checkouts brings in the most revenue. Thank-you, cross-sell and review emails follow every completed order. Welcome and win-back emails cover the customer lifecycle. The high-value order alert gives the store team a quick heads-up on big orders. The other 6 workflows in our list have lower demand or legal risk, so they move to v1.1 / v1.2.
 
@@ -12,12 +14,12 @@ We chose these 8 because they cover what merchants install an automation plugin 
 
 | Page | What changes in v1.0 | Milestone |
 |---|---|---|
-| Workflow list | Run counts, last run, status filter | M2 |
-| Create workflow dialog | New starting events in the trigger picker | M4, M6, M8 |
-| Template Library | 18 templates, category filters, cart tracking badge | M1, M8 |
-| Template preview | Other versions, Before you start, Steps | M1, M3, M8 |
+| Workflow list | Run counts, last run, status filter, row actions menu | M2, identity |
+| Create workflow dialog | New layout (describe, browse templates, choose a trigger); new starting events in the trigger picker | identity, M4, M6, M8 |
+| Template Library | 18 templates, category and plugin sidebar, cart tracking badge | M1, M8 |
+| Template preview | Side panel: Steps, Plugins used, Other versions, Before you start | M1, M3, M8 |
 | Editor | New triggers and steps: Wait, Generate coupon, Send email with Preview / Send test | M1, M2, M4, M6, M8 |
-| Workflow overview | Workflow runs table and run detail | M2 |
+| Workflow overview | Summary row, workflow runs table and run detail | M2 |
 | Settings | Cart tracking, Emails, Run history | M7 |
 | Store front | Restore cart link, unsubscribe page | M1, M7 |
 | Customer emails | What shoppers receive, per workflow | M1–M8 |
@@ -29,6 +31,7 @@ We chose these 8 because they cover what merchants install an automation plugin 
 **v1.0 adds:**
 - Two columns: runs in the last 30 days, and when the workflow last ran (proposal).
 - Status filter: All · Active · Inactive · Draft (proposal).
+- Row actions in a "⋯" menu: Edit, Rename, Activate / Deactivate, Delete. Unapplied edits show a "Draft changes" badge. *([identity](plan-identity.md))*
 
 **States:** a workflow that never ran shows "—" in both columns.
 
@@ -41,11 +44,12 @@ We chose these 8 because they cover what merchants install an automation plugin 
 **Today:** a start page with "Select a trigger" and "Template Library"; the AI box shows "Coming soon".
 
 **v1.0 adds:**
-- No layout change. The trigger picker lists the new starting events as they land: account created, inactive customer, abandoned cart and checkout.
+- New layout *([identity](plan-identity.md))*: the question "What do you want to automate?", a describe box with example prompts (shows "Coming soon" until the AI ships in v2.0), then two start cards: **Browse templates** and **Choose a trigger**.
+- The trigger picker lists the new starting events as they land: account created, inactive customer, abandoned cart and checkout.
 
-**Done when:** each new trigger can be picked from the dialog as soon as its milestone lands.
+**Done when:** both start cards work, the describe box is clearly unavailable, and each new trigger can be picked as soon as its milestone lands.
 
-**Milestone:** M4, M6, M8
+**Milestone:** identity (layout), M4, M6, M8 (triggers)
 
 ### Template Library
 
@@ -53,7 +57,8 @@ We chose these 8 because they cover what merchants install an automation plugin 
 
 **v1.0 adds:**
 - 18 templates, arriving with their milestones.
-- Category filters above the grid: All · Recover carts · Post-purchase · Customer lifecycle · Alerts.
+- A sidebar *([identity](plan-identity.md))*: Categories with counts (All · Recover carts · Post-purchase · Customer lifecycle · Alerts), then Plugins with checkboxes, installed first. Long lists show "Show more"; chosen filters appear as removable chips above the grid.
+- Cards open with a strip of the template's step icons, then name and description; plugins show as icons (up to 3, then "+N", name on hover).
 - A "Needs cart tracking" badge on cart and checkout templates while cart tracking is off.
 - "Most popular" sort uses a fixed order based on expected demand (proposal).
 
@@ -68,14 +73,16 @@ We chose these 8 because they cover what merchants install an automation plugin 
 **Today:** a read-only view of the workflow, an "About this template" panel (description, plugins used) and Install.
 
 **v1.0 adds:**
-- **Other versions:** links to the other templates of the same workflow (e.g. the 3 abandoned cart versions).
-- **Before you start:** what the template needs, with a link to fix it (turn on cart tracking; turn on product reviews).
-- **Steps:** one line per step, the same text as on the workflow cards.
-- After Install, the message says "Review the emails, then turn it on".
+- A side panel next to the canvas replaces the floating "About this template" box, and a breadcrumb leads back to the library *([identity](plan-identity.md))*. It holds:
+  - **Steps:** one line per step with its icon, the same text as on the workflow cards.
+  - **Plugins used**, as today.
+  - **Other versions:** links to the other templates of the same workflow (e.g. the 3 abandoned cart versions).
+  - **Before you start:** what the template needs, with a link to fix it (turn on cart tracking; turn on product reviews).
+- **Use template** replaces Install. Afterwards the message says "Review the emails, then activate it".
 
 **States:** "Before you start" is hidden when nothing is missing.
 
-**Done when:** every template's preview shows its steps and requirements, and Install opens a ready-to-review draft.
+**Done when:** every template's preview shows its steps and requirements, and Use template opens a ready-to-review draft.
 
 **Milestone:** M1 (versions, steps), M3 and M8 (before you start)
 
@@ -91,12 +98,12 @@ We chose these 8 because they cover what merchants install an automation plugin 
   - Customer inactive: number of days (default 90), with "Checked once a day".
 - **Wait:** a number and a unit (hours, days, and minutes as a proposal); the card reads e.g. "Wait 1 hour" with a clock icon. *(M2)*
 - **Generate coupon:** discount type, amount, expires after N days, minimum spend, individual use, limited to the customer's email, code prefix. The card reads e.g. "10 % off, expires in 7 days". Later emails can include the coupon code. *(M1)*
-- **Send email:** To (the customer's email by default; editable, proposal), Subject, Heading, Message, each with "Add a variable". Note under the form: "An unsubscribe link is added automatically". *(M1)*
+- **Send email:** To (the customer's email by default; editable, proposal), Subject, Heading, Message, each with "Insert variable". Note under the form: "An unsubscribe link is added automatically". *(M1)*
   - **Preview** shows the email as the customer sees it, with sample data from a recent order or cart.
   - **Send test** sends it to the admin who is logged in.
-- **Add a variable:** lists only what the step can use, e.g. the coupon only below a Generate coupon step. *(M1)*
+- **Insert variable:** lists only what the step can use, e.g. the coupon only below a Generate coupon step. *(M1)*
 - **Condition:** yes/no checks (first order, unsubscribed, products not reviewed, …) need no value, only "Is true" or "Is false". *(M1)*
-- **Warnings before Turn on:** a step uses a coupon with no Generate coupon above it; a cart trigger while cart tracking is off. *(M1, M8)*
+- **Warnings before Activate:** a step uses a coupon with no Generate coupon above it; a cart trigger while cart tracking is off. *(M1, M8)*
 
 **States:**
 - Preview with no recent order or cart uses made-up sample data, labelled "Sample data".
@@ -111,12 +118,13 @@ We chose these 8 because they cover what merchants install an automation plugin 
 **Today:** the workflow diagram, version history, and an empty "Workflow runs" placeholder.
 
 **v1.0 adds:**
+- **Summary row** *([identity](plan-identity.md))*: status (e.g. "Active since Oct 2"), trigger, runs in the last 30 days, last run.
 - **Workflow runs** table: started, what it ran for (order number, cart, customer), status (Running, Waiting until …, Completed, Failed, Cancelled), steps run. Pages and a status filter.
-- **Run detail:** click a run to see each step with its result and time, e.g. "Condition → False", "Wait → until Oct 9, 3:00 PM", "Send email → sent to a@b.com", "Generate coupon → YAY-7K2P", with a link to the order or customer.
-- Turn off and Apply changes say how many waiting runs will be cancelled. Cancelled runs show "Cancelled" right away, never "Waiting until …".
+- **Run detail:** click a run to see each step with its result and time, e.g. "Condition → No", "Wait → until Oct 9, 3:00 PM", "Send email → sent to a@b.com", "Generate coupon → YAY-7K2P", with a link to the order or customer.
+- Deactivate and Update say how many waiting runs will be cancelled. Cancelled runs show "Cancelled" right away, never "Waiting until …".
 
 **States:**
-- No runs yet: the existing "Workflow runs will show up here" empty state.
+- No runs yet: an empty state that says "No runs yet" and "Each time an order starts this workflow, the run shows up here with every step's result."
 - Loading: placeholder rows.
 - A failed run shows its error in the row and in the detail.
 - Skipped emails show why, e.g. the customer unsubscribed.
@@ -160,7 +168,7 @@ We chose these 8 because they cover what merchants install an automation plugin 
 
 **Today:** only the staff email (High-value order alert).
 
-**v1.0 adds:** every customer email uses the store's WooCommerce email look (logo, colors, footer) and has a subject, a heading and a message the store owner can edit. Ready-made blocks are added from "Add a variable":
+**v1.0 adds:** every customer email uses the store's WooCommerce email look (logo, colors, footer) and has a subject, a heading and a message the store owner can edit. Ready-made blocks are added from "Insert variable":
 
 | Workflow | What the shopper sees |
 |---|---|
@@ -264,7 +272,7 @@ v1.0 can ship when all of these are true:
 1. **Every one of the 18 templates** installs, turns on, starts from a real store event, runs end to end (including waits), and the email arrives in the inbox with correct content.
 2. Unsubscribe works: the link unsubscribes, and that customer gets no more workflow emails.
 3. Coupons from templates work at checkout and expire as set.
-4. Turning a workflow off stops it right away, including runs that are waiting.
+4. Deactivating a workflow stops it right away, including runs that are waiting.
 5. Restore-cart links refill the cart, and a recovered order stops the reminder series.
 6. Works with classic and block checkout, light and dark admin themes; all text translatable.
 7. Release checklist items picked for v1.0 (below) are done.
