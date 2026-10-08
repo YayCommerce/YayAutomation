@@ -28,7 +28,7 @@ export const schema = withKnownVariables(
     message: required(),
   }),
   ['to', 'subject', 'heading', 'message'],
-  // While the block itself is coming soon, it may use fields that are too.
+  // While the step itself is coming soon, it may use fields that are too.
   { allowPending: isPendingStep('send_email') },
 );
 

@@ -73,7 +73,7 @@ export function unknownVariable(...texts: string[]) {
   return firstUnknown(texts, false);
 }
 
-/** `unknownVariable()` for a block still coming soon: fields PHP doesn't have yet are fine there. */
+/** `unknownVariable()` for a step still coming soon: fields PHP doesn't have yet are fine there. */
 export function unknownVariableAllowingPending(...texts: string[]) {
   return firstUnknown(texts, true);
 }

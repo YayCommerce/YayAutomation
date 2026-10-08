@@ -25,11 +25,11 @@ export function ChangeOrderStatusForm({ config, onChange }: StepFormProps<Change
         {(field) => (
           <ConfigField
             label={__('New status', 'yay-automation')}
-            htmlFor="block-order-status"
+            htmlFor="step-order-status"
             errors={field.state.meta.errors}
           >
             <Select value={field.state.value} onValueChange={field.handleChange}>
-              <SelectTrigger id="block-order-status" className="w-full" aria-invalid={markInvalid(field.state.meta)}>
+              <SelectTrigger id="step-order-status" className="w-full" aria-invalid={markInvalid(field.state.meta)}>
                 <SelectValue placeholder={__('Choose a status', 'yay-automation')} />
               </SelectTrigger>
               <SelectContent>

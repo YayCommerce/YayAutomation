@@ -80,7 +80,7 @@ describe('graph queries and updates', () => {
     expect(graph.nodes.find((node) => node.id === 'email')!.data.config).toEqual({ subject: 'Hi' });
   });
 
-  it('setNodeStep swaps the block and resets the config to its defaults', () => {
+  it('setNodeStep swaps the step and resets the config to its defaults', () => {
     const graph = setNodeStep(base(), 'email', 'add_order_note');
     const data = graph.nodes.find((node) => node.id === 'email')!.data;
     expect(data.block).toBe('add_order_note');

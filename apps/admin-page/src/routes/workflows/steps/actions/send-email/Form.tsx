@@ -40,14 +40,14 @@ export function SendEmailForm({ config, onChange }: StepFormProps<SendEmailConfi
       {(field) => (
         <ConfigField
           label={label}
-          htmlFor={`block-email-${name}`}
+          htmlFor={`step-email-${name}`}
           description={description}
           errors={field.state.meta.errors}
         >
           {name === 'message' ? (
             <Textarea
               ref={refs.message}
-              id="block-email-message"
+              id="step-email-message"
               rows={10}
               value={field.state.value}
               onChange={(event) => field.handleChange(event.target.value)}
@@ -57,7 +57,7 @@ export function SendEmailForm({ config, onChange }: StepFormProps<SendEmailConfi
           ) : (
             <Input
               ref={refs[name]}
-              id={`block-email-${name}`}
+              id={`step-email-${name}`}
               value={field.state.value}
               placeholder={placeholder}
               onChange={(event) => field.handleChange(event.target.value)}
@@ -73,8 +73,8 @@ export function SendEmailForm({ config, onChange }: StepFormProps<SendEmailConfi
 
   return (
     <FieldGroup>
-      <ConfigField label={__('From', 'yay-automation')} htmlFor="block-email-from" errors={[]}>
-        <Input id="block-email-from" value={sender.fromAddress} readOnly disabled />
+      <ConfigField label={__('From', 'yay-automation')} htmlFor="step-email-from" errors={[]}>
+        <Input id="step-email-from" value={sender.fromAddress} readOnly disabled />
         <FieldDescription className="flex justify-between gap-2">
           {__('The store email used to contact customers', 'yay-automation')}
           <Button asChild variant="link" size="sm" className="h-auto px-0">

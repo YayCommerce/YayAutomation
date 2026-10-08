@@ -22,7 +22,7 @@ const MARKED = new RegExp(
   'g',
 );
 
-/** A block summary with its values in bold and its placeholders in italics. */
+/** A step summary with its values in bold and its placeholders in italics. */
 export function SummaryText({ text }: { text: string }) {
   const parts: ReactNode[] = [];
   let last = 0;

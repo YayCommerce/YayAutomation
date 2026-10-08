@@ -1,7 +1,7 @@
 {
     "plugin": {
         "pluginUrl": "https://example.test/wp-content/plugins/yay-automation/",
-        "version": "0.1.0"
+        "version": "0.0.0"
     },
     "wp": {
         "restRoot": "https://example.test/wp-json/",

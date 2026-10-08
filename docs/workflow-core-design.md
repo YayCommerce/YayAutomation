@@ -6,19 +6,21 @@
 
 ## §0 Current state (v0.1)
 
+Paths are after F0 (move and rename); the behavior described is v0.1's.
+
 | Area | Today | File |
 |---|---|---|
-| Storage | CPT `yay_automation_wf` + post meta (status, trigger id, live graph JSON, draft graph JSON). Versions in table `yay_automation_versions` | `includes/Engine/Workflows/WorkflowRepository.php`, `VersionStore.php` |
-| Graph | React Flow shape (nodes with positions, edges). Tree: one parent per step, one child per handle. Kinds: trigger, condition (`then` / `otherwise`), action | `includes/Engine/Workflows/WorkflowValidator.php` |
-| Trigger → queue | Triggers hook WP actions → `collect()` while the request runs → `flush()` at shutdown → `meta_query` for active workflows → `claim()` → `matches()` → one Action Scheduler async job per workflow | `includes/Engine/Workflows/Runner.php` |
+| Storage | CPT `yay_automation_wf` + post meta (status, trigger id, live graph JSON, draft graph JSON). Versions in table `yay_automation_versions` | `includes/Workflow/Storage/WorkflowRepository.php`, `VersionStore.php` |
+| Graph | React Flow shape (nodes with positions, edges). Tree: one parent per step, one child per handle. Kinds: trigger, condition (`then` / `otherwise`), action | `includes/Workflow/Definition/WorkflowValidator.php` |
+| Trigger → queue | Triggers hook WP actions → `collect()` while the request runs → `flush()` at shutdown → `meta_query` for active workflows → `claim()` → `matches()` → one Action Scheduler async job per workflow | `includes/Workflow/Runtime/Runner.php` |
 | Execution | One job walks the whole graph at once. It reads the live graph at run time, not the version live when the event happened | `Runner::run()` |
 | Run state | None. Errors go to the WooCommerce log. No runs, step results or outputs are stored | `includes/Utils/Logger.php` |
-| Context | Item id => live PHP object (`WC_Order`), rebuilt from event args. Can't be saved mid-run | `Blocks/Triggers/OrderTrigger.php` |
-| Data | Fields typed number / string / enum / date. 3 items: order, customer, site. Merge tags have 2 parts (`{{ order.total }}`). No booleans, lists, relations or step outputs | `includes/Engine/Data/` |
-| Actions | `run()` returns `true` or `WP_Error`, no output | `Blocks/Core/Action.php` |
+| Context | Item id => live PHP object (`WC_Order`), rebuilt from event args. Can't be saved mid-run | `Workflow/Steps/Triggers/OrderTrigger.php` |
+| Data | Fields typed number / string / enum / date. 3 items: order, customer, site. Merge tags have 2 parts (`{{ order.total }}`). No booleans, lists, relations or step outputs | `includes/Workflow/Data/` |
+| Actions | `run()` returns `true` or `WP_Error`, no output | `Workflow/Steps/Core/Action.php` |
 | Loop guard | In-memory chain of workflow ids per subject, passed in job args | `Runner::collect()` |
-| Extending | Hard-coded lists in `BlockRegistry`, `DataRegistry`, `Plugins`. No hooks | `Blocks/Core/BlockRegistry.php` |
-| Validation | Written twice: PHP `validate()` must match each block's TS `schema.ts` by hand | `Blocks/Core/Block.php` |
+| Extending | Hard-coded lists in `StepRegistry`, `DataRegistry`, `Plugins`. No hooks | `Workflow/Steps/Core/StepRegistry.php` |
+| Validation | Written twice: PHP `validate()` must match each step's TS `schema.ts` by hand | `Workflow/Steps/Core/Step.php` |
 
 **Keep:** batching at shutdown, `claim()` for once-per-subject triggers, the sanitize / validate split, versions, `uses()` / `provides()` checks, "never throw into the host request", Action Scheduler.
 

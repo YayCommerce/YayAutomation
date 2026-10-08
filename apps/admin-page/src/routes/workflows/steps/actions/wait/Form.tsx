@@ -31,13 +31,13 @@ export function WaitForm({ config, onChange }: StepFormProps<WaitConfig>) {
         {(amount) => (
           <ConfigField
             label={__('Wait for', 'yay-automation')}
-            htmlFor="block-wait-amount"
+            htmlFor="step-wait-amount"
             description={__('Then the workflow continues with the next step.', 'yay-automation')}
             errors={amount.state.meta.errors}
           >
             <div className="flex gap-2">
               <Input
-                id="block-wait-amount"
+                id="step-wait-amount"
                 inputMode="numeric"
                 className="w-28"
                 value={amount.state.value}

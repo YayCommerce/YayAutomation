@@ -9,7 +9,7 @@ import type { DataFieldType, DataItemMeta, PluginMeta, StepMeta } from '@/types/
  * soon" as soon as PHP sends it. Once PHP sends everything here, delete this file and read
  * `window.yayAutomationMeta.automation` directly again.
  *
- * What PHP has to match: the YayAutomation plugin in `Workflow\Extend\Plugins` and Condition's `plugin`, each pending block's `schema.ts` (its `sanitize()` / `validate()`), the
+ * What PHP has to match: the YayAutomation plugin in `Workflow\Extend\Plugins` and Condition's `plugin`, each pending step's `schema.ts` (its `sanitize()` / `validate()`), the
  * meta and fields below, boolean operators with no value (`needsValue()`), and action `provides`
  * in `WorkflowValidator` (`availableData()`).
  */
@@ -24,8 +24,8 @@ const plugins: PluginMeta[] = [
   },
 ];
 
-/** Meta PHP sends for a block but without these keys. */
-const blockExtras: Partial<Record<StepId, Partial<StepMeta>>> = {
+/** Meta PHP sends for a step but without these keys. */
+const stepExtras: Partial<Record<StepId, Partial<StepMeta>>> = {
   condition: { plugin: 'yayautomation' },
 };
 
@@ -140,13 +140,13 @@ export const automationMeta = {
   ...php,
   plugins: [...php.plugins, ...plugins.filter((plugin) => !php.plugins.some((p) => p.id === plugin.id))],
   steps: Object.fromEntries(
-    Object.entries({ ...steps, ...php.steps }).map(([id, meta]) => [id, { ...blockExtras[id as StepId], ...meta }]),
+    Object.entries({ ...steps, ...php.steps }).map(([id, meta]) => [id, { ...stepExtras[id as StepId], ...meta }]),
   ) as Record<StepId, StepMeta>,
   data: mergeData(),
   operators: { ...operators, ...php.operators } as Record<DataFieldType, string[]>,
 };
 
-/** The block's PHP side isn't built yet: shown, but can't be picked or installed. */
+/** The step's PHP side isn't built yet: shown, but can't be picked or installed. */
 export const isPendingStep = (id: StepId) => pendingSteps.has(id);
 
 /** The field's PHP side isn't built yet: shown, but can't be picked. */

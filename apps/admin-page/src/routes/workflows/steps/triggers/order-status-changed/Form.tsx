@@ -88,12 +88,12 @@ export function OrderStatusChangedForm({ config, onChange }: StepFormProps<Order
         {(field) => (
           <ConfigField
             label={__('Status changes from', 'yay-automation')}
-            htmlFor="block-status-from"
+            htmlFor="step-status-from"
             description={__('Leave empty for any previous status.', 'yay-automation')}
             errors={field.state.meta.errors}
           >
             <StatusMultiSelect
-              id="block-status-from"
+              id="step-status-from"
               value={field.state.value}
               onChange={field.handleChange}
               placeholder={__('Any status', 'yay-automation')}
@@ -107,12 +107,12 @@ export function OrderStatusChangedForm({ config, onChange }: StepFormProps<Order
         {(field) => (
           <ConfigField
             label={__('Status changes to', 'yay-automation')}
-            htmlFor="block-status-to"
+            htmlFor="step-status-to"
             description={__('Leave empty for any new status.', 'yay-automation')}
             errors={field.state.meta.errors}
           >
             <StatusMultiSelect
-              id="block-status-to"
+              id="step-status-to"
               value={field.state.value}
               onChange={field.handleChange}
               placeholder={__('Any status', 'yay-automation')}
@@ -126,12 +126,12 @@ export function OrderStatusChangedForm({ config, onChange }: StepFormProps<Order
         {(field) => (
           <Field orientation="horizontal">
             <Checkbox
-              id="block-status-checkout"
+              id="step-status-checkout"
               checked={field.state.value}
               onCheckedChange={(checked) => field.handleChange(checked === true)}
             />
             <FieldContent>
-              <FieldLabel htmlFor="block-status-checkout">
+              <FieldLabel htmlFor="step-status-checkout">
                 {__('Only run for checkout orders', 'yay-automation')}
               </FieldLabel>
               <FieldDescription>

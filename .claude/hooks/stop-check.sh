@@ -1,13 +1,21 @@
 #!/usr/bin/env bash
-# Stop hook: build, tests and PHP lint for uncommitted changes. Skips a change set that already passed. Prints only on failure.
+# Stop hook: build, tests and PHP lint for this branch's changes (commits since develop + uncommitted).
+# Skips a state that already passed. Prints only on failure; exit 2 blocks the stop with stderr as the reason.
 root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0
 cd "$root" || exit 0
 cache="$(git rev-parse --git-dir)/claude-stop-check.hash"
 
-changed=$({ git diff --name-only HEAD; git ls-files --others --exclude-standard; } | sort -u)
+# Commits made during the turn count too, not only the working tree.
+base=$(git merge-base HEAD origin/develop 2>/dev/null || git merge-base HEAD develop 2>/dev/null || git rev-parse HEAD)
+untracked=$(git ls-files --others --exclude-standard)
+changed=$({ git diff --name-only "$base"; printf '%s\n' "$untracked"; } | grep -v '^$' | sort -u)
 [ -z "$changed" ] && exit 0
 
-hash=$({ git rev-parse HEAD; git diff HEAD; git ls-files -o --exclude-standard -z | xargs -0 cat 2>/dev/null; } | shasum | cut -d' ' -f1)
+hash=$({
+  git rev-parse HEAD
+  git diff HEAD
+  [ -n "$untracked" ] && printf '%s\n' "$untracked" | tr '\n' '\0' | xargs -0 cat 2>/dev/null
+} | shasum | cut -d' ' -f1)
 [ -f "$cache" ] && [ "$(cat "$cache")" = "$hash" ] && exit 0
 
 fail=""
@@ -17,7 +25,7 @@ if echo "$changed" | grep -qE '^(apps|packages)/|^(package\.json|pnpm-lock\.yaml
     fail+="Build failed:"$'\n'"${errs:-$(echo "$out" | tail -25)}"$'\n'
   fi
   if ! out=$(pnpm test 2>&1); then
-    errs=$(echo "$out" | grep -E 'FAIL|AssertionError|Error|✗|×' | head -25)
+    errs=$(echo "$out" | grep -E 'FAIL|AssertionError|Error|×' | head -25)
     fail+="Tests failed:"$'\n'"${errs:-$(echo "$out" | tail -25)}"$'\n'
   fi
 fi
@@ -38,7 +46,7 @@ if [ -n "$php_files" ]; then
 fi
 
 if [ -n "$fail" ]; then
-  printf '%s' "$fail" | php -r 'echo json_encode(["decision" => "block", "reason" => stream_get_contents(STDIN)]);'
-else
-  echo "$hash" > "$cache"
+  printf '%s' "$fail" >&2
+  exit 2
 fi
+echo "$hash" > "$cache"

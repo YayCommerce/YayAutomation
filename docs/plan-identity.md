@@ -33,9 +33,9 @@ Ordered from strongest to weakest signal. Layout direction is also a strong sign
 | True/False tabs inside the condition card | `NodeCardView.tsx` (`branchLeft`) |
 | "Review" / "Error" tab above the card | `NodeCardView.tsx`, `pages/editor/IssueBanner.tsx` |
 | S-curve lines | `shared/canvas/CurvedEdge.tsx`, `EdgeArrow.tsx`, `flow.ts` |
-| Picker: plugin box with back button, text-only rows | `pages/editor/BlockPicker.tsx`, `StepPanel.tsx` |
-| "Add a variable" modal with raw ids (`order`, `customer`, `site`) | `blocks/core/fields/VariablePicker.tsx`, `AddVariable.tsx` |
-| Condition form: "IF", AND/OR select, "Add criteria" | `blocks/conditions/criteria/Form.tsx` |
+| Picker: plugin box with back button, text-only rows | `pages/editor/StepPicker.tsx`, `StepPanel.tsx` |
+| "Add a variable" modal with raw ids (`order`, `customer`, `site`) | `steps/core/fields/VariablePicker.tsx`, `AddVariable.tsx` |
+| Condition form: "IF", AND/OR select, "Add criteria" | `steps/conditions/criteria/Form.tsx` |
 | Start page: illustration, prompt box, "Or", round buttons | `pages/list/CreateWorkflowDialog.tsx` |
 | Library: dashed filter pills, text-only cards | `pages/list/library/TemplatesDialog.tsx`, `LibraryFilters.tsx` |
 | Template preview: "More templates", floating "About this template", "Install" | `pages/template-preview/TemplatePreviewPage.tsx` |

@@ -84,15 +84,15 @@ export const sameItems = (a: string[], b: string[]) => a.length === b.length && 
 
 /** The one issue of a step's own settings. Mirrors PHP `WorkflowValidator::step_error()`. */
 function stepIssue(node: WorkflowNode, available: string[] | null): Omit<WorkflowIssue, 'nodeId'> | null {
-  const block = stepOf(node.data);
-  if (!block) {
+  const stepDef = stepOf(node.data);
+  if (!stepDef) {
     return node.kind === 'action' ? { code: 'no_block', message: __('Select an action', 'yay-automation') } : null;
   }
 
-  const error = block.firstError(node.data.config);
+  const error = stepDef.firstError(node.data.config);
   if (error) return { code: 'invalid_config', message: error };
 
-  const missing = available && block.uses(node.data.config).find((item) => !available.includes(item));
+  const missing = available && stepDef.uses(node.data.config).find((item) => !available.includes(item));
   if (missing) {
     return {
       code: 'missing_data',

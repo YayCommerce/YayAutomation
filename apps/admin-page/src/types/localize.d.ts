@@ -8,7 +8,7 @@ export interface PluginMeta {
   active: boolean;
 }
 
-/** PHP `StepRegistry::to_client()`: what the engine knows about each block. */
+/** PHP `StepRegistry::to_client()`: what the engine knows about each step. */
 export interface StepMeta {
   kind: WorkflowNodeKind;
   /** Triggers and actions. */

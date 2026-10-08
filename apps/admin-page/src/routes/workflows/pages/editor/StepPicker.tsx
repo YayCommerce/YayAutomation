@@ -30,8 +30,8 @@ const searchLabels: Record<PickableKind, string> = {
 const matches = (text: string, query: string) => text.toLowerCase().includes(query.trim().toLowerCase());
 
 /**
- * Picks a trigger or action block: active plugins first (icon, name, count), then that plugin's
- * steps. Searching from the plugin list searches every block. With `available` (actions), steps
+ * Picks a trigger or action step: active plugins first (icon, name, count), then that plugin's
+ * steps. Searching from the plugin list searches every step. With `available` (actions), steps
  * needing data the step can't read are dimmed and can't be picked; so are steps still coming soon.
  */
 export function StepPicker({
@@ -41,32 +41,32 @@ export function StepPicker({
 }: {
   kind: PickableKind;
   available?: string[];
-  onPick: (block: StepId) => void;
+  onPick: (stepId: StepId) => void;
 }) {
   const [plugin, setPlugin] = useState<WorkflowPlugin | null>(null);
   const [query, setQuery] = useState('');
 
   const choices = Object.values(steps).filter(
-    (block) => block.kind === kind && block.plugin && plugins[block.plugin].active,
+    (stepDef) => stepDef.kind === kind && stepDef.plugin && plugins[stepDef.plugin].active,
   );
-  const pluginIds = [...new Set(choices.map((block) => block.plugin!))];
-  const missingData = (block: Step) => block.requires.find((item) => available && !available.includes(item));
+  const pluginIds = [...new Set(choices.map((stepDef) => stepDef.plugin!))];
+  const missingData = (stepDef: Step) => stepDef.requires.find((item) => available && !available.includes(item));
 
   const open = (id: WorkflowPlugin | null) => {
     setPlugin(id);
     setQuery('');
   };
 
-  const blockRows = (list: Step[]) =>
-    list.map((block) => {
-      const missing = missingData(block);
+  const stepRows = (list: Step[]) =>
+    list.map((stepDef) => {
+      const missing = missingData(stepDef);
       return (
         <StepRow
-          key={block.id}
-          block={block}
+          key={stepDef.id}
+          step={stepDef}
           showPlugin={!plugin}
           disabledReason={
-            block.comingSoon
+            stepDef.comingSoon
               ? comingSoonLabel
               : missing &&
                 /* translators: %s: data item, e.g. "Order" */
@@ -75,16 +75,17 @@ export function StepPicker({
                   itemLabel(missing),
                 )
           }
-          onPick={() => onPick(block.id)}
+          onPick={() => onPick(stepDef.id)}
         />
       );
     });
 
   let list: ReactNode;
   if (plugin) {
-    const own = choices.filter((block) => block.plugin === plugin && matches(block.label, query));
+    const own = choices.filter((stepDef) => stepDef.plugin === plugin && matches(stepDef.label, query));
     // Actions come in sections (Email, Order, …); triggers are one list.
-    const sections = kind === 'action' ? [...new Set(own.map((block) => block.category!))] : own.length ? [null] : [];
+    const sections =
+      kind === 'action' ? [...new Set(own.map((stepDef) => stepDef.category!))] : own.length ? [null] : [];
     list = sections.map((category) => (
       <section key={category ?? 'all'}>
         {category && (
@@ -92,11 +93,11 @@ export function StepPicker({
             {categoryLabels[category]}
           </h3>
         )}
-        {blockRows(own.filter((block) => !category || block.category === category))}
+        {stepRows(own.filter((stepDef) => !category || stepDef.category === category))}
       </section>
     ));
   } else if (query.trim()) {
-    list = blockRows(choices.filter((block) => matches(`${block.label} ${plugins[block.plugin!].label}`, query)));
+    list = stepRows(choices.filter((stepDef) => matches(`${stepDef.label} ${plugins[stepDef.plugin!].label}`, query)));
   } else {
     list = pluginIds.map((id) => (
       <PickerRow key={id} onClick={() => open(id)}>
@@ -104,7 +105,7 @@ export function StepPicker({
         <span className="min-w-0 flex-1">
           <span className="flex items-center gap-2 font-medium">
             {plugins[id].label}
-            <Badge variant="dimmed">{choices.filter((block) => block.plugin === id).length}</Badge>
+            <Badge variant="dimmed">{choices.filter((stepDef) => stepDef.plugin === id).length}</Badge>
           </span>
           <span className="text-muted-foreground block text-xs">{plugins[id].description}</span>
         </span>
@@ -178,25 +179,25 @@ function PickerRow({ onClick, disabled, children }: { onClick: () => void; disab
 }
 
 function StepRow({
-  block,
+  step: stepDef,
   showPlugin,
   disabledReason,
   onPick,
 }: {
-  block: Step;
+  step: Step;
   showPlugin: boolean;
   disabledReason?: string;
   onPick: () => void;
 }) {
   const row = (
     <PickerRow onClick={onPick} disabled={!!disabledReason}>
-      {showPlugin && <PluginIcon plugin={block.plugin!} />}
+      {showPlugin && <PluginIcon plugin={stepDef.plugin!} />}
       <span className="min-w-0 flex-1">
         <span className="flex items-center gap-2 font-medium">
-          {block.label}
-          {block.comingSoon && <Badge variant="dimmed">{comingSoonLabel}</Badge>}
+          {stepDef.label}
+          {stepDef.comingSoon && <Badge variant="dimmed">{comingSoonLabel}</Badge>}
         </span>
-        <span className="text-muted-foreground block text-xs">{block.description}</span>
+        <span className="text-muted-foreground block text-xs">{stepDef.description}</span>
       </span>
     </PickerRow>
   );

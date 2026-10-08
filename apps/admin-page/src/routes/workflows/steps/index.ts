@@ -14,8 +14,8 @@ export type { Step } from './core/types';
 export { SummaryText } from './core/defineStep';
 
 /**
- * Every block the editor knows. To add one: create its folder under triggers/, conditions/ or
- * actions/ (named after the block id in kebab-case), add its PHP class, and list it here.
+ * Every step the editor knows. To add one: create its folder under triggers/, conditions/ or
+ * actions/ (named after the step id in kebab-case), add its PHP class, and list it here.
  */
 export const { steps, newNodeData, withStep, stepOf } = createRegistry(
   [

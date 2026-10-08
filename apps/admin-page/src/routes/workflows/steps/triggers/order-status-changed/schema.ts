@@ -11,7 +11,7 @@ export const statuses = window.yayAutomationMeta.wc.orderStatuses;
 
 export const statusLabel = (value: string) => statuses.find((status) => status.value === value)?.label ?? value;
 
-/** Without WooCommerce there's nothing to check against; the PHP block skips the check too. */
+/** Without WooCommerce there's nothing to check against; the PHP step skips the check too. */
 const isKnown = (value: string) => statuses.length === 0 || statuses.some((status) => status.value === value);
 
 const statusList = v.pipe(

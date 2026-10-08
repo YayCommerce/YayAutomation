@@ -103,6 +103,6 @@ function updateNodeData(
 export const updateNodeConfig = (graph: WorkflowGraph, nodeId: string, config: Record<string, unknown>) =>
   updateNodeData(graph, nodeId, (data) => ({ ...data, config }));
 
-/** Chooses (or swaps) a trigger's or action's block; its config resets to that block's defaults. */
-export const setNodeStep = (graph: WorkflowGraph, nodeId: string, block: StepId) =>
-  updateNodeData(graph, nodeId, (data) => withStep(data, block));
+/** Chooses (or swaps) a trigger's or action's step; its config resets to that step's defaults. */
+export const setNodeStep = (graph: WorkflowGraph, nodeId: string, stepId: StepId) =>
+  updateNodeData(graph, nodeId, (data) => withStep(data, stepId));

@@ -36,13 +36,13 @@ function graph({
     column: number,
     row: number,
     kind: WorkflowNode['kind'],
-    block: StepId,
+    stepId: StepId,
     config: Record<string, unknown>,
   ): WorkflowNode => ({
     id,
     kind,
     position: { x: -BRANCH_OFFSET * column, y: ROW_GAP * row },
-    data: { block, config },
+    data: { block: stepId, config },
   });
 
   const nodes: WorkflowNode[] = [

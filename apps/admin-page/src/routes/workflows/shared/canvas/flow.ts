@@ -98,10 +98,10 @@ export function toFlowNodes(graph: WorkflowGraph, heights: Record<string, number
   }));
 }
 
-/** Not set up yet: no block chosen, or settings still missing (e.g. a condition with no criteria). */
+/** Not set up yet: no step chosen, or settings still missing (e.g. a condition with no criteria). */
 function isPending(data: WorkflowNodeData) {
-  const block = stepOf(data);
-  return !block || block.firstError(data.config) !== null;
+  const stepDef = stepOf(data);
+  return !stepDef || stepDef.firstError(data.config) !== null;
 }
 
 /**

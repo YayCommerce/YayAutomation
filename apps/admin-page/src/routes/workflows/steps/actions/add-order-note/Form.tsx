@@ -28,14 +28,14 @@ export function AddOrderNoteForm({ config, onChange }: StepFormProps<AddOrderNot
         {(field) => (
           <ConfigField
             label={__('Note type', 'yay-automation')}
-            htmlFor="block-note-type"
+            htmlFor="step-note-type"
             errors={field.state.meta.errors}
           >
             <Select
               value={field.state.value}
               onValueChange={(type) => field.handleChange(type as AddOrderNoteConfig['type'])}
             >
-              <SelectTrigger id="block-note-type" className="w-full">
+              <SelectTrigger id="step-note-type" className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -49,10 +49,10 @@ export function AddOrderNoteForm({ config, onChange }: StepFormProps<AddOrderNot
 
       <form.Field name="note">
         {(field) => (
-          <ConfigField label={__('Note', 'yay-automation')} htmlFor="block-note-text" errors={field.state.meta.errors}>
+          <ConfigField label={__('Note', 'yay-automation')} htmlFor="step-note-text" errors={field.state.meta.errors}>
             <Textarea
               ref={noteRef}
-              id="block-note-text"
+              id="step-note-text"
               rows={5}
               value={field.state.value}
               onChange={(event) => field.handleChange(event.target.value)}

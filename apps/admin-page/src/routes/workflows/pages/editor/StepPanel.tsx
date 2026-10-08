@@ -40,8 +40,8 @@ const kindOfPlugin = (node: WorkflowNode, plugin: string) =>
   })[node.kind];
 
 /**
- * Content of the open step's panel (inside `StepPanelFrame`): its block picker while a trigger or
- * action has none (or `picking`, to swap), then the block's header and settings. Edits go straight into the form; autosave persists them.
+ * Content of the open step's panel (inside `StepPanelFrame`): its step picker while a trigger or
+ * action has none (or `picking`, to swap), then the step's header and settings. Edits go straight into the form; autosave persists them.
  */
 export function StepPanel({
   nodeId,
@@ -76,7 +76,7 @@ export function StepPanel({
   const triggerLabel = triggerStep?.label ?? null;
   if (!node) return null;
 
-  const block = stepOf(node.data);
+  const stepDef = stepOf(node.data);
   const update = (change: (graph: WorkflowGraph) => WorkflowGraph) => form.setFieldValue('graph', change);
 
   const close = closable && (
@@ -85,7 +85,7 @@ export function StepPanel({
     </Button>
   );
 
-  if (node.kind !== 'condition' && (!block || picking)) {
+  if (node.kind !== 'condition' && (!stepDef || picking)) {
     const pick = (id: StepId) => {
       update((graph) => setNodeStep(graph, node.id, id));
       onPicked();
@@ -102,9 +102,9 @@ export function StepPanel({
       </>
     );
   }
-  if (!block) return null;
+  if (!stepDef) return null;
 
-  const Icon = block.icon ?? kindMeta[node.kind].icon;
+  const Icon = stepDef.icon ?? kindMeta[node.kind].icon;
   return (
     <>
       <div className="flex items-start gap-3 border-b p-4">
@@ -113,26 +113,26 @@ export function StepPanel({
         </span>
         <div className="min-w-0 flex-1">
           <h2 className="text-sm font-semibold">
-            {block.label}
-            {block.plugin && (
+            {stepDef.label}
+            {stepDef.plugin && (
               <span className="text-muted-foreground font-normal">
                 {' • '}
-                {kindOfPlugin(node, plugins[block.plugin].label)}
+                {kindOfPlugin(node, plugins[stepDef.plugin].label)}
               </span>
             )}
           </h2>
-          <p className="text-muted-foreground mt-0.5 text-xs">{block.description}</p>
+          <p className="text-muted-foreground mt-0.5 text-xs">{stepDef.description}</p>
         </div>
         {close}
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto p-4">
-        {block.Form ? (
+        {stepDef.Form ? (
           <FeedbackContext.Provider value={feedback}>
             <VariableScopeContext.Provider value={{ available, trigger: triggerLabel }}>
-              {/* Keyed by step and block, so switching either starts a fresh form. */}
-              <block.Form
-                key={`${node.id}:${block.id}`}
+              {/* Keyed by step and step, so switching either starts a fresh form. */}
+              <stepDef.Form
+                key={`${node.id}:${stepDef.id}`}
                 config={node.data.config}
                 onChange={(config) => update((graph) => updateNodeConfig(graph, node.id, config))}
               />

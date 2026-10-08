@@ -18,7 +18,7 @@ export function createTemplateRegistry(list: WorkflowTemplate[]) {
   if (import.meta.env.DEV) {
     for (const template of list) {
       // Shape first (what Install's save would reject), then issues (what Turn on would reject);
-      // the issue check assumes every block exists.
+      // the issue check assumes every step exists.
       const broken = structureErrors(template.graph);
       const problems = broken.length
         ? broken

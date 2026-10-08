@@ -27,12 +27,12 @@ export function UpdateOrderMetaForm({ config, onChange }: StepFormProps<UpdateOr
         {(field) => (
           <ConfigField
             label={__('Field name', 'yay-automation')}
-            htmlFor="block-meta-key"
+            htmlFor="step-meta-key"
             description={__('The meta key, e.g. _vip_order.', 'yay-automation')}
             errors={field.state.meta.errors}
           >
             <Input
-              id="block-meta-key"
+              id="step-meta-key"
               value={field.state.value}
               onChange={(event) => field.handleChange(event.target.value)}
               onBlur={field.handleBlur}
@@ -44,14 +44,10 @@ export function UpdateOrderMetaForm({ config, onChange }: StepFormProps<UpdateOr
 
       <form.Field name="value">
         {(field) => (
-          <ConfigField
-            label={__('Value', 'yay-automation')}
-            htmlFor="block-meta-value"
-            errors={field.state.meta.errors}
-          >
+          <ConfigField label={__('Value', 'yay-automation')} htmlFor="step-meta-value" errors={field.state.meta.errors}>
             <Input
               ref={valueRef}
-              id="block-meta-value"
+              id="step-meta-value"
               value={field.state.value}
               onChange={(event) => field.handleChange(event.target.value)}
               onBlur={field.handleBlur}

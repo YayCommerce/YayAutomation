@@ -24,8 +24,8 @@ type Tab = 'all' | 'active' | 'inactive';
 
 function triggerSummary(workflow: Workflow) {
   const trigger = workflow.graph.nodes.find((node) => node.kind === 'trigger');
-  const block = trigger && stepOf(trigger.data);
-  return block ? <SummaryText text={block.summary(trigger.data.config)} /> : '—';
+  const stepDef = trigger && stepOf(trigger.data);
+  return stepDef ? <SummaryText text={stepDef.summary(trigger.data.config)} /> : '—';
 }
 
 function TableHeadRow({ select }: { select: ReactNode }) {

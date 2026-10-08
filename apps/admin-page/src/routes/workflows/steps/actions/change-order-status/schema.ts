@@ -12,7 +12,7 @@ export const schema = v.object({
   status: v.pipe(
     v.string(),
     v.check(
-      // Without WooCommerce there's nothing to check against; the PHP block skips the check too.
+      // Without WooCommerce there's nothing to check against; the PHP step skips the check too.
       (status) => status !== '' && (statuses.length === 0 || statuses.some((s) => s.value === status)),
       chooseStatus,
     ),

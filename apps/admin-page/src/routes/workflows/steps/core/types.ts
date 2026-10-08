@@ -14,7 +14,7 @@ export interface StepFormProps<TConfig> {
   onChange: (config: TConfig) => void;
 }
 
-/** What a block folder passes to `defineStep()`. Plugin and data facts come from PHP (`StepMeta`). */
+/** What a step folder passes to `defineStep()`. Plugin and data facts come from PHP (`StepMeta`). */
 export interface StepSpec<TConfig extends Config> {
   id: StepId;
   kind: WorkflowNodeKind;
@@ -22,29 +22,29 @@ export interface StepSpec<TConfig extends Config> {
   description: string;
   /**
    * The one source of truth for a valid config: field errors in the form and the workflow's
-   * `invalid_config` issue. Must accept exactly what the PHP block's `validate()` accepts.
+   * `invalid_config` issue. Must accept exactly what the PHP step's `validate()` accepts.
    */
   schema: v.GenericSchema<TConfig>;
   defaults: () => TConfig;
   /**
-   * Brings stored config into the current shape: fills missing keys. Mirrors the PHP block's
+   * Brings stored config into the current shape: fills missing keys. Mirrors the PHP step's
    * `sanitize()`. Defaults to merging over `defaults()`.
    */
   normalize?: (config: Config) => TConfig;
   /**
-   * Data items the step reads with this config. Mirrors the PHP block's `uses()`. Defaults to the
-   * block's `requires` plus the items of every merge tag in the config's text.
+   * Data items the step reads with this config. Mirrors the PHP step's `uses()`. Defaults to the
+   * step's `requires` plus the items of every merge tag in the config's text.
    */
   uses?: (config: TConfig) => string[];
   /** Plain-language line for the node card. Gets incomplete config too, so show placeholders for gaps. */
   summary: (config: TConfig) => string;
   /** Replaces the step kind's icon on the card and in the panel header (e.g. a clock for Wait). */
   icon?: LucideIcon;
-  /** Omitted when the block has nothing to configure. */
+  /** Omitted when the step has nothing to configure. */
   Form?: ComponentType<StepFormProps<TConfig>>;
 }
 
-/** A block with its config type erased, so one registry can hold them all. Every method normalizes first. */
+/** A step with its config type erased, so one registry can hold them all. Every method normalizes first. */
 export interface Step {
   id: StepId;
   kind: WorkflowNodeKind;

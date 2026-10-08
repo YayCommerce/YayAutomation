@@ -12,6 +12,8 @@
 *.xml
 vendor-prefixed/
 composer.lock
+# Pinned dev tools: CI and every machine lint with the same versions.
+!/dev/tools/*/composer.lock
 
 # Logs
 logs

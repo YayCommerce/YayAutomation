@@ -1,7 +1,7 @@
 import { createContext, useContext } from 'react';
 
 /**
- * How a block form shows its errors, set by the editor per step:
+ * How a step form shows its errors, set by the editor per step:
  * - `none`: quiet, the step is being filled in for the first time;
  * - `review`: blue tint + message, the step was left unfinished;
  * - `error`: red, a Turn on / Apply failed.

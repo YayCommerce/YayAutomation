@@ -34,12 +34,13 @@ cp "$PROJECT_PATH/composer.json" "$PROJECT_PATH/composer.lock" "$DEST_PATH/"
 composer dump-autoload --optimize --classmap-authoritative --no-dev --working-dir="$DEST_PATH" || exit 1
 rm -f "$DEST_PATH/composer.json" "$DEST_PATH/composer.lock"
 
-# Check if tools directory exists before running lint
-if command -v phpcbf >/dev/null 2>&1; then
+# Same pinned tools as `pnpm lint:php` (installed by ./run.sh setup).
+PHPCBF="$PROJECT_PATH/dev/tools/lintphp/vendor/bin/phpcbf"
+if [[ -x $PHPCBF ]]; then
     echo "Run lint"
-    phpcbf --standard="$PROJECT_PATH/phpcs.xml" "$DEST_PATH" || true
+    "$PHPCBF" --standard="$PROJECT_PATH/phpcs.xml" "$DEST_PATH" || true
 else
-    echo "Skipping lint: phpcbf not found."
+    echo "Skipping lint: run ./run.sh setup to install the PHP lint tools."
 fi
 
 # Remove development code

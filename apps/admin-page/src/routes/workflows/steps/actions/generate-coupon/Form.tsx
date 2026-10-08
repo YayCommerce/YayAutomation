@@ -37,12 +37,12 @@ export function GenerateCouponForm({ config, onChange }: StepFormProps<GenerateC
       {(field) => (
         <ConfigField
           label={label}
-          htmlFor={`block-coupon-${name}`}
+          htmlFor={`step-coupon-${name}`}
           description={description}
           errors={field.state.meta.errors}
         >
           <Input
-            id={`block-coupon-${name}`}
+            id={`step-coupon-${name}`}
             value={field.state.value}
             placeholder={placeholder}
             inputMode={name === 'code_prefix' ? undefined : 'decimal'}
@@ -60,12 +60,12 @@ export function GenerateCouponForm({ config, onChange }: StepFormProps<GenerateC
       {(field) => (
         <Field orientation="horizontal">
           <Checkbox
-            id={`block-coupon-${name}`}
+            id={`step-coupon-${name}`}
             checked={field.state.value}
             onCheckedChange={(checked) => field.handleChange(checked === true)}
           />
           <FieldContent>
-            <FieldLabel htmlFor={`block-coupon-${name}`}>{label}</FieldLabel>
+            <FieldLabel htmlFor={`step-coupon-${name}`}>{label}</FieldLabel>
             <FieldDescription>{description}</FieldDescription>
           </FieldContent>
         </Field>
@@ -77,9 +77,9 @@ export function GenerateCouponForm({ config, onChange }: StepFormProps<GenerateC
     <FieldGroup>
       <form.Field name="discount_type">
         {(field) => (
-          <ConfigField label={__('Discount type', 'yay-automation')} htmlFor="block-coupon-type" errors={[]}>
+          <ConfigField label={__('Discount type', 'yay-automation')} htmlFor="step-coupon-type" errors={[]}>
             <Segmented
-              id="block-coupon-type"
+              id="step-coupon-type"
               shape="square"
               value={field.state.value}
               // Clicking the selected item would clear a single toggle group; keep a type chosen.

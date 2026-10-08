@@ -7,9 +7,13 @@ command -v wp >/dev/null || { echo "Missing: wp-cli"; exit 1; }
 out=apps/admin-page/src/test/fixtures/meta.json
 mkdir -p "$(dirname "$out")"
 
-# Site-specific and per-request values are replaced, so the file only changes when PHP does.
+# English labels; site-specific and per-request values replaced. WooCommerce option lists (statuses,
+# payment methods) still come from the site that ran it, so regenerate from a plain WooCommerce install.
 wp ${WP_PATH:+--path="$WP_PATH"} eval '
+switch_to_locale( "en_US" );
 $meta = \YayAutomation\Engine\BEPages\AdminPage::client_meta();
+$meta["plugin"]["version"]      = "0.0.0";
+$meta["wc"]["currencySymbol"]   = "$";
 $meta["plugin"]["pluginUrl"]  = "https://example.test/wp-content/plugins/yay-automation/";
 $meta["wp"]["restRoot"]       = "https://example.test/wp-json/";
 $meta["wp"]["restNonce"]      = "test-nonce";

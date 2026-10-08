@@ -29,8 +29,8 @@ export function SendInternalEmailForm({ config, onChange }: StepFormProps<SendIn
 
   return (
     <FieldGroup>
-      <ConfigField label={__('From', 'yay-automation')} htmlFor="block-email-from" errors={[]}>
-        <Input id="block-email-from" value={sender.fromAddress} readOnly disabled />
+      <ConfigField label={__('From', 'yay-automation')} htmlFor="step-email-from" errors={[]}>
+        <Input id="step-email-from" value={sender.fromAddress} readOnly disabled />
         <FieldDescription className="flex justify-between gap-2">
           {__('The store email used to contact customers', 'yay-automation')}
           <Button asChild variant="link" size="sm" className="h-auto px-0">
@@ -45,7 +45,7 @@ export function SendInternalEmailForm({ config, onChange }: StepFormProps<SendIn
         {(field) => (
           <ConfigField
             label={__('To', 'yay-automation')}
-            htmlFor="block-email-recipients"
+            htmlFor="step-email-recipients"
             description={__(
               'Separate addresses with commas. Leave blank to use the site admin email.',
               'yay-automation',
@@ -53,7 +53,7 @@ export function SendInternalEmailForm({ config, onChange }: StepFormProps<SendIn
             errors={field.state.meta.errors}
           >
             <Input
-              id="block-email-recipients"
+              id="step-email-recipients"
               value={field.state.value}
               placeholder={adminEmail}
               onChange={(event) => field.handleChange(event.target.value)}
@@ -68,12 +68,12 @@ export function SendInternalEmailForm({ config, onChange }: StepFormProps<SendIn
         {(field) => (
           <ConfigField
             label={__('Subject', 'yay-automation')}
-            htmlFor="block-email-subject"
+            htmlFor="step-email-subject"
             errors={field.state.meta.errors}
           >
             <Input
               ref={subjectRef}
-              id="block-email-subject"
+              id="step-email-subject"
               value={field.state.value}
               onChange={(event) => field.handleChange(event.target.value)}
               onBlur={field.handleBlur}
@@ -88,12 +88,12 @@ export function SendInternalEmailForm({ config, onChange }: StepFormProps<SendIn
         {(field) => (
           <ConfigField
             label={__('Message', 'yay-automation')}
-            htmlFor="block-email-message"
+            htmlFor="step-email-message"
             errors={field.state.meta.errors}
           >
             <Textarea
               ref={messageRef}
-              id="block-email-message"
+              id="step-email-message"
               rows={10}
               value={field.state.value}
               onChange={(event) => field.handleChange(event.target.value)}
