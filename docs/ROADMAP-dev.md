@@ -19,8 +19,8 @@ Changes from the ROADMAP-v1.0 order:
 
 | # | Phase | Size | Risk | Depends on | Status |
 |---|---|---|---|---|---|
-| F0 | Move and rename | S | 1 | — | ⏳ Done, merge pending |
-| F1 | Workflow Core foundation | L | 3 | F0 | Next |
+| F0 | Move and rename | S | 1 | — | ✅ Done |
+| F1 | Workflow Core foundation | L | 3 | F0 | In progress |
 | M1 | Customer emails + coupons | L | 3 | F1 | — |
 | M2 | Wait + run history | L | 3 | F1 | — |
 | F2 | Workflows table | M | 3 | F1 | — |
@@ -36,7 +36,7 @@ Changes from the ROADMAP-v1.0 order:
 | v2.0 | AI | L+ | 3 | v1.2 | — |
 | API | Public extension API | M | 2 | v1.2 stable | — |
 
-Status: ✅ done (merged into `develop`, CI green) · ⏳ done, merge pending · Next · — not started. Mark a phase and its items ✅ when it lands in `develop`.
+Status: ✅ done (merged into `develop`, CI green) · ⏳ done, merge pending · In progress · Next · — not started. Mark a phase and its items ✅ when it lands in `develop`.
 
 Risk scale as in ROADMAP-v1.0: 1 = easy to undo · 2 = new logic · 3 = stores data, runs in the background, emails shoppers or creates coupons.
 
@@ -44,7 +44,7 @@ Risk scale as in ROADMAP-v1.0: 1 = easy to undo · 2 = new logic · 3 = stores d
 
 ## F0 — Move and rename · S (1 day + ½ day baseline)
 
-**Status:** ⏳ All items done 2026-10-08 on `jack/refactor/move-rename` (commits `e225947`, `825a60f`, `998ac44`). Becomes ✅ when merged into `develop` with CI green.
+**Status:** ✅ Done 2026-10-08, PR #11 merged into `develop` with CI green (commits `e225947`, `825a60f`, `998ac44`).
 
 Do it when no feature branch is open: it touches every file, so it's cheapest as one quick PR that everyone rebases on once.
 
@@ -57,6 +57,8 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 - ✅ **F0.3** No behaviour change. Check: `pnpm build`, `pnpm lint:php`, `pnpm test` (same results as before F0), manual run of both triggers and all 4 actions.
 
 ## F1 — Workflow Core foundation · L (~3 weeks)
+
+**Status:** In progress, branch `jack/feature/workflow-core-foundation`.
 
 **Backend**
 - **F1.0 PHPUnit** *([plan-infra](plan-infra.md))* — plain unit tests, no WordPress loaded (`dev/tools/phpunit`); CI step. First tests: template parser, Validator v2, Scope.
