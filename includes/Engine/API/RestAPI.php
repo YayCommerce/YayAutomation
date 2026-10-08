@@ -1,10 +1,10 @@
 <?php
 namespace YayAutomation\Engine\API;
 
-use YayAutomation\Utils\SingletonTrait;
 use YayAutomation\Engine\BEPages\AdminPage;
-use YayAutomation\Engine\Workflows\WorkflowRepository;
-use YayAutomation\Engine\Workflows\WorkflowValidator;
+use YayAutomation\Utils\SingletonTrait;
+use YayAutomation\Workflow\Definition\WorkflowValidator;
+use YayAutomation\Workflow\Storage\WorkflowRepository;
 
 defined( 'ABSPATH' ) || exit;
 

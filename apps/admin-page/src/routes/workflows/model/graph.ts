@@ -1,6 +1,6 @@
-import type { BlockId, WorkflowBranch, WorkflowGraph, WorkflowNodeData, WorkflowNodeKind } from '@yay-automation/types';
+import type { StepId, WorkflowBranch, WorkflowGraph, WorkflowNodeData, WorkflowNodeKind } from '@yay-automation/types';
 
-import { newNodeData, withBlock } from '../blocks';
+import { newNodeData, withStep } from '../steps';
 
 /**
  * Pure graph updates: (graph, …args) → new graph. The form calls these through
@@ -104,5 +104,5 @@ export const updateNodeConfig = (graph: WorkflowGraph, nodeId: string, config: R
   updateNodeData(graph, nodeId, (data) => ({ ...data, config }));
 
 /** Chooses (or swaps) a trigger's or action's block; its config resets to that block's defaults. */
-export const setNodeBlock = (graph: WorkflowGraph, nodeId: string, block: BlockId) =>
-  updateNodeData(graph, nodeId, (data) => withBlock(data, block));
+export const setNodeStep = (graph: WorkflowGraph, nodeId: string, block: StepId) =>
+  updateNodeData(graph, nodeId, (data) => withStep(data, block));

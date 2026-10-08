@@ -5,7 +5,7 @@ import { Check, CircleAlert, GitBranch, Info, Play, X, Zap, type LucideIcon } fr
 import { __ } from '@wordpress/i18n';
 
 import { cn } from '@/lib/utils';
-import { blockOf, SummaryText } from '../../blocks';
+import { stepOf, SummaryText } from '../../steps';
 import { sourceHandleStyle, targetHandleStyle, type FlowNode } from './flow';
 
 /** How a step card marks an issue: blue "Review" (left unfinished) or red "Error" (after a failed Turn on / Apply). */
@@ -47,7 +47,7 @@ export function NodeCardView({
   children?: ReactNode;
 }) {
   const { label: kindLabel, icon: kindIcon, choose } = kindMeta[type];
-  const block = blockOf(data);
+  const block = stepOf(data);
   const Icon = block?.icon ?? kindIcon;
 
   return (

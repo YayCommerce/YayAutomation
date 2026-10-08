@@ -1,11 +1,11 @@
-import type { BlockId, WorkflowEdge, WorkflowGraph, WorkflowNode } from '@yay-automation/types';
+import type { StepId, WorkflowEdge, WorkflowGraph, WorkflowNode } from '@yay-automation/types';
 import { __ } from '@wordpress/i18n';
 
-import { defaults as couponDefaults, type GenerateCouponConfig } from '../../blocks/actions/generate-coupon/schema';
-import type { SendEmailConfig } from '../../blocks/actions/send-email/schema';
-import type { WaitConfig } from '../../blocks/actions/wait/schema';
-import type { Rule } from '../../blocks/conditions/criteria/schema';
 import { BRANCH_OFFSET, ROW_GAP } from '../../model/graph';
+import { defaults as couponDefaults, type GenerateCouponConfig } from '../../steps/actions/generate-coupon/schema';
+import type { SendEmailConfig } from '../../steps/actions/send-email/schema';
+import type { WaitConfig } from '../../steps/actions/wait/schema';
+import type { Rule } from '../../steps/conditions/criteria/schema';
 import { defineTemplate } from '../core/defineTemplate';
 
 const rule = (field: string, operator: string, value = ''): Rule => ({ field, operator, value, valueType: 'value' });
@@ -36,7 +36,7 @@ function graph({
     column: number,
     row: number,
     kind: WorkflowNode['kind'],
-    block: BlockId,
+    block: StepId,
     config: Record<string, unknown>,
   ): WorkflowNode => ({
     id,

@@ -22,7 +22,6 @@ import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/sonner';
 import { ApiError } from '../../api/workflow.api';
 import { useWorkflowActionMutation, workflowKeys } from '../../api/workflow.query';
-import { blockOf } from '../../blocks';
 import { removeNode } from '../../model/graph';
 import { createIssuesSelector, sameIssues } from '../../model/validation';
 import {
@@ -38,6 +37,7 @@ import { kindMeta } from '../../shared/canvas/NodeCardView';
 import { EditorLayout } from '../../shared/layout/EditorLayout';
 import { type EditorNavState } from '../../shared/nav/editor.nav';
 import { workflowState, WorkflowStatusBadge } from '../../shared/ui/WorkflowStatusBadge';
+import { stepOf } from '../../steps';
 import { EditorContext, type EditorState } from './editor.context';
 import { IssueBanner } from './IssueBanner';
 import { SaveStatus } from './SaveStatus';
@@ -262,7 +262,7 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
                 issues={issues}
                 labelFor={(nodeId) => {
                   const node = form.state.values.graph.nodes.find((n) => n.id === nodeId);
-                  return node ? (blockOf(node.data)?.label ?? kindMeta[node.kind].label) : '';
+                  return node ? (stepOf(node.data)?.label ?? kindMeta[node.kind].label) : '';
                 }}
                 onView={(nodeId) => showPanel({ nodeId, picking: false })}
                 onRename={() => setRenaming(true)}

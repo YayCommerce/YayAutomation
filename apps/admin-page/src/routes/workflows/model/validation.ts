@@ -1,8 +1,8 @@
 import type { Workflow, WorkflowGraph, WorkflowIssue, WorkflowNode } from '@yay-automation/types';
 import { __, sprintf } from '@wordpress/i18n';
 
-import { blockOf } from '../blocks';
-import { alwaysAvailable, itemLabel } from '../blocks/core/data';
+import { stepOf } from '../steps';
+import { alwaysAvailable, itemLabel } from '../steps/core/data';
 import { descendantsOf } from './graph';
 
 /**
@@ -17,9 +17,9 @@ export function validateWorkflow({ name, graph }: Pick<Workflow, 'name' | 'graph
     issues.push({ code: 'name_required', message: __('Enter a workflow name.', 'yay-automation') });
   }
   const trigger = graph.nodes.find((node) => node.kind === 'trigger');
-  const triggerBlock = trigger && blockOf(trigger.data);
+  const triggerStep = trigger && stepOf(trigger.data);
   // Workflow-level: no step to point at, like Shopify Flow.
-  if (!triggerBlock) {
+  if (!triggerStep) {
     issues.push({ code: 'no_trigger', message: __('Add a trigger to this workflow', 'yay-automation') });
   }
   if (!graph.nodes.some((node) => node.kind === 'action')) {
@@ -55,10 +55,10 @@ export function validateWorkflow({ name, graph }: Pick<Workflow, 'name' | 'graph
  */
 export function availableData(graph: WorkflowGraph): ((nodeId: string) => string[]) | null {
   const trigger = graph.nodes.find((node) => node.kind === 'trigger');
-  const triggerBlock = trigger && blockOf(trigger.data);
-  if (!trigger || !triggerBlock) return null;
+  const triggerStep = trigger && stepOf(trigger.data);
+  if (!trigger || !triggerStep) return null;
 
-  const base = [...new Set([...triggerBlock.provides, ...alwaysAvailable])];
+  const base = [...new Set([...triggerStep.provides, ...alwaysAvailable])];
   const nodes = new Map(graph.nodes.map((node) => [node.id, node]));
   const children = new Map<string, string[]>();
   for (const { source, target } of graph.edges) children.set(source, [...(children.get(source) ?? []), target]);
@@ -67,7 +67,7 @@ export function availableData(graph: WorkflowGraph): ((nodeId: string) => string
   while (queue.length) {
     const id = queue.shift()!;
     const node = nodes.get(id)!;
-    const added = node.kind === 'action' ? (blockOf(node.data)?.provides ?? []) : [];
+    const added = node.kind === 'action' ? (stepOf(node.data)?.provides ?? []) : [];
     const below = added.length ? [...new Set([...byNode.get(id)!, ...added])] : byNode.get(id)!;
     for (const target of children.get(id) ?? []) {
       if (!byNode.has(target) && nodes.has(target)) {
@@ -84,7 +84,7 @@ export const sameItems = (a: string[], b: string[]) => a.length === b.length && 
 
 /** The one issue of a step's own settings. Mirrors PHP `WorkflowValidator::step_error()`. */
 function stepIssue(node: WorkflowNode, available: string[] | null): Omit<WorkflowIssue, 'nodeId'> | null {
-  const block = blockOf(node.data);
+  const block = stepOf(node.data);
   if (!block) {
     return node.kind === 'action' ? { code: 'no_block', message: __('Select an action', 'yay-automation') } : null;
   }

@@ -1,20 +1,20 @@
 import type { ReactNode } from 'react';
 import { useStore } from '@tanstack/react-form';
-import type { BlockId, WorkflowGraph, WorkflowNode } from '@yay-automation/types';
+import type { StepId, WorkflowGraph, WorkflowNode } from '@yay-automation/types';
 import { X } from 'lucide-react';
 import { m } from 'motion/react';
 import { __, sprintf } from '@wordpress/i18n';
 
 import { Button } from '@/components/ui/button';
-import { blockOf } from '../../blocks';
-import { alwaysAvailable } from '../../blocks/core/data';
-import { FeedbackContext, type Feedback } from '../../blocks/core/fields/feedback';
-import { VariableScopeContext } from '../../blocks/core/fields/variableScope';
-import { setNodeBlock, updateNodeConfig } from '../../model/graph';
+import { setNodeStep, updateNodeConfig } from '../../model/graph';
 import { availableData, sameItems } from '../../model/validation';
 import { kindMeta } from '../../shared/canvas/NodeCardView';
 import { plugins } from '../../shared/ui/PluginIcon';
-import { BlockPicker } from './BlockPicker';
+import { stepOf } from '../../steps';
+import { alwaysAvailable } from '../../steps/core/data';
+import { FeedbackContext, type Feedback } from '../../steps/core/fields/feedback';
+import { VariableScopeContext } from '../../steps/core/fields/variableScope';
+import { StepPicker } from './StepPicker';
 import { useWorkflowFormContext } from './useWorkflowForm';
 
 /**
@@ -64,19 +64,19 @@ export function StepPanel({
   // Null when the step was deleted while its panel was open.
   const node = useStore(form.store, (state) => state.values.graph.nodes.find((n) => n.id === nodeId) ?? null);
   // The trigger decides which variables and actions the step can use.
-  const triggerBlock = useStore(form.store, (state) => {
+  const triggerStep = useStore(form.store, (state) => {
     const trigger = state.values.graph.nodes.find((n) => n.kind === 'trigger');
-    return trigger ? blockOf(trigger.data) : undefined;
+    return trigger ? stepOf(trigger.data) : undefined;
   });
   const available = useStore(
     form.store,
     (state) => availableData(state.values.graph)?.(nodeId) ?? alwaysAvailable,
     sameItems,
   );
-  const triggerLabel = triggerBlock?.label ?? null;
+  const triggerLabel = triggerStep?.label ?? null;
   if (!node) return null;
 
-  const block = blockOf(node.data);
+  const block = stepOf(node.data);
   const update = (change: (graph: WorkflowGraph) => WorkflowGraph) => form.setFieldValue('graph', change);
 
   const close = closable && (
@@ -86,8 +86,8 @@ export function StepPanel({
   );
 
   if (node.kind !== 'condition' && (!block || picking)) {
-    const pick = (id: BlockId) => {
-      update((graph) => setNodeBlock(graph, node.id, id));
+    const pick = (id: StepId) => {
+      update((graph) => setNodeStep(graph, node.id, id));
       onPicked();
     };
     return (
@@ -97,7 +97,7 @@ export function StepPanel({
           {close}
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto p-4 pt-3">
-          <BlockPicker kind={node.kind} available={node.kind === 'action' ? available : undefined} onPick={pick} />
+          <StepPicker kind={node.kind} available={node.kind === 'action' ? available : undefined} onPick={pick} />
         </div>
       </>
     );

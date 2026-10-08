@@ -2,15 +2,15 @@
 
 namespace YayAutomation\Engine\BEPages;
 
-use YayAutomation\YayAutomation;
-use YayAutomation\Utils\SingletonTrait;
 use YayAutomation\Engine\Register\ScriptName;
-use YayAutomation\Engine\Blocks\Actions\SendInternalEmail;
-use YayAutomation\Engine\Blocks\Core\BlockRegistry;
-use YayAutomation\Engine\Data\DataRegistry;
-use YayAutomation\Engine\Data\OrderData;
-use YayAutomation\Engine\Data\Operators;
-use YayAutomation\Engine\Plugins;
+use YayAutomation\Utils\SingletonTrait;
+use YayAutomation\Workflow\Data\DataRegistry;
+use YayAutomation\Workflow\Data\Operators;
+use YayAutomation\Workflow\Data\OrderData;
+use YayAutomation\Workflow\Extend\Plugins;
+use YayAutomation\Workflow\Steps\Actions\SendInternalEmail;
+use YayAutomation\Workflow\Steps\Core\StepRegistry;
+use YayAutomation\YayAutomation;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -90,7 +90,7 @@ class AdminPage {
             ],
             'automation' => [
                 'plugins'   => Plugins::to_client(),
-                'blocks'    => BlockRegistry::to_client(),
+                'steps'     => StepRegistry::to_client(),
                 'data'      => DataRegistry::to_client(),
                 'operators' => Operators::BY_TYPE,
                 'always'    => DataRegistry::ALWAYS,

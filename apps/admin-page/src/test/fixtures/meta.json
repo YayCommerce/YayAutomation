@@ -60,7 +60,7 @@
                 "active": true
             }
         ],
-        "blocks": {
+        "steps": {
             "order_created": {
                 "kind": "trigger",
                 "plugin": "woocommerce",

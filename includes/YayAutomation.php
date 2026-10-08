@@ -13,10 +13,10 @@ final class YayAutomation {
         \YayAutomation\Engine\Register\RegisterFacade::get_instance();
         \YayAutomation\Engine\BEPages\AdminPage::get_instance();
         \YayAutomation\Engine\API\RestAPI::get_instance();
-        \YayAutomation\Engine\Workflows\WorkflowPostType::get_instance();
-        \YayAutomation\Engine\Workflows\VersionStore::maybe_install();
+        \YayAutomation\Workflow\Storage\WorkflowPostType::get_instance();
+        \YayAutomation\Workflow\Storage\VersionStore::maybe_install();
         if ( class_exists( 'WooCommerce' ) ) {
-            \YayAutomation\Engine\Workflows\Runner::get_instance();
+            \YayAutomation\Workflow\Runtime\Runner::get_instance();
         }
 
         // TODO: EDD setup

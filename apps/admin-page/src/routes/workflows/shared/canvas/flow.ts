@@ -3,7 +3,7 @@ import type { Edge, Node } from '@xyflow/react';
 import type { WorkflowGraph, WorkflowNodeData, WorkflowNodeKind } from '@yay-automation/types';
 import { __ } from '@wordpress/i18n';
 
-import { blockOf } from '../../blocks';
+import { stepOf } from '../../steps';
 
 /** ReactFlow node typed by our data + kind. `type` picks the component from `nodeTypes`. */
 export type FlowNode = Node<WorkflowNodeData, WorkflowNodeKind>;
@@ -100,7 +100,7 @@ export function toFlowNodes(graph: WorkflowGraph, heights: Record<string, number
 
 /** Not set up yet: no block chosen, or settings still missing (e.g. a condition with no criteria). */
 function isPending(data: WorkflowNodeData) {
-  const block = blockOf(data);
+  const block = stepOf(data);
   return !block || block.firstError(data.config) !== null;
 }
 

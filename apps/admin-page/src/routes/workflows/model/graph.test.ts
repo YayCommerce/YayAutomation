@@ -10,7 +10,7 @@ import {
   moveNode,
   removeNode,
   ROW_GAP,
-  setNodeBlock,
+  setNodeStep,
   updateNodeConfig,
 } from './graph';
 
@@ -80,8 +80,8 @@ describe('graph queries and updates', () => {
     expect(graph.nodes.find((node) => node.id === 'email')!.data.config).toEqual({ subject: 'Hi' });
   });
 
-  it('setNodeBlock swaps the block and resets the config to its defaults', () => {
-    const graph = setNodeBlock(base(), 'email', 'add_order_note');
+  it('setNodeStep swaps the block and resets the config to its defaults', () => {
+    const graph = setNodeStep(base(), 'email', 'add_order_note');
     const data = graph.nodes.find((node) => node.id === 'email')!.data;
     expect(data.block).toBe('add_order_note');
     expect(data.config).not.toHaveProperty('subject');

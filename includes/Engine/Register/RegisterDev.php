@@ -2,7 +2,6 @@
 namespace YayAutomation\Engine\Register;
 
 use YayAutomation\Utils\SingletonTrait;
-use YayAutomation\Engine\Register\ScriptName;
 
 /**
  * Register in Development Mode

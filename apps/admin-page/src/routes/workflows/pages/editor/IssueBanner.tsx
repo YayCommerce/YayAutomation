@@ -24,7 +24,7 @@ export function IssueBanner({
   style,
 }: {
   issues: WorkflowIssue[];
-  /** Block label of a step. */
+  /** Step label of a step. */
   labelFor: (nodeId: string) => string;
   onView: (nodeId: string) => void;
   onRename: () => void;
