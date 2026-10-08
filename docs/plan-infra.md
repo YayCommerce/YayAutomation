@@ -19,6 +19,8 @@ Cheap checks Claude and CI can run on their own: lint, unit tests, a GitHub work
 
 ## Phase 1: F0.0 Verify baseline (first checkpoint of the F0 branch)
 
+**Status:** ⏳ Done 2026-10-08 in commit `e225947` (F0 branch); ✅ once F0 is merged with CI green.
+
 ROADMAP-dev F0.3 checks F0 with `pnpm build` and phpcs. Without a clean phpcs and a few tests, nothing proves "no behavior change" except a manual run.
 
 1. **PHP lint in the project.**
