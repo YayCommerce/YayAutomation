@@ -3,9 +3,9 @@ import { ShoppingCart, Workflow, type LucideIcon } from 'lucide-react';
 
 import type { PluginMeta } from '@/types/localize';
 import { cn } from '@/lib/utils';
-import { automationMeta } from '../../blocks/core/pending';
+import { automationMeta } from '../../steps/core/pending';
 
-/** Plugin facts from PHP (`Engine\Plugins`), by id. */
+/** Plugin facts from PHP (`Workflow\Extend\Plugins`), by id. */
 export const plugins = Object.fromEntries(automationMeta.plugins.map((plugin) => [plugin.id, plugin])) as Record<
   WorkflowPlugin,
   PluginMeta

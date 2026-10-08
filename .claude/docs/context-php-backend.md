@@ -11,10 +11,14 @@
 - `includes/YayAutomationProLicenseAdapter.php` — license adapter, not registered (`TODO: EDD setup`)
 - `includes/Engine/API/RestAPI.php` — routes under `yay-automation/v1`
 - `includes/Engine/Register/` — script loading; `RegisterDev.php` is stripped from the release zip
-- `includes/Engine/Data/` — data items (order, customer, site): typed fields, condition operators, `{{ item.field }}` merge tags. The admin app reads them from `yayAutomationMeta.automation`.
-- `includes/Engine/Blocks/` — one class per step type, listed in `Core/BlockRegistry.php`. Triggers hook their own events (`listen()`) and declare `provides`; actions declare `plugin`, `category`, `requires`. Each mirrors a TS folder in `apps/admin-page/src/routes/workflows/blocks/`.
-- `includes/Engine/Plugins.php` — plugin groups for the editor's pickers.
-- `includes/Engine/Workflows/Runner.php` — queues matching workflows through Action Scheduler at shutdown and runs them; a workflow never re-runs in its own causal chain.
+- `includes/Engine/` — WP/WC glue only: `BEPages/`, `API/`, `Register/`. REST controllers call Workflow Core and hold no workflow logic.
+- `includes/Workflow/` — Workflow Core, namespace `YayAutomation\Workflow\` (design §1):
+  - `Data/` — data items (order, customer, site): typed fields, condition operators, `{{ item.field }}` merge tags. The admin app reads them from `yayAutomationMeta.automation`.
+  - `Steps/` — one class per step type, listed in `Core/StepRegistry.php`. Triggers hook their own events (`listen()`) and declare `provides`; actions declare `plugin`, `category`, `requires`. Each mirrors a TS folder in `apps/admin-page/src/routes/workflows/steps/`.
+  - `Storage/` — `WorkflowRepository` (CPT + post meta), `VersionStore` (versions table), `WorkflowPostType`.
+  - `Definition/WorkflowValidator.php` — graph shape on save, issues that block activating.
+  - `Runtime/Runner.php` — queues matching workflows through Action Scheduler at shutdown and runs them; a workflow never re-runs in its own causal chain.
+  - `Extend/Plugins.php` — plugin groups for the editor's pickers.
 
 ## Admin shell
 

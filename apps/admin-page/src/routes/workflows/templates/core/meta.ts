@@ -1,8 +1,8 @@
 import type { TemplateCategory, WorkflowGraph } from '@yay-automation/types';
 import { __ } from '@wordpress/i18n';
 
-import { variableKeys } from '../../blocks/core/data';
-import { isPendingBlock, isPendingField } from '../../blocks/core/pending';
+import { variableKeys } from '../../steps/core/data';
+import { isPendingField, isPendingStep } from '../../steps/core/pending';
 
 /** In library chip order. */
 export const categoryLabels: Record<TemplateCategory, string> = {
@@ -16,13 +16,13 @@ const strings = (value: unknown): string[] =>
   typeof value === 'string' ? [value] : value && typeof value === 'object' ? Object.values(value).flatMap(strings) : [];
 
 /**
- * A step or variable of the graph has no PHP side yet (see `blocks/core/pending.ts`): the server
+ * A step or variable of the graph has no PHP side yet (see `steps/core/pending.ts`): the server
  * would reject the draft, so Install stays locked. Checks every config string, as a field key
  * (criteria) or as text with merge tags.
  */
 export const isComingSoon = (graph: WorkflowGraph) =>
   graph.nodes.some(
     ({ data }) =>
-      (data.block && isPendingBlock(data.block)) ||
+      (data.block && isPendingStep(data.block)) ||
       strings(data.config).some((text) => isPendingField(text) || variableKeys(text).some(isPendingField)),
   );

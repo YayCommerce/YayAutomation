@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { WorkflowIssue } from '@yay-automation/types';
 
-import type { Feedback } from '../../blocks/core/fields/feedback';
 import type { IssueMode } from '../../shared/canvas/NodeCardView';
+import type { Feedback } from '../../steps/core/fields/feedback';
 
 /**
  * How the editor shows issues, like Shopify Flow:

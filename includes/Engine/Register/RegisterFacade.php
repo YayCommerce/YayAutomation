@@ -1,9 +1,8 @@
 <?php
 namespace YayAutomation\Engine\Register;
 
-use YayAutomation\YayAutomation;
 use YayAutomation\Utils\SingletonTrait;
-use YayAutomation\Engine\Register\ScriptName;
+use YayAutomation\YayAutomation;
 
 /**
  * Register Facade.

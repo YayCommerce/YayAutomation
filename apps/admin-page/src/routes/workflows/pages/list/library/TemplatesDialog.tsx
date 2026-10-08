@@ -10,9 +10,9 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/compone
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { comingSoonLabel } from '../../../blocks/core/pending';
 import type { LibraryNavState } from '../../../shared/nav/library.nav';
 import { PluginIcon } from '../../../shared/ui/PluginIcon';
+import { comingSoonLabel } from '../../../steps/core/pending';
 import { categoryLabels, isComingSoon, pluginsOf, templates } from '../../../templates';
 import { TemplatesHeroIllustration } from '../WorkflowIllustrations';
 import { CategoryFilter, PluginsFilter } from './LibraryFilters';

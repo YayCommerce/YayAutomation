@@ -13,9 +13,9 @@ import { Pagination } from '@/components/ui/pagination';
 import { Segmented, SegmentedItem } from '@/components/ui/segmented';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { blockOf, SummaryText } from '../../blocks';
 import { DeleteWorkflowDialog } from '../../shared/actions/WorkflowActions';
 import { onOffState, WorkflowStatusBadge } from '../../shared/ui/WorkflowStatusBadge';
+import { stepOf, SummaryText } from '../../steps';
 import { WorkflowBulkActions } from './WorkflowBulkActions';
 
 const PAGE_SIZE = 10;
@@ -24,8 +24,8 @@ type Tab = 'all' | 'active' | 'inactive';
 
 function triggerSummary(workflow: Workflow) {
   const trigger = workflow.graph.nodes.find((node) => node.kind === 'trigger');
-  const block = trigger && blockOf(trigger.data);
-  return block ? <SummaryText text={block.summary(trigger.data.config)} /> : '—';
+  const stepDef = trigger && stepOf(trigger.data);
+  return stepDef ? <SummaryText text={stepDef.summary(trigger.data.config)} /> : '—';
 }
 
 function TableHeadRow({ select }: { select: ReactNode }) {

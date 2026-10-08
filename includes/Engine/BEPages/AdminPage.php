@@ -2,15 +2,15 @@
 
 namespace YayAutomation\Engine\BEPages;
 
-use YayAutomation\YayAutomation;
-use YayAutomation\Utils\SingletonTrait;
 use YayAutomation\Engine\Register\ScriptName;
-use YayAutomation\Engine\Blocks\Actions\SendInternalEmail;
-use YayAutomation\Engine\Blocks\Core\BlockRegistry;
-use YayAutomation\Engine\Data\DataRegistry;
-use YayAutomation\Engine\Data\OrderData;
-use YayAutomation\Engine\Data\Operators;
-use YayAutomation\Engine\Plugins;
+use YayAutomation\Utils\SingletonTrait;
+use YayAutomation\Workflow\Data\DataRegistry;
+use YayAutomation\Workflow\Data\Operators;
+use YayAutomation\Workflow\Data\OrderData;
+use YayAutomation\Workflow\Extend\Plugins;
+use YayAutomation\Workflow\Steps\Actions\SendInternalEmail;
+use YayAutomation\Workflow\Steps\Core\StepRegistry;
+use YayAutomation\YayAutomation;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -53,8 +53,20 @@ class AdminPage {
             return;
         }
 
+        wp_localize_script( ScriptName::PAGE_ADMIN, 'yayAutomationMeta', self::client_meta() );
+
+        wp_enqueue_script( ScriptName::PAGE_ADMIN );
+        if ( YayAutomation::is_prod() ) {
+            wp_enqueue_style( ScriptName::STYLE_ADMIN );
+        }
+    }
+
+    /**
+     * `window.yayAutomationMeta`. Also read by `dev/scripts/meta-fixture.sh` for the admin app's tests.
+     */
+    public static function client_meta(): array {
         // Shape must match apps/admin-page/src/types/localize.d.ts.
-        $meta = [
+        return [
             'plugin'     => [
                 'pluginUrl' => YAY_AUTOMATION_PLUGIN_URL,
                 'version'   => YAY_AUTOMATION_VERSION,
@@ -78,7 +90,7 @@ class AdminPage {
             ],
             'automation' => [
                 'plugins'   => Plugins::to_client(),
-                'blocks'    => BlockRegistry::to_client(),
+                'steps'     => StepRegistry::to_client(),
                 'data'      => DataRegistry::to_client(),
                 'operators' => Operators::BY_TYPE,
                 'always'    => DataRegistry::ALWAYS,
@@ -93,17 +105,10 @@ class AdminPage {
                 'workflowRuns' => esc_url_raw( apply_filters( 'yay_automation_workflow_runs_docs_url', 'https://docs.yaycommerce.com/' ) ),
             ],
         ];
-
-        wp_localize_script( ScriptName::PAGE_ADMIN, 'yayAutomationMeta', $meta );
-
-        wp_enqueue_script( ScriptName::PAGE_ADMIN );
-        if ( YayAutomation::is_prod() ) {
-            wp_enqueue_style( ScriptName::STYLE_ADMIN );
-        }
     }
 
     /**
-     * value => label map as a list, so JSON keeps the order.
+     * A value => label map as a list, so JSON keeps the order.
      *
      * @param array $options value => label.
      */

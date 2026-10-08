@@ -6,7 +6,7 @@ import type { IssueMode } from '../../shared/canvas/NodeCardView';
 export interface EditorState {
   /** Step whose panel is open; highlighted like a selection. */
   openNodeId: string | null;
-  /** Opens a step's panel; `picking` shows the block picker even when a block is chosen (swap). */
+  /** Opens a step's panel; `picking` shows the step picker even when a step is chosen (swap). */
   openPanel: (nodeId: string, picking?: boolean) => void;
   /** Steps showing an issue: blue "Review" (left unfinished) or red "Error" (after a failed Turn on / Apply). */
   issueModes: ReadonlyMap<string, IssueMode>;

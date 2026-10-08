@@ -5,7 +5,7 @@ import { Check, CircleAlert, GitBranch, Info, Play, X, Zap, type LucideIcon } fr
 import { __ } from '@wordpress/i18n';
 
 import { cn } from '@/lib/utils';
-import { blockOf, SummaryText } from '../../blocks';
+import { stepOf, SummaryText } from '../../steps';
 import { sourceHandleStyle, targetHandleStyle, type FlowNode } from './flow';
 
 /** How a step card marks an issue: blue "Review" (left unfinished) or red "Error" (after a failed Turn on / Apply). */
@@ -26,7 +26,7 @@ export const branchLeft: Record<WorkflowBranch, string> = { then: '30%', otherwi
 
 /**
  * Card body + handles. No form access, so it also renders on the read-only template preview.
- * Header = kind icon + block label, body = plain-language summary. `issue` adds a blue "Review" or red "Error" header above it.
+ * Header = kind icon + step label, body = plain-language summary. `issue` adds a blue "Review" or red "Error" header above it.
  */
 export function NodeCardView({
   type,
@@ -47,8 +47,8 @@ export function NodeCardView({
   children?: ReactNode;
 }) {
   const { label: kindLabel, icon: kindIcon, choose } = kindMeta[type];
-  const block = blockOf(data);
-  const Icon = block?.icon ?? kindIcon;
+  const stepDef = stepOf(data);
+  const Icon = stepDef?.icon ?? kindIcon;
 
   return (
     <div className={cn('group relative w-80', className)}>
@@ -87,11 +87,11 @@ export function NodeCardView({
       >
         <div className="flex items-start gap-2">
           <Icon className="text-muted-foreground mt-0.5 size-4 shrink-0" role="img" aria-label={kindLabel} />
-          <div className="min-w-0 flex-1 text-sm font-semibold">{block?.label ?? kindLabel}</div>
+          <div className="min-w-0 flex-1 text-sm font-semibold">{stepDef?.label ?? kindLabel}</div>
         </div>
         {/* Not chosen yet: the kind's prompt, muted. Summaries may span lines (a condition's criteria). */}
-        <div className={cn('mt-2 text-sm whitespace-pre-line', !block && 'text-muted-foreground')}>
-          {block ? <SummaryText text={block.summary(data.config)} /> : choose}
+        <div className={cn('mt-2 text-sm whitespace-pre-line', !stepDef && 'text-muted-foreground')}>
+          {stepDef ? <SummaryText text={stepDef.summary(data.config)} /> : choose}
         </div>
         {/* Branch names right above their tabs, like Shopify Flow. */}
         {type === 'condition' && (

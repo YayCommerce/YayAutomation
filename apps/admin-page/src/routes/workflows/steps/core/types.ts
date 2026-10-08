@@ -1,0 +1,72 @@
+import type { ComponentType } from 'react';
+import type { StepId, WorkflowNodeKind, WorkflowPlugin } from '@yay-automation/types';
+import type { LucideIcon } from 'lucide-react';
+import type * as v from 'valibot';
+
+import type { StepMeta } from '@/types/localize';
+
+export type Config = Record<string, unknown>;
+
+export interface StepFormProps<TConfig> {
+  /** Initial values. The form owns its state after mount. */
+  config: TConfig;
+  /** Called on every change, so the workflow draft always holds the latest values. */
+  onChange: (config: TConfig) => void;
+}
+
+/** What a step folder passes to `defineStep()`. Plugin and data facts come from PHP (`StepMeta`). */
+export interface StepSpec<TConfig extends Config> {
+  id: StepId;
+  kind: WorkflowNodeKind;
+  label: string;
+  description: string;
+  /**
+   * The one source of truth for a valid config: field errors in the form and the workflow's
+   * `invalid_config` issue. Must accept exactly what the PHP step's `validate()` accepts.
+   */
+  schema: v.GenericSchema<TConfig>;
+  defaults: () => TConfig;
+  /**
+   * Brings stored config into the current shape: fills missing keys. Mirrors the PHP step's
+   * `sanitize()`. Defaults to merging over `defaults()`.
+   */
+  normalize?: (config: Config) => TConfig;
+  /**
+   * Data items the step reads with this config. Mirrors the PHP step's `uses()`. Defaults to the
+   * step's `requires` plus the items of every merge tag in the config's text.
+   */
+  uses?: (config: TConfig) => string[];
+  /** Plain-language line for the node card. Gets incomplete config too, so show placeholders for gaps. */
+  summary: (config: TConfig) => string;
+  /** Replaces the step kind's icon on the card and in the panel header (e.g. a clock for Wait). */
+  icon?: LucideIcon;
+  /** Omitted when the step has nothing to configure. */
+  Form?: ComponentType<StepFormProps<TConfig>>;
+}
+
+/** A step with its config type erased, so one registry can hold them all. Every method normalizes first. */
+export interface Step {
+  id: StepId;
+  kind: WorkflowNodeKind;
+  label: string;
+  description: string;
+  /** Triggers and actions. */
+  plugin?: WorkflowPlugin;
+  /** Data items the step adds: a trigger's for every run, an action's for the steps below it. */
+  provides: string[];
+  /** Actions: data items needed whatever the config; the picker dims the action without them. */
+  requires: string[];
+  /** Actions: picker section. */
+  category?: StepMeta['category'];
+  /** Its PHP side isn't built yet: shown but can't be picked (see `pending.ts`). */
+  comingSoon: boolean;
+  defaults: () => Config;
+  normalize: (config: Config) => Config;
+  /** The first validation message, or null when the config is valid. */
+  firstError: (config: Config) => string | null;
+  /** Data items the step reads, `site` excluded. */
+  uses: (config: Config) => string[];
+  summary: (config: Config) => string;
+  icon?: LucideIcon;
+  Form?: ComponentType<StepFormProps<Config>>;
+}

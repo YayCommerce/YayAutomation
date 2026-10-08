@@ -8,10 +8,10 @@ export type WorkflowNodeKind = 'trigger' | 'condition' | 'action';
 export type WorkflowBranch = 'then' | 'otherwise';
 
 /**
- * Step type. Each id has a TS folder (admin app `blocks/<kind>/<id-in-kebab-case>/`) and a PHP class
- * (`includes/Engine/Blocks/<Kind>/`).
+ * Step type. Each id has a TS folder (admin app `steps/<kind>/<id-in-kebab-case>/`) and a PHP class
+ * (`includes/Workflow/Steps/<Kind>/`).
  */
-export type BlockId =
+export type StepId =
   | 'order_created'
   | 'order_status_changed'
   | 'condition'
@@ -26,7 +26,7 @@ export type BlockId =
 /** `type` (not `interface`) so it satisfies ReactFlow's `Record<string, unknown>` data constraint. */
 export type WorkflowNodeData = {
   /** Null on a trigger or action step whose block isn't chosen yet. */
-  block: BlockId | null;
+  block: StepId | null;
   /** Block-specific settings. Validated by the block's schema; may be incomplete while inactive. */
   config: Record<string, unknown>;
 };
@@ -94,7 +94,7 @@ export interface WorkflowVersionsPage {
   hasMore: boolean;
 }
 
-/** Plugin that triggers and actions are grouped under (PHP `Engine\Plugins`). */
+/** Plugin that triggers and actions are grouped under (PHP `Workflow\Extend\Plugins`). */
 export type WorkflowPlugin = 'woocommerce' | 'yayautomation';
 
 /** Library chip a template is filed under. Labels live in the admin app. */

@@ -1,9 +1,9 @@
 import type { WorkflowGraph } from '@yay-automation/types';
 import { __ } from '@wordpress/i18n';
 
-import type { GenerateCouponConfig } from '../../blocks/actions/generate-coupon/schema';
-import type { SendEmailConfig } from '../../blocks/actions/send-email/schema';
 import { BRANCH_OFFSET, ROW_GAP } from '../../model/graph';
+import type { GenerateCouponConfig } from '../../steps/actions/generate-coupon/schema';
+import type { SendEmailConfig } from '../../steps/actions/send-email/schema';
 import { defineTemplate } from '../core/defineTemplate';
 
 /**

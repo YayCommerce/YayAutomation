@@ -17,24 +17,26 @@ Changes from the ROADMAP-v1.0 order:
 - **F2 comes after M2.** The CPT → table migration must ship before v1.0, while there's no merchant data yet.
 - **M6 stays after M8.** The inactive-customer trigger reuses M8's scheduled scan.
 
-| # | Phase | Size | Risk | Depends on |
-|---|---|---|---|---|
-| F0 | Move and rename | S | 1 | — |
-| F1 | Workflow Core foundation | L | 3 | F0 |
-| M1 | Customer emails + coupons | L | 3 | F1 |
-| M2 | Wait + run history | L | 3 | F1 |
-| F2 | Workflows table | M | 3 | F1 |
-| M7 | Cart tracking + Settings + Health check | L | 3 | F1 |
-| M8 | Abandoned cart + checkout | L | 2 | M1, M2, M7 |
-| M3 | Review request | M | 2 | M2 |
-| M4 | Welcome series | S | 2 | M2 |
-| M5 | High-value order alert | S | 1 | — |
-| M6 | Win-back | M | 2 | M8 |
-| M9 | Release hardening | M | 2 | all |
-| v1.1 | Control flow | L+ | 3 | v1.0 |
-| v1.2 | Yay ecosystem + Pro connectors | L+ | 3 | v1.1 |
-| v2.0 | AI | L+ | 3 | v1.2 |
-| API | Public extension API | M | 2 | v1.2 stable |
+| # | Phase | Size | Risk | Depends on | Status |
+|---|---|---|---|---|---|
+| F0 | Move and rename | S | 1 | — | ⏳ Done, merge pending |
+| F1 | Workflow Core foundation | L | 3 | F0 | Next |
+| M1 | Customer emails + coupons | L | 3 | F1 | — |
+| M2 | Wait + run history | L | 3 | F1 | — |
+| F2 | Workflows table | M | 3 | F1 | — |
+| M7 | Cart tracking + Settings + Health check | L | 3 | F1 | — |
+| M8 | Abandoned cart + checkout | L | 2 | M1, M2, M7 | — |
+| M3 | Review request | M | 2 | M2 | — |
+| M4 | Welcome series | S | 2 | M2 | — |
+| M5 | High-value order alert | S | 1 | — | — |
+| M6 | Win-back | M | 2 | M8 | — |
+| M9 | Release hardening | M | 2 | all | — |
+| v1.1 | Control flow | L+ | 3 | v1.0 | — |
+| v1.2 | Yay ecosystem + Pro connectors | L+ | 3 | v1.1 | — |
+| v2.0 | AI | L+ | 3 | v1.2 | — |
+| API | Public extension API | M | 2 | v1.2 stable | — |
+
+Status: ✅ done (merged into `develop`, CI green) · ⏳ done, merge pending · Next · — not started. Mark a phase and its items ✅ when it lands in `develop`.
 
 Risk scale as in ROADMAP-v1.0: 1 = easy to undo · 2 = new logic · 3 = stores data, runs in the background, emails shoppers or creates coupons.
 
@@ -42,15 +44,17 @@ Risk scale as in ROADMAP-v1.0: 1 = easy to undo · 2 = new logic · 3 = stores d
 
 ## F0 — Move and rename · S (1 day + ½ day baseline)
 
+**Status:** ⏳ All items done 2026-10-08 on `jack/refactor/move-rename` (commits `e225947`, `825a60f`, `998ac44`). Becomes ✅ when merged into `develop` with CI green.
+
 Do it when no feature branch is open: it touches every file, so it's cheapest as one quick PR that everyone rebases on once.
 
-- **F0.0 Verify baseline** *([plan-infra](plan-infra.md))*, its own PR before F0.1:
+- ✅ **F0.0 Verify baseline** *([plan-infra](plan-infra.md))*, the first checkpoint and commit of the F0 branch, before F0.1:
   - phpcs inside the project (`dev/tools/lintphp`), `pnpm lint:php`, the 12 current errors fixed.
   - Vitest with first tests on `model/` and the template registry; `pnpm test`.
   - Stop hook adds tests; CI on `develop`: lint → lint:php → test → build.
-- **F0.1** Move `includes/Engine/{Workflows,Blocks,Data}` and `Engine/Plugins.php` to `includes/Workflow/`, then run `composer dump-autoload`. *(design §1)*
-- **F0.2** Rename Blocks → Steps: PHP classes, `apps/admin-page/src/routes/workflows/blocks/` → `steps/`, types, `.claude/docs/context-php-backend.md`.
-- **F0.3** No behaviour change. Check: `pnpm build`, `pnpm lint:php`, `pnpm test` (same results as before F0), manual run of both triggers and all 4 actions.
+- ✅ **F0.1** Move `includes/Engine/{Workflows,Blocks,Data}` and `Engine/Plugins.php` to `includes/Workflow/`, then run `composer dump-autoload`. *(design §1)*
+- ✅ **F0.2** Rename Blocks → Steps: PHP classes, `apps/admin-page/src/routes/workflows/blocks/` → `steps/`, types, `.claude/docs/context-php-backend.md`.
+- ✅ **F0.3** No behaviour change. Check: `pnpm build`, `pnpm lint:php`, `pnpm test` (same results as before F0), manual run of both triggers and all 4 actions.
 
 ## F1 — Workflow Core foundation · L (~3 weeks)
 

@@ -1,6 +1,6 @@
-import type { BlockId, WorkflowNodeKind, WorkflowPlugin } from '@yay-automation/types';
+import type { StepId, WorkflowNodeKind, WorkflowPlugin } from '@yay-automation/types';
 
-/** PHP `Engine\Plugins::to_client()`. */
+/** PHP `Workflow\Extend\Plugins::to_client()`. */
 export interface PluginMeta {
   id: WorkflowPlugin;
   label: string;
@@ -8,8 +8,8 @@ export interface PluginMeta {
   active: boolean;
 }
 
-/** PHP `BlockRegistry::to_client()`: what the engine knows about each block. */
-export interface BlockMeta {
+/** PHP `StepRegistry::to_client()`: what the engine knows about each step. */
+export interface StepMeta {
   kind: WorkflowNodeKind;
   /** Triggers and actions. */
   plugin?: WorkflowPlugin;
@@ -66,8 +66,8 @@ declare global {
       };
       automation: {
         plugins: PluginMeta[];
-        /** Blocks PHP has built; the admin may list more (see `blocks/core/pending.ts`). */
-        blocks: Partial<Record<BlockId, BlockMeta>>;
+        /** Steps PHP has built; the admin may list more (see `steps/core/pending.ts`). */
+        steps: Partial<Record<StepId, StepMeta>>;
         data: DataItemMeta[];
         /** Operator ids per field type. Labels live in the admin app. */
         operators: Record<DataFieldType, string[]>;

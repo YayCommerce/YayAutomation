@@ -16,8 +16,9 @@ Scaffolded from [YayUiKits](../YayUiKits/README.md) conventions.
 ```
 apps/admin-page/   # React admin app
 packages/          # Shared TS packages (@yay-automation/utils, /types)
-src/               # PHP backend (namespace YayAutomation\)
-  Engine/API/      # REST endpoints
+includes/          # PHP backend (namespace YayAutomation\)
+  Engine/          # WP/WC glue: admin page, REST endpoints, script loading
+  Workflow/        # Workflow Core: storage, definition, runtime, steps, data
 yay-automation.php # Plugin bootstrap
 assets/dist/       # Build output (gitignored)
 ```

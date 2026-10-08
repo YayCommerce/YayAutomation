@@ -17,7 +17,9 @@ Cheap checks Claude and CI can run on their own: lint, unit tests, a GitHub work
 | Claude Stop hook | `pnpm build` + `php -l` (syntax only) |
 | `run.sh` | Older copy of Bookster's. `claude-workflow` "Session here" always opens the plugin root (Bookster fixed it with `RUN_CWD`) |
 
-## Phase 1: F0.0 Verify baseline (before F0)
+## Phase 1: F0.0 Verify baseline (first checkpoint of the F0 branch)
+
+**Status:** ⏳ Done 2026-10-08 in commit `e225947` (F0 branch); ✅ once F0 is merged with CI green.
 
 ROADMAP-dev F0.3 checks F0 with `pnpm build` and phpcs. Without a clean phpcs and a few tests, nothing proves "no behavior change" except a manual run.
 
@@ -28,11 +30,11 @@ ROADMAP-dev F0.3 checks F0 with `pnpm build` and phpcs. Without a clean phpcs an
 2. **Vitest for TS.**
    - `vitest` in `apps/admin-page`, `test` script there, root `pnpm test` = `pnpm -r test`.
    - First tests pin today's behavior: `model/` (graph, validation), every template in the registry validates, `packages/utils`.
-   - Setup file stubs `window.yayAutomationMeta` with a fixture: block and data modules read it on import (`blocks/core/pending.ts`).
+   - Setup file stubs `window.yayAutomationMeta` with a fixture: step and data modules read it on import (`steps/core/pending.ts`).
 3. **Claude Stop hook: `.claude/hooks/stop-check.sh`** for the whole team (taken from the closed `jack/chore/claude-token-optimization` branch).
    - Checks only what changed: `pnpm build` when `apps/`, `packages/` or package files change; `php -l` on changed PHP files.
    - Skips a change set that already passed (hash in `.git/`). Prints only on failure.
-   - F0.0 adds `pnpm test` and phpcs on changed PHP files.
+   - Also runs `pnpm test`, and phpcs on changed PHP files once `./run.sh setup` has installed the tools.
    - `settings.json` calls the script instead of today's two inline commands.
 4. **CI: `.github/workflows/ci.yml`.** On push and pull request to `develop`: install → `pnpm lint` → `lint:php` → `pnpm test` → `pnpm build`.
    - No main `composer install`: it needs access to the private admin-shell repo. Only `dev/tools/*` composer installs.

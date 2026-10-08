@@ -9,11 +9,11 @@ import { Badge } from '@/components/ui/badge';
 import { Button, LoadingButton } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { comingSoonLabel } from '../../blocks/core/pending';
 import { ReadOnlyCanvas } from '../../shared/canvas/ReadOnlyCanvas';
 import { EditorLayout, EditorPlaceholder } from '../../shared/layout/EditorLayout';
 import { LIBRARY_PATH, readLibraryNavState } from '../../shared/nav/library.nav';
 import { PluginIcon, plugins } from '../../shared/ui/PluginIcon';
+import { comingSoonLabel } from '../../steps/core/pending';
 import { findTemplate, isComingSoon, pluginsOf } from '../../templates';
 import { useCreateDraft } from './useCreateDraft';
 

@@ -8,7 +8,7 @@ export type PanelState = { nodeId: string; picking: boolean };
 
 /**
  * Which step's panel is open. A new workflow opens on its trigger picker, which can't be closed
- * until a trigger is chosen (`locked`). Leaving a step: an action still without a block (and
+ * until a trigger is chosen (`locked`). Leaving a step: an action still without a step (and
  * nothing below it) is dropped; any other step is handed to `onLeave`.
  */
 export function useStepPanel(form: WorkflowForm, onLeave: (nodeId: string) => void) {

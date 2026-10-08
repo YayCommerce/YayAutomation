@@ -1,5 +1,5 @@
 #!/bin/bash
-# Install PHP dependencies: vendor/autoload.php + vendor-prefixed/ (scoped admin-shell).
+# Install PHP dependencies: vendor/autoload.php + vendor-prefixed/ (scoped admin-shell) + lint tools.
 cd "$(dirname "$0")/../.." || exit 1
 [[ -f yay-automation.php ]] || { echo "Not the plugin root: $(pwd)"; exit 1; }
 command -v composer >/dev/null || { echo "Missing: composer"; exit 1; }
@@ -20,5 +20,9 @@ rm -rf vendor-prefixed
 cp -r vendor/yaycommerce/admin-shell/assets vendor-prefixed/assets
 # Not authoritative: new includes/ classes resolve via PSR-4 without a re-dump.
 composer dump-autoload || exit 1
+
+# Dev-only tools, kept out of the plugin's composer.json so they never ship.
+echo "Installing PHP lint tools..."
+composer install -d dev/tools/lintphp || exit 1
 
 echo "Setup done."
