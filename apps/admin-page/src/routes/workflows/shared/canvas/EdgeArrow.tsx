@@ -1,8 +1,8 @@
 import { EDGE_ARROW_ID, lineColor } from './flow';
 
 /**
- * Defines the edges' arrowhead: an open chevron with round ends, solid even on dashed lines, like
- * Shopify Flow's. ReactFlow's built-in arrow is too thin at this size. Render once inside each canvas.
+ * Defines the edges' arrowhead: an open chevron with round ends, solid even on dashed lines.
+ * ReactFlow's built-in arrow is too thin at this size. Render once inside each canvas.
  */
 export function EdgeArrowDefs() {
   return (

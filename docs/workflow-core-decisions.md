@@ -55,7 +55,7 @@ Each note: **Decision** · **Why** · **Rejected** · **Cost** · **For devs** (
 
 **Why.**
 - "Block" clashes with Gutenberg blocks, which every WP dev knows.
-- The UI already says "step", and so does Shopify Flow, our UX reference.
+- The UI already says "step", as most automation tools do.
 
 **Cost.** Part of F0. Done once, while no branch is open, to avoid conflicts.
 
@@ -192,7 +192,7 @@ Today errors only go to the WooCommerce log, which merchants never open.
 **What merge would add.** Steps shared by two branches written once instead of copied: less duplication, a smaller canvas, and one step id for stats.
 
 **Why not.**
-- None of the 18 v1.0 templates need it. Shopify Flow and Klaviyo don't merge branches either.
+- None of the 18 v1.0 templates need it. Popular automation tools don't merge branches either.
 - The real cost is variables, not drawing. After a merge, a coupon made in only one branch may not exist, so the Validator, "Insert variable" and the AI would all need "maybe exists" logic.
 - Call workflow (v1.1) covers shared steps: put them in their own workflow.
 

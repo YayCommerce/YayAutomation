@@ -13,7 +13,7 @@ import { plugins } from '../../../shared/ui/PluginIcon';
 import { categoryLabels } from '../../../templates';
 
 /**
- * A filter's button, like Shopify Flow's: dashed while nothing is chosen, solid with the choice
+ * A filter's button: dashed while nothing is chosen, solid with the choice
  * ("Categories: Post-purchase") once something is.
  */
 function FilterPill({ label, value, children }: { label: string; value: string | null; children: ReactNode }) {

@@ -75,7 +75,7 @@ export function NodeCardView({
       <div
         className={cn(
           'bg-card text-card-foreground relative rounded-xl border p-4 shadow-sm',
-          // Selected: a dark outline, like Shopify Flow. A ring, so the card keeps its size.
+          // Selected: a dark outline. A ring, so the card keeps its size.
           selected
             ? 'border-foreground/70 ring-foreground/70 shadow-md ring-1'
             : issue === 'error'
@@ -93,7 +93,7 @@ export function NodeCardView({
         <div className={cn('mt-2 text-sm whitespace-pre-line', !stepDef && 'text-muted-foreground')}>
           {stepDef ? <SummaryText text={stepDef.summary(data.config)} /> : choose}
         </div>
-        {/* Branch names right above their tabs, like Shopify Flow. */}
+        {/* Branch names right above their handles. */}
         {type === 'condition' && (
           <div className="relative mt-3 h-5 text-sm" aria-hidden>
             <span className="absolute flex -translate-x-1/2 items-center gap-1" style={{ left: branchLeft.then }}>

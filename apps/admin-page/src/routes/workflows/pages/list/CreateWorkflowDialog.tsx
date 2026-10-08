@@ -13,7 +13,7 @@ import { CreateWorkflowIllustration } from './WorkflowIllustrations';
 const startButton = 'hover:bg-primary/10 hover:text-primary rounded-full';
 
 /**
- * Near full-screen start page, like Shopify Flow's: describe the workflow (the AI assistant; layout
+ * Near full-screen start page: describe the workflow (the AI assistant; layout
  * only for now), or select a trigger, or browse the template library.
  */
 export function CreateWorkflowDialog({

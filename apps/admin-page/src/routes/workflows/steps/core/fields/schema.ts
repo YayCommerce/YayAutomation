@@ -3,7 +3,7 @@ import { __ } from '@wordpress/i18n';
 
 import { unknownVariable, unknownVariableAllowingPending } from '../data';
 
-/** A string that isn't blank. Same message as PHP `Step::required()`, like Shopify Flow's. */
+/** A string that isn't blank. Same message as PHP `Step::required()`. */
 export const required = () =>
   v.pipe(
     v.string(),

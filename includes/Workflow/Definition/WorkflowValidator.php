@@ -162,7 +162,7 @@ final class WorkflowValidator {
                 'message' => __( 'Enter a workflow name.', 'yay-automation' ),
             ];
         }
-        // Workflow-level: no step to point at, like Shopify Flow.
+        // Workflow-level: there is no step to point at.
         if ( ! $trigger_step ) {
             $errors[] = [
                 'code'    => 'no_trigger',

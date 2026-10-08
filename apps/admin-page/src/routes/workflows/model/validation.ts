@@ -18,7 +18,7 @@ export function validateWorkflow({ name, graph }: Pick<Workflow, 'name' | 'graph
   }
   const trigger = graph.nodes.find((node) => node.kind === 'trigger');
   const triggerStep = trigger && stepOf(trigger.data);
-  // Workflow-level: no step to point at, like Shopify Flow.
+  // Workflow-level: there is no step to point at.
   if (!triggerStep) {
     issues.push({ code: 'no_trigger', message: __('Add a trigger to this workflow', 'yay-automation') });
   }

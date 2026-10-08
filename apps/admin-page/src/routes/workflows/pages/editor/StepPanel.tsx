@@ -18,7 +18,7 @@ import { StepPicker } from './StepPicker';
 import { useWorkflowFormContext } from './useWorkflowForm';
 
 /**
- * Panel width for a canvas this wide: roomy on desktops (like Shopify Flow's 480px), narrower on
+ * Panel width for a canvas this wide: roomy on desktops (480px), narrower on
  * laptops and tablets so the graph keeps some room beside it.
  */
 export const panelWidthFor = (canvasWidth: number) => (canvasWidth >= 1200 ? 480 : canvasWidth >= 900 ? 420 : 360);
@@ -149,8 +149,8 @@ export function StepPanel({
 }
 
 /**
- * The panel's card. Slides in from the left when it opens and back out when it closes, like Shopify
- * Flow; switching steps only swaps the content. Render inside `AnimatePresence`.
+ * The panel's card. Slides in from the left when it opens and back out when it closes; switching
+ * steps only swaps the content. Render inside `AnimatePresence`.
  */
 export function StepPanelFrame({ width, children }: { width: number; children: ReactNode }) {
   return (

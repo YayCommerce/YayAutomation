@@ -5,7 +5,7 @@ import type { IssueMode } from '../../shared/canvas/NodeCardView';
 import type { Feedback } from '../../steps/core/fields/feedback';
 
 /**
- * How the editor shows issues, like Shopify Flow:
+ * How the editor shows issues:
  * - quiet while a step is being built;
  * - blue "review" on steps whose panel was left with an issue (`markVisited`);
  * - red "error" everywhere once Turn on / Apply fails (`setErrorMode(true)`), until the steps are

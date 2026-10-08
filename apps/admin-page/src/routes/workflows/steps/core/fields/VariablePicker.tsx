@@ -26,7 +26,7 @@ const matches = (texts: string[], query: string) =>
   texts.some((text) => text.toLowerCase().includes(query.trim().toLowerCase()));
 
 /**
- * "Add a variable", like Shopify Flow: a modal beside the step panel, level with the element being
+ * "Add a variable": a modal beside the step panel, level with the element being
  * edited (the nearest `data-spotlight` around `children`), which stays bright while the rest dims.
  * The trigger first, then the data items the step can read (key, description, `>`), each opening its
  * fields. Searching lists matching fields across items.

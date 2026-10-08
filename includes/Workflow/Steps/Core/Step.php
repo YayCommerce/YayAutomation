@@ -51,7 +51,7 @@ abstract class Step {
         return [];
     }
 
-    /** A required field is blank. One message for all, like Shopify Flow's; mirrored by the TS `required()`. */
+    /** A required field is blank. One message for all; mirrored by the TS `required()`. */
     protected function required(): \WP_Error {
         return $this->invalid( __( 'This field is required', 'yay-automation' ) );
     }
