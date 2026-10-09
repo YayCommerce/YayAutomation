@@ -35,6 +35,12 @@ if [ -n "$php_files" ]; then
   php_out=$(echo "$php_files" | while read -r f; do php -l "$f" 2>&1 | grep -v '^No syntax errors'; done)
   [ -n "$php_out" ] && fail+="PHP syntax failed:"$'\n'"$php_out"$'\n'
 
+  # Unit tests whenever PHP changes. Skipped until `./run.sh setup` installs the tools.
+  phpunit=dev/tools/phpunit/vendor/bin/phpunit
+  if [ -z "$php_out" ] && [ -x "$phpunit" ] && ! out=$($phpunit 2>&1); then
+    fail+="PHP tests failed:"$'\n'"$(echo "$out" | grep -vE '^\s*$' | tail -25)"$'\n'
+  fi
+
   # Coding standard, changed files only. Skipped until `./run.sh setup` installs the tools.
   phpcs=dev/tools/lintphp/vendor/bin/phpcs
   if [ -z "$php_out" ] && [ -x "$phpcs" ]; then

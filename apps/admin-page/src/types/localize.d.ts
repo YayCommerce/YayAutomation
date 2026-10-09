@@ -33,7 +33,10 @@ export interface DataItemMeta {
     /** Full key, e.g. `order.total`. */
     key: string;
     label: string;
+    /** Condition type: picks the operators. */
     type: DataFieldType;
+    /** Full value type, e.g. `money`, `list<entity<order_item>>`. Always sent by PHP; absent on fields the app defines itself. */
+    valueType?: string;
     /** False: merge tag only, not offered in conditions. */
     conditional: boolean;
     /** Enum fields. */

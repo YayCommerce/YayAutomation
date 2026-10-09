@@ -52,13 +52,13 @@ Paths are after F0 (move and rename); the behavior described is v0.1's.
 
 ## §2 Storage · C3, C8, C10
 
-Custom tables replace the CPT and post meta. Upgrades use `dbDelta` + a DB version option, like `VersionStore::maybe_install()` today.
+Custom tables replace the CPT and post meta. One installer, `Storage/Schema::maybe_install()`, creates and upgrades them with `dbDelta` + the `yay_automation_db_version` option. `trigger` and `cursor` are MySQL reserved words, so those columns are `trigger_id` and `position`.
 
 | Table | Columns (main) |
 |---|---|
-| `workflows` | id, name, status, trigger, live_version_id, draft_version_id, activated_at, created_at, updated_at · index (status, trigger) |
+| `workflows` | id, name, status, trigger_id, live_version_id, draft_version_id, activated_at, created_at, updated_at · index (status, trigger_id) |
 | `workflow_versions` | id, workflow_id, action, graph, user_id, created_at. A saved version never changes; only the draft row is edited in place |
-| `runs` | id, workflow_id, version_id, trigger, subject, status, cursor, scope, wait_until, error, parent_run_id, root_run_id, depth, started_at, finished_at |
+| `runs` | id, workflow_id, version_id, trigger_id, subject, status, position, scope, wait_until, error, parent_run_id, root_run_id, depth, started_at, finished_at |
 | `run_steps` | id, run_id, step_id, iteration, status, input, output, error, attempt, started_at, finished_at |
 | `trigger_claims` | workflow_id, subject, claimed_at · unique (workflow_id, subject) |
 
@@ -72,7 +72,7 @@ Custom tables replace the CPT and post meta. Upgrades use `dbDelta` + a DB versi
 
 - **Dispatcher.** Keeps today's flow: collect events during the request, match at shutdown. It now creates a `runs` row per matching workflow and queues it.
 - **Worker.** Action Scheduler is the clock and the worker; the `runs` table is the source of truth. A job takes a row lock (`UPDATE … WHERE status IN (…)`) so two workers never run the same run.
-- **Slices.** A job keeps running steps until the run finishes, hits a Wait, uses ~20 s or its memory budget, or ends a loop batch. It then saves the cursor and queues the next slice.
+- **Slices.** A job keeps running steps until the run finishes, hits a Wait, uses ~20 s or its memory budget, or ends a loop batch. It then saves its position (the `position` column) and queues the next slice.
 - **Errors.** Each step has a policy: stop the run (default) or continue. Retries come in v1.1.
 - **Loop safety.** `parent_run_id`, `root_run_id`, `depth` replace the in-memory chain. Max depth, a per-workflow rate limit that pauses a runaway workflow, and a max loop size.
 - **Scheduled and query triggers.** A schedule fans out to one run per matching subject, in batches. `trigger_claims` stops duplicates ("once per customer per 90 days"). This generalises the `_yay_automation_order_created` order meta in `OrderCreated::claim()`.

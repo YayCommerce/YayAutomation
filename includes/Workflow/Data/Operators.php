@@ -10,14 +10,15 @@ defined( 'ABSPATH' ) || exit;
 final class Operators {
 
     public const BY_TYPE = [
-        DataItem::TYPE_NUMBER => [ 'equal', 'not_equal', 'greater_than', 'greater_or_equal', 'less_than', 'less_or_equal' ],
-        DataItem::TYPE_STRING => [ 'equal', 'not_equal', 'contains', 'not_contains', 'starts_with', 'ends_with', 'is_empty', 'is_not_empty' ],
-        DataItem::TYPE_ENUM   => [ 'is', 'is_not' ],
-        DataItem::TYPE_DATE   => [ 'before', 'after' ],
+        DataItem::TYPE_NUMBER  => [ 'equal', 'not_equal', 'greater_than', 'greater_or_equal', 'less_than', 'less_or_equal' ],
+        DataItem::TYPE_STRING  => [ 'equal', 'not_equal', 'contains', 'not_contains', 'starts_with', 'ends_with', 'is_empty', 'is_not_empty' ],
+        DataItem::TYPE_ENUM    => [ 'is', 'is_not' ],
+        DataItem::TYPE_DATE    => [ 'before', 'after' ],
+        DataItem::TYPE_BOOLEAN => [ 'is_true', 'is_false' ],
     ];
 
     /** Operators that compare against nothing. */
-    private const NO_VALUE = [ 'is_empty', 'is_not_empty' ];
+    private const NO_VALUE = [ 'is_empty', 'is_not_empty', 'is_true', 'is_false' ];
 
     public static function supports( string $type, string $operator ): bool {
         return in_array( $operator, self::BY_TYPE[ $type ] ?? [], true );
@@ -30,12 +31,16 @@ final class Operators {
     /**
      * @param string $type     Field type.
      * @param string $operator Supported by the type.
-     * @param mixed  $actual   Field value: float for numbers, `Y-m-d` for dates, string otherwise.
+     * @param mixed  $actual   Field value: float for numbers, `Y-m-d` for dates, bool for booleans, string otherwise.
      * @param mixed  $expected Value from the rule as typed, or another field's value.
      */
     public static function compare( string $type, string $operator, $actual, $expected ): bool {
         if ( DataItem::TYPE_NUMBER === $type ) {
             return self::compare_numbers( $operator, (float) $actual, (float) $expected );
+        }
+        if ( DataItem::TYPE_BOOLEAN === $type ) {
+            $true = self::is_true( $actual );
+            return 'is_true' === $operator ? $true : ( 'is_false' === $operator && ! $true );
         }
 
         $actual   = (string) $actual;
@@ -70,6 +75,15 @@ final class Operators {
                 return '' !== $actual && $lower > $expected;
         }//end switch
         return false;
+    }
+
+    /**
+     * Stored flags come as bools, `1` / `0` or `yes` / `no`.
+     *
+     * @param mixed $value Field value.
+     */
+    private static function is_true( $value ): bool {
+        return is_bool( $value ) ? $value : is_scalar( $value ) && in_array( strtolower( trim( (string) $value ) ), [ '1', 'yes', 'true', 'on' ], true );
     }
 
     private static function compare_numbers( string $operator, float $actual, float $expected ): bool {

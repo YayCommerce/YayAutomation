@@ -8,6 +8,10 @@
 node_modules/
 
 phpcs.xml
+phpunit.xml.dist
+.phpunit.result.cache
+CLAUDE.local.md
+/tests
 log.xml
 composer.json
 composer.lock

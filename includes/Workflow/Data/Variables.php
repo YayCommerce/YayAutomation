@@ -4,25 +4,30 @@ namespace YayAutomation\Workflow\Data;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * `{{ order.number }}` merge tags in action text. Spaces inside the braces are optional.
- * Same pattern as `VARIABLE_PATTERN` in the admin app's data module.
+ * Merge tags for steps that still get the run context (data item id => object): a bridge to
+ * `Template` and `Scope` until steps take a Scope. `{{ order.number }}` renders as before.
+ *
+ * Checks still know only `item.field` tags: `unknown()` reports any other path (relations,
+ * `steps.*`), so a step can't use them yet, and the admin app's `VARIABLE_PATTERN`
+ * (apps/admin-page/src/routes/workflows/steps/core/data.ts) matches only those tags. Both move to
+ * the Template syntax with the step catalog.
  */
 final class Variables {
 
-    private const PATTERN = '/\{\{\s*([a-z_]+\.[a-z_]+)\s*\}\}/';
+    /** @var Template|null */
+    private static $template = null;
 
     /**
-     * Full keys used in the text, in order, without duplicates.
+     * Paths used in the text, in order, without duplicates.
      *
      * @param string $text Text with merge tags.
      */
     public static function keys( string $text ): array {
-        preg_match_all( self::PATTERN, $text, $matches );
-        return array_values( array_unique( $matches[1] ) );
+        return self::template()->paths( $text );
     }
 
     /**
-     * Keys used in the text that no data item defines.
+     * Paths used in the text that no data item defines.
      *
      * @param string $text Text with merge tags.
      */
@@ -38,16 +43,35 @@ final class Variables {
      * @param bool   $html    Return safe HTML: the text around the tags is escaped too.
      */
     public static function render( string $text, array $context, bool $html = false ): string {
-        $parts = preg_split( self::PATTERN, $text, -1, PREG_SPLIT_DELIM_CAPTURE );
-        $out   = '';
-        foreach ( $parts as $i => $part ) {
-            // preg_split alternates: text, captured key, text, …
-            if ( 1 === $i % 2 ) {
-                $out .= DataRegistry::display( $part, $context, $html );
-            } else {
-                $out .= $html ? esc_html( $part ) : $part;
+        return self::template()->render( $text, self::scope( $context ), $html );
+    }
+
+    /**
+     * The context as a Scope: its objects become trigger refs, already loaded; other keys (a status
+     * change's `from` / `to`) stay plain values.
+     *
+     * @param array $context Run context.
+     */
+    private static function scope( array $context ): Scope {
+        $entities = DataRegistry::entities();
+        $resolver = new RefResolver();
+        $trigger  = [];
+        foreach ( $context as $key => $value ) {
+            if ( isset( $entities[ $key ] ) && is_object( $value ) ) {
+                // Never stored, so the id only has to be unique within this render.
+                $ref = new Ref( $key, 'context' );
+                $resolver->prime( $ref, $value );
+                $value = $ref;
             }
+            $trigger[ $key ] = $value;
         }
-        return $out;
+        return new Scope( [ 'trigger' => $trigger ], $resolver, $entities );
+    }
+
+    private static function template(): Template {
+        if ( null === self::$template ) {
+            self::$template = new Template();
+        }
+        return self::$template;
     }
 }

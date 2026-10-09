@@ -14,7 +14,7 @@ final class YayAutomation {
         \YayAutomation\Engine\BEPages\AdminPage::get_instance();
         \YayAutomation\Engine\API\RestAPI::get_instance();
         \YayAutomation\Workflow\Storage\WorkflowPostType::get_instance();
-        \YayAutomation\Workflow\Storage\VersionStore::maybe_install();
+        \YayAutomation\Workflow\Storage\Schema::maybe_install();
         if ( class_exists( 'WooCommerce' ) ) {
             \YayAutomation\Workflow\Runtime\Runner::get_instance();
         }

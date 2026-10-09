@@ -15,6 +15,9 @@ final class DataRegistry {
     /** @var DataItem[]|null Keyed by item id. */
     private static $items = null;
 
+    /** @var DataItem[]|null Keyed by entity type id. */
+    private static $entities = null;
+
     /** @return DataItem[] */
     public static function items(): array {
         if ( null === self::$items ) {
@@ -24,6 +27,20 @@ final class DataRegistry {
             }
         }
         return self::$items;
+    }
+
+    /**
+     * Every entity type a Scope can read: the items, plus those reached only through a relation
+     * (`order.items` → order_item).
+     *
+     * @return DataItem[]
+     */
+    public static function entities(): array {
+        if ( null === self::$entities ) {
+            $item_data      = new OrderItemData();
+            self::$entities = self::items() + [ $item_data->id() => $item_data ];
+        }
+        return self::$entities;
     }
 
     /**
@@ -76,16 +93,24 @@ final class DataRegistry {
         return DataItem::display( $field, $context[ self::item_of( $key ) ] ?? null, $html );
     }
 
-    /** Shape must match `DataItemMeta` in apps/admin-page/src/types/localize.d.ts. */
+    /**
+     * Shape must match `DataItemMeta` in apps/admin-page/src/types/localize.d.ts. `type` is the
+     * condition type; `valueType` the full one. Relations (`order.customer`) aren't listed: their
+     * fields are the related item's.
+     */
     public static function to_client(): array {
         $items = [];
         foreach ( self::items() as $item ) {
             $fields = [];
             foreach ( $item->fields() as $key => $field ) {
+                if ( $field['value_type']->is( Type::ENTITY ) ) {
+                    continue;
+                }
                 $client = [
                     'key'         => $item->id() . '.' . $key,
                     'label'       => $field['label'],
                     'type'        => $field['type'],
+                    'valueType'   => $field['value_type']->to_string(),
                     'conditional' => $field['conditional'],
                 ];
                 if ( $field['options'] ) {
@@ -98,7 +123,7 @@ final class DataRegistry {
                     }
                 }
                 $fields[] = $client;
-            }
+            }//end foreach
             $items[] = [
                 'id'          => $item->id(),
                 'label'       => $item->label(),

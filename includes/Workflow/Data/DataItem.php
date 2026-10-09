@@ -10,7 +10,10 @@ defined( 'ABSPATH' ) || exit;
  * Field definition (see `define()`):
  * - `label`       string
  * - `type`        one of the TYPE_* constants; picks the condition operators
- * - `value`       fn( $object ): mixed — typed value for conditions (float, `Y-m-d`, slug or string)
+ * - `value_type`  Type — the full type (money, entity<customer>, list<…>); defaults to `type`'s.
+ *                 An `entity` or `list<entity>` field holds Refs: a relation, read through a Scope.
+ * - `value`       fn( $object ): mixed — typed value for conditions (float, `Y-m-d`, slug, bool or
+ *                 string), or Ref(s) for a relation
  * - `display`     fn( $object, bool $html ): string — merge tag text; defaults to the value (an enum's
  *                 option label). With `$html` it returns safe HTML, otherwise plain text.
  * - `options`     fn(): array value => label, enum fields only
@@ -18,10 +21,11 @@ defined( 'ABSPATH' ) || exit;
  */
 abstract class DataItem {
 
-    public const TYPE_NUMBER = 'number';
-    public const TYPE_STRING = 'string';
-    public const TYPE_ENUM   = 'enum';
-    public const TYPE_DATE   = 'date';
+    public const TYPE_NUMBER  = 'number';
+    public const TYPE_STRING  = 'string';
+    public const TYPE_ENUM    = 'enum';
+    public const TYPE_DATE    = 'date';
+    public const TYPE_BOOLEAN = 'boolean';
 
     /** @var array[]|null */
     private $fields = null;
@@ -45,6 +49,7 @@ abstract class DataItem {
                     'options'     => null,
                     'conditional' => true,
                     'display'     => null,
+                    'value_type'  => Type::from_legacy( $field['type'] ),
                 ];
             }
         }
@@ -62,8 +67,15 @@ abstract class DataItem {
         if ( $field['display'] ) {
             return (string) ( $field['display'] )( $item_object, $html );
         }
-        $text = (string) ( $field['value'] )( $item_object );
-        if ( self::TYPE_ENUM === $field['type'] ) {
+        $value = ( $field['value'] )( $item_object );
+        // A relation (Ref or list of Refs) has no text of its own; its fields do.
+        if ( ! is_scalar( $value ) ) {
+            return '';
+        }
+        $text = (string) $value;
+        if ( is_bool( $value ) ) {
+            $text = $value ? __( 'Yes', 'yay-automation' ) : __( 'No', 'yay-automation' );
+        } elseif ( self::TYPE_ENUM === $field['type'] ) {
             $text = (string) ( ( $field['options'] )()[ $text ] ?? $text );
         }
         return $html ? esc_html( $text ) : $text;

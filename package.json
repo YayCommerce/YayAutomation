@@ -9,6 +9,7 @@
     "lint:php": "dev/tools/lintphp/vendor/bin/phpcs",
     "lint:php:fix": "dev/tools/lintphp/vendor/bin/phpcbf",
     "test": "pnpm -r test",
+    "test:php": "dev/tools/phpunit/vendor/bin/phpunit",
     "format": "pnpm -r format",
     "analyze": "pnpm -F @yay-automation/admin analyze"
   },

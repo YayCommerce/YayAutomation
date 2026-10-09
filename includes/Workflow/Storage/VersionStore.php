@@ -10,7 +10,8 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Rows of the `yay_automation_versions` table: one snapshot of a workflow's graph per version, with
  * the last action taken on it. Which row is live or the draft is tracked by `WorkflowRepository`.
- * Dates are GMT.
+ * Dates are GMT. Runs pin a version, so a saved version never changes: `update()` is only for the
+ * draft row, and for the live row of a workflow never turned on (it has no runs).
  */
 final class VersionStore {
 
@@ -21,39 +22,34 @@ final class VersionStore {
 
     public const PER_PAGE = 10;
 
-    // Bump when the schema below changes; dbDelta() then upgrades the table on the next load.
-    private const DB_VERSION        = '1';
-    private const DB_VERSION_OPTION = 'yay_automation_db_version';
-
     public static function table(): string {
-        global $wpdb;
-        return $wpdb->prefix . 'yay_automation_versions';
+        return Schema::table( Schema::VERSIONS );
     }
 
-    /** Creates or upgrades the table. Runs on every load, so it also covers plugin updates. */
-    public static function maybe_install(): void {
-        if ( self::DB_VERSION === get_option( self::DB_VERSION_OPTION ) ) {
-            return;
-        }
+    /**
+     * One version with its graph decoded, or null. The executor loads a run's pinned version this
+     * way, never the live graph.
+     *
+     * @param int $id Row id.
+     */
+    public static function find( int $id ): ?array {
         global $wpdb;
-        require_once ABSPATH . 'wp-admin/includes/upgrade.php';
-        $table   = self::table();
-        $charset = $wpdb->get_charset_collate();
-        // dbDelta() needs two spaces after PRIMARY KEY.
-        dbDelta(
-            "CREATE TABLE {$table} (
-                id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-                workflow_id bigint(20) unsigned NOT NULL,
-                action varchar(20) NOT NULL,
-                graph longtext NOT NULL,
-                user_id bigint(20) unsigned NOT NULL DEFAULT 0,
-                created_at datetime NOT NULL,
-                updated_at datetime NOT NULL,
-                PRIMARY KEY  (id),
-                KEY workflow_id (workflow_id)
-            ) {$charset};"
-        );
-        update_option( self::DB_VERSION_OPTION, self::DB_VERSION );
+        $table = self::table();
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        $row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE id = %d", $id ), ARRAY_A );
+        if ( ! $row ) {
+            return null;
+        }
+        $graph = json_decode( $row['graph'], true );
+        return [
+            'id'          => (int) $row['id'],
+            'workflow_id' => (int) $row['workflow_id'],
+            'action'      => $row['action'],
+            'graph'       => is_array( $graph ) ? $graph : [],
+            'user_id'     => (int) $row['user_id'],
+            'created_at'  => $row['created_at'],
+            'updated_at'  => $row['updated_at'],
+        ];
     }
 
     /**

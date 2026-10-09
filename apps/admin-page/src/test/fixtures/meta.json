@@ -121,24 +121,28 @@
                         "key": "order.number",
                         "label": "Order number",
                         "type": "string",
+                        "valueType": "string",
                         "conditional": true
                     },
                     {
                         "key": "order.total",
                         "label": "Order total",
                         "type": "number",
+                        "valueType": "money",
                         "conditional": true
                     },
                     {
                         "key": "order.subtotal",
                         "label": "Order subtotal",
                         "type": "number",
+                        "valueType": "money",
                         "conditional": true
                     },
                     {
                         "key": "order.status",
                         "label": "Order status",
                         "type": "enum",
+                        "valueType": "enum",
                         "conditional": true,
                         "options": [
                             {
@@ -179,6 +183,7 @@
                         "key": "order.payment_method",
                         "label": "Payment method",
                         "type": "enum",
+                        "valueType": "enum",
                         "conditional": true,
                         "options": [
                             {
@@ -199,30 +204,35 @@
                         "key": "order.shipping_method",
                         "label": "Shipping method",
                         "type": "string",
+                        "valueType": "string",
                         "conditional": true
                     },
                     {
                         "key": "order.item_count",
                         "label": "Item count",
                         "type": "number",
+                        "valueType": "number",
                         "conditional": true
                     },
                     {
                         "key": "order.created_date",
                         "label": "Order date",
                         "type": "date",
+                        "valueType": "date",
                         "conditional": true
                     },
                     {
                         "key": "order.admin_url",
                         "label": "Order admin URL",
                         "type": "string",
+                        "valueType": "string",
                         "conditional": false
                     },
                     {
                         "key": "order.items",
                         "label": "Order items",
                         "type": "string",
+                        "valueType": "list<entity<order_item>>",
                         "conditional": false
                     }
                 ]
@@ -236,36 +246,42 @@
                         "key": "customer.email",
                         "label": "Customer email",
                         "type": "string",
+                        "valueType": "string",
                         "conditional": true
                     },
                     {
                         "key": "customer.first_name",
                         "label": "Customer first name",
                         "type": "string",
+                        "valueType": "string",
                         "conditional": true
                     },
                     {
                         "key": "customer.last_name",
                         "label": "Customer last name",
                         "type": "string",
+                        "valueType": "string",
                         "conditional": true
                     },
                     {
                         "key": "customer.full_name",
                         "label": "Customer full name",
                         "type": "string",
+                        "valueType": "string",
                         "conditional": true
                     },
                     {
                         "key": "customer.phone",
                         "label": "Customer phone",
                         "type": "string",
+                        "valueType": "string",
                         "conditional": true
                     },
                     {
                         "key": "customer.billing_country",
                         "label": "Billing country",
                         "type": "enum",
+                        "valueType": "enum",
                         "conditional": true,
                         "options": [
                             {
@@ -1281,12 +1297,14 @@
                         "key": "site.name",
                         "label": "Site name",
                         "type": "string",
+                        "valueType": "string",
                         "conditional": true
                     },
                     {
                         "key": "site.url",
                         "label": "Site URL",
                         "type": "string",
+                        "valueType": "string",
                         "conditional": false
                     }
                 ]
@@ -1318,6 +1336,10 @@
             "date": [
                 "before",
                 "after"
+            ],
+            "boolean": [
+                "is_true",
+                "is_false"
             ]
         },
         "always": [

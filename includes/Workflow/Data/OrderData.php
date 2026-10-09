@@ -3,7 +3,7 @@ namespace YayAutomation\Workflow\Data;
 
 defined( 'ABSPATH' ) || exit;
 
-/** A WooCommerce order. Context object: \WC_Order. */
+/** A WooCommerce order. Context object: \WC_Order. Relations: `customer`, `items`. */
 final class OrderData extends DataItem {
 
     public const ID = 'order';
@@ -52,16 +52,18 @@ final class OrderData extends DataItem {
                 'value' => fn( \WC_Order $order ) => (string) $order->get_order_number(),
             ],
             'total'           => [
-                'label'   => __( 'Order total', 'yay-automation' ),
-                'type'    => self::TYPE_NUMBER,
-                'value'   => fn( \WC_Order $order ) => (float) $order->get_total(),
-                'display' => fn( \WC_Order $order, bool $html ) => self::price( $order, (float) $order->get_total(), $html ),
+                'label'      => __( 'Order total', 'yay-automation' ),
+                'type'       => self::TYPE_NUMBER,
+                'value_type' => Type::money(),
+                'value'      => fn( \WC_Order $order ) => (float) $order->get_total(),
+                'display'    => fn( \WC_Order $order, bool $html ) => self::price( $order, (float) $order->get_total(), $html ),
             ],
             'subtotal'        => [
-                'label'   => __( 'Order subtotal', 'yay-automation' ),
-                'type'    => self::TYPE_NUMBER,
-                'value'   => fn( \WC_Order $order ) => (float) $order->get_subtotal(),
-                'display' => fn( \WC_Order $order, bool $html ) => self::price( $order, (float) $order->get_subtotal(), $html ),
+                'label'      => __( 'Order subtotal', 'yay-automation' ),
+                'type'       => self::TYPE_NUMBER,
+                'value_type' => Type::money(),
+                'value'      => fn( \WC_Order $order ) => (float) $order->get_subtotal(),
+                'display'    => fn( \WC_Order $order, bool $html ) => self::price( $order, (float) $order->get_subtotal(), $html ),
             ],
             'status'          => [
                 'label'   => __( 'Order status', 'yay-automation' ),
@@ -93,6 +95,14 @@ final class OrderData extends DataItem {
                 'value'   => fn( \WC_Order $order ) => $order->get_date_created() ? $order->get_date_created()->date( 'Y-m-d' ) : '',
                 'display' => fn( \WC_Order $order, bool $html ) => self::text( wc_format_datetime( $order->get_date_created() ), $html ),
             ],
+            'customer'        => [
+                'label'       => __( 'Customer', 'yay-automation' ),
+                'type'        => self::TYPE_STRING,
+                'value_type'  => Type::entity( CustomerData::ID ),
+                // The billing details on the order, so guests have a customer too.
+                'value'       => fn( \WC_Order $order ) => new Ref( CustomerData::ID, 'order:' . $order->get_id() ),
+                'conditional' => false,
+            ],
             'admin_url'       => [
                 'label'       => __( 'Order admin URL', 'yay-automation' ),
                 'type'        => self::TYPE_STRING,
@@ -102,7 +112,10 @@ final class OrderData extends DataItem {
             'items'           => [
                 'label'       => __( 'Order items', 'yay-automation' ),
                 'type'        => self::TYPE_STRING,
-                'value'       => fn( \WC_Order $order ) => '',
+                'value_type'  => Type::list_of( Type::entity( OrderItemData::ID ) ),
+                'value'       => fn( \WC_Order $order ) => array_values(
+                    array_map( fn( \WC_Order_Item $item ) => new Ref( OrderItemData::ID, $item->get_id() ), $order->get_items() )
+                ),
                 'display'     => [ self::class, 'items' ],
                 'conditional' => false,
             ],
@@ -160,7 +173,14 @@ final class OrderData extends DataItem {
         return trim( (string) preg_replace( '/\s*\n\s*/', ' ', $table ) );
     }
 
-    private static function price( \WC_Order $order, float $amount, bool $html ): string {
+    /**
+     * An amount in the order's currency: HTML from wc_price(), or the same as plain text.
+     *
+     * @param \WC_Order $order  Order.
+     * @param float     $amount Amount.
+     * @param bool      $html   HTML instead of plain text.
+     */
+    public static function price( \WC_Order $order, float $amount, bool $html ): string {
         $price = wc_price( $amount, [ 'currency' => $order->get_currency() ] );
         return $html ? $price : html_entity_decode( wp_strip_all_tags( $price ), ENT_QUOTES, 'UTF-8' );
     }
