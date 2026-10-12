@@ -48,6 +48,17 @@ describe('validateWorkflow', () => {
       expect.objectContaining({ code: 'invalid_config', nodeId: 'email' }),
     ]);
   });
+  // PHP's Validator accepts these (deep paths, step outputs, filters); the editor must not block them.
+  it('accepts every merge tag the server accepts', () => {
+    const graph = base();
+    node(graph, 'email').data.config = {
+      ...node(graph, 'email').data.config,
+      subject: 'Hi {{ order.customer.first_name | default: "there" }} {{ trigger.order.total }}',
+      message:
+        'Total {{ order.total | money }}; result {{ steps.condition.result }}; {{ steps.action-mv0pf42q0l81.type }}',
+    };
+    expect(validateWorkflow({ name: 'Alert', graph })).toEqual([]);
+  });
 });
 
 describe('availableData', () => {

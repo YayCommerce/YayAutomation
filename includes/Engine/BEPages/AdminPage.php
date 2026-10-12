@@ -4,12 +4,9 @@ namespace YayAutomation\Engine\BEPages;
 
 use YayAutomation\Engine\Register\ScriptName;
 use YayAutomation\Utils\SingletonTrait;
-use YayAutomation\Workflow\Data\DataRegistry;
-use YayAutomation\Workflow\Data\Operators;
 use YayAutomation\Workflow\Data\OrderData;
-use YayAutomation\Workflow\Extend\Plugins;
+use YayAutomation\Workflow\Definition\Catalog;
 use YayAutomation\Workflow\Steps\Actions\SendInternalEmail;
-use YayAutomation\Workflow\Steps\Core\StepRegistry;
 use YayAutomation\YayAutomation;
 
 defined( 'ABSPATH' ) || exit;
@@ -83,19 +80,12 @@ class AdminPage {
             ],
             'wc'         => [
                 'active'         => class_exists( 'WooCommerce' ),
-                'orderStatuses'  => self::options( OrderData::statuses() ),
+                'orderStatuses'  => Catalog::options( OrderData::statuses() ),
                 'currencySymbol' => function_exists( 'get_woocommerce_currency_symbol' )
                     ? html_entity_decode( get_woocommerce_currency_symbol(), ENT_QUOTES, 'UTF-8' )
                     : '',
             ],
-            'automation' => [
-                'plugins'   => Plugins::to_client(),
-                'steps'     => StepRegistry::to_client(),
-                'data'      => DataRegistry::to_client(),
-                'operators' => Operators::BY_TYPE,
-                'always'    => DataRegistry::ALWAYS,
-                'email'     => SendInternalEmail::sender(),
-            ],
+            'automation' => Catalog::to_client() + [ 'email' => SendInternalEmail::sender() ],
             'docs'       => [
                 /**
                  * Link under the empty "Workflow runs" section on a workflow's page.
@@ -105,22 +95,6 @@ class AdminPage {
                 'workflowRuns' => esc_url_raw( apply_filters( 'yay_automation_workflow_runs_docs_url', 'https://docs.yaycommerce.com/' ) ),
             ],
         ];
-    }
-
-    /**
-     * A value => label map as a list, so JSON keeps the order.
-     *
-     * @param array $options value => label.
-     */
-    private static function options( array $options ): array {
-        $list = [];
-        foreach ( $options as $value => $label ) {
-            $list[] = [
-                'value' => (string) $value,
-                'label' => $label,
-            ];
-        }
-        return $list;
     }
 
     public function render_page() {

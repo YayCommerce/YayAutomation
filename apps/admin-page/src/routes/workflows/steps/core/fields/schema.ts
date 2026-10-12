@@ -1,13 +1,28 @@
+import type { StepId } from '@yay-automation/types';
 import * as v from 'valibot';
-import { __ } from '@wordpress/i18n';
+import { __, sprintf } from '@wordpress/i18n';
 
 import { unknownVariable, unknownVariableAllowingPending } from '../data';
 
-/** A string that isn't blank. Same message as PHP `Step::required()`. */
+/** A string that isn't blank. Generic message, for steps PHP doesn't have yet. */
 export const required = () =>
   v.pipe(
     v.string(),
     v.check((value) => value.trim() !== '', __('This field is required', 'yay-automation')),
+  );
+
+/**
+ * A string that isn't blank, for a step PHP has: `message` is the same string as the PHP field's
+ * `required( … )` (e.g. "%s needs a note."), filled with the step's label from the catalog.
+ */
+export const requiredFor = (stepId: StepId, message: string) =>
+  v.pipe(
+    v.string(),
+    v.check(
+      (value) => value.trim() !== '',
+      // `message` holds one %s; the cast tells sprintf's types to expect one argument.
+      sprintf(message as '%s', window.yayAutomationMeta.automation.steps[stepId]?.label ?? stepId),
+    ),
   );
 
 /**

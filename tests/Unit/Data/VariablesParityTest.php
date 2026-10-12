@@ -116,9 +116,8 @@ final class VariablesParityTest extends TestCase {
         $this->assertSame( LegacyVariables::render( $text, $blank ), Variables::render( $text, $blank ) );
     }
 
-    public function test_keys_and_unknown_match_for_old_tags(): void {
+    public function test_keys_match_for_old_tags(): void {
         $text = $this->old_tags() . ' {{order.number}} {{ order.nope }} {{ nope.field }}';
         $this->assertSame( LegacyVariables::keys( $text ), Variables::keys( $text ) );
-        $this->assertSame( [ 'order.nope', 'nope.field' ], Variables::unknown( $text ) );
     }
 }

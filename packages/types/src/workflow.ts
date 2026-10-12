@@ -113,7 +113,7 @@ export interface WorkflowTemplate {
   graph: WorkflowGraph;
 }
 
-/** Codes shared by the TS `validateWorkflow()` and PHP `WorkflowValidator::errors()`. */
+/** Codes shared by the TS `validateWorkflow()` and PHP `Validator::errors()`. */
 export type WorkflowIssueCode =
   | 'name_required'
   | 'no_trigger'

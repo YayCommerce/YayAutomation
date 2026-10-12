@@ -1,6 +1,8 @@
 <?php
 namespace YayAutomation\Workflow\Steps\Core;
 
+use YayAutomation\Workflow\Data\Scope;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -13,9 +15,6 @@ abstract class Trigger extends Step {
     public function kind(): string {
         return self::KIND_TRIGGER;
     }
-
-    /** Plugin the trigger is grouped under in the picker (see Workflow/Extend/Plugins). */
-    abstract public function plugin(): string;
 
     /** Data items every run context of this trigger holds. */
     abstract public function provides(): array;
@@ -59,6 +58,16 @@ abstract class Trigger extends Step {
      */
     public function claim( array $args ): bool {
         return true;
+    }
+
+    /**
+     * Nothing to do: what the trigger supplies is already in the Scope.
+     *
+     * @param Scope $scope  Run scope.
+     * @param array $config Sanitized, valid config.
+     */
+    public function run( Scope $scope, array $config ): StepResult { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- the contract every step shares.
+        return StepResult::ok();
     }
 
     public function client_meta(): array {

@@ -7,7 +7,7 @@ const BRANCHES = ['then', 'otherwise'];
 
 /**
  * Why the server would reject this graph's shape on save, one message per problem (empty = fine).
- * Same rules as PHP `WorkflowValidator::prepare_graph()`: valid unique step ids, known steps of the
+ * Same rules as PHP `GraphSchema::prepare()`: valid unique step ids, known steps of the
  * right kind (or none yet on a trigger or action), exactly one trigger, and edges that form a tree (only conditions branch, and always
  * name the branch; one parent per step; one child per handle).
  *

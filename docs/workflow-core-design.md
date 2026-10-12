@@ -96,7 +96,7 @@ Step:   id() label() plugin() module()
         icon(): string           a name from core's step icon list, e.g. "mail" (L5)
         fields(): Field[]        settings, rules, widgets
         validate( config )       optional extra checks the field rules can't express
-        outputs(): Field[]       what later steps can use
+        outputs(): array         what later steps can use: key => [ label, type, options? ]
         summary(): string        card text, e.g. "Send email to %recipients%"
         run( Scope, config ): StepResult   ok( outputs ) | skipped( reason ) | failed( error )
 ```

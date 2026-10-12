@@ -2,9 +2,13 @@
 namespace YayAutomation\Workflow\Steps\Actions;
 
 use YayAutomation\Workflow\Data\OrderData;
-use YayAutomation\Workflow\Data\Variables;
+use YayAutomation\Workflow\Data\Scope;
+use YayAutomation\Workflow\Data\Type;
+use YayAutomation\Workflow\Extend\Modules;
 use YayAutomation\Workflow\Extend\Plugins;
 use YayAutomation\Workflow\Steps\Core\Action;
+use YayAutomation\Workflow\Steps\Core\Field;
+use YayAutomation\Workflow\Steps\Core\StepResult;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -17,8 +21,24 @@ class UpdateOrderMeta extends Action {
         return self::ID;
     }
 
+    public function label(): string {
+        return __( 'Update order custom field', 'yay-automation' );
+    }
+
+    public function description(): string {
+        return __( 'Set a custom field (meta) on the order.', 'yay-automation' );
+    }
+
     public function plugin(): string {
         return Plugins::WOOCOMMERCE;
+    }
+
+    public function module(): string {
+        return Modules::CORE;
+    }
+
+    public function icon(): string {
+        return 'database';
     }
 
     public function category(): string {
@@ -29,26 +49,41 @@ class UpdateOrderMeta extends Action {
         return [ OrderData::ID ];
     }
 
-    public function sanitize( $config ): array {
-        $config = is_array( $config ) ? $config : [];
-
+    public function fields(): array {
         return [
-            'key'   => sanitize_text_field( (string) ( $config['key'] ?? '' ) ),
-            'value' => self::single_line( (string) ( $config['value'] ?? '' ) ),
+            Field::text( 'key', __( 'Field name', 'yay-automation' ) )
+                /* translators: %s: step name, e.g. "Update order custom field" */
+                ->required( __( '%s needs a field name.', 'yay-automation' ) )
+                ->help( __( 'The meta key, e.g. _vip_order.', 'yay-automation' ) ),
+            Field::text( 'value', __( 'Value', 'yay-automation' ) )->variables(),
+        ];
+    }
+
+    public function summary(): string {
+        /* translators: %key%: custom field name, %value%: its value; keep the placeholders as they are. */
+        return __( 'Set the order field %key% to %value%', 'yay-automation' );
+    }
+
+    public function outputs(): array {
+        return [
+            'key' => [
+                'label' => __( 'Field name', 'yay-automation' ),
+                'type'  => Type::string(),
+            ],
         ];
     }
 
     public function validate( array $config ) {
-        if ( '' === $config['key'] ) {
-            return $this->required();
-        }
-        return $this->unknown_variable( $config['value'] ) ?? true;
+        return $this->field_error( $config ) ?? true;
     }
 
-    public function run( array $context, array $config ) {
-        $order = $context[ OrderData::ID ];
-        $order->update_meta_data( $config['key'], Variables::render( $config['value'], $context ) );
+    public function run( Scope $scope, array $config ): StepResult {
+        $order = $scope->entity( OrderData::ID );
+        if ( ! $order ) {
+            return StepResult::skipped( __( 'There is no order to update.', 'yay-automation' ) );
+        }
+        $order->update_meta_data( $config['key'], self::render( $config['value'], $scope ) );
         $order->save();
-        return true;
+        return StepResult::ok( [ 'key' => $config['key'] ] );
     }
 }

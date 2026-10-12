@@ -1,9 +1,14 @@
 <?php
 namespace YayAutomation\Workflow\Steps\Actions;
 
-use YayAutomation\Workflow\Data\Variables;
+use YayAutomation\Workflow\Data\Scope;
+use YayAutomation\Workflow\Data\Type;
+use YayAutomation\Workflow\Definition\Messages;
+use YayAutomation\Workflow\Extend\Modules;
 use YayAutomation\Workflow\Extend\Plugins;
 use YayAutomation\Workflow\Steps\Core\Action;
+use YayAutomation\Workflow\Steps\Core\Field;
+use YayAutomation\Workflow\Steps\Core\StepResult;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -21,8 +26,24 @@ class SendInternalEmail extends Action {
         return self::ID;
     }
 
+    public function label(): string {
+        return __( 'Send internal email', 'yay-automation' );
+    }
+
+    public function description(): string {
+        return __( "Send an email notification to your staff. The email will be sent from your store's contact email address.", 'yay-automation' );
+    }
+
     public function plugin(): string {
         return Plugins::WOOCOMMERCE;
+    }
+
+    public function module(): string {
+        return Modules::CORE;
+    }
+
+    public function icon(): string {
+        return 'mail';
     }
 
     public function category(): string {
@@ -33,47 +54,72 @@ class SendInternalEmail extends Action {
         return [];
     }
 
-    public function sanitize( $config ): array {
-        $config = is_array( $config ) ? $config : [];
-
+    /** The sender is shown from `sender()` (EmailMeta); the notice explains where it comes from. */
+    public function fields(): array {
         return [
-            'recipients' => sanitize_text_field( (string) ( $config['recipients'] ?? '' ) ),
-            'subject'    => self::single_line( (string) ( $config['subject'] ?? '' ) ),
-            'message'    => self::plain_text( (string) ( $config['message'] ?? '' ) ),
+            Field::notice( 'from', __( 'From', 'yay-automation' ), __( 'The store email used to contact customers', 'yay-automation' ) ),
+            Field::emails( 'recipients', __( 'To', 'yay-automation' ) )
+                ->help( __( 'Separate addresses with commas. Leave blank to use the site admin email.', 'yay-automation' ) ),
+            Field::text( 'subject', __( 'Subject', 'yay-automation' ) )
+                /* translators: %s: step name, e.g. "Send internal email" */
+                ->required( __( '%s needs a subject.', 'yay-automation' ) )
+                ->variables(),
+            Field::textarea( 'message', __( 'Message', 'yay-automation' ) )
+                /* translators: %s: step name, e.g. "Send internal email" */
+                ->required( __( '%s needs a message.', 'yay-automation' ) )
+                ->variables(),
         ];
     }
 
-    public function validate( array $config ) {
-        foreach ( self::split_recipients( $config['recipients'] ) as $email ) {
-            if ( ! is_email( $email ) ) {
-                /* translators: %s: the invalid email address */
-                return $this->invalid( sprintf( __( 'Invalid recipient email: %s', 'yay-automation' ), $email ) );
-            }
-        }
-        if ( '' === $config['subject'] ) {
-            return $this->required();
-        }
-        if ( '' === $config['message'] ) {
-            return $this->required();
-        }
-        return $this->unknown_variable( $config['subject'], $config['message'] ) ?? true;
+    public function summary(): string {
+        /* translators: %recipients%: email addresses, %subject%: email subject; keep the placeholders as they are. */
+        return __( 'Send email to %recipients% with the following subject: %subject%', 'yay-automation' );
     }
 
-    public function run( array $context, array $config ) {
-        $recipients = self::split_recipients( $config['recipients'] );
+    public function outputs(): array {
+        return [
+            'to' => [
+                'label' => __( 'Sent to', 'yay-automation' ),
+                'type'  => Type::list_of( Type::string() ),
+            ],
+        ];
+    }
+
+    /**
+     * Field rules, in today's order and words: recipients first, then subject and message.
+     *
+     * @param array $config Sanitized config.
+     */
+    public function validate( array $config ) {
+        foreach ( Field::split_emails( $config['recipients'] ) as $email ) {
+            if ( ! is_email( $email ) ) {
+                return $this->invalid( Messages::get( 'invalidEmail', $email ), 'recipients' );
+            }
+        }
+        return $this->field_error( $config ) ?? true;
+    }
+
+    /**
+     * Outputs the addresses it was sent to; never the subject or body.
+     *
+     * @param Scope $scope  Run scope.
+     * @param array $config Sanitized, valid config.
+     */
+    public function run( Scope $scope, array $config ): StepResult {
+        $recipients = Field::split_emails( $config['recipients'] );
         if ( ! $recipients ) {
-            $recipients = [ get_option( 'admin_email' ) ];
+            $recipients = [ (string) get_option( 'admin_email' ) ];
         }
 
         // Merged values may contain line breaks; a subject must stay one line.
-        $subject = self::single_line( Variables::render( $config['subject'], $context ) );
+        $subject = Field::single_line( self::render( $config['subject'], $scope ) );
         $mailer  = WC()->mailer();
-        $body    = $mailer->wrap_message( $subject, Variables::render( $config['message'], $context, true ) );
+        $body    = $mailer->wrap_message( $subject, self::render( $config['message'], $scope, true ) );
 
         if ( ! $mailer->send( $recipients, $subject, $body ) ) {
-            return new \WP_Error( 'yay_automation_mail_failed', __( 'The email could not be sent.', 'yay-automation' ) );
+            return StepResult::failed( new \WP_Error( 'yay_automation_mail_failed', __( 'Couldn’t send the email.', 'yay-automation' ) ) );
         }
-        return true;
+        return StepResult::ok( [ 'to' => $recipients ] );
     }
 
     /**
@@ -86,9 +132,5 @@ class SendInternalEmail extends Action {
             'fromAddress' => (string) get_option( 'woocommerce_email_from_address', get_option( 'admin_email' ) ),
             'settingsUrl' => admin_url( 'admin.php?page=wc-settings&tab=email' ),
         ];
-    }
-
-    private static function split_recipients( string $recipients ): array {
-        return array_values( array_filter( array_map( 'trim', explode( ',', $recipients ) ) ) );
     }
 }

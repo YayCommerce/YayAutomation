@@ -1,6 +1,7 @@
 import { __, sprintf } from '@wordpress/i18n';
 
 import type { DataFieldType, DataItemMeta } from '@/types/localize';
+import { messages } from '../../model/messages';
 import { automationMeta, isPendingField } from './pending';
 
 /**
@@ -82,8 +83,7 @@ function firstUnknown(texts: string[], allowPending: boolean) {
   for (const text of texts) {
     const unknown = variableKeys(text).find((key) => !fieldByKey(key) || (!allowPending && isPendingField(key)));
     if (unknown) {
-      /* translators: %s: merge tag, e.g. {{ order.foo }} */
-      return sprintf(__('Unknown variable: %s', 'yay-automation'), variableTag(unknown));
+      return sprintf(messages.unknownVariable, variableTag(unknown));
     }
   }
   return null;

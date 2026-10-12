@@ -1,7 +1,7 @@
 import type { StepId } from '@yay-automation/types';
 import { __ } from '@wordpress/i18n';
 
-import type { DataFieldType, DataItemMeta, PluginMeta, StepMeta } from '@/types/localize';
+import type { DataFieldType, DataItemMeta, StepMeta } from '@/types/localize';
 
 /**
  * Placeholder engine meta for steps and data fields whose PHP side isn't built yet, so their forms,
@@ -9,25 +9,10 @@ import type { DataFieldType, DataItemMeta, PluginMeta, StepMeta } from '@/types/
  * soon" as soon as PHP sends it. Once PHP sends everything here, delete this file and read
  * `window.yayAutomationMeta.automation` directly again.
  *
- * What PHP has to match: the YayAutomation plugin in `Workflow\Extend\Plugins` and Condition's `plugin`, each pending step's `schema.ts` (its `sanitize()` / `validate()`), the
+ * What PHP has to match: each pending step's `schema.ts` (its `sanitize()` / `validate()`), the
  * meta and fields below, boolean operators with no value (`needsValue()`), and action `provides`
- * in `WorkflowValidator` (`availableData()`).
+ * in `Validator` (`availableData()`).
  */
-
-/** YayAutomation's own steps (Condition, later Wait) are grouped under it. */
-const plugins: PluginMeta[] = [
-  {
-    id: 'yayautomation',
-    label: 'YayAutomation',
-    description: __('Workflow logic: conditions and waits.', 'yay-automation'),
-    active: true,
-  },
-];
-
-/** Meta PHP sends for a step but without these keys. */
-const stepExtras: Partial<Record<StepId, Partial<StepMeta>>> = {
-  condition: { plugin: 'yayautomation' },
-};
 
 const steps: Partial<Record<StepId, StepMeta>> = {
   send_email: { kind: 'action', plugin: 'woocommerce', category: 'email', requires: [] },
@@ -138,10 +123,7 @@ function mergeData(): DataItemMeta[] {
 /** `window.yayAutomationMeta.automation` with the stubs filled in under it. */
 export const automationMeta = {
   ...php,
-  plugins: [...php.plugins, ...plugins.filter((plugin) => !php.plugins.some((p) => p.id === plugin.id))],
-  steps: Object.fromEntries(
-    Object.entries({ ...steps, ...php.steps }).map(([id, meta]) => [id, { ...stepExtras[id as StepId], ...meta }]),
-  ) as Record<StepId, StepMeta>,
+  steps: { ...steps, ...php.steps } as Record<StepId, StepMeta>,
   data: mergeData(),
   operators: { ...operators, ...php.operators } as Record<DataFieldType, string[]>,
 };

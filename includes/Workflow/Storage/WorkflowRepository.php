@@ -8,7 +8,7 @@ defined( 'ABSPATH' ) || exit;
 
 /**
  * Workflow storage over the private post type. Returned arrays match the TS `Workflow` type.
- * Input must already be prepared by `WorkflowValidator`.
+ * Input must already be prepared by `Validator`.
  *
  * - `_yay_automation_graph` is the live graph: the only one the runner reads.
  * - `_yay_automation_draft_graph` holds unapplied edits of a workflow that has ever been turned on

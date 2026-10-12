@@ -35,6 +35,7 @@ import { Label } from '@/components/ui/label';
 import { toast } from '@/components/ui/sonner';
 import { ApiError } from '../../api/workflow.api';
 import { useDeleteWorkflowMutation, useUpdateWorkflowMutation, workflowKeys } from '../../api/workflow.query';
+import { messages } from '../../model/messages';
 
 /**
  * "More actions" menu: Rename and Delete. Delete returns to the list, after `onDeleted` (e.g. the
@@ -364,14 +365,8 @@ export function DeleteBlockedContent({ several = false, message }: { several?: b
         <AlertDialogDescription>
           {message ??
             (several
-              ? __(
-                  'Because one or more workflows are still turned on, they couldn’t be deleted. Turn them off and try again.',
-                  'yay-automation',
-                )
-              : __(
-                  'Because this workflow is still turned on, it couldn’t be deleted. Turn it off and try again.',
-                  'yay-automation',
-                ))}
+              ? __('Deactivate these workflows before you delete them.', 'yay-automation')
+              : messages.deleteActive)}
         </AlertDialogDescription>
       </AlertDialogHeader>
       <AlertDialogFooter>

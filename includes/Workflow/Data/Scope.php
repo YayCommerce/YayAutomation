@@ -58,6 +58,30 @@ final class Scope implements Values {
         return new self( $stored, $resolver, $entities );
     }
 
+    /**
+     * A run context (data item id => object) as a Scope: its objects become trigger refs, already
+     * loaded; other keys (a status change's `from` / `to`) stay plain values. For code that still
+     * gets the context, until the Executor builds scopes from runs.
+     *
+     * @param array           $context  Run context.
+     * @param DataItem[]|null $entities Entity types by id; null = `DataRegistry::entities()`.
+     */
+    public static function from_context( array $context, ?array $entities = null ): self {
+        $entities = $entities ?? DataRegistry::entities();
+        $resolver = new RefResolver();
+        $trigger  = [];
+        foreach ( $context as $key => $value ) {
+            if ( isset( $entities[ $key ] ) && is_object( $value ) ) {
+                // Never stored, so the id only has to be unique within this scope.
+                $ref = new Ref( $key, 'context' );
+                $resolver->prime( $ref, $value );
+                $value = $ref;
+            }
+            $trigger[ $key ] = $value;
+        }
+        return new self( [ 'trigger' => $trigger ], $resolver, $entities );
+    }
+
     /** JSON-safe form: Refs become `{ "__ref": { type, id } }`; `from_array()` reads them back in the trigger only. */
     public function to_array(): array {
         return self::encode( $this->data );
@@ -94,6 +118,19 @@ final class Scope implements Values {
             return null;
         }
         return $found['field'] ? ( $found['field']['value'] )( $found['object'] ) : $found['value'];
+    }
+
+    /**
+     * The loaded entity a path points to, e.g. `order` → the order object. For steps that act on it.
+     * Null when the path holds no entity.
+     *
+     * @param string $path E.g. `order` (shortcut of `trigger.order`).
+     * @return object|null
+     * @throws GoneEntity When the entity no longer exists.
+     */
+    public function entity( string $path ) {
+        $value = $this->get( $path );
+        return $value instanceof Ref ? $this->resolver->load( $value ) : null;
     }
 
     /**

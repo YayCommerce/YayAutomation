@@ -1,6 +1,8 @@
 <?php
 namespace YayAutomation\Workflow\Data;
 
+use YayAutomation\Workflow\Definition\Messages;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -95,8 +97,7 @@ final class Template {
             }
             foreach ( $token['filters'] as $filter ) {
                 if ( ! $this->filters->has( $filter['name'] ) ) {
-                    /* translators: %s: filter name, e.g. upper */
-                    $errors[] = sprintf( __( 'Unknown filter: %s', 'yay-automation' ), $filter['name'] );
+                    $errors[] = Messages::get( 'unknownFilter', $filter['name'], implode( ', ', $this->filters->names() ) );
                 }
             }
         }
@@ -233,8 +234,7 @@ final class Template {
      * @param string $raw The tag as written.
      */
     private static function malformed( string $raw ): string {
-        /* translators: %s: a merge tag as written, e.g. {{ order. }} */
-        return sprintf( __( 'This variable is written incorrectly: %s', 'yay-automation' ), $raw );
+        return Messages::get( 'malformedTag', $raw );
     }
 
     /**

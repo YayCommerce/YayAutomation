@@ -3,7 +3,9 @@ namespace YayAutomation\Engine\API;
 
 use YayAutomation\Engine\BEPages\AdminPage;
 use YayAutomation\Utils\SingletonTrait;
-use YayAutomation\Workflow\Definition\WorkflowValidator;
+use YayAutomation\Workflow\Definition\GraphSchema;
+use YayAutomation\Workflow\Definition\Messages;
+use YayAutomation\Workflow\Definition\Validator;
 use YayAutomation\Workflow\Storage\WorkflowRepository;
 
 defined( 'ABSPATH' ) || exit;
@@ -126,8 +128,14 @@ class RestAPI {
         return rest_ensure_response( WorkflowRepository::all() );
     }
 
+    /**
+     * One workflow, with the issues of its live graph and draft.
+     *
+     * @param \WP_REST_Request $request Request.
+     */
     public function get_workflow( \WP_REST_Request $request ) {
-        return WorkflowRepository::find( (int) $request['id'] ) ?? $this->not_found();
+        $workflow = WorkflowRepository::find( (int) $request['id'] );
+        return $workflow ? self::with_issues( $workflow ) : $this->not_found();
     }
 
     /**
@@ -136,7 +144,7 @@ class RestAPI {
      * @param \WP_REST_Request $request Request.
      */
     public function create_workflow( \WP_REST_Request $request ) {
-        $workflow = WorkflowValidator::prepare_new( $request->get_json_params() );
+        $workflow = Validator::prepare_new( $request->get_json_params() );
         if ( is_wp_error( $workflow ) ) {
             return $workflow;
         }
@@ -144,7 +152,7 @@ class RestAPI {
         if ( is_wp_error( $created ) ) {
             return $created;
         }
-        return new \WP_REST_Response( $created, 201 );
+        return new \WP_REST_Response( self::with_issues( $created ), 201 );
     }
 
     /**
@@ -156,22 +164,22 @@ class RestAPI {
      * @param \WP_REST_Request $request Request.
      */
     public function update_workflow( \WP_REST_Request $request ) {
-        $changes = WorkflowValidator::prepare_changes( $request->get_json_params() );
+        $changes = Validator::prepare_changes( $request->get_json_params() );
         if ( is_wp_error( $changes ) ) {
             return $changes;
         }
 
-        return $this->with_workflow(
+        $updated = $this->with_workflow(
             (int) $request['id'],
             function ( int $id, array $current ) use ( $changes ) {
                 $name       = isset( $changes['name'] ) && $changes['name'] !== $current['name'] ? $changes['name'] : null;
                 $live_graph = null;
                 if ( isset( $changes['graph'] ) ) {
-                    $same_as_live = WorkflowValidator::same_graph( $changes['graph'], $current['graph'] );
+                    $same_as_live = GraphSchema::same( $changes['graph'], $current['graph'] );
                     // Once turned on, the saved content only changes through Apply: edits go to the draft.
                     if ( $current['everActivated'] ) {
                         $draft = $same_as_live ? null : $changes['graph'];
-                        if ( ! WorkflowValidator::same_graph( $draft, $current['draft'] ) ) {
+                        if ( ! GraphSchema::same( $draft, $current['draft'] ) ) {
                             WorkflowRepository::save_draft( $id, $draft );
                         }
                     } elseif ( ! $same_as_live ) {
@@ -184,6 +192,7 @@ class RestAPI {
                 return true;
             }
         );
+        return is_array( $updated ) ? self::with_issues( $updated ) : $updated;
     }
 
     /**
@@ -200,16 +209,16 @@ class RestAPI {
                 if ( 'active' === $current['status'] ) {
                     return true;
                 }
-                $errors = WorkflowValidator::errors( $current );
+                $errors = Validator::errors( $current );
                 if ( ! $errors && null !== $current['draft'] ) {
-                    $errors = WorkflowValidator::errors(
+                    $errors = Validator::errors(
                         [
                             'name'  => $current['name'],
                             'graph' => $current['draft'],
                         ]
                     );
                 }
-                return $errors ? WorkflowValidator::issues_error( $errors ) : WorkflowRepository::activate( $id );
+                return $errors ? Validator::issues_error( $errors, 'activate' ) : WorkflowRepository::activate( $id );
             }
         );
     }
@@ -243,15 +252,15 @@ class RestAPI {
             (int) $request['id'],
             function ( int $id, array $current ) {
                 if ( null === $current['draft'] ) {
-                    return new \WP_Error( 'yay_automation_no_draft', __( 'There are no changes to apply.', 'yay-automation' ), [ 'status' => 409 ] );
+                    return new \WP_Error( 'yay_automation_no_draft', __( 'There are no draft changes to update.', 'yay-automation' ), [ 'status' => 409 ] );
                 }
-                $errors = WorkflowValidator::errors(
+                $errors = Validator::errors(
                     [
                         'name'  => $current['name'],
                         'graph' => $current['draft'],
                     ]
                 );
-                return $errors ? WorkflowValidator::issues_error( $errors ) : WorkflowRepository::apply_draft( $id, $current['draft'] );
+                return $errors ? Validator::issues_error( $errors, 'apply' ) : WorkflowRepository::apply_draft( $id, $current['draft'] );
             }
         );
     }
@@ -332,7 +341,7 @@ class RestAPI {
     }
 
     /**
-     * Permanent delete. An active workflow must be turned off first (409), so a running automation
+     * Permanent delete. An active workflow must be deactivated first (409), so a running automation
      * can't disappear by accident.
      *
      * @param \WP_REST_Request $request Request.
@@ -344,17 +353,26 @@ class RestAPI {
                 if ( 'active' === $current['status'] ) {
                     return new \WP_Error(
                         'yay_automation_delete_active',
-                        __( 'Because this workflow is still turned on, it couldn’t be deleted. Turn it off and try again.', 'yay-automation' ),
+                        Messages::get( 'deleteActive' ),
                         [ 'status' => 409 ]
                     );
                 }
                 // It exists (checked under the lock), so a false here is a failed delete, not a 404.
                 if ( ! WorkflowRepository::delete( $id ) ) {
-                    return new \WP_Error( 'yay_automation_delete_failed', __( 'The workflow couldn’t be deleted. Try again.', 'yay-automation' ), [ 'status' => 500 ] );
+                    return new \WP_Error( 'yay_automation_delete_failed', __( 'Couldn’t delete the workflow. Try again.', 'yay-automation' ), [ 'status' => 500 ] );
                 }
                 return rest_ensure_response( [ 'deleted' => true ] );
             }
         );
+    }
+
+    /**
+     * A workflow response plus `issues: { live, draft }`, found by Workflow Core.
+     *
+     * @param array $workflow Stored workflow.
+     */
+    private static function with_issues( array $workflow ): array {
+        return $workflow + [ 'issues' => Validator::issues( $workflow ) ];
     }
 
     private function not_found(): \WP_Error {

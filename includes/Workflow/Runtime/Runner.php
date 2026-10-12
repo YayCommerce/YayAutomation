@@ -3,10 +3,14 @@ namespace YayAutomation\Workflow\Runtime;
 
 use YayAutomation\Utils\Logger;
 use YayAutomation\Utils\SingletonTrait;
+use YayAutomation\Workflow\Data\DataRegistry;
+use YayAutomation\Workflow\Data\GoneEntity;
+use YayAutomation\Workflow\Data\Scope;
 use YayAutomation\Workflow\Steps\Core\Action;
 use YayAutomation\Workflow\Steps\Core\Condition;
 use YayAutomation\Workflow\Steps\Core\Step;
 use YayAutomation\Workflow\Steps\Core\StepRegistry;
+use YayAutomation\Workflow\Steps\Core\StepResult;
 use YayAutomation\Workflow\Steps\Core\Trigger;
 use YayAutomation\Workflow\Storage\WorkflowRepository;
 
@@ -144,10 +148,13 @@ class Runner {
     }
 
     /**
-     * Walks the graph from the trigger: actions run in order, conditions pick the `then` or `otherwise` edge.
+     * Walks the graph from the trigger with one Scope for the run. Each step's outputs go into the
+     * Scope (`steps.<id>.*`); a condition follows `then` on yes, `otherwise` on no. Until the
+     * Executor: a failed or skipped step is logged and the run goes on with the next step; a
+     * condition that didn't decide ends its path.
      *
      * @param array  $workflow Stored workflow.
-     * @param array  $context  Run context, see Step.
+     * @param array  $context  Run context, see Trigger::context().
      * @param string $subject  For log lines.
      */
     private function run( array $workflow, array $context, string $subject ): void {
@@ -155,6 +162,7 @@ class Runner {
         $edges   = $workflow['graph']['edges'];
         $queue   = self::children( $edges, self::trigger_node( $workflow )['id'] );
         $visited = [];
+        $scope   = Scope::from_context( $context );
 
         while ( $queue ) {
             $id = array_shift( $queue );
@@ -170,18 +178,45 @@ class Runner {
                 $this->log( $workflow, $subject, "Skipped invalid step {$id}." );
                 continue;
             }
+            if ( ! $step instanceof Condition && ! $step instanceof Action ) {
+                continue;
+            }
+
+            $result = self::run_step( $step, $scope, $config );
+            if ( $result->is_ok() ) {
+                $scope->set_step_outputs( $id, $result->outputs() );
+            } else {
+                $this->log( $workflow, $subject, "Step {$id} {$result->status()}: " . $result->message() );
+            }
 
             if ( $step instanceof Condition ) {
-                $branch = $step->evaluate( $context, $config ) ? 'then' : 'otherwise';
-                $queue  = array_merge( $queue, self::children( $edges, $id, $branch ) );
-            } elseif ( $step instanceof Action ) {
-                $result = $step->run( $context, $config );
-                if ( is_wp_error( $result ) ) {
-                    $this->log( $workflow, $subject, "Step {$id}: " . $result->get_error_message() );
+                if ( $result->is_ok() ) {
+                    $branch = 'yes' === ( $result->outputs()['result'] ?? '' ) ? 'then' : 'otherwise';
+                    $queue  = array_merge( $queue, self::children( $edges, $id, $branch ) );
                 }
+            } elseif ( ! $result->is_wait() ) {
                 $queue = array_merge( $queue, self::children( $edges, $id ) );
             }
         }//end while
+    }
+
+    /**
+     * One step's result. Never throws: a deleted entity skips the step, any other error fails it.
+     *
+     * @param Step  $step   Condition or action.
+     * @param Scope $scope  Run scope.
+     * @param array $config Valid config.
+     */
+    private static function run_step( Step $step, Scope $scope, array $config ): StepResult {
+        try {
+            return $step->run( $scope, $config );
+        } catch ( GoneEntity $gone ) {
+            $entity = DataRegistry::entities()[ $gone->ref()->type() ] ?? null;
+            /* translators: %s: what was deleted, e.g. "Order" */
+            return StepResult::skipped( sprintf( __( '%s no longer exists.', 'yay-automation' ), $entity ? $entity->label() : $gone->ref()->type() ) );
+        } catch ( \Throwable $e ) {
+            return StepResult::failed( $e->getMessage() );
+        }
     }
 
     private static function trigger_node( array $workflow ): ?array {

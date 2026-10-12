@@ -3,6 +3,7 @@ namespace YayAutomation\Workflow\Steps\Triggers;
 
 use YayAutomation\Workflow\Data\CustomerData;
 use YayAutomation\Workflow\Data\OrderData;
+use YayAutomation\Workflow\Extend\Modules;
 use YayAutomation\Workflow\Extend\Plugins;
 use YayAutomation\Workflow\Steps\Core\Trigger;
 
@@ -16,6 +17,10 @@ abstract class OrderTrigger extends Trigger {
 
     public function plugin(): string {
         return Plugins::WOOCOMMERCE;
+    }
+
+    public function module(): string {
+        return Modules::CORE;
     }
 
     public function provides(): array {

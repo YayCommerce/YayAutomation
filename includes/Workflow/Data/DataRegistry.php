@@ -64,21 +64,6 @@ final class DataRegistry {
     }
 
     /**
-     * Typed value for conditions. Null when the field is unknown or the context lacks its item.
-     *
-     * @param string $key     Full field key.
-     * @param array  $context Run context: item id => object.
-     * @return mixed
-     */
-    public static function value( string $key, array $context ) {
-        $field = self::field( $key );
-        if ( ! $field || ! self::in_context( $key, $context ) ) {
-            return null;
-        }
-        return ( $field['value'] )( $context[ self::item_of( $key ) ] ?? null );
-    }
-
-    /**
      * Merge tag text. Empty when the field is unknown or the context lacks its item.
      *
      * @param string $key     Full field key.

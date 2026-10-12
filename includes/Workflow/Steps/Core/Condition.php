@@ -1,14 +1,32 @@
 <?php
 namespace YayAutomation\Workflow\Steps\Core;
 
+use YayAutomation\Workflow\Data\Scope;
+
 defined( 'ABSPATH' ) || exit;
 
-/** True follows the `then` branch, false follows `otherwise`. */
+/** Output `result` `yes` follows the `then` branch, `no` follows `otherwise`. */
 abstract class Condition extends Step {
 
     public function kind(): string {
         return self::KIND_CONDITION;
     }
 
-    abstract public function evaluate( array $context, array $config ): bool;
+    /**
+     * Whether the config's rules match.
+     *
+     * @param Scope $scope  Run scope.
+     * @param array $config Sanitized, valid config.
+     */
+    abstract public function evaluate( Scope $scope, array $config ): bool;
+
+    /**
+     * `ok( [ 'result' => 'yes'|'no' ] )`.
+     *
+     * @param Scope $scope  Run scope.
+     * @param array $config Sanitized, valid config.
+     */
+    public function run( Scope $scope, array $config ): StepResult {
+        return StepResult::ok( [ 'result' => $this->evaluate( $scope, $config ) ? 'yes' : 'no' ] );
+    }
 }

@@ -1,8 +1,9 @@
 import * as v from 'valibot';
-import { __ } from '@wordpress/i18n';
+import { __, sprintf } from '@wordpress/i18n';
 
+import { messages } from '../../../model/messages';
 import { isWpEmail, splitRecipients } from '../../core/fields/email';
-import { required, withKnownVariables } from '../../core/fields/schema';
+import { requiredFor, withKnownVariables } from '../../core/fields/schema';
 
 /** Mirrors includes/Workflow/Steps/Actions/SendInternalEmail.php. Blank `recipients` = the site admin email. */
 export type SendInternalEmailConfig = { recipients: string; subject: string; message: string };
@@ -11,13 +12,17 @@ export const schema = withKnownVariables(
   v.object({
     recipients: v.pipe(
       v.string(),
-      v.check(
-        (recipients) => splitRecipients(recipients).every(isWpEmail),
-        __('Enter valid email addresses, separated by commas.', 'yay-automation'),
-      ),
+      // The first address that isn't valid, like PHP.
+      v.rawCheck(({ dataset, addIssue }) => {
+        if (!dataset.typed) return;
+        const invalid = splitRecipients(dataset.value).find((email) => !isWpEmail(email));
+        if (invalid !== undefined) addIssue({ message: sprintf(messages.invalidEmail, invalid) });
+      }),
     ),
-    subject: required(),
-    message: required(),
+    /* translators: %s: step name, e.g. "Send internal email" */
+    subject: requiredFor('send_internal_email', __('%s needs a subject.', 'yay-automation')),
+    /* translators: %s: step name, e.g. "Send internal email" */
+    message: requiredFor('send_internal_email', __('%s needs a message.', 'yay-automation')),
   }),
   ['subject', 'message'],
 );

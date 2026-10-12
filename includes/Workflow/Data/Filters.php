@@ -56,6 +56,11 @@ final class Filters {
         ];
     }
 
+    /** Registered filter names, in registration order. */
+    public function names(): array {
+        return array_keys( $this->filters );
+    }
+
     public function has( string $name ): bool {
         return isset( $this->filters[ $name ] );
     }

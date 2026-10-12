@@ -110,3 +110,17 @@ if ( ! function_exists( 'home_url' ) ) {
         return 'https://shop.test' . $path;
     }
 }
+
+if ( ! function_exists( 'wc_get_order_statuses' ) ) {
+    function wc_get_order_statuses() {
+        return [
+            'wc-pending'    => 'Pending payment',
+            'wc-processing' => 'Processing',
+            'wc-on-hold'    => 'On hold',
+            'wc-completed'  => 'Completed',
+            'wc-cancelled'  => 'Cancelled',
+            'wc-refunded'   => 'Refunded',
+            'wc-failed'     => 'Failed',
+        ];
+    }
+}

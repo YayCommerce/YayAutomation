@@ -1,5 +1,6 @@
 import * as v from 'valibot';
-import { __ } from '@wordpress/i18n';
+
+import { messages } from '../../../model/messages';
 
 /**
  * Mirrors includes/Workflow/Steps/Triggers/OrderStatusChanged.php. Statuses are slugs without the
@@ -16,7 +17,7 @@ const isKnown = (value: string) => statuses.length === 0 || statuses.some((statu
 
 const statusList = v.pipe(
   v.array(v.string()),
-  v.check((list) => list.every(isKnown), __('Unknown order status.', 'yay-automation')),
+  v.check((list) => list.every(isKnown), messages.unknownStatus),
 );
 
 export const schema = v.object({ from: statusList, to: statusList, only_checkout: v.boolean() });
