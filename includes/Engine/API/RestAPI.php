@@ -6,6 +6,9 @@ use YayAutomation\Utils\SingletonTrait;
 use YayAutomation\Workflow\Definition\GraphSchema;
 use YayAutomation\Workflow\Definition\Messages;
 use YayAutomation\Workflow\Definition\Validator;
+use YayAutomation\Workflow\Runtime\RunPresenter;
+use YayAutomation\Workflow\Storage\RunStepStore;
+use YayAutomation\Workflow\Storage\RunStore;
 use YayAutomation\Workflow\Storage\WorkflowRepository;
 
 defined( 'ABSPATH' ) || exit;
@@ -107,6 +110,26 @@ class RestAPI {
                         'default' => 1,
                     ],
                 ],
+            ]
+        );
+
+        register_rest_route(
+            self::REST_NAMESPACE,
+            '/workflows/(?P<id>\d+)/runs',
+            [
+                'methods'             => \WP_REST_Server::READABLE,
+                'callback'            => [ $this, 'list_runs' ],
+                'permission_callback' => [ $this, 'can_manage' ],
+            ]
+        );
+
+        register_rest_route(
+            self::REST_NAMESPACE,
+            '/runs/(?P<id>\d+)',
+            [
+                'methods'             => \WP_REST_Server::READABLE,
+                'callback'            => [ $this, 'get_run' ],
+                'permission_callback' => [ $this, 'can_manage' ],
             ]
         );
     }
@@ -304,6 +327,38 @@ class RestAPI {
             }
         }
         return rest_ensure_response( WorkflowRepository::versions( $id, (int) $request['page'] ) );
+    }
+
+    /**
+     * A workflow's newest runs (`RunPresenter::run()`). Status filter and paging come in M2.3.
+     *
+     * @param \WP_REST_Request $request Request.
+     */
+    public function list_runs( \WP_REST_Request $request ) {
+        $id = (int) $request['id'];
+        if ( ! WorkflowRepository::find( $id ) ) {
+            return $this->not_found();
+        }
+        $rows = RunStore::list( [ 'workflow_id' => $id ] );
+        return rest_ensure_response(
+            [
+                'items'   => array_map( [ RunPresenter::class, 'run' ], array_slice( $rows, 0, RunStore::PER_PAGE ) ),
+                'hasMore' => count( $rows ) > RunStore::PER_PAGE,
+            ]
+        );
+    }
+
+    /**
+     * One run with its step rows (`RunPresenter::detail()`).
+     *
+     * @param \WP_REST_Request $request Request.
+     */
+    public function get_run( \WP_REST_Request $request ) {
+        $run = RunStore::find( (int) $request['id'] );
+        if ( ! $run ) {
+            return new \WP_Error( 'yay_automation_not_found', __( 'Run not found.', 'yay-automation' ), [ 'status' => 404 ] );
+        }
+        return rest_ensure_response( RunPresenter::detail( $run, RunStepStore::for_run( (int) $run['id'] ) ) );
     }
 
     /**

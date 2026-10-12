@@ -13,7 +13,7 @@
 
 // phpcs:disable WordPress.WP.GlobalVariablesOverride.Prohibited -- wp eval-file passes $args.
 
-use YayAutomation\Workflow\Runtime\Runner;
+require_once __DIR__ . '/check-run.php';
 
 const META_KEY      = '_yay_automation_check';
 const TARGET_STATUS = 'failed';
@@ -97,60 +97,71 @@ $graph = [
     ],
 ];
 
-$workflow = $call(
-    'POST',
-    'workflows',
-    [
-        'name'  => 'Check status flow (temporary)',
-        'graph' => $graph,
-    ]
-);
-$id       = (int) $workflow['id'];
-$call( 'POST', "workflows/$id/activate" );
+// A workflow left by an earlier, interrupted run would also act on these orders.
+$left = yay_automation_check_remove_workflows( 'Check status flow' );
+if ( $left ) {
+    fwrite( STDERR, 'Could not remove leftover workflows: ' . implode( ', ', $left ) . "\n" ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fwrite
+    exit( 1 );
+}
 
 $out = [];
-foreach ( array_map( 'intval', $args ) as $order_id ) {
-    $order  = wc_get_order( $order_id );
-    $status = $order->get_status();
-    $before = wp_list_pluck( wc_get_order_notes( [ 'order_id' => $order_id ] ), 'id' );
-    $mails  = [];
-
-    Runner::get_instance()->run_job(
-        $id,
-        'order_status_changed',
+try {
+    $workflow = $call(
+        'POST',
+        'workflows',
         [
-            'order_id' => $order_id,
-            'from'     => 'pending',
-            'to'       => $status,
-        ],
-        []
+            'name'  => 'Check status flow (temporary)',
+            'graph' => $graph,
+        ]
     );
+    $id       = (int) $workflow['id'];
+    $call( 'POST', "workflows/$id/activate" );
 
-    $order = wc_get_order( $order_id );
-    $notes = [];
-    foreach ( wc_get_order_notes( [ 'order_id' => $order_id ] ) as $note ) {
-        if ( ! in_array( $note->id, $before, true ) ) {
-            $notes[] = $note->content;
+    foreach ( array_map( 'intval', $args ) as $order_id ) {
+        $order  = wc_get_order( $order_id );
+        $status = $order->get_status();
+        $before = wp_list_pluck( wc_get_order_notes( [ 'order_id' => $order_id ] ), 'id' );
+        $mails  = [];
+
+        yay_automation_check_run(
+            $id,
+            'order_status_changed',
+            [
+                'order_id' => $order_id,
+                'from'     => 'pending',
+                'to'       => $status,
+            ]
+        );
+
+        $order = wc_get_order( $order_id );
+        $notes = [];
+        foreach ( wc_get_order_notes( [ 'order_id' => $order_id ] ) as $note ) {
+            if ( ! in_array( $note->id, $before, true ) ) {
+                $notes[] = $note->content;
+            }
         }
-    }
-    $out[ $order_id ] = [
-        'status' => $status . ' → ' . $order->get_status(),
-        'meta'   => $order->get_meta( META_KEY ),
-        'notes'  => array_reverse( $notes ),
-        'mails'  => $mails,
-    ];
+        $out[ $order_id ] = [
+            'status' => $status . ' → ' . $order->get_status(),
+            'meta'   => $order->get_meta( META_KEY ),
+            'notes'  => array_reverse( $notes ),
+            'mails'  => $mails,
+        ];
 
-    // Restore: status, meta, then every note added since (the restore adds one too).
-    $order->set_status( $status );
-    $order->delete_meta_data( META_KEY );
-    $order->save();
-    foreach ( wc_get_order_notes( [ 'order_id' => $order_id ] ) as $note ) {
-        if ( ! in_array( $note->id, $before, true ) ) {
-            wc_delete_order_note( $note->id );
+        // Restore: status, meta, then every note added since (the restore adds one too).
+        $order->set_status( $status );
+        $order->delete_meta_data( META_KEY );
+        $order->save();
+        foreach ( wc_get_order_notes( [ 'order_id' => $order_id ] ) as $note ) {
+            if ( ! in_array( $note->id, $before, true ) ) {
+                wc_delete_order_note( $note->id );
+            }
         }
+    }//end foreach
+} finally {
+    // Before shutdown, so the restores above can't start a run. Also covers a failure midway.
+    $left = yay_automation_check_remove_workflows( 'Check status flow' );
+    if ( $left ) {
+        fwrite( STDERR, 'Could not remove workflows: ' . implode( ', ', $left ) . "\n" ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fwrite
     }
-}//end foreach
-
-$call( 'POST', "workflows/$id/deactivate" );
-$call( 'DELETE', "workflows/$id" );
+}//end try
 echo wp_json_encode( $out, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ), "\n";

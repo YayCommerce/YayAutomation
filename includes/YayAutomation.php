@@ -16,7 +16,7 @@ final class YayAutomation {
         \YayAutomation\Workflow\Storage\WorkflowPostType::get_instance();
         \YayAutomation\Workflow\Storage\Schema::maybe_install();
         if ( class_exists( 'WooCommerce' ) ) {
-            \YayAutomation\Workflow\Runtime\Runner::get_instance();
+            \YayAutomation\Workflow\Runtime\Runtime::boot();
         }
 
         // TODO: EDD setup

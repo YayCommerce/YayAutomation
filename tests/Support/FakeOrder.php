@@ -7,6 +7,9 @@ namespace YayAutomation\Tests\Support;
  */
 final class FakeOrder extends \WC_Order {
 
+    /** @var FakeOrder[] What `wc_get_order()` finds, by id. */
+    public static $found = [];
+
     /** @var array[] [ note, is_customer_note ]. */
     public $notes = [];
 

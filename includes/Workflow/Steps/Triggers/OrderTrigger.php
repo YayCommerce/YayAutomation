@@ -3,6 +3,7 @@ namespace YayAutomation\Workflow\Steps\Triggers;
 
 use YayAutomation\Workflow\Data\CustomerData;
 use YayAutomation\Workflow\Data\OrderData;
+use YayAutomation\Workflow\Data\Ref;
 use YayAutomation\Workflow\Extend\Modules;
 use YayAutomation\Workflow\Extend\Plugins;
 use YayAutomation\Workflow\Steps\Core\Trigger;
@@ -42,6 +43,23 @@ abstract class OrderTrigger extends Trigger {
             OrderData::ID    => $order,
             CustomerData::ID => $order,
         ] : null;
+    }
+
+    /**
+     * The customer is the order's billing details (`order:<id>`), so guests work too.
+     *
+     * @param array $args Event args, with `order_id`.
+     */
+    public function refs( array $args ): ?array {
+        $order = self::order( $args['order_id'] ?? 0 );
+        if ( ! $order ) {
+            return null;
+        }
+        $id = (int) $order->get_id();
+        return [
+            OrderData::ID    => new Ref( OrderData::ID, $id ),
+            CustomerData::ID => new Ref( CustomerData::ID, OrderData::ID . ':' . $id ),
+        ];
     }
 
     /**

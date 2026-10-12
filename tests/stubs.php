@@ -115,3 +115,16 @@ if ( ! function_exists( '_n' ) ) {
         return 1 === (int) $number ? $single : $plural;
     }
 }
+
+if ( ! function_exists( 'absint' ) ) {
+    function absint( $maybeint ) {
+        return abs( (int) $maybeint );
+    }
+}
+
+if ( ! function_exists( 'current_time' ) ) {
+    // GMT only: the plugin always asks for GMT.
+    function current_time( $type, $gmt = 0 ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- same signature as WordPress.
+        return 'mysql' === $type ? gmdate( 'Y-m-d H:i:s' ) : time();
+    }
+}

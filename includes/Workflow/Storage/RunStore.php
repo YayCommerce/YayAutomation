@@ -120,8 +120,33 @@ final class RunStore {
     }
 
     /**
+     * Runs of a workflow started in the last `$seconds`, for the rate limits: `all`, and `chained`
+     * (depth > 0: started by another run, as every loop is). One query.
+     *
+     * @param int $workflow_id Workflow id.
+     * @param int $seconds     Window.
+     * @return int[] `all`, `chained`.
+     */
+    public static function recent_counts( int $workflow_id, int $seconds ): array {
+        global $wpdb;
+        $table  = self::table();
+        $cutoff = gmdate( 'Y-m-d H:i:s', time() - $seconds );
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        $row = $wpdb->get_row( $wpdb->prepare( "SELECT COUNT(*) AS total, COALESCE(SUM(depth > 0), 0) AS chained FROM {$table} WHERE workflow_id = %d AND started_at >= %s", $workflow_id, $cutoff ), ARRAY_A );
+        return [
+            'all'     => (int) ( $row['total'] ?? 0 ),
+            'chained' => (int) ( $row['chained'] ?? 0 ),
+        ];
+    }
+
+    /**
      * Takes a run for one worker: moves it to `running` only if it is still in one of `$from`.
-     * The single UPDATE is the row lock, so two workers never both get true.
+     * The single UPDATE is the row lock, so two workers never both get true. A `waiting` run is
+     * only taken once its `wait_until` has passed; `wait_until` stays, so the Executor can tell a
+     * woken wait from an interrupted one.
+     *
+     * Taking a run from `running` (recovery) first hands it back as `queued`: an UPDATE that leaves
+     * a row as it was counts 0 rows in MySQL, so `running` → `running` would never succeed.
      *
      * @param int      $id   Run id.
      * @param string[] $from Statuses it may be taken from.
@@ -133,13 +158,18 @@ final class RunStore {
             return false;
         }
         $table = self::table();
-        $in    = implode( ',', array_fill( 0, count( $from ), '%s' ) );
-        $done  = $wpdb->query(
+        if ( in_array( self::STATUS_RUNNING, $from, true ) ) {
+            // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+            $wpdb->query( $wpdb->prepare( "UPDATE {$table} SET status = %s WHERE id = %d AND status = %s", self::STATUS_QUEUED, $id, self::STATUS_RUNNING ) );
+            $from = array_values( array_unique( array_merge( array_diff( $from, [ self::STATUS_RUNNING ] ), [ self::STATUS_QUEUED ] ) ) );
+        }
+        $in   = implode( ',', array_fill( 0, count( $from ), '%s' ) );
+        $done = $wpdb->query(
             // phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- placeholders are built to match the array.
             $wpdb->prepare(
                 // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
-                "UPDATE {$table} SET status = %s, wait_until = NULL WHERE id = %d AND status IN ({$in})",
-                array_merge( [ self::STATUS_RUNNING, $id ], $from )
+                "UPDATE {$table} SET status = %s WHERE id = %d AND status IN ({$in}) AND ( status <> %s OR wait_until IS NULL OR wait_until <= %s )",
+                array_merge( [ self::STATUS_RUNNING, $id ], $from, [ self::STATUS_WAITING, current_time( 'mysql', true ) ] )
             )
         );
         return 1 === $done;

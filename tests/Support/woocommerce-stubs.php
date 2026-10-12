@@ -124,3 +124,10 @@ if ( ! function_exists( 'wc_get_order_statuses' ) ) {
         ];
     }
 }
+
+if ( ! function_exists( 'wc_get_order' ) ) {
+    // Orders a test put in `FakeOrder::$found`, by id.
+    function wc_get_order( $order_id ) {
+        return \YayAutomation\Tests\Support\FakeOrder::$found[ (int) $order_id ] ?? false;
+    }
+}

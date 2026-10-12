@@ -26,7 +26,8 @@ final class WorkflowRepository {
     private const META_TRIGGER       = '_yay_automation_trigger';
     private const META_DRAFT_GRAPH   = '_yay_automation_draft_graph';
     private const META_DRAFT_UPDATED = '_yay_automation_draft_updated';
-    // When the workflow was first turned on. Tells "Inactive" (turned off) from "Draft" (never on).
+    // When the workflow was last turned on. Set on every activate; deactivate only adds it when missing,
+    // so it also tells "Inactive" (turned off) from "Draft" (never on).
     private const META_ACTIVATED_AT  = '_yay_automation_activated_at';
     private const META_LIVE_VERSION  = '_yay_automation_live_version';
     private const META_DRAFT_VERSION = '_yay_automation_draft_version';
@@ -60,7 +61,16 @@ final class WorkflowRepository {
      * @param int $id Post id.
      */
     public static function has_versions( int $id ): bool {
-        return (bool) self::live_version( $id );
+        return (bool) self::live_version_id( $id );
+    }
+
+    /**
+     * Version row holding the live graph, which a new run pins; 0 for a workflow saved before versions existed.
+     *
+     * @param int $id Post id.
+     */
+    public static function live_version_id( int $id ): int {
+        return (int) get_post_meta( $id, self::META_LIVE_VERSION, true );
     }
 
     /**
@@ -81,7 +91,7 @@ final class WorkflowRepository {
      */
     public static function versions( int $id, int $page ): array {
         $workflow = self::find( $id );
-        $live     = self::live_version( $id );
+        $live     = self::live_version_id( $id );
         $draft    = self::draft_version( $id );
         $rows     = VersionStore::page( $id, $page );
         $has_more = count( $rows ) > VersionStore::PER_PAGE;
@@ -188,7 +198,7 @@ final class WorkflowRepository {
         if ( null !== $graph ) {
             self::ensure_versions( $id );
             self::write_graph( $id, $graph );
-            VersionStore::update( self::live_version( $id ), VersionStore::ACTION_EDITED, $graph );
+            VersionStore::update( self::live_version_id( $id ), VersionStore::ACTION_EDITED, $graph );
         }
         return true;
     }
@@ -229,7 +239,7 @@ final class WorkflowRepository {
             return $result;
         }
         update_post_meta( $id, self::META_STATUS, 'active' );
-        self::mark_activated( $id );
+        update_post_meta( $id, self::META_ACTIVATED_AT, gmdate( 'c' ) );
         self::record_live( $id, VersionStore::ACTION_ACTIVATED );
         return true;
     }
@@ -307,7 +317,7 @@ final class WorkflowRepository {
      * @param int $id Post id of an existing workflow.
      */
     private static function ensure_versions( int $id ): void {
-        if ( self::live_version( $id ) ) {
+        if ( self::live_version_id( $id ) ) {
             return;
         }
         $post = self::get_post( $id );
@@ -324,10 +334,6 @@ final class WorkflowRepository {
             $time    = $updated ? gmdate( 'Y-m-d H:i:s', (int) strtotime( $updated ) ) : null;
             update_post_meta( $id, self::META_DRAFT_VERSION, VersionStore::insert( $id, VersionStore::ACTION_EDITED, self::decode_graph( $draft ), $author, $time ) );
         }
-    }
-
-    private static function live_version( int $id ): int {
-        return (int) get_post_meta( $id, self::META_LIVE_VERSION, true );
     }
 
     private static function draft_version( int $id ): int {
@@ -399,6 +405,8 @@ final class WorkflowRepository {
             'lastVersionAt'  => $last_version ?? $updated_at,
             // Active without the meta: turned on before the meta existed; still counts.
             'everActivated'  => $active || (bool) $activated_at,
+            // Null while inactive, and for a workflow turned on before the meta existed.
+            'activatedAt'    => $active && $activated_at ? (string) $activated_at : null,
         ];
     }
 

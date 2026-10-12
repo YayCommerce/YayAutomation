@@ -1,7 +1,8 @@
 <?php
 /**
- * Runs one workflow's job on real orders and prints the emails and order notes it made, as JSON.
- * Mail is captured, not sent; the notes it added are deleted again. Run through check-orders.sh.
+ * Runs one workflow on real orders and prints the emails and order notes it made, as JSON: a run
+ * through the Dispatcher (no claim, no match) and the Worker, synchronously. Mail is captured, not
+ * sent; the notes it added are deleted again. Run through check-orders.sh.
  *
  * Args: workflow id, trigger id, order ids.
  *
@@ -9,6 +10,8 @@
  */
 
 // phpcs:disable WordPress.WP.GlobalVariablesOverride.Prohibited -- wp eval-file passes $args.
+
+require_once __DIR__ . '/check-run.php';
 
 list( $workflow_id, $trigger_id ) = $args;
 $order_ids                        = array_map( 'intval', array_slice( $args, 2 ) );
@@ -32,7 +35,7 @@ $out = [];
 foreach ( $order_ids as $order_id ) {
     $mails  = [];
     $before = wp_list_pluck( wc_get_order_notes( [ 'order_id' => $order_id ] ), 'id' );
-    YayAutomation\Workflow\Runtime\Runner::get_instance()->run_job( (int) $workflow_id, $trigger_id, [ 'order_id' => $order_id ], [] );
+    yay_automation_check_run( (int) $workflow_id, (string) $trigger_id, [ 'order_id' => $order_id ] );
     $notes = [];
     foreach ( wc_get_order_notes( [ 'order_id' => $order_id ] ) as $note ) {
         if ( ! in_array( $note->id, $before, true ) ) {

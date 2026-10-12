@@ -22,8 +22,13 @@
   - `Definition/GraphSchema.php` — graph shape on save (ids, kinds, one trigger, one parent per step, one child per handle) and its normalized form with `schemaVersion` (missing reads as 1; newer → 400). `same()` compares two graphs.
   - `Definition/Validator.php` — REST input → storable parts, and issues that block Activate / Update: workflow-level, then per step (settings, merge tags against what the step can reach: trigger data, outputs of the steps above, always items; then data it needs). Issues carry `code`, `message`, `field`, `nodeId`. `issues()` → `{ live, draft }` for REST responses. Mirrored by TS `validateWorkflow()`.
   - `Definition/Messages.php` — messages PHP and TS both show; TS copy in `apps/admin-page/src/routes/workflows/model/messages.ts`, kept equal by the parity test.
-  - `Storage/` — `Schema` (tables, `dbDelta`), `WorkflowRepository` (CPT + post meta), `VersionStore`, `RunStore`, `ClaimStore`, `WorkflowPostType`.
-  - `Runtime/Runner.php` — queues matching workflows through Action Scheduler at shutdown and runs them: one Scope per run, each step's outputs into it, conditions follow `then` on yes. A failed or skipped step is logged and the run goes on; a step that throws only fails itself. A workflow never re-runs in its own causal chain.
+  - `Storage/` — `Schema` (tables, `dbDelta`), `WorkflowRepository` (CPT + post meta; `live_version_id()`), `VersionStore`, `RunStore` (runs; `claim()` is the row lock), `RunStepStore` (one row per step a run ran), `ClaimStore`, `WorkflowPostType`.
+  - `Runtime/` — wired by `Runtime::boot()` (WooCommerce only). Never throws into the host request.
+    - `Dispatcher` — triggers report events while a request runs; at shutdown: active workflows for the trigger, `claim()`, `validate()` + `matches()`, then per match a queued `runs` row (live version pinned, `Trigger::refs()` as scope, parent run) and one Action Scheduler job (`yay_automation_run`, args `[ run_id ]`); inline without Action Scheduler. Loop guard: workflow already in the parent chain, depth > 5. Turned off (logged) at ≥ 100 runs started by other runs, or ≥ 1000 runs in all, within 60 s.
+    - `Worker` — the job: claims the run, cancels it (workflow off or deleted) or skips it (trigger entity gone) before the first step, then runs an `Executor` slice. Action Scheduler failure hooks queue a recovery job (`yay_automation_recover_run`) that may take a `running` run.
+    - `Executor` — walks the pinned graph from the cursor (`position.queue`); a `run_steps` row before and after each step; declared outputs into `steps.<id>`; stop / continue policy; wait; ~20 s / 80% memory slices. Never reruns a finished step; a step left `running` fails as "Interrupted.".
+    - Seams for PHPUnit fakes: `RunRepository`, `GraphSource`, `Queue`, `Clock`, `Workflows` (adapters `Db…`, `Version…`, `ActionScheduler…`, `System…`, `Repository…`).
+    - `RunPresenter` — REST shape of runs and steps (camelCase, ISO dates; no scope or cursor). Routes `GET /workflows/{id}/runs`, `GET /runs/{id}`.
 
 ## Admin shell
 
@@ -36,5 +41,5 @@
 - `vendor/` is dumped classmap-authoritative: after adding a PHP class, run `composer dump-autoload`.
 - Every REST route needs `permission_callback` (see `RestAPI::can_manage`).
 - Changing `yayAutomationMeta` → update `apps/admin-page/src/types/localize.d.ts` and run `./run.sh meta-fixture`.
-- PHP tests: `pnpm test:php` (plain PHPUnit, no WordPress; `tests/`). Real-site checks: `./run.sh check-storage`, `check-orders`, `check-status-flow`.
+- PHP tests: `pnpm test:php` (plain PHPUnit, no WordPress; `tests/`). Real-site checks: `./run.sh check-storage`, `check-orders`, `check-status-flow`, `check-runs` (runs end to end: events → Dispatcher → Worker; temporary order and workflows, removed after).
 - Style: `phpcs.xml` (WPCS, 4 spaces, PHP 7.4+).

@@ -54,7 +54,7 @@ final class StepRunTest extends TestCase {
     }
 
     /**
-     * Runs a step with a raw config, as the Runner would: sanitized and valid.
+     * Runs a step with a raw config, as the Executor would: sanitized and valid.
      *
      * @param Step       $step  Step.
      * @param array      $raw   Raw config.

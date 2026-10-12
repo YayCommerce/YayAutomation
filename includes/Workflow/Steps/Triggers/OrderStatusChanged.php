@@ -101,6 +101,14 @@ class OrderStatusChanged extends OrderTrigger {
         ] : null;
     }
 
+    public function refs( array $args ): ?array {
+        $refs = parent::refs( $args );
+        return $refs ? $refs + [
+            'from' => (string) ( $args['from'] ?? '' ),
+            'to'   => (string) ( $args['to'] ?? '' ),
+        ] : null;
+    }
+
     public function matches( array $context, array $config ): bool {
         $order = $context[ OrderData::ID ];
         return ( ! $config['from'] || in_array( $context['from'], $config['from'], true ) )

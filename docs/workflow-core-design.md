@@ -54,6 +54,8 @@ Paths are after F0 (move and rename); the behavior described is v0.1's.
 
 Custom tables replace the CPT and post meta. One installer, `Storage/Schema::maybe_install()`, creates and upgrades them with `dbDelta` + the `yay_automation_db_version` option. `trigger` and `cursor` are MySQL reserved words, so those columns are `trigger_id` and `position`.
 
+Table names below omit the prefix: each is `{prefix}yay_automation_<name>`, e.g. `wp_yay_automation_runs`.
+
 | Table | Columns (main) |
 |---|---|
 | `workflows` | id, name, status, trigger_id, live_version_id, draft_version_id, activated_at, created_at, updated_at · index (status, trigger_id) |
@@ -74,9 +76,10 @@ Custom tables replace the CPT and post meta. One installer, `Storage/Schema::may
 - **Worker.** Action Scheduler is the clock and the worker; the `runs` table is the source of truth. A job takes a row lock (`UPDATE … WHERE status IN (…)`) so two workers never run the same run.
 - **Slices.** A job keeps running steps until the run finishes, hits a Wait, uses ~20 s or its memory budget, or ends a loop batch. It then saves its position (the `position` column) and queues the next slice.
 - **Errors.** Each step has a policy: stop the run (default) or continue. Retries come in v1.1.
-- **Loop safety.** `parent_run_id`, `root_run_id`, `depth` replace the in-memory chain. Max depth, a per-workflow rate limit that pauses a runaway workflow, and a max loop size.
+- **Loop safety.** `parent_run_id`, `root_run_id`, `depth` replace the in-memory chain. A workflow never starts again inside its own chain; max depth 5; a max loop size. Rate limits per workflow, per 60 s, pause (turn off) a runaway workflow: 100 runs started by other runs (a loop always has a parent), or 1000 runs in all. Runs from plain events only count toward the 1000, so a bulk edit of hundreds of orders never pauses a workflow.
 - **Scheduled and query triggers.** A schedule fans out to one run per matching subject, in batches. `trigger_claims` stops duplicates ("once per customer per 90 days"). This generalises the `_yay_automation_order_created` order meta in `OrderCreated::claim()`.
 - **Cancel.** Deactivate and Update cancel waiting runs (v1.0 rule). The API returns the count for the UI.
+- **Known limit.** Action Scheduler fails a job still running after its timeout (~5 min). If a step is still running then, a recovery job can take the run while the old worker is alive. Slices stay far below that (~20 s), so only a single very slow step can hit it.
 
 ## §4 Data layer · C6, C7
 
@@ -153,6 +156,8 @@ Settings → Health check finds problems and proposes a fix the site owner can a
 | Slow query triggers on big stores | Smaller batch size |
 | Email delivery not configured | Suggest an SMTP plugin (YaySMTP) |
 | Active workflow uses a step from a missing plugin | Install link from the feature directory |
+| Runs stuck in `queued` or `waiting` with no pending Action Scheduler job (queueing failed) | Queue them again |
+| Runs left `running` after their recovery job died | Queue recovery again; the interrupted step fails, it never runs twice |
 
 ## §10 Deferred decisions
 
