@@ -72,7 +72,7 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
   - `RefResolver` and `Scope`. Port `OrderData`, `CustomerData`, `SiteData`.
 - ⏳ **F1.3 Templates tier 1** *(§6)*
   - PHP parser, renderer, filter registry (`default`, `date`, `money`, `upper`, `lower`, `join`).
-  - Replaces `Data/Variables.php`. Old `{{ item.field }}` tags keep working.
+  - Rendering moved from `Data/Variables.php` to `Template` + `Scope`; `Variables` keeps only `keys()` (merge tag paths for `Action::uses()`). Old `{{ item.field }}` tags keep working.
 - ⏳ **F1.4 Step contract** *(§5)*
   - `Step` base, `Field` builder, `outputs()`, `StepResult`, summary templates, `icon()` name *(L5)*.
   - Plugin logo: one SVG per plugin, `currentColor`, cleaned with `wp_kses` *(L5)*.

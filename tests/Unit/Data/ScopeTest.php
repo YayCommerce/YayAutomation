@@ -330,22 +330,4 @@ final class ScopeTest extends TestCase {
             $template->render( 'Hi {{ order.customer.first_name | upper }}, order {{ order.number }}: {{ order.total }} at {{ site.name }}', $this->run_scope() )
         );
     }
-
-    public function test_from_context_makes_objects_trigger_refs_and_keeps_plain_values(): void {
-        $order = (object) $this->orders['12'];
-        $scope = Scope::from_context(
-            [
-                'order' => $order,
-                'from'  => 'pending',
-                'site'  => 'not an object',
-            ],
-            $this->entities()
-        );
-
-        $this->assertSame( '1012', $scope->get( 'trigger.order.number' ) );
-        $this->assertSame( '1012', $scope->get( 'order.number' ), 'shortcut without trigger.' );
-        $this->assertSame( 'pending', $scope->get( 'trigger.from' ) );
-        $this->assertSame( 'not an object', $scope->get( 'trigger.site' ), 'only objects become refs' );
-        $this->assertSame( 'order', $scope->to_array()['trigger']['order']['__ref']['type'] ?? null, 'the order is stored as a ref' );
-    }
 }

@@ -2,6 +2,7 @@
 namespace YayAutomation\Workflow\Steps\Core;
 
 use YayAutomation\Workflow\Data\Scope;
+use YayAutomation\Workflow\Data\Type;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -10,6 +11,23 @@ abstract class Condition extends Step {
 
     public function kind(): string {
         return self::KIND_CONDITION;
+    }
+
+    /**
+     * `result` (yes / no) picks the branch; declared here, so every condition's result survives the
+     * Executor, which keeps declared outputs only.
+     */
+    public function outputs(): array {
+        return [
+            'result' => [
+                'label'   => __( 'Result', 'yay-automation' ),
+                'type'    => Type::enum(),
+                'options' => [
+                    'yes' => __( 'Yes', 'yay-automation' ),
+                    'no'  => __( 'No', 'yay-automation' ),
+                ],
+            ],
+        ];
     }
 
     /**

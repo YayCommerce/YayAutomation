@@ -42,14 +42,23 @@ final class StepRunTest extends TestCase {
         FakeMailer::$current = new FakeMailer();
     }
 
+    /** The scope a run of order 12 has: trigger refs, as the Dispatcher stores them, and status facts. */
     private function scope(): Scope {
-        return Scope::from_context(
+        return new Scope(
             [
-                'order'    => $this->order,
-                'customer' => $this->order,
-                'from'     => 'pending',
-                'to'       => 'processing',
-            ]
+                'trigger' => [
+                    'order'    => new Ref( 'order', 12 ),
+                    'customer' => new Ref( 'customer', 'order:12' ),
+                    'from'     => 'pending',
+                    'to'       => 'processing',
+                ],
+            ],
+            new RefResolver(
+                [
+                    'order'    => fn() => $this->order,
+                    'customer' => fn() => $this->order,
+                ]
+            )
         );
     }
 

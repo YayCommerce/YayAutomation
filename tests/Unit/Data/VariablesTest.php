@@ -4,7 +4,7 @@ namespace YayAutomation\Tests\Unit\Data;
 use PHPUnit\Framework\TestCase;
 use YayAutomation\Workflow\Data\Variables;
 
-/** Pins today's merge-tag parsing, so the template module that replaces it (F1.3) keeps old tags working. */
+/** `Variables::keys()`: the paths of old `{{ item.field }}` tags, as v0.1 found them (now parsed by `Template`). */
 final class VariablesTest extends TestCase {
 
     public function test_keys_finds_tags_in_order_without_duplicates(): void {

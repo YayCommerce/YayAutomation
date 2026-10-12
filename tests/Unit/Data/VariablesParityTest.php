@@ -2,14 +2,27 @@
 namespace YayAutomation\Tests\Unit\Data;
 
 use PHPUnit\Framework\TestCase;
+use YayAutomation\Tests\Support\ContextScope;
 use YayAutomation\Tests\Support\LegacyVariables;
 use YayAutomation\Workflow\Data\DataRegistry;
+use YayAutomation\Workflow\Data\Template;
 use YayAutomation\Workflow\Data\Variables;
 
 require_once dirname( __DIR__, 2 ) . '/Support/woocommerce-stubs.php';
 
-/** The Template bridge renders every old `{{ item.field }}` tag byte for byte as the old regex did. */
+/** Template + Scope render every old `{{ item.field }}` tag byte for byte as v0.1 did (`LegacyVariables`). */
 final class VariablesParityTest extends TestCase {
+
+    /**
+     * What steps render today: the one Template over a Scope with the context's entities as trigger refs.
+     *
+     * @param string $text    Text with merge tags.
+     * @param array  $context v0.1 run context.
+     * @param bool   $html    Safe HTML.
+     */
+    private static function render( string $text, array $context, bool $html = false ): string {
+        return ( new Template() )->render( $text, ContextScope::of( $context ), $html );
+    }
 
     private function order( array $data = [] ): \WC_Order {
         return new \WC_Order(
@@ -86,7 +99,7 @@ final class VariablesParityTest extends TestCase {
             foreach ( [ false, true ] as $html ) {
                 $this->assertSame(
                     LegacyVariables::render( $text, $context, $html ),
-                    Variables::render( $text, $context, $html ),
+                    self::render( $text, $context, $html ),
                     $name . ( $html ? ' / html' : ' / plain' )
                 );
             }
@@ -100,7 +113,7 @@ final class VariablesParityTest extends TestCase {
             'customer' => $this->order(),
         ];
         foreach ( [ false, true ] as $html ) {
-            $this->assertSame( LegacyVariables::render( $text, $context, $html ), Variables::render( $text, $context, $html ) );
+            $this->assertSame( LegacyVariables::render( $text, $context, $html ), self::render( $text, $context, $html ) );
         }
         // A field with its own display text prints it even when its value is empty.
         $blank = [
@@ -113,7 +126,7 @@ final class VariablesParityTest extends TestCase {
         ];
         $text  = '{{ order.created_date }}|{{ order.payment_method }}';
         $this->assertSame( '|Cash <on> delivery', LegacyVariables::render( $text, $blank ) );
-        $this->assertSame( LegacyVariables::render( $text, $blank ), Variables::render( $text, $blank ) );
+        $this->assertSame( LegacyVariables::render( $text, $blank ), self::render( $text, $blank ) );
     }
 
     public function test_keys_match_for_old_tags(): void {

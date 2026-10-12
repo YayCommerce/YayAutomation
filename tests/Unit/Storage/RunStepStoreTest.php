@@ -84,11 +84,6 @@ final class RunStepStoreTest extends TestCase {
         $this->assertSame( [], $rows[0]['output'] );
     }
 
-    public function test_find_running_asks_for_the_running_row(): void {
-        $this->assertNull( RunStepStore::find_running( 7 ) );
-        $this->assertStringContainsString( "WHERE run_id = 7 AND status = 'running'", $this->db->last_sql() );
-    }
-
     public function test_recent_counts_counts_all_and_chained_runs_of_one_workflow_since_the_cutoff(): void {
         $this->db->result = [
             'total'   => '150',

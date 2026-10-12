@@ -2,10 +2,9 @@
 namespace YayAutomation\Tests\Support;
 
 use YayAutomation\Workflow\Data\Scope;
-use YayAutomation\Workflow\Data\Type;
 use YayAutomation\Workflow\Steps\Core\Condition;
 
-/** A condition that says yes when its config has `yes` true. Counts its runs. */
+/** A condition that says yes when its config has `yes` true; `result` comes from the base class. Counts its runs. */
 final class FakeCondition extends Condition {
 
     /** @var int */
@@ -41,15 +40,6 @@ final class FakeCondition extends Condition {
 
     public function summary(): string {
         return '';
-    }
-
-    public function outputs(): array {
-        return [
-            'result' => [
-                'label' => 'Result',
-                'type'  => Type::enum(),
-            ],
-        ];
     }
 
     /**

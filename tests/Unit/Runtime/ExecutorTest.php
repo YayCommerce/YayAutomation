@@ -635,4 +635,49 @@ final class ExecutorTest extends TestCase {
         $this->assertSame( [ 'w' => 'failed' ], $this->statuses( $id ) );
         $this->assertSame( 0, $this->steps['act']->runs );
     }
+
+    public function test_condition_that_only_implements_evaluate_follows_then_on_yes(): void {
+        $this->steps['minimal'] = new class() extends \YayAutomation\Workflow\Steps\Core\Condition {
+            public function id(): string {
+                return 'minimal';
+            }
+            public function label(): string {
+                return '';
+            }
+            public function description(): string {
+                return '';
+            }
+            public function plugin(): string {
+                return '';
+            }
+            public function module(): string {
+                return '';
+            }
+            public function icon(): string {
+                return '';
+            }
+            public function fields(): array {
+                return [];
+            }
+            public function summary(): string {
+                return '';
+            }
+            public function evaluate( Scope $scope, array $config ): bool {
+                return true;
+            }
+        };
+        $this->graph(
+            [
+                'c'   => [ 'minimal', [] ],
+                'yes' => [ 'act', [] ],
+                'no'  => [ 'act', [] ],
+            ],
+            [ [ 't', 'c' ], [ 'c', 'yes', 'then' ], [ 'c', 'no', 'otherwise' ] ]
+        );
+        $id = $this->new_run();
+
+        $this->assertSame( 'completed', $this->slice( $id ) );
+        $this->assertSame( [ 'c', 'yes' ], array_keys( $this->statuses( $id ) ) );
+        $this->assertSame( [ 'result' => 'yes' ], $this->runs->steps( $id )[0]['output'] );
+    }
 }

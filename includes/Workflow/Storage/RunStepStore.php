@@ -99,22 +99,6 @@ final class RunStepStore {
         return array_map( [ self::class, 'decode' ], (array) $rows );
     }
 
-    /**
-     * The step left `running`, if any: after a crash, the one that was interrupted.
-     *
-     * @param int $run_id Run id.
-     */
-    public static function find_running( int $run_id ): ?array {
-        global $wpdb;
-        $table = self::table();
-        $row   = $wpdb->get_row(
-            // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-            $wpdb->prepare( "SELECT * FROM {$table} WHERE run_id = %d AND status = %s ORDER BY id DESC LIMIT 1", $run_id, self::STATUS_RUNNING ),
-            ARRAY_A
-        );
-        return $row ? self::decode( $row ) : null;
-    }
-
     public static function table(): string {
         return Schema::table( Schema::RUN_STEPS );
     }

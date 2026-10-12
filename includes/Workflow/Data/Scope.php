@@ -58,30 +58,6 @@ final class Scope implements Values {
         return new self( $stored, $resolver, $entities );
     }
 
-    /**
-     * A run context (data item id => object) as a Scope: its objects become trigger refs, already
-     * loaded; other keys (a status change's `from` / `to`) stay plain values. For code that still
-     * gets the context, until the Executor builds scopes from runs.
-     *
-     * @param array           $context  Run context.
-     * @param DataItem[]|null $entities Entity types by id; null = `DataRegistry::entities()`.
-     */
-    public static function from_context( array $context, ?array $entities = null ): self {
-        $entities = $entities ?? DataRegistry::entities();
-        $resolver = new RefResolver();
-        $trigger  = [];
-        foreach ( $context as $key => $value ) {
-            if ( isset( $entities[ $key ] ) && is_object( $value ) ) {
-                // Never stored, so the id only has to be unique within this scope.
-                $ref = new Ref( $key, 'context' );
-                $resolver->prime( $ref, $value );
-                $value = $ref;
-            }
-            $trigger[ $key ] = $value;
-        }
-        return new self( [ 'trigger' => $trigger ], $resolver, $entities );
-    }
-
     /** JSON-safe form: Refs become `{ "__ref": { type, id } }`; `from_array()` reads them back in the trigger only. */
     public function to_array(): array {
         return self::encode( $this->data );

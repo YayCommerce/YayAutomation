@@ -64,21 +64,6 @@ final class DataRegistry {
     }
 
     /**
-     * Merge tag text. Empty when the field is unknown or the context lacks its item.
-     *
-     * @param string $key     Full field key.
-     * @param array  $context Run context.
-     * @param bool   $html    Escaped HTML instead of plain text.
-     */
-    public static function display( string $key, array $context, bool $html ): string {
-        $field = self::field( $key );
-        if ( ! $field || ! self::in_context( $key, $context ) ) {
-            return '';
-        }
-        return DataItem::display( $field, $context[ self::item_of( $key ) ] ?? null, $html );
-    }
-
-    /**
      * Shape must match `DataItemMeta` in apps/admin-page/src/types/localize.d.ts. `type` is the
      * condition type; `valueType` the full one. Relations (`order.customer`) aren't listed: their
      * fields are the related item's.
@@ -117,10 +102,5 @@ final class DataRegistry {
             ];
         }//end foreach
         return $items;
-    }
-
-    private static function in_context( string $key, array $context ): bool {
-        $item = self::item_of( $key );
-        return in_array( $item, self::ALWAYS, true ) || isset( $context[ $item ] );
     }
 }

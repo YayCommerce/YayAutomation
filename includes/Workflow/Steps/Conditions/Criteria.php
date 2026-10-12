@@ -5,7 +5,6 @@ use YayAutomation\Workflow\Data\DataItem;
 use YayAutomation\Workflow\Data\DataRegistry;
 use YayAutomation\Workflow\Data\Operators;
 use YayAutomation\Workflow\Data\Scope;
-use YayAutomation\Workflow\Data\Type;
 use YayAutomation\Workflow\Definition\Messages;
 use YayAutomation\Workflow\Extend\Modules;
 use YayAutomation\Workflow\Extend\Plugins;
@@ -69,19 +68,6 @@ class Criteria extends Condition {
 
     public function summary(): string {
         return '%rules%';
-    }
-
-    public function outputs(): array {
-        return [
-            'result' => [
-                'label'   => __( 'Result', 'yay-automation' ),
-                'type'    => Type::enum(),
-                'options' => [
-                    'yes' => __( 'Yes', 'yay-automation' ),
-                    'no'  => __( 'No', 'yay-automation' ),
-                ],
-            ],
-        ];
     }
 
     /**
