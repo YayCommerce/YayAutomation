@@ -4,7 +4,12 @@ namespace YayAutomation\Workflow\Steps\Conditions;
 use YayAutomation\Workflow\Data\DataItem;
 use YayAutomation\Workflow\Data\DataRegistry;
 use YayAutomation\Workflow\Data\Operators;
+use YayAutomation\Workflow\Data\Scope;
+use YayAutomation\Workflow\Definition\Messages;
+use YayAutomation\Workflow\Extend\Modules;
+use YayAutomation\Workflow\Extend\Plugins;
 use YayAutomation\Workflow\Steps\Core\Condition;
+use YayAutomation\Workflow\Steps\Core\Field;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -27,6 +32,49 @@ class Criteria extends Condition {
         return self::ID;
     }
 
+    public function label(): string {
+        return __( 'Condition', 'yay-automation' );
+    }
+
+    public function description(): string {
+        return __( 'Take different actions based on the conditions you set', 'yay-automation' );
+    }
+
+    public function plugin(): string {
+        return Plugins::YAYAUTOMATION;
+    }
+
+    public function module(): string {
+        return Modules::CORE;
+    }
+
+    public function icon(): string {
+        return 'split';
+    }
+
+    public function fields(): array {
+        return [
+            Field::select(
+                'match',
+                __( 'Match', 'yay-automation' ),
+                [
+                    'all' => __( 'All', 'yay-automation' ),
+                    'any' => __( 'Any', 'yay-automation' ),
+                ]
+            )->default( 'all' ),
+            Field::rules( 'rules', __( 'Rules', 'yay-automation' ) )->required(),
+        ];
+    }
+
+    public function summary(): string {
+        return '%rules%';
+    }
+
+    /**
+     * Each rule is cleaned by the type of the variable it compares, so it keeps its own sanitize.
+     *
+     * @param mixed $config Raw config from the request.
+     */
     public function sanitize( $config ): array {
         $config = is_array( $config ) ? $config : [];
         $rules  = [];
@@ -49,12 +97,12 @@ class Criteria extends Condition {
 
     public function validate( array $config ) {
         if ( ! array_filter( array_column( $config['rules'], 'field' ) ) ) {
-            return $this->invalid( __( 'Criteria is required. Add a criteria for comparison, or remove this condition.', 'yay-automation' ) );
+            return $this->invalid( Messages::get( 'rulesRequired' ), 'rules' );
         }
         foreach ( $config['rules'] as $rule ) {
             $error = $this->rule_error( $rule );
             if ( $error ) {
-                return $this->invalid( $error );
+                return $this->invalid( $error, 'rules' );
             }
         }
         return true;
@@ -72,15 +120,15 @@ class Criteria extends Condition {
         return array_values( array_diff( array_unique( $items ), DataRegistry::ALWAYS ) );
     }
 
-    public function evaluate( array $context, array $config ): bool {
+    public function evaluate( Scope $scope, array $config ): bool {
         foreach ( $config['rules'] as $rule ) {
             $field    = DataRegistry::field( $rule['field'] );
             $expected = 'variable' === $rule['valueType'] && Operators::needs_value( $rule['operator'] )
-                ? DataRegistry::value( $rule['value'], $context )
+                ? $scope->get( $rule['value'] )
                 : $rule['value'];
             // Comparing with a variable that has no value (e.g. no paid date yet) never matches.
             $result = null !== $expected
-                && Operators::compare( $field['type'], $rule['operator'], DataRegistry::value( $rule['field'], $context ), $expected );
+                && Operators::compare( $field['type'], $rule['operator'], $scope->get( $rule['field'] ), $expected );
             if ( 'any' === $config['match'] && $result ) {
                 return true;
             }
@@ -99,10 +147,10 @@ class Criteria extends Condition {
     private function rule_error( array $rule ): ?string {
         $field = DataRegistry::field( $rule['field'] );
         if ( ! $field || ! $field['conditional'] ) {
-            return __( 'Choose a variable for each criteria.', 'yay-automation' );
+            return Messages::get( 'ruleVariable' );
         }
         if ( ! Operators::supports( $field['type'], $rule['operator'] ) ) {
-            return __( 'Choose a comparison for each criteria.', 'yay-automation' );
+            return Messages::get( 'ruleComparison' );
         }
         if ( ! Operators::needs_value( $rule['operator'] ) ) {
             return null;
@@ -112,29 +160,27 @@ class Criteria extends Condition {
             $other = DataRegistry::field( $rule['value'] );
             $fits  = $other && $other['conditional'] && $other['type'] === $field['type']
                 && in_array( $field['type'], self::VARIABLE_VALUE_TYPES, true );
-            return $fits ? null : __( 'Choose a variable to compare with.', 'yay-automation' );
+            return $fits ? null : Messages::get( 'ruleCompareWith' );
         }
 
         $value = $rule['value'];
         if ( '' === $value ) {
-            /* translators: %s: variable, e.g. "Order total" */
-            $required = sprintf( __( '%s is required.', 'yay-automation' ), $field['label'] );
+            $required = Messages::get( 'ruleValueRequired', $field['label'] );
             // Text can be checked for blank instead.
             return DataItem::TYPE_STRING === $field['type']
-                /* translators: %s: comparison name, "Is empty" */
-                ? $required . ' ' . sprintf( __( 'Select the "%s" operator to check for blank values.', 'yay-automation' ), __( 'Is empty', 'yay-automation' ) )
+                ? $required . ' ' . Messages::get( 'ruleBlankHint', __( 'Is empty', 'yay-automation' ) )
                 : $required;
         }
         if ( DataItem::TYPE_NUMBER === $field['type'] && ! is_numeric( $value ) ) {
-            return __( 'Enter a number.', 'yay-automation' );
+            return Messages::get( 'ruleNumber' );
         }
         if ( DataItem::TYPE_DATE === $field['type'] && ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $value ) ) {
-            return __( 'Enter a date.', 'yay-automation' );
+            return Messages::get( 'ruleDate' );
         }
         // Without the plugin that provides the options there's nothing to check against.
         $options = DataItem::TYPE_ENUM === $field['type'] ? ( $field['options'] )() : [];
         if ( $options && ! array_key_exists( $value, $options ) ) {
-            return __( 'Choose one of the listed values.', 'yay-automation' );
+            return Messages::get( 'ruleOption' );
         }
         return null;
     }
@@ -146,12 +192,5 @@ class Criteria extends Condition {
      */
     private static function field_key( string $key ): string {
         return (string) preg_replace( '/[^a-z_.]/', '', $key );
-    }
-
-    /**
-     * @param mixed $value Raw input.
-     */
-    private static function scalar( $value ): string {
-        return is_scalar( $value ) ? trim( (string) $value ) : '';
     }
 }

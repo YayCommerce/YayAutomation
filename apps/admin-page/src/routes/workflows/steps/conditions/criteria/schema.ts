@@ -1,6 +1,7 @@
 import * as v from 'valibot';
-import { __, sprintf } from '@wordpress/i18n';
+import { sprintf } from '@wordpress/i18n';
 
+import { messages } from '../../../model/messages';
 import { fieldByKey, needsValue, operatorLabels, operatorsFor, type DataField } from '../../core/data';
 
 /**
@@ -23,46 +24,40 @@ export const comparableWith = (field: DataField) => (other: DataField) =>
 /** Why one criteria can't run, or null. Same checks, order and messages as PHP `Criteria::rule_error()`. */
 function ruleError({ field: key, operator, value, valueType }: Rule): string | null {
   const field = fieldByKey(key);
-  if (!field?.conditional) return __('Choose a variable for each criteria.', 'yay-automation');
-  if (!operatorsFor(field.type).includes(operator))
-    return __('Choose a comparison for each criteria.', 'yay-automation');
+  if (!field?.conditional) return messages.ruleVariable;
+  if (!operatorsFor(field.type).includes(operator)) return messages.ruleComparison;
   if (!needsValue(operator)) return null;
 
   if (valueType === 'variable') {
     const other = fieldByKey(value);
-    return other && comparableWith(field)(other) ? null : __('Choose a variable to compare with.', 'yay-automation');
+    return other && comparableWith(field)(other) ? null : messages.ruleCompareWith;
   }
 
   // PHP trims values on save.
   if (value.trim() === '') {
-    /* translators: %s: variable, e.g. "Order total" */
-    const required = sprintf(__('%s is required.', 'yay-automation'), field.label);
+    const required = sprintf(messages.ruleValueRequired, field.label);
     // Text can be checked for blank instead.
     return field.type === 'string'
-      ? /* translators: %s: comparison name, "Is empty" */
-        `${required} ${sprintf(__('Select the "%s" operator to check for blank values.', 'yay-automation'), operatorLabels.is_empty)}`
+      ? `${required} ${sprintf(messages.ruleBlankHint, operatorLabels.is_empty)}`
       : required;
   }
   if (field.type === 'number' && !/^\s*[+-]?(\d+\.?\d*|\.\d+)(e[+-]?\d+)?\s*$/i.test(value)) {
-    return __('Enter a number.', 'yay-automation');
+    return messages.ruleNumber;
   }
-  if (field.type === 'date' && !/^\d{4}-\d{2}-\d{2}$/.test(value)) return __('Enter a date.', 'yay-automation');
+  if (field.type === 'date' && !/^\d{4}-\d{2}-\d{2}$/.test(value)) return messages.ruleDate;
   // Without the plugin that provides the options there's nothing to check against.
   if (field.options?.length && !field.options.some((option) => option.value === value)) {
-    return __('Choose one of the listed values.', 'yay-automation');
+    return messages.ruleOption;
   }
   return null;
 }
 
 /** No criteria has a variable yet. */
-export const criteriaRequired = __(
-  'Criteria is required. Add a criteria for comparison, or remove this condition.',
-  'yay-automation',
-);
+export const criteriaRequired = messages.rulesRequired;
 
 /**
  * The error of each criteria, in order (null when fine). With no variable chosen anywhere, the
- * first one carries "Criteria is required". Same order as PHP `Criteria::validate()`.
+ * first one carries `rulesRequired`. Same order as PHP `Criteria::validate()`.
  */
 export const criteriaErrors = (rules: Rule[]): (string | null)[] =>
   rules.some((rule) => rule.field) ? rules.map(ruleError) : rules.map((_, i) => (i === 0 ? criteriaRequired : null));

@@ -68,6 +68,8 @@ export interface Workflow {
   draftUpdatedAt: string | null;
   /** Turned on at least once. Inactive + false = "Draft" (never on); inactive + true = "Inactive". */
   everActivated: boolean;
+  /** ISO date the workflow was last turned on; null while inactive. */
+  activatedAt: string | null;
   /** ISO date of the newest version (draft saves included): "Last updated". */
   lastVersionAt: string;
 }
@@ -113,7 +115,7 @@ export interface WorkflowTemplate {
   graph: WorkflowGraph;
 }
 
-/** Codes shared by the TS `validateWorkflow()` and PHP `WorkflowValidator::errors()`. */
+/** Codes shared by the TS `validateWorkflow()` and PHP `Validator::errors()`. */
 export type WorkflowIssueCode =
   | 'name_required'
   | 'no_trigger'
@@ -130,4 +132,52 @@ export interface WorkflowIssue {
   nodeId?: string;
   /** `unlinked` only: every step not connected to the trigger. Workflow-level, so no `nodeId`. */
   nodeIds?: string[];
+}
+
+export type RunStatus = 'queued' | 'running' | 'waiting' | 'completed' | 'failed' | 'cancelled' | 'skipped';
+
+/** One run of a workflow, as `GET /workflows/{id}/runs` lists it. Dates are ISO 8601 in UTC. */
+export interface Run {
+  id: string;
+  workflowId: string;
+  /** Version the run pinned when it started; it follows that graph to the end. */
+  versionId: string;
+  triggerId: string;
+  /** What the run is about, e.g. `order:12`. */
+  subject: string;
+  status: RunStatus;
+  /** Why it failed, was skipped or was cancelled; null otherwise. */
+  error: string | null;
+  waitUntil: string | null;
+  /** Run whose step caused this one; null when an event started it. */
+  parentRunId: string | null;
+  rootRunId: string;
+  depth: number;
+  startedAt: string | null;
+  finishedAt: string | null;
+}
+
+export type RunStepStatus = 'running' | 'completed' | 'skipped' | 'failed' | 'waiting';
+
+/** One step a run ran. */
+export interface RunStep {
+  id: string;
+  runId: string;
+  /** Node id in the pinned version's graph. */
+  stepId: string;
+  iteration: number;
+  status: RunStepStatus;
+  /** Step config with merge tags unrendered. */
+  input: Record<string, unknown>;
+  /** The step's declared outputs. */
+  output: Record<string, unknown>;
+  error: string | null;
+  attempt: number;
+  startedAt: string | null;
+  finishedAt: string | null;
+}
+
+/** `GET /runs/{id}`. */
+export interface RunDetail extends Run {
+  steps: RunStep[];
 }

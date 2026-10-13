@@ -18,12 +18,24 @@ class OrderCreated extends OrderTrigger {
         return self::ID;
     }
 
-    public function sanitize( $config ): array {
+    public function label(): string {
+        return __( 'Order created', 'yay-automation' );
+    }
+
+    public function description(): string {
+        return __( 'This workflow starts when a new order is created', 'yay-automation' );
+    }
+
+    public function icon(): string {
+        return 'shopping-cart';
+    }
+
+    public function fields(): array {
         return [];
     }
 
-    public function validate( array $config ) {
-        return true;
+    public function summary(): string {
+        return __( 'This workflow starts when a new order is created', 'yay-automation' );
     }
 
     public function listen( callable $emit ): void {

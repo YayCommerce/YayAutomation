@@ -15,6 +15,9 @@ final class DataRegistry {
     /** @var DataItem[]|null Keyed by item id. */
     private static $items = null;
 
+    /** @var DataItem[]|null Keyed by entity type id. */
+    private static $entities = null;
+
     /** @return DataItem[] */
     public static function items(): array {
         if ( null === self::$items ) {
@@ -24,6 +27,20 @@ final class DataRegistry {
             }
         }
         return self::$items;
+    }
+
+    /**
+     * Every entity type a Scope can read: the items, plus those reached only through a relation
+     * (`order.items` → order_item).
+     *
+     * @return DataItem[]
+     */
+    public static function entities(): array {
+        if ( null === self::$entities ) {
+            $item_data      = new OrderItemData();
+            self::$entities = self::items() + [ $item_data->id() => $item_data ];
+        }
+        return self::$entities;
     }
 
     /**
@@ -47,45 +64,23 @@ final class DataRegistry {
     }
 
     /**
-     * Typed value for conditions. Null when the field is unknown or the context lacks its item.
-     *
-     * @param string $key     Full field key.
-     * @param array  $context Run context: item id => object.
-     * @return mixed
+     * Shape must match `DataItemMeta` in apps/admin-page/src/types/localize.d.ts. `type` is the
+     * condition type; `valueType` the full one. Relations (`order.customer`) aren't listed: their
+     * fields are the related item's.
      */
-    public static function value( string $key, array $context ) {
-        $field = self::field( $key );
-        if ( ! $field || ! self::in_context( $key, $context ) ) {
-            return null;
-        }
-        return ( $field['value'] )( $context[ self::item_of( $key ) ] ?? null );
-    }
-
-    /**
-     * Merge tag text. Empty when the field is unknown or the context lacks its item.
-     *
-     * @param string $key     Full field key.
-     * @param array  $context Run context.
-     * @param bool   $html    Escaped HTML instead of plain text.
-     */
-    public static function display( string $key, array $context, bool $html ): string {
-        $field = self::field( $key );
-        if ( ! $field || ! self::in_context( $key, $context ) ) {
-            return '';
-        }
-        return DataItem::display( $field, $context[ self::item_of( $key ) ] ?? null, $html );
-    }
-
-    /** Shape must match `DataItemMeta` in apps/admin-page/src/types/localize.d.ts. */
     public static function to_client(): array {
         $items = [];
         foreach ( self::items() as $item ) {
             $fields = [];
             foreach ( $item->fields() as $key => $field ) {
+                if ( $field['value_type']->is( Type::ENTITY ) ) {
+                    continue;
+                }
                 $client = [
                     'key'         => $item->id() . '.' . $key,
                     'label'       => $field['label'],
                     'type'        => $field['type'],
+                    'valueType'   => $field['value_type']->to_string(),
                     'conditional' => $field['conditional'],
                 ];
                 if ( $field['options'] ) {
@@ -98,7 +93,7 @@ final class DataRegistry {
                     }
                 }
                 $fields[] = $client;
-            }
+            }//end foreach
             $items[] = [
                 'id'          => $item->id(),
                 'label'       => $item->label(),
@@ -107,10 +102,5 @@ final class DataRegistry {
             ];
         }//end foreach
         return $items;
-    }
-
-    private static function in_context( string $key, array $context ): bool {
-        $item = self::item_of( $key );
-        return in_array( $item, self::ALWAYS, true ) || isset( $context[ $item ] );
     }
 }

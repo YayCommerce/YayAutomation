@@ -1,5 +1,5 @@
 import { useMemo, useState, type ReactNode } from 'react';
-import type { Workflow } from '@yay-automation/types';
+import type { Workflow, WorkflowIssue } from '@yay-automation/types';
 import { ChevronLeft, CircleAlert, Pencil } from 'lucide-react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { __, sprintf } from '@wordpress/i18n';
@@ -59,8 +59,9 @@ function WorkflowOverview({ workflow }: { workflow: Workflow }) {
   const isActive = state === 'active';
 
   const [turnOnOpen, setTurnOnOpen] = useState(false);
-  // Set by a Turn on that failed on issues; shows the error container until Turn on succeeds.
-  const [turnOnFailed, setTurnOnFailed] = useState(false);
+  // What a Turn on that failed on issues reported; shows the error container until Turn on succeeds.
+  // Each message is listed: the server may find issues the editor doesn't check (e.g. a malformed tag).
+  const [turnOnIssues, setTurnOnIssues] = useState<WorkflowIssue[]>([]);
   const activateMutation = useWorkflowActionMutation('activate');
   const deactivateMutation = useWorkflowActionMutation('deactivate');
 
@@ -70,13 +71,13 @@ function WorkflowOverview({ workflow }: { workflow: Workflow }) {
       {
         onSuccess: () => {
           setTurnOnOpen(false);
-          setTurnOnFailed(false);
+          setTurnOnIssues([]);
           toast.success(__('Workflow turned on', 'yay-automation'));
         },
         onError: (error) => {
           setTurnOnOpen(false);
           // Issues are explained by the error container, which leads to the editor; anything else is a toast.
-          if (error instanceof ApiError && error.issues.length) setTurnOnFailed(true);
+          if (error instanceof ApiError && error.issues.length) setTurnOnIssues(error.issues);
           else toast.error(error.message);
         },
       },
@@ -160,13 +161,18 @@ function WorkflowOverview({ workflow }: { workflow: Workflow }) {
             formatTime(workflow.lastVersionAt),
           )}
         </p>
-        {turnOnFailed && !isActive && (
+        {turnOnIssues.length > 0 && !isActive && (
           <ErrorAlert className="flex items-center gap-3 [&>svg]:translate-y-0">
             <CircleAlert />
-            <p className="min-w-0 flex-1">
+            <div className="min-w-0 flex-1">
               <span className="font-medium">{__('Workflow contains errors', 'yay-automation')}</span>{' '}
               {__('Before you can turn on this workflow, you need to make some corrections.', 'yay-automation')}
-            </p>
+              <ul className="mt-1 list-disc ps-4">
+                {[...new Set(turnOnIssues.map((issue) => issue.message))].map((message) => (
+                  <li key={message}>{message}</li>
+                ))}
+              </ul>
+            </div>
             <Button
               variant="destructive-soft"
               size="sm"

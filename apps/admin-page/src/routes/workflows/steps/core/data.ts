@@ -1,6 +1,7 @@
 import { __, sprintf } from '@wordpress/i18n';
 
 import type { DataFieldType, DataItemMeta } from '@/types/localize';
+import { messages } from '../../model/messages';
 import { automationMeta, isPendingField } from './pending';
 
 /**
@@ -56,7 +57,10 @@ export const operatorLabels: Record<string, string> = {
   is_false: __('Is false', 'yay-automation'),
 };
 
-/** Same pattern as PHP `Variables::PATTERN`. Spaces inside the braces are optional. */
+/**
+ * Old two-part tags (`{{ order.total }}`). Spaces inside the braces are optional. PHP parses the full
+ * grammar in `Data/Template.php`; the TS parser comes in F1.11.
+ */
 const VARIABLE_PATTERN = /\{\{\s*([a-z_]+\.[a-z_]+)\s*\}\}/g;
 
 /** Full keys of the merge tags in a text, without duplicates. */
@@ -66,8 +70,9 @@ export const variableKeys = (text: string) => [...new Set([...text.matchAll(VARI
 export const variableTag = (key: string) => `{{ ${key} }}`;
 
 /**
- * Error for the first merge tag no data item defines, or null. Mirrors PHP `Action::unknown_variable()`,
- * so fields PHP doesn't have yet count as unknown too.
+ * Error for the first merge tag no data item defines, or null. PHP checks tags in
+ * `Definition/Validator.php` (`tag_error()`: path, filter, what the step can reach); fields PHP
+ * doesn't have yet count as unknown too.
  */
 export function unknownVariable(...texts: string[]) {
   return firstUnknown(texts, false);
@@ -82,8 +87,7 @@ function firstUnknown(texts: string[], allowPending: boolean) {
   for (const text of texts) {
     const unknown = variableKeys(text).find((key) => !fieldByKey(key) || (!allowPending && isPendingField(key)));
     if (unknown) {
-      /* translators: %s: merge tag, e.g. {{ order.foo }} */
-      return sprintf(__('Unknown variable: %s', 'yay-automation'), variableTag(unknown));
+      return sprintf(messages.unknownVariable, variableTag(unknown));
     }
   }
   return null;

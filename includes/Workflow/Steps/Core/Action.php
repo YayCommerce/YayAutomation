@@ -2,11 +2,16 @@
 namespace YayAutomation\Workflow\Steps\Core;
 
 use YayAutomation\Workflow\Data\DataRegistry;
+use YayAutomation\Workflow\Data\Scope;
+use YayAutomation\Workflow\Data\Template;
 use YayAutomation\Workflow\Data\Variables;
 
 defined( 'ABSPATH' ) || exit;
 
-/** A step that does something, e.g. sends an email. */
+/**
+ * A step that does something, e.g. sends an email. `run()` returns `ok( outputs )`, `failed( error )`,
+ * or `skipped( reason )` when there is nothing to act on.
+ */
 abstract class Action extends Step {
 
     public const CATEGORY_EMAIL = 'email';
@@ -16,9 +21,6 @@ abstract class Action extends Step {
         return self::KIND_ACTION;
     }
 
-    /** Plugin the action is grouped under in the picker (see Workflow/Extend/Plugins). */
-    abstract public function plugin(): string;
-
     /** Section within the plugin in the picker: one of the CATEGORY_* constants. */
     abstract public function category(): string;
 
@@ -26,16 +28,7 @@ abstract class Action extends Step {
     abstract public function requires(): array;
 
     /**
-     * Performs the step. A WP_Error is logged; the workflow continues with the next step.
-     *
-     * @param array $context Run context, see Step.
-     * @param array $config  Sanitized, valid config.
-     * @return true|\WP_Error
-     */
-    abstract public function run( array $context, array $config );
-
-    /**
-     * What `requires()` says, plus the items of every merge tag in the config's text.
+     * What `requires()` says, plus the data items of every merge tag in the config's text.
      *
      * @param array $config Step config.
      */
@@ -46,6 +39,8 @@ abstract class Action extends Step {
                 $items = array_merge( $items, array_map( [ DataRegistry::class, 'item_of' ], Variables::keys( $value ) ) );
             }
         }
+        // Data items only: `steps.*` outputs are checked by the Validator, by the steps above.
+        $items = array_intersect( $items, array_keys( DataRegistry::items() ) );
         return array_values( array_diff( array_unique( $items ), DataRegistry::ALWAYS ) );
     }
 
@@ -58,39 +53,15 @@ abstract class Action extends Step {
     }
 
     /**
-     * Cleans text that may hold merge tags. Not sanitize_text(area)_field(): those treat
-     * `<{{ customer.email }}>` as a tag and strip it. Output is escaped where it's used.
+     * Text with its merge tags filled in from the Scope. A missing value prints empty.
      *
-     * @param string $text Raw text.
+     * @param string $text  Text with merge tags.
+     * @param Scope  $scope Run scope.
+     * @param bool   $html  Safe HTML: the text around the tags is escaped too.
      */
-    protected static function plain_text( string $text ): string {
-        $text = str_replace( "\r\n", "\n", wp_check_invalid_utf8( $text ) );
-        // Control characters, keeping tab and newline.
-        return trim( (string) preg_replace( '/[\x00-\x08\x0B-\x1F\x7F]/', '', $text ) );
-    }
-
-    /**
-     * `plain_text()` on one line: line breaks and tabs become spaces (e.g. so a subject can't inject mail headers).
-     *
-     * @param string $text Raw text.
-     */
-    protected static function single_line( string $text ): string {
-        return trim( (string) preg_replace( '/[\r\n\t]+/', ' ', self::plain_text( $text ) ) );
-    }
-
-    /**
-     * Error for the first merge tag no data item defines, or null when all are known.
-     *
-     * @param string ...$texts Config text fields.
-     */
-    protected function unknown_variable( string ...$texts ): ?\WP_Error {
-        foreach ( $texts as $text ) {
-            $unknown = Variables::unknown( $text );
-            if ( $unknown ) {
-                /* translators: %s: merge tag, e.g. {{ order.foo }} */
-                return $this->invalid( sprintf( __( 'Unknown variable: %s', 'yay-automation' ), '{{ ' . $unknown[0] . ' }}' ) );
-            }
-        }
-        return null;
+    protected static function render( string $text, Scope $scope, bool $html = false ): string {
+        static $template = null;
+        $template        = $template ?? new Template();
+        return $template->render( $text, $scope, $html );
     }
 }

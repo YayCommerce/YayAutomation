@@ -2,6 +2,8 @@
 namespace YayAutomation\Workflow\Steps\Triggers;
 
 use YayAutomation\Workflow\Data\OrderData;
+use YayAutomation\Workflow\Definition\Messages;
+use YayAutomation\Workflow\Steps\Core\Field;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -17,6 +19,42 @@ class OrderStatusChanged extends OrderTrigger {
         return self::ID;
     }
 
+    public function label(): string {
+        return __( 'Order status changed', 'yay-automation' );
+    }
+
+    public function description(): string {
+        return __( 'Triggers after an order changes status occurs. Set the workflow to run on certain status changes with the trigger options', 'yay-automation' );
+    }
+
+    public function icon(): string {
+        return 'refresh-cw';
+    }
+
+    public function fields(): array {
+        $statuses = [ OrderData::class, 'statuses' ];
+        return [
+            Field::multiselect( 'from', __( 'Status changes from', 'yay-automation' ), $statuses )
+                ->placeholder( __( 'Any status', 'yay-automation' ) )
+                ->help( __( 'Leave empty for any previous status.', 'yay-automation' ) ),
+            Field::multiselect( 'to', __( 'Status changes to', 'yay-automation' ), $statuses )
+                ->placeholder( __( 'Any status', 'yay-automation' ) )
+                ->help( __( 'Leave empty for any new status.', 'yay-automation' ) ),
+            Field::toggle( 'only_checkout', __( 'Only run for checkout orders', 'yay-automation' ) )
+                ->help( __( 'Skips orders created by admin, REST API, import tools, and other non-checkout sources.', 'yay-automation' ) ),
+        ];
+    }
+
+    public function summary(): string {
+        /* translators: %from% and %to%: order statuses; keep the placeholders as they are. */
+        return __( 'Order status changes from %from% to %to%', 'yay-automation' );
+    }
+
+    /**
+     * Statuses are stored without the `wc-` prefix, so it keeps its own sanitize.
+     *
+     * @param mixed $config Raw config from the request.
+     */
     public function sanitize( $config ): array {
         $config = is_array( $config ) ? $config : [];
 
@@ -30,8 +68,10 @@ class OrderStatusChanged extends OrderTrigger {
     public function validate( array $config ) {
         $known = array_keys( OrderData::statuses() );
         // Without WooCommerce there's nothing to check against; the trigger just never fires.
-        if ( $known && array_diff( array_merge( $config['from'], $config['to'] ), $known ) ) {
-            return $this->invalid( __( 'Unknown order status.', 'yay-automation' ) );
+        foreach ( [ 'from', 'to' ] as $key ) {
+            if ( $known && array_diff( $config[ $key ], $known ) ) {
+                return $this->invalid( Messages::get( 'unknownStatus' ), $key );
+            }
         }
         return true;
     }
@@ -56,6 +96,14 @@ class OrderStatusChanged extends OrderTrigger {
     public function context( array $args ): ?array {
         $context = parent::context( $args );
         return $context ? $context + [
+            'from' => (string) ( $args['from'] ?? '' ),
+            'to'   => (string) ( $args['to'] ?? '' ),
+        ] : null;
+    }
+
+    public function refs( array $args ): ?array {
+        $refs = parent::refs( $args );
+        return $refs ? $refs + [
             'from' => (string) ( $args['from'] ?? '' ),
             'to'   => (string) ( $args['to'] ?? '' ),
         ] : null;

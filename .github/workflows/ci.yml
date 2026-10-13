@@ -38,8 +38,10 @@ jobs:
       - name: Install JS dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Install PHP lint tools
-        run: composer install --no-interaction --prefer-dist -d dev/tools/lintphp
+      - name: Install PHP lint and test tools
+        run: |
+          composer install --no-interaction --prefer-dist -d dev/tools/lintphp
+          composer install --no-interaction --prefer-dist -d dev/tools/phpunit
 
       - name: Lint (eslint + prettier)
         run: pnpm lint
@@ -49,6 +51,9 @@ jobs:
 
       - name: Test (vitest)
         run: pnpm test
+
+      - name: Test PHP (phpunit)
+        run: pnpm test:php
 
       - name: Build
         run: pnpm build

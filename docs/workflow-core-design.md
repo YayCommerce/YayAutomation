@@ -1,24 +1,24 @@
 # Workflow Core — design and decisions
 
-**Status:** Planned, not yet built · **Decisions confirmed:** 2026-10-07 · **Roadmap:** [ROADMAP-dev.md](ROADMAP-dev.md) · **Product scope:** [ROADMAP-v1.0.md](ROADMAP-v1.0.md)
+**Status:** F1 backend built (storage §2, runtime §3, data layer §4, step contract §5, templates §6, modules §8); the rest is planned · **Decisions confirmed:** 2026-10-07 · **Roadmap:** [ROADMAP-dev.md](ROADMAP-dev.md) · **Product scope:** [ROADMAP-v1.0.md](ROADMAP-v1.0.md)
 
 "Workflow Core" is the code that stores, checks and runs workflows. It is not called "engine": in this repo `includes/Engine/` means WP/WC glue. This doc holds the decisions and the interfaces; the reasons behind them are in [workflow-core-decisions.md](workflow-core-decisions.md). The roadmap refers to sections here as `design §N`.
 
 ## §0 Current state (v0.1)
 
-Paths are after F0 (move and rename); the behavior described is v0.1's.
+Paths are after F0 (move and rename); the behavior described is v0.1's. Files marked *(removed in F1)* no longer exist.
 
 | Area | Today | File |
 |---|---|---|
 | Storage | CPT `yay_automation_wf` + post meta (status, trigger id, live graph JSON, draft graph JSON). Versions in table `yay_automation_versions` | `includes/Workflow/Storage/WorkflowRepository.php`, `VersionStore.php` |
-| Graph | React Flow shape (nodes with positions, edges). Tree: one parent per step, one child per handle. Kinds: trigger, condition (`then` / `otherwise`), action | `includes/Workflow/Definition/WorkflowValidator.php` |
-| Trigger → queue | Triggers hook WP actions → `collect()` while the request runs → `flush()` at shutdown → `meta_query` for active workflows → `claim()` → `matches()` → one Action Scheduler async job per workflow | `includes/Workflow/Runtime/Runner.php` |
-| Execution | One job walks the whole graph at once. It reads the live graph at run time, not the version live when the event happened | `Runner::run()` |
+| Graph | React Flow shape (nodes with positions, edges). Tree: one parent per step, one child per handle. Kinds: trigger, condition (`then` / `otherwise`), action | `includes/Workflow/Definition/WorkflowValidator.php` *(removed in F1)* |
+| Trigger → queue | Triggers hook WP actions → `collect()` while the request runs → `flush()` at shutdown → `meta_query` for active workflows → `claim()` → `matches()` → one Action Scheduler async job per workflow | `includes/Workflow/Runtime/Runner.php` *(removed in F1)* |
+| Execution | One job walks the whole graph at once. It reads the live graph at run time, not the version live when the event happened | `Runner::run()` *(removed in F1)* |
 | Run state | None. Errors go to the WooCommerce log. No runs, step results or outputs are stored | `includes/Utils/Logger.php` |
 | Context | Item id => live PHP object (`WC_Order`), rebuilt from event args. Can't be saved mid-run | `Workflow/Steps/Triggers/OrderTrigger.php` |
 | Data | Fields typed number / string / enum / date. 3 items: order, customer, site. Merge tags have 2 parts (`{{ order.total }}`). No booleans, lists, relations or step outputs | `includes/Workflow/Data/` |
 | Actions | `run()` returns `true` or `WP_Error`, no output | `Workflow/Steps/Core/Action.php` |
-| Loop guard | In-memory chain of workflow ids per subject, passed in job args | `Runner::collect()` |
+| Loop guard | In-memory chain of workflow ids per subject, passed in job args | `Runner::collect()` *(removed in F1)* |
 | Extending | Hard-coded lists in `StepRegistry`, `DataRegistry`, `Plugins`. No hooks | `Workflow/Steps/Core/StepRegistry.php` |
 | Validation | Written twice: PHP `validate()` must match each step's TS `schema.ts` by hand | `Workflow/Steps/Core/Step.php` |
 
@@ -52,13 +52,15 @@ Paths are after F0 (move and rename); the behavior described is v0.1's.
 
 ## §2 Storage · C3, C8, C10
 
-Custom tables replace the CPT and post meta. Upgrades use `dbDelta` + a DB version option, like `VersionStore::maybe_install()` today.
+Custom tables replace the CPT and post meta. One installer, `Storage/Schema::maybe_install()`, creates and upgrades them with `dbDelta` + the `yay_automation_db_version` option. `trigger` and `cursor` are MySQL reserved words, so those columns are `trigger_id` and `position`.
+
+Table names below omit the prefix: each is `{prefix}yay_automation_<name>`, e.g. `wp_yay_automation_runs`.
 
 | Table | Columns (main) |
 |---|---|
-| `workflows` | id, name, status, trigger, live_version_id, draft_version_id, activated_at, created_at, updated_at · index (status, trigger) |
+| `workflows` | id, name, status, trigger_id, live_version_id, draft_version_id, activated_at, created_at, updated_at · index (status, trigger_id) |
 | `workflow_versions` | id, workflow_id, action, graph, user_id, created_at. A saved version never changes; only the draft row is edited in place |
-| `runs` | id, workflow_id, version_id, trigger, subject, status, cursor, scope, wait_until, error, parent_run_id, root_run_id, depth, started_at, finished_at |
+| `runs` | id, workflow_id, version_id, trigger_id, subject, status, position, scope, wait_until, error, parent_run_id, root_run_id, depth, started_at, finished_at |
 | `run_steps` | id, run_id, step_id, iteration, status, input, output, error, attempt, started_at, finished_at |
 | `trigger_claims` | workflow_id, subject, claimed_at · unique (workflow_id, subject) |
 
@@ -72,11 +74,12 @@ Custom tables replace the CPT and post meta. Upgrades use `dbDelta` + a DB versi
 
 - **Dispatcher.** Keeps today's flow: collect events during the request, match at shutdown. It now creates a `runs` row per matching workflow and queues it.
 - **Worker.** Action Scheduler is the clock and the worker; the `runs` table is the source of truth. A job takes a row lock (`UPDATE … WHERE status IN (…)`) so two workers never run the same run.
-- **Slices.** A job keeps running steps until the run finishes, hits a Wait, uses ~20 s or its memory budget, or ends a loop batch. It then saves the cursor and queues the next slice.
+- **Slices.** A job keeps running steps until the run finishes, hits a Wait, uses ~20 s or its memory budget, or ends a loop batch. It then saves its position (the `position` column) and queues the next slice.
 - **Errors.** Each step has a policy: stop the run (default) or continue. Retries come in v1.1.
-- **Loop safety.** `parent_run_id`, `root_run_id`, `depth` replace the in-memory chain. Max depth, a per-workflow rate limit that pauses a runaway workflow, and a max loop size.
+- **Loop safety.** `parent_run_id`, `root_run_id`, `depth` replace the in-memory chain. A workflow never starts again inside its own chain; max depth 5; a max loop size. Rate limits per workflow, per 60 s, pause (turn off) a runaway workflow: 100 runs started by other runs (a loop always has a parent), or 1000 runs in all. Runs from plain events only count toward the 1000, so a bulk edit of hundreds of orders never pauses a workflow.
 - **Scheduled and query triggers.** A schedule fans out to one run per matching subject, in batches. `trigger_claims` stops duplicates ("once per customer per 90 days"). This generalises the `_yay_automation_order_created` order meta in `OrderCreated::claim()`.
 - **Cancel.** Deactivate and Update cancel waiting runs (v1.0 rule). The API returns the count for the UI.
+- **Known limit.** Action Scheduler fails a job still running after its timeout (~5 min). If a step is still running then, a recovery job can take the run while the old worker is alive. Slices stay far below that (~20 s), so only a single very slow step can hit it.
 
 ## §4 Data layer · C6, C7
 
@@ -96,7 +99,7 @@ Step:   id() label() plugin() module()
         icon(): string           a name from core's step icon list, e.g. "mail" (L5)
         fields(): Field[]        settings, rules, widgets
         validate( config )       optional extra checks the field rules can't express
-        outputs(): Field[]       what later steps can use
+        outputs(): array         what later steps can use: key => [ label, type, options? ]
         summary(): string        card text, e.g. "Send email to %recipients%"
         run( Scope, config ): StepResult   ok( outputs ) | skipped( reason ) | failed( error )
 ```
@@ -153,6 +156,8 @@ Settings → Health check finds problems and proposes a fix the site owner can a
 | Slow query triggers on big stores | Smaller batch size |
 | Email delivery not configured | Suggest an SMTP plugin (YaySMTP) |
 | Active workflow uses a step from a missing plugin | Install link from the feature directory |
+| Runs stuck in `queued` or `waiting` with no pending Action Scheduler job (queueing failed) | Queue them again |
+| Runs left `running` after their recovery job died | Queue recovery again; the interrupted step fails, it never runs twice |
 
 ## §10 Deferred decisions
 

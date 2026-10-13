@@ -1,0 +1,14 @@
+{
+    "name": "yaycommerce/yay-automation-phpunit",
+    "description": "PHPUnit for YayAutomation's plain PHP unit tests (no WordPress loaded). Kept out of the plugin's composer.json so it never ships.",
+    "minimum-stability": "stable",
+    "prefer-stable": true,
+    "require-dev": {
+        "phpunit/phpunit": "^9.6"
+    },
+    "config": {
+        "platform": {
+            "php": "7.4.0"
+        }
+    }
+}

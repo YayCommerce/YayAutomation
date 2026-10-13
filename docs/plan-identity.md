@@ -1,6 +1,6 @@
 # Plan: Editor Identity
 
-Status: design in review (mock v2). F0 merged 2026-10-08, so code can start; see [Phases](#phases).
+Status: design in review (mock v2). Code starts after the F1 backend, as in [ROADMAP-dev](ROADMAP-dev.md); see [Phases](#phases).
 
 ## Goal
 
@@ -75,7 +75,7 @@ Confirmed 2026-10-07.
 2. **Design deliverable:** an HTML mock in light and dark mode covering every workflow screen: list, create dialog, Template Library, template preview, editor and card states, step picker and forms, Insert variable, overview, dialogs. Built with YayUiKits tokens from `src/styles/theme.css`. Mock v2 (current): https://claude.ai/artifact/EK3wTDkQuzEBfDo9TQB97d · v1 kept for comparison: https://claude.ai/artifact/WEQ7wrQwkc8ZjdfBtd2ZMs
 3. **Wording:** same pass as the visuals. Update [ROADMAP-v1.0.md](ROADMAP-v1.0.md) to match.
 4. **Sign-off:** Jack.
-5. **Timing:** design now. Code only after F0 (Blocks → Steps) merges: F0 comes first and touches the same files. Then two phases, see [Phases](#phases).
+5. **Timing:** design now. Code only after the F1 backend, which adds the step catalog the restyle reads. Then two phases, see [Phases](#phases).
 6. **Workflow list:** follows ROADMAP-v1.0 (M2.10): Runs (30 days) and Last run columns ("—" when never run), Last updated kept, status filter All · Active · Inactive · Draft.
 7. **Icons:** step icon = a lucide name from core's list; plugin logo = one SVG per plugin. Recorded as **L5** in [workflow-core-decisions.md](workflow-core-decisions.md) and design §5, §8.
 
@@ -116,7 +116,7 @@ Full wording list: see the mock's Wording section. The main ones:
 
 Decided 2026-10-08.
 
-1. **Phase 1, after F0: frontend restyle.** Canvas and cards, list (Last run shows "Never run" until runs exist), create dialog, Template Library, template preview, overview, dialogs, wording in TS. No backend change needed.
+1. **Phase 1, after the F1 backend: frontend restyle.** It reads step icons and summaries from the new step catalog. Canvas and cards, list (Runs and Last run show "—" until runs exist, as in [ROADMAP-v1.0](ROADMAP-v1.0.md)), create dialog, Template Library, template preview, overview, dialogs, wording in TS. No backend change needed.
 2. **Phase 2, with F1.9–F1.12:** step forms, condition form and Insert variable. F1 replaces today's forms with the generic `StepForm` and changes the data layer to scopes and step outputs, so doing them earlier means doing them twice.
 3. **After M2:** real data in Last run and the overview summary row.
 
