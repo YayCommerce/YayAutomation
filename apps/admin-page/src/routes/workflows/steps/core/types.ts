@@ -4,6 +4,7 @@ import type { LucideIcon } from 'lucide-react';
 import type * as v from 'valibot';
 
 import type { StepMeta } from '@/types/localize';
+import type { SummaryValues } from './summary';
 
 export type Config = Record<string, unknown>;
 
@@ -18,8 +19,9 @@ export interface StepFormProps<TConfig> {
 export interface StepSpec<TConfig extends Config> {
   id: StepId;
   kind: WorkflowNodeKind;
-  label: string;
-  description: string;
+  /** Pending steps only: a built step's label, description, icon and summary come from PHP's catalog. */
+  label?: string;
+  description?: string;
   /**
    * The one source of truth for a valid config: field errors in the form and the workflow's
    * `invalid_config` issue. Must accept exactly what the PHP step's `validate()` accepts.
@@ -36,9 +38,15 @@ export interface StepSpec<TConfig extends Config> {
    * step's `requires` plus the items of every merge tag in the config's text.
    */
   uses?: (config: TConfig) => string[];
-  /** Plain-language line for the node card. Gets incomplete config too, so show placeholders for gaps. */
-  summary: (config: TConfig) => string;
-  /** Replaces the step kind's icon on the card and in the panel header (e.g. a clock for Wait). */
+  /**
+   * Pending steps only: plain-language line for the node card. Gets incomplete config too, so show
+   * placeholders for gaps. Ignored once PHP's catalog has the step: what its template can't write
+   * from the fields alone (units, plurals) moves to `summaryValues` then.
+   */
+  summary?: (config: TConfig) => string;
+  /** Catalog summary placeholders a field can't write on its own (e.g. a condition's `%rules%`). */
+  summaryValues?: SummaryValues<TConfig>;
+  /** Pending steps only: replaces the step kind's icon on the card and in the panel header. */
   icon?: LucideIcon;
   /** Omitted when the step has nothing to configure. */
   Form?: ComponentType<StepFormProps<TConfig>>;
@@ -66,7 +74,9 @@ export interface Step {
   firstError: (config: Config) => string | null;
   /** Data items the step reads, `site` excluded. */
   uses: (config: Config) => string[];
+  /** Card text, with `SummaryText` marks. */
   summary: (config: Config) => string;
+  /** The step's own icon; without one the card shows its kind's. */
   icon?: LucideIcon;
   Form?: ComponentType<StepFormProps<Config>>;
 }

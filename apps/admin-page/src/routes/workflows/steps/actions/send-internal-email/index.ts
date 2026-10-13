@@ -1,5 +1,3 @@
-import { __, sprintf } from '@wordpress/i18n';
-
 import { defineStep, value } from '../../core/defineStep';
 import { splitRecipients } from '../../core/fields/email';
 import { SendInternalEmailForm } from './Form';
@@ -10,19 +8,9 @@ const adminEmail = window.yayAutomationMeta.wp.adminEmail;
 export const sendInternalEmailStep = defineStep<SendInternalEmailConfig>({
   id: 'send_internal_email',
   kind: 'action',
-  label: __('Send internal email', 'yay-automation'),
-  description: __(
-    "Send an email notification to your staff. The email will be sent from your store's contact email address.",
-    'yay-automation',
-  ),
   schema,
   defaults,
-  summary: ({ recipients, subject }) =>
-    /* translators: 1: recipient email address(es), 2: email subject */
-    sprintf(
-      __('Send email to %1$s with the following subject: %2$s', 'yay-automation'),
-      value(splitRecipients(recipients).join(', ') || adminEmail),
-      value(subject),
-    ),
+  // Blank sends to the site admin (PHP `run()`), so the card names that address.
+  summaryValues: { recipients: ({ recipients }) => value(splitRecipients(recipients).join(', ') || adminEmail) },
   Form: SendInternalEmailForm,
 });

@@ -63,8 +63,8 @@ class AddOrderNote extends Action {
     }
 
     public function summary(): string {
-        /* translators: %note%: the note text; keep the placeholder as it is. */
-        return __( 'Add an order note: %note%', 'yay-automation' );
+        /* translators: %type%: note type (private or to the customer), %note%: the note text; keep the placeholders as they are. */
+        return __( '%type%: %note%', 'yay-automation' );
     }
 
     public function outputs(): array {

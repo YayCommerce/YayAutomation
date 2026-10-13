@@ -31,7 +31,7 @@ class SendInternalEmail extends Action {
     }
 
     public function description(): string {
-        return __( "Send an email notification to your staff. The email will be sent from your store's contact email address.", 'yay-automation' );
+        return __( 'Email your store team, from your WooCommerce store email address.', 'yay-automation' );
     }
 
     public function plugin(): string {
@@ -72,8 +72,8 @@ class SendInternalEmail extends Action {
     }
 
     public function summary(): string {
-        /* translators: %recipients%: email addresses, %subject%: email subject; keep the placeholders as they are. */
-        return __( 'Send email to %recipients% with the following subject: %subject%', 'yay-automation' );
+        /* translators: %recipients%: email addresses; keep the placeholder as it is. */
+        return __( 'Send to %recipients%', 'yay-automation' );
     }
 
     public function outputs(): array {

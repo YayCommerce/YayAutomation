@@ -60,7 +60,7 @@ class ChangeOrderStatus extends Action {
 
     public function summary(): string {
         /* translators: %status%: order status; keep the placeholder as it is. */
-        return __( 'Change the order status to %status%', 'yay-automation' );
+        return __( 'Set to %status%', 'yay-automation' );
     }
 
     public function outputs(): array {

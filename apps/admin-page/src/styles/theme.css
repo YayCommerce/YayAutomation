@@ -42,6 +42,11 @@
   --popover: #ffffff;
   --popover-foreground: #171719;
 
+  /* Workflow step kinds (app-only; to move to YayUiKits). */
+  --yay-kind-trigger: #b86e00;
+  --yay-kind-condition: #6d4ee8;
+  --yay-kind-action: #15803d;
+
   --radius: 0.625rem;
   --default-transition-duration: 0.3s;
 }
@@ -95,6 +100,10 @@
   --color-popover: var(--popover) /* #ffffff */;
   --color-popover-foreground: var(--popover-foreground) /* #171719 */;
 
+  --color-kind-trigger: var(--yay-kind-trigger) /* #b86e00 */;
+  --color-kind-condition: var(--yay-kind-condition) /* #6d4ee8 */;
+  --color-kind-action: var(--yay-kind-action) /* #15803d */;
+
   --font-sans:
     -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif,
     'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
@@ -142,4 +151,8 @@
   --card-foreground: #fafafa;
   --popover: #171719;
   --popover-foreground: #fafafa;
+
+  --yay-kind-trigger: #f4b740;
+  --yay-kind-condition: #a68cff;
+  --yay-kind-action: #4ade80;
 }

@@ -79,9 +79,9 @@
                 ],
                 "module": "core",
                 "label": "Order created",
-                "description": "This workflow starts when a new order is created",
+                "description": "Starts when a new order is created.",
                 "icon": "shopping-cart",
-                "summary": "This workflow starts when a new order is created",
+                "summary": "When a new order is created",
                 "onError": "stop",
                 "fields": [],
                 "outputs": []
@@ -95,9 +95,9 @@
                 ],
                 "module": "core",
                 "label": "Order status changed",
-                "description": "Triggers after an order changes status occurs. Set the workflow to run on certain status changes with the trigger options",
+                "description": "Starts when an order moves to another status. Choose which status changes count.",
                 "icon": "refresh-cw",
-                "summary": "Order status changes from %from% to %to%",
+                "summary": "%from% → %to%",
                 "onError": "stop",
                 "fields": [
                     {
@@ -199,7 +199,7 @@
                 "plugin": "yayautomation",
                 "module": "core",
                 "label": "Condition",
-                "description": "Take different actions based on the conditions you set",
+                "description": "Take the Yes path when the rules match, otherwise the No path.",
                 "icon": "split",
                 "summary": "%rules%",
                 "onError": "stop",
@@ -253,9 +253,9 @@
                 "requires": [],
                 "module": "core",
                 "label": "Send internal email",
-                "description": "Send an email notification to your staff. The email will be sent from your store's contact email address.",
+                "description": "Email your store team, from your WooCommerce store email address.",
                 "icon": "mail",
-                "summary": "Send email to %recipients% with the following subject: %subject%",
+                "summary": "Send to %recipients%",
                 "onError": "stop",
                 "fields": [
                     {
@@ -309,7 +309,7 @@
                 "label": "Change order status",
                 "description": "Move the order to another status.",
                 "icon": "arrow-right-left",
-                "summary": "Change the order status to %status%",
+                "summary": "Set to %status%",
                 "onError": "stop",
                 "fields": [
                     {
@@ -447,7 +447,7 @@
                 "label": "Add order note",
                 "description": "Add a private note to the order, or a note the customer gets by email.",
                 "icon": "sticky-note",
-                "summary": "Add an order note: %note%",
+                "summary": "%type%: %note%",
                 "onError": "stop",
                 "fields": [
                     {
@@ -505,7 +505,7 @@
                 "label": "Update order custom field",
                 "description": "Set a custom field (meta) on the order.",
                 "icon": "database",
-                "summary": "Set the order field %key% to %value%",
+                "summary": "Set %key% to %value%",
                 "onError": "stop",
                 "fields": [
                     {

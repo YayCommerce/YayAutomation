@@ -1,7 +1,7 @@
 import { __, sprintf } from '@wordpress/i18n';
 
 import { fieldByKey, itemOf, needsValue } from '../../core/data';
-import { defineStep, PLACEHOLDER } from '../../core/defineStep';
+import { defineStep, PLACEHOLDER, value } from '../../core/defineStep';
 import { CriteriaForm } from './Form';
 import { defaults, normalize, schema, type CriteriaConfig, type Rule } from './schema';
 
@@ -28,27 +28,25 @@ const phrases: Record<string, string> = {
 };
 
 /** "Order total is greater than or equal to 500"; placeholders for the parts still missing. */
-function describe({ field: key, operator, value, valueType }: Rule) {
+function describe({ field: key, operator, value: compared, valueType }: Rule) {
   const field = fieldByKey(key);
   const shown = !needsValue(operator)
     ? ''
     : valueType === 'variable'
-      ? (fieldByKey(value)?.label ?? '')
-      : (field?.options?.find((option) => option.value === value)?.label ?? value);
+      ? (fieldByKey(compared)?.label ?? '')
+      : (field?.options?.find((option) => option.value === compared)?.label ?? compared);
   /* translators: 1: variable, 2: comparison, e.g. "is greater than", 3: value */
   return sprintf(
     __('%1$s %2$s %3$s', 'yay-automation'),
     field?.label ?? PLACEHOLDER,
     phrases[operator] ?? PLACEHOLDER,
-    shown || (needsValue(operator) ? PLACEHOLDER : ''),
+    shown ? value(shown) : needsValue(operator) ? PLACEHOLDER : '',
   ).trim();
 }
 
 export const criteriaStep = defineStep<CriteriaConfig>({
   id: 'condition',
   kind: 'condition',
-  label: __('Condition', 'yay-automation'),
-  description: __('Take different actions based on the conditions you set', 'yay-automation'),
   schema,
   defaults,
   normalize,
@@ -59,12 +57,15 @@ export const criteriaStep = defineStep<CriteriaConfig>({
         .filter(Boolean)
         .map(itemOf),
     ),
-  // One line per criteria with the AND / OR between them; the card keeps the line breaks.
-  summary: ({ match, rules }) => {
-    const started = rules.filter((rule) => rule.field);
-    if (!started.length) return __('Select condition', 'yay-automation');
-    const joiner = match === 'any' ? __('OR', 'yay-automation') : __('AND', 'yay-automation');
-    return started.map(describe).join(`\n${joiner}\n`);
+  // The rules on one line, joined by "and" / "or"; blank until a rule has its variable.
+  summaryValues: {
+    rules: ({ match, rules }) => {
+      const joiner = match === 'any' ? __('or', 'yay-automation') : __('and', 'yay-automation');
+      return rules
+        .filter((rule) => rule.field)
+        .map(describe)
+        .join(` ${joiner} `);
+    },
   },
   Form: CriteriaForm,
 });

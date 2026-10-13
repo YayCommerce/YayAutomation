@@ -37,7 +37,7 @@ class Criteria extends Condition {
     }
 
     public function description(): string {
-        return __( 'Take different actions based on the conditions you set', 'yay-automation' );
+        return __( 'Take the Yes path when the rules match, otherwise the No path.', 'yay-automation' );
     }
 
     public function plugin(): string {

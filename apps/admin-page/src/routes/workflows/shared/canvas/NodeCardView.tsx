@@ -1,24 +1,33 @@
 import type { ReactNode } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import type { WorkflowBranch, WorkflowNodeData, WorkflowNodeKind } from '@yay-automation/types';
-import { Check, CircleAlert, GitBranch, Info, Play, X, Zap, type LucideIcon } from 'lucide-react';
+import { Check, CircleAlert, Info, X, type LucideIcon } from 'lucide-react';
 import { __ } from '@wordpress/i18n';
 
 import { cn } from '@/lib/utils';
 import { stepOf, SummaryText } from '../../steps';
+import { kindIcons } from '../ui/StepTile';
 import { sourceHandleStyle, targetHandleStyle, type FlowNode } from './flow';
 
 /** How a step card marks an issue: blue "Review" (left unfinished) or red "Error" (after a failed Turn on / Apply). */
 export type IssueMode = 'review' | 'error';
 
 export const kindMeta: Record<WorkflowNodeKind, { label: string; icon: LucideIcon; choose: string }> = {
-  trigger: { label: __('Trigger', 'yay-automation'), icon: Zap, choose: __('Select a trigger', 'yay-automation') },
+  trigger: {
+    label: __('Trigger', 'yay-automation'),
+    icon: kindIcons.trigger,
+    choose: __('Select a trigger', 'yay-automation'),
+  },
   condition: {
     label: __('Condition', 'yay-automation'),
-    icon: GitBranch,
+    icon: kindIcons.condition,
     choose: __('Select condition', 'yay-automation'),
   },
-  action: { label: __('Action', 'yay-automation'), icon: Play, choose: __('Select an action', 'yay-automation') },
+  action: {
+    label: __('Action', 'yay-automation'),
+    icon: kindIcons.action,
+    choose: __('Select an action', 'yay-automation'),
+  },
 };
 
 /** Where each condition branch leaves the card. Shared by the handles and their "+" buttons. */
