@@ -7,8 +7,9 @@ import type { Feedback } from '../../steps/core/fields/feedback';
 /**
  * How the editor shows issues:
  * - quiet while a step is being built;
- * - blue "review" on steps whose panel was left with an issue (`markVisited`);
- * - red "error" everywhere once Turn on / Apply fails (`setErrorMode(true)`), until the steps are
+ * - "review" on steps whose panel was left with an issue (`markVisited`): an amber "Needs setup"
+ *   badge on the card;
+ * - red "error" everywhere once Activate / Update fails (`setErrorMode(true)`), until the steps are
  *   clean again (workflow-level issues like "Add an action" don't keep it).
  */
 export function useIssueFeedback(issues: WorkflowIssue[], startInErrorMode: boolean) {
@@ -37,7 +38,7 @@ export function useIssueFeedback(issues: WorkflowIssue[], startInErrorMode: bool
     [errorMode, visited],
   );
 
-  /** Header of each card showing an issue. Steps `unlinked` lists are marked only in error mode. */
+  /** Badge of each card showing an issue. Steps `unlinked` lists are marked only in error mode. */
   const issueModes = useMemo(
     () =>
       new Map(

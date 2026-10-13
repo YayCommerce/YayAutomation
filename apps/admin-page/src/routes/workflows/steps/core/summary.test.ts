@@ -2,11 +2,10 @@ import { describe, expect, it } from 'vitest';
 
 import type { StepFieldMeta } from '@/types/localize';
 import { steps } from '..';
-import { PLACEHOLDER, value } from './marks';
+import { PLACEHOLDER, plainSummary, value } from './marks';
 import { renderSummary } from './summary';
 
-/** The summary as read, marks removed. */
-const plain = (text: string) => text.replace(/[⁠⁡]/g, '');
+const plain = plainSummary;
 
 describe('renderSummary', () => {
   const status: StepFieldMeta = {
@@ -45,6 +44,15 @@ describe('renderSummary', () => {
   it('lets the step write a placeholder, and keeps unknown ones as they are', () => {
     expect(renderSummary('%rules% %nope%', [], {}, { rules: () => 'A and B' })).toBe('A and B %nope%');
     expect(renderSummary('%rules%', [], {}, { rules: () => '' })).toBe(PLACEHOLDER);
+  });
+});
+
+describe('plainSummary', () => {
+  it('removes the marks and keeps the words', () => {
+    const text = `Set ${value('_note')} to ${PLACEHOLDER}`;
+    expect(text).not.toBe('Set _note to Not set');
+    expect(plainSummary(text)).toBe('Set _note to Not set');
+    expect(plainSummary('No marks')).toBe('No marks');
   });
 });
 

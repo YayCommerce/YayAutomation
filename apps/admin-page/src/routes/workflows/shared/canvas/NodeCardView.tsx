@@ -1,41 +1,53 @@
 import type { ReactNode } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import type { WorkflowBranch, WorkflowNodeData, WorkflowNodeKind } from '@yay-automation/types';
-import { Check, CircleAlert, Info, X, type LucideIcon } from 'lucide-react';
+import { Check, CircleAlert, X, type LucideIcon } from 'lucide-react';
 import { __ } from '@wordpress/i18n';
 
 import { cn } from '@/lib/utils';
-import { stepOf, SummaryText } from '../../steps';
-import { kindIcons } from '../ui/StepTile';
+import { CARD_WIDTH } from '../../model/graph';
+import { plainSummary, stepOf, SummaryText } from '../../steps';
+import { plugins } from '../ui/PluginIcon';
+import { kindIcons, StepTile } from '../ui/StepTile';
 import { sourceHandleStyle, targetHandleStyle, type FlowNode } from './flow';
 
-/** How a step card marks an issue: blue "Review" (left unfinished) or red "Error" (after a failed Turn on / Apply). */
+/**
+ * How a step card marks an issue: amber "Needs setup" (its panel was left unfinished) or red "Error"
+ * (after a failed Activate / Update). Same values as the panel's `Feedback`.
+ */
 export type IssueMode = 'review' | 'error';
 
 export const kindMeta: Record<WorkflowNodeKind, { label: string; icon: LucideIcon; choose: string }> = {
   trigger: {
     label: __('Trigger', 'yay-automation'),
     icon: kindIcons.trigger,
-    choose: __('Select a trigger', 'yay-automation'),
+    choose: __('Choose a trigger', 'yay-automation'),
   },
   condition: {
     label: __('Condition', 'yay-automation'),
     icon: kindIcons.condition,
-    choose: __('Select condition', 'yay-automation'),
+    choose: __('Choose a condition', 'yay-automation'),
   },
   action: {
     label: __('Action', 'yay-automation'),
     icon: kindIcons.action,
-    choose: __('Select an action', 'yay-automation'),
+    choose: __('Choose an action', 'yay-automation'),
   },
 };
 
-/** Where each condition branch leaves the card. Shared by the handles and their "+" buttons. */
+/** Where each condition branch leaves the card. Shared by the handles, their Yes / No and "+" buttons. */
 export const branchLeft: Record<WorkflowBranch, string> = { then: '30%', otherwise: '70%' };
+
+const kindText: Record<WorkflowNodeKind, string> = {
+  trigger: 'text-kind-trigger',
+  condition: 'text-kind-condition',
+  action: 'text-kind-action',
+};
 
 /**
  * Card body + handles. No form access, so it also renders on the read-only template preview.
- * Header = kind icon + step label, body = plain-language summary. `issue` adds a blue "Review" or red "Error" header above it.
+ * Tile, then an eyebrow (kind · plugin), the step's name and a one-line summary. Not chosen yet: a
+ * dashed card that asks for the step. `issue` adds a badge on the top-right corner.
  */
 export function NodeCardView({
   type,
@@ -51,69 +63,87 @@ export function NodeCardView({
   selected?: boolean;
   issue?: IssueMode;
   className?: string;
-  /** Extra controls in the header row, after the kind icon. */
+  /** Extra controls on the card's right side. */
   actions?: ReactNode;
   children?: ReactNode;
 }) {
-  const { label: kindLabel, icon: kindIcon, choose } = kindMeta[type];
+  const { label: kindLabel, choose } = kindMeta[type];
   const stepDef = stepOf(data);
-  const Icon = stepDef?.icon ?? kindIcon;
+  const plugin = stepDef?.plugin && plugins[stepDef.plugin].label;
+  // A step named after its kind ("Condition") shows only its plugin, so the word isn't said twice.
+  const showKind = !stepDef || stepDef.label.toLowerCase() !== kindLabel.toLowerCase();
+  const summary = stepDef?.summary(data.config);
 
   return (
-    <div className={cn('group relative w-80', className)}>
+    <div className={cn('group relative', className)} style={{ width: CARD_WIDTH }}>
       {type !== 'trigger' && <Handle type="target" position={Position.Top} style={targetHandleStyle} />}
-
-      {/* Out of flow, tucked under the card's top edge: showing or hiding it never moves the card or
-          its handles. The opaque base keeps the tint readable over the canvas and the incoming edge. */}
-      {issue && (
-        <div className="bg-card absolute inset-x-0 bottom-full -mb-2 overflow-hidden rounded-t-xl">
-          {issue === 'error' ? (
-            <div className="bg-destructive/15 text-destructive flex items-center gap-1.5 px-3 pt-1.5 pb-3.5 text-xs font-medium">
-              <CircleAlert className="size-3.5" aria-hidden />
-              {__('Error', 'yay-automation')}
-            </div>
-          ) : (
-            <div className="bg-primary/15 text-primary flex items-center gap-1.5 px-3 pt-1.5 pb-3.5 text-xs font-medium">
-              <Info className="size-3.5" aria-hidden />
-              {__('Review', 'yay-automation')}
-            </div>
-          )}
-        </div>
-      )}
 
       <div
         className={cn(
-          'bg-card text-card-foreground relative rounded-xl border p-4 shadow-sm',
-          // Selected: a dark outline. A ring, so the card keeps its size.
+          'text-card-foreground relative flex min-h-21.5 flex-wrap items-start gap-x-3 rounded-xl border px-3.5 py-3',
+          !stepDef ? 'bg-card/70 border-muted-foreground/40 border-dashed' : 'bg-card shadow-xs',
+          // Selected: a primary ring, so the card keeps its size.
           selected
-            ? 'border-foreground/70 ring-foreground/70 shadow-md ring-1'
+            ? 'border-primary ring-primary shadow-primary/30 border-solid shadow-lg ring-1'
             : issue === 'error'
-              ? 'border-destructive/40'
+              ? 'border-destructive/60'
               : issue === 'review'
-                ? 'border-primary/40'
-                : 'border-border',
+                ? 'border-warning-accent/70'
+                : stepDef && 'border-border',
         )}
       >
-        <div className="flex items-start gap-2">
-          <Icon className="text-muted-foreground mt-0.5 size-4 shrink-0" role="img" aria-label={kindLabel} />
-          <div className="min-w-0 flex-1 text-sm font-semibold">{stepDef?.label ?? kindLabel}</div>
+        <StepTile kind={type} icon={stepDef?.icon} empty={!stepDef} size="lg" />
+        <div className="flex min-w-0 flex-1 flex-col">
+          <div className={cn('text-[11px]/4 font-semibold tracking-wide uppercase', kindText[type])}>
+            {showKind && kindLabel}
+            {plugin && (
+              <span className="text-muted-foreground font-medium tracking-normal normal-case">
+                {showKind && ' · '}
+                {plugin}
+              </span>
+            )}
+          </div>
+          {/* Name and summary are cut to one line; the tooltip has them in full. */}
+          <div
+            title={stepDef?.label}
+            className={cn('truncate text-sm/5', stepDef ? 'font-semibold' : 'text-muted-foreground-600 font-medium')}
+          >
+            {stepDef?.label ?? choose}
+          </div>
+          {summary !== undefined && (
+            <div
+              title={plainSummary(summary)}
+              className="text-muted-foreground-600 [&_em]:text-muted-foreground [&_strong]:text-card-foreground truncate text-[13px]/4.75"
+            >
+              <SummaryText text={summary} />
+            </div>
+          )}
         </div>
-        {/* Not chosen yet: the kind's prompt, muted. Summaries may span lines (a condition's criteria). */}
-        <div className={cn('mt-2 text-sm whitespace-pre-line', !stepDef && 'text-muted-foreground')}>
-          {stepDef ? <SummaryText text={stepDef.summary(data.config)} /> : choose}
-        </div>
-        {/* Branch names right above their handles. */}
+        {/* Yes / No right above their handles. */}
         {type === 'condition' && (
-          <div className="relative mt-3 h-5 text-sm" aria-hidden>
-            <span className="absolute flex -translate-x-1/2 items-center gap-1" style={{ left: branchLeft.then }}>
-              <Check className="size-3.5" />
-              {__('True', 'yay-automation')}
+          <div className="relative mt-2.5 h-5.5 basis-full text-xs font-semibold" aria-hidden>
+            <span className={branchPill} style={{ left: branchLeft.then }}>
+              <Check className="text-kind-action size-3.25 stroke-[2.5]" />
+              {__('Yes', 'yay-automation')}
             </span>
-            <span className="absolute flex -translate-x-1/2 items-center gap-1" style={{ left: branchLeft.otherwise }}>
-              <X className="size-3.5" />
-              {__('False', 'yay-automation')}
+            <span className={branchPill} style={{ left: branchLeft.otherwise }}>
+              <X className="text-muted-foreground size-3.25 stroke-[2.5]" />
+              {__('No', 'yay-automation')}
             </span>
           </div>
+        )}
+
+        {/* On the corner, out of flow: showing it never moves the card or its handles. */}
+        {issue && (
+          <span
+            className={cn(
+              'absolute -top-2.5 right-3 inline-flex h-5 items-center gap-1 rounded-full px-2 text-[11.5px] font-semibold whitespace-nowrap shadow-xs',
+              issue === 'error' ? 'bg-destructive text-destructive-foreground' : 'bg-warning text-warning-foreground',
+            )}
+          >
+            <CircleAlert className="size-3 stroke-[2.5]" aria-hidden />
+            {issue === 'error' ? __('Error', 'yay-automation') : __('Needs setup', 'yay-automation')}
+          </span>
         )}
       </div>
       {/* Padding, not margin: the pointer crosses into the control without leaving the card's hover. */}
@@ -141,6 +171,9 @@ export function NodeCardView({
     </div>
   );
 }
+
+const branchPill =
+  'bg-card absolute inline-flex h-5.5 -translate-x-1/2 items-center gap-1 rounded-full border pr-2.25 pl-1.75';
 
 function ReadOnlyNodeCard({ type, data }: NodeProps<FlowNode>) {
   return <NodeCardView type={type} data={data} />;

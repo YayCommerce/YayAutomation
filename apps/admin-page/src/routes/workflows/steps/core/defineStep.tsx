@@ -9,7 +9,7 @@ import { automationMeta, isPendingStep } from './pending';
 import { renderSummary } from './summary';
 import type { Config, Step, StepFormProps, StepSpec } from './types';
 
-export { PLACEHOLDER, value } from './marks';
+export { PLACEHOLDER, plainSummary, value } from './marks';
 
 /** A step summary with its values in bold and its placeholders in italics. */
 export function SummaryText({ text }: { text: string }) {

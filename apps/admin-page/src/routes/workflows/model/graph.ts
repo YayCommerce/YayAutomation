@@ -8,10 +8,12 @@ import { newNodeData, withStep } from '../steps';
  */
 
 /** Layout grid for new nodes. Template graphs use the same grid so added steps line up. */
-// Top-to-top: a one-line card is ~74px tall, leaving room for a clear edge and the "+" below it.
-// Branches sit far enough apart that two 320px cards side by side keep a gap.
+// Top-to-top: a card is 86px tall, leaving room for a clear edge and the "+" below it.
+// Branches sit far enough apart that two 290px cards side by side keep a gap.
 export const ROW_GAP = 170;
 export const BRANCH_OFFSET = 200;
+/** Every card's width, so a step and its branches line up. Positions are cards' top-left corners. */
+export const CARD_WIDTH = 290;
 
 /** Short unique id with a readable prefix. Not `crypto.randomUUID()`: it's undefined on non-HTTPS WP sites. */
 export function createId(prefix: string) {

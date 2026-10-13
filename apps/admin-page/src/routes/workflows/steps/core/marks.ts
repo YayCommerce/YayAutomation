@@ -11,6 +11,9 @@ export const PLACEHOLDER = `${EMPTY_MARK}${__('Not set', 'yay-automation')}${EMP
 /** A configured value in a summary, shown bold; blank → the italic placeholder. */
 export const value = (text: string) => (text.trim() ? `${VALUE_MARK}${text}${VALUE_MARK}` : PLACEHOLDER);
 
+/** A summary as plain text, marks removed: for `title`, `aria-label` and other places without formatting. */
+export const plainSummary = (text: string) => text.replace(new RegExp(`[${EMPTY_MARK}${VALUE_MARK}]`, 'g'), '');
+
 /** Group 1: a placeholder's text; group 2: a value's text. */
 export const MARKED = new RegExp(
   `${EMPTY_MARK}([^${EMPTY_MARK}]*)${EMPTY_MARK}|${VALUE_MARK}([^${VALUE_MARK}]*)${VALUE_MARK}`,

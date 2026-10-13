@@ -78,7 +78,7 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
     sameIssues,
   );
 
-  // Quiet → blue "review" → red "error". Opened from a failed Turn on elsewhere → starts red.
+  // Quiet → "review" (Needs setup) → red "error". Opened from a failed Activate elsewhere → starts red.
   const { errorMode, setErrorMode, feedbackFor, markVisited, issueModes } = useIssueFeedback(
     issues,
     !!(location.state as EditorNavState | null)?.showIssues,
