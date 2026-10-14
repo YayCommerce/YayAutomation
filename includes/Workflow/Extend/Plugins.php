@@ -86,8 +86,8 @@ final class Plugins {
      */
     public static function logos(): array {
         return [
-            // A plain shopping bag: a store, not WooCommerce's own mark.
-            self::WOOCOMMERCE   => self::SVG_OPEN . '<path d="M5.5 8.5h13l-1 11h-11z" /><path d="M9 8.5V7a3 3 0 0 1 6 0v1.5" /></svg>',
+            // A shopping cart outline (lucide `shopping-cart`): a store, not WooCommerce's own mark.
+            self::WOOCOMMERCE   => self::SVG_OPEN . '<circle cx="8" cy="21" r="1" /><circle cx="19" cy="21" r="1" /><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12" /></svg>',
             // Three steps joined: one that starts, two it leads to.
             self::YAYAUTOMATION => self::SVG_OPEN . '<rect x="9" y="3" width="6" height="5" rx="1.5" /><circle cx="6.5" cy="18" r="2.5" /><circle cx="17.5" cy="18" r="2.5" /><path d="M12 8v3.5M6.5 15.5v-4h11v4" /></svg>',
         ];

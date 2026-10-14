@@ -5,7 +5,7 @@ defined( 'ABSPATH' ) || exit;
 
 /**
  * One line of an order, reached through `order.items`. Context object: \WC_Order_Item_Product.
- * Not offered in "Add a variable": it isn't something a trigger supplies.
+ * Not offered in "Insert variable": it isn't something a trigger supplies.
  */
 final class OrderItemData extends DataItem {
 

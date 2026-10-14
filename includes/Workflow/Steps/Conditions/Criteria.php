@@ -49,7 +49,7 @@ class Criteria extends Condition {
     }
 
     public function icon(): string {
-        return 'split';
+        return 'git-branch';
     }
 
     public function fields(): array {

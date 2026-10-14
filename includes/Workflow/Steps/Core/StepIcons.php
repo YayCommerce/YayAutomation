@@ -27,6 +27,7 @@ final class StepIcons {
         'filter',
         'git-branch',
         'list-checks',
+        'list',
         'repeat',
         // Messages.
         'mail',
@@ -43,6 +44,7 @@ final class StepIcons {
         'webhook',
         'globe',
         // Discounts and rewards.
+        'ticket',
         'ticket-percent',
         'badge-percent',
         'gift',

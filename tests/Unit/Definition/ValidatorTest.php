@@ -358,4 +358,71 @@ final class ValidatorTest extends TestCase {
 
         $this->assertSame( [ 'nope isn’t a filter. Available filters: default, upper, lower, join, date, money, shout.' ], $errors );
     }
+
+    /** @return array[] Cases shared with the admin app's `availableVariables()` (tests/fixtures/variables.json). */
+    public function variable_cases(): array {
+        $cases = json_decode( (string) file_get_contents( dirname( __DIR__, 2 ) . '/fixtures/variables.json' ), true )['cases'];
+        $sets = [];
+        foreach ( $cases as $case ) {
+            if ( isset( $sets[ $case['name'] ] ) ) {
+                throw new \LogicException( 'Two variable cases with the same name: ' . $case['name'] );
+            }
+            $sets[ $case['name'] ] = [ $case['graph'], $case['nodeId'], $case['keys'] ];
+        }
+        return $sets;
+    }
+
+    /**
+     * @dataProvider variable_cases
+     * @param array    $graph   Graph as stored.
+     * @param string   $node_id The step.
+     * @param string[] $keys    Expected keys, in order.
+     */
+    public function test_variables_a_step_can_use( array $graph, string $node_id, array $keys ): void {
+        $this->assertSame( $keys, array_column( Validator::variables( GraphSchema::prepare( $graph ), $node_id ), 'key' ) );
+    }
+
+    public function test_variables_carry_label_and_type(): void {
+        $graph = GraphSchema::prepare(
+            [
+                'nodes' => [ self::trigger(), self::node( 'c', 'condition', 'condition' ), self::note( 'n' ) ],
+                'edges' => [ self::edge( 't', 'c' ), self::edge( 'c', 'note', 'then' ) ],
+            ]
+        );
+        $by_key = array_column( Validator::variables( $graph, 'note' ), null, 'key' );
+        $this->assertSame(
+            [
+                'key'   => 'order.total',
+                'label' => 'Order total',
+                'type'  => 'money',
+            ],
+            $by_key['order.total']
+        );
+        $this->assertSame( 'Customer first name', $by_key['order.customer.first_name']['label'], 'a relation reads as the related field' );
+        $this->assertArrayNotHasKey( 'order.customer', $by_key, 'the relation itself has no text' );
+        $this->assertSame( 'enum', $by_key['steps.c.result']['type'] );
+    }
+
+    public function test_every_listed_variable_passes_the_tag_check(): void {
+        $graph = GraphSchema::prepare(
+            [
+                'nodes' => [ self::trigger(), self::node( 'c', 'condition', 'condition' ), self::note( 'n' ) ],
+                'edges' => [ self::edge( 't', 'c' ), self::edge( 'c', 'note', 'then' ) ],
+            ]
+        );
+        $tags  = implode( ' ', array_map( fn( array $v ) => '{{ ' . $v['key'] . ' }}', Validator::variables( $graph, 'note' ) ) );
+        $graph = GraphSchema::prepare(
+            [
+                'nodes' => [ self::trigger(), self::node( 'c', 'condition', 'condition' ), self::note( $tags ) ],
+                'edges' => [ self::edge( 't', 'c' ), self::edge( 'c', 'note', 'then' ) ],
+            ]
+        );
+        $issues = Validator::errors(
+            [
+                'name'  => 'Alert',
+                'graph' => $graph,
+            ]
+        );
+        $this->assertSame( [], array_values( array_filter( $issues, fn( array $issue ) => 'note' === ( $issue['nodeId'] ?? null ) ) ) );
+    }
 }

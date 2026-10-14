@@ -1,6 +1,8 @@
 <?php
 namespace YayAutomation\Workflow\Data;
 
+use YayAutomation\Workflow\Definition\Catalog;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -65,32 +67,34 @@ final class DataRegistry {
 
     /**
      * Shape must match `DataItemMeta` in apps/admin-page/src/types/localize.d.ts. `type` is the
-     * condition type; `valueType` the full one. Relations (`order.customer`) aren't listed: their
-     * fields are the related item's.
+     * condition type; `valueType` the full one. Relations to one entity (`order.customer`) aren't
+     * fields: they go in `relations`, and their fields are the related item's.
      */
     public static function to_client(): array {
         $items = [];
         foreach ( self::items() as $item ) {
-            $fields = [];
+            $fields    = [];
+            $relations = [];
             foreach ( $item->fields() as $key => $field ) {
-                if ( $field['value_type']->is( Type::ENTITY ) ) {
+                /** @var Type $type */
+                $type = $field['value_type'];
+                if ( $type->is( Type::ENTITY ) ) {
+                    $relations[] = [
+                        'key'   => $item->id() . '.' . $key,
+                        'label' => $field['label'],
+                        'item'  => $type->entity_type(),
+                    ];
                     continue;
                 }
                 $client = [
                     'key'         => $item->id() . '.' . $key,
                     'label'       => $field['label'],
                     'type'        => $field['type'],
-                    'valueType'   => $field['value_type']->to_string(),
+                    'valueType'   => $type->to_string(),
                     'conditional' => $field['conditional'],
                 ];
                 if ( $field['options'] ) {
-                    $client['options'] = [];
-                    foreach ( ( $field['options'] )() as $value => $label ) {
-                        $client['options'][] = [
-                            'value' => (string) $value,
-                            'label' => $label,
-                        ];
-                    }
+                    $client['options'] = Catalog::options( ( $field['options'] )() );
                 }
                 $fields[] = $client;
             }//end foreach
@@ -99,6 +103,7 @@ final class DataRegistry {
                 'label'       => $item->label(),
                 'description' => $item->description(),
                 'fields'      => $fields,
+                'relations'   => $relations,
             ];
         }//end foreach
         return $items;

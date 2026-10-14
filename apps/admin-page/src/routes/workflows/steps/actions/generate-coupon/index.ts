@@ -1,3 +1,4 @@
+import { Ticket } from 'lucide-react';
 import { __, sprintf } from '@wordpress/i18n';
 
 import { defineStep, value } from '../../core/defineStep';
@@ -20,6 +21,7 @@ export const generateCouponStep = defineStep<GenerateCouponConfig>({
   kind: 'action',
   label: __('Generate coupon', 'yay-automation'),
   description: __('Create a single-use WooCommerce coupon to send in a later email.', 'yay-automation'),
+  icon: Ticket,
   schema,
   defaults,
   summary: (config) => {

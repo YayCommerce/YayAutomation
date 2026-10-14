@@ -4,7 +4,6 @@ namespace YayAutomation\Workflow\Steps\Core;
 use YayAutomation\Workflow\Data\DataRegistry;
 use YayAutomation\Workflow\Data\Scope;
 use YayAutomation\Workflow\Data\Template;
-use YayAutomation\Workflow\Data\Variables;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -28,19 +27,13 @@ abstract class Action extends Step {
     abstract public function requires(): array;
 
     /**
-     * What `requires()` says, plus the data items of every merge tag in the config's text.
+     * The data items in `requires()`. Data read through merge tags is checked by the Validator
+     * (`tag_error()`), which also covers `trigger.` paths and step outputs.
      *
      * @param array $config Step config.
      */
     public function uses( array $config ): array {
-        $items = $this->requires();
-        foreach ( $config as $value ) {
-            if ( is_string( $value ) ) {
-                $items = array_merge( $items, array_map( [ DataRegistry::class, 'item_of' ], Variables::keys( $value ) ) );
-            }
-        }
-        // Data items only: `steps.*` outputs are checked by the Validator, by the steps above.
-        $items = array_intersect( $items, array_keys( DataRegistry::items() ) );
+        $items = array_intersect( $this->requires(), array_keys( DataRegistry::items() ) );
         return array_values( array_diff( array_unique( $items ), DataRegistry::ALWAYS ) );
     }
 

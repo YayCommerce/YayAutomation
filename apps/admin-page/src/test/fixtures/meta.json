@@ -59,7 +59,7 @@
                 "label": "WooCommerce",
                 "description": "Orders, customers and store emails.",
                 "active": true,
-                "logo": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\"><path d=\"M5.5 8.5h13l-1 11h-11z\" /><path d=\"M9 8.5V7a3 3 0 0 1 6 0v1.5\" /></svg>"
+                "logo": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\"><circle cx=\"8\" cy=\"21\" r=\"1\" /><circle cx=\"19\" cy=\"21\" r=\"1\" /><path d=\"M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12\" /></svg>"
             },
             {
                 "id": "yayautomation",
@@ -80,7 +80,7 @@
                 "module": "core",
                 "label": "Order created",
                 "description": "Starts when a new order is created.",
-                "icon": "shopping-cart",
+                "icon": "shopping-bag",
                 "summary": "When a new order is created",
                 "onError": "stop",
                 "fields": [],
@@ -96,7 +96,7 @@
                 "module": "core",
                 "label": "Order status changed",
                 "description": "Starts when an order moves to another status. Choose which status changes count.",
-                "icon": "refresh-cw",
+                "icon": "shopping-bag",
                 "summary": "%from% → %to%",
                 "onError": "stop",
                 "fields": [
@@ -200,7 +200,7 @@
                 "module": "core",
                 "label": "Condition",
                 "description": "Take the Yes path when the rules match, otherwise the No path.",
-                "icon": "split",
+                "icon": "git-branch",
                 "summary": "%rules%",
                 "onError": "stop",
                 "fields": [
@@ -262,7 +262,7 @@
                         "key": "from",
                         "type": "notice",
                         "label": "From",
-                        "text": "The store email used to contact customers"
+                        "text": "Example Store <store@example.test>"
                     },
                     {
                         "key": "recipients",
@@ -308,7 +308,7 @@
                 "module": "core",
                 "label": "Change order status",
                 "description": "Move the order to another status.",
-                "icon": "arrow-right-left",
+                "icon": "tag",
                 "summary": "Set to %status%",
                 "onError": "stop",
                 "fields": [
@@ -446,7 +446,7 @@
                 "module": "core",
                 "label": "Add order note",
                 "description": "Add a private note to the order, or a note the customer gets by email.",
-                "icon": "sticky-note",
+                "icon": "message-square",
                 "summary": "%type%: %note%",
                 "onError": "stop",
                 "fields": [
@@ -504,7 +504,7 @@
                 "module": "core",
                 "label": "Update order custom field",
                 "description": "Set a custom field (meta) on the order.",
-                "icon": "database",
+                "icon": "list",
                 "summary": "Set %key% to %value%",
                 "onError": "stop",
                 "fields": [
@@ -657,6 +657,13 @@
                         "type": "string",
                         "valueType": "list<entity<order_item>>",
                         "conditional": false
+                    }
+                ],
+                "relations": [
+                    {
+                        "key": "order.customer",
+                        "label": "Customer",
+                        "item": "customer"
                     }
                 ]
             },
@@ -1709,7 +1716,8 @@
                             }
                         ]
                     }
-                ]
+                ],
+                "relations": []
             },
             {
                 "id": "site",
@@ -1730,7 +1738,8 @@
                         "valueType": "string",
                         "conditional": false
                     }
-                ]
+                ],
+                "relations": []
             }
         ],
         "operators": {

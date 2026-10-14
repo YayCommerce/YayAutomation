@@ -41,7 +41,7 @@ class AddOrderNote extends Action {
     }
 
     public function icon(): string {
-        return 'sticky-note';
+        return 'message-square';
     }
 
     public function category(): string {

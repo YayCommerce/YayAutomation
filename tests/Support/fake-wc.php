@@ -42,9 +42,3 @@ if ( ! function_exists( 'WC' ) ) {
         return $wc;
     }
 }//end if
-
-if ( ! function_exists( 'get_option' ) ) {
-    function get_option( $name, $default_value = false ) {
-        return 'admin_email' === $name ? 'admin@shop.test' : $default_value;
-    }
-}

@@ -54,10 +54,10 @@ class SendInternalEmail extends Action {
         return [];
     }
 
-    /** The sender is shown from `sender()` (EmailMeta); the notice explains where it comes from. */
+    /** The read-only From line is the WooCommerce sender, e.g. "Store <store@example.com>". */
     public function fields(): array {
         return [
-            Field::notice( 'from', __( 'From', 'yay-automation' ), __( 'The store email used to contact customers', 'yay-automation' ) ),
+            Field::notice( 'from', __( 'From', 'yay-automation' ), self::from_line() ),
             Field::emails( 'recipients', __( 'To', 'yay-automation' ) )
                 ->help( __( 'Separate addresses with commas. Leave blank to use the site admin email.', 'yay-automation' ) ),
             Field::text( 'subject', __( 'Subject', 'yay-automation' ) )
@@ -128,9 +128,26 @@ class SendInternalEmail extends Action {
      */
     public static function sender(): array {
         return [
-            'fromName'    => (string) get_option( 'woocommerce_email_from_name', get_bloginfo( 'name' ) ),
-            'fromAddress' => (string) get_option( 'woocommerce_email_from_address', get_option( 'admin_email' ) ),
+            'fromName'    => self::from_name(),
+            'fromAddress' => self::from_address(),
             'settingsUrl' => admin_url( 'admin.php?page=wc-settings&tab=email' ),
         ];
+    }
+
+    /** "Store <store@example.com>"; the address alone when the sender has no name. */
+    private static function from_line(): string {
+        // Stored escaped, like the site title; the notice is plain text.
+        $name = wp_specialchars_decode( self::from_name(), ENT_QUOTES );
+        return '' === $name ? self::from_address() : sprintf( '%s <%s>', $name, self::from_address() );
+    }
+
+    private static function from_name(): string {
+        return (string) get_option( 'woocommerce_email_from_name', get_bloginfo( 'name' ) );
+    }
+
+    /** A blank address falls back to the site admin's, as WooCommerce's own default. */
+    private static function from_address(): string {
+        $address = (string) get_option( 'woocommerce_email_from_address' );
+        return '' !== $address ? $address : (string) get_option( 'admin_email' );
     }
 }

@@ -2,6 +2,7 @@
 namespace YayAutomation\Tests\Unit\Definition;
 
 use PHPUnit\Framework\TestCase;
+use YayAutomation\Workflow\Data\DataRegistry;
 use YayAutomation\Workflow\Data\Type;
 use YayAutomation\Workflow\Definition\Catalog;
 use YayAutomation\Workflow\Steps\Core\StepRegistry;
@@ -101,5 +102,23 @@ final class CatalogTest extends TestCase {
                 $this->assertNotNull( Type::parse( $output['type'] ), $output['type'] );
             }
         }
+    }
+
+    public function test_data_items_list_relations_apart_from_fields(): void {
+        $order = array_column( DataRegistry::to_client(), null, 'id' )['order'];
+
+        $this->assertSame(
+            [
+                [
+                    'key'   => 'order.customer',
+                    'label' => 'Customer',
+                    'item'  => 'customer',
+                ],
+            ],
+            $order['relations'],
+            'one entity: a relation; a list (`order.items`) stays a field'
+        );
+        $this->assertNotContains( 'order.customer', array_column( $order['fields'], 'key' ) );
+        $this->assertContains( 'order.items', array_column( $order['fields'], 'key' ) );
     }
 }

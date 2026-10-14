@@ -1,3 +1,4 @@
+import { User } from 'lucide-react';
 import { __, sprintf } from '@wordpress/i18n';
 
 import { defineStep, value } from '../../core/defineStep';
@@ -13,6 +14,7 @@ export const sendEmailStep = defineStep<SendEmailConfig>({
     'Send an email to a customer in your store’s WooCommerce email style, with an unsubscribe link.',
     'yay-automation',
   ),
+  icon: User,
   schema,
   defaults,
   summary: ({ to }) =>

@@ -6,7 +6,6 @@ use YayAutomation\Tests\Support\ContextScope;
 use YayAutomation\Tests\Support\LegacyVariables;
 use YayAutomation\Workflow\Data\DataRegistry;
 use YayAutomation\Workflow\Data\Template;
-use YayAutomation\Workflow\Data\Variables;
 
 require_once dirname( __DIR__, 2 ) . '/Support/woocommerce-stubs.php';
 
@@ -131,6 +130,6 @@ final class VariablesParityTest extends TestCase {
 
     public function test_keys_match_for_old_tags(): void {
         $text = $this->old_tags() . ' {{order.number}} {{ order.nope }} {{ nope.field }}';
-        $this->assertSame( LegacyVariables::keys( $text ), Variables::keys( $text ) );
+        $this->assertSame( LegacyVariables::keys( $text ), ( new Template() )->paths( $text ) );
     }
 }

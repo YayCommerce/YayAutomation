@@ -39,7 +39,7 @@ class ChangeOrderStatus extends Action {
     }
 
     public function icon(): string {
-        return 'arrow-right-left';
+        return 'tag';
     }
 
     public function category(): string {

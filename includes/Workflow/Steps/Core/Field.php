@@ -1,6 +1,7 @@
 <?php
 namespace YayAutomation\Workflow\Steps\Core;
 
+use YayAutomation\Workflow\Definition\Catalog;
 use YayAutomation\Workflow\Definition\Messages;
 
 defined( 'ABSPATH' ) || exit;
@@ -391,13 +392,7 @@ final class Field {
             $data['showIf'] = $this->show_if;
         }
         if ( null !== $this->options ) {
-            $data['options'] = [];
-            foreach ( $this->options() as $value => $label ) {
-                $data['options'][] = [
-                    'value' => (string) $value,
-                    'label' => (string) $label,
-                ];
-            }
+            $data['options'] = Catalog::options( $this->options() );
         }
         if ( $this->has_value() ) {
             $data['default'] = $this->sanitize( null );

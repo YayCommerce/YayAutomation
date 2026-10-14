@@ -93,6 +93,12 @@ if ( ! function_exists( 'esc_html__' ) ) {
     }
 }
 
+if ( ! function_exists( 'get_option' ) ) {
+    function get_option( $name, $default_value = false ) {
+        return 'admin_email' === $name ? 'admin@shop.test' : $default_value;
+    }
+}
+
 if ( ! function_exists( 'get_bloginfo' ) ) {
     function get_bloginfo( $show = '' ) {
         return 'Tom &amp; Jerry&#039;s';

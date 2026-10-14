@@ -38,7 +38,7 @@ class UpdateOrderMeta extends Action {
     }
 
     public function icon(): string {
-        return 'database';
+        return 'list';
     }
 
     public function category(): string {

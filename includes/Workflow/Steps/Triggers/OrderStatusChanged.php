@@ -28,7 +28,7 @@ class OrderStatusChanged extends OrderTrigger {
     }
 
     public function icon(): string {
-        return 'refresh-cw';
+        return 'shopping-bag';
     }
 
     public function fields(): array {

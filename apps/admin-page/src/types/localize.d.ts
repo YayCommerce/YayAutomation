@@ -90,7 +90,7 @@ export type DataFieldType = 'number' | 'string' | 'enum' | 'date' | 'boolean';
 export interface DataItemMeta {
   id: string;
   label: string;
-  /** One line for the "Add a variable" list. */
+  /** One line for the "Insert variable" list. */
   description: string;
   fields: {
     /** Full key, e.g. `order.total`. */
@@ -105,6 +105,8 @@ export interface DataItemMeta {
     /** Enum fields. */
     options?: { value: string; label: string }[];
   }[];
+  /** Links to one other item (`order.customer` → `customer`): its fields read as `order.customer.first_name`. Sent by PHP; absent on items the app defines itself. */
+  relations?: { key: string; label: string; item: string }[];
 }
 
 declare global {
