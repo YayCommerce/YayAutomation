@@ -16,17 +16,33 @@ const tones: Record<WorkflowPlugin, string> = {
   yayautomation: 'bg-primary text-primary-foreground',
 };
 
-/** Small tinted tile with the plugin's logo. */
-export function PluginIcon({ plugin, className }: { plugin: WorkflowPlugin; className?: string }) {
+/** Small tinted tile with the plugin's logo. `sm`: in lists and stacks (sidebar, card footers). */
+export function PluginIcon({
+  plugin,
+  size = 'md',
+  className,
+}: {
+  plugin: WorkflowPlugin;
+  size?: 'sm' | 'md';
+  className?: string;
+}) {
   const { label, logo } = plugins[plugin];
 
   return (
     <span
       title={label}
-      className={cn('flex size-7 shrink-0 items-center justify-center rounded-md', tones[plugin], className)}
+      className={cn(
+        'flex shrink-0 items-center justify-center',
+        size === 'sm' ? 'size-5.5 rounded-md' : 'size-7 rounded-md',
+        tones[plugin],
+        className,
+      )}
     >
       {/* PHP cleans the SVG with wp_kses() and it draws in currentColor. */}
-      <span className="flex [&>svg]:size-4" dangerouslySetInnerHTML={{ __html: logo }} />
+      <span
+        className={cn('flex', size === 'sm' ? '[&>svg]:size-3' : '[&>svg]:size-4')}
+        dangerouslySetInnerHTML={{ __html: logo }}
+      />
       <span className="sr-only">{label}</span>
     </span>
   );

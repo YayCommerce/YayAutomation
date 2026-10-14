@@ -108,3 +108,29 @@ export const updateNodeConfig = (graph: WorkflowGraph, nodeId: string, config: R
 /** Chooses (or swaps) a trigger's or action's step; its config resets to that step's defaults. */
 export const setNodeStep = (graph: WorkflowGraph, nodeId: string, stepId: StepId) =>
   updateNodeData(graph, nodeId, (data) => withStep(data, stepId));
+
+/**
+ * Steps in reading order: the trigger, then down the flow, a condition's Yes path before its No
+ * path. Steps not linked to the trigger come last, as stored.
+ */
+export function stepsInOrder(graph: WorkflowGraph): WorkflowGraph['nodes'] {
+  const byId = new Map(graph.nodes.map((node) => [node.id, node]));
+  const rank = (handle?: WorkflowBranch) => (handle === 'otherwise' ? 1 : 0);
+  const children = (id: string) =>
+    graph.edges
+      .filter((edge) => edge.source === id)
+      .sort((a, b) => rank(a.sourceHandle) - rank(b.sourceHandle))
+      .map((edge) => edge.target);
+
+  const seen = new Set<string>();
+  const ordered: WorkflowGraph['nodes'] = [];
+  const visit = (id: string) => {
+    const node = byId.get(id);
+    if (!node || seen.has(id)) return;
+    seen.add(id);
+    ordered.push(node);
+    children(id).forEach(visit);
+  };
+  graph.nodes.filter((node) => node.kind === 'trigger').forEach((node) => visit(node.id));
+  return [...ordered, ...graph.nodes.filter((node) => !seen.has(node.id))];
+}

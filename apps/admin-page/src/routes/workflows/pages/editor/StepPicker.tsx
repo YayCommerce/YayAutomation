@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/breadcrumb';
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { ComingSoonChip } from '../../shared/ui/ComingSoonChip';
 import { PluginIcon, plugins } from '../../shared/ui/PluginIcon';
 import { StepTile } from '../../shared/ui/StepTile';
 import { steps, type Step } from '../../steps';
@@ -203,7 +204,7 @@ function StepRow({
           {stepDef.label}
           {/* Searching every plugin: say whose step it is. */}
           {showPlugin && <span className="text-muted-foreground font-normal">{plugins[stepDef.plugin!].label}</span>}
-          {stepDef.comingSoon && <Badge variant="dimmed">{comingSoonLabel}</Badge>}
+          {stepDef.comingSoon && <ComingSoonChip />}
         </span>
         <span className="text-muted-foreground block truncate text-xs" title={stepDef.description}>
           {stepDef.description}

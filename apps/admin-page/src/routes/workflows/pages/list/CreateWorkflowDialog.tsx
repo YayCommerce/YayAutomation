@@ -4,6 +4,7 @@ import { __ } from '@wordpress/i18n';
 
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { WorkflowAppIcon } from '../../shared/layout/EditorLayout';
+import { ComingSoonChip } from '../../shared/ui/ComingSoonChip';
 import { StepTile } from '../../shared/ui/StepTile';
 
 /** Example prompts for the describe box; shown, not usable, until the assistant ships (v2.0). */
@@ -72,9 +73,7 @@ export function CreateWorkflowDialog({
               </span>
             </div>
             <div className="flex items-center justify-end gap-2">
-              <span className="bg-muted text-muted-foreground inline-flex h-5 items-center rounded-md px-1.75 text-[11.5px] font-medium">
-                {__('Coming soon', 'yay-automation')}
-              </span>
+              <ComingSoonChip />
               <span
                 className="bg-muted text-muted-foreground flex size-8 items-center justify-center rounded-full"
                 aria-hidden
