@@ -230,7 +230,7 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
                   {__('Activate', 'yay-automation')}
                 </Button>
               ) : (
-                <Button variant="destructive" size="sm" disabled={busy} onClick={() => setConfirm('turnOff')}>
+                <Button variant="destructive-outline" size="sm" disabled={busy} onClick={() => setConfirm('turnOff')}>
                   {__('Deactivate', 'yay-automation')}
                 </Button>
               )}

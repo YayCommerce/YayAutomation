@@ -12,9 +12,13 @@ import { useWorkflowVersionsQuery } from '../../api/workflow.query';
 import { validateWorkflow } from '../../model/validation';
 import { WorkflowStatusBadge } from '../../shared/ui/WorkflowStatusBadge';
 
+/** "Oct 2": the year only when it isn't this year. */
+export const shortDay = (date: string) =>
+  formatDate(date, formatDate(date, 'Y') === formatDate(undefined, 'Y') ? 'M j' : 'M j, Y');
+
 /** "Oct 2 at 3:39 PM": the year only when it isn't this year; the time in the site's time format. */
 export function formatVersionDate(date: string) {
-  const day = formatDate(date, formatDate(date, 'Y') === formatDate(undefined, 'Y') ? 'M j' : 'M j, Y');
+  const day = shortDay(date);
   /* translators: 1: date, 2: time */
   return sprintf(__('%1$s at %2$s', 'yay-automation'), day, formatTime(date));
 }

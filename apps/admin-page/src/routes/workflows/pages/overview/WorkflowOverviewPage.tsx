@@ -4,7 +4,6 @@ import { ChevronLeft, CircleAlert, Pencil } from 'lucide-react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { __, sprintf } from '@wordpress/i18n';
 
-import { formatDate, formatTime } from '@/lib/helpers/date.helper';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/components/ui/sonner';
@@ -17,8 +16,10 @@ import { ReadOnlyCanvas } from '../../shared/canvas/ReadOnlyCanvas';
 import { WorkflowAppIcon } from '../../shared/layout/EditorLayout';
 import type { EditorNavState } from '../../shared/nav/editor.nav';
 import { ErrorAlert } from '../../shared/ui/ErrorAlert';
-import { onOffState, workflowState, WorkflowStatusBadge } from '../../shared/ui/WorkflowStatusBadge';
-import { VersionHistory } from './VersionHistory';
+import { StepTile } from '../../shared/ui/StepTile';
+import { workflowState, WorkflowStatusBadge } from '../../shared/ui/WorkflowStatusBadge';
+import { plainSummary, stepOf, SummaryText } from '../../steps';
+import { shortDay, VersionHistory } from './VersionHistory';
 import { WorkflowRuns } from './WorkflowRuns';
 
 export default function WorkflowOverviewPage() {
@@ -42,10 +43,10 @@ export default function WorkflowOverviewPage() {
 
 const HISTORY_TAB = 'history';
 
-// Pill tabs: the selected tab is a gray pill, no card or shadow. Focus ring stays
+// Underline tabs: the selected tab gets a primary line under it, no fill. Focus ring stays
 // keyboard-only (the kit's `focus-visible` styles).
-const pillTabClass =
-  'flex-none rounded-full px-3 py-1.5 data-[state=active]:bg-foreground/10 data-[state=active]:text-foreground data-[state=active]:shadow-none dark:data-[state=active]:border-transparent dark:data-[state=active]:bg-foreground/10';
+const underlineTabClass =
+  'text-muted-foreground data-[state=active]:text-foreground data-[state=active]:border-b-primary dark:data-[state=active]:border-b-primary -mb-px h-auto flex-none rounded-none border-0 border-b-2 border-transparent px-0 pt-0 pb-2 font-medium data-[state=active]:bg-transparent data-[state=active]:shadow-none dark:data-[state=active]:border-x-transparent dark:data-[state=active]:border-t-transparent dark:data-[state=active]:bg-transparent';
 
 // Fixed height so React Flow has room to fit the graph. `flex-none` overrides the kit's `flex-1`
 // (basis 0%): with no fixed card height that basis collapses the panel to 0px.
@@ -72,7 +73,7 @@ function WorkflowOverview({ workflow }: { workflow: Workflow }) {
         onSuccess: () => {
           setTurnOnOpen(false);
           setTurnOnIssues([]);
-          toast.success(__('Workflow turned on', 'yay-automation'));
+          toast.success(__('Workflow activated', 'yay-automation'));
         },
         onError: (error) => {
           setTurnOnOpen(false);
@@ -90,7 +91,7 @@ function WorkflowOverview({ workflow }: { workflow: Workflow }) {
       {
         onSuccess: () => {
           setTurnOffOpen(false);
-          toast.success(__('Workflow turned off', 'yay-automation'));
+          toast.success(__('Workflow deactivated', 'yay-automation'));
         },
         onError: (error) => {
           setTurnOffOpen(false);
@@ -99,16 +100,12 @@ function WorkflowOverview({ workflow }: { workflow: Workflow }) {
       },
     );
 
-  // The running or saved content, then unapplied edits when there are any. A workflow never turned on
-  // has just one version, and it's a draft.
-  const liveLabel = {
-    active: __('Active workflow', 'yay-automation'),
-    inactive: __('Saved workflow', 'yay-automation'),
-    draft: __('Draft', 'yay-automation'),
-  }[state];
+  // The workflow as it runs (or as saved), then draft changes when there are any.
   const tabs: { value: string; label: string; graph: Workflow['graph'] }[] = [
-    { value: 'live', label: liveLabel, graph: workflow.graph },
-    ...(workflow.draft ? [{ value: 'draft', label: __('Draft', 'yay-automation'), graph: workflow.draft }] : []),
+    { value: 'live', label: __('Workflow', 'yay-automation'), graph: workflow.graph },
+    ...(workflow.draft
+      ? [{ value: 'draft', label: __('Draft changes', 'yay-automation'), graph: workflow.draft }]
+      : []),
   ];
   // A draft with issues can't be activated, so the button isn't offered. Without a draft, Turn on
   // stays: a refusal opens the error container that explains the issues.
@@ -123,7 +120,7 @@ function WorkflowOverview({ workflow }: { workflow: Workflow }) {
       title={
         <>
           <span className="truncate font-medium">{workflow.name}</span>
-          <WorkflowStatusBadge state={onOffState(workflow)} />
+          <WorkflowStatusBadge state={state} />
         </>
       }
       actions={
@@ -136,28 +133,21 @@ function WorkflowOverview({ workflow }: { workflow: Workflow }) {
           </Button>
           <MoreActionsMenu workflow={workflow} />
           {isActive ? (
-            <Button variant="destructive" size="sm" onClick={() => setTurnOffOpen(true)}>
-              {__('Turn off workflow', 'yay-automation')}
+            <Button variant="destructive-outline" size="sm" onClick={() => setTurnOffOpen(true)}>
+              {__('Deactivate', 'yay-automation')}
             </Button>
           ) : (
             !draftBlocksTurnOn && (
               <Button size="sm" onClick={() => setTurnOnOpen(true)}>
-                {__('Turn on workflow', 'yay-automation')}
+                {__('Activate', 'yay-automation')}
               </Button>
             )
           )}
         </>
       }
     >
-      <div className="flex flex-col gap-3 p-4">
-        <p className="text-muted-foreground text-sm">
-          {sprintf(
-            /* translators: 1: date, 2: time */
-            __('Last updated on %1$s at %2$s', 'yay-automation'),
-            formatDate(workflow.lastVersionAt),
-            formatTime(workflow.lastVersionAt),
-          )}
-        </p>
+      <div className="flex flex-col gap-3.5 p-4">
+        <SummaryRow workflow={workflow} />
         {turnOnIssues.length > 0 && !isActive && (
           <ErrorAlert className="flex items-center gap-3 [&>svg]:translate-y-0">
             <CircleAlert />
@@ -180,13 +170,13 @@ function WorkflowOverview({ workflow }: { workflow: Workflow }) {
           </ErrorAlert>
         )}
         <Tabs value={currentTab} onValueChange={setTab} className="bg-card gap-3 rounded-lg border p-3 shadow-xs">
-          <TabsList className="h-auto bg-transparent p-0">
+          <TabsList className="h-auto w-full justify-start gap-5 rounded-none border-b bg-transparent p-0 px-1">
             {tabs.map((t) => (
-              <TabsTrigger key={t.value} value={t.value} className={pillTabClass}>
+              <TabsTrigger key={t.value} value={t.value} className={underlineTabClass}>
                 {t.label}
               </TabsTrigger>
             ))}
-            <TabsTrigger value={HISTORY_TAB} className={pillTabClass}>
+            <TabsTrigger value={HISTORY_TAB} className={underlineTabClass}>
               {__('Version history', 'yay-automation')}
             </TabsTrigger>
           </TabsList>
@@ -227,6 +217,63 @@ function WorkflowOverview({ workflow }: { workflow: Workflow }) {
         pending={deactivateMutation.isPending}
       />
     </OverviewLayout>
+  );
+}
+
+/** One cell of the summary row: a small label over its value. */
+function SummaryCell({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="flex min-w-0 flex-col gap-1 px-3.5 py-3">
+      <span className="text-muted-foreground text-xs">{label}</span>
+      <div className="flex min-w-0 items-center gap-2 font-semibold tabular-nums">{children}</div>
+    </div>
+  );
+}
+
+/**
+ * Status, trigger, runs in the last 30 days, last run. The run cells show "—" until run history
+ * (M2) fills them.
+ */
+function SummaryRow({ workflow }: { workflow: Workflow }) {
+  const state = workflowState(workflow);
+  const status =
+    state === 'active'
+      ? workflow.activatedAt
+        ? sprintf(
+            /* translators: %s: date, e.g. "Oct 2" */
+            __('Active since %s', 'yay-automation'),
+            shortDay(workflow.activatedAt),
+          )
+        : __('Active', 'yay-automation')
+      : state === 'inactive'
+        ? __('Inactive', 'yay-automation')
+        : __('Draft', 'yay-automation');
+  const trigger = workflow.graph.nodes.find((node) => node.kind === 'trigger');
+  const triggerStep = trigger && stepOf(trigger.data);
+  const summary = triggerStep && trigger ? triggerStep.summary(trigger.data.config) : '';
+  const none = <span className="text-muted-foreground font-normal">—</span>;
+
+  return (
+    <div className="bg-card grid grid-cols-2 rounded-lg border md:grid-cols-4 md:divide-x max-md:[&>*:nth-child(even)]:border-l max-md:[&>*:nth-child(n+3)]:border-t">
+      <SummaryCell label={__('Status', 'yay-automation')}>{status}</SummaryCell>
+      <SummaryCell label={__('Trigger', 'yay-automation')}>
+        {triggerStep ? (
+          <>
+            <StepTile kind="trigger" icon={triggerStep.icon} size="sm" />
+            <span className="min-w-0" title={plainSummary(summary)}>
+              <span className="block truncate">{triggerStep.label}</span>
+              <span className="text-muted-foreground-600 [&_strong]:text-card-foreground block truncate text-xs font-normal">
+                <SummaryText text={summary} />
+              </span>
+            </span>
+          </>
+        ) : (
+          none
+        )}
+      </SummaryCell>
+      <SummaryCell label={__('Runs (30 days)', 'yay-automation')}>{none}</SummaryCell>
+      <SummaryCell label={__('Last run', 'yay-automation')}>{none}</SummaryCell>
+    </div>
   );
 }
 

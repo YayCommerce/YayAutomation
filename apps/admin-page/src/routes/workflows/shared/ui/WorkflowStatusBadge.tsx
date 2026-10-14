@@ -11,11 +11,6 @@ export function workflowState(workflow: Pick<Workflow, 'status' | 'everActivated
   return workflow.everActivated ? 'inactive' : 'draft';
 }
 
-/** The Overview header only says Active or Inactive; the list and editor also say Draft. */
-export function onOffState(workflow: Pick<Workflow, 'status'>): WorkflowState {
-  return workflow.status === 'active' ? 'active' : 'inactive';
-}
-
 const badges = {
   active: { variant: 'success-soft', label: __('Active', 'yay-automation') },
   inactive: { variant: 'secondary', label: __('Inactive', 'yay-automation') },
