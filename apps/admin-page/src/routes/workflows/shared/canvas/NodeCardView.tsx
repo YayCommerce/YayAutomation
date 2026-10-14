@@ -7,8 +7,7 @@ import { __ } from '@wordpress/i18n';
 import { cn } from '@/lib/utils';
 import { CARD_WIDTH } from '../../model/graph';
 import { plainSummary, stepOf, SummaryText } from '../../steps';
-import { plugins } from '../ui/PluginIcon';
-import { kindIcons, StepTile } from '../ui/StepTile';
+import { kindIcons, StepEyebrow, StepTile } from '../ui/StepTile';
 import { sourceHandleStyle, targetHandleStyle, type FlowNode } from './flow';
 
 /**
@@ -38,12 +37,6 @@ export const kindMeta: Record<WorkflowNodeKind, { label: string; icon: LucideIco
 /** Where each condition branch leaves the card. Shared by the handles, their Yes / No and "+" buttons. */
 export const branchLeft: Record<WorkflowBranch, string> = { then: '30%', otherwise: '70%' };
 
-const kindText: Record<WorkflowNodeKind, string> = {
-  trigger: 'text-kind-trigger',
-  condition: 'text-kind-condition',
-  action: 'text-kind-action',
-};
-
 /**
  * Card body + handles. No form access, so it also renders on the read-only template preview.
  * Tile, then an eyebrow (kind · plugin), the step's name and a one-line summary. Not chosen yet: a
@@ -69,9 +62,6 @@ export function NodeCardView({
 }) {
   const { label: kindLabel, choose } = kindMeta[type];
   const stepDef = stepOf(data);
-  const plugin = stepDef?.plugin && plugins[stepDef.plugin].label;
-  // A step named after its kind ("Condition") shows only its plugin, so the word isn't said twice.
-  const showKind = !stepDef || stepDef.label.toLowerCase() !== kindLabel.toLowerCase();
   const summary = stepDef?.summary(data.config);
 
   return (
@@ -94,15 +84,7 @@ export function NodeCardView({
       >
         <StepTile kind={type} icon={stepDef?.icon} empty={!stepDef} size="lg" />
         <div className="flex min-w-0 flex-1 flex-col">
-          <div className={cn('text-[11px]/4 font-semibold tracking-wide uppercase', kindText[type])}>
-            {showKind && kindLabel}
-            {plugin && (
-              <span className="text-muted-foreground font-medium tracking-normal normal-case">
-                {showKind && ' · '}
-                {plugin}
-              </span>
-            )}
-          </div>
+          <StepEyebrow kind={type} kindLabel={kindLabel} stepLabel={stepDef?.label} plugin={stepDef?.plugin} />
           {/* Name and summary are cut to one line; the tooltip has them in full. */}
           <div
             title={stepDef?.label}

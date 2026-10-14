@@ -18,6 +18,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/sonner';
 import { ApiError } from '../../api/workflow.api';
@@ -33,11 +34,9 @@ import {
   TurnOffDialog,
   TurnOnDialog,
 } from '../../shared/actions/WorkflowActions';
-import { kindMeta } from '../../shared/canvas/NodeCardView';
 import { EditorLayout } from '../../shared/layout/EditorLayout';
 import { type EditorNavState } from '../../shared/nav/editor.nav';
 import { workflowState, WorkflowStatusBadge } from '../../shared/ui/WorkflowStatusBadge';
-import { stepOf } from '../../steps';
 import { EditorContext, type EditorState } from './editor.context';
 import { IssueBanner } from './IssueBanner';
 import { SaveStatus } from './SaveStatus';
@@ -65,9 +64,9 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
   const panelWidth = panelWidthFor(canvasWidth);
 
   const isActive = workflow.status === 'active';
-  // Once turned on, edits go into a draft (active or not), and they're unapplied changes as soon as
+  // Once activated, edits go into a draft (active or not), and they're draft changes as soon as
   // they're made, not only once saved. (If they end up matching the saved content, the server clears
-  // the draft and Apply reports 409.) Never turned on: edits change the workflow itself.
+  // the draft and Update reports 409.) Never activated: edits change the workflow itself.
   const hasDraft = workflow.everActivated && (workflow.draft !== null || autosave.status !== 'saved');
 
   // Reused across drag frames and compared by content, so the header re-renders only when issues change.
@@ -117,7 +116,7 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
   const apply = useWorkflowActionMutation('apply');
   const discard = useWorkflowActionMutation('discard');
 
-  /** Saves pending edits, then runs `action`. Turn on / Apply failing on issues → error mode. */
+  /** Saves pending edits, then runs `action`. Activate / Update failing on issues → error mode. */
   const run = async (action: () => Promise<Workflow>, success: string) => {
     setBusy(true);
     try {
@@ -131,8 +130,8 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
     } catch (error) {
       if (error instanceof ApiError && error.code === 'yay_automation_no_draft') {
         // The edits ended up matching the live workflow, so the server dropped the draft. Refetch so
-        // the header stops offering Apply.
-        toast.info(__('There were no changes to apply.', 'yay-automation'));
+        // the header stops offering Update.
+        toast.info(__('There were no changes to update.', 'yay-automation'));
         void queryClient.invalidateQueries({ queryKey: workflowKeys.detail(workflow.id) });
       } else if (error instanceof ApiError && error.issues.length) {
         setErrorMode(true);
@@ -151,10 +150,11 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
     }
   };
 
-  const turnOn = () => run(() => activate.mutateAsync({ id: workflow.id }), __('Workflow turned on', 'yay-automation'));
-  const applyChanges = () => run(() => apply.mutateAsync({ id: workflow.id }), __('Changes applied', 'yay-automation'));
+  const turnOn = () => run(() => activate.mutateAsync({ id: workflow.id }), __('Workflow activated', 'yay-automation'));
+  const applyChanges = () =>
+    run(() => apply.mutateAsync({ id: workflow.id }), __('Workflow updated', 'yay-automation'));
   const turnOff = () =>
-    run(() => deactivate.mutateAsync({ id: workflow.id }), __('Workflow turned off', 'yay-automation'));
+    run(() => deactivate.mutateAsync({ id: workflow.id }), __('Workflow deactivated', 'yay-automation'));
 
   const discardChanges = async () => {
     setBusy(true);
@@ -199,9 +199,10 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
           title={
             <>
               <span className="truncate font-medium">{workflow.name}</span>
-              {/* Unapplied changes, or never turned on → Draft. Otherwise Inactive, or no badge when active. */}
+              {/* Edits not yet in the live workflow → Draft changes. Otherwise Draft (never activated),
+                  Inactive, or no badge when active. */}
               {hasDraft ? (
-                <WorkflowStatusBadge state="draft" />
+                <Badge variant="warning-soft">{__('Draft changes', 'yay-automation')}</Badge>
               ) : (
                 !isActive && <WorkflowStatusBadge state={workflowState(workflow)} />
               )}
@@ -215,22 +216,22 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
                   <Button variant="outline" size="sm" disabled={busy} onClick={() => setConfirm('discard')}>
                     {__('Discard changes', 'yay-automation')}
                   </Button>
-                  {/* Only a running workflow asks first: applying to a saved one changes nothing live. */}
+                  {/* Only a running workflow asks first: updating an inactive one changes nothing live. */}
                   <Button
                     size="sm"
                     disabled={busy || blockedByIssues}
                     onClick={() => (isActive ? setConfirm('apply') : void applyChanges())}
                   >
-                    {__('Apply changes', 'yay-automation')}
+                    {__('Update', 'yay-automation')}
                   </Button>
                 </>
               ) : !isActive ? (
                 <Button size="sm" disabled={busy || blockedByIssues} onClick={() => setConfirm('turnOn')}>
-                  {__('Turn on workflow', 'yay-automation')}
+                  {__('Activate', 'yay-automation')}
                 </Button>
               ) : (
                 <Button variant="destructive" size="sm" disabled={busy} onClick={() => setConfirm('turnOff')}>
-                  {__('Turn off workflow', 'yay-automation')}
+                  {__('Deactivate', 'yay-automation')}
                 </Button>
               )}
             </>
@@ -260,10 +261,7 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
             {errorMode && (
               <IssueBanner
                 issues={issues}
-                labelFor={(nodeId) => {
-                  const node = form.state.values.graph.nodes.find((n) => n.id === nodeId);
-                  return node ? (stepOf(node.data)?.label ?? kindMeta[node.kind].label) : '';
-                }}
+                nodeFor={(nodeId) => form.state.values.graph.nodes.find((n) => n.id === nodeId)}
                 onView={(nodeId) => showPanel({ nodeId, picking: false })}
                 onRename={() => setRenaming(true)}
                 // Clear of the step panel on the left.
