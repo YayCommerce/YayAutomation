@@ -1,20 +1,23 @@
-import { ArrowUp, LayoutTemplate, Loader2, Sparkles, Zap } from 'lucide-react';
+import type { ReactNode } from 'react';
+import { ArrowUp, ChevronRight, LayoutTemplate, Loader2, Sparkles } from 'lucide-react';
 import { __ } from '@wordpress/i18n';
 
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { WorkflowAppIcon } from '../../shared/layout/EditorLayout';
-import { CreateWorkflowIllustration } from './WorkflowIllustrations';
+import { StepTile } from '../../shared/ui/StepTile';
 
-/** Round pill that tints with the primary color on hover. */
-const startButton = 'hover:bg-primary/10 hover:text-primary rounded-full';
+/** Example prompts for the describe box; shown, not usable, until the assistant ships (v2.0). */
+const ideas = [
+  __('Thank first-time buyers', 'yay-automation'),
+  __('Alert me about big orders', 'yay-automation'),
+  __('Remind shoppers about their cart', 'yay-automation'),
+  __('Ask for a review after delivery', 'yay-automation'),
+];
 
 /**
- * Near full-screen start page: describe the workflow (the AI assistant; layout
- * only for now), or select a trigger, or browse the template library.
+ * Near full-screen start page: the question, a describe box with example prompts (the assistant;
+ * "Coming soon" until it ships), then two ways to start on your own: browse templates, or choose
+ * a trigger.
  */
 export function CreateWorkflowDialog({
   open,
@@ -31,78 +34,135 @@ export function CreateWorkflowDialog({
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex h-[calc(100vh-2rem)] flex-col gap-0 p-0 sm:max-w-[calc(100vw-2rem)]">
-        <div className="flex h-12 shrink-0 items-center gap-2 px-4">
+      <DialogContent
+        className="flex h-[calc(100vh-2rem)] flex-col gap-0 p-0 outline-none sm:max-w-[calc(100vw-2rem)]"
+        // Focus the dialog itself, not the first card: no ring on open; Tab reaches the cards.
+        onOpenAutoFocus={(event) => {
+          event.preventDefault();
+          (event.currentTarget as HTMLElement).focus();
+        }}
+      >
+        <div className="flex h-12 shrink-0 items-center gap-2 border-b px-4">
           <WorkflowAppIcon />
-          <DialogTitle className="text-sm font-medium">{__('Workflow', 'yay-automation')}</DialogTitle>
+          <DialogTitle className="text-sm font-medium">{__('New workflow', 'yay-automation')}</DialogTitle>
         </div>
 
-        <div className="flex flex-1 flex-col items-center justify-center gap-5 px-4 pb-16">
-          <CreateWorkflowIllustration />
-          <DialogDescription className="sr-only">
-            {__('Describe what you want to automate, or start on your own.', 'yay-automation')}
-          </DialogDescription>
+        <div className="flex flex-1 flex-col items-center justify-center gap-4.5 overflow-y-auto px-6 pt-12 pb-14">
+          <div className="text-center">
+            <h2 className="text-[22px] font-semibold tracking-tight">
+              {__('What do you want to automate?', 'yay-automation')}
+            </h2>
+            <DialogDescription className="text-muted-foreground mt-1 text-[13.5px]">
+              {__(
+                'Soon you can describe it and get a draft to review. Until then, start on your own below.',
+                'yay-automation',
+              )}
+            </DialogDescription>
+          </div>
 
-          {/* The assistant isn't built yet: the box shows where it goes. Disabled controls swallow
-              pointer events, so the wrapper carries the tooltip. */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="ring-primary/15 relative w-full max-w-md rounded-xl ring-4">
-                <Sparkles
-                  className="text-primary pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2"
-                  aria-hidden
-                />
-                <Input
-                  disabled
-                  className="h-11 rounded-xl pr-11 pl-9"
-                  placeholder={__('Tell me what you want to create…', 'yay-automation')}
-                  aria-label={__('Describe your workflow', 'yay-automation')}
-                />
-                <Button
-                  size="icon-sm"
-                  variant="ghost"
-                  className="absolute top-1/2 right-1.5 size-7 -translate-y-1/2 rounded-full"
-                  disabled
-                  aria-label={__('Send', 'yay-automation')}
-                >
-                  <ArrowUp />
-                </Button>
-              </div>
-            </TooltipTrigger>
-            {/* Above the dialog (z-100002); the kit's tooltip layer sits below it. */}
-            <TooltipContent className="z-100003">{__('Coming soon', 'yay-automation')}</TooltipContent>
-          </Tooltip>
+          {/* The assistant isn't built yet: the box looks as it will, but nothing in it can be used. */}
+          <div
+            aria-disabled
+            className="bg-card border-input flex w-full max-w-150 cursor-not-allowed flex-col gap-2.5 rounded-[14px] border pt-3 pr-3 pb-2.5 pl-3.5 shadow-[0_0_0_4px_color-mix(in_srgb,var(--primary)_10%,transparent),0_8px_24px_-14px_color-mix(in_srgb,var(--primary)_60%,transparent)]"
+          >
+            <div className="flex min-h-11 gap-2.5 text-[14.5px]/normal">
+              <Sparkles className="text-primary mt-0.75 size-4 shrink-0" aria-hidden />
+              <span className="text-muted-foreground">
+                {__('e.g. Email customers who haven’t ordered in 90 days with a coupon', 'yay-automation')}
+              </span>
+            </div>
+            <div className="flex items-center justify-end gap-2">
+              <span className="bg-muted text-muted-foreground inline-flex h-5 items-center rounded-md px-1.75 text-[11.5px] font-medium">
+                {__('Coming soon', 'yay-automation')}
+              </span>
+              <span
+                className="bg-muted text-muted-foreground flex size-8 items-center justify-center rounded-full"
+                aria-hidden
+              >
+                <ArrowUp className="size-3.75 stroke-[2.5]" />
+              </span>
+            </div>
+          </div>
 
-          <div className="text-muted-foreground flex w-full max-w-60 items-center gap-3 text-sm">
+          {/* Examples of what to describe; not clickable until the assistant ships. */}
+          <ul
+            className="flex max-w-160 flex-wrap justify-center gap-2"
+            aria-label={__('Example prompts', 'yay-automation')}
+          >
+            {ideas.map((idea) => (
+              <li
+                key={idea}
+                className="bg-card text-muted-foreground-600 flex h-7.5 items-center gap-1.5 rounded-full border px-3 text-[13px]"
+              >
+                <Sparkles className="text-muted-foreground size-3.25" aria-hidden />
+                {idea}
+              </li>
+            ))}
+          </ul>
+
+          <div className="text-muted-foreground flex w-full max-w-150 items-center gap-3 text-[12.5px]">
             <span className="bg-border h-px flex-1" />
-            {__('Or', 'yay-automation')}
+            {__('or start on your own', 'yay-automation')}
             <span className="bg-border h-px flex-1" />
           </div>
 
-          <div className="flex gap-2">
-            {/* While the workflow is being created a spinner takes the label's place; the hidden label
-                keeps the button's width. */}
-            <Button
-              variant="secondary"
-              size="sm"
-              className={cn(startButton, 'relative disabled:opacity-100')}
-              disabled={creating}
-              aria-busy={creating}
+          <div className="grid w-full max-w-150 gap-3 sm:grid-cols-2">
+            <StartCard
+              tile={
+                <span className="bg-primary/14 text-primary flex size-7.5 shrink-0 items-center justify-center rounded-lg">
+                  <LayoutTemplate className="size-4" />
+                </span>
+              }
+              title={__('Browse templates', 'yay-automation')}
+              description={__('Ready-made workflows to review and activate', 'yay-automation')}
+              onClick={onBrowseTemplates}
+            />
+            <StartCard
+              tile={<StepTile kind="trigger" size="md" />}
+              title={__('Choose a trigger', 'yay-automation')}
+              description={__('Build it step by step', 'yay-automation')}
+              busy={creating}
               onClick={onSelectTrigger}
-            >
-              <span className={cn('flex items-center gap-1.5', creating && 'invisible')}>
-                <Zap />
-                {__('Select a trigger', 'yay-automation')}
-              </span>
-              {creating && <Loader2 className="absolute animate-spin" aria-hidden />}
-            </Button>
-            <Button variant="secondary" size="sm" className={startButton} onClick={onBrowseTemplates}>
-              <LayoutTemplate />
-              {__('Template Library', 'yay-automation')}
-            </Button>
+            />
           </div>
         </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function StartCard({
+  tile,
+  title,
+  description,
+  busy,
+  onClick,
+}: {
+  tile: ReactNode;
+  title: string;
+  description: string;
+  /** Creating the workflow: a spinner replaces the arrow, and a second click does nothing. */
+  busy?: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      disabled={busy}
+      aria-busy={busy}
+      onClick={onClick}
+      className="bg-card hover:border-primary focus-visible:ring-ring/50 flex cursor-pointer items-center gap-3 rounded-xl border px-3.5 py-3 text-left transition-colors outline-none focus-visible:ring-[3px] disabled:cursor-wait"
+    >
+      {tile}
+      <span className="min-w-0 flex-1">
+        <span className="block text-sm font-semibold">{title}</span>
+        <span className="text-muted-foreground block text-[12.5px]">{description}</span>
+      </span>
+      {busy ? (
+        <Loader2 className="text-muted-foreground size-4 shrink-0 animate-spin" aria-hidden />
+      ) : (
+        <ChevronRight className="text-muted-foreground size-4 shrink-0" aria-hidden />
+      )}
+    </button>
   );
 }

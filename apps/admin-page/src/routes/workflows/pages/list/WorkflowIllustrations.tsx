@@ -58,26 +58,3 @@ export function TemplatesHeroIllustration({ className }: { className?: string })
     </svg>
   );
 }
-
-/** Step cards on a disc, one picked by a cursor. Sits above the Create workflow prompt. */
-export function CreateWorkflowIllustration({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 160 110" aria-hidden="true" className={cn('h-28 w-40', className)}>
-      <circle cx="78" cy="56" r="48" className="fill-muted" />
-
-      <rect x="46" y="18" width="62" height="20" rx="7" className="fill-card stroke-border" />
-      <rect x="56" y="26" width="30" height="4" rx="2" className="fill-muted-foreground/30" />
-      <circle cx="97" cy="28" r="3" className="fill-muted-foreground/30" />
-
-      <rect x="10" y="62" width="62" height="20" rx="7" className="fill-card stroke-border" />
-      <rect x="20" y="70" width="30" height="4" rx="2" className="fill-muted-foreground/30" />
-      <circle cx="61" cy="72" r="3" className="fill-muted-foreground/30" />
-
-      <rect x="84" y="48" width="64" height="22" rx="7" className="fill-card stroke-foreground" strokeWidth="2" />
-      <rect x="94" y="57" width="30" height="4" rx="2" className="fill-muted-foreground/30" />
-      <circle cx="137" cy="59" r="3" className="fill-muted-foreground/30" />
-
-      <path d="M136 64l0 14 4-4 3 6 3-1.5-3-6 5.5-.5z" className="fill-foreground stroke-card" strokeWidth="1" />
-    </svg>
-  );
-}
