@@ -54,15 +54,16 @@ export function VariablePicker({
   /** The element that opens it. */
   children: ReactNode;
 }) {
-  const { available, trigger } = useVariableScope();
+  const { variables, trigger } = useVariableScope();
   const [open, setOpen] = useState(false);
   const [position, setPosition] = useState<CSSProperties>();
   const [itemId, setItemId] = useState<string | null>(null);
   const [query, setQuery] = useState('');
 
   // Built only while open: a criteria box holds several closed pickers.
+  const itemIds = open ? new Set(variables.map((variable) => variable.key.split('.')[0])) : null;
   const items = (open ? dataItems : [])
-    .filter((item) => available.includes(item.id))
+    .filter((item) => itemIds?.has(item.id))
     .map((item) => ({
       ...item,
       fields: item.fields.filter((field) => (!conditionalOnly || field.conditional) && (!filter || filter(field))),

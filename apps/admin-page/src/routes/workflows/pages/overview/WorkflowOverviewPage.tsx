@@ -62,8 +62,8 @@ function WorkflowOverview({ workflow }: { workflow: Workflow }) {
   const [activateOpen, setActivateOpen] = useState(false);
   const [deactivateOpen, setDeactivateOpen] = useState(false);
   const issues = useMemo(() => activateIssues(workflow), [workflow]);
-  // What a refused Activate reported: the server may find issues this page doesn't check (e.g. a
-  // malformed tag). Kept for this copy of the workflow only: a refetch shows its own issues again.
+  // What a refused Activate reported: newer than this copy's issues when the workflow changed
+  // elsewhere. Kept for this copy only: a refetch shows its own issues again.
   const [refused, setRefused] = useState<{ workflow: Workflow; issues: WorkflowIssue[] } | null>(null);
   const setupIssues = refused?.workflow === workflow ? refused.issues : issues;
 

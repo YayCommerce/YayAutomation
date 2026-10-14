@@ -1,5 +1,5 @@
 {
-    "//": "Variables a step can use: PHP Validator::variables(). Meant to be shared with the admin app. Add cases here, not in one test only.",
+    "//": "Variables a step can use: PHP Validator::variables(). Shared with the admin app's availableVariables() (steps/core/variables.test.ts). Add cases here, not in one test only.",
     "cases": [
         {
             "name": "No trigger chosen: only the always-available data",

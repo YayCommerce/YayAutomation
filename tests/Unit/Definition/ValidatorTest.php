@@ -425,4 +425,41 @@ final class ValidatorTest extends TestCase {
         );
         $this->assertSame( [], array_values( array_filter( $issues, fn( array $issue ) => 'note' === ( $issue['nodeId'] ?? null ) ) ) );
     }
+
+    public function test_list_issues_match_issues(): void {
+        $workflow = [
+            'id'    => '7',
+            'name'  => 'Alert',
+            'graph' => GraphSchema::blank(),
+            'draft' => null,
+        ];
+        $this->assertSame( Validator::issues( $workflow ), Validator::list_issues( $workflow ) );
+    }
+
+    public function test_list_issues_survive_a_workflow_that_cant_be_checked(): void {
+        $log      = tempnam( sys_get_temp_dir(), 'yay-log' );
+        $previous = ini_set( 'error_log', $log );
+        try {
+            // No `nodes`: errors() throws on it.
+            $issues = Validator::list_issues(
+                [
+                    'id'    => '42',
+                    'name'  => 'Broken',
+                    'graph' => [ 'edges' => [] ],
+                    'draft' => null,
+                ]
+            );
+        } finally {
+            ini_set( 'error_log', (string) $previous );
+        }
+        $this->assertSame(
+            [
+                'live'  => [],
+                'draft' => [],
+            ],
+            $issues
+        );
+        $this->assertStringContainsString( 'Could not check workflow 42', (string) file_get_contents( $log ) );
+        unlink( $log );
+    }
 }

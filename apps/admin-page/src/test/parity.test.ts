@@ -13,9 +13,10 @@ import { sprintf } from '@wordpress/i18n';
 import type { DataFieldType } from '@/types/localize';
 import { messages } from '../routes/workflows/model/messages';
 import { steps } from '../routes/workflows/steps';
-import { needsValue, operatorLabels, variableKeys } from '../routes/workflows/steps/core/data';
+import { fieldByPath, needsValue, operatorLabels } from '../routes/workflows/steps/core/data';
 import { stepIcons } from '../routes/workflows/steps/core/icons';
 import { automationMeta, isPendingStep } from '../routes/workflows/steps/core/pending';
+import { templatePaths } from '../routes/workflows/steps/core/template';
 import { isComingSoon, templates } from '../routes/workflows/templates';
 
 const php = window.yayAutomationMeta.automation;
@@ -156,8 +157,8 @@ describe('PHP ↔ TS parity', () => {
             if (rule.valueType === 'variable') expect(dataKeys.has(rule.value), rule.value).toBe(true);
           }
         }
-        for (const key of strings(data.config).flatMap(variableKeys)) {
-          expect(dataKeys.has(key), key).toBe(true);
+        for (const path of strings(data.config).flatMap(templatePaths)) {
+          expect(dataKeys.has(fieldByPath(path)?.key ?? ''), path).toBe(true);
         }
       }
     });

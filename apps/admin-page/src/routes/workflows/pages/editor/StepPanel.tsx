@@ -14,8 +14,16 @@ import { stepOf } from '../../steps';
 import { alwaysAvailable } from '../../steps/core/data';
 import { FeedbackContext, type Feedback } from '../../steps/core/fields/feedback';
 import { VariableScopeContext } from '../../steps/core/fields/variableScope';
+import { availableVariables, type Variable } from '../../steps/core/variables';
 import { StepPicker } from './StepPicker';
 import { useWorkflowFormContext } from './useWorkflowForm';
+
+/** Same keys in the same order: labels and types only change with them. */
+const sameVariables = (a: Variable[], b: Variable[]) =>
+  sameItems(
+    a.map((variable) => variable.key),
+    b.map((variable) => variable.key),
+  );
 
 /**
  * Panel width for a canvas this wide: roomy on desktops (480px), narrower on
@@ -57,6 +65,7 @@ export function StepPanel({
     (state) => availableData(state.values.graph)?.(nodeId) ?? alwaysAvailable,
     sameItems,
   );
+  const variables = useStore(form.store, (state) => availableVariables(state.values.graph, nodeId), sameVariables);
   const triggerLabel = triggerStep?.label ?? null;
   if (!node) return null;
 
@@ -109,7 +118,7 @@ export function StepPanel({
       <div className="min-h-0 flex-1 overflow-y-auto p-4">
         {stepDef.Form ? (
           <FeedbackContext.Provider value={feedback}>
-            <VariableScopeContext.Provider value={{ available, trigger: triggerLabel }}>
+            <VariableScopeContext.Provider value={{ variables, trigger: triggerLabel }}>
               {/* Keyed by step and step, so switching either starts a fresh form. */}
               <stepDef.Form
                 key={`${node.id}:${stepDef.id}`}

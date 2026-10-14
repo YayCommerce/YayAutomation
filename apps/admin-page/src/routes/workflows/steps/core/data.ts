@@ -3,10 +3,12 @@ import { __, sprintf } from '@wordpress/i18n';
 import type { DataFieldType, DataItemMeta } from '@/types/localize';
 import { messages } from '../../model/messages';
 import { automationMeta, isPendingField } from './pending';
+import { templateErrors, templatePaths } from './template';
 
 /**
  * Data items and their fields, from PHP `DataRegistry` (labels, types and options live there).
- * Fields are both condition variables and `{{ item.field }}` merge tags.
+ * Fields are both condition variables and merge tags (`{{ order.total }}`, through relations
+ * `{{ order.customer.first_name }}`).
  */
 
 export type DataField = DataItemMeta['fields'][number];
@@ -57,38 +59,59 @@ export const operatorLabels: Record<string, string> = {
   is_false: __('Is false', 'yay-automation'),
 };
 
-/**
- * Old two-part tags (`{{ order.total }}`). Spaces inside the braces are optional. PHP parses the full
- * grammar in `Data/Template.php`; the TS parser comes in F1.11.
- */
-const VARIABLE_PATTERN = /\{\{\s*([a-z_]+\.[a-z_]+)\s*\}\}/g;
-
-/** Full keys of the merge tags in a text, without duplicates. */
-export const variableKeys = (text: string) => [...new Set([...text.matchAll(VARIABLE_PATTERN)].map((m) => m[1]))];
-
-/** Merge tag for a key, as inserted by "Add variable". */
+/** Merge tag for a key, as inserted by "Insert variable". */
 export const variableTag = (key: string) => `{{ ${key} }}`;
 
+/** A path without the optional `trigger.` prefix, split: `trigger.order.total` → `['order', 'total']`. */
+export const pathSegments = (path: string) => {
+  const segments = path.split('.');
+  return segments[0] === 'trigger' ? segments.slice(1) : segments;
+};
+
+/** A step output's path: `steps.<step id>.<key>`. Which steps exist is up to the graph. */
+export const isStepPath = (segments: string[]) => segments[0] === 'steps';
+
 /**
- * Error for the first merge tag no data item defines, or null. PHP checks tags in
- * `Definition/Validator.php` (`tag_error()`: path, filter, what the step can reach); fields PHP
- * doesn't have yet count as unknown too.
+ * What a merge-tag path reads, following relations: a data field (`order.customer.first_name` →
+ * `customer.first_name`), a relation itself (`order.customer`), or undefined. Mirrors PHP
+ * `Validator::has_field()`.
  */
-export function unknownVariable(...texts: string[]) {
-  return firstUnknown(texts, false);
-}
-
-/** `unknownVariable()` for a step still coming soon: fields PHP doesn't have yet are fine there. */
-export function unknownVariableAllowingPending(...texts: string[]) {
-  return firstUnknown(texts, true);
-}
-
-function firstUnknown(texts: string[], allowPending: boolean) {
-  for (const text of texts) {
-    const unknown = variableKeys(text).find((key) => !fieldByKey(key) || (!allowPending && isPendingField(key)));
-    if (unknown) {
-      return sprintf(messages.unknownVariable, variableTag(unknown));
+function resolvePath(path: string) {
+  const [first, ...rest] = pathSegments(path);
+  let item = dataItems.find((i) => i.id === first);
+  for (const [i, segment] of rest.entries()) {
+    if (!item) return undefined;
+    const key = `${item.id}.${segment}`;
+    const relation = item.relations?.find((r) => r.key === key);
+    if (i === rest.length - 1) {
+      const field = fieldByKey(key);
+      return field ? { field } : relation && { relation };
     }
+    item = relation && dataItems.find((target) => target.id === relation.item);
+  }
+  return undefined;
+}
+
+/** The data field a merge-tag path reads, following relations (`order.customer.first_name` → `customer.first_name`). */
+export const fieldByPath = (path: string): DataField | undefined => resolvePath(path)?.field;
+
+/**
+ * The first problem with the merge tags in these texts, or null: a malformed tag or unknown filter,
+ * then a path nothing defines. Per text, like PHP `Validator::tag_error()`; whether the step can reach
+ * the data is the workflow's check (`missing_data`). `allowPending`: for a step still coming soon,
+ * fields PHP doesn't have yet are fine.
+ */
+export function tagError(texts: string[], { allowPending = false } = {}) {
+  for (const text of texts) {
+    const error = templateErrors(text)[0];
+    if (error) return error;
+    const unknown = templatePaths(text).find((path) => {
+      const segments = pathSegments(path);
+      if (isStepPath(segments)) return segments.length !== 3;
+      const found = resolvePath(path);
+      return !found || (!allowPending && !!found.field && isPendingField(found.field.key));
+    });
+    if (unknown) return sprintf(messages.unknownVariable, variableTag(unknown));
   }
   return null;
 }

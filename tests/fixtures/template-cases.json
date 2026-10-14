@@ -1,5 +1,5 @@
 {
-    "//": "Template checks: PHP Data\\Template (errors(), paths()). Meant to be shared with the admin app parser. Add cases here, not in one test only.",
+    "//": "Template checks: PHP Data\\Template (errors(), paths()). Shared with the admin app (steps/core/template.test.ts). Add cases here, not in one test only.",
     "cases": [
         {
             "text": "Plain text, no tags",
@@ -137,6 +137,15 @@
             "paths": [
                 "order.number",
                 "order.nope"
+            ]
+        },
+        {
+            "text": "{{\u00a0order.total }} {{ order.number }}",
+            "errors": [
+                "{{\u00a0order.total }} is written incorrectly. Use {{ variable }} or {{ variable | filter }}."
+            ],
+            "paths": [
+                "order.number"
             ]
         }
     ]

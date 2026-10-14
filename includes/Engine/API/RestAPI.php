@@ -147,8 +147,17 @@ class RestAPI {
         );
     }
 
+    /**
+     * Every workflow, each with its issues (the list offers Activate only without them). One that
+     * can't be checked gets none rather than failing the list (`Validator::list_issues()`).
+     */
     public function list_workflows() {
-        return rest_ensure_response( WorkflowRepository::all() );
+        return rest_ensure_response(
+            array_map(
+                fn( array $workflow ) => $workflow + [ 'issues' => Validator::list_issues( $workflow ) ],
+                WorkflowRepository::all()
+            )
+        );
     }
 
     /**
@@ -215,7 +224,7 @@ class RestAPI {
                 return true;
             }
         );
-        return is_array( $updated ) ? self::with_issues( $updated ) : $updated;
+        return self::with_issues( $updated );
     }
 
     /**
@@ -226,23 +235,25 @@ class RestAPI {
      * @param \WP_REST_Request $request Request.
      */
     public function activate_workflow( \WP_REST_Request $request ) {
-        return $this->with_workflow(
-            (int) $request['id'],
-            function ( int $id, array $current ) {
-                if ( 'active' === $current['status'] ) {
-                    return true;
+        return self::with_issues(
+            $this->with_workflow(
+                (int) $request['id'],
+                function ( int $id, array $current ) {
+                    if ( 'active' === $current['status'] ) {
+                        return true;
+                    }
+                    $errors = Validator::errors( $current );
+                    if ( ! $errors && null !== $current['draft'] ) {
+                        $errors = Validator::errors(
+                            [
+                                'name'  => $current['name'],
+                                'graph' => $current['draft'],
+                            ]
+                        );
+                    }
+                    return $errors ? Validator::issues_error( $errors, 'activate' ) : WorkflowRepository::activate( $id );
                 }
-                $errors = Validator::errors( $current );
-                if ( ! $errors && null !== $current['draft'] ) {
-                    $errors = Validator::errors(
-                        [
-                            'name'  => $current['name'],
-                            'graph' => $current['draft'],
-                        ]
-                    );
-                }
-                return $errors ? Validator::issues_error( $errors, 'activate' ) : WorkflowRepository::activate( $id );
-            }
+            )
         );
     }
 
@@ -253,14 +264,16 @@ class RestAPI {
      * @param \WP_REST_Request $request Request.
      */
     public function deactivate_workflow( \WP_REST_Request $request ) {
-        return $this->with_workflow(
-            (int) $request['id'],
-            function ( int $id, array $current ) {
-                if ( 'active' !== $current['status'] ) {
-                    return true;
+        return self::with_issues(
+            $this->with_workflow(
+                (int) $request['id'],
+                function ( int $id, array $current ) {
+                    if ( 'active' !== $current['status'] ) {
+                        return true;
+                    }
+                    return WorkflowRepository::deactivate( $id );
                 }
-                return WorkflowRepository::deactivate( $id );
-            }
+            )
         );
     }
 
@@ -271,20 +284,22 @@ class RestAPI {
      * @param \WP_REST_Request $request Request.
      */
     public function apply_workflow( \WP_REST_Request $request ) {
-        return $this->with_workflow(
-            (int) $request['id'],
-            function ( int $id, array $current ) {
-                if ( null === $current['draft'] ) {
-                    return new \WP_Error( 'yay_automation_no_draft', __( 'There are no draft changes to update.', 'yay-automation' ), [ 'status' => 409 ] );
+        return self::with_issues(
+            $this->with_workflow(
+                (int) $request['id'],
+                function ( int $id, array $current ) {
+                    if ( null === $current['draft'] ) {
+                        return new \WP_Error( 'yay_automation_no_draft', __( 'There are no draft changes to update.', 'yay-automation' ), [ 'status' => 409 ] );
+                    }
+                    $errors = Validator::errors(
+                        [
+                            'name'  => $current['name'],
+                            'graph' => $current['draft'],
+                        ]
+                    );
+                    return $errors ? Validator::issues_error( $errors, 'apply' ) : WorkflowRepository::apply_draft( $id, $current['draft'] );
                 }
-                $errors = Validator::errors(
-                    [
-                        'name'  => $current['name'],
-                        'graph' => $current['draft'],
-                    ]
-                );
-                return $errors ? Validator::issues_error( $errors, 'apply' ) : WorkflowRepository::apply_draft( $id, $current['draft'] );
-            }
+            )
         );
     }
 
@@ -294,12 +309,14 @@ class RestAPI {
      * @param \WP_REST_Request $request Request.
      */
     public function discard_draft( \WP_REST_Request $request ) {
-        return $this->with_workflow(
-            (int) $request['id'],
-            function ( int $id ) {
-                WorkflowRepository::save_draft( $id, null );
-                return true;
-            }
+        return self::with_issues(
+            $this->with_workflow(
+                (int) $request['id'],
+                function ( int $id ) {
+                    WorkflowRepository::save_draft( $id, null );
+                    return true;
+                }
+            )
         );
     }
 
@@ -422,12 +439,14 @@ class RestAPI {
     }
 
     /**
-     * A workflow response plus `issues: { live, draft }`, found by Workflow Core.
+     * A workflow response plus `issues: { live, draft }`, found by Workflow Core. Every response that
+     * returns a workflow has them; anything else (an error) passes through.
      *
-     * @param array $workflow Stored workflow.
+     * @param array|\WP_Error|\WP_REST_Response $workflow Stored workflow, or the response instead of one.
+     * @return array|\WP_Error|\WP_REST_Response
      */
-    private static function with_issues( array $workflow ): array {
-        return $workflow + [ 'issues' => Validator::issues( $workflow ) ];
+    private static function with_issues( $workflow ) {
+        return is_array( $workflow ) ? $workflow + [ 'issues' => Validator::issues( $workflow ) ] : $workflow;
     }
 
     private function not_found(): \WP_Error {

@@ -12,14 +12,13 @@ import { isPendingStep } from '../../core/pending';
  */
 export type SendEmailConfig = { to: string; subject: string; heading: string; message: string };
 
-const TAG = /^\{\{\s*[a-z_]+\.[a-z_]+\s*\}\}$/;
-
 export const schema = withKnownVariables(
   v.object({
     to: v.pipe(
       required(),
       v.check(
-        (to) => splitRecipients(to).every((part) => TAG.test(part) || isWpEmail(part)),
+        // Like PHP `Field::emails`: a part with a tag is a variable; the merge-tag check reads it.
+        (to) => splitRecipients(to).every((part) => part.includes('{{') || isWpEmail(part)),
         __('Enter email addresses or variables, separated by commas.', 'yay-automation'),
       ),
     ),

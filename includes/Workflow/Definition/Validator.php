@@ -8,6 +8,7 @@ use YayAutomation\Workflow\Data\Type;
 use YayAutomation\Workflow\Steps\Core\Field;
 use YayAutomation\Workflow\Steps\Core\Step;
 use YayAutomation\Workflow\Steps\Core\StepRegistry;
+use YayAutomation\Utils\Logger;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -138,6 +139,26 @@ final class Validator {
     }
 
     /**
+     * `issues()` for one row of the workflow list: never throws, so one workflow that can't be
+     * checked doesn't break the whole list. It gets no issues and the error is logged; Activate
+     * still runs the full check.
+     *
+     * @param array $workflow Stored workflow: id, name, graph, draft.
+     * @return array [ 'live' => issue[], 'draft' => issue[] ]
+     */
+    public static function list_issues( array $workflow ): array {
+        try {
+            return self::issues( $workflow );
+        } catch ( \Throwable $e ) {
+            Logger::error( 'Could not check workflow ' . ( $workflow['id'] ?? '?' ) . ' for the list: ' . $e->getMessage(), [ 'workflow_id' => $workflow['id'] ?? null ] );
+            return [
+                'live'  => [],
+                'draft' => [],
+            ];
+        }
+    }
+
+    /**
      * Problems that block turning a workflow on or applying a draft. Codes match the TS `validateWorkflow()`:
      * name_required, no_trigger (trigger not chosen), no_action (both workflow-level), unlinked (one issue,
      * `nodeIds` = every step not reached from the trigger), and per step: no_block (action not chosen),
@@ -200,7 +221,7 @@ final class Validator {
      * items and the always-available ones, each item's fields then its relations to one entity
      * (`order.customer.first_name`; the relation itself has no text), then the outputs of the steps
      * above it, top to bottom (`steps.<id>.<key>`). Without a trigger only the always-available
-     * items. Cases in tests/fixtures/variables.json, meant to be shared with the admin app.
+     * items. Cases in tests/fixtures/variables.json, shared with the TS `availableVariables()`.
      *
      * @param array  $graph   Well-formed graph (from `GraphSchema::prepare()`).
      * @param string $node_id The step.

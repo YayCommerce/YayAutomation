@@ -72,6 +72,8 @@ export interface Workflow {
   activatedAt: string | null;
   /** ISO date of the newest version (draft saves included): "Last updated". */
   lastVersionAt: string;
+  /** What blocks Activate / Update, found by the server: the live graph's, and the draft's (null without one). */
+  issues: { live: WorkflowIssue[]; draft: WorkflowIssue[] | null };
 }
 
 export type WorkflowVersionAction = 'created' | 'edited' | 'activated' | 'deactivated';

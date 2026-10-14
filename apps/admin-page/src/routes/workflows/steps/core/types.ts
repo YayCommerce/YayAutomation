@@ -3,7 +3,7 @@ import type { StepId, WorkflowNodeKind, WorkflowPlugin } from '@yay-automation/t
 import type { LucideIcon } from 'lucide-react';
 import type * as v from 'valibot';
 
-import type { StepMeta } from '@/types/localize';
+import type { StepMeta, StepOutputMeta } from '@/types/localize';
 import type { SummaryValues } from './summary';
 
 export type Config = Record<string, unknown>;
@@ -34,8 +34,8 @@ export interface StepSpec<TConfig extends Config> {
    */
   normalize?: (config: Config) => TConfig;
   /**
-   * Data items the step reads with this config. Mirrors the PHP step's `uses()`. Defaults to the
-   * step's `requires` plus the items of every merge tag in the config's text.
+   * Data items the step reads with this config, besides its merge tags (the workflow checks those
+   * through `tagPaths`). Mirrors the PHP step's `uses()`. Defaults to the step's `requires`.
    */
   uses?: (config: TConfig) => string[];
   /**
@@ -64,6 +64,8 @@ export interface Step {
   provides: string[];
   /** Actions: data items needed whatever the config; the picker dims the action without them. */
   requires: string[];
+  /** What later steps can read at `steps.<id>.<key>`. From PHP's catalog; none while pending. */
+  outputs: StepOutputMeta[];
   /** Actions: picker section. */
   category?: StepMeta['category'];
   /** Its PHP side isn't built yet: shown but can't be picked (see `pending.ts`). */
@@ -72,7 +74,9 @@ export interface Step {
   normalize: (config: Config) => Config;
   /** The first validation message, or null when the config is valid. */
   firstError: (config: Config) => string | null;
-  /** Data items the step reads, `site` excluded. */
+  /** Paths of the well-formed merge tags in the fields that accept them (all text while pending). */
+  tagPaths: (config: Config) => string[];
+  /** Data items the step reads besides its merge tags, `site` excluded. */
   uses: (config: Config) => string[];
   /** Card text, with `SummaryText` marks. */
   summary: (config: Config) => string;

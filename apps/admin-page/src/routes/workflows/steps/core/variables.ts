@@ -1,0 +1,85 @@
+import type { StepId, WorkflowGraph } from '@yay-automation/types';
+
+import type { DataItemMeta } from '@/types/localize';
+import { alwaysAvailable, dataItems } from './data';
+import { automationMeta, isPendingField } from './pending';
+
+/** One merge tag a step can insert. */
+export interface Variable {
+  /** Full path, e.g. `order.customer.first_name`, `steps.<id>.code`. */
+  key: string;
+  label: string;
+  /** As a data field's `valueType`, e.g. `money`, `list<string>`. */
+  type: string;
+  /** Its PHP side isn't built yet: listed, but can't be picked. */
+  comingSoon: boolean;
+}
+
+/**
+ * Variables one step can use, in the order "Insert variable" lists them: the trigger's data items and
+ * the always-available ones, each item's fields then those of its relations (`order.customer.first_name`),
+ * then the outputs of the steps above it, top to bottom (`steps.<id>.<key>`). Without a trigger only
+ * the always-available items. Mirrors PHP `Validator::variables()`; shared cases in
+ * tests/fixtures/variables.json. Items added by coming-soon actions above (e.g. a coupon) are listed too.
+ */
+export function availableVariables(graph: WorkflowGraph, nodeId: string): Variable[] {
+  const block = (id: string) => graph.nodes.find((node) => node.id === id)?.data.block ?? null;
+  const trigger = graph.nodes.find((node) => node.kind === 'trigger');
+  const triggerBlock = trigger?.data.block;
+  const above = ancestors(graph, nodeId).reverse();
+
+  const items = [
+    ...new Set([
+      ...(triggerBlock ? (automationMeta.steps[triggerBlock]?.provides ?? []) : []),
+      ...alwaysAvailable,
+      ...(triggerBlock ? above.flatMap((id) => providedByAction(block(id))) : []),
+    ]),
+  ];
+  const list = items.flatMap((id) => {
+    const item = dataItems.find((i) => i.id === id);
+    return item ? itemVariables(item, id, new Set([id])) : [];
+  });
+
+  for (const id of above) {
+    const stepId = block(id);
+    // Only PHP's catalog has outputs; a pending step has none yet.
+    const outputs = stepId ? (window.yayAutomationMeta.automation.steps[stepId]?.outputs ?? []) : [];
+    for (const output of outputs) {
+      list.push({ key: `steps.${id}.${output.key}`, label: output.label, type: output.type, comingSoon: false });
+    }
+  }
+  return list;
+}
+
+/** Data items an action adds for the steps below it; only coming-soon actions do so far. */
+const providedByAction = (stepId: StepId | null) =>
+  stepId && automationMeta.steps[stepId]?.kind === 'action' ? (automationMeta.steps[stepId].provides ?? []) : [];
+
+/** An item's fields under a path prefix, then its relations' (a relation back to an item on the path isn't followed). */
+function itemVariables(item: DataItemMeta, prefix: string, seen: Set<string>): Variable[] {
+  const own = item.fields.map((field) => ({
+    key: `${prefix}.${field.key.slice(item.id.length + 1)}`,
+    label: field.label,
+    type: field.valueType ?? field.type,
+    comingSoon: isPendingField(field.key),
+  }));
+  const related = (item.relations ?? []).flatMap((relation) => {
+    const target = dataItems.find((i) => i.id === relation.item);
+    if (!target || seen.has(target.id)) return [];
+    const key = `${prefix}.${relation.key.slice(item.id.length + 1)}`;
+    return itemVariables(target, key, new Set([...seen, target.id]));
+  });
+  return [...own, ...related];
+}
+
+/** Ids of the steps above a step, nearest first, up to the trigger. One parent per step, as PHP reads edges. */
+export function ancestors(graph: WorkflowGraph, nodeId: string): string[] {
+  const parents = new Map(graph.edges.map((edge) => [edge.target, edge.source]));
+  const above: string[] = [];
+  let id = nodeId;
+  while (parents.has(id) && !above.includes(parents.get(id)!)) {
+    id = parents.get(id)!;
+    above.push(id);
+  }
+  return above;
+}

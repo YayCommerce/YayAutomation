@@ -2,7 +2,7 @@ import type { StepId } from '@yay-automation/types';
 import * as v from 'valibot';
 import { __, sprintf } from '@wordpress/i18n';
 
-import { unknownVariable, unknownVariableAllowingPending } from '../data';
+import { tagError } from '../data';
 
 /** A string that isn't blank. Generic message, for steps PHP doesn't have yet. */
 export const required = () =>
@@ -26,9 +26,10 @@ export const requiredFor = (stepId: StepId, message: string) =>
   );
 
 /**
- * Wraps an object schema with the unknown-merge-tag check on the given text fields. Runs only once
- * the fields themselves are valid, like PHP's `validate()` checks them last. `allowPending`: for
- * steps still coming soon, which may use fields PHP doesn't have yet (see `pending.ts`).
+ * Wraps an object schema with the merge-tag check on the given text fields (`tagError()`: malformed
+ * tags, unknown filters and paths). Runs only once the fields themselves are valid, like PHP checks
+ * tags after `validate()`. `allowPending`: for steps still coming soon, which may use fields PHP
+ * doesn't have yet (see `pending.ts`).
  */
 export const withKnownVariables = <T extends v.GenericSchema<Record<string, unknown>>>(
   schema: T,
@@ -40,7 +41,7 @@ export const withKnownVariables = <T extends v.GenericSchema<Record<string, unkn
     v.rawCheck(({ dataset, addIssue }) => {
       if (!dataset.typed) return;
       const texts = fields.map((key) => String(dataset.value[key]));
-      const error = allowPending ? unknownVariableAllowingPending(...texts) : unknownVariable(...texts);
+      const error = tagError(texts, { allowPending });
       if (error) addIssue({ message: error });
     }),
   );

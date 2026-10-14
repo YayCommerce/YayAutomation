@@ -2,11 +2,12 @@ import { useState, type ReactNode } from 'react';
 import * as v from 'valibot';
 
 import type { CatalogStepMeta } from '@/types/localize';
-import { alwaysAvailable, itemOf, variableKeys } from './data';
+import { alwaysAvailable } from './data';
 import { stepIcons } from './icons';
 import { MARKED } from './marks';
 import { automationMeta, isPendingStep } from './pending';
 import { renderSummary } from './summary';
+import { templatePaths } from './template';
 import type { Config, Step, StepFormProps, StepSpec } from './types';
 
 export { PLACEHOLDER, plainSummary, value } from './marks';
@@ -50,10 +51,14 @@ export function defineStep<TConfig extends Config>({
   // PHP's catalog entry once the step is built: its wording, icon and summary win over the stub's.
   const catalog = isPendingStep(spec.id) ? undefined : (meta as CatalogStepMeta);
 
-  /** Default `uses`: what the action always needs, plus the items of its merge tags. */
-  const usesByDefault = (config: TConfig) => [
-    ...requires,
-    ...Object.values(config).flatMap((value) => (typeof value === 'string' ? variableKeys(value).map(itemOf) : [])),
+  // Fields that accept merge tags; a pending step has no catalog yet, so all its text.
+  const variableFields = catalog?.fields.filter((field) => field.variables).map((field) => field.key);
+  const tagPaths = (config: Config) => [
+    ...new Set(
+      Object.entries(config).flatMap(([key, value]) =>
+        typeof value === 'string' && (!variableFields || variableFields.includes(key)) ? templatePaths(value) : [],
+      ),
+    ),
   ];
 
   function StepConfigForm({ config, onChange }: StepFormProps<Config>) {
@@ -70,6 +75,7 @@ export function defineStep<TConfig extends Config>({
     plugin: meta.plugin,
     provides: meta.provides ?? [],
     requires,
+    outputs: catalog?.outputs ?? [],
     category: meta.category,
     comingSoon: isPendingStep(spec.id),
     defaults,
@@ -78,8 +84,9 @@ export function defineStep<TConfig extends Config>({
       const result = v.safeParse(schema, normalize(config));
       return result.success ? null : result.issues[0].message;
     },
+    tagPaths: (config) => tagPaths(normalize(config)),
     uses: (config) => {
-      const items = (uses ?? usesByDefault)(normalize(config));
+      const items = uses ? uses(normalize(config)) : requires;
       return [...new Set(items)].filter((item) => !alwaysAvailable.includes(item));
     },
     summary: (config) =>
