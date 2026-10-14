@@ -1,32 +1,41 @@
 import { useState, type ReactNode } from 'react';
 import type { Workflow } from '@yay-automation/types';
-import { Trash2 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router';
 import { __, sprintf } from '@wordpress/i18n';
 
 import { formatDateTime } from '@/lib/helpers/date.helper';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Pagination } from '@/components/ui/pagination';
 import { Segmented, SegmentedItem } from '@/components/ui/segmented';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { DeleteWorkflowDialog } from '../../shared/actions/WorkflowActions';
-import { onOffState, WorkflowStatusBadge } from '../../shared/ui/WorkflowStatusBadge';
-import { stepOf, SummaryText } from '../../steps';
+import { StepTile } from '../../shared/ui/StepTile';
+import { workflowState, WorkflowStatusBadge, type WorkflowState } from '../../shared/ui/WorkflowStatusBadge';
+import { plainSummary, stepOf } from '../../steps';
 import { WorkflowBulkActions } from './WorkflowBulkActions';
+import { WorkflowRowDialogs, WorkflowRowMenu, type RowTarget } from './WorkflowRowMenu';
 
 const PAGE_SIZE = 10;
 
-type Tab = 'all' | 'active' | 'inactive';
+type Tab = 'all' | WorkflowState;
 
-function triggerSummary(workflow: Workflow) {
+/** The live trigger's tile and name; its summary on hover. */
+function TriggerCell({ workflow }: { workflow: Workflow }) {
   const trigger = workflow.graph.nodes.find((node) => node.kind === 'trigger');
   const stepDef = trigger && stepOf(trigger.data);
-  return stepDef ? <SummaryText text={stepDef.summary(trigger.data.config)} /> : '—';
+  if (!stepDef) return <span className="text-muted-foreground">{__('No trigger yet', 'yay-automation')}</span>;
+  return (
+    <span className="flex items-center gap-2" title={plainSummary(stepDef.summary(trigger.data.config))}>
+      <StepTile kind="trigger" icon={stepDef.icon} size="sm" />
+      {stepDef.label}
+    </span>
+  );
 }
+
+/** Shown in the run columns until run history (M2) fills them. */
+const noRuns = <span className="text-muted-foreground">—</span>;
 
 function TableHeadRow({ select }: { select: ReactNode }) {
   return (
@@ -35,6 +44,8 @@ function TableHeadRow({ select }: { select: ReactNode }) {
       <TableHead>{__('Name', 'yay-automation')}</TableHead>
       <TableHead>{__('Status', 'yay-automation')}</TableHead>
       <TableHead>{__('Trigger', 'yay-automation')}</TableHead>
+      <TableHead className="text-right">{__('Runs (30 days)', 'yay-automation')}</TableHead>
+      <TableHead>{__('Last run', 'yay-automation')}</TableHead>
       <TableHead>{__('Last updated', 'yay-automation')}</TableHead>
       <TableHead className="w-12">
         <span className="sr-only">{__('Actions', 'yay-automation')}</span>
@@ -44,7 +55,7 @@ function TableHeadRow({ select }: { select: ReactNode }) {
 }
 
 /**
- * The workflows list: All / Active / Inactive tabs, selectable rows, 10 per page, and bulk actions
+ * The workflows list: All / Active / Inactive / Draft tabs, selectable rows, 10 per page, and bulk actions
  * for 2+ selected. Selection belongs to a tab (switching clears it) and survives paging.
  */
 export function WorkflowsTable({ workflows }: { workflows: Workflow[] }) {
@@ -52,10 +63,11 @@ export function WorkflowsTable({ workflows }: { workflows: Workflow[] }) {
   const [tab, setTab] = useState<Tab>('all');
   const [page, setPage] = useState(0);
   const [selectedIds, setSelectedIds] = useState<ReadonlySet<string>>(new Set());
-  const [pendingDelete, setPendingDelete] = useState<Workflow | null>(null);
+  // Here, not in the row: the dialog must outlive a refresh that moves its row off this tab or page.
+  const [rowTarget, setRowTarget] = useState<RowTarget | null>(null);
 
-  // Never-turned-on workflows count as Inactive, like their badge.
-  const inTab = tab === 'all' ? workflows : workflows.filter((workflow) => onOffState(workflow) === tab);
+  // Draft = never activated; Inactive = activated before, now off.
+  const inTab = tab === 'all' ? workflows : workflows.filter((workflow) => workflowState(workflow) === tab);
   const pageCount = Math.max(1, Math.ceil(inTab.length / PAGE_SIZE));
   // Deletes can shrink the list under the current page.
   const pageIndex = Math.min(page, pageCount - 1);
@@ -102,6 +114,7 @@ export function WorkflowsTable({ workflows }: { workflows: Workflow[] }) {
         <SegmentedItem value="all">{__('All', 'yay-automation')}</SegmentedItem>
         <SegmentedItem value="active">{__('Active', 'yay-automation')}</SegmentedItem>
         <SegmentedItem value="inactive">{__('Inactive', 'yay-automation')}</SegmentedItem>
+        <SegmentedItem value="draft">{__('Draft', 'yay-automation')}</SegmentedItem>
       </Segmented>
 
       <div className="overflow-x-auto rounded-lg border">
@@ -112,7 +125,7 @@ export function WorkflowsTable({ workflows }: { workflows: Workflow[] }) {
           <TableBody>
             {rows.length === 0 && (
               <TableRow>
-                <TableCell colSpan={6} className="text-muted-foreground h-24 text-center">
+                <TableCell colSpan={8} className="text-muted-foreground h-24 text-center">
                   {__('No workflows here yet.', 'yay-automation')}
                 </TableCell>
               </TableRow>
@@ -122,9 +135,11 @@ export function WorkflowsTable({ workflows }: { workflows: Workflow[] }) {
                 key={workflow.id}
                 className="cursor-pointer"
                 // The whole row opens the Overview. The name link keeps keyboard and middle-click access;
-                // the link, the whole checkbox cell and the Delete button handle their own clicks.
+                // the link, the whole checkbox cell and the "⋯" menu handle their own clicks. Clicks
+                // from portaled content (the menu) bubble here through React, so they must be in the row.
                 onClick={(event) => {
-                  if (!(event.target as HTMLElement).closest('a, button, [data-row-select]')) {
+                  const target = event.target as HTMLElement;
+                  if (event.currentTarget.contains(target) && !target.closest('a, button, [data-row-select]')) {
                     navigate(`/workflows/${workflow.id}`);
                   }
                 }}
@@ -142,33 +157,24 @@ export function WorkflowsTable({ workflows }: { workflows: Workflow[] }) {
                   />
                 </TableCell>
                 <TableCell>
-                  <Link to={`/workflows/${workflow.id}`} className="hover:text-primary font-medium">
-                    {workflow.name}
-                  </Link>
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-1.5">
-                    <WorkflowStatusBadge state={onOffState(workflow)} />
-                    {workflow.draft && (
-                      <Badge variant="warning-soft">{__('Unapplied changes', 'yay-automation')}</Badge>
-                    )}
+                  <div className="flex items-center gap-2">
+                    <Link to={`/workflows/${workflow.id}`} className="hover:text-primary font-medium">
+                      {workflow.name}
+                    </Link>
+                    {workflow.draft && <Badge variant="warning-soft">{__('Draft changes', 'yay-automation')}</Badge>}
                   </div>
                 </TableCell>
-                <TableCell className="text-muted-foreground">{triggerSummary(workflow)}</TableCell>
+                <TableCell>
+                  <WorkflowStatusBadge state={workflowState(workflow)} />
+                </TableCell>
+                <TableCell>
+                  <TriggerCell workflow={workflow} />
+                </TableCell>
+                <TableCell className="text-right tabular-nums">{noRuns}</TableCell>
+                <TableCell>{noRuns}</TableCell>
                 <TableCell className="text-muted-foreground">{formatDateTime(workflow.lastVersionAt)}</TableCell>
                 <TableCell>
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    aria-label={sprintf(
-                      /* translators: %s: workflow name */
-                      __('Delete %s', 'yay-automation'),
-                      workflow.name,
-                    )}
-                    onClick={() => setPendingDelete(workflow)}
-                  >
-                    <Trash2 />
-                  </Button>
+                  <WorkflowRowMenu workflow={workflow} onAction={(action) => setRowTarget({ action, workflow })} />
                 </TableCell>
               </TableRow>
             ))}
@@ -204,7 +210,7 @@ export function WorkflowsTable({ workflows }: { workflows: Workflow[] }) {
         )}
       </div>
 
-      <DeleteWorkflowDialog workflow={pendingDelete} onClose={() => setPendingDelete(null)} />
+      <WorkflowRowDialogs target={rowTarget} onClose={() => setRowTarget(null)} />
     </>
   );
 }
@@ -219,7 +225,7 @@ export function WorkflowsTableSkeleton() {
         <TableBody>
           {Array.from({ length: 3 }, (_, i) => (
             <TableRow key={i}>
-              {Array.from({ length: 6 }, (_, j) => (
+              {Array.from({ length: 8 }, (_, j) => (
                 <TableCell key={j}>
                   <Skeleton className="h-5" />
                 </TableCell>

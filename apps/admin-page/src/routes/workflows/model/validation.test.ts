@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import highValueOrderAlert from '../templates/high-value-order-alert';
 import { addNode, removeNode } from './graph';
-import { availableData, validateWorkflow } from './validation';
+import { availableData, draftBlocksActivate, validateWorkflow } from './validation';
 
 const base = (): WorkflowGraph => structuredClone(highValueOrderAlert.graph);
 /** Steps and edges by id, so editing the template doesn't change what a test covers. */
@@ -71,5 +71,19 @@ describe('availableData', () => {
   it("gives every step the trigger's data plus the always-available items", () => {
     const at = availableData(base())!;
     expect(at('email')).toEqual(expect.arrayContaining(['order', 'customer', 'site']));
+  });
+});
+
+describe('draftBlocksActivate', () => {
+  const broken = () => removeNode(base(), 'email');
+
+  it('blocks an inactive workflow whose draft has issues', () => {
+    expect(draftBlocksActivate({ name: 'Alert', status: 'inactive', draft: broken() })).toBe(true);
+  });
+
+  it('allows a clean draft, no draft, or an active workflow', () => {
+    expect(draftBlocksActivate({ name: 'Alert', status: 'inactive', draft: base() })).toBe(false);
+    expect(draftBlocksActivate({ name: 'Alert', status: 'inactive', draft: null })).toBe(false);
+    expect(draftBlocksActivate({ name: 'Alert', status: 'active', draft: broken() })).toBe(false);
   });
 });

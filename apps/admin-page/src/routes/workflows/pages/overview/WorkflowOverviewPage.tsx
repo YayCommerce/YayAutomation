@@ -11,7 +11,7 @@ import { toast } from '@/components/ui/sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ApiError } from '../../api/workflow.api';
 import { useWorkflowActionMutation, useWorkflowQuery } from '../../api/workflow.query';
-import { validateWorkflow } from '../../model/validation';
+import { draftBlocksActivate } from '../../model/validation';
 import { MoreActionsMenu, TurnOffDialog, TurnOnDialog } from '../../shared/actions/WorkflowActions';
 import { ReadOnlyCanvas } from '../../shared/canvas/ReadOnlyCanvas';
 import { WorkflowAppIcon } from '../../shared/layout/EditorLayout';
@@ -110,12 +110,7 @@ function WorkflowOverview({ workflow }: { workflow: Workflow }) {
     { value: 'live', label: liveLabel, graph: workflow.graph },
     ...(workflow.draft ? [{ value: 'draft', label: __('Draft', 'yay-automation'), graph: workflow.draft }] : []),
   ];
-  // A saved workflow whose draft has issues can't be turned on (the server refuses too), so the
-  // button isn't offered. An active workflow can always be turned off.
-  const draftBlocksTurnOn = useMemo(
-    () => !isActive && !!workflow.draft && validateWorkflow({ name: workflow.name, graph: workflow.draft }).length > 0,
-    [isActive, workflow.draft, workflow.name],
-  );
+  const draftBlocksTurnOn = useMemo(() => draftBlocksActivate(workflow), [workflow]);
   const [tab, setTab] = useState(tabs[0].value);
   const [historyPage, setHistoryPage] = useState(1);
   // A tab can disappear (draft applied or discarded elsewhere); fall back to the first.

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { LayoutTemplate, Plus } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router';
 import { __ } from '@wordpress/i18n';
 
@@ -31,15 +32,25 @@ export default function WorkflowListPage() {
     onSaved: (workflow) => navigate(`/workflows/${workflow.id}/edit`),
     onFailed: (error) => toast.error(error.message),
   });
-  const createButton = <Button onClick={() => setCreateOpen(true)}>{__('Create workflow', 'yay-automation')}</Button>;
+  const createButton = (
+    <Button onClick={() => setCreateOpen(true)}>
+      <Plus />
+      {__('Create workflow', 'yay-automation')}
+    </Button>
+  );
+  const browseLabel = __('Browse templates', 'yay-automation');
 
   return (
     <PageCard>
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <PageTitle>{__('Workflows', 'yay-automation')}</PageTitle>
+        <PageTitle>
+          {__('Workflows', 'yay-automation')}
+          {!!workflows?.length && <span className="text-muted-foreground text-sm font-normal">{workflows.length}</span>}
+        </PageTitle>
         <div className="flex items-center gap-2">
           <Button variant="outline" onClick={() => setTemplatesOpen(true)}>
-            {__('Template Library', 'yay-automation')}
+            <LayoutTemplate />
+            {browseLabel}
           </Button>
           {createButton}
         </div>
@@ -61,14 +72,18 @@ export default function WorkflowListPage() {
             <EmptyMedia>
               <WorkflowsEmptyIllustration />
             </EmptyMedia>
-            <EmptyTitle className="text-base">{__('Get more work done in less time', 'yay-automation')}</EmptyTitle>
+            <EmptyTitle className="text-base">{__('Automate your store’s routine work', 'yay-automation')}</EmptyTitle>
             <EmptyDescription>
-              {__('Turn your store tasks into automated workflows so you can get back to business.', 'yay-automation')}
+              {__(
+                'Start from a template or build your own. A workflow runs on its own once you activate it.',
+                'yay-automation',
+              )}
             </EmptyDescription>
           </EmptyHeader>
           <EmptyContent className="flex-row justify-center">
             <Button variant="secondary" onClick={() => setTemplatesOpen(true)}>
-              {__('Template Library', 'yay-automation')}
+              <LayoutTemplate />
+              {browseLabel}
             </Button>
             {createButton}
           </EmptyContent>

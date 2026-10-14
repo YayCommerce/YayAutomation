@@ -11,7 +11,7 @@ export function workflowState(workflow: Pick<Workflow, 'status' | 'everActivated
   return workflow.everActivated ? 'inactive' : 'draft';
 }
 
-/** The list and Overview header only say Active or Inactive; "Draft" is the editor's word. */
+/** The Overview header only says Active or Inactive; the list and editor also say Draft. */
 export function onOffState(workflow: Pick<Workflow, 'status'>): WorkflowState {
   return workflow.status === 'active' ? 'active' : 'inactive';
 }

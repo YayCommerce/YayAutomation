@@ -18,7 +18,7 @@ const errorMessage = (reason: unknown) => (reason instanceof Error ? reason.mess
 
 /**
  * Bulk actions bar for the workflows list (shown with 2+ selected): clear, "N selected", Delete, and
- * Turn off when any selected workflow is on. Requests go one per workflow, in parallel, through the
+ * Deactivate when any selected workflow is active. Requests go one per workflow, in parallel, through the
  * same mutations as the single actions, so the server's rules (e.g. no deleting an active workflow)
  * and the cache updates stay the same.
  *
@@ -59,7 +59,7 @@ export function WorkflowBulkActions({
     setDialog(null);
     if (done) {
       /* translators: %d: number of workflows */
-      toast.success(sprintf(_n('%d workflow turned off', '%d workflows turned off', done, 'yay-automation'), done));
+      toast.success(sprintf(_n('%d workflow deactivated', '%d workflows deactivated', done, 'yay-automation'), done));
     }
     if (failed.length) {
       const reason = results.find((result) => result.status === 'rejected')?.reason;
@@ -67,8 +67,8 @@ export function WorkflowBulkActions({
         sprintf(
           /* translators: %d: number of workflows */
           _n(
-            '%d workflow couldn’t be turned off',
-            '%d workflows couldn’t be turned off',
+            '%d workflow couldn’t be deactivated',
+            '%d workflows couldn’t be deactivated',
             failed.length,
             'yay-automation',
           ),
@@ -82,7 +82,7 @@ export function WorkflowBulkActions({
 
   const deleteAll = async () => {
     setPending(true);
-    // All or nothing: this list can be stale (a workflow turned on in another tab), so re-read every
+    // All or nothing: this list can be stale (a workflow activated in another tab), so re-read every
     // selected workflow first and delete none if any is on. The server's 409 stays as the last guard.
     try {
       const current = await Promise.all(targets.map((workflow) => getWorkflow(workflow.id)));
@@ -100,7 +100,7 @@ export function WorkflowBulkActions({
     }
 
     const results = await Promise.allSettled(targets.map((workflow) => remove.mutateAsync(workflow.id)));
-    // Turned on between the check above and its delete: the server keeps it.
+    // Activated between the check above and its delete: the server keeps it.
     const refused = targets.filter((_, i) => {
       const result = results[i];
       return (
@@ -146,7 +146,7 @@ export function WorkflowBulkActions({
         <Separator orientation="vertical" className="ml-2 h-5!" />
         {active.length > 0 && (
           <Button variant="ghost" size="sm" onClick={() => open('turnOff', active)}>
-            {__('Turn off', 'yay-automation')}
+            {__('Deactivate', 'yay-automation')}
           </Button>
         )}
         <Button
