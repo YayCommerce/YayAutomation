@@ -15,9 +15,9 @@ import { ReadOnlyCanvas } from '../../shared/canvas/ReadOnlyCanvas';
 import { WorkflowAppIcon } from '../../shared/layout/EditorLayout';
 import type { EditorNavState } from '../../shared/nav/editor.nav';
 import { ErrorAlert } from '../../shared/ui/ErrorAlert';
-import { StepTile } from '../../shared/ui/StepTile';
 import { workflowState, WorkflowStatusBadge } from '../../shared/ui/WorkflowStatusBadge';
 import { plainSummary, stepOf, SummaryText } from '../../steps';
+import { StepTile } from '../../steps/core/StepTile';
 import { shortDay, VersionHistory } from './VersionHistory';
 import { WorkflowRuns } from './WorkflowRuns';
 

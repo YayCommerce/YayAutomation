@@ -21,9 +21,9 @@ import { ReadOnlyCanvas } from '../../shared/canvas/ReadOnlyCanvas';
 import { EditorLayout, EditorPlaceholder } from '../../shared/layout/EditorLayout';
 import { LIBRARY_PATH, readLibraryNavState } from '../../shared/nav/library.nav';
 import { PluginIcon, plugins } from '../../shared/ui/PluginIcon';
-import { StepTile } from '../../shared/ui/StepTile';
 import { stepOf, SummaryText } from '../../steps';
 import { comingSoonLabel } from '../../steps/core/pending';
+import { StepTile } from '../../steps/core/StepTile';
 import { categoryLabels, findTemplate, isComingSoon, pluginsOf } from '../../templates';
 import { installFirst, useCreateDraft } from './useCreateDraft';
 

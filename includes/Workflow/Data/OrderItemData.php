@@ -23,6 +23,10 @@ final class OrderItemData extends DataItem {
         return __( 'One line of an order: the product name, quantity and line total.', 'yay-automation' );
     }
 
+    public function icon(): string {
+        return 'package';
+    }
+
     protected function define(): array {
         return [
             'name'     => [

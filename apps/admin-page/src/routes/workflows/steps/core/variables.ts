@@ -1,7 +1,7 @@
 import type { StepId, WorkflowGraph } from '@yay-automation/types';
 
 import type { DataItemMeta } from '@/types/localize';
-import { alwaysAvailable, dataItems } from './data';
+import { alwaysAvailable, dataItems, pathLabel } from './data';
 import { automationMeta, isPendingField } from './pending';
 
 /** One merge tag a step can insert. */
@@ -83,3 +83,49 @@ export function ancestors(graph: WorkflowGraph, nodeId: string): string[] {
   }
   return above;
 }
+
+/** Whether "Insert variable" lets a step insert it: a coming-soon field only into a step that's coming soon too. */
+export const canInsert = (variable: Variable, comingSoonStep: boolean) => !variable.comingSoon || comingSoonStep;
+
+/** One row of the first "Insert variable" level: a data item, or a step above and its outputs. */
+export interface VariableGroup {
+  /** Data item id (`order`) or, for `source: 'step'`, the step's node id. */
+  id: string;
+  source: 'data' | 'step';
+  /** The item's own fields (`label` null), then one section per relation path (`order.customer` → "Customer"). */
+  sections: { path: string; label: string | null; variables: Variable[] }[];
+}
+
+/** `availableVariables()` grouped for "Insert variable", in the same order. */
+export function groupVariables(variables: Variable[]): VariableGroup[] {
+  const groups = new Map<string, VariableGroup>();
+  for (const variable of variables) {
+    const segments = variable.key.split('.');
+    const step = segments[0] === 'steps';
+    const groupKey = step ? segments.slice(0, 2).join('.') : segments[0];
+    let group = groups.get(groupKey);
+    if (!group) {
+      group = { id: step ? segments[1] : segments[0], source: step ? 'step' : 'data', sections: [] };
+      groups.set(groupKey, group);
+    }
+    const path = segments.slice(0, -1).join('.');
+    let section = group.sections.find((s) => s.path === path);
+    if (!section) {
+      section = { path, label: path === groupKey ? null : relationLabel(path), variables: [] };
+      group.sections.push(section);
+    }
+    section.variables.push(variable);
+  }
+  return [...groups.values()];
+}
+
+/** `order.customer` → "Customer"; deeper paths join each relation's name with " › ". */
+const relationLabel = (path: string) =>
+  path
+    .split('.')
+    .slice(1)
+    .map((segment, i, rest) => {
+      const prefix = [path.split('.')[0], ...rest.slice(0, i + 1)].join('.');
+      return pathLabel(prefix) ?? segment;
+    })
+    .join(' › ');

@@ -507,6 +507,7 @@
                 "id": "order",
                 "label": "Order",
                 "description": "The WooCommerce order that started this workflow: its number, totals, status, payment, shipping and items.",
+                "icon": "shopping-bag",
                 "fields": [
                     {
                         "key": "order.number",
@@ -639,6 +640,7 @@
                 "id": "customer",
                 "label": "Customer",
                 "description": "The person who placed the order, from its billing details. Works for guests too.",
+                "icon": "user",
                 "fields": [
                     {
                         "key": "customer.email",
@@ -1691,6 +1693,7 @@
                 "id": "site",
                 "label": "Site",
                 "description": "Your WordPress site: its name and address. Available in every workflow.",
+                "icon": "globe",
                 "fields": [
                     {
                         "key": "site.name",

@@ -92,6 +92,8 @@ export interface DataItemMeta {
   label: string;
   /** One line for the "Insert variable" list. */
   description: string;
+  /** Its tile in the "Insert variable" list: a step icon name. Sent by PHP; absent on items the app defines itself. */
+  icon?: string;
   fields: {
     /** Full key, e.g. `order.total`. */
     key: string;

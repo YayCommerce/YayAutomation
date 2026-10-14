@@ -20,6 +20,10 @@ final class SiteData extends DataItem {
         return __( 'Your WordPress site: its name and address. Available in every workflow.', 'yay-automation' );
     }
 
+    public function icon(): string {
+        return 'globe';
+    }
+
     protected function define(): array {
         return [
             'name' => [

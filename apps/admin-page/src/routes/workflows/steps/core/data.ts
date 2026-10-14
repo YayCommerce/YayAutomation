@@ -95,6 +95,12 @@ function resolvePath(path: string) {
 /** The data field a merge-tag path reads, following relations (`order.customer.first_name` → `customer.first_name`). */
 export const fieldByPath = (path: string): DataField | undefined => resolvePath(path)?.field;
 
+/** The name of what a merge-tag path reads ("Customer first name"), or undefined for a path nothing defines. */
+export const pathLabel = (path: string): string | undefined => {
+  const found = resolvePath(path);
+  return found?.field?.label ?? found?.relation?.label;
+};
+
 /**
  * The first problem with the merge tags in these texts, or null: a malformed tag or unknown filter,
  * then a path nothing defines. Per text, like PHP `Validator::tag_error()`; whether the step can reach

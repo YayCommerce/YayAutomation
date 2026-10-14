@@ -1,11 +1,13 @@
-import { useLayoutEffect, useRef } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 
 import { Field, FieldContent, FieldDescription, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
-import { InsertVariable } from './AddVariable';
+import { tagError } from '../data';
 import { ConfigField } from './ConfigField';
+import { InsertVariable } from './InsertVariable';
+import { useVariableScope } from './variableScope';
 
 /** Field widgets shared by `StepForm` and the custom forms of steps not built in PHP yet. */
 
@@ -13,7 +15,8 @@ type FieldErrors = ({ message?: string } | undefined)[];
 
 /**
  * Labelled text input or textarea. `variables`: "Insert variable" on the label row puts a merge tag
- * at the cursor.
+ * at the cursor, and a broken tag shows under the field once it was left, even while the form's own
+ * errors are quiet. Only a step still coming soon may use fields PHP doesn't have yet.
  */
 export function TextField({
   id,
@@ -43,6 +46,10 @@ export function TextField({
   errors: FieldErrors;
 }) {
   const ref = useRef<HTMLInputElement & HTMLTextAreaElement>(null);
+  // Only once the field is left: while typing, `{{ ord` is a tag being written, not a mistake.
+  const [left, setLeft] = useState(false);
+  const { comingSoonStep } = useVariableScope();
+  const tagIssue = variables && left ? tagError([value], { allowPending: comingSoonStep }) : null;
   useLayoutEffect(() => {
     if (multiline && ref.current) fitHeight(ref.current);
   }, [multiline, value]);
@@ -66,8 +73,12 @@ export function TextField({
     placeholder,
     inputMode,
     onChange: (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => onChange(event.target.value),
-    onBlur,
-    'aria-invalid': invalid,
+    onFocus: () => setLeft(false),
+    onBlur: () => {
+      setLeft(true);
+      onBlur();
+    },
+    'aria-invalid': invalid || !!tagIssue,
   };
   return (
     <ConfigField
@@ -76,6 +87,7 @@ export function TextField({
       description={help}
       action={variables ? <InsertVariable inputRef={ref} value={value} onChange={onChange} /> : undefined}
       errors={errors}
+      inlineError={tagIssue}
     >
       {multiline ? <Textarea rows={5} {...control} /> : <Input {...control} />}
     </ConfigField>

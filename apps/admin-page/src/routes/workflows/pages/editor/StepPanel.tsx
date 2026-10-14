@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import { useStore } from '@tanstack/react-form';
 import type { StepId, WorkflowGraph } from '@yay-automation/types';
 import { X } from 'lucide-react';
@@ -9,11 +9,13 @@ import { Button } from '@/components/ui/button';
 import { setNodeStep, updateNodeConfig } from '../../model/graph';
 import { availableData, sameItems } from '../../model/validation';
 import { kindMeta } from '../../shared/canvas/NodeCardView';
-import { StepEyebrow, StepTile } from '../../shared/ui/StepTile';
+import { StepEyebrow } from '../../shared/ui/StepTile';
 import { stepOf } from '../../steps';
 import { alwaysAvailable } from '../../steps/core/data';
 import { FeedbackContext, type Feedback } from '../../steps/core/fields/feedback';
-import { VariableScopeContext } from '../../steps/core/fields/variableScope';
+import { VariableScopeContext, type VariableScope } from '../../steps/core/fields/variableScope';
+import { plainSummary } from '../../steps/core/marks';
+import { StepTile } from '../../steps/core/StepTile';
 import { availableVariables, type Variable } from '../../steps/core/variables';
 import { StepPicker } from './StepPicker';
 import { useWorkflowFormContext } from './useWorkflowForm';
@@ -24,6 +26,17 @@ const sameVariables = (a: Variable[], b: Variable[]) =>
     a.map((variable) => variable.key),
     b.map((variable) => variable.key),
   );
+
+const sameSteps = (a: VariableScope['steps'], b: VariableScope['steps']) => {
+  const ids = Object.keys(a);
+  return (
+    ids.length === Object.keys(b).length &&
+    ids.every((id) => {
+      const [x, y] = [a[id], b[id]];
+      return !!y && x.label === y.label && x.kind === y.kind && x.icon === y.icon && x.summary === y.summary;
+    })
+  );
+};
 
 /**
  * Panel width for a canvas this wide: roomy on desktops (480px), narrower on
@@ -66,7 +79,39 @@ export function StepPanel({
     sameItems,
   );
   const variables = useStore(form.store, (state) => availableVariables(state.values.graph, nodeId), sameVariables);
-  const triggerLabel = triggerStep?.label ?? null;
+  // Each step's tile and card summary: not positions, so moving cards doesn't rebuild the scope.
+  const steps = useStore(
+    form.store,
+    (state) => {
+      const all: VariableScope['steps'] = {};
+      for (const n of state.values.graph.nodes) {
+        const def = stepOf(n.data);
+        if (def) {
+          all[n.id] = {
+            label: def.label,
+            kind: n.kind,
+            icon: def.icon,
+            summary: plainSummary(def.summary(n.data.config)),
+          };
+        }
+      }
+      return all;
+    },
+    sameSteps,
+  );
+  const comingSoonStep = useStore(form.store, (state) => {
+    const open = state.values.graph.nodes.find((n) => n.id === nodeId);
+    return !!(open && stepOf(open.data)?.comingSoon);
+  });
+  const scope = useMemo<VariableScope>(() => {
+    const trigger = triggerStep && {
+      label: triggerStep.label,
+      kind: 'trigger' as const,
+      icon: triggerStep.icon,
+      provides: triggerStep.provides,
+    };
+    return { variables, trigger: trigger ?? null, steps, comingSoonStep };
+  }, [steps, triggerStep, variables, comingSoonStep]);
   if (!node) return null;
 
   const stepDef = stepOf(node.data);
@@ -118,7 +163,7 @@ export function StepPanel({
       <div className="min-h-0 flex-1 overflow-y-auto p-4">
         {stepDef.Form ? (
           <FeedbackContext.Provider value={feedback}>
-            <VariableScopeContext.Provider value={{ variables, trigger: triggerLabel }}>
+            <VariableScopeContext.Provider value={scope}>
               {/* Keyed by step and step, so switching either starts a fresh form. */}
               <stepDef.Form
                 key={`${node.id}:${stepDef.id}`}
@@ -149,7 +194,7 @@ export function StepPanelFrame({ width, children }: { width: number; children: R
       animate={{ x: 0 }}
       exit={{ x: '-110%' }}
       transition={{ type: 'tween', ease: 'easeOut', duration: 0.25 }}
-      // While "Add a variable" is open (`data-dimmed`, set by the picker): lifted above the dialog
+      // While "Insert variable" is open (`data-dimmed`, set by the picker): lifted above the dialog
       // overlay and dimmed by its own layer, so only the element being edited stays bright.
       className="nokey bg-card text-card-foreground group/panel absolute inset-y-3 left-3 z-20 flex max-w-[calc(100%-1.5rem)] flex-col rounded-xl border shadow-lg data-[dimmed=on]:z-100002"
       style={{ width }}

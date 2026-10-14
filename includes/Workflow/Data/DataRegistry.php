@@ -102,6 +102,7 @@ final class DataRegistry {
                 'id'          => $item->id(),
                 'label'       => $item->label(),
                 'description' => $item->description(),
+                'icon'        => $item->icon(),
                 'fields'      => $fields,
                 'relations'   => $relations,
             ];

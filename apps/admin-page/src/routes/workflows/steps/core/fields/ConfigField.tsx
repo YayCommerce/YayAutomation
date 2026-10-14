@@ -7,8 +7,9 @@ import { spotlightTarget } from './VariablePicker';
 
 /**
  * Label row (label, plus an `action` like "Insert variable" on the right), control, first error
- * with an icon, then help text. Errors show only while the editor shows them (see `Feedback`); red
- * outlines come from the control's own `aria-invalid`.
+ * with an icon, then help text. `errors` show only while the editor shows them (see `Feedback`);
+ * `inlineError` (a broken merge tag) shows whenever it's set. Red outlines come from the control's
+ * own `aria-invalid`.
  */
 export function ConfigField({
   label,
@@ -16,6 +17,7 @@ export function ConfigField({
   description,
   action,
   errors,
+  inlineError,
   children,
 }: {
   label: string;
@@ -23,10 +25,11 @@ export function ConfigField({
   description?: ReactNode;
   action?: ReactNode;
   errors: ({ message?: string } | undefined)[];
+  inlineError?: string | null;
   children: ReactNode;
 }) {
   const showErrors = useShowErrors();
-  const error = showErrors ? errors.find((e) => e?.message)?.message : undefined;
+  const error = (showErrors ? errors.find((e) => e?.message)?.message : undefined) ?? inlineError ?? undefined;
 
   return (
     <Field data-invalid={!!error} data-spotlight className={spotlightTarget}>

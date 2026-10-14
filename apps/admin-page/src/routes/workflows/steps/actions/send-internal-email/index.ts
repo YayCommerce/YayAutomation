@@ -2,6 +2,7 @@ import { __ } from '@wordpress/i18n';
 
 import { defineStep, value } from '../../core/defineStep';
 import { splitRecipients } from '../../core/fields/email';
+import { variableNames } from '../../core/summary';
 
 const adminEmail = window.yayAutomationMeta.wp.adminEmail;
 
@@ -21,5 +22,7 @@ export const sendInternalEmailStep = defineStep({
     ),
   }),
   // Blank sends to the site admin (PHP `run()`), so the card names that address.
-  summaryValues: { recipients: ({ recipients }) => value(splitRecipients(recipients).join(', ') || adminEmail) },
+  summaryValues: {
+    recipients: ({ recipients }) => value(variableNames(splitRecipients(recipients).join(', ')) || adminEmail),
+  },
 });
