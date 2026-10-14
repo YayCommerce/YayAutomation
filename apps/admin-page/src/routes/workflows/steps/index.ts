@@ -11,7 +11,7 @@ import { orderCreatedStep } from './triggers/order-created';
 import { orderStatusChangedStep } from './triggers/order-status-changed';
 
 export type { Step } from './core/types';
-export { SummaryText } from './core/defineStep';
+export { plainSummary, SummaryText } from './core/defineStep';
 
 /**
  * Every step the editor knows. To add one: create its folder under triggers/, conditions/ or

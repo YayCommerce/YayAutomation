@@ -1,14 +1,23 @@
 import { useState, type ReactNode } from 'react';
 import type { StepId, WorkflowPlugin } from '@yay-automation/types';
-import { ArrowLeft, ChevronRight, Search } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import { __, sprintf } from '@wordpress/i18n';
 
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '@/components/ui/breadcrumb';
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { ComingSoonChip } from '../../shared/ui/ComingSoonChip';
 import { PluginIcon, plugins } from '../../shared/ui/PluginIcon';
+import { StepTile } from '../../shared/ui/StepTile';
 import { steps, type Step } from '../../steps';
 import { itemLabel } from '../../steps/core/data';
 import { comingSoonLabel } from '../../steps/core/pending';
@@ -30,8 +39,8 @@ const searchLabels: Record<PickableKind, string> = {
 const matches = (text: string, query: string) => text.toLowerCase().includes(query.trim().toLowerCase());
 
 /**
- * Picks a trigger or action step: active plugins first (icon, name, count), then that plugin's
- * steps. Searching from the plugin list searches every step. With `available` (actions), steps
+ * Picks a trigger or action step: active plugins first (logo, name, count), then that plugin's
+ * steps, each with the same tile as its card. "All plugins › WooCommerce" leads back. Searching from the plugin list searches every step. With `available` (actions), steps
  * needing data the step can't read are dimmed and can't be picked; so are steps still coming soon.
  */
 export function StepPicker({
@@ -89,7 +98,7 @@ export function StepPicker({
     list = sections.map((category) => (
       <section key={category ?? 'all'}>
         {category && (
-          <h3 className="text-muted-foreground bg-muted/50 px-4 py-1.5 text-xs font-medium">
+          <h3 className="text-muted-foreground px-2 pt-2.5 pb-1 text-[11px] font-semibold tracking-wider uppercase">
             {categoryLabels[category]}
           </h3>
         )}
@@ -109,54 +118,52 @@ export function StepPicker({
           </span>
           <span className="text-muted-foreground block text-xs">{plugins[id].description}</span>
         </span>
-        <ChevronRight className="text-muted-foreground size-4 shrink-0" aria-hidden />
+        <ChevronRight className="text-muted-foreground size-3.5 shrink-0" aria-hidden />
       </PickerRow>
     ));
   }
 
   return (
-    <div className="flex min-h-0 flex-col gap-3">
+    <div className="flex min-h-0 flex-col gap-2.5">
+      <InputGroup>
+        <InputGroupAddon>
+          <Search />
+        </InputGroupAddon>
+        <InputGroupInput
+          // Typing is the reason the picker is open.
+          autoFocus
+          value={query}
+          placeholder={plugin ? sprintf(__('Search %s', 'yay-automation'), plugins[plugin].label) : searchLabels[kind]}
+          onChange={(event) => setQuery(event.target.value)}
+        />
+      </InputGroup>
       {plugin && (
-        <div className="bg-muted/50 flex items-center gap-3 rounded-lg border p-2">
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            aria-label={__('Back to plugins', 'yay-automation')}
-            onClick={() => open(null)}
-          >
-            <ArrowLeft />
-          </Button>
-          <PluginIcon plugin={plugin} />
-          <span className="min-w-0">
-            <span className="block text-sm font-medium">{plugins[plugin].label}</span>
-            <span className="text-muted-foreground block text-xs">{plugins[plugin].description}</span>
-          </span>
-        </div>
+        <Breadcrumb>
+          <BreadcrumbList className="gap-1.5 text-[13px] sm:gap-1.5">
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <button
+                  type="button"
+                  className="inline-flex cursor-pointer items-center gap-1"
+                  onClick={() => open(null)}
+                >
+                  <ChevronLeft className="size-3.5" aria-hidden />
+                  {__('All plugins', 'yay-automation')}
+                </button>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage className="font-semibold">{plugins[plugin].label}</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
       )}
-
-      <div className="overflow-hidden rounded-lg border">
-        <div className="border-b p-2">
-          <InputGroup>
-            <InputGroupAddon>
-              <Search />
-            </InputGroupAddon>
-            <InputGroupInput
-              // Typing is the reason the picker is open.
-              autoFocus
-              value={query}
-              placeholder={
-                plugin ? sprintf(__('Search %s', 'yay-automation'), plugins[plugin].label) : searchLabels[kind]
-              }
-              onChange={(event) => setQuery(event.target.value)}
-            />
-          </InputGroup>
-        </div>
-        <div className="divide-y">
-          {list}
-          {Array.isArray(list) && !list.length && (
-            <p className="text-muted-foreground p-4 text-sm">{__('Nothing found.', 'yay-automation')}</p>
-          )}
-        </div>
+      <div className="-mx-2 flex flex-col">
+        {list}
+        {Array.isArray(list) && !list.length && (
+          <p className="text-muted-foreground p-2 text-sm">{__('Nothing found.', 'yay-automation')}</p>
+        )}
       </div>
     </div>
   );
@@ -169,7 +176,7 @@ function PickerRow({ onClick, disabled, children }: { onClick: () => void; disab
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        'flex w-full cursor-pointer items-center gap-3 px-4 py-3 text-left text-sm',
+        'flex w-full cursor-pointer items-center gap-3 rounded-lg p-2 text-left text-sm',
         disabled ? 'cursor-not-allowed opacity-50' : 'hover:bg-accent',
       )}
     >
@@ -191,14 +198,19 @@ function StepRow({
 }) {
   const row = (
     <PickerRow onClick={onPick} disabled={!!disabledReason}>
-      {showPlugin && <PluginIcon plugin={stepDef.plugin!} />}
+      <StepTile kind={stepDef.kind} icon={stepDef.icon} size="md" />
       <span className="min-w-0 flex-1">
         <span className="flex items-center gap-2 font-medium">
           {stepDef.label}
-          {stepDef.comingSoon && <Badge variant="dimmed">{comingSoonLabel}</Badge>}
+          {/* Searching every plugin: say whose step it is. */}
+          {showPlugin && <span className="text-muted-foreground font-normal">{plugins[stepDef.plugin!].label}</span>}
+          {stepDef.comingSoon && <ComingSoonChip />}
         </span>
-        <span className="text-muted-foreground block text-xs">{stepDef.description}</span>
+        <span className="text-muted-foreground block truncate text-xs" title={stepDef.description}>
+          {stepDef.description}
+        </span>
       </span>
+      {!disabledReason && <ChevronRight className="text-muted-foreground size-3.5 shrink-0" aria-hidden />}
     </PickerRow>
   );
   if (!disabledReason) return row;

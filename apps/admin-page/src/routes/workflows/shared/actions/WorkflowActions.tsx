@@ -156,7 +156,7 @@ export function DeleteWorkflowDialog({
   if (workflow && workflow !== shown?.workflow) {
     setShown({ workflow, refusedMessage: null });
   }
-  // `refusedMessage`: the server said it's on, though this copy said off (turned on in another tab).
+  // `refusedMessage`: the server said it's active, though this copy said not (activated in another tab).
   const blocked = shown?.workflow.status === 'active' || !!shown?.refusedMessage;
 
   const confirm = () => {
@@ -170,7 +170,7 @@ export function DeleteWorkflowDialog({
       onError: (error) => {
         if (error instanceof ApiError && error.code === 'yay_automation_delete_active') {
           setShown({ workflow, refusedMessage: error.message });
-          // This copy was stale; refetch so the page shows it's on (and offers Turn off).
+          // This copy was stale; refetch so the page shows it's active (and offers Deactivate).
           void queryClient.invalidateQueries({ queryKey: workflowKeys.all });
         } else {
           toast.error(error.message);
@@ -271,40 +271,38 @@ export function ConfirmDialog({
   );
 }
 
-/** `hasDraft`: Turn on runs the saved content, so say the draft isn't included. */
-export function TurnOnDialog({ hasDraft, ...props }: ConfirmProps & { hasDraft?: boolean }) {
+/** `hasDraft`: Activate makes the saved content live, so say the draft changes aren't included. */
+export function ActivateDialog({ name, hasDraft, ...props }: ConfirmProps & { name: string; hasDraft?: boolean }) {
   return (
     <ConfirmDialog
       {...props}
-      title={__('Ready to turn on your automation workflow?', 'yay-automation')}
+      title={sprintf(
+        /* translators: %s: workflow name */
+        __('Activate “%s”?', 'yay-automation'),
+        name,
+      )}
       description={
         <>
-          {__('Turning on the workflow will activate the automation.', 'yay-automation')}
+          {__('It starts running right away. You can deactivate it at any time.', 'yay-automation')}
           {hasDraft && (
             <span className="mt-2 block">
-              {__(
-                'Your unapplied draft changes won’t be turned on. Apply them first to include them.',
-                'yay-automation',
-              )}
+              {__('Your draft changes aren’t included. Update first to include them.', 'yay-automation')}
             </span>
           )}
         </>
       }
-      confirmLabel={__('Turn on', 'yay-automation')}
+      confirmLabel={__('Activate', 'yay-automation')}
     />
   );
 }
 
-export function ApplyChangesDialog(props: ConfirmProps) {
+export function UpdateDialog(props: ConfirmProps) {
   return (
     <ConfirmDialog
       {...props}
-      title={__('Apply changes?', 'yay-automation')}
-      description={__(
-        'This workflow is turned on. Once you apply changes, they’ll take effect immediately.',
-        'yay-automation',
-      )}
-      confirmLabel={__('Apply', 'yay-automation')}
+      title={__('Update this workflow?', 'yay-automation')}
+      description={__('It’s active, so your draft changes take effect right away.', 'yay-automation')}
+      confirmLabel={__('Update', 'yay-automation')}
     />
   );
 }
@@ -313,44 +311,48 @@ export function DiscardChangesDialog(props: ConfirmProps) {
   return (
     <ConfirmDialog
       {...props}
-      title={__('Discard changes?', 'yay-automation')}
-      description={__(
-        'Your unapplied changes will be deleted. The workflow keeps running as it is now.',
-        'yay-automation',
-      )}
+      title={__('Discard draft changes?', 'yay-automation')}
+      description={__('Your draft changes will be deleted. The workflow stays as it was.', 'yay-automation')}
       confirmLabel={__('Discard changes', 'yay-automation')}
       destructive
     />
   );
 }
 
-/** One workflow (no `count`), or `count` of them from the list's bulk actions. */
-export function TurnOffDialog({ count, ...props }: ConfirmProps & { count?: number }) {
+/** One workflow (`name`), or `count` of them from the list's bulk actions. */
+export function DeactivateDialog(
+  props: ConfirmProps & ({ name: string; count?: never } | { count: number; name?: never }),
+) {
+  const { name, count, ...confirm } = props;
+  const several = count !== undefined && count > 1;
   return (
     <ConfirmDialog
-      {...props}
+      {...confirm}
       title={
         count === undefined
-          ? __('Turn off workflow', 'yay-automation')
+          ? sprintf(
+              /* translators: %s: workflow name */
+              __('Deactivate “%s”?', 'yay-automation'),
+              name,
+            )
           : sprintf(
               /* translators: %d: number of workflows */
-              _n('Turn off %d workflow', 'Turn off %d workflows', count, 'yay-automation'),
+              _n('Deactivate %d workflow?', 'Deactivate %d workflows?', count, 'yay-automation'),
               count,
             )
       }
       description={
-        count === undefined || count === 1
-          ? __('If you turn this workflow off, the runs in progress will be cancelled.', 'yay-automation')
-          : __('If you turn these workflows off, the runs in progress will be cancelled.', 'yay-automation')
+        several
+          ? __('Their runs in progress will be cancelled. You can activate them again at any time.', 'yay-automation')
+          : __('Its runs in progress will be cancelled. You can activate it again at any time.', 'yay-automation')
       }
-      confirmLabel={__('Turn off', 'yay-automation')}
-      cancelLabel={__('Dismiss', 'yay-automation')}
+      confirmLabel={__('Deactivate', 'yay-automation')}
     />
   );
 }
 
 /**
- * "Couldn't delete: still turned on" body with a single Back button, for inside an AlertDialog.
+ * "Couldn't delete: still active" body with a single Back button, for inside an AlertDialog.
  * `several`: the list's bulk delete. `message`: the server's own wording, when it refused.
  */
 export function DeleteBlockedContent({ several = false, message }: { several?: boolean; message?: string }) {

@@ -1,15 +1,15 @@
 import type { ReactNode } from 'react';
 import { useStore } from '@tanstack/react-form';
-import type { StepId, WorkflowGraph, WorkflowNode } from '@yay-automation/types';
+import type { StepId, WorkflowGraph } from '@yay-automation/types';
 import { X } from 'lucide-react';
 import { m } from 'motion/react';
-import { __, sprintf } from '@wordpress/i18n';
+import { __ } from '@wordpress/i18n';
 
 import { Button } from '@/components/ui/button';
 import { setNodeStep, updateNodeConfig } from '../../model/graph';
 import { availableData, sameItems } from '../../model/validation';
 import { kindMeta } from '../../shared/canvas/NodeCardView';
-import { plugins } from '../../shared/ui/PluginIcon';
+import { StepEyebrow, StepTile } from '../../shared/ui/StepTile';
 import { stepOf } from '../../steps';
 import { alwaysAvailable } from '../../steps/core/data';
 import { FeedbackContext, type Feedback } from '../../steps/core/fields/feedback';
@@ -22,22 +22,6 @@ import { useWorkflowFormContext } from './useWorkflowForm';
  * laptops and tablets so the graph keeps some room beside it.
  */
 export const panelWidthFor = (canvasWidth: number) => (canvasWidth >= 1200 ? 480 : canvasWidth >= 900 ? 420 : 360);
-
-const pickerTitles = {
-  trigger: __('Select trigger', 'yay-automation'),
-  action: __('Select action', 'yay-automation'),
-};
-
-/** "WooCommerce trigger", "YayAutomation condition", "WooCommerce action". */
-const kindOfPlugin = (node: WorkflowNode, plugin: string) =>
-  ({
-    /* translators: %s: plugin name */
-    trigger: sprintf(__('%s trigger', 'yay-automation'), plugin),
-    /* translators: %s: plugin name */
-    condition: sprintf(__('%s condition', 'yay-automation'), plugin),
-    /* translators: %s: plugin name */
-    action: sprintf(__('%s action', 'yay-automation'), plugin),
-  })[node.kind];
 
 /**
  * Content of the open step's panel (inside `StepPanelFrame`): its step picker while a trigger or
@@ -93,7 +77,7 @@ export function StepPanel({
     return (
       <>
         <div className="flex items-center justify-between gap-2 px-4 pt-3">
-          <h2 className="text-sm font-semibold">{pickerTitles[node.kind]}</h2>
+          <h2 className="text-[15px] font-semibold">{kindMeta[node.kind].choose}</h2>
           {close}
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto p-4 pt-3">
@@ -104,23 +88,19 @@ export function StepPanel({
   }
   if (!stepDef) return null;
 
-  const Icon = stepDef.icon ?? kindMeta[node.kind].icon;
   return (
     <>
+      {/* The card's tile and eyebrow, so the panel reads as the step it belongs to. */}
       <div className="flex items-start gap-3 border-b p-4">
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-md border">
-          <Icon className="size-4" aria-hidden />
-        </span>
+        <StepTile kind={node.kind} icon={stepDef.icon} size="lg" />
         <div className="min-w-0 flex-1">
-          <h2 className="text-sm font-semibold">
-            {stepDef.label}
-            {stepDef.plugin && (
-              <span className="text-muted-foreground font-normal">
-                {' • '}
-                {kindOfPlugin(node, plugins[stepDef.plugin].label)}
-              </span>
-            )}
-          </h2>
+          <StepEyebrow
+            kind={node.kind}
+            kindLabel={kindMeta[node.kind].label}
+            stepLabel={stepDef.label}
+            plugin={stepDef.plugin}
+          />
+          <h2 className="text-[15px]/5 font-semibold">{stepDef.label}</h2>
           <p className="text-muted-foreground mt-0.5 text-xs">{stepDef.description}</p>
         </div>
         {close}

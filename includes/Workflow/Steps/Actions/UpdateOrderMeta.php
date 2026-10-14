@@ -61,7 +61,7 @@ class UpdateOrderMeta extends Action {
 
     public function summary(): string {
         /* translators: %key%: custom field name, %value%: its value; keep the placeholders as they are. */
-        return __( 'Set the order field %key% to %value%', 'yay-automation' );
+        return __( 'Set %key% to %value%', 'yay-automation' );
     }
 
     public function outputs(): array {

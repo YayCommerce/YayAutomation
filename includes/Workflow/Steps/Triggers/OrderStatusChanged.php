@@ -24,7 +24,7 @@ class OrderStatusChanged extends OrderTrigger {
     }
 
     public function description(): string {
-        return __( 'Triggers after an order changes status occurs. Set the workflow to run on certain status changes with the trigger options', 'yay-automation' );
+        return __( 'Starts when an order moves to another status. Choose which status changes count.', 'yay-automation' );
     }
 
     public function icon(): string {
@@ -47,7 +47,7 @@ class OrderStatusChanged extends OrderTrigger {
 
     public function summary(): string {
         /* translators: %from% and %to%: order statuses; keep the placeholders as they are. */
-        return __( 'Order status changes from %from% to %to%', 'yay-automation' );
+        return __( '%from% → %to%', 'yay-automation' );
     }
 
     /**

@@ -16,7 +16,7 @@ Changes from the ROADMAP-v1.0 order:
 - **F0 and F1 come first.** M1 needs step outputs, templates and the new step contract. M2 needs stored runs. Building M1/M2 on the v0.1 runner means building them twice.
 - **F2 comes after M2.** The CPT → table migration must ship before v1.0, while there's no merchant data yet.
 - **M6 stays after M8.** The inactive-customer trigger reuses M8's scheduled scan.
-- **Identity inside F1** *([plan-identity](plan-identity.md))*: F1 backend first, so the restyle reads step icons and summaries from the new catalog; then the restyle; then the forms, built once in the new style. Nothing is built twice.
+- **Identity inside F1** *([plan-identity](plan-identity.md))*: F1 backend first, so the restyle reads step icons and summaries from the new catalog; then the restyle (phase 1, built on `jack/feature/identity-phase-1`: screens, cards and wording; PHP step wording only); then the forms (phase 2, with F1.9–F1.12), built once in the new style. Nothing is built twice.
 
 | # | Phase | Size | Risk | Depends on | Status |
 |---|---|---|---|---|---|
@@ -59,36 +59,36 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 
 ## F1 — Workflow Core foundation · L (~3 weeks)
 
-**Status:** In progress, branch `jack/feature/workflow-core-foundation`.
+**Status:** In progress — backend (PR A #13) merged; identity phase 1 on `jack/feature/identity-phase-1`.
 
 **Backend**
-- ⏳ **F1.0 PHPUnit** *([plan-infra](plan-infra.md))* — plain unit tests, no WordPress loaded (`dev/tools/phpunit`); CI step. First tests: template parser, Validator v2, Scope.
-- ⏳ **F1.1 Storage** *(§2)*
+- ✅ **F1.0 PHPUnit** *([plan-infra](plan-infra.md))* — plain unit tests, no WordPress loaded (`dev/tools/phpunit`); CI step. First tests: template parser, Validator v2, Scope.
+- ✅ **F1.1 Storage** *(§2)*
   - `runs`, `run_steps`, `trigger_claims` tables with upgrades.
   - Saved versions never change; runs pin their version.
-- ⏳ **F1.2 Data layer v2** *(§4)*
+- ✅ **F1.2 Data layer v2** *(§4)*
   - Types incl. boolean, money, list, entity.
   - Entity types order, customer, site with relations (`order.customer`, `order.items`).
   - `RefResolver` and `Scope`. Port `OrderData`, `CustomerData`, `SiteData`.
-- ⏳ **F1.3 Templates tier 1** *(§6)*
+- ✅ **F1.3 Templates tier 1** *(§6)*
   - PHP parser, renderer, filter registry (`default`, `date`, `money`, `upper`, `lower`, `join`).
   - Rendering moved from `Data/Variables.php` to `Template` + `Scope`; `Variables` keeps only `keys()` (merge tag paths for `Action::uses()`). Old `{{ item.field }}` tags keep working.
-- ⏳ **F1.4 Step contract** *(§5)*
+- ✅ **F1.4 Step contract** *(§5)*
   - `Step` base, `Field` builder, `outputs()`, `StepResult`, summary templates, `icon()` name *(L5)*.
   - Plugin logo: one SVG per plugin, `currentColor`, cleaned with `wp_kses` *(L5)*.
   - Parity test: the PHP catalog and what TS expects can't drift *([plan-infra](plan-infra.md))*.
   - Catalog in `yayAutomationMeta`; update `apps/admin-page/src/types/localize.d.ts`.
-- ⏳ **F1.5 Executor** *(§3)*
+- ✅ **F1.5 Executor** *(§3)*
   - Dispatcher replaces `Runner` collect / flush. Worker: Action Scheduler hook + row lock.
   - Cursor walk, slices, per-step error policy (stop / continue). **Stop is the default** (design §3, confirmed 2026-10-08); a step type may declare `continue` in PHP. No UI toggle in v1.0. A skipped step (gone entity, unsubscribed) is not a failure.
   - Causation (`parent_run_id`, `root_run_id`, `depth`) replaces the in-memory chain.
-- ⏳ **F1.6 Validator v2** *(§4, §6)*
+- ✅ **F1.6 Validator v2** *(§4, §6)*
   - Available variables per step; type checks; template checks.
   - Same issue codes as today (`no_trigger`, `unlinked`, `invalid_config`, `missing_data`, …).
   - An issue on a step names the field it's about (`field`), so the editor can say "Add order note needs a note" *([plan-identity](plan-identity.md))*.
   - Validator and REST messages use the plan-identity wording (Activate / Deactivate, Update).
-- ⏳ **F1.7 Modules** *(§8)* — manifest with tier and on/off switch; the registry reads it.
-- ⏳ **F1.8 Runs REST** — list and detail endpoints (the UI comes in M2). Workflow responses also return `activatedAt`, for "Active since …" on the overview *([plan-identity](plan-identity.md))*.
+- ✅ **F1.7 Modules** *(§8)* — manifest with tier and on/off switch; the registry reads it.
+- ✅ **F1.8 Runs REST** — list and detail endpoints (the UI comes in M2). Workflow responses also return `activatedAt`, for "Active since …" on the overview *([plan-identity](plan-identity.md))*.
 
 **UI**
 - **F1.9 Step forms** *(§5)*

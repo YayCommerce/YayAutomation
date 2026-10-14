@@ -11,6 +11,7 @@ import {
   removeNode,
   ROW_GAP,
   setNodeStep,
+  stepsInOrder,
   updateNodeConfig,
 } from './graph';
 
@@ -85,5 +86,28 @@ describe('graph queries and updates', () => {
     const data = graph.nodes.find((node) => node.id === 'email')!.data;
     expect(data.block).toBe('add_order_note');
     expect(data.config).not.toHaveProperty('subject');
+  });
+});
+
+describe('stepsInOrder', () => {
+  const ids = (graph: WorkflowGraph) => stepsInOrder(graph).map((node) => node.id);
+
+  it('reads from the trigger down', () => {
+    const graph = base();
+    graph.nodes.reverse();
+    expect(ids(graph)).toEqual(['trigger', 'condition', 'email']);
+  });
+
+  it('puts the Yes path before the No path, and unlinked steps last', () => {
+    const graph = addNode(
+      addNode(base(), 'condition', 'action', 'otherwise', 'no'),
+      'trigger',
+      'action',
+      undefined,
+      'x',
+    );
+    graph.edges = graph.edges.filter((edge) => edge.target !== 'x');
+    graph.edges.reverse();
+    expect(ids(graph)).toEqual(['trigger', 'condition', 'email', 'no', 'x']);
   });
 });

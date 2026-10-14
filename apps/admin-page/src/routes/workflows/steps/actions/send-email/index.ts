@@ -15,12 +15,8 @@ export const sendEmailStep = defineStep<SendEmailConfig>({
   ),
   schema,
   defaults,
-  summary: ({ to, subject }) =>
-    /* translators: 1: recipient(s), 2: email subject */
-    sprintf(
-      __('Send email to %1$s with the following subject: %2$s', 'yay-automation'),
-      value(splitRecipients(to).join(', ')),
-      value(subject),
-    ),
+  summary: ({ to }) =>
+    /* translators: %s: recipient(s) */
+    sprintf(__('Send to %s', 'yay-automation'), value(splitRecipients(to).join(', '))),
   Form: SendEmailForm,
 });

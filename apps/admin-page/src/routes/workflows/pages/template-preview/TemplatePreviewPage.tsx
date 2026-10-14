@@ -1,21 +1,37 @@
-import { useState, type MouseEventHandler } from 'react';
-import type { WorkflowPlugin, WorkflowTemplate } from '@yay-automation/types';
-import { ChevronDown } from 'lucide-react';
+import type { MouseEventHandler } from 'react';
+import type { WorkflowTemplate } from '@yay-automation/types';
+import { ChevronLeft, Info } from 'lucide-react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router';
 import { __ } from '@wordpress/i18n';
 
-import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '@/components/ui/breadcrumb';
 import { Button, LoadingButton } from '@/components/ui/button';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { stepsInOrder } from '../../model/graph';
+import { kindMeta } from '../../shared/canvas/NodeCardView';
 import { ReadOnlyCanvas } from '../../shared/canvas/ReadOnlyCanvas';
 import { EditorLayout, EditorPlaceholder } from '../../shared/layout/EditorLayout';
 import { LIBRARY_PATH, readLibraryNavState } from '../../shared/nav/library.nav';
 import { PluginIcon, plugins } from '../../shared/ui/PluginIcon';
+import { StepTile } from '../../shared/ui/StepTile';
+import { stepOf, SummaryText } from '../../steps';
 import { comingSoonLabel } from '../../steps/core/pending';
-import { findTemplate, isComingSoon, pluginsOf } from '../../templates';
-import { useCreateDraft } from './useCreateDraft';
+import { categoryLabels, findTemplate, isComingSoon, pluginsOf } from '../../templates';
+import { installFirst, useCreateDraft } from './useCreateDraft';
+
+/** Names of the plugins a template uses that aren't installed. */
+const missingPlugins = (template: WorkflowTemplate) =>
+  pluginsOf(template.graph)
+    .filter((id) => !plugins[id].active)
+    .map((id) => plugins[id].label);
 
 export default function TemplatePreviewPage() {
   const { templateId = '' } = useParams();
@@ -24,7 +40,7 @@ export default function TemplatePreviewPage() {
   const location = useLocation();
   const { createDraft, isCreating } = useCreateDraft();
 
-  // "More templates" returns to the open library. Opened from a card → pop that entry;
+  // The breadcrumb returns to the open library. Opened from a card → pop that entry;
   // otherwise (bookmark, reload) → link. × leaves the flow for the workflow list (EditorLayout default).
   const toLibrary: MouseEventHandler<HTMLAnchorElement> = (event) => {
     if (readLibraryNavState(location.state).fromLibrary) {
@@ -37,13 +53,27 @@ export default function TemplatePreviewPage() {
     return <EditorPlaceholder error={new Error(__('Template not found.', 'yay-automation'))} />;
   }
 
+  const useLabel = __('Use template', 'yay-automation');
+
   return (
     <EditorLayout
       title={
-        <>
-          <span className="truncate font-medium">{template.name}</span>
-          <Badge variant="primary-soft">{__('Template', 'yay-automation')}</Badge>
-        </>
+        <Breadcrumb className="min-w-0">
+          <BreadcrumbList className="flex-nowrap gap-1.5 text-sm sm:gap-1.5">
+            <BreadcrumbItem className="shrink-0">
+              <BreadcrumbLink asChild>
+                <Link to={LIBRARY_PATH} onClick={toLibrary} className="inline-flex items-center gap-1">
+                  <ChevronLeft className="size-4" aria-hidden />
+                  {__('Template Library', 'yay-automation')}
+                </Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem className="min-w-0">
+              <BreadcrumbPage className="truncate font-medium">{template.name}</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
       }
       actions={
         isComingSoon(template.graph) ? (
@@ -52,7 +82,7 @@ export default function TemplatePreviewPage() {
               {/* Disabled buttons swallow pointer events, so a wrapper carries the tooltip. */}
               <span tabIndex={0}>
                 <Button size="sm" disabled>
-                  {__('Install', 'yay-automation')}
+                  {useLabel}
                 </Button>
               </span>
             </TooltipTrigger>
@@ -63,68 +93,99 @@ export default function TemplatePreviewPage() {
             size="sm"
             loading={isCreating}
             disabled={isCreating}
-            onClick={() => createDraft(template.name, template.graph)}
+            onClick={() => createDraft(template.name, template.graph, missingPlugins(template))}
           >
-            {__('Install', 'yay-automation')}
+            {useLabel}
           </LoadingButton>
         )
       }
     >
-      <div className="relative size-full">
-        {/* The About panel covers the bottom-left corner, where the zoom controls usually sit. */}
-        <ReadOnlyCanvas key={template.id} graph={template.graph} controlsPosition="bottom-right" maxZoom={2} />
-
-        <Button variant="outline" size="sm" className="absolute top-4 right-4" asChild>
-          <Link to={LIBRARY_PATH} onClick={toLibrary}>
-            {__('More templates', 'yay-automation')}
-          </Link>
-        </Button>
-
-        <AboutTemplate template={template} className="absolute bottom-4 left-4" />
+      {/* Narrow screens: the panel goes under the canvas. */}
+      <div className="flex size-full max-md:flex-col">
+        <div className="relative min-h-0 min-w-0 flex-1">
+          <ReadOnlyCanvas key={template.id} graph={template.graph} maxZoom={2} />
+        </div>
+        <TemplateSidePanel template={template} />
       </div>
     </EditorLayout>
   );
 }
 
-function AboutTemplate({ template, className }: { template: WorkflowTemplate; className?: string }) {
-  const [open, setOpen] = useState(true);
+const groupHeading = 'text-muted-foreground mb-2 text-[11px] font-semibold tracking-wider uppercase';
+
+/** Docked beside the canvas: what the template is, what it does step by step, its plugins, what's next. */
+function TemplateSidePanel({ template }: { template: WorkflowTemplate }) {
+  const incoming = new Map(template.graph.edges.map((edge) => [edge.target, edge.sourceHandle]));
 
   return (
-    <Collapsible
-      open={open}
-      onOpenChange={setOpen}
-      className={cn('bg-card text-card-foreground w-96 max-w-[calc(100%-2rem)] rounded-lg border shadow-md', className)}
-    >
-      <CollapsibleTrigger className="flex w-full cursor-pointer items-center justify-between gap-2 px-4 py-3 text-sm font-semibold">
-        {__('About this template', 'yay-automation')}
-        <ChevronDown className={cn('size-4 transition-transform', open && 'rotate-180')} aria-hidden />
-      </CollapsibleTrigger>
-      <CollapsibleContent>
-        <div className="flex flex-col gap-4 px-4 pb-4">
-          <p className="text-muted-foreground text-sm">{template.description}</p>
-          <section>
-            <h3 className="text-sm font-semibold">{__('Plugins used', 'yay-automation')}</h3>
-            {/* Gap, not `space-y-*`: WP admin's `li { margin-bottom }` beats its zero-specificity margins. */}
-            <ul className="mt-2 flex flex-col gap-2">
-              {pluginsOf(template.graph).map((plugin) => (
-                <li key={plugin} className="flex items-center gap-2 rounded-md border px-3 py-2 text-sm">
-                  <PluginIcon plugin={plugin} />
-                  <span className="min-w-0 flex-1 truncate font-medium">{plugins[plugin].label}</span>
-                  <InstallState plugin={plugin} />
-                </li>
-              ))}
-            </ul>
-          </section>
-        </div>
-      </CollapsibleContent>
-    </Collapsible>
-  );
-}
+    <aside className="bg-background flex w-75 shrink-0 flex-col gap-5 overflow-y-auto border-l p-4.5 text-[13.5px] max-md:max-h-[45%] max-md:w-full max-md:border-t max-md:border-l-0">
+      <div>
+        <span className="text-muted-foreground text-[11px]/4 font-semibold tracking-wide uppercase">
+          {categoryLabels[template.category]}
+        </span>
+        <h2 className="text-[17px]/snug font-semibold">{template.name}</h2>
+        <p className="text-muted-foreground mt-1.5 text-[13px]">{template.description}</p>
+      </div>
 
-function InstallState({ plugin }: { plugin: WorkflowPlugin }) {
-  return plugins[plugin].active ? (
-    <Badge variant="dimmed">{__('Installed', 'yay-automation')}</Badge>
-  ) : (
-    <Badge variant="warning-soft">{__('Not installed', 'yay-automation')}</Badge>
+      <section>
+        <h3 className={groupHeading}>{__('What it does', 'yay-automation')}</h3>
+        {/* Gap, not `space-y-*`: WP admin's `li { margin-bottom }` beats its zero-specificity margins. */}
+        <ol className="flex flex-col gap-2.5">
+          {stepsInOrder(template.graph).map((node) => {
+            const stepDef = stepOf(node.data);
+            const branch = incoming.get(node.id);
+            return (
+              <li key={node.id} className="flex items-start gap-2.5">
+                <StepTile kind={node.kind} icon={stepDef?.icon} empty={!stepDef} size="sm" />
+                {/* Same text as the step's card: its name, then its summary. */}
+                <span className="min-w-0 flex-1">
+                  <span className="block font-medium">
+                    {branch && (
+                      <span className="text-muted-foreground font-normal">
+                        {branch === 'then' ? __('Yes:', 'yay-automation') : __('No:', 'yay-automation')}{' '}
+                      </span>
+                    )}
+                    {stepDef?.label ?? kindMeta[node.kind].label}
+                  </span>
+                  {stepDef && (
+                    <span className="text-muted-foreground-600 [&_strong]:text-card-foreground block text-[13px]">
+                      <SummaryText text={stepDef.summary(node.data.config)} />
+                    </span>
+                  )}
+                </span>
+              </li>
+            );
+          })}
+        </ol>
+      </section>
+
+      <section>
+        <h3 className={groupHeading}>{__('Plugins used', 'yay-automation')}</h3>
+        <ul className="flex flex-col gap-2">
+          {pluginsOf(template.graph).map((plugin) => (
+            <li key={plugin} className="flex items-center gap-2 rounded-lg border px-2.5 py-2">
+              <PluginIcon plugin={plugin} />
+              <span className="min-w-0 flex-1 truncate font-medium">{plugins[plugin].label}</span>
+              {plugins[plugin].active ? (
+                <Badge variant="success-soft">{__('Installed', 'yay-automation')}</Badge>
+              ) : (
+                <Badge variant="warning-soft">{__('Not installed', 'yay-automation')}</Badge>
+              )}
+            </li>
+          ))}
+        </ul>
+        {/* Using it still works; activating needs the plugin. */}
+        {installFirst(missingPlugins(template)) && (
+          <p className="text-warning-foreground bg-warning/20 mt-2 rounded-md px-2.5 py-1.5 text-[13px]">
+            {installFirst(missingPlugins(template))}
+          </p>
+        )}
+      </section>
+
+      <p className="bg-primary/8 flex items-start gap-2 rounded-lg px-3 py-2.5 text-[13px]">
+        <Info className="text-primary mt-0.5 size-4 shrink-0" aria-hidden />
+        {__('Using it creates an inactive draft. Review it, then activate.', 'yay-automation')}
+      </p>
+    </aside>
   );
 }

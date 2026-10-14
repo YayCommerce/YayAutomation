@@ -1,15 +1,7 @@
 import '@xyflow/react/dist/style.css';
 
 import { useEffect, useMemo, type ReactNode } from 'react';
-import {
-  Background,
-  Panel,
-  ReactFlow,
-  useNodesInitialized,
-  useReactFlow,
-  useStore,
-  type PanelPosition,
-} from '@xyflow/react';
+import { Background, Panel, ReactFlow, useNodesInitialized, useReactFlow, useStore } from '@xyflow/react';
 import type { WorkflowGraph } from '@yay-automation/types';
 import { Maximize2, Minus, Plus } from 'lucide-react';
 import { __ } from '@wordpress/i18n';
@@ -34,13 +26,10 @@ type FitViewOptions = { minZoom: number; maxZoom: number; padding: number; durat
  */
 export function ReadOnlyCanvas({
   graph,
-  controlsPosition = 'bottom-left',
   controls,
   maxZoom = 1,
 }: {
   graph: WorkflowGraph;
-  /** Moves the zoom controls out of the way of overlays (e.g. the preview's About panel). */
-  controlsPosition?: PanelPosition;
   /** Extra buttons before zoom and fit (e.g. the Overview's edit button). */
   controls?: ReactNode;
   /** Largest zoom fit may reach. Full-page canvases pass 2 (the editor's default) to fill the space. */
@@ -72,7 +61,7 @@ export function ReadOnlyCanvas({
       <SpaceOutOnMeasure graph={graph} fitViewOptions={fitViewOptions} />
       <Background />
       <EdgeArrowDefs />
-      <Panel position={controlsPosition} className="flex items-center gap-2">
+      <Panel position="bottom-left" className="flex items-center gap-2">
         {controls}
         <CanvasControls fitViewOptions={fitViewOptions} />
       </Panel>

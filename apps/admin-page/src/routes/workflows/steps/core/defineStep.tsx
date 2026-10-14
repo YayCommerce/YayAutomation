@@ -1,26 +1,15 @@
 import { useState, type ReactNode } from 'react';
 import * as v from 'valibot';
-import { __ } from '@wordpress/i18n';
 
+import type { CatalogStepMeta } from '@/types/localize';
 import { alwaysAvailable, itemOf, variableKeys } from './data';
+import { stepIcons } from './icons';
+import { MARKED } from './marks';
 import { automationMeta, isPendingStep } from './pending';
+import { renderSummary } from './summary';
 import type { Config, Step, StepFormProps, StepSpec } from './types';
 
-// Invisible characters around a part of a summary mark how `SummaryText` shows it, so summaries
-// stay plain strings (sprintf, i18n) yet render rich.
-const EMPTY_MARK = '\u2060';
-const VALUE_MARK = '\u2061';
-
-/** Shown in summaries where a required value is still missing: an italic "Empty". */
-export const PLACEHOLDER = `${EMPTY_MARK}${__('Empty', 'yay-automation')}${EMPTY_MARK}`;
-
-/** A configured value in a summary, shown bold; blank → the italic placeholder. */
-export const value = (text: string) => (text.trim() ? `${VALUE_MARK}${text}${VALUE_MARK}` : PLACEHOLDER);
-
-const MARKED = new RegExp(
-  `${EMPTY_MARK}([^${EMPTY_MARK}]*)${EMPTY_MARK}|${VALUE_MARK}([^${VALUE_MARK}]*)${VALUE_MARK}`,
-  'g',
-);
+export { PLACEHOLDER, plainSummary, value } from './marks';
 
 /** A step summary with its values in bold and its placeholders in italics. */
 export function SummaryText({ text }: { text: string }) {
@@ -49,11 +38,17 @@ export function defineStep<TConfig extends Config>({
   normalize = (config) => ({ ...defaults(), ...config }) as TConfig,
   uses,
   summary,
+  summaryValues,
+  icon,
+  label = '',
+  description = '',
   Form,
   ...spec
 }: StepSpec<TConfig>): Step {
   const meta = automationMeta.steps[spec.id];
   const requires = meta.requires ?? [];
+  // PHP's catalog entry once the step is built: its wording, icon and summary win over the stub's.
+  const catalog = isPendingStep(spec.id) ? undefined : (meta as CatalogStepMeta);
 
   /** Default `uses`: what the action always needs, plus the items of its merge tags. */
   const usesByDefault = (config: TConfig) => [
@@ -69,6 +64,9 @@ export function defineStep<TConfig extends Config>({
 
   return {
     ...spec,
+    label: catalog?.label ?? label,
+    description: catalog?.description ?? description,
+    icon: (catalog && stepIcons[catalog.icon]) ?? icon,
     plugin: meta.plugin,
     provides: meta.provides ?? [],
     requires,
@@ -84,7 +82,10 @@ export function defineStep<TConfig extends Config>({
       const items = (uses ?? usesByDefault)(normalize(config));
       return [...new Set(items)].filter((item) => !alwaysAvailable.includes(item));
     },
-    summary: (config) => summary(normalize(config)),
+    summary: (config) =>
+      catalog
+        ? renderSummary(catalog.summary, catalog.fields, normalize(config), summaryValues)
+        : (summary?.(normalize(config)) ?? ''),
     Form: Form && StepConfigForm,
   };
 }

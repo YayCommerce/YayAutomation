@@ -8,17 +8,15 @@ import { BulkActionBox } from '@/components/ui/bulk-actions';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { toast } from '@/components/ui/sonner';
-import { ApiError, getWorkflow } from '../../api/workflow.api';
+import { ApiError, errorMessage, getWorkflow } from '../../api/workflow.api';
 import { useDeleteWorkflowMutation, useWorkflowActionMutation, workflowKeys } from '../../api/workflow.query';
-import { ConfirmDialog, DeleteBlockedContent, TurnOffDialog } from '../../shared/actions/WorkflowActions';
+import { ConfirmDialog, DeactivateDialog, DeleteBlockedContent } from '../../shared/actions/WorkflowActions';
 
-type Dialog = 'turnOff' | 'delete' | 'deleteBlocked';
-
-const errorMessage = (reason: unknown) => (reason instanceof Error ? reason.message : String(reason));
+type Dialog = 'deactivate' | 'delete' | 'deleteBlocked';
 
 /**
  * Bulk actions bar for the workflows list (shown with 2+ selected): clear, "N selected", Delete, and
- * Turn off when any selected workflow is on. Requests go one per workflow, in parallel, through the
+ * Deactivate when any selected workflow is active. Requests go one per workflow, in parallel, through the
  * same mutations as the single actions, so the server's rules (e.g. no deleting an active workflow)
  * and the cache updates stay the same.
  *
@@ -49,7 +47,7 @@ export function WorkflowBulkActions({
   };
   const refresh = () => queryClient.invalidateQueries({ queryKey: workflowKeys.all });
 
-  const turnOff = async () => {
+  const deactivateAll = async () => {
     setPending(true);
     const results = await Promise.allSettled(targets.map((workflow) => deactivate.mutateAsync({ id: workflow.id })));
     const failed = targets.filter((_, i) => results[i].status === 'rejected');
@@ -59,7 +57,7 @@ export function WorkflowBulkActions({
     setDialog(null);
     if (done) {
       /* translators: %d: number of workflows */
-      toast.success(sprintf(_n('%d workflow turned off', '%d workflows turned off', done, 'yay-automation'), done));
+      toast.success(sprintf(_n('%d workflow deactivated', '%d workflows deactivated', done, 'yay-automation'), done));
     }
     if (failed.length) {
       const reason = results.find((result) => result.status === 'rejected')?.reason;
@@ -67,8 +65,8 @@ export function WorkflowBulkActions({
         sprintf(
           /* translators: %d: number of workflows */
           _n(
-            '%d workflow couldn’t be turned off',
-            '%d workflows couldn’t be turned off',
+            '%d workflow couldn’t be deactivated',
+            '%d workflows couldn’t be deactivated',
             failed.length,
             'yay-automation',
           ),
@@ -82,7 +80,7 @@ export function WorkflowBulkActions({
 
   const deleteAll = async () => {
     setPending(true);
-    // All or nothing: this list can be stale (a workflow turned on in another tab), so re-read every
+    // All or nothing: this list can be stale (a workflow activated in another tab), so re-read every
     // selected workflow first and delete none if any is on. The server's 409 stays as the last guard.
     try {
       const current = await Promise.all(targets.map((workflow) => getWorkflow(workflow.id)));
@@ -100,7 +98,7 @@ export function WorkflowBulkActions({
     }
 
     const results = await Promise.allSettled(targets.map((workflow) => remove.mutateAsync(workflow.id)));
-    // Turned on between the check above and its delete: the server keeps it.
+    // Activated between the check above and its delete: the server keeps it.
     const refused = targets.filter((_, i) => {
       const result = results[i];
       return (
@@ -145,8 +143,8 @@ export function WorkflowBulkActions({
         </span>
         <Separator orientation="vertical" className="ml-2 h-5!" />
         {active.length > 0 && (
-          <Button variant="ghost" size="sm" onClick={() => open('turnOff', active)}>
-            {__('Turn off', 'yay-automation')}
+          <Button variant="ghost" size="sm" onClick={() => open('deactivate', active)}>
+            {__('Deactivate', 'yay-automation')}
           </Button>
         )}
         <Button
@@ -160,10 +158,10 @@ export function WorkflowBulkActions({
         </Button>
       </BulkActionBox>
 
-      <TurnOffDialog
-        open={dialog === 'turnOff'}
+      <DeactivateDialog
+        open={dialog === 'deactivate'}
         onOpenChange={(isOpen) => !isOpen && setDialog(null)}
-        onConfirm={() => void turnOff()}
+        onConfirm={() => void deactivateAll()}
         pending={pending}
         count={targets.length}
       />

@@ -7,6 +7,9 @@ import { getErrorJson, getErrorMsg } from '@/lib/helpers/response.helper';
 
 /** REST client for `yay-automation/v1/workflows`. Errors are rethrown as `ApiError` with the server's message. */
 
+/** Any thrown value as text for a toast. */
+export const errorMessage = (reason: unknown) => (reason instanceof Error ? reason.message : String(reason));
+
 export class ApiError extends Error {
   constructor(
     message: string,

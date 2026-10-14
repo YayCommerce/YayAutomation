@@ -23,7 +23,7 @@ class OrderCreated extends OrderTrigger {
     }
 
     public function description(): string {
-        return __( 'This workflow starts when a new order is created', 'yay-automation' );
+        return __( 'Starts when a new order is created.', 'yay-automation' );
     }
 
     public function icon(): string {
@@ -35,7 +35,7 @@ class OrderCreated extends OrderTrigger {
     }
 
     public function summary(): string {
-        return __( 'This workflow starts when a new order is created', 'yay-automation' );
+        return __( 'When a new order is created', 'yay-automation' );
     }
 
     public function listen( callable $emit ): void {

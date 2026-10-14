@@ -3,6 +3,8 @@
  * PHP is the one source for steps, plugins, data and operators; these checks catch the TS side
  * drifting from it. Catalog change → `./run.sh meta-fixture`, then run this test.
  */
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import type { StepId, WorkflowPlugin } from '@yay-automation/types';
 import { icons } from 'lucide-react';
 import { describe, expect, it } from 'vitest';
@@ -12,6 +14,7 @@ import type { DataFieldType } from '@/types/localize';
 import { messages } from '../routes/workflows/model/messages';
 import { steps } from '../routes/workflows/steps';
 import { needsValue, operatorLabels, variableKeys } from '../routes/workflows/steps/core/data';
+import { stepIcons } from '../routes/workflows/steps/core/icons';
 import { automationMeta, isPendingStep } from '../routes/workflows/steps/core/pending';
 import { isComingSoon, templates } from '../routes/workflows/templates';
 
@@ -66,6 +69,14 @@ describe('PHP ↔ TS parity', () => {
     for (const id of phpStepIds) {
       expect(icons, `${id}: ${php.steps[id]!.icon}`).toHaveProperty(lucideName(php.steps[id]!.icon));
     }
+  });
+
+  it('the TS icon map has exactly the names in PHP StepIcons::NAMES', () => {
+    const php = readFileSync(resolve(__dirname, '../../../../includes/Workflow/Steps/Core/StepIcons.php'), 'utf8');
+    const list = /NAMES = \[([\s\S]*?)\];/.exec(php)![1];
+    const names = [...list.matchAll(/'([a-z0-9-]+)'/g)].map((m) => m[1]);
+    expect(names.length).toBeGreaterThan(0);
+    expect(Object.keys(stepIcons)).toEqual(names);
   });
 
   it('plugins match: PHP sends every plugin TS knows, each with a currentColor logo', () => {

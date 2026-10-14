@@ -26,12 +26,12 @@ We chose these 8 because they cover what merchants install an automation plugin 
 
 ### Workflow list
 
-**Today:** a table of workflows (name, status, trigger, last updated) with bulk actions and an empty state.
+**Today:** a table of workflows (name, status, trigger, runs, last run, last updated) with a status filter, a "⋯" row menu, bulk actions and an empty state. Runs and Last run show "—" until run history exists.
 
 **v1.0 adds:**
-- Two columns: runs in the last 30 days, and when the workflow last ran (proposal).
-- Status filter: All · Active · Inactive · Draft (proposal).
-- Row actions in a "⋯" menu: Edit, Rename, Activate / Deactivate, Delete. Unapplied edits show a "Draft changes" badge. *([identity](plan-identity.md))*
+- Two columns: runs in the last 30 days, and when the workflow last ran. Shown with "—" since identity phase 1; filled in M2.
+- Status filter: All · Active · Inactive · Draft. ✅ identity phase 1
+- Row actions in a "⋯" menu: Edit, Rename, Activate / Deactivate, Delete. Edits not yet live show a "Draft changes" badge. ✅ identity phase 1 *([identity](plan-identity.md))*
 
 **States:** a workflow that never ran shows "—" in both columns.
 
@@ -41,10 +41,10 @@ We chose these 8 because they cover what merchants install an automation plugin 
 
 ### Create workflow dialog
 
-**Today:** a start page with "Select a trigger" and "Template Library"; the AI box shows "Coming soon".
+**Today:** the question "What do you want to automate?", a describe box with example prompts ("Coming soon"), and two start cards: Browse templates and Choose a trigger.
 
 **v1.0 adds:**
-- New layout *([identity](plan-identity.md))*: the question "What do you want to automate?", a describe box with example prompts (shows "Coming soon" until the AI ships in v2.0), then two start cards: **Browse templates** and **Choose a trigger**.
+- ✅ New layout, identity phase 1 *([identity](plan-identity.md))*: the question "What do you want to automate?", a describe box with example prompts (shows "Coming soon" until the AI ships in v2.0), then two start cards: **Browse templates** and **Choose a trigger**.
 - The trigger picker lists the new starting events as they land: account created, inactive customer, abandoned cart and checkout.
 
 **Done when:** both start cards work, the describe box is clearly unavailable, and each new trigger can be picked as soon as its milestone lands.
@@ -53,12 +53,12 @@ We chose these 8 because they cover what merchants install an automation plugin 
 
 ### Template Library
 
-**Today:** one template, with search and sort.
+**Today:** a few templates, with search, sort, a sidebar (categories with counts, plugins) and cards with a strip of step icons.
 
 **v1.0 adds:**
 - 18 templates, arriving with their milestones.
-- A sidebar *([identity](plan-identity.md))*: Categories with counts (All · Recover carts · Post-purchase · Customer lifecycle · Alerts), then Plugins with checkboxes, installed first. Long lists show "Show more"; chosen filters appear as removable chips above the grid.
-- Cards open with a strip of the template's step icons, then name and description; plugins show as icons (up to 3, then "+N", name on hover).
+- ✅ A sidebar, identity phase 1 *([identity](plan-identity.md))*: Categories with counts (All · Recover carts · Post-purchase · Customer lifecycle · Alerts), then Plugins with checkboxes, installed first. Long lists show "Show more"; chosen filters appear as removable chips above the grid.
+- ✅ Cards open with a strip of the template's step icons, then name and description; plugins show as icons (up to 3, then "+N", name on hover).
 - A "Needs cart tracking" badge on cart and checkout templates while cart tracking is off.
 - "Most popular" sort uses a fixed order based on expected demand (proposal).
 
@@ -70,15 +70,15 @@ We chose these 8 because they cover what merchants install an automation plugin 
 
 ### Template preview
 
-**Today:** a read-only view of the workflow, an "About this template" panel (description, plugins used) and Install.
+**Today:** a read-only view of the workflow, a breadcrumb back to the library, a side panel (what it does step by step, plugins used) and Use template.
 
 **v1.0 adds:**
-- A side panel next to the canvas replaces the floating "About this template" box, and a breadcrumb leads back to the library *([identity](plan-identity.md))*. It holds:
+- A side panel next to the canvas and a breadcrumb back to the library (✅ identity phase 1, with Steps and Plugins used) *([identity](plan-identity.md))*. It holds:
   - **Steps:** one line per step with its icon, the same text as on the workflow cards.
   - **Plugins used**, as today.
   - **Other versions:** links to the other templates of the same workflow (e.g. the 3 abandoned cart versions).
   - **Before you start:** what the template needs, with a link to fix it (turn on cart tracking; turn on product reviews).
-- **Use template** replaces Install. Afterwards the message says "Review the emails, then activate it".
+- ✅ **Use template** replaces Install (identity phase 1); the message says "Draft created. Review it, then activate it." From M1, templates with customer emails say "Review the emails, then activate it".
 
 **States:** "Before you start" is hidden when nothing is missing.
 
@@ -115,10 +115,10 @@ We chose these 8 because they cover what merchants install an automation plugin 
 
 ### Workflow overview
 
-**Today:** the workflow diagram, version history, and an empty "Workflow runs" placeholder.
+**Today:** a summary row (status, trigger; runs and last run show "—"), the workflow diagram with Draft changes and Version history tabs, and an empty "Workflow runs" section.
 
 **v1.0 adds:**
-- **Summary row** *([identity](plan-identity.md))*: status (e.g. "Active since Oct 2"), trigger, runs in the last 30 days, last run.
+- **Summary row** (✅ identity phase 1; run cells filled in M2) *([identity](plan-identity.md))*: status (e.g. "Active since Oct 2"), trigger, runs in the last 30 days, last run.
 - **Workflow runs** table: started, what it ran for (order number, cart, customer), status (Running, Waiting until …, Completed, Failed, Cancelled), steps run. Pages and a status filter.
 - **Run detail:** click a run to see each step with its result and time, e.g. "Condition → No", "Wait → until Oct 9, 3:00 PM", "Send email → sent to a@b.com", "Generate coupon → YAY-7K2P", with a link to the order or customer.
 - Deactivate and Update say how many waiting runs will be cancelled. Cancelled runs show "Cancelled" right away, never "Waiting until …".

@@ -1,7 +1,6 @@
 import type { CSSProperties } from 'react';
 import type { Edge, Node } from '@xyflow/react';
 import type { WorkflowGraph, WorkflowNodeData, WorkflowNodeKind } from '@yay-automation/types';
-import { __ } from '@wordpress/i18n';
 
 import { stepOf } from '../../steps';
 
@@ -43,16 +42,11 @@ export const targetHandleStyle: CSSProperties = {
   transform: 'translate(-50%, 0)',
 };
 
-const branchLabels = {
-  then: __('Then', 'yay-automation'),
-  otherwise: __('Otherwise', 'yay-automation'),
-};
-
 /**
- * Least room between a card's bottom and the top of a step below it: the edge, its Then / Otherwise
- * label and the "+" button. What `ROW_GAP` leaves under a one-line card.
+ * Least room between a card's bottom and the top of a step below it: the edge and the "+" button.
+ * What `ROW_GAP` leaves under an 86px card.
  */
-const MIN_EDGE_GAP = 96;
+const MIN_EDGE_GAP = 84;
 
 /**
  * Where to draw each step: pushed down when it sits closer than `MIN_EDGE_GAP` below its parent's
@@ -117,7 +111,6 @@ export function toFlowEdges(graph: WorkflowGraph, { editing = false } = {}): Edg
     source: edge.source,
     target: edge.target,
     sourceHandle: edge.sourceHandle,
-    label: edge.sourceHandle ? branchLabels[edge.sourceHandle] : undefined,
     type: 'curved',
     animated: editing && pending.has(edge.target),
     style: editing ? { strokeDasharray: '5 5', strokeWidth: 1.5 } : { strokeWidth: 1.5 },

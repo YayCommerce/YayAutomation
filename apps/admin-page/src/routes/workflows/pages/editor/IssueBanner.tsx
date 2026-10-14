@@ -1,31 +1,46 @@
-import { useState, type CSSProperties } from 'react';
-import type { WorkflowIssue } from '@yay-automation/types';
-import { ChevronLeft, ChevronRight, CircleAlert, Eye, Pencil } from 'lucide-react';
+import { useState, type CSSProperties, type ReactNode } from 'react';
+import type { WorkflowIssue, WorkflowNode } from '@yay-automation/types';
+import { ChevronLeft, ChevronRight, CircleAlert } from 'lucide-react';
 import { __, sprintf } from '@wordpress/i18n';
 
 import { cn } from '@/lib/utils';
-import { AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { ErrorAlert } from '../../shared/ui/ErrorAlert';
+import { kindMeta } from '../../shared/canvas/NodeCardView';
+import { StepTile } from '../../shared/ui/StepTile';
+import { stepOf } from '../../steps';
 
 const issueKey = (issue: WorkflowIssue) => `${issue.code}|${issue.nodeId ?? ''}`;
 
+/** The message with the step's name in bold where it appears ("**Add order note** needs a note."). */
+function withStepName(message: string, name: string): ReactNode {
+  const at = name ? message.indexOf(name) : -1;
+  if (at < 0) return message;
+  return (
+    <>
+      {message.slice(0, at)}
+      <strong className="font-semibold">{name}</strong>
+      {message.slice(at + name.length)}
+    </>
+  );
+}
+
 /**
- * Error-mode banner: one issue at a time, with "1 of N" paging on the right.
- * A step issue names the step and links to it; `unlinked` links to its first step; `name_required`
- * offers Rename; other workflow-level issues (no trigger, no action) are just their message.
+ * Error-mode bar: one issue at a time, with "1 / N" paging on the right.
+ * A step issue shows the step's tile and message and links to the step; `unlinked` links to its
+ * first step; `name_required` offers Rename; other workflow-level issues (no trigger, no action)
+ * are just their message.
  */
 export function IssueBanner({
   issues,
-  labelFor,
+  nodeFor,
   onView,
   onRename,
   className,
   style,
 }: {
   issues: WorkflowIssue[];
-  /** Step label of a step. */
-  labelFor: (nodeId: string) => string;
+  /** The step an issue points at, if it's still in the graph. */
+  nodeFor: (nodeId: string) => WorkflowNode | undefined;
   onView: (nodeId: string) => void;
   onRename: () => void;
   className?: string;
@@ -42,87 +57,68 @@ export function IssueBanner({
   const stepId = issue.nodeId ?? issue.nodeIds?.[0];
   const show = (index: number) => setShown({ key: issueKey(issues[index]), index });
 
-  // Paging sits at the bottom right, beside the View link (or alone, after a workflow-level message).
-  const pager = issues.length > 1 && (
-    <div className="flex shrink-0 items-center gap-1 self-end">
-      <Button
-        variant="ghost"
-        size="icon-sm"
-        className="text-destructive size-6"
-        disabled={current === 0}
-        aria-label={__('Previous error', 'yay-automation')}
-        onClick={() => show(current - 1)}
-      >
-        <ChevronLeft />
-      </Button>
-      <Button
-        variant="ghost"
-        size="icon-sm"
-        className="text-destructive size-6"
-        disabled={current === issues.length - 1}
-        aria-label={__('Next error', 'yay-automation')}
-        onClick={() => show(current + 1)}
-      >
-        <ChevronRight />
-      </Button>
-      <span className="ml-1 text-xs">
-        {sprintf(
-          /* translators: 1: current error number, 2: number of errors */
-          __('%1$d of %2$d', 'yay-automation'),
-          current + 1,
-          issues.length,
-        )}
-      </span>
-    </div>
+  const node = issue.nodeId ? nodeFor(issue.nodeId) : undefined;
+  const stepDef = node && stepOf(node.data);
+  const stepName = node ? (stepDef?.label ?? kindMeta[node.kind].label) : '';
+
+  const link = (label: string, onClick: () => void) => (
+    <Button variant="link" size="sm" className="h-auto p-0 align-baseline" onClick={onClick}>
+      {label}
+    </Button>
   );
 
-  const hasDetails = !!stepId || issue.code === 'name_required' || !!pager;
-
   return (
-    <ErrorAlert className={cn('w-[min(48rem,calc(100%-2rem))] shadow-sm', className)} style={style}>
-      <CircleAlert />
-      <AlertTitle className="line-clamp-none font-normal">
-        {issue.nodeId ? __('Correct the error for this workflow step:', 'yay-automation') : issue.message}
-      </AlertTitle>
-      {hasDetails && (
-        <AlertDescription className="flex items-end justify-between gap-4">
-          <div className="flex min-w-0 flex-col gap-2">
-            {issue.nodeId && (
-              <ul className="list-disc pl-5">
-                <li>{issue.message}</li>
-              </ul>
-            )}
-            {stepId ? (
-              <Button
-                variant="link"
-                size="sm"
-                className="text-destructive h-auto self-start p-0 font-normal"
-                onClick={() => onView(stepId)}
-              >
-                <Eye />
-                {sprintf(
-                  /* translators: %s: step name, e.g. "Condition" */
-                  __('View ‘%s’ step', 'yay-automation'),
-                  labelFor(stepId),
-                )}
-              </Button>
-            ) : (
-              issue.code === 'name_required' && (
-                <Button
-                  variant="link"
-                  size="sm"
-                  className="text-destructive h-auto self-start p-0 font-normal"
-                  onClick={onRename}
-                >
-                  <Pencil />
-                  {__('Rename workflow', 'yay-automation')}
-                </Button>
-              )
-            )}
-          </div>
-          {pager}
-        </AlertDescription>
+    <div
+      role="alert"
+      className={cn(
+        'bg-card text-card-foreground flex w-[min(48rem,calc(100%-2rem))] items-center gap-2.5 rounded-xl border px-2.5 py-2 text-sm shadow-md',
+        className,
       )}
-    </ErrorAlert>
+      style={style}
+    >
+      {node ? (
+        <StepTile kind={node.kind} icon={stepDef?.icon} empty={!stepDef} size="sm" />
+      ) : (
+        <CircleAlert className="text-destructive ml-1 size-4 shrink-0" aria-hidden />
+      )}
+      <p className="min-w-0 flex-1">
+        {withStepName(issue.message, stepName)}{' '}
+        {stepId
+          ? link(__('Show step', 'yay-automation'), () => onView(stepId))
+          : issue.code === 'name_required' && link(__('Rename workflow', 'yay-automation'), onRename)}
+      </p>
+      {issues.length > 1 && (
+        <div className="text-muted-foreground flex shrink-0 items-center gap-0.5 text-xs">
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className="size-6"
+            disabled={current === 0}
+            aria-label={__('Previous issue', 'yay-automation')}
+            onClick={() => show(current - 1)}
+          >
+            <ChevronLeft />
+          </Button>
+          <span className="tabular-nums">
+            {sprintf(
+              /* translators: 1: current issue number, 2: number of issues */
+              __('%1$d / %2$d', 'yay-automation'),
+              current + 1,
+              issues.length,
+            )}
+          </span>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className="size-6"
+            disabled={current === issues.length - 1}
+            aria-label={__('Next issue', 'yay-automation')}
+            onClick={() => show(current + 1)}
+          >
+            <ChevronRight />
+          </Button>
+        </div>
+      )}
+    </div>
   );
 }

@@ -100,7 +100,7 @@ Step:   id() label() plugin() module()
         fields(): Field[]        settings, rules, widgets
         validate( config )       optional extra checks the field rules can't express
         outputs(): array         what later steps can use: key => [ label, type, options? ]
-        summary(): string        card text, e.g. "Send email to %recipients%"
+        summary(): string        card text, one short line, e.g. "Send to %recipients%"
         run( Scope, config ): StepResult   ok( outputs ) | skipped( reason ) | failed( error )
 ```
 
