@@ -1,4 +1,5 @@
 import { useEffect, useRef, type RefObject } from 'react';
+import { Braces } from 'lucide-react';
 import { __ } from '@wordpress/i18n';
 
 import { Button } from '@/components/ui/button';
@@ -7,19 +8,26 @@ import { VariablePicker } from './VariablePicker';
 
 type TextControl = HTMLInputElement | HTMLTextAreaElement;
 
-/**
- * "Add variable" link under a text field: inserts the picked merge tag at the cursor of `inputRef`
- * (at the end when the field was never focused) and puts the cursor after it.
- */
-export function AddVariable({
-  inputRef,
-  value,
-  onChange,
-}: {
+type InsertVariableProps = {
   inputRef: RefObject<TextControl | null>;
   value: string;
   onChange: (value: string) => void;
-}) {
+};
+
+/** `InsertVariable` on its own row under the field, for the forms not yet on `StepForm`. */
+export function AddVariable(props: InsertVariableProps) {
+  return (
+    <div className="flex justify-end">
+      <InsertVariable {...props} />
+    </div>
+  );
+}
+
+/**
+ * "Insert variable" link for a field's label row: inserts the picked merge tag at the cursor of
+ * `inputRef` (at the end when the field was never focused) and puts the cursor after it.
+ */
+export function InsertVariable({ inputRef, value, onChange }: InsertVariableProps) {
   // A control never focused still reports a cursor (often 0), so remember whether there's a real one.
   const focused = useRef(false);
   useEffect(() => {
@@ -44,12 +52,11 @@ export function AddVariable({
   };
 
   return (
-    <div className="flex justify-end">
-      <VariablePicker onSelect={insert}>
-        <Button type="button" variant="link" size="sm" className="h-auto px-0">
-          {__('Add variable', 'yay-automation')}
-        </Button>
-      </VariablePicker>
-    </div>
+    <VariablePicker onSelect={insert}>
+      <Button type="button" variant="link" size="sm" className="h-auto gap-1 px-0 text-[12.5px]">
+        <Braces className="size-3.5" aria-hidden />
+        {__('Insert variable', 'yay-automation')}
+      </Button>
+    </VariablePicker>
   );
 }

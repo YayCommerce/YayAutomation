@@ -13,10 +13,10 @@ import {
 import { Field, FieldError, FieldLabel } from '@/components/ui/field';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { fieldByKey, needsValue, operatorLabels, operatorsFor } from '../../core/data';
-import { feedbackStyles, useFeedback, type Feedback } from '../../core/fields/feedback';
+import { errorStyles, useShowErrors } from '../../core/fields/feedback';
 import { spotlightTarget, VariablePicker } from '../../core/fields/VariablePicker';
 import type { StepFormProps } from '../../core/types';
-import { comparableWith, criteriaErrors, criteriaRequired, emptyRule, type CriteriaConfig, type Rule } from './schema';
+import { comparableWith, criteriaErrors, emptyRule, type CriteriaConfig, type Rule } from './schema';
 import { softButton, ValueInput, VariableLabel } from './ValueInput';
 
 const joinerLabel = { all: __('AND', 'yay-automation'), any: __('OR', 'yay-automation') };
@@ -47,11 +47,9 @@ export function CriteriaForm({ config, onChange }: StepFormProps<CriteriaConfig>
     update({ match, rules: [...value.rules, emptyRule()] });
   };
 
-  const feedback = useFeedback();
+  const showErrors = useShowErrors();
   const errors = criteriaErrors(value.rules);
-  // Review stays quiet about a condition with no variable yet; error mode says it's required.
-  const errorFor = (index: number) =>
-    feedback === 'none' || (feedback === 'review' && errors[index] === criteriaRequired) ? null : errors[index];
+  const errorFor = (index: number) => (showErrors ? errors[index] : null);
 
   return (
     <div className="flex flex-col gap-3">
@@ -74,7 +72,6 @@ export function CriteriaForm({ config, onChange }: StepFormProps<CriteriaConfig>
             id={`criteria-${index}`}
             rule={rule}
             error={errorFor(index)}
-            feedback={feedback}
             autoOpen={index === pending}
             onChange={(next) => {
               setRule(index, next);
@@ -117,7 +114,6 @@ function RuleBox({
   id,
   rule,
   error,
-  feedback,
   autoOpen,
   onChange,
   onDismissNew,
@@ -125,9 +121,8 @@ function RuleBox({
 }: {
   id: string;
   rule: Rule;
-  /** Shown under the box, in the feedback mode's color. */
+  /** Shown under the box; null while the form shows no errors. */
   error: string | null;
-  feedback: Feedback;
   /** Just added by "Add criteria": open the variable picker right away. */
   autoOpen: boolean;
   onChange: (rule: Rule) => void;
@@ -136,7 +131,7 @@ function RuleBox({
   onRemove: () => void;
 }) {
   const field = fieldByKey(rule.field);
-  const tone = error && feedback !== 'none' ? feedbackStyles[feedback] : null;
+  const tone = error ? errorStyles : null;
 
   // Another variable of the same type keeps the comparison (and the value, if it still fits);
   // otherwise the new type's first comparison is picked and the value cleared.
@@ -214,13 +209,7 @@ function RuleBox({
         {needsValue(rule.operator) && (
           <Field data-spotlight className={spotlightTarget}>
             <FieldLabel htmlFor={`${id}-value`}>{field?.label ?? __('Value', 'yay-automation')}</FieldLabel>
-            <ValueInput
-              id={`${id}-value`}
-              invalid={feedback === 'error' && !!error}
-              field={field}
-              rule={rule}
-              onChange={onChange}
-            />
+            <ValueInput id={`${id}-value`} invalid={!!error} field={field} rule={rule} onChange={onChange} />
           </Field>
         )}
       </div>

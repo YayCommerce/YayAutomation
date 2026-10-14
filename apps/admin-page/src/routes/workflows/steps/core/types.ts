@@ -23,11 +23,12 @@ export interface StepSpec<TConfig extends Config> {
   label?: string;
   description?: string;
   /**
-   * The one source of truth for a valid config: field errors in the form and the workflow's
-   * `invalid_config` issue. Must accept exactly what the PHP step's `validate()` accepts.
+   * Pending steps only: the one source of truth for a valid config (field errors in the form and
+   * the workflow's `invalid_config` issue). A built step's schema comes from its catalog fields.
    */
-  schema: v.GenericSchema<TConfig>;
-  defaults: () => TConfig;
+  schema?: v.GenericSchema<TConfig>;
+  /** Pending steps only: a built step's defaults come from its catalog fields. */
+  defaults?: () => TConfig;
   /**
    * Brings stored config into the current shape: fills missing keys. Mirrors the PHP step's
    * `sanitize()`. Defaults to merging over `defaults()`.
@@ -48,7 +49,7 @@ export interface StepSpec<TConfig extends Config> {
   summaryValues?: SummaryValues<TConfig>;
   /** Pending steps only: replaces the step kind's icon on the card and in the panel header. */
   icon?: LucideIcon;
-  /** Omitted when the step has nothing to configure. */
+  /** A custom form. Without one, a built step's form is drawn from its catalog fields (`StepForm`). */
   Form?: ComponentType<StepFormProps<TConfig>>;
 }
 
@@ -82,5 +83,6 @@ export interface Step {
   summary: (config: Config) => string;
   /** The step's own icon; without one the card shows its kind's. */
   icon?: LucideIcon;
+  /** Omitted when the step has nothing to set. */
   Form?: ComponentType<StepFormProps<Config>>;
 }

@@ -1,11 +1,4 @@
 import { defineStep } from '../../core/defineStep';
-import { ChangeOrderStatusForm } from './Form';
-import { defaults, schema, type ChangeOrderStatusConfig } from './schema';
 
-export const changeOrderStatusStep = defineStep<ChangeOrderStatusConfig>({
-  id: 'change_order_status',
-  kind: 'action',
-  schema,
-  defaults,
-  Form: ChangeOrderStatusForm,
-});
+/** Form and checks come from includes/Workflow/Steps/Actions/ChangeOrderStatus.php `fields()`. */
+export const changeOrderStatusStep = defineStep({ id: 'change_order_status', kind: 'action' });

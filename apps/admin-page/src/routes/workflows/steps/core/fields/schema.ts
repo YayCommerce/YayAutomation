@@ -1,14 +1,15 @@
 import type { StepId } from '@yay-automation/types';
 import * as v from 'valibot';
-import { __, sprintf } from '@wordpress/i18n';
+import { sprintf } from '@wordpress/i18n';
 
+import { messages } from '../../../model/messages';
 import { tagError } from '../data';
 
 /** A string that isn't blank. Generic message, for steps PHP doesn't have yet. */
 export const required = () =>
   v.pipe(
     v.string(),
-    v.check((value) => value.trim() !== '', __('This field is required', 'yay-automation')),
+    v.check((value) => value.trim() !== '', messages.fieldRequired),
   );
 
 /**

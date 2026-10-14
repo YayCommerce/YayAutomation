@@ -221,7 +221,7 @@ final class StepConfigsTest extends TestCase {
 
             // Change order status.
             'status: empty'                => [ 'change_order_status', [], [ 'status' => '' ], 'Choose the new status.' ],
-            'status: unknown'              => [ 'change_order_status', [ 'status' => 'gone' ], [ 'status' => 'gone' ], 'Choose the new status.' ],
+            'status: unknown'              => [ 'change_order_status', [ 'status' => 'gone' ], [ 'status' => 'gone' ], 'Choose an option from the list.' ],
             'status: wc- prefix'           => [ 'change_order_status', [ 'status' => 'wc-completed' ], [ 'status' => 'completed' ], self::OK ],
 
             // Add order note.

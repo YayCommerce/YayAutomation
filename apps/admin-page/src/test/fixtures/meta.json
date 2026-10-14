@@ -317,6 +317,7 @@
                         "type": "select",
                         "label": "New status",
                         "required": true,
+                        "requiredMessage": "Choose the new status.",
                         "placeholder": "Choose a status",
                         "options": [
                             {
@@ -1788,8 +1789,12 @@
             "unknownVariable": "%s isn’t an available variable.",
             "unknownFilter": "%1$s isn’t a filter. Available filters: %2$s.",
             "malformedTag": "%s is written incorrectly. Use {{ variable }} or {{ variable | filter }}.",
+            "fieldRequired": "This field is required",
             "invalidEmail": "%s isn’t a valid email address.",
-            "chooseNewStatus": "Choose the new status.",
+            "chooseOption": "Choose an option from the list.",
+            "chooseOptions": "Choose options from the list only.",
+            "numberMin": "Enter %s or more.",
+            "numberMax": "Enter %s or less.",
             "unknownStatus": "Choose statuses from the list.",
             "rulesRequired": "Add a rule, or remove this condition.",
             "ruleVariable": "Choose a variable for each rule.",

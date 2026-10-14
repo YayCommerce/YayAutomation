@@ -33,9 +33,15 @@ final class Messages {
             /* translators: %s: a merge tag as written, e.g. {{ order. }}. Keep {{ variable }} and {{ variable | filter }} as they are. */
             'malformedTag'      => __( '%s is written incorrectly. Use {{ variable }} or {{ variable | filter }}.', 'yay-automation' ),
             // Step settings.
+            'fieldRequired'     => __( 'This field is required', 'yay-automation' ),
             /* translators: %s: the text entered as an email address */
             'invalidEmail'      => __( '%s isn’t a valid email address.', 'yay-automation' ),
-            'chooseNewStatus'   => __( 'Choose the new status.', 'yay-automation' ),
+            'chooseOption'      => __( 'Choose an option from the list.', 'yay-automation' ),
+            'chooseOptions'     => __( 'Choose options from the list only.', 'yay-automation' ),
+            /* translators: %s: smallest number allowed */
+            'numberMin'         => __( 'Enter %s or more.', 'yay-automation' ),
+            /* translators: %s: largest number allowed */
+            'numberMax'         => __( 'Enter %s or less.', 'yay-automation' ),
             'unknownStatus'     => __( 'Choose statuses from the list.', 'yay-automation' ),
             // Condition rules.
             'rulesRequired'     => __( 'Add a rule, or remove this condition.', 'yay-automation' ),

@@ -128,9 +128,7 @@ export function StepPanel({
             </VariableScopeContext.Provider>
           </FeedbackContext.Provider>
         ) : (
-          <p className="text-muted-foreground text-sm">
-            {__("This trigger doesn't require any configuration.", 'yay-automation')}
-          </p>
+          <p className="text-muted-foreground text-sm">{__('No settings needed.', 'yay-automation')}</p>
         )}
       </div>
     </>

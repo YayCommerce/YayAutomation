@@ -90,10 +90,6 @@ class AddOrderNote extends Action {
         ];
     }
 
-    public function validate( array $config ) {
-        return $this->field_error( $config ) ?? true;
-    }
-
     public function run( Scope $scope, array $config ): StepResult {
         $order = $scope->entity( OrderData::ID );
         if ( ! $order ) {

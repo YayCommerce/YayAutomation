@@ -133,7 +133,7 @@ describe('PHP ↔ TS parity', () => {
         checked++;
       }
     }
-    expect(checked).toBe(4);
+    expect(checked).toBe(5);
   });
 
   describe.each(templates.map((template) => [template.id, template] as const))('template %s', (_id, template) => {
