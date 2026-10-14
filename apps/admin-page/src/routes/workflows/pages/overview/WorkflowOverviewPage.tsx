@@ -11,7 +11,7 @@ import { toast } from '@/components/ui/sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ApiError } from '../../api/workflow.api';
 import { useWorkflowActionMutation, useWorkflowQuery } from '../../api/workflow.query';
-import { draftBlocksActivate } from '../../model/validation';
+import { activateIssues } from '../../model/validation';
 import { MoreActionsMenu, TurnOffDialog, TurnOnDialog } from '../../shared/actions/WorkflowActions';
 import { ReadOnlyCanvas } from '../../shared/canvas/ReadOnlyCanvas';
 import { WorkflowAppIcon } from '../../shared/layout/EditorLayout';
@@ -110,7 +110,9 @@ function WorkflowOverview({ workflow }: { workflow: Workflow }) {
     { value: 'live', label: liveLabel, graph: workflow.graph },
     ...(workflow.draft ? [{ value: 'draft', label: __('Draft', 'yay-automation'), graph: workflow.draft }] : []),
   ];
-  const draftBlocksTurnOn = useMemo(() => draftBlocksActivate(workflow), [workflow]);
+  // A draft with issues can't be activated, so the button isn't offered. Without a draft, Turn on
+  // stays: a refusal opens the error container that explains the issues.
+  const draftBlocksTurnOn = useMemo(() => !!workflow.draft && activateIssues(workflow).length > 0, [workflow]);
   const [tab, setTab] = useState(tabs[0].value);
   const [historyPage, setHistoryPage] = useState(1);
   // A tab can disappear (draft applied or discarded elsewhere); fall back to the first.

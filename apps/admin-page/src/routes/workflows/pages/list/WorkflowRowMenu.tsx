@@ -14,7 +14,7 @@ import {
 import { toast } from '@/components/ui/sonner';
 import { ApiError } from '../../api/workflow.api';
 import { useWorkflowActionMutation } from '../../api/workflow.query';
-import { draftBlocksActivate } from '../../model/validation';
+import { activateIssues } from '../../model/validation';
 import {
   DeleteWorkflowDialog,
   RenameWorkflowDialog,
@@ -25,7 +25,10 @@ import type { EditorNavState } from '../../shared/nav/editor.nav';
 
 export type RowAction = 'rename' | 'activate' | 'deactivate' | 'delete';
 
-/** What a row's menu asked for; the table keeps it, so its dialog outlives a list refresh. */
+/**
+ * What a row's menu asked for. The table keeps it, so its dialog outlives a list refresh, and keeps
+ * it after closing too, so the dialog's text doesn't change while it fades out.
+ */
 export type RowTarget = { action: RowAction; workflow: Workflow };
 
 /**
@@ -67,8 +70,8 @@ export function WorkflowRowMenu({ workflow, onAction }: { workflow: Workflow; on
             {__('Deactivate', 'yay-automation')}
           </DropdownMenuItem>
         ) : (
-          // Like the Overview: not offered while the draft has issues (the server would refuse).
-          !draftBlocksActivate(workflow) && (
+          // Not offered while what Activate would make live has issues: the server would refuse.
+          activateIssues(workflow).length === 0 && (
             <DropdownMenuItem onSelect={() => onAction('activate')}>
               <Power />
               {__('Activate', 'yay-automation')}
@@ -89,12 +92,20 @@ export function WorkflowRowMenu({ workflow, onAction }: { workflow: Workflow; on
  * The dialogs behind the row menus, mounted once by the table. An Activate refused for issues
  * offers the editor, which opens showing them.
  */
-export function WorkflowRowDialogs({ target, onClose }: { target: RowTarget | null; onClose: () => void }) {
+export function WorkflowRowDialogs({
+  target,
+  open,
+  onClose,
+}: {
+  target: RowTarget | null;
+  open: boolean;
+  onClose: () => void;
+}) {
   const navigate = useNavigate();
   const activate = useWorkflowActionMutation('activate');
   const deactivate = useWorkflowActionMutation('deactivate');
   const workflow = target?.workflow;
-  const action = target?.action;
+  const action = open ? target?.action : undefined;
 
   const runActivate = (id: string) =>
     activate.mutate(

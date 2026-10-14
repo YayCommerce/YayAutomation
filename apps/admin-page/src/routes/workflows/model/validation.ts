@@ -49,21 +49,21 @@ export function validateWorkflow({ name, graph }: Pick<Workflow, 'name' | 'graph
 }
 
 /**
+ * Issues that stop an inactive workflow from being activated: those of the content Activate would
+ * make live, its draft when it has one (the server checks the same). None for an active workflow.
+ */
+export const activateIssues = (workflow: Pick<Workflow, 'name' | 'status' | 'draft' | 'graph'>) =>
+  workflow.status === 'active'
+    ? []
+    : validateWorkflow({ name: workflow.name, graph: workflow.draft ?? workflow.graph });
+
+/**
  * Data items each step can read: what the trigger supplies, what the actions above it add (e.g. a
  * coupon), and the always-available ones. Steps not linked to the trigger get the trigger's data.
  * Null until a trigger is chosen. PHP `Validator` also checks `steps.<id>.*` merge tags against the
  * steps above; the editor doesn't parse those tags yet. Only coming-soon actions provide data items
  * so far (see `pending.ts`).
  */
-/**
- * An inactive workflow whose draft has issues can't be activated (the server refuses too), so the
- * Overview and the list don't offer Activate. An active workflow can always be deactivated.
- */
-export const draftBlocksActivate = (workflow: Pick<Workflow, 'name' | 'status' | 'draft'>) =>
-  workflow.status !== 'active' &&
-  !!workflow.draft &&
-  validateWorkflow({ name: workflow.name, graph: workflow.draft }).length > 0;
-
 export function availableData(graph: WorkflowGraph): ((nodeId: string) => string[]) | null {
   const trigger = graph.nodes.find((node) => node.kind === 'trigger');
   const triggerStep = trigger && stepOf(trigger.data);

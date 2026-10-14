@@ -65,6 +65,7 @@ export function WorkflowsTable({ workflows }: { workflows: Workflow[] }) {
   const [selectedIds, setSelectedIds] = useState<ReadonlySet<string>>(new Set());
   // Here, not in the row: the dialog must outlive a refresh that moves its row off this tab or page.
   const [rowTarget, setRowTarget] = useState<RowTarget | null>(null);
+  const [rowDialogOpen, setRowDialogOpen] = useState(false);
 
   // Draft = never activated; Inactive = activated before, now off.
   const inTab = tab === 'all' ? workflows : workflows.filter((workflow) => workflowState(workflow) === tab);
@@ -174,7 +175,13 @@ export function WorkflowsTable({ workflows }: { workflows: Workflow[] }) {
                 <TableCell>{noRuns}</TableCell>
                 <TableCell className="text-muted-foreground">{formatDateTime(workflow.lastVersionAt)}</TableCell>
                 <TableCell>
-                  <WorkflowRowMenu workflow={workflow} onAction={(action) => setRowTarget({ action, workflow })} />
+                  <WorkflowRowMenu
+                    workflow={workflow}
+                    onAction={(action) => {
+                      setRowTarget({ action, workflow });
+                      setRowDialogOpen(true);
+                    }}
+                  />
                 </TableCell>
               </TableRow>
             ))}
@@ -210,7 +217,7 @@ export function WorkflowsTable({ workflows }: { workflows: Workflow[] }) {
         )}
       </div>
 
-      <WorkflowRowDialogs target={rowTarget} onClose={() => setRowTarget(null)} />
+      <WorkflowRowDialogs target={rowTarget} open={rowDialogOpen} onClose={() => setRowDialogOpen(false)} />
     </>
   );
 }

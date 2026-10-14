@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import highValueOrderAlert from '../templates/high-value-order-alert';
 import { addNode, removeNode } from './graph';
-import { availableData, draftBlocksActivate, validateWorkflow } from './validation';
+import { activateIssues, availableData, validateWorkflow } from './validation';
 
 const base = (): WorkflowGraph => structuredClone(highValueOrderAlert.graph);
 /** Steps and edges by id, so editing the template doesn't change what a test covers. */
@@ -74,16 +74,17 @@ describe('availableData', () => {
   });
 });
 
-describe('draftBlocksActivate', () => {
+describe('activateIssues', () => {
   const broken = () => removeNode(base(), 'email');
+  const codesOf = (workflow: Parameters<typeof activateIssues>[0]) => activateIssues(workflow).map((i) => i.code);
 
-  it('blocks an inactive workflow whose draft has issues', () => {
-    expect(draftBlocksActivate({ name: 'Alert', status: 'inactive', draft: broken() })).toBe(true);
+  it('checks the draft when there is one, else the workflow itself', () => {
+    expect(codesOf({ name: 'Alert', status: 'inactive', graph: base(), draft: broken() })).toEqual(['no_action']);
+    expect(codesOf({ name: 'Alert', status: 'inactive', graph: broken(), draft: null })).toEqual(['no_action']);
+    expect(codesOf({ name: 'Alert', status: 'inactive', graph: broken(), draft: base() })).toEqual([]);
   });
 
-  it('allows a clean draft, no draft, or an active workflow', () => {
-    expect(draftBlocksActivate({ name: 'Alert', status: 'inactive', draft: base() })).toBe(false);
-    expect(draftBlocksActivate({ name: 'Alert', status: 'inactive', draft: null })).toBe(false);
-    expect(draftBlocksActivate({ name: 'Alert', status: 'active', draft: broken() })).toBe(false);
+  it('finds nothing for an active workflow', () => {
+    expect(codesOf({ name: 'Alert', status: 'active', graph: base(), draft: broken() })).toEqual([]);
   });
 });
