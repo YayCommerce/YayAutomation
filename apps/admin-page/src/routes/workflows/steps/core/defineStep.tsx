@@ -65,7 +65,10 @@ export function defineStep<TConfig extends Config>({
   const schema = ownSchema ?? (schemaFromFields(fields, catalog!.label) as v.GenericSchema<TConfig>);
   const fieldDefaults = defaultsFromFields(fields) as TConfig;
   const defaults = ownDefaults ?? (() => structuredClone(fieldDefaults));
-  const normalize = ownNormalize ?? ((config: Config) => ({ ...defaults(), ...config }) as TConfig);
+  // A built step keeps only its fields' keys, like PHP `Field::sanitize_all()`.
+  const keep = (config: Config) =>
+    catalog ? Object.fromEntries(Object.entries(config).filter(([key]) => key in fieldDefaults)) : config;
+  const normalize = ownNormalize ?? ((config: Config) => ({ ...defaults(), ...keep(config) }) as TConfig);
 
   // Fields that accept merge tags; a pending step has no catalog yet, so all its text.
   const variableFields = catalog?.fields.filter((field) => field.variables).map((field) => field.key);

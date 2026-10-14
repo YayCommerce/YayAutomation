@@ -1,13 +1,12 @@
 import { useForm, useStore } from '@tanstack/react-form';
 import { __ } from '@wordpress/i18n';
 
-import { Checkbox } from '@/components/ui/checkbox';
-import { Field, FieldContent, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
-import { Input } from '@/components/ui/input';
+import { FieldGroup } from '@/components/ui/field';
 import { Segmented, SegmentedItem } from '@/components/ui/segmented';
 import { ConfigField } from '../../core/fields/ConfigField';
 import { useMarkInvalid } from '../../core/fields/feedback';
 import { useValidateOnMount } from '../../core/fields/useValidateOnMount';
+import { TextField, ToggleField } from '../../core/fields/widgets';
 import type { StepFormProps } from '../../core/types';
 import { schema, type DiscountType, type GenerateCouponConfig } from './schema';
 
@@ -20,7 +19,7 @@ export const discountTypeLabels: Record<DiscountType, string> = {
 };
 
 type TextKey = 'amount' | 'expiry_days' | 'minimum_spend' | 'code_prefix';
-type CheckKey = 'individual_use' | 'limit_to_customer';
+type ToggleKey = 'individual_use' | 'limit_to_customer';
 
 export function GenerateCouponForm({ config, onChange }: StepFormProps<GenerateCouponConfig>) {
   const form = useForm({
@@ -32,43 +31,35 @@ export function GenerateCouponForm({ config, onChange }: StepFormProps<GenerateC
   const markInvalid = useMarkInvalid();
   const discountType = useStore(form.store, (state) => state.values.discount_type);
 
-  const textField = (name: TextKey, label: string, description?: string, placeholder?: string) => (
+  const textField = (name: TextKey, label: string, help?: string, placeholder?: string) => (
     <form.Field name={name}>
       {(field) => (
-        <ConfigField
+        <TextField
+          id={`step-coupon-${name}`}
           label={label}
-          htmlFor={`step-coupon-${name}`}
-          description={description}
+          help={help}
+          placeholder={placeholder}
+          inputMode={name === 'code_prefix' ? undefined : 'decimal'}
+          value={field.state.value}
+          onChange={field.handleChange}
+          onBlur={field.handleBlur}
+          invalid={markInvalid(field.state.meta)}
           errors={field.state.meta.errors}
-        >
-          <Input
-            id={`step-coupon-${name}`}
-            value={field.state.value}
-            placeholder={placeholder}
-            inputMode={name === 'code_prefix' ? undefined : 'decimal'}
-            onChange={(event) => field.handleChange(event.target.value)}
-            onBlur={field.handleBlur}
-            aria-invalid={markInvalid(field.state.meta)}
-          />
-        </ConfigField>
+        />
       )}
     </form.Field>
   );
 
-  const checkField = (name: CheckKey, label: string, description: string) => (
+  const toggleField = (name: ToggleKey, label: string, help: string) => (
     <form.Field name={name}>
       {(field) => (
-        <Field orientation="horizontal">
-          <Checkbox
-            id={`step-coupon-${name}`}
-            checked={field.state.value}
-            onCheckedChange={(checked) => field.handleChange(checked === true)}
-          />
-          <FieldContent>
-            <FieldLabel htmlFor={`step-coupon-${name}`}>{label}</FieldLabel>
-            <FieldDescription>{description}</FieldDescription>
-          </FieldContent>
-        </Field>
+        <ToggleField
+          id={`step-coupon-${name}`}
+          label={label}
+          help={help}
+          checked={field.state.value}
+          onChange={field.handleChange}
+        />
       )}
     </form.Field>
   );
@@ -118,12 +109,12 @@ export function GenerateCouponForm({ config, onChange }: StepFormProps<GenerateC
         __('Added before the random part of the code, e.g. THANKS-7K2P9Q.', 'yay-automation'),
         'THANKS-',
       )}
-      {checkField(
+      {toggleField(
         'limit_to_customer',
         __("Limit to the customer's email", 'yay-automation'),
         __('Only the customer the workflow runs for can use it.', 'yay-automation'),
       )}
-      {checkField(
+      {toggleField(
         'individual_use',
         __('Individual use only', 'yay-automation'),
         __("Can't be combined with other coupons.", 'yay-automation'),

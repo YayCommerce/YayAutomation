@@ -14,15 +14,6 @@ type InsertVariableProps = {
   onChange: (value: string) => void;
 };
 
-/** `InsertVariable` on its own row under the field, for the forms not yet on `StepForm`. */
-export function AddVariable(props: InsertVariableProps) {
-  return (
-    <div className="flex justify-end">
-      <InsertVariable {...props} />
-    </div>
-  );
-}
-
 /**
  * "Insert variable" link for a field's label row: inserts the picked merge tag at the cursor of
  * `inputRef` (at the end when the field was never focused) and puts the cursor after it.

@@ -16,40 +16,6 @@
     },
     "wc": {
         "active": true,
-        "orderStatuses": [
-            {
-                "value": "pending",
-                "label": "Pending payment"
-            },
-            {
-                "value": "processing",
-                "label": "Processing"
-            },
-            {
-                "value": "on-hold",
-                "label": "On hold"
-            },
-            {
-                "value": "completed",
-                "label": "Completed"
-            },
-            {
-                "value": "cancelled",
-                "label": "Cancelled"
-            },
-            {
-                "value": "refunded",
-                "label": "Refunded"
-            },
-            {
-                "value": "failed",
-                "label": "Failed"
-            },
-            {
-                "value": "checkout-draft",
-                "label": "Draft"
-            }
-        ],
         "currencySymbol": "$"
     },
     "automation": {
@@ -268,6 +234,7 @@
                         "key": "recipients",
                         "type": "emails",
                         "label": "To",
+                        "placeholder": "admin@example.test",
                         "help": "Separate addresses with commas. Leave blank to use the site admin email.",
                         "default": ""
                     },
@@ -1792,10 +1759,9 @@
             "fieldRequired": "This field is required",
             "invalidEmail": "%s isn’t a valid email address.",
             "chooseOption": "Choose an option from the list.",
-            "chooseOptions": "Choose options from the list only.",
+            "chooseOptions": "Choose options from the list.",
             "numberMin": "Enter %s or more.",
             "numberMax": "Enter %s or less.",
-            "unknownStatus": "Choose statuses from the list.",
             "rulesRequired": "Add a rule, or remove this condition.",
             "ruleVariable": "Choose a variable for each rule.",
             "ruleComparison": "Choose a comparison for each rule.",
@@ -1807,9 +1773,7 @@
             "ruleOption": "Choose a value from the list."
         },
         "email": {
-            "fromName": "Example Store",
-            "fromAddress": "store@example.test",
-            "settingsUrl": "https://example.test/wp-admin/admin.php?page=wc-settings&tab=email"
+            "fromLine": "Example Store <store@example.test>"
         }
     },
     "docs": {

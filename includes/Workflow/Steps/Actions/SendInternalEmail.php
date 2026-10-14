@@ -3,7 +3,6 @@ namespace YayAutomation\Workflow\Steps\Actions;
 
 use YayAutomation\Workflow\Data\Scope;
 use YayAutomation\Workflow\Data\Type;
-use YayAutomation\Workflow\Definition\Messages;
 use YayAutomation\Workflow\Extend\Modules;
 use YayAutomation\Workflow\Extend\Plugins;
 use YayAutomation\Workflow\Steps\Core\Action;
@@ -59,6 +58,7 @@ class SendInternalEmail extends Action {
         return [
             Field::notice( 'from', __( 'From', 'yay-automation' ), self::from_line() ),
             Field::emails( 'recipients', __( 'To', 'yay-automation' ) )
+                ->placeholder( (string) get_option( 'admin_email' ) )
                 ->help( __( 'Separate addresses with commas. Leave blank to use the site admin email.', 'yay-automation' ) ),
             Field::text( 'subject', __( 'Subject', 'yay-automation' ) )
                 /* translators: %s: step name, e.g. "Send internal email" */
@@ -86,20 +86,6 @@ class SendInternalEmail extends Action {
     }
 
     /**
-     * Field rules, in today's order and words: recipients first, then subject and message.
-     *
-     * @param array $config Sanitized config.
-     */
-    public function validate( array $config ) {
-        foreach ( Field::split_emails( $config['recipients'] ) as $email ) {
-            if ( ! is_email( $email ) ) {
-                return $this->invalid( Messages::get( 'invalidEmail', $email ), 'recipients' );
-            }
-        }
-        return $this->field_error( $config ) ?? true;
-    }
-
-    /**
      * Outputs the addresses it was sent to; never the subject or body.
      *
      * @param Scope $scope  Run scope.
@@ -123,15 +109,11 @@ class SendInternalEmail extends Action {
     }
 
     /**
-     * WooCommerce sender, for the read-only "From" field.
-     * Shape must match `EmailMeta` in apps/admin-page/src/types/localize.d.ts.
+     * WooCommerce sender, for the From line of email steps the admin draws itself.
+     * Shape must match `automation.email` in apps/admin-page/src/types/localize.d.ts.
      */
     public static function sender(): array {
-        return [
-            'fromName'    => self::from_name(),
-            'fromAddress' => self::from_address(),
-            'settingsUrl' => admin_url( 'admin.php?page=wc-settings&tab=email' ),
-        ];
+        return [ 'fromLine' => self::from_line() ];
     }
 
     /** "Store <store@example.com>"; the address alone when the sender has no name. */

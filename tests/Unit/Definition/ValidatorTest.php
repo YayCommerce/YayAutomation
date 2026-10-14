@@ -177,7 +177,7 @@ final class ValidatorTest extends TestCase {
 
         $this->assertSame(
             [
-                [ 'invalid_config', 'Choose statuses from the list.', 't' ],
+                [ 'invalid_config', 'Choose options from the list.', 't' ],
                 [ 'invalid_config', 'Add a rule, or remove this condition.', 'c' ],
                 [ 'invalid_config', '{{ order.foo }} isn’t an available variable.', 'note' ],
                 [ 'invalid_config', 'Update order custom field needs a field name.', 'meta' ],

@@ -1,21 +1,18 @@
-import { useRef } from 'react';
 import { useForm, useStore } from '@tanstack/react-form';
 import type * as v from 'valibot';
 import { __ } from '@wordpress/i18n';
 
 import type { StepFieldMeta } from '@/types/localize';
-import { Field, FieldContent, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
+import { FieldGroup } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { Textarea } from '@/components/ui/textarea';
 import type { Config, StepFormProps } from '../types';
-import { InsertVariable } from './AddVariable';
 import { isFieldVisible } from './catalogSchema';
 import { ConfigField } from './ConfigField';
 import { useMarkInvalid } from './feedback';
 import { MultiSelect } from './MultiSelect';
 import { useValidateOnMount } from './useValidateOnMount';
+import { Notice, TextField, ToggleField } from './widgets';
 
 /** What one widget gets from the form. */
 interface WidgetProps {
@@ -52,7 +49,7 @@ export function StepForm({
       {fields
         .filter((field) => isFieldVisible(field, values))
         .map((field) => {
-          if (field.type === 'notice') return <Notice key={field.key} field={field} />;
+          if (field.type === 'notice') return <Notice key={field.key} label={field.label} text={field.text ?? ''} />;
           return (
             <form.Field key={field.key} name={field.key}>
               {(api) => (
@@ -74,90 +71,51 @@ export function StepForm({
 }
 
 function Widget({ errors, ...props }: WidgetProps & { errors: ({ message?: string } | undefined)[] }) {
-  const { field, id } = props;
-  if (field.type === 'toggle') return <Toggle {...props} />;
-  if (field.variables && ['text', 'textarea', 'emails'].includes(field.type)) {
-    return <TextWithVariables {...props} errors={errors} />;
-  }
-
-  let control;
-  switch (field.type) {
-    case 'text':
-    case 'emails':
-      control = <TextInput {...props} />;
-      break;
-    case 'textarea':
-      control = <TextArea {...props} />;
-      break;
-    case 'select':
-      control = <SelectWidget {...props} />;
-      break;
-    case 'multiselect':
-      control = (
-        <MultiSelect
-          id={id}
-          options={field.options ?? []}
-          value={Array.isArray(props.value) ? (props.value as string[]) : []}
-          onChange={props.onChange}
-          placeholder={field.placeholder ?? ''}
-          invalid={props.invalid}
-        />
-      );
-      break;
-    case 'number':
-      control = <NumberInput {...props} />;
-      break;
-    default:
-      return null;
-  }
-  return (
+  const { field, id, value, onChange, onBlur, invalid } = props;
+  const labelled = (control: React.ReactNode) => (
     <ConfigField label={field.label} htmlFor={id} description={field.help} errors={errors}>
       {control}
     </ConfigField>
   );
-}
-
-/** Text that takes merge tags: "Insert variable" on the label row puts one at the cursor. */
-function TextWithVariables({ errors, ...props }: WidgetProps & { errors: ({ message?: string } | undefined)[] }) {
-  const { field, id, value, onChange } = props;
-  const ref = useRef<HTMLInputElement & HTMLTextAreaElement>(null);
-  const insert = <InsertVariable inputRef={ref} value={String(value ?? '')} onChange={onChange} />;
-  return (
-    <ConfigField label={field.label} htmlFor={id} description={field.help} action={insert} errors={errors}>
-      {field.type === 'textarea' ? <TextArea {...props} inputRef={ref} /> : <TextInput {...props} inputRef={ref} />}
-    </ConfigField>
-  );
-}
-
-type TextProps = WidgetProps & { inputRef?: React.Ref<HTMLInputElement & HTMLTextAreaElement> };
-
-function TextInput({ field, id, value, onChange, onBlur, invalid, inputRef }: TextProps) {
-  return (
-    <Input
-      ref={inputRef}
-      id={id}
-      value={String(value ?? '')}
-      placeholder={field.placeholder}
-      onChange={(event) => onChange(event.target.value)}
-      onBlur={onBlur}
-      aria-invalid={invalid}
-    />
-  );
-}
-
-function TextArea({ field, id, value, onChange, onBlur, invalid, inputRef }: TextProps) {
-  return (
-    <Textarea
-      ref={inputRef}
-      id={id}
-      rows={5}
-      value={String(value ?? '')}
-      placeholder={field.placeholder}
-      onChange={(event) => onChange(event.target.value)}
-      onBlur={onBlur}
-      aria-invalid={invalid}
-    />
-  );
+  switch (field.type) {
+    case 'toggle':
+      return <ToggleField id={id} label={field.label} help={field.help} checked={value === true} onChange={onChange} />;
+    case 'text':
+    case 'emails':
+    case 'textarea':
+      return (
+        <TextField
+          id={id}
+          label={field.label}
+          help={field.help}
+          placeholder={field.placeholder}
+          multiline={field.type === 'textarea'}
+          variables={!!field.variables}
+          value={String(value ?? '')}
+          onChange={onChange}
+          onBlur={onBlur}
+          invalid={invalid}
+          errors={errors}
+        />
+      );
+    case 'select':
+      return labelled(<SelectWidget {...props} />);
+    case 'multiselect':
+      return labelled(
+        <MultiSelect
+          id={id}
+          options={field.options ?? []}
+          value={Array.isArray(value) ? (value as string[]) : []}
+          onChange={onChange}
+          placeholder={field.placeholder ?? ''}
+          invalid={invalid}
+        />,
+      );
+    case 'number':
+      return labelled(<NumberInput {...props} />);
+    default:
+      return null;
+  }
 }
 
 function SelectWidget({ field, id, value, onChange, invalid }: WidgetProps) {
@@ -192,28 +150,5 @@ function NumberInput({ field, id, value, onChange, onBlur, invalid }: WidgetProp
       onBlur={onBlur}
       aria-invalid={invalid}
     />
-  );
-}
-
-function Toggle({ field, id, value, onChange }: WidgetProps) {
-  return (
-    <Field orientation="horizontal">
-      <FieldContent>
-        <FieldLabel htmlFor={id}>{field.label}</FieldLabel>
-        {field.help && <FieldDescription>{field.help}</FieldDescription>}
-      </FieldContent>
-      <Switch id={id} size="sm" checked={value === true} onCheckedChange={onChange} />
-    </Field>
-  );
-}
-
-/** Read-only line, e.g. who an email is sent from: the label muted, then the text. */
-function Notice({ field }: { field: StepFieldMeta }) {
-  return (
-    <p title={field.text} className="bg-muted min-w-0 truncate rounded-lg px-3 py-2.5 text-[13px]">
-      <span className="text-muted-foreground">{field.label}</span>
-      {'  '}
-      {field.text}
-    </p>
   );
 }

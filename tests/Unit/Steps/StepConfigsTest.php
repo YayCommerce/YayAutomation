@@ -96,8 +96,8 @@ final class StepConfigsTest extends TestCase {
                 ],
                 self::OK,
             ],
-            'status changed: unknown to'   => [ 'order_status_changed', [ 'to' => [ 'gone' ] ], null, 'Choose statuses from the list.' ],
-            'status changed: unknown from' => [ 'order_status_changed', [ 'from' => [ 'completed', 'gone' ] ], null, 'Choose statuses from the list.' ],
+            'status changed: unknown to'   => [ 'order_status_changed', [ 'to' => [ 'gone' ] ], null, 'Choose options from the list.' ],
+            'status changed: unknown from' => [ 'order_status_changed', [ 'from' => [ 'completed', 'gone' ] ], null, 'Choose options from the list.' ],
 
             // Condition.
             'condition: empty'             => [ 'condition', 'junk', self::criteria( [] ), 'Add a rule, or remove this condition.' ],

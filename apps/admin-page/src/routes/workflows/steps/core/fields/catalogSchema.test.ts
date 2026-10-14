@@ -63,7 +63,7 @@ describe('schemaFromFields', () => {
       'type: Choose an option from the list.',
       'note: Add order note needs a note.',
       'to: nope isn’t a valid email address.',
-      'tags: Choose options from the list only.',
+      'tags: Choose options from the list.',
       'days: Enter 1 or more.',
     ]);
     expect(issues({ ...valid, days: 31 })).toEqual(['days: Enter 30 or less.']);

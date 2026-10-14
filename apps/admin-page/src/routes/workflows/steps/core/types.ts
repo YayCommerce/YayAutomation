@@ -27,7 +27,10 @@ export interface StepSpec<TConfig extends Config> {
    * the workflow's `invalid_config` issue). A built step's schema comes from its catalog fields.
    */
   schema?: v.GenericSchema<TConfig>;
-  /** Pending steps only: a built step's defaults come from its catalog fields. */
+  /**
+   * A new step's config. A built step's come from its catalog fields; pass them only for sample
+   * text PHP doesn't keep.
+   */
   defaults?: () => TConfig;
   /**
    * Brings stored config into the current shape: fills missing keys. Mirrors the PHP step's

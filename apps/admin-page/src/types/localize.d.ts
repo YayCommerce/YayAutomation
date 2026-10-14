@@ -128,8 +128,6 @@ declare global {
       };
       wc: {
         active: boolean;
-        /** Slugs without the `wc-` prefix. Empty when WooCommerce is inactive. */
-        orderStatuses: { value: string; label: string }[];
         currencySymbol: string;
       };
       automation: {
@@ -143,8 +141,8 @@ declare global {
         always: string[];
         /** PHP `Definition\Messages::all()`: messages both sides show, by key. Same as `model/messages.ts`. */
         messages: Record<string, string>;
-        /** WooCommerce email sender, for Send internal email. */
-        email: { fromName: string; fromAddress: string; settingsUrl: string };
+        /** WooCommerce sender for steps not built in PHP yet, e.g. "Store <store@example.com>". */
+        email: { fromLine: string };
       };
       docs: {
         /** Filter `yay_automation_workflow_runs_docs_url`. */

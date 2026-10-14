@@ -1,16 +1,25 @@
+import { __ } from '@wordpress/i18n';
+
 import { defineStep, value } from '../../core/defineStep';
 import { splitRecipients } from '../../core/fields/email';
-import { SendInternalEmailForm } from './Form';
-import { defaults, schema, type SendInternalEmailConfig } from './schema';
 
 const adminEmail = window.yayAutomationMeta.wp.adminEmail;
 
-export const sendInternalEmailStep = defineStep<SendInternalEmailConfig>({
+/**
+ * Form and checks come from includes/Workflow/Steps/Actions/SendInternalEmail.php `fields()`.
+ * A new step starts with a sample subject and message; PHP keeps no such text.
+ */
+export const sendInternalEmailStep = defineStep({
   id: 'send_internal_email',
   kind: 'action',
-  schema,
-  defaults,
+  defaults: () => ({
+    recipients: '',
+    subject: __('Order {{ order.number }} is {{ order.status }}', 'yay-automation'),
+    message: __(
+      'Order {{ order.number }} from {{ customer.full_name }} is {{ order.status }}.\n\nTotal: {{ order.total }}\n\n{{ order.items }}',
+      'yay-automation',
+    ),
+  }),
   // Blank sends to the site admin (PHP `run()`), so the card names that address.
   summaryValues: { recipients: ({ recipients }) => value(splitRecipients(recipients).join(', ') || adminEmail) },
-  Form: SendInternalEmailForm,
 });

@@ -7,10 +7,9 @@ defined( 'ABSPATH' ) || exit;
 
 /**
  * One workflow step type. PHP is the one source of a step's settings (`fields()`); the admin app
- * gets them through the catalog. A step's folder in apps/admin-page/src/routes/workflows/steps/
- * (e.g. Triggers/OrderStatusChanged ↔ triggers/order-status-changed/) still holds its form and
- * `schema.ts`, which must accept exactly what `validate()` accepts until the editor builds its
- * checks from the fields.
+ * gets them through the catalog and draws the form and checks from them. Checks a field can't
+ * express go in `validate()` and need a matching custom form in the step's folder in
+ * apps/admin-page/src/routes/workflows/steps/ (e.g. Conditions/Criteria ↔ conditions/criteria/).
  *
  * Config life: `sanitize()` on every save (never fails) → `validate()` before Activate →
  * `run( Scope, config )`. A step reads data only through the Scope and returns a StepResult;
