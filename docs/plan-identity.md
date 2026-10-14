@@ -1,6 +1,6 @@
 # Plan: Editor Identity
 
-Status: design in review (mock v2). Code starts after the F1 backend, as in [ROADMAP-dev](ROADMAP-dev.md); see [Phases](#phases).
+Status: design approved (mock v2). Phase 1 (frontend restyle) built on `jack/feature/identity-phase-1`; phase 2 comes with F1.9–F1.12. See [Phases](#phases).
 
 ## Goal
 
@@ -19,8 +19,8 @@ Use YayUiKits (see `.claude/docs/context-ui-components.md`). Design first, then 
 
 Ordered from strongest to weakest signal. Layout direction is also a strong signal, but it's out of scope: top-to-bottom is generic and isn't anyone's signature.
 
-1. **Node shape:** the reference product uses wide white cards. Make uses circles. n8n uses square tiles with the label below.
-2. **Color:** the reference product is grey, white and black. Make colors by app. n8n uses a per-node accent.
+1. **Node shape:** the reference product uses wide white cards. Other tools use circles, or square tiles with the label below.
+2. **Color:** the reference product is grey, white and black. Other tools color by app, or give each node an accent.
 3. **Lines and branches:** the reference product uses S-curves, and True/False tabs inside the condition card.
 4. **Copy:** "Turn on", "Review", "Select a trigger", "True/False".
 
@@ -59,9 +59,9 @@ Keep the top-to-bottom layout. Redesign the card and the lines.
 
 Borrow a pattern only if it adds value for the user, like clearer reading, faster editing or less clutter. Being different from the reference product is not a reason on its own. Candidates to evaluate:
 
-- **Zapier / n8n:** step numbers; one icon per block (Woo, email, note) instead of a generic kind icon.
-- **Make:** branch labels (Yes/No) on the lines, not inside the card.
-- **n8n:** a "+" on the line; square lines with rounded corners instead of S-curves.
+- Step numbers; one icon per block (Woo, email, note) instead of a generic kind icon.
+- Branch labels (Yes/No) on the lines, not inside the card.
+- A "+" on the line; square lines with rounded corners instead of S-curves.
 - **Per-kind accent:** a color stripe or icon tile for trigger, condition and action.
 
 - **Pros:** clearly different, and the UX stays familiar.
@@ -116,7 +116,7 @@ Full wording list: see the mock's Wording section. The main ones:
 
 Decided 2026-10-08.
 
-1. **Phase 1, after the F1 backend: frontend restyle.** It reads step icons and summaries from the new step catalog. Canvas and cards, list (Runs and Last run show "—" until runs exist, as in [ROADMAP-v1.0](ROADMAP-v1.0.md)), create dialog, Template Library, template preview, overview, dialogs, wording in TS. No backend change needed.
+1. **Phase 1, after the F1 backend: frontend restyle.** It reads step icons and summaries from the new step catalog. Canvas and cards, list (Runs and Last run show "—" until runs exist, as in [ROADMAP-v1.0](ROADMAP-v1.0.md)), create dialog, Template Library, template preview, overview, dialogs, wording in TS. No PHP logic change: PHP step wording (labels, descriptions, short card summaries) only. ✅ built on `jack/feature/identity-phase-1`.
 2. **Phase 2, with F1.9–F1.12:** step forms, condition form and Insert variable. F1 replaces today's forms with the generic `StepForm` and changes the data layer to scopes and step outputs, so doing them earlier means doing them twice.
 3. **After M2:** real data in Last run and the overview summary row.
 
@@ -133,11 +133,23 @@ All in ROADMAP-dev F1 (confirmed 2026-10-08):
 - **Read-only "From" line** uses the `notice` widget (F1.9).
 - **Runs data** for Runs, Last run and the overview summary (F1.1, F1.8, M2.4).
 
+## Phase 1 vs mock v2
+
+Deliberate differences in what was built:
+
+- **Needs setup** badge is amber (warning), not blue: blue is the selected ring (decision 2).
+- A never-activated workflow shows a **Draft** status badge in the list (the mock shows "Inactive"), so the badge matches the Draft filter.
+- Card summaries are **one short PHP line** (no step name, key values only), e.g. "Set to **Completed**".
+- Template preview "What it does": each step shows its **name, then its summary** (short summaries need the name).
+- **Deactivate** is a red outline button in the editor and on the Overview; solid red stays for Delete confirms.
+- Create dialog: its own subtitle ("Soon you can describe it…"); the describe box and example chips are **not interactive** and show "Coming soon".
+- Template card strip: a line joins two tiles **only when one step leads to the other**, so branches don't read as a chain.
+
 ## Done when
 
-- [ ] Design approved before code changes.
+- [x] Design approved before code changes (mock v2, Jack).
 - [ ] A side-by-side screenshot with the reference product is not mistaken for it by someone outside the team.
-- [ ] No user-facing string matches the reference product's wording.
+- [ ] No user-facing string matches the reference product's wording. Phase 1 screens done; the step forms, condition form and "Add a variable" change in phase 2.
 - [x] No comments in code name another product (done 2026-10-08).
-- [ ] Light and dark mode both checked. Read-only template preview (`shared/canvas/ReadOnlyCanvas.tsx`) matches the editor.
+- [x] Light and dark mode both checked. Read-only template preview (`shared/canvas/ReadOnlyCanvas.tsx`) matches the editor (phase 1 screens, full pass 2026-10-14; forms in phase 2).
 - [ ] Behavior unchanged; canvas layout unchanged. Page layouts match the approved mock.

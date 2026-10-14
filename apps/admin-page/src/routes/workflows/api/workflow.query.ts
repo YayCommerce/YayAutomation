@@ -112,7 +112,7 @@ const workflowActions = {
   discard: discardDraft,
 };
 
-/** Turn on / off, apply or discard the draft. Activate and apply reject with `ApiError.issues`. */
+/** Activate, deactivate, update (`apply`) or discard the draft. Activate and update reject with `ApiError.issues`. */
 export const useWorkflowActionMutation = (action: keyof typeof workflowActions, callbacks?: MutationCallbacks) =>
   useWorkflowMutation(({ id }: { id: string }) => workflowActions[action](id), callbacks);
 

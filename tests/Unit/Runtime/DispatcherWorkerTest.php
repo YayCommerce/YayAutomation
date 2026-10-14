@@ -336,7 +336,7 @@ final class DispatcherWorkerTest extends TestCase {
         $this->workflows->workflows[1]['status'] = 'inactive';
 
         $this->assertSame( 'cancelled', $this->worker->run( $id ) );
-        $this->assertSame( 'The workflow was turned off before this run started.', $this->runs->runs[ $id ]['error'] );
+        $this->assertSame( 'The workflow was deactivated before this run started.', $this->runs->runs[ $id ]['error'] );
 
         $id = $this->queued_run( [] );
         unset( $this->workflows->workflows[1] );

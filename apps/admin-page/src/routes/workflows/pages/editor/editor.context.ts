@@ -8,7 +8,7 @@ export interface EditorState {
   openNodeId: string | null;
   /** Opens a step's panel; `picking` shows the step picker even when a step is chosen (swap). */
   openPanel: (nodeId: string, picking?: boolean) => void;
-  /** Steps showing an issue: blue "Review" (left unfinished) or red "Error" (after a failed Turn on / Apply). */
+  /** Steps showing an issue: amber "Needs setup" (left unfinished) or red "Error" (after a failed Activate / Update). */
   issueModes: ReadonlyMap<string, IssueMode>;
   /** Asks to delete these steps (one confirm); anything below them stays on the canvas, unlinked. */
   requestDelete: (nodeIds: string[]) => void;

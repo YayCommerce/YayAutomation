@@ -8,13 +8,11 @@ import { BulkActionBox } from '@/components/ui/bulk-actions';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { toast } from '@/components/ui/sonner';
-import { ApiError, getWorkflow } from '../../api/workflow.api';
+import { ApiError, errorMessage, getWorkflow } from '../../api/workflow.api';
 import { useDeleteWorkflowMutation, useWorkflowActionMutation, workflowKeys } from '../../api/workflow.query';
-import { ConfirmDialog, DeleteBlockedContent, TurnOffDialog } from '../../shared/actions/WorkflowActions';
+import { ConfirmDialog, DeactivateDialog, DeleteBlockedContent } from '../../shared/actions/WorkflowActions';
 
-type Dialog = 'turnOff' | 'delete' | 'deleteBlocked';
-
-const errorMessage = (reason: unknown) => (reason instanceof Error ? reason.message : String(reason));
+type Dialog = 'deactivate' | 'delete' | 'deleteBlocked';
 
 /**
  * Bulk actions bar for the workflows list (shown with 2+ selected): clear, "N selected", Delete, and
@@ -49,7 +47,7 @@ export function WorkflowBulkActions({
   };
   const refresh = () => queryClient.invalidateQueries({ queryKey: workflowKeys.all });
 
-  const turnOff = async () => {
+  const deactivateAll = async () => {
     setPending(true);
     const results = await Promise.allSettled(targets.map((workflow) => deactivate.mutateAsync({ id: workflow.id })));
     const failed = targets.filter((_, i) => results[i].status === 'rejected');
@@ -145,7 +143,7 @@ export function WorkflowBulkActions({
         </span>
         <Separator orientation="vertical" className="ml-2 h-5!" />
         {active.length > 0 && (
-          <Button variant="ghost" size="sm" onClick={() => open('turnOff', active)}>
+          <Button variant="ghost" size="sm" onClick={() => open('deactivate', active)}>
             {__('Deactivate', 'yay-automation')}
           </Button>
         )}
@@ -160,10 +158,10 @@ export function WorkflowBulkActions({
         </Button>
       </BulkActionBox>
 
-      <TurnOffDialog
-        open={dialog === 'turnOff'}
+      <DeactivateDialog
+        open={dialog === 'deactivate'}
         onOpenChange={(isOpen) => !isOpen && setDialog(null)}
-        onConfirm={() => void turnOff()}
+        onConfirm={() => void deactivateAll()}
         pending={pending}
         count={targets.length}
       />

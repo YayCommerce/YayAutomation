@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useStore } from '@tanstack/react-form';
 import { useQueryClient } from '@tanstack/react-query';
-import type { Workflow } from '@yay-automation/types';
+import type { Workflow, WorkflowIssue } from '@yay-automation/types';
 import { AnimatePresence } from 'motion/react';
 import { useLocation, useNavigate } from 'react-router';
 import { __ } from '@wordpress/i18n';
@@ -21,18 +21,19 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/sonner';
-import { ApiError } from '../../api/workflow.api';
+import { ApiError, errorMessage } from '../../api/workflow.api';
 import { useWorkflowActionMutation, workflowKeys } from '../../api/workflow.query';
 import { removeNode } from '../../model/graph';
 import { createIssuesSelector, sameIssues } from '../../model/validation';
+import { useActivateWorkflow } from '../../shared/actions/useActivateWorkflow';
 import {
-  ApplyChangesDialog,
+  ActivateDialog,
+  DeactivateDialog,
   DeleteStepDialog,
   DiscardChangesDialog,
   MoreActionsMenu,
   RenameWorkflowDialog,
-  TurnOffDialog,
-  TurnOnDialog,
+  UpdateDialog,
 } from '../../shared/actions/WorkflowActions';
 import { EditorLayout } from '../../shared/layout/EditorLayout';
 import { type EditorNavState } from '../../shared/nav/editor.nav';
@@ -47,7 +48,7 @@ import { useStepPanel } from './useStepPanel';
 import { useWorkflowForm, WorkflowFormContext } from './useWorkflowForm';
 import { WorkflowCanvas } from './WorkflowCanvas';
 
-type ConfirmAction = 'turnOn' | 'turnOff' | 'apply' | 'discard';
+type ConfirmAction = 'activate' | 'deactivate' | 'update' | 'discard';
 
 /**
  * Edits one saved workflow; changes autosave. Mount with `key={workflow.id}` so switching starts fresh.
@@ -111,50 +112,62 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
 
   const [confirm, setConfirm] = useState<ConfirmAction | null>(null);
   const [busy, setBusy] = useState(false);
-  const activate = useWorkflowActionMutation('activate');
-  const deactivate = useWorkflowActionMutation('deactivate');
+  const { activate, deactivate } = useActivateWorkflow(workflow);
   const apply = useWorkflowActionMutation('apply');
   const discard = useWorkflowActionMutation('discard');
 
-  /** Saves pending edits, then runs `action`. Activate / Update failing on issues → error mode. */
-  const run = async (action: () => Promise<Workflow>, success: string) => {
+  /** Saves pending edits first; false (and a toast) when that fails. */
+  const saveFirst = async () => {
+    const saved = await autosave.flush();
+    if (!saved) toast.error(__('Couldn’t save your latest changes. Try again.', 'yay-automation'));
+    return saved;
+  };
+
+  /** A refusal for issues → error mode. The banner lists what the editor sees; anything else the server found goes in a toast. */
+  const showRefusal = (refused: WorkflowIssue[], error: ApiError) => {
+    setErrorMode(true);
+    const seen = new Set(issues.map((issue) => `${issue.code}|${issue.nodeId ?? ''}`));
+    const unseen = refused.filter((issue) => !seen.has(`${issue.code}|${issue.nodeId ?? ''}`));
+    if (unseen.length) {
+      toast.error(error.message, { description: unseen.map((issue) => issue.message).join(' ') });
+    }
+  };
+
+  /** Runs one header action with the buttons disabled, then closes its confirm. */
+  const busyWhile = async (action: () => Promise<void>) => {
     setBusy(true);
     try {
-      if (!(await autosave.flush())) {
-        toast.error(__('Couldn’t save your latest changes. Try again.', 'yay-automation'));
-        return;
-      }
       await action();
-      setErrorMode(false);
-      toast.success(success);
-    } catch (error) {
-      if (error instanceof ApiError && error.code === 'yay_automation_no_draft') {
-        // The edits ended up matching the live workflow, so the server dropped the draft. Refetch so
-        // the header stops offering Update.
-        toast.info(__('There were no changes to update.', 'yay-automation'));
-        void queryClient.invalidateQueries({ queryKey: workflowKeys.detail(workflow.id) });
-      } else if (error instanceof ApiError && error.issues.length) {
-        setErrorMode(true);
-        // The banner lists what the editor sees. If the server found anything else, say so here.
-        const seen = new Set(issues.map((issue) => `${issue.code}|${issue.nodeId ?? ''}`));
-        const unseen = error.issues.filter((issue) => !seen.has(`${issue.code}|${issue.nodeId ?? ''}`));
-        if (unseen.length) {
-          toast.error(error.message, { description: unseen.map((issue) => issue.message).join(' ') });
-        }
-      } else {
-        toast.error(error instanceof Error ? error.message : String(error));
-      }
     } finally {
       setBusy(false);
       setConfirm(null);
     }
   };
 
-  const turnOn = () => run(() => activate.mutateAsync({ id: workflow.id }), __('Workflow activated', 'yay-automation'));
-  const applyChanges = () =>
-    run(() => apply.mutateAsync({ id: workflow.id }), __('Workflow updated', 'yay-automation'));
-  const turnOff = () =>
-    run(() => deactivate.mutateAsync({ id: workflow.id }), __('Workflow deactivated', 'yay-automation'));
+  const runActivate = () =>
+    busyWhile(() => activate({ before: saveFirst, onSuccess: () => setErrorMode(false), onIssues: showRefusal }));
+  const runDeactivate = () => busyWhile(() => deactivate({ before: saveFirst, onSuccess: () => setErrorMode(false) }));
+
+  const runUpdate = () =>
+    busyWhile(async () => {
+      if (!(await saveFirst())) return;
+      try {
+        await apply.mutateAsync({ id: workflow.id });
+        setErrorMode(false);
+        toast.success(__('Workflow updated', 'yay-automation'));
+      } catch (error) {
+        if (error instanceof ApiError && error.code === 'yay_automation_no_draft') {
+          // The edits ended up matching the live workflow, so the server dropped the draft. Refetch so
+          // the header stops offering Update.
+          toast.info(__('There were no changes to update.', 'yay-automation'));
+          void queryClient.invalidateQueries({ queryKey: workflowKeys.detail(workflow.id) });
+        } else if (error instanceof ApiError && error.issues.length) {
+          showRefusal(error.issues, error);
+        } else {
+          toast.error(errorMessage(error));
+        }
+      }
+    });
 
   const discardChanges = async () => {
     setBusy(true);
@@ -168,7 +181,7 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
     } catch (error) {
       // Nothing was discarded; the edits keep saving.
       autosave.resume();
-      toast.error(error instanceof Error ? error.message : String(error));
+      toast.error(errorMessage(error));
     } finally {
       setBusy(false);
       setConfirm(null);
@@ -220,17 +233,22 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
                   <Button
                     size="sm"
                     disabled={busy || blockedByIssues}
-                    onClick={() => (isActive ? setConfirm('apply') : void applyChanges())}
+                    onClick={() => (isActive ? setConfirm('update') : void runUpdate())}
                   >
                     {__('Update', 'yay-automation')}
                   </Button>
                 </>
               ) : !isActive ? (
-                <Button size="sm" disabled={busy || blockedByIssues} onClick={() => setConfirm('turnOn')}>
+                <Button size="sm" disabled={busy || blockedByIssues} onClick={() => setConfirm('activate')}>
                   {__('Activate', 'yay-automation')}
                 </Button>
               ) : (
-                <Button variant="destructive-outline" size="sm" disabled={busy} onClick={() => setConfirm('turnOff')}>
+                <Button
+                  variant="destructive-outline"
+                  size="sm"
+                  disabled={busy}
+                  onClick={() => setConfirm('deactivate')}
+                >
                   {__('Deactivate', 'yay-automation')}
                 </Button>
               )}
@@ -279,17 +297,17 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
           </div>
         </EditorLayout>
 
-        <TurnOnDialog
-          open={confirm === 'turnOn'}
+        <ActivateDialog
+          open={confirm === 'activate'}
           onOpenChange={(open) => !open && setConfirm(null)}
-          onConfirm={turnOn}
+          onConfirm={runActivate}
           pending={busy}
-          hasDraft={hasDraft}
+          name={workflow.name}
         />
-        <ApplyChangesDialog
-          open={confirm === 'apply'}
+        <UpdateDialog
+          open={confirm === 'update'}
           onOpenChange={(open) => !open && setConfirm(null)}
-          onConfirm={applyChanges}
+          onConfirm={runUpdate}
           pending={busy}
         />
         <DiscardChangesDialog
@@ -304,11 +322,12 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
           onConfirm={deleteSteps}
           pending={false}
         />
-        <TurnOffDialog
-          open={confirm === 'turnOff'}
+        <DeactivateDialog
+          open={confirm === 'deactivate'}
           onOpenChange={(open) => !open && setConfirm(null)}
-          onConfirm={turnOff}
+          onConfirm={runDeactivate}
           pending={busy}
+          name={workflow.name}
         />
 
         {renaming && <RenameWorkflowDialog workflow={workflow} onClose={() => setRenaming(false)} />}

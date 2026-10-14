@@ -7,8 +7,8 @@ import { descendantsOf } from './graph';
 import { messages } from './messages';
 
 /**
- * Everything that blocks turning a workflow on or applying its draft (saves allow them). Same rules
- * and codes as PHP `Validator::errors()`, which rejects activate / apply with a 400.
+ * Everything that blocks Activate or Update (saves allow them). Same rules and codes as PHP
+ * `Validator::errors()`, which rejects activate / apply with a 400.
  */
 export function validateWorkflow({ name, graph }: Pick<Workflow, 'name' | 'graph'>): WorkflowIssue[] {
   const issues: WorkflowIssue[] = [];
@@ -49,13 +49,24 @@ export function validateWorkflow({ name, graph }: Pick<Workflow, 'name' | 'graph
 }
 
 /**
- * Issues that stop an inactive workflow from being activated: those of the content Activate would
- * make live, its draft when it has one (the server checks the same). None for an active workflow.
+ * Issues that stop an inactive workflow from being activated. Like the server: its saved content,
+ * then its draft if it has one (each issue once). None for an active workflow.
  */
-export const activateIssues = (workflow: Pick<Workflow, 'name' | 'status' | 'draft' | 'graph'>) =>
-  workflow.status === 'active'
-    ? []
-    : validateWorkflow({ name: workflow.name, graph: workflow.draft ?? workflow.graph });
+export function activateIssues(workflow: Pick<Workflow, 'name' | 'status' | 'draft' | 'graph'>): WorkflowIssue[] {
+  if (workflow.status === 'active') return [];
+  const graphs = workflow.draft ? [workflow.graph, workflow.draft] : [workflow.graph];
+  const all = graphs.flatMap((graph) => validateWorkflow({ name: workflow.name, graph }));
+  const key = (issue: WorkflowIssue) => `${issue.code}|${issue.nodeId ?? ''}|${issue.message}`;
+  return all.filter((issue, i) => all.findIndex((other) => key(other) === key(issue)) === i);
+}
+
+/** Activate is offered only when the server would accept it. */
+export const canActivate = (workflow: Pick<Workflow, 'name' | 'status' | 'draft' | 'graph'>) =>
+  workflow.status !== 'active' && activateIssues(workflow).length === 0;
+
+/** Steps with an issue of their own (`nodeId`), each counted once. Unconnected steps aren't counted: their issue says so. */
+export const stepsNeedingSetup = (issues: WorkflowIssue[]) =>
+  new Set(issues.flatMap((issue) => (issue.nodeId ? [issue.nodeId] : []))).size;
 
 /**
  * Data items each step can read: what the trigger supplies, what the actions above it add (e.g. a

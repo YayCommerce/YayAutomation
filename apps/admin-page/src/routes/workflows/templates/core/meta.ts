@@ -17,7 +17,7 @@ const strings = (value: unknown): string[] =>
 
 /**
  * A step or variable of the graph has no PHP side yet (see `steps/core/pending.ts`): the server
- * would reject the draft, so Install stays locked. Checks every config string, as a field key
+ * would reject the draft, so Use template stays locked. Checks every config string, as a field key
  * (criteria) or as text with merge tags.
  */
 export const isComingSoon = (graph: WorkflowGraph) =>

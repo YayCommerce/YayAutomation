@@ -2,16 +2,15 @@ import { useMemo, useState, type ReactNode } from 'react';
 import type { Workflow, WorkflowIssue } from '@yay-automation/types';
 import { ChevronLeft, CircleAlert, Pencil } from 'lucide-react';
 import { Link, useNavigate, useParams } from 'react-router';
-import { __, sprintf } from '@wordpress/i18n';
+import { __, _n, sprintf } from '@wordpress/i18n';
 
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { toast } from '@/components/ui/sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ApiError } from '../../api/workflow.api';
-import { useWorkflowActionMutation, useWorkflowQuery } from '../../api/workflow.query';
-import { activateIssues } from '../../model/validation';
-import { MoreActionsMenu, TurnOffDialog, TurnOnDialog } from '../../shared/actions/WorkflowActions';
+import { useWorkflowQuery } from '../../api/workflow.query';
+import { activateIssues, stepsNeedingSetup } from '../../model/validation';
+import { useActivateWorkflow } from '../../shared/actions/useActivateWorkflow';
+import { ActivateDialog, DeactivateDialog, MoreActionsMenu } from '../../shared/actions/WorkflowActions';
 import { ReadOnlyCanvas } from '../../shared/canvas/ReadOnlyCanvas';
 import { WorkflowAppIcon } from '../../shared/layout/EditorLayout';
 import type { EditorNavState } from '../../shared/nav/editor.nav';
@@ -52,53 +51,21 @@ const underlineTabClass =
 // (basis 0%): with no fixed card height that basis collapses the panel to 0px.
 const canvasPanelClass = 'h-[clamp(280px,38vh,420px)] flex-none overflow-hidden rounded-md';
 
-/** Read-only summary of a saved workflow: the live version, plus unapplied changes when there are any. */
+/** Read-only summary of a saved workflow: the live version, plus draft changes when there are any. */
 function WorkflowOverview({ workflow }: { workflow: Workflow }) {
   const navigate = useNavigate();
   const editPath = `/workflows/${workflow.id}/edit`;
   const state = workflowState(workflow);
   const isActive = state === 'active';
 
-  const [turnOnOpen, setTurnOnOpen] = useState(false);
-  // What a Turn on that failed on issues reported; shows the error container until Turn on succeeds.
-  // Each message is listed: the server may find issues the editor doesn't check (e.g. a malformed tag).
-  const [turnOnIssues, setTurnOnIssues] = useState<WorkflowIssue[]>([]);
-  const activateMutation = useWorkflowActionMutation('activate');
-  const deactivateMutation = useWorkflowActionMutation('deactivate');
-
-  const turnOn = () =>
-    activateMutation.mutate(
-      { id: workflow.id },
-      {
-        onSuccess: () => {
-          setTurnOnOpen(false);
-          setTurnOnIssues([]);
-          toast.success(__('Workflow activated', 'yay-automation'));
-        },
-        onError: (error) => {
-          setTurnOnOpen(false);
-          // Issues are explained by the error container, which leads to the editor; anything else is a toast.
-          if (error instanceof ApiError && error.issues.length) setTurnOnIssues(error.issues);
-          else toast.error(error.message);
-        },
-      },
-    );
-
-  const [turnOffOpen, setTurnOffOpen] = useState(false);
-  const turnOff = () =>
-    deactivateMutation.mutate(
-      { id: workflow.id },
-      {
-        onSuccess: () => {
-          setTurnOffOpen(false);
-          toast.success(__('Workflow deactivated', 'yay-automation'));
-        },
-        onError: (error) => {
-          setTurnOffOpen(false);
-          toast.error(error.message);
-        },
-      },
-    );
+  const { activate, deactivate, pending } = useActivateWorkflow(workflow);
+  const [activateOpen, setActivateOpen] = useState(false);
+  const [deactivateOpen, setDeactivateOpen] = useState(false);
+  const issues = useMemo(() => activateIssues(workflow), [workflow]);
+  // What a refused Activate reported: the server may find issues this page doesn't check (e.g. a
+  // malformed tag). Kept for this copy of the workflow only: a refetch shows its own issues again.
+  const [refused, setRefused] = useState<{ workflow: Workflow; issues: WorkflowIssue[] } | null>(null);
+  const setupIssues = refused?.workflow === workflow ? refused.issues : issues;
 
   // The workflow as it runs (or as saved), then draft changes when there are any.
   const tabs: { value: string; label: string; graph: Workflow['graph'] }[] = [
@@ -107,9 +74,6 @@ function WorkflowOverview({ workflow }: { workflow: Workflow }) {
       ? [{ value: 'draft', label: __('Draft changes', 'yay-automation'), graph: workflow.draft }]
       : []),
   ];
-  // A draft with issues can't be activated, so the button isn't offered. Without a draft, Turn on
-  // stays: a refusal opens the error container that explains the issues.
-  const draftBlocksTurnOn = useMemo(() => !!workflow.draft && activateIssues(workflow).length > 0, [workflow]);
   const [tab, setTab] = useState(tabs[0].value);
   const [historyPage, setHistoryPage] = useState(1);
   // A tab can disappear (draft applied or discarded elsewhere); fall back to the first.
@@ -133,12 +97,13 @@ function WorkflowOverview({ workflow }: { workflow: Workflow }) {
           </Button>
           <MoreActionsMenu workflow={workflow} />
           {isActive ? (
-            <Button variant="destructive-outline" size="sm" onClick={() => setTurnOffOpen(true)}>
+            <Button variant="destructive-outline" size="sm" onClick={() => setDeactivateOpen(true)}>
               {__('Deactivate', 'yay-automation')}
             </Button>
           ) : (
-            !draftBlocksTurnOn && (
-              <Button size="sm" onClick={() => setTurnOnOpen(true)}>
+            // Not offered while it has issues; the notice below says what to fix.
+            issues.length === 0 && (
+              <Button size="sm" onClick={() => setActivateOpen(true)}>
                 {__('Activate', 'yay-automation')}
               </Button>
             )
@@ -148,26 +113,11 @@ function WorkflowOverview({ workflow }: { workflow: Workflow }) {
     >
       <div className="flex flex-col gap-3.5 p-4">
         <SummaryRow workflow={workflow} />
-        {turnOnIssues.length > 0 && !isActive && (
-          <ErrorAlert className="flex items-center gap-3 [&>svg]:translate-y-0">
-            <CircleAlert />
-            <div className="min-w-0 flex-1">
-              <span className="font-medium">{__('Workflow contains errors', 'yay-automation')}</span>{' '}
-              {__('Before you can turn on this workflow, you need to make some corrections.', 'yay-automation')}
-              <ul className="mt-1 list-disc ps-4">
-                {[...new Set(turnOnIssues.map((issue) => issue.message))].map((message) => (
-                  <li key={message}>{message}</li>
-                ))}
-              </ul>
-            </div>
-            <Button
-              variant="destructive-soft"
-              size="sm"
-              onClick={() => navigate(editPath, { state: { showIssues: true } satisfies EditorNavState })}
-            >
-              {__('Edit workflow', 'yay-automation')}
-            </Button>
-          </ErrorAlert>
+        {!isActive && setupIssues.length > 0 && (
+          <SetupNotice
+            issues={setupIssues}
+            onFix={() => navigate(editPath, { state: { showIssues: true } satisfies EditorNavState })}
+          />
         )}
         <Tabs value={currentTab} onValueChange={setTab} className="bg-card gap-3 rounded-lg border p-3 shadow-xs">
           <TabsList className="h-auto w-full justify-start gap-5 rounded-none border-b bg-transparent p-0 px-1">
@@ -203,20 +153,66 @@ function WorkflowOverview({ workflow }: { workflow: Workflow }) {
         <WorkflowRuns runs={[]} />
       </div>
 
-      <TurnOnDialog
-        open={turnOnOpen}
-        onOpenChange={setTurnOnOpen}
-        onConfirm={turnOn}
-        pending={activateMutation.isPending}
+      <ActivateDialog
+        open={activateOpen}
+        onOpenChange={setActivateOpen}
+        onConfirm={() =>
+          void activate({
+            onSuccess: () => setRefused(null),
+            onIssues: (refusedIssues) => setRefused({ workflow, issues: refusedIssues }),
+          }).finally(() => setActivateOpen(false))
+        }
+        pending={pending}
+        name={workflow.name}
         hasDraft={!!workflow.draft}
       />
-      <TurnOffDialog
-        open={turnOffOpen}
-        onOpenChange={setTurnOffOpen}
-        onConfirm={turnOff}
-        pending={deactivateMutation.isPending}
+      <DeactivateDialog
+        open={deactivateOpen}
+        onOpenChange={setDeactivateOpen}
+        onConfirm={() => void deactivate().finally(() => setDeactivateOpen(false))}
+        pending={pending}
+        name={workflow.name}
       />
     </OverviewLayout>
+  );
+}
+
+/**
+ * Why the workflow can't be activated: "2 steps need setup before this workflow can run.", then
+ * each issue in its own words (the server may report ones the editor doesn't show). "Fix in
+ * editor" opens the editor showing them.
+ */
+function SetupNotice({ issues, onFix }: { issues: WorkflowIssue[]; onFix: () => void }) {
+  const steps = stepsNeedingSetup(issues);
+  const messages = [...new Set(issues.map((issue) => issue.message))];
+  return (
+    <ErrorAlert className="flex items-center gap-3 [&>svg]:translate-y-0">
+      <CircleAlert />
+      <div className="min-w-0 flex-1">
+        {steps > 0 && (
+          <span className="font-medium">
+            {sprintf(
+              /* translators: %d: number of steps */
+              _n(
+                '%d step needs setup before this workflow can run.',
+                '%d steps need setup before this workflow can run.',
+                steps,
+                'yay-automation',
+              ),
+              steps,
+            )}
+          </span>
+        )}
+        <ul className="mt-0.5 list-disc ps-4">
+          {messages.map((message) => (
+            <li key={message}>{message}</li>
+          ))}
+        </ul>
+      </div>
+      <Button variant="destructive-soft" size="sm" onClick={onFix}>
+        {__('Fix in editor', 'yay-automation')}
+      </Button>
+    </ErrorAlert>
   );
 }
 

@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 
 export type WorkflowState = 'active' | 'inactive' | 'draft';
 
-/** Active; Inactive = turned on before, now off; Draft = never turned on. */
+/** Active; Inactive = activated before, now off; Draft = never activated. */
 export function workflowState(workflow: Pick<Workflow, 'status' | 'everActivated'>): WorkflowState {
   if (workflow.status === 'active') return 'active';
   return workflow.everActivated ? 'inactive' : 'draft';

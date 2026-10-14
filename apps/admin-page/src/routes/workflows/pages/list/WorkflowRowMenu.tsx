@@ -11,17 +11,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { toast } from '@/components/ui/sonner';
-import { ApiError } from '../../api/workflow.api';
-import { useWorkflowActionMutation } from '../../api/workflow.query';
-import { activateIssues } from '../../model/validation';
+import { canActivate } from '../../model/validation';
+import { useActivateWorkflow } from '../../shared/actions/useActivateWorkflow';
 import {
+  ActivateDialog,
+  DeactivateDialog,
   DeleteWorkflowDialog,
   RenameWorkflowDialog,
-  TurnOffDialog,
-  TurnOnDialog,
 } from '../../shared/actions/WorkflowActions';
-import type { EditorNavState } from '../../shared/nav/editor.nav';
 
 export type RowAction = 'rename' | 'activate' | 'deactivate' | 'delete';
 
@@ -71,7 +68,7 @@ export function WorkflowRowMenu({ workflow, onAction }: { workflow: Workflow; on
           </DropdownMenuItem>
         ) : (
           // Not offered while what Activate would make live has issues: the server would refuse.
-          activateIssues(workflow).length === 0 && (
+          canActivate(workflow) && (
             <DropdownMenuItem onSelect={() => onAction('activate')}>
               <Power />
               {__('Activate', 'yay-automation')}
@@ -89,8 +86,8 @@ export function WorkflowRowMenu({ workflow, onAction }: { workflow: Workflow; on
 }
 
 /**
- * The dialogs behind the row menus, mounted once by the table. An Activate refused for issues
- * offers the editor, which opens showing them.
+ * The dialogs behind the row menus, mounted once by the table. Activate and Deactivate go through
+ * `useActivateWorkflow`, like the Overview and editor.
  */
 export function WorkflowRowDialogs({
   target,
@@ -101,61 +98,49 @@ export function WorkflowRowDialogs({
   open: boolean;
   onClose: () => void;
 }) {
-  const navigate = useNavigate();
-  const activate = useWorkflowActionMutation('activate');
-  const deactivate = useWorkflowActionMutation('deactivate');
-  const workflow = target?.workflow;
-  const action = open ? target?.action : undefined;
+  if (!target) return null;
+  return (
+    <RowDialogs
+      key={target.workflow.id}
+      workflow={target.workflow}
+      action={open ? target.action : undefined}
+      onClose={onClose}
+    />
+  );
+}
 
-  const runActivate = (id: string) =>
-    activate.mutate(
-      { id },
-      {
-        onSuccess: () => toast.success(__('Workflow activated', 'yay-automation')),
-        onError: (error) =>
-          error instanceof ApiError && error.issues.length
-            ? toast.error(error.message, {
-                action: {
-                  label: __('Fix in editor', 'yay-automation'),
-                  onClick: () =>
-                    navigate(`/workflows/${id}/edit`, { state: { showIssues: true } satisfies EditorNavState }),
-                },
-              })
-            : toast.error(error.message),
-        onSettled: onClose,
-      },
-    );
-
-  const runDeactivate = (id: string) =>
-    deactivate.mutate(
-      { id },
-      {
-        onSuccess: () => toast.success(__('Workflow deactivated', 'yay-automation')),
-        onError: (error) => toast.error(error.message),
-        onSettled: onClose,
-      },
-    );
-
+function RowDialogs({
+  workflow,
+  action,
+  onClose,
+}: {
+  workflow: Workflow;
+  action: RowAction | undefined;
+  onClose: () => void;
+}) {
+  const { activate, deactivate, pending } = useActivateWorkflow(workflow);
   const closeOnDismiss = (open: boolean) => !open && onClose();
 
   return (
     <>
       {/* Mounted per opening, so it starts from the current name. */}
-      {action === 'rename' && workflow && <RenameWorkflowDialog workflow={workflow} onClose={onClose} />}
-      <TurnOnDialog
+      {action === 'rename' && <RenameWorkflowDialog workflow={workflow} onClose={onClose} />}
+      <ActivateDialog
         open={action === 'activate'}
         onOpenChange={closeOnDismiss}
-        onConfirm={() => workflow && runActivate(workflow.id)}
-        pending={activate.isPending}
-        hasDraft={!!workflow?.draft}
+        onConfirm={() => void activate().finally(onClose)}
+        pending={pending}
+        name={workflow.name}
+        hasDraft={!!workflow.draft}
       />
-      <TurnOffDialog
+      <DeactivateDialog
         open={action === 'deactivate'}
         onOpenChange={closeOnDismiss}
-        onConfirm={() => workflow && runDeactivate(workflow.id)}
-        pending={deactivate.isPending}
+        onConfirm={() => void deactivate().finally(onClose)}
+        pending={pending}
+        name={workflow.name}
       />
-      <DeleteWorkflowDialog workflow={action === 'delete' ? (workflow ?? null) : null} onClose={onClose} />
+      <DeleteWorkflowDialog workflow={action === 'delete' ? workflow : null} onClose={onClose} />
     </>
   );
 }

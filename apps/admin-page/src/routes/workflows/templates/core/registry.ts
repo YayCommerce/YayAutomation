@@ -6,7 +6,7 @@ import { validateWorkflow } from '../../model/validation';
 /**
  * Lists templates and finds one by id. Throws on a duplicate id so a copy-pasted template folder fails
  * fast. In development it also throws when a template's graph would be rejected by the server's
- * shape checks or has issues: Install has to give a workflow that saves and can be turned on as is.
+ * shape checks or has issues: Use template has to give a workflow that saves and can be activated as is.
  */
 export function createTemplateRegistry(list: WorkflowTemplate[]) {
   const byId = new Map<string, WorkflowTemplate>();
@@ -17,7 +17,7 @@ export function createTemplateRegistry(list: WorkflowTemplate[]) {
 
   if (import.meta.env.DEV) {
     for (const template of list) {
-      // Shape first (what Install's save would reject), then issues (what Turn on would reject);
+      // Shape first (what Use template's save would reject), then issues (what Activate would reject);
       // the issue check assumes every step exists.
       const broken = structureErrors(template.graph);
       const problems = broken.length

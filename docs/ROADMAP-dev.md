@@ -16,7 +16,7 @@ Changes from the ROADMAP-v1.0 order:
 - **F0 and F1 come first.** M1 needs step outputs, templates and the new step contract. M2 needs stored runs. Building M1/M2 on the v0.1 runner means building them twice.
 - **F2 comes after M2.** The CPT → table migration must ship before v1.0, while there's no merchant data yet.
 - **M6 stays after M8.** The inactive-customer trigger reuses M8's scheduled scan.
-- **Identity inside F1** *([plan-identity](plan-identity.md))*: F1 backend first, so the restyle reads step icons and summaries from the new catalog; then the restyle; then the forms, built once in the new style. Nothing is built twice.
+- **Identity inside F1** *([plan-identity](plan-identity.md))*: F1 backend first, so the restyle reads step icons and summaries from the new catalog; then the restyle (phase 1, built on `jack/feature/identity-phase-1`: screens, cards and wording; PHP step wording only); then the forms (phase 2, with F1.9–F1.12), built once in the new style. Nothing is built twice.
 
 | # | Phase | Size | Risk | Depends on | Status |
 |---|---|---|---|---|---|
