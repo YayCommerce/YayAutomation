@@ -1,6 +1,6 @@
 # Plan: Editor Identity
 
-Status: design approved (mock v2). Phase 1 (frontend restyle) built on `jack/feature/identity-phase-1`; phase 2 comes with F1.9–F1.12. See [Phases](#phases).
+Status: design approved (mock v2). Phase 1 (frontend restyle) merged. Phase 2 (forms, with F1.9–F1.12) done on `jack/feature/step-forms`, merge pending. See [Phases](#phases).
 
 ## Goal
 
@@ -117,7 +117,7 @@ Full wording list: see the mock's Wording section. The main ones:
 Decided 2026-10-08.
 
 1. **Phase 1, after the F1 backend: frontend restyle.** It reads step icons and summaries from the new step catalog. Canvas and cards, list (Runs and Last run show "—" until runs exist, as in [ROADMAP-v1.0](ROADMAP-v1.0.md)), create dialog, Template Library, template preview, overview, dialogs, wording in TS. No PHP logic change: PHP step wording (labels, descriptions, short card summaries) only. ✅ built on `jack/feature/identity-phase-1`.
-2. **Phase 2, with F1.9–F1.12:** step forms, condition form and Insert variable. F1 replaces today's forms with the generic `StepForm` and changes the data layer to scopes and step outputs, so doing them earlier means doing them twice.
+2. **Phase 2, with F1.9–F1.12:** step forms, condition form and Insert variable. F1 replaces today's forms with the generic `StepForm` and changes the data layer to scopes and step outputs, so doing them earlier means doing them twice. ⏳ built on `jack/feature/step-forms`: forms per mock "Step form", condition written as a sentence ("Take the Yes path when all / any of these match", "Add rule", "Otherwise the No path runs"), "Insert variable", "Change action" in the panel header.
 3. **After M2:** real data in Last run and the overview summary row.
 
 ### Backend notes for F1
@@ -145,11 +145,19 @@ Deliberate differences in what was built:
 - Create dialog: its own subtitle ("Soon you can describe it…"); the describe box and example chips are **not interactive** and show "Coming soon".
 - Template card strip: a line joins two tiles **only when one step leads to the other**, so branches don't read as a chain.
 
+## Phase 2 vs mock v2
+
+Deliberate differences in what was built:
+
+- **No "Change" link** on the From line: the store sender is set in WooCommerce.
+- **Comparisons read as a sentence** in the condition's rules ("is greater than"), the same words as the card summary.
+- The condition's **data select** lists data fields only, not step outputs.
+
 ## Done when
 
 - [x] Design approved before code changes (mock v2, Jack).
 - [ ] A side-by-side screenshot with the reference product is not mistaken for it by someone outside the team.
-- [ ] No user-facing string matches the reference product's wording. Phase 1 screens done; the step forms, condition form and "Add a variable" change in phase 2.
+- [x] No user-facing string matches the reference product's wording. Phase 1 screens, then phase 2: step forms, condition form, Insert variable.
 - [x] No comments in code name another product (done 2026-10-08).
-- [x] Light and dark mode both checked. Read-only template preview (`shared/canvas/ReadOnlyCanvas.tsx`) matches the editor (phase 1 screens, full pass 2026-10-14; forms in phase 2).
+- [x] Light and dark mode both checked. Read-only template preview (`shared/canvas/ReadOnlyCanvas.tsx`) matches the editor (phase 1 screens, full pass 2026-10-14; phase 2 forms checked in light and dark).
 - [ ] Behavior unchanged; canvas layout unchanged. Page layouts match the approved mock.

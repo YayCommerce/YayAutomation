@@ -310,7 +310,7 @@ final class ValidatorTest extends TestCase {
                 ],
             ]
         );
-        $this->assertSame( self::expect( 'invalid_config', 'Choose a variable for each rule.', 'rules' ), $issue );
+        $this->assertSame( self::expect( 'invalid_config', 'Choose data for each rule.', 'rules' ), $issue );
     }
 
     public function test_issues_cover_live_and_draft(): void {

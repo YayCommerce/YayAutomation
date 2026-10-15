@@ -2,8 +2,15 @@ import type { WorkflowGraph } from '@yay-automation/types';
 import { describe, expect, it } from 'vitest';
 
 import highValueOrderAlert from '../templates/high-value-order-alert';
-import { addNode, removeNode } from './graph';
-import { activateIssues, availableData, canActivate, stepsNeedingSetup, validateWorkflow } from './validation';
+import { addNode, removeNode, setNodeStep } from './graph';
+import {
+  activateIssues,
+  availableData,
+  canActivate,
+  newStepIssues,
+  stepsNeedingSetup,
+  validateWorkflow,
+} from './validation';
 
 const base = (): WorkflowGraph => structuredClone(highValueOrderAlert.graph);
 /** Steps and edges by id, so editing the template doesn't change what a test covers. */
@@ -148,5 +155,33 @@ describe('stepsNeedingSetup', () => {
         { code: 'no_action', message: '' },
       ]),
     ).toBe(1);
+  });
+});
+
+describe('newStepIssues', () => {
+  // A note step above the email, whose message uses the note's output.
+  const withNote = () => {
+    const graph = addNode(base(), 'condition', 'action', 'then', 'note');
+    node(graph, 'note').data = { block: 'add_order_note', config: { type: 'private', note: 'Big order' } };
+    const email = graph.edges.find((edge) => edge.target === 'email')!;
+    email.source = 'note';
+    email.sourceHandle = undefined;
+    node(graph, 'email').data.config = { ...node(graph, 'email').data.config, message: '{{ steps.note.type }}' };
+    return graph;
+  };
+
+  it('lists the steps a swap breaks, not the swapped step', () => {
+    const before = withNote();
+    expect(validateWorkflow({ name: 'Alert', graph: before })).toEqual([]);
+    const after = setNodeStep(before, 'note', 'change_order_status');
+    expect(newStepIssues([], { name: 'Alert', graph: after }, 'note')).toEqual(['email']);
+  });
+
+  it('skips issues a step already had', () => {
+    const before = withNote();
+    node(before, 'email').data.config = { ...node(before, 'email').data.config, message: '{{ steps.note.nope }}' };
+    const had = validateWorkflow({ name: 'Alert', graph: before });
+    const after = setNodeStep(before, 'note', 'change_order_status');
+    expect(newStepIssues(had, { name: 'Alert', graph: after }, 'note')).toEqual([]);
   });
 });

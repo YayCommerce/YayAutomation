@@ -50,6 +50,22 @@ export function validateWorkflow({ name, graph }: Pick<Workflow, 'name' | 'graph
 }
 
 /**
+ * Steps (other than `changed`) with an issue after an edit that wasn't in `before` (the issues
+ * before it): e.g. the steps that used the outputs of a step whose step was swapped.
+ */
+export function newStepIssues(
+  before: WorkflowIssue[],
+  after: Pick<Workflow, 'name' | 'graph'>,
+  changed: string,
+): string[] {
+  const key = (issue: WorkflowIssue) => `${issue.code}|${issue.nodeId ?? ''}|${issue.message}`;
+  const had = new Set(before.map(key));
+  return validateWorkflow(after).flatMap((issue) =>
+    issue.nodeId && issue.nodeId !== changed && !had.has(key(issue)) ? [issue.nodeId] : [],
+  );
+}
+
+/**
  * Issues that stop an inactive workflow from being activated, as the server found them: its saved
  * content, then its draft if it has one (each issue once). None for an active workflow.
  */

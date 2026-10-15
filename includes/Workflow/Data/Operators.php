@@ -4,7 +4,7 @@ namespace YayAutomation\Workflow\Data;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Comparison operators per field type. Ids are shared with the TS rule builder, which only adds labels.
+ * Comparison operators per field type, with their labels. The admin app reads both from the catalog.
  * Text comparisons ignore case.
  */
 final class Operators {
@@ -16,6 +16,34 @@ final class Operators {
         DataItem::TYPE_DATE    => [ 'before', 'after' ],
         DataItem::TYPE_BOOLEAN => [ 'is_true', 'is_false' ],
     ];
+
+    /**
+     * How each operator reads in a condition's rules and card summary ("Order total is greater than 500").
+     *
+     * @return array<string, string> Label by operator id, one per operator in `BY_TYPE`.
+     */
+    public static function labels(): array {
+        return [
+            'equal'            => __( 'is equal to', 'yay-automation' ),
+            'not_equal'        => __( 'is not equal to', 'yay-automation' ),
+            'greater_than'     => __( 'is greater than', 'yay-automation' ),
+            'greater_or_equal' => __( 'is greater than or equal to', 'yay-automation' ),
+            'less_than'        => __( 'is less than', 'yay-automation' ),
+            'less_or_equal'    => __( 'is less than or equal to', 'yay-automation' ),
+            'contains'         => __( 'contains', 'yay-automation' ),
+            'not_contains'     => __( 'does not contain', 'yay-automation' ),
+            'starts_with'      => __( 'starts with', 'yay-automation' ),
+            'ends_with'        => __( 'ends with', 'yay-automation' ),
+            'is_empty'         => __( 'is empty', 'yay-automation' ),
+            'is_not_empty'     => __( 'is not empty', 'yay-automation' ),
+            'is'               => __( 'is', 'yay-automation' ),
+            'is_not'           => __( 'is not', 'yay-automation' ),
+            'before'           => __( 'is before', 'yay-automation' ),
+            'after'            => __( 'is after', 'yay-automation' ),
+            'is_true'          => __( 'is true', 'yay-automation' ),
+            'is_false'         => __( 'is false', 'yay-automation' ),
+        ];
+    }
 
     /** Operators that compare against nothing. */
     private const NO_VALUE = [ 'is_empty', 'is_not_empty', 'is_true', 'is_false' ];

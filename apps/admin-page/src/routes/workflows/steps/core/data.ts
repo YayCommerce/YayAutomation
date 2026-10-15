@@ -1,4 +1,4 @@
-import { __, sprintf } from '@wordpress/i18n';
+import { sprintf } from '@wordpress/i18n';
 
 import type { DataFieldType, DataItemMeta } from '@/types/localize';
 import { messages } from '../../model/messages';
@@ -38,26 +38,8 @@ export const operatorsFor = (type: DataFieldType) => meta.operators[type];
  */
 export const needsValue = (operator: string) => !['is_empty', 'is_not_empty', 'is_true', 'is_false'].includes(operator);
 
-export const operatorLabels: Record<string, string> = {
-  equal: __('Equal to', 'yay-automation'),
-  not_equal: __('Not equal to', 'yay-automation'),
-  greater_than: __('Greater than', 'yay-automation'),
-  greater_or_equal: __('Greater than or equal to', 'yay-automation'),
-  less_than: __('Less than', 'yay-automation'),
-  less_or_equal: __('Less than or equal to', 'yay-automation'),
-  contains: __('Contains', 'yay-automation'),
-  not_contains: __('Does not contain', 'yay-automation'),
-  starts_with: __('Starts with', 'yay-automation'),
-  ends_with: __('Ends with', 'yay-automation'),
-  is_empty: __('Is empty', 'yay-automation'),
-  is_not_empty: __('Is not empty', 'yay-automation'),
-  is: __('Is', 'yay-automation'),
-  is_not: __('Is not', 'yay-automation'),
-  before: __('Before', 'yay-automation'),
-  after: __('After', 'yay-automation'),
-  is_true: __('Is true', 'yay-automation'),
-  is_false: __('Is false', 'yay-automation'),
-};
+/** How each operator reads in the condition's rules and summary ("is greater than"), from PHP `Operators::labels()`. */
+export const operatorLabels = meta.operatorLabels;
 
 /** Merge tag for a key, as inserted by "Insert variable". */
 export const variableTag = (key: string) => `{{ ${key} }}`;

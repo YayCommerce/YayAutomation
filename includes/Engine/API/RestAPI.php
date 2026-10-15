@@ -161,13 +161,15 @@ class RestAPI {
     }
 
     /**
-     * One workflow, with the issues of its live graph and draft.
+     * One workflow, with the issues of its live graph and draft. One that can't be checked still
+     * opens (no issues, error logged; `Validator::list_issues()`), so it can be fixed in the editor.
+     * Activate and apply keep the full check.
      *
      * @param \WP_REST_Request $request Request.
      */
     public function get_workflow( \WP_REST_Request $request ) {
         $workflow = WorkflowRepository::find( (int) $request['id'] );
-        return $workflow ? self::with_issues( $workflow ) : $this->not_found();
+        return $workflow ? $workflow + [ 'issues' => Validator::list_issues( $workflow ) ] : $this->not_found();
     }
 
     /**

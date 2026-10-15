@@ -139,9 +139,9 @@ final class Validator {
     }
 
     /**
-     * `issues()` for one row of the workflow list: never throws, so one workflow that can't be
-     * checked doesn't break the whole list. It gets no issues and the error is logged; Activate
-     * still runs the full check.
+     * `issues()` for reading workflows (the list, opening one): never throws, so a workflow that
+     * can't be checked doesn't break the list and can still be opened and fixed. It gets no issues
+     * and the error is logged; Activate and apply still run the full check.
      *
      * @param array $workflow Stored workflow: id, name, graph, draft.
      * @return array [ 'live' => issue[], 'draft' => issue[] ]
@@ -150,7 +150,7 @@ final class Validator {
         try {
             return self::issues( $workflow );
         } catch ( \Throwable $e ) {
-            Logger::error( 'Could not check workflow ' . ( $workflow['id'] ?? '?' ) . ' for the list: ' . $e->getMessage(), [ 'workflow_id' => $workflow['id'] ?? null ] );
+            Logger::error( 'Could not check workflow ' . ( $workflow['id'] ?? '?' ) . ': ' . $e->getMessage(), [ 'workflow_id' => $workflow['id'] ?? null ] );
             return [
                 'live'  => [],
                 'draft' => [],

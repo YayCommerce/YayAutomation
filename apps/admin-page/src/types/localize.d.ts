@@ -137,8 +137,10 @@ declare global {
         /** Steps PHP has built; the admin may list more (see `steps/core/pending.ts`). */
         steps: Partial<Record<StepId, CatalogStepMeta>>;
         data: DataItemMeta[];
-        /** Operator ids per field type. Labels live in the admin app. */
+        /** Operator ids per field type. */
         operators: Record<DataFieldType, string[]>;
+        /** PHP `Operators::labels()`: how each operator reads ("is greater than"), by id. */
+        operatorLabels: Record<string, string>;
         /** Data items every workflow has, whatever the trigger. */
         always: string[];
         /** PHP `Definition\Messages::all()`: messages both sides show, by key. Same as `model/messages.ts`. */

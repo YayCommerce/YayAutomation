@@ -1745,6 +1745,26 @@
                 "is_false"
             ]
         },
+        "operatorLabels": {
+            "equal": "is equal to",
+            "not_equal": "is not equal to",
+            "greater_than": "is greater than",
+            "greater_or_equal": "is greater than or equal to",
+            "less_than": "is less than",
+            "less_or_equal": "is less than or equal to",
+            "contains": "contains",
+            "not_contains": "does not contain",
+            "starts_with": "starts with",
+            "ends_with": "ends with",
+            "is_empty": "is empty",
+            "is_not_empty": "is not empty",
+            "is": "is",
+            "is_not": "is not",
+            "before": "is before",
+            "after": "is after",
+            "is_true": "is true",
+            "is_false": "is false"
+        },
         "always": [
             "site"
         ],
@@ -1766,9 +1786,9 @@
             "numberMin": "Enter %s or more.",
             "numberMax": "Enter %s or less.",
             "rulesRequired": "Add a rule, or remove this condition.",
-            "ruleVariable": "Choose a variable for each rule.",
+            "ruleVariable": "Choose data for each rule.",
             "ruleComparison": "Choose a comparison for each rule.",
-            "ruleCompareWith": "Choose a variable to compare with.",
+            "ruleCompareWith": "Choose data to compare with.",
             "ruleValueRequired": "Enter a value for %s.",
             "ruleBlankHint": "Or choose “%s” to check for a blank value.",
             "ruleNumber": "Enter a number.",

@@ -168,7 +168,7 @@ class Criteria extends Condition {
             $required = Messages::get( 'ruleValueRequired', $field['label'] );
             // Text can be checked for blank instead.
             return DataItem::TYPE_STRING === $field['type']
-                ? $required . ' ' . Messages::get( 'ruleBlankHint', __( 'Is empty', 'yay-automation' ) )
+                ? $required . ' ' . Messages::get( 'ruleBlankHint', Operators::labels()['is_empty'] )
                 : $required;
         }
         if ( DataItem::TYPE_NUMBER === $field['type'] && ! is_numeric( $value ) ) {

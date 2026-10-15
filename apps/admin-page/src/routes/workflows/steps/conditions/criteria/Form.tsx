@@ -1,35 +1,29 @@
 import { useState } from 'react';
-import { ChevronDown, CircleAlert, Replace, Trash2 } from 'lucide-react';
+import { Check, CircleAlert, Info, Plus, Trash2 } from 'lucide-react';
 import { __ } from '@wordpress/i18n';
 
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Field, FieldError, FieldLabel } from '@/components/ui/field';
+import { FieldError } from '@/components/ui/field';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { fieldByKey, needsValue, operatorLabels, operatorsFor } from '../../core/data';
 import { errorStyles, useShowErrors } from '../../core/fields/feedback';
 import { spotlightTarget, VariablePicker } from '../../core/fields/VariablePicker';
 import type { StepFormProps } from '../../core/types';
 import { comparableWith, criteriaErrors, emptyRule, type CriteriaConfig, type Rule } from './schema';
-import { softButton, ValueInput, VariableLabel } from './ValueInput';
+import { DataSelect, ValueInput } from './ValueInput';
 
-const joinerLabel = { all: __('AND', 'yay-automation'), any: __('OR', 'yay-automation') };
+const joinerText = { all: __('and', 'yay-automation'), any: __('or', 'yay-automation') };
 
 /**
- * "IF" + one box per criteria (variable, comparison, value). With one criteria, "Add criteria"
- * asks AND or OR; after that a select between the boxes switches the whole group. A box added that
- * way opens "Add a variable" at once and goes away if nothing is picked. The condition always keeps
- * one box: deleting the last one empties it instead.
+ * The condition as a sentence: "Take the Yes path when [all / any] of these match:", one box per rule
+ * (data, comparison, value) joined by "and" / "or", then "Otherwise the No path runs." A rule added
+ * with "Add rule" opens its data picker at once and goes away if nothing is picked. The condition
+ * always keeps one rule: deleting the last one empties it instead.
  */
 export function CriteriaForm({ config, onChange }: StepFormProps<CriteriaConfig>) {
   const [value, setValue] = useState(config);
-  // The box just added by "Add criteria", until its variable is picked.
+  // The rule just added by "Add rule", until its data is picked.
   const [pending, setPending] = useState<number | null>(null);
   const update = (next: CriteriaConfig) => {
     setValue(next);
@@ -42,9 +36,9 @@ export function CriteriaForm({ config, onChange }: StepFormProps<CriteriaConfig>
       ...value,
       rules: value.rules.length === 1 ? [emptyRule()] : value.rules.filter((_, i) => i !== index),
     });
-  const addRule = (match = value.match) => {
+  const addRule = () => {
     setPending(value.rules.length);
-    update({ match, rules: [...value.rules, emptyRule()] });
+    update({ ...value, rules: [...value.rules, emptyRule()] });
   };
 
   const showErrors = useShowErrors();
@@ -52,60 +46,76 @@ export function CriteriaForm({ config, onChange }: StepFormProps<CriteriaConfig>
   const errorFor = (index: number) => (showErrors ? errors[index] : null);
 
   return (
-    <div className="flex flex-col gap-3">
-      <span className="text-sm font-medium">{__('IF', 'yay-automation')}</span>
-
-      {value.rules.map((rule, index) => (
-        <div key={index} className="flex flex-col gap-3">
-          {index > 0 && (
-            <Select value={value.match} onValueChange={(match) => update({ ...value, match: match as 'all' | 'any' })}>
-              <SelectTrigger size="sm" className="w-fit" aria-label={__('Match', 'yay-automation')}>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{joinerLabel.all}</SelectItem>
-                <SelectItem value="any">{joinerLabel.any}</SelectItem>
-              </SelectContent>
-            </Select>
+    <div className="flex flex-col gap-3.5">
+      <div className="flex flex-wrap items-center gap-1.5 text-sm/7.5">
+        {/* translators: 1: the Yes path's tag, 2: "all" or "any" */}
+        {__('Take the %1$s path when %2$s of these match:', 'yay-automation')
+          .split(/(%\d\$s)/)
+          .map((part, i) =>
+            part === '%1$s' ? (
+              <span
+                key={i}
+                className="inline-flex h-5.5 items-center gap-1 rounded-full border pr-2 pl-1.5 text-[12.5px] font-semibold"
+              >
+                <Check className="text-kind-action size-3 stroke-[2.5]" aria-hidden />
+                {__('Yes', 'yay-automation')}
+              </span>
+            ) : part === '%2$s' ? (
+              <Select
+                key={i}
+                value={value.match}
+                onValueChange={(match) => update({ ...value, match: match as 'all' | 'any' })}
+              >
+                <SelectTrigger size="sm" className="h-7.5 px-2.5" aria-label={__('Match', 'yay-automation')}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{__('all', 'yay-automation')}</SelectItem>
+                  <SelectItem value="any">{__('any', 'yay-automation')}</SelectItem>
+                </SelectContent>
+              </Select>
+            ) : (
+              part.trim() && <span key={i}>{part.trim()}</span>
+            ),
           )}
-          <RuleBox
-            id={`criteria-${index}`}
-            rule={rule}
-            error={errorFor(index)}
-            autoOpen={index === pending}
-            onChange={(next) => {
-              setRule(index, next);
-              if (index === pending) setPending(null);
-            }}
-            onDismissNew={() => {
-              setPending(null);
-              update({ ...value, rules: value.rules.filter((_, i) => i !== index) });
-            }}
-            onRemove={() => removeRule(index)}
-          />
-        </div>
-      ))}
-
-      <div className="border-t pt-3">
-        {value.rules.length === 1 ? (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="secondary" size="sm" className={softButton}>
-                {__('Add criteria', 'yay-automation')}
-                <ChevronDown />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start">
-              <DropdownMenuItem onSelect={() => addRule('all')}>{joinerLabel.all}</DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => addRule('any')}>{joinerLabel.any}</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        ) : (
-          <Button variant="secondary" size="sm" className={softButton} onClick={() => addRule()}>
-            {__('Add criteria', 'yay-automation')}
-          </Button>
-        )}
       </div>
+
+      <div className="flex flex-col gap-2">
+        {value.rules.map((rule, index) => (
+          <div key={index} className="flex flex-col gap-2">
+            {index > 0 && (
+              <span className="text-muted-foreground pl-2.5 text-[11.5px] font-semibold tracking-wider uppercase">
+                {joinerText[value.match]}
+              </span>
+            )}
+            <RuleBox
+              id={`rule-${index}`}
+              rule={rule}
+              error={errorFor(index)}
+              autoOpen={index === pending}
+              onChange={(next) => {
+                setRule(index, next);
+                if (index === pending) setPending(null);
+              }}
+              onDismissNew={() => {
+                setPending(null);
+                update({ ...value, rules: value.rules.filter((_, i) => i !== index) });
+              }}
+              onRemove={() => removeRule(index)}
+            />
+          </div>
+        ))}
+      </div>
+
+      <Button variant="ghost" size="sm" className="w-fit pl-1" onClick={addRule}>
+        <Plus />
+        {__('Add rule', 'yay-automation')}
+      </Button>
+
+      <p className="text-muted-foreground flex items-center gap-1.5 text-[12.5px]">
+        <Info className="size-3.25 shrink-0" aria-hidden />
+        {__('Otherwise the No path runs.', 'yay-automation')}
+      </p>
     </div>
   );
 }
@@ -123,19 +133,19 @@ function RuleBox({
   rule: Rule;
   /** Shown under the box; null while the form shows no errors. */
   error: string | null;
-  /** Just added by "Add criteria": open the variable picker right away. */
+  /** Just added by "Add rule": open the data picker right away. */
   autoOpen: boolean;
   onChange: (rule: Rule) => void;
-  /** The picker of a just-added box closed without a pick. */
+  /** The picker of a just-added rule closed without a pick. */
   onDismissNew: () => void;
   onRemove: () => void;
 }) {
   const field = fieldByKey(rule.field);
   const tone = error ? errorStyles : null;
 
-  // Another variable of the same type keeps the comparison (and the value, if it still fits);
+  // Another field of the same type keeps the comparison (and the value, if it still fits);
   // otherwise the new type's first comparison is picked and the value cleared.
-  const chooseVariable = (key: string) => {
+  const chooseField = (key: string) => {
     const next = fieldByKey(key)!;
     const keep = next.type === field?.type;
     const other = fieldByKey(rule.value);
@@ -156,41 +166,36 @@ function RuleBox({
     <div className="flex flex-col gap-1.5">
       <div
         data-spotlight
-        className={cn('flex flex-col gap-3 rounded-lg border p-3', tone ? tone.tint : 'bg-muted/50', spotlightTarget)}
+        className={cn(
+          'grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] gap-x-2 gap-y-1.5 rounded-[10px] border p-2.5',
+          tone ? tone.tint : 'bg-muted/60 border-transparent',
+          spotlightTarget,
+        )}
       >
-        <div className="flex items-start justify-between gap-2">
+        <div className="col-span-2 min-w-0">
           <VariablePicker
             conditionalOnly
             autoOpen={autoOpen}
-            onSelect={chooseVariable}
+            onSelect={chooseField}
             onDismiss={autoOpen ? onDismissNew : undefined}
           >
-            {field ? (
-              <VariableLabel field={field} />
-            ) : (
-              <Button variant="secondary" size="sm" className={softButton}>
-                {__('Add a variable', 'yay-automation')}
-              </Button>
-            )}
+            <DataSelect
+              id={`${id}-data`}
+              field={field}
+              placeholder={__('Choose data', 'yay-automation')}
+              invalid={!!error && !field}
+            />
           </VariablePicker>
-          <div className="flex shrink-0 items-center">
-            {field && (
-              <VariablePicker conditionalOnly onSelect={chooseVariable}>
-                <Button variant="ghost" size="icon-sm" aria-label={__('Change variable', 'yay-automation')}>
-                  <Replace />
-                </Button>
-              </VariablePicker>
-            )}
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              aria-label={__('Remove criteria', 'yay-automation')}
-              onClick={onRemove}
-            >
-              <Trash2 />
-            </Button>
-          </div>
         </div>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          className="self-center"
+          aria-label={__('Remove rule', 'yay-automation')}
+          onClick={onRemove}
+        >
+          <Trash2 />
+        </Button>
 
         <Select value={rule.operator} onValueChange={(operator) => onChange({ ...rule, operator })} disabled={!field}>
           <SelectTrigger id={`${id}-operator`} className="w-full" aria-label={__('Comparison', 'yay-automation')}>
@@ -207,10 +212,12 @@ function RuleBox({
         </Select>
 
         {needsValue(rule.operator) && (
-          <Field data-spotlight className={spotlightTarget}>
-            <FieldLabel htmlFor={`${id}-value`}>{field?.label ?? __('Value', 'yay-automation')}</FieldLabel>
+          <div data-spotlight className={cn('min-w-0', spotlightTarget)}>
+            <label htmlFor={`${id}-value`} className="sr-only">
+              {field?.label ?? __('Value', 'yay-automation')}
+            </label>
             <ValueInput id={`${id}-value`} invalid={!!error} field={field} rule={rule} onChange={onChange} />
-          </Field>
+          </div>
         )}
       </div>
       {error && tone && <ErrorLine className={tone.text}>{error}</ErrorLine>}

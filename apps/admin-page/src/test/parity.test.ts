@@ -107,9 +107,10 @@ describe('PHP ↔ TS parity', () => {
     }
   });
 
-  it('operators: every TS operator exists in PHP, and every PHP operator has a TS label', () => {
-    expect(Object.keys(operatorLabels).filter((op) => !phpOperators.has(op))).toEqual([]);
-    expect([...phpOperators].filter((op) => !(op in operatorLabels))).toEqual([]);
+  it('operators: PHP labels each operator once, and TS reads those labels', () => {
+    expect(Object.keys(php.operatorLabels).sort()).toEqual([...phpOperators].sort());
+    expect(Object.values(php.operatorLabels).every((label) => label.trim() !== '')).toBe(true);
+    expect(operatorLabels).toBe(php.operatorLabels);
     expect(Object.keys(php.operators).sort()).toEqual(Object.keys(dataFieldTypes).sort());
     // TS `needsValue()` mirrors PHP: the no-value operators are the boolean and empty checks.
     expect([...phpOperators].filter((op) => !needsValue(op)).sort()).toEqual(

@@ -44,12 +44,12 @@ final class Messages {
             'numberMax'         => __( 'Enter %s or less.', 'yay-automation' ),
             // Condition rules.
             'rulesRequired'     => __( 'Add a rule, or remove this condition.', 'yay-automation' ),
-            'ruleVariable'      => __( 'Choose a variable for each rule.', 'yay-automation' ),
+            'ruleVariable'      => __( 'Choose data for each rule.', 'yay-automation' ),
             'ruleComparison'    => __( 'Choose a comparison for each rule.', 'yay-automation' ),
-            'ruleCompareWith'   => __( 'Choose a variable to compare with.', 'yay-automation' ),
+            'ruleCompareWith'   => __( 'Choose data to compare with.', 'yay-automation' ),
             /* translators: %s: variable, e.g. "Order total" */
             'ruleValueRequired' => __( 'Enter a value for %s.', 'yay-automation' ),
-            /* translators: %s: comparison name, "Is empty" */
+            /* translators: %s: comparison name, "is empty" */
             'ruleBlankHint'     => __( 'Or choose “%s” to check for a blank value.', 'yay-automation' ),
             'ruleNumber'        => __( 'Enter a number.', 'yay-automation' ),
             'ruleDate'          => __( 'Enter a date (YYYY-MM-DD).', 'yay-automation' ),
