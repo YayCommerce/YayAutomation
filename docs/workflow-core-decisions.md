@@ -159,7 +159,7 @@ Today errors only go to the WooCommerce log, which merchants never open.
 
 ## C10. Custom tables replace the CPT
 
-**Decision.** `workflows` and `workflow_versions` tables replace the `yay_automation_wf` post type and its meta.
+**Decision.** `workflows` and `workflow_versions` tables replace the `yaymatik_wf` post type and its meta.
 
 **Why.**
 - Every store event runs a `meta_query` to find active workflows. That's slow, and it runs on checkout.
@@ -330,7 +330,7 @@ Today errors only go to the WooCommerce log, which merchants never open.
 
 **Decision.**
 - Each Yay plugin ships its own steps, templates and data types.
-- YayAutomation Pro owns templates that combine several plugins.
+- YayMatik Pro owns templates that combine several plugins.
 - A static feature directory in core lists everything and where to install it.
 
 **Why.**

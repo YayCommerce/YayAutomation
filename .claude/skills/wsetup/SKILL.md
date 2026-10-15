@@ -41,7 +41,7 @@ pnpm build
 ## Step 4 — PHP lint
 
 ```bash
-find includes yay-automation.php -name '*.php' -exec php -l {} \; | grep -v '^No syntax errors'
+find includes yaymatik.php -name '*.php' -exec php -l {} \; | grep -v '^No syntax errors'
 ```
 
 Empty output = pass.
@@ -50,8 +50,8 @@ Empty output = pass.
 
 ## Step 5 — WordPress
 
-- Plugin active? `wp plugin list --path=../../.. | grep yay-automation`
-- Dev mode? `grep YAY_AUTOMATION ../../../wp-config.php` — see `.claude/docs/context-dev-convention.md` → Dev Server.
+- Plugin active? `wp plugin list --path=../../.. | grep yaymatik`
+- Dev mode? `grep YAYMATIK ../../../wp-config.php` — see `.claude/docs/context-dev-convention.md` → Dev Server.
 
 ---
 

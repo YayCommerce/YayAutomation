@@ -1,4 +1,4 @@
-# YayAutomation
+# YayMatik
 
 WordPress plugin: automation workflows + template library. Inspired by Shopify Flow, Klaviyo, AutomateWoo.
 
@@ -10,11 +10,11 @@ WordPress plugin: automation workflows + template library. Inspired by Shopify F
 
 ## Layout
 
-- `yay-automation.php` — plugin bootstrap
-- `includes/` — PHP backend, namespace `YayAutomation\`
+- `yaymatik.php` — plugin bootstrap
+- `includes/` — PHP backend, namespace `YayMatik\`
 - `apps/admin-page/` — React admin app
 - `dev/` — team scripts (`./run.sh`), personal `.env.local`; not shipped
-- `packages/` — shared TS (`@yay-automation/utils`, `@yay-automation/types`)
+- `packages/` — shared TS (`@yaymatik/utils`, `@yaymatik/types`)
 
 ## Commands
 
@@ -25,7 +25,7 @@ pnpm build      # typecheck + build
 pnpm lint:fix
 ```
 
-Admin page: `/wp-admin/admin.php?page=yay-automation`
+Admin page: `/wp-admin/admin.php?page=yaymatik`
 
 ## Docs
 

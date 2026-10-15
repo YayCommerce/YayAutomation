@@ -6,7 +6,7 @@
  *
  * Args: workflow id, trigger id, order ids.
  *
- * @package YayAutomation
+ * @package YayMatik
  */
 
 // phpcs:disable WordPress.WP.GlobalVariablesOverride.Prohibited -- wp eval-file passes $args.
@@ -35,7 +35,7 @@ $out = [];
 foreach ( $order_ids as $order_id ) {
     $mails  = [];
     $before = wp_list_pluck( wc_get_order_notes( [ 'order_id' => $order_id ] ), 'id' );
-    yay_automation_check_run( (int) $workflow_id, (string) $trigger_id, [ 'order_id' => $order_id ] );
+    yaymatik_check_run( (int) $workflow_id, (string) $trigger_id, [ 'order_id' => $order_id ] );
     $notes = [];
     foreach ( wc_get_order_notes( [ 'order_id' => $order_id ] ) as $note ) {
         if ( ! in_array( $note->id, $before, true ) ) {
