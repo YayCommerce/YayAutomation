@@ -18,7 +18,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/sonner';
 import { ApiError, errorMessage } from '../../api/workflow.api';
@@ -37,6 +36,7 @@ import {
 } from '../../shared/actions/WorkflowActions';
 import { EditorLayout } from '../../shared/layout/EditorLayout';
 import { type EditorNavState } from '../../shared/nav/editor.nav';
+import { WarningBadge } from '../../shared/ui/WarningBadge';
 import { workflowState, WorkflowStatusBadge } from '../../shared/ui/WorkflowStatusBadge';
 import { EditorContext, type EditorState } from './editor.context';
 import { IssueBanner } from './IssueBanner';
@@ -238,7 +238,7 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
               {/* Edits not yet in the live workflow → Draft changes. Otherwise Draft (never activated),
                   Inactive, or no badge when active. */}
               {hasDraft ? (
-                <Badge variant="warning-soft">{__('Draft changes', 'yay-automation')}</Badge>
+                <WarningBadge>{__('Draft changes', 'yay-automation')}</WarningBadge>
               ) : (
                 !isActive && <WorkflowStatusBadge state={workflowState(workflow)} />
               )}

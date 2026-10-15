@@ -47,6 +47,12 @@
   --yay-kind-condition: #6d4ee8;
   --yay-kind-action: #15803d;
 
+  /* Badges (app-only): "Draft changes"; Active's text; Draft's text and other links. */
+  --yay-warning-soft: #fef3c7;
+  --yay-warning-soft-foreground: #92400e;
+  --yay-success-soft-foreground: #15803d;
+  --yay-link: #3858e9;
+
   --radius: 0.625rem;
   --default-transition-duration: 0.3s;
 }
@@ -103,6 +109,11 @@
   --color-kind-trigger: var(--yay-kind-trigger) /* #b86e00 */;
   --color-kind-condition: var(--yay-kind-condition) /* #6d4ee8 */;
   --color-kind-action: var(--yay-kind-action) /* #15803d */;
+
+  --color-warning-soft: var(--yay-warning-soft) /* #fef3c7 */;
+  --color-warning-soft-foreground: var(--yay-warning-soft-foreground) /* #92400e */;
+  --color-success-soft-foreground: var(--yay-success-soft-foreground) /* #15803d */;
+  --color-link: var(--yay-link) /* #3858e9 */;
 
   --font-sans:
     -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif,
@@ -161,4 +172,10 @@
   --yay-kind-trigger: #f4b740;
   --yay-kind-condition: #a68cff;
   --yay-kind-action: #4ade80;
+
+  /* Not #793207: that's --warning here, the "Needs setup" pill, which must look different. */
+  --yay-warning-soft: rgb(245 158 11 / 16%);
+  --yay-warning-soft-foreground: #fde68a;
+  --yay-success-soft-foreground: #4ade80;
+  --yay-link: #8ea0ff;
 }

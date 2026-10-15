@@ -14,7 +14,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { activateIssues } from '../../model/validation';
-import { workflowState, WorkflowStatusBadge, type WorkflowState } from '../../shared/ui/WorkflowStatusBadge';
+import { WarningBadge } from '../../shared/ui/WarningBadge';
+import { appBadge, workflowState, WorkflowStatusBadge, type WorkflowState } from '../../shared/ui/WorkflowStatusBadge';
 import { plainSummary, stepOf } from '../../steps';
 import { StepTile } from '../../steps/core/StepTile';
 import { WorkflowBulkActions } from './WorkflowBulkActions';
@@ -56,6 +57,15 @@ function TableHeadRow({ select }: { select: ReactNode }) {
     </TableRow>
   );
 }
+
+/** A small segmented tab bar: the kit's `Segmented`, made compact. */
+const tabBarClass = 'mb-3 h-auto gap-0.5 rounded-lg p-[3px]';
+const tabClass = cn(
+  'h-auto rounded-md border-0 px-2.5 py-0.75 text-[13px] font-normal data-[shape=square]:rounded-md',
+  'text-muted-foreground-600 dark:text-muted-foreground-600 hover:text-foreground hover:bg-transparent',
+  'data-[state=on]:bg-card dark:data-[state=on]:bg-card data-[state=on]:text-card-foreground dark:data-[state=on]:text-card-foreground',
+  'data-[state=on]:font-medium data-[state=on]:shadow-[0_1px_2px_#0000001a]',
+);
 
 /**
  * The workflows list: All / Active / Inactive / Draft tabs, selectable rows, 10 per page, and bulk actions
@@ -105,94 +115,106 @@ export function WorkflowsTable({ workflows }: { workflows: Workflow[] }) {
 
   return (
     <>
-      <Segmented
-        value={tab}
-        onValueChange={(value) => {
-          if (!value) return;
-          setTab(value as Tab);
-          setPage(0);
-          clearSelection();
-        }}
-        className="mb-4"
-      >
-        <SegmentedItem value="all">{__('All', 'yay-automation')}</SegmentedItem>
-        <SegmentedItem value="active">{__('Active', 'yay-automation')}</SegmentedItem>
-        <SegmentedItem value="inactive">{__('Inactive', 'yay-automation')}</SegmentedItem>
-        <SegmentedItem value="draft">{__('Draft', 'yay-automation')}</SegmentedItem>
-      </Segmented>
+      {/* Tabs and table share one card. */}
+      <div className="bg-card rounded-[10px] border p-3">
+        <Segmented
+          value={tab}
+          onValueChange={(value) => {
+            if (!value) return;
+            setTab(value as Tab);
+            setPage(0);
+            clearSelection();
+          }}
+          shape="square"
+          className={tabBarClass}
+        >
+          <SegmentedItem value="all" className={tabClass}>
+            {__('All', 'yay-automation')}
+          </SegmentedItem>
+          <SegmentedItem value="active" className={tabClass}>
+            {__('Active', 'yay-automation')}
+          </SegmentedItem>
+          <SegmentedItem value="inactive" className={tabClass}>
+            {__('Inactive', 'yay-automation')}
+          </SegmentedItem>
+          <SegmentedItem value="draft" className={tabClass}>
+            {__('Draft', 'yay-automation')}
+          </SegmentedItem>
+        </Segmented>
 
-      <div className="overflow-x-auto rounded-lg border">
-        <Table>
-          <TableHeader>
-            <TableHeadRow select={headerCheckbox} />
-          </TableHeader>
-          <TableBody>
-            {rows.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={8} className="text-muted-foreground h-24 text-center">
-                  {__('No workflows here yet.', 'yay-automation')}
-                </TableCell>
-              </TableRow>
-            )}
-            {rows.map((workflow) => (
-              <TableRow
-                key={workflow.id}
-                className="cursor-pointer"
-                // The whole row opens the Overview. The name link keeps keyboard and middle-click access;
-                // the link, the whole checkbox cell and the "⋯" menu handle their own clicks. Clicks
-                // from portaled content (the menu) bubble here through React, so they must be in the row.
-                onClick={(event) => {
-                  const target = event.target as HTMLElement;
-                  if (event.currentTarget.contains(target) && !target.closest('a, button, [data-row-select]')) {
-                    navigate(`/workflows/${workflow.id}`);
-                  }
-                }}
-              >
-                {/* A near miss on the checkbox mustn't open the Overview and lose the selection. */}
-                <TableCell data-row-select>
-                  <Checkbox
-                    checked={selectedIds.has(workflow.id)}
-                    onCheckedChange={(checked) => toggle(workflow.id, checked === true)}
-                    aria-label={sprintf(
-                      /* translators: %s: workflow name */
-                      __('Select %s', 'yay-automation'),
-                      workflow.name,
-                    )}
-                  />
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <Link to={`/workflows/${workflow.id}`} className="hover:text-primary font-medium">
-                      {workflow.name}
-                    </Link>
-                    {workflow.draft && <Badge variant="warning-soft">{__('Draft changes', 'yay-automation')}</Badge>}
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-1.5">
-                    <WorkflowStatusBadge state={workflowState(workflow)} />
-                    {activateIssues(workflow).length > 0 && <NeedsSetupBadge />}
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <TriggerCell workflow={workflow} />
-                </TableCell>
-                <TableCell className="text-right tabular-nums">{noRuns}</TableCell>
-                <TableCell>{noRuns}</TableCell>
-                <TableCell className="text-muted-foreground">{formatDateTime(workflow.lastVersionAt)}</TableCell>
-                <TableCell>
-                  <WorkflowRowMenu
-                    workflow={workflow}
-                    onAction={(action) => {
-                      setRowTarget({ action, workflow });
-                      setRowDialogOpen(true);
-                    }}
-                  />
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableHeadRow select={headerCheckbox} />
+            </TableHeader>
+            <TableBody>
+              {rows.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={8} className="text-muted-foreground h-24 text-center">
+                    {__('No workflows here yet.', 'yay-automation')}
+                  </TableCell>
+                </TableRow>
+              )}
+              {rows.map((workflow) => (
+                <TableRow
+                  key={workflow.id}
+                  className="cursor-pointer"
+                  // The whole row opens the Overview. The name link keeps keyboard and middle-click access;
+                  // the link, the whole checkbox cell and the "⋯" menu handle their own clicks. Clicks
+                  // from portaled content (the menu) bubble here through React, so they must be in the row.
+                  onClick={(event) => {
+                    const target = event.target as HTMLElement;
+                    if (event.currentTarget.contains(target) && !target.closest('a, button, [data-row-select]')) {
+                      navigate(`/workflows/${workflow.id}`);
+                    }
+                  }}
+                >
+                  {/* A near miss on the checkbox mustn't open the Overview and lose the selection. */}
+                  <TableCell data-row-select>
+                    <Checkbox
+                      checked={selectedIds.has(workflow.id)}
+                      onCheckedChange={(checked) => toggle(workflow.id, checked === true)}
+                      aria-label={sprintf(
+                        /* translators: %s: workflow name */
+                        __('Select %s', 'yay-automation'),
+                        workflow.name,
+                      )}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Link to={`/workflows/${workflow.id}`} className="hover:text-primary font-medium">
+                        {workflow.name}
+                      </Link>
+                      {workflow.draft && <WarningBadge>{__('Draft changes', 'yay-automation')}</WarningBadge>}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-1.5">
+                      <WorkflowStatusBadge state={workflowState(workflow)} />
+                      {activateIssues(workflow).length > 0 && <NeedsSetupBadge />}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <TriggerCell workflow={workflow} />
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">{noRuns}</TableCell>
+                  <TableCell>{noRuns}</TableCell>
+                  <TableCell className="text-muted-foreground">{formatDateTime(workflow.lastVersionAt)}</TableCell>
+                  <TableCell>
+                    <WorkflowRowMenu
+                      workflow={workflow}
+                      onAction={(action) => {
+                        setRowTarget({ action, workflow });
+                        setRowDialogOpen(true);
+                      }}
+                    />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       </div>
 
       {/* Always mounted: a bulk action's dialog must survive the list refresh that can empty the
@@ -230,7 +252,7 @@ export function WorkflowsTable({ workflows }: { workflows: Workflow[] }) {
 
 export function WorkflowsTableSkeleton() {
   return (
-    <div className="overflow-x-auto rounded-lg border">
+    <div className="bg-card overflow-x-auto rounded-[10px] border p-3">
       <Table>
         <TableHeader>
           <TableHeadRow select={null} />
@@ -251,13 +273,16 @@ export function WorkflowsTableSkeleton() {
   );
 }
 
-/** Next to a Draft or Inactive status when the server's issues block Activate. */
+/**
+ * Next to a Draft or Inactive status when the server's issues block Activate. Looks like a step
+ * card's "Needs setup" pill (solid warning, alert icon), not like "Draft changes".
+ */
 function NeedsSetupBadge() {
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <Badge variant="warning-soft" className="gap-1">
-          <CircleAlert className="size-3" aria-hidden />
+        <Badge variant="secondary" className={cn(appBadge, 'bg-warning text-warning-foreground font-semibold')}>
+          <CircleAlert className="stroke-[2.5]" aria-hidden />
           {__('Needs setup', 'yay-automation')}
         </Badge>
       </TooltipTrigger>
