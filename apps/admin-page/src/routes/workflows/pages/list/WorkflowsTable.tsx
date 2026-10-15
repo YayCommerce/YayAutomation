@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import type { Workflow } from '@yay-automation/types';
+import { CircleAlert } from 'lucide-react';
 import { Link, useNavigate } from 'react-router';
 import { __, sprintf } from '@wordpress/i18n';
 
@@ -11,6 +12,8 @@ import { Pagination } from '@/components/ui/pagination';
 import { Segmented, SegmentedItem } from '@/components/ui/segmented';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { activateIssues } from '../../model/validation';
 import { workflowState, WorkflowStatusBadge, type WorkflowState } from '../../shared/ui/WorkflowStatusBadge';
 import { plainSummary, stepOf } from '../../steps';
 import { StepTile } from '../../steps/core/StepTile';
@@ -166,7 +169,10 @@ export function WorkflowsTable({ workflows }: { workflows: Workflow[] }) {
                   </div>
                 </TableCell>
                 <TableCell>
-                  <WorkflowStatusBadge state={workflowState(workflow)} />
+                  <div className="flex items-center gap-1.5">
+                    <WorkflowStatusBadge state={workflowState(workflow)} />
+                    {activateIssues(workflow).length > 0 && <NeedsSetupBadge />}
+                  </div>
                 </TableCell>
                 <TableCell>
                   <TriggerCell workflow={workflow} />
@@ -242,5 +248,20 @@ export function WorkflowsTableSkeleton() {
         </TableBody>
       </Table>
     </div>
+  );
+}
+
+/** Next to a Draft or Inactive status when the server's issues block Activate. */
+function NeedsSetupBadge() {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Badge variant="warning-soft" className="gap-1">
+          <CircleAlert className="size-3" aria-hidden />
+          {__('Needs setup', 'yay-automation')}
+        </Badge>
+      </TooltipTrigger>
+      <TooltipContent>{__('Fix the issues in the editor before activating.', 'yay-automation')}</TooltipContent>
+    </Tooltip>
   );
 }

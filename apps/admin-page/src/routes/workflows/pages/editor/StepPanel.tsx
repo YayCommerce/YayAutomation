@@ -16,6 +16,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { updateNodeConfig } from '../../model/graph';
 import { availableData, sameItems } from '../../model/validation';
 import { kindMeta } from '../../shared/canvas/NodeCardView';
@@ -82,7 +83,7 @@ export function StepPanel({
   closable: boolean;
   /** A step was chosen in the picker (the same one keeps its settings). */
   onPick: (stepId: StepId) => void;
-  /** "Change action" shows the picker for this step (true); back to its settings (false). */
+  /** "Change trigger" / "Change action" shows the picker for this step (true); back to its settings (false). */
   onSwap: (picking: boolean) => void;
   onClose: () => void;
 }) {
@@ -207,6 +208,9 @@ export function StepPanel({
   }
   if (!stepDef) return null;
 
+  const swapLabel =
+    node.kind === 'trigger' ? __('Change trigger', 'yay-automation') : __('Change action', 'yay-automation');
+
   return (
     <>
       {/* The card's tile and eyebrow, so the panel reads as the step it belongs to. */}
@@ -223,15 +227,15 @@ export function StepPanel({
           {/* The condition's sentence says what it does. */}
           {node.kind !== 'condition' && <p className="text-muted-foreground mt-0.5 text-xs">{stepDef.description}</p>}
         </div>
-        {node.kind === 'action' && (
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            aria-label={__('Change action', 'yay-automation')}
-            onClick={() => onSwap(true)}
-          >
-            <ArrowRightLeft />
-          </Button>
+        {node.kind !== 'condition' && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon-sm" aria-label={swapLabel} onClick={() => onSwap(true)}>
+                <ArrowRightLeft />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>{swapLabel}</TooltipContent>
+          </Tooltip>
         )}
         {close}
       </div>
