@@ -20,17 +20,20 @@ const tones: Record<WorkflowPlugin, string> = {
 export function PluginIcon({
   plugin,
   size = 'md',
+  noTitle = false,
   className,
 }: {
   plugin: WorkflowPlugin;
   size?: 'sm' | 'md';
+  /** No native `title`: a tooltip shows the name instead. */
+  noTitle?: boolean;
   className?: string;
 }) {
   const { label, logo } = plugins[plugin];
 
   return (
     <span
-      title={label}
+      title={noTitle ? undefined : label}
       className={cn(
         'flex shrink-0 items-center justify-center',
         size === 'sm' ? 'size-5.5 rounded-md' : 'size-7 rounded-md',
