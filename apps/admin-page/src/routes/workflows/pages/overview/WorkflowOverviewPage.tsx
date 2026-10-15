@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useWorkflowQuery } from '../../api/workflow.query';
-import { activateIssues, stepsNeedingSetup } from '../../model/validation';
+import { activateIssues, activateIssueTexts, issueText, stepsNeedingSetup } from '../../model/validation';
 import { useActivateWorkflow } from '../../shared/actions/useActivateWorkflow';
 import { ActivateDialog, DeactivateDialog, MoreActionsMenu } from '../../shared/actions/WorkflowActions';
 import { ReadOnlyCanvas } from '../../shared/canvas/ReadOnlyCanvas';
@@ -65,7 +65,16 @@ function WorkflowOverview({ workflow }: { workflow: Workflow }) {
   // What a refused Activate reported: newer than this copy's issues when the workflow changed
   // elsewhere. Kept for this copy only: a refetch shows its own issues again.
   const [refused, setRefused] = useState<{ workflow: Workflow; issues: WorkflowIssue[] } | null>(null);
-  const setupIssues = refused?.workflow === workflow ? refused.issues : issues;
+  const refusedNow = refused?.workflow === workflow ? refused.issues : null;
+  const setupIssues = refusedNow ?? issues;
+  // A refusal doesn't say which graph each issue is from: the live one is checked first, then the draft.
+  const setupMessages = useMemo(
+    () =>
+      refusedNow
+        ? [...new Set(refusedNow.map((issue) => issueText(issue, workflow.graph, workflow.draft)))]
+        : activateIssueTexts(workflow),
+    [refusedNow, workflow],
+  );
 
   // The workflow as it runs (or as saved), then draft changes when there are any.
   const tabs: { value: string; label: string; graph: Workflow['graph'] }[] = [
@@ -116,6 +125,7 @@ function WorkflowOverview({ workflow }: { workflow: Workflow }) {
         {!isActive && setupIssues.length > 0 && (
           <SetupNotice
             issues={setupIssues}
+            messages={setupMessages}
             onFix={() => navigate(editPath, { state: { showIssues: true } satisfies EditorNavState })}
           />
         )}
@@ -179,12 +189,11 @@ function WorkflowOverview({ workflow }: { workflow: Workflow }) {
 
 /**
  * Why the workflow can't be activated: "2 steps need setup before this workflow can run.", then
- * each issue in its own words (the server may report ones the editor doesn't show). "Fix in
- * editor" opens the editor showing them.
+ * each issue in its own words, after its step's name (`messages`; the server may report ones the
+ * editor doesn't show). "Fix in editor" opens the editor showing them.
  */
-function SetupNotice({ issues, onFix }: { issues: WorkflowIssue[]; onFix: () => void }) {
+function SetupNotice({ issues, messages, onFix }: { issues: WorkflowIssue[]; messages: string[]; onFix: () => void }) {
   const steps = stepsNeedingSetup(issues);
-  const messages = [...new Set(issues.map((issue) => issue.message))];
   return (
     <ErrorAlert className="flex items-center gap-3 [&>svg]:translate-y-0">
       <CircleAlert />

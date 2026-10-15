@@ -1779,7 +1779,7 @@
             "unknownVariable": "%s isn’t an available variable.",
             "unknownFilter": "%1$s isn’t a filter. Available filters: %2$s.",
             "malformedTag": "%s is written incorrectly. Use {{ variable }} or {{ variable | filter }}.",
-            "fieldRequired": "This field is required",
+            "fieldRequired": "This field is required.",
             "invalidEmail": "%s isn’t a valid email address.",
             "chooseOption": "Choose an option from the list.",
             "chooseOptions": "Choose options from the list.",

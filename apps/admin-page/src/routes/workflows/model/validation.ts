@@ -1,5 +1,5 @@
 import type { Workflow, WorkflowGraph, WorkflowIssue, WorkflowNode } from '@yay-automation/types';
-import { sprintf } from '@wordpress/i18n';
+import { __, sprintf } from '@wordpress/i18n';
 
 import { stepOf } from '../steps';
 import { alwaysAvailable, isStepPath, itemLabel, pathSegments, variableTag } from '../steps/core/data';
@@ -74,6 +74,34 @@ export function activateIssues(workflow: Pick<Workflow, 'status' | 'issues'>): W
   const all = [...workflow.issues.live, ...(workflow.issues.draft ?? [])];
   const key = (issue: WorkflowIssue) => `${issue.code}|${issue.nodeId ?? ''}|${issue.message}`;
   return all.filter((issue, i) => all.findIndex((other) => key(other) === key(issue)) === i);
+}
+
+/**
+ * An issue's message, after its step's name when it's about a step and doesn't name it:
+ * "Change order status: Choose an option from the list." The step is looked up in `graphs`, in
+ * order (the graph the issue came from first).
+ */
+export function issueText(issue: WorkflowIssue, ...graphs: (WorkflowGraph | null | undefined)[]): string {
+  if (!issue.nodeId) return issue.message;
+  const node = graphs.flatMap((graph) => graph?.nodes ?? []).find((n) => n.id === issue.nodeId);
+  const label = node && stepOf(node.data)?.label;
+  if (!label || issue.message.includes(label)) return issue.message;
+  /* translators: 1: a step, e.g. "Change order status", 2: what's wrong with it */
+  return sprintf(__('%1$s: %2$s', 'yay-automation'), label, issue.message);
+}
+
+/**
+ * `activateIssues()` as text, each step named from the graph its issue came from (`issueText()`),
+ * each line once.
+ */
+export function activateIssueTexts(workflow: Pick<Workflow, 'status' | 'issues' | 'graph' | 'draft'>): string[] {
+  if (workflow.status === 'active') return [];
+  return [
+    ...new Set([
+      ...workflow.issues.live.map((issue) => issueText(issue, workflow.graph)),
+      ...(workflow.issues.draft ?? []).map((issue) => issueText(issue, workflow.draft)),
+    ]),
+  ];
 }
 
 /** Activate is offered only when the server would accept it. */

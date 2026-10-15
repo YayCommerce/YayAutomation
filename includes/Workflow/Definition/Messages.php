@@ -33,7 +33,7 @@ final class Messages {
             /* translators: %s: a merge tag as written, e.g. {{ order. }}. Keep {{ variable }} and {{ variable | filter }} as they are. */
             'malformedTag'      => __( '%s is written incorrectly. Use {{ variable }} or {{ variable | filter }}.', 'yay-automation' ),
             // Step settings.
-            'fieldRequired'     => __( 'This field is required', 'yay-automation' ),
+            'fieldRequired'     => __( 'This field is required.', 'yay-automation' ),
             /* translators: %s: the text entered as an email address */
             'invalidEmail'      => __( '%s isn’t a valid email address.', 'yay-automation' ),
             'chooseOption'      => __( 'Choose an option from the list.', 'yay-automation' ),

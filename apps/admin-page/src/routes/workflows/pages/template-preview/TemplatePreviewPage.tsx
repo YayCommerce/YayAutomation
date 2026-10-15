@@ -184,7 +184,7 @@ function TemplateSidePanel({ template }: { template: WorkflowTemplate }) {
 
       <p className="bg-primary/8 flex items-start gap-2 rounded-lg px-3 py-2.5 text-[13px]">
         <Info className="text-primary mt-0.5 size-4 shrink-0" aria-hidden />
-        {__('Using it creates an inactive draft. Review it, then activate.', 'yay-automation')}
+        {__('Using it creates a draft. Review it, then activate it.', 'yay-automation')}
       </p>
     </aside>
   );

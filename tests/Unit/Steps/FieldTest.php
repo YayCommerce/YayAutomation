@@ -7,7 +7,7 @@ use YayAutomation\Workflow\Steps\Core\Field;
 /** Step settings: each widget's sanitize (never fails) and validate, the modifiers, the catalog shape. */
 final class FieldTest extends TestCase {
 
-    private const REQUIRED = 'This field is required';
+    private const REQUIRED = 'This field is required.';
 
     /** Inputs no widget expects; sanitize must still return its stored shape. */
     private function junk(): array {
@@ -328,6 +328,6 @@ final class FieldTest extends TestCase {
         $this->assertSame( 'Add order note needs a note.', $field->validate( '', [], 'Add order note' ) );
         $this->assertSame( '%s needs a note.', $field->to_array()['requiredMessage'], 'the catalog gets the template' );
         $this->assertArrayNotHasKey( 'requiredMessage', Field::text( 'a', 'A' )->required()->to_array() );
-        $this->assertSame( 'This field is required', Field::text( 'a', 'A' )->required()->validate( '' ), 'without a message' );
+        $this->assertSame( 'This field is required.', Field::text( 'a', 'A' )->required()->validate( '' ), 'without a message' );
     }
 }

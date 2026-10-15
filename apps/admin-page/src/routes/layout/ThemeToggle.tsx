@@ -1,4 +1,5 @@
 import { Moon, Sun } from 'lucide-react';
+import { __ } from '@wordpress/i18n';
 
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -19,13 +20,13 @@ export default function ThemeToggle({ className }: { className?: string }) {
         <Button variant="outline" size="icon" className={cn('relative', className)}>
           <Sun className="size-[1.2rem] scale-100 rotate-0 transition-all dark:scale-0 dark:-rotate-90" />
           <Moon className="absolute size-[1.2rem] scale-0 rotate-90 transition-all dark:scale-100 dark:rotate-0" />
-          <span className="sr-only">Toggle theme</span>
+          <span className="sr-only">{__('Toggle theme', 'yay-automation')}</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => setTheme('light')}>Light</DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme('dark')}>Dark</DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme('system')}>System</DropdownMenuItem>
+        <DropdownMenuItem onClick={() => setTheme('light')}>{__('Light', 'yay-automation')}</DropdownMenuItem>
+        <DropdownMenuItem onClick={() => setTheme('dark')}>{__('Dark', 'yay-automation')}</DropdownMenuItem>
+        <DropdownMenuItem onClick={() => setTheme('system')}>{__('System', 'yay-automation')}</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
