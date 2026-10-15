@@ -31,7 +31,7 @@ We chose these 8 because they cover what merchants install an automation plugin 
 **v1.0 adds:**
 - Two columns: runs in the last 30 days, and when the workflow last ran. Shown with "—" since identity phase 1; filled in M2.
 - Status filter: All · Active · Inactive · Draft. ✅ identity phase 1
-- Row actions in a "⋯" menu: Edit, Rename, Activate / Deactivate, Delete. Edits not yet live show a "Draft changes" badge. ✅ identity phase 1 *([identity](plan-identity.md))*
+- Row actions in a "⋯" menu: Edit, Rename, Activate / Deactivate, Delete. Edits not yet live show a "Draft changes" badge; a Draft or Inactive workflow that can't be activated yet shows "Needs setup". ✅ identity phase 1 *([identity](plan-identity.md))*
 
 **States:** a workflow that never ran shows "—" in both columns.
 

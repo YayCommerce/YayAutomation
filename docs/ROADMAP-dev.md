@@ -59,7 +59,7 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 
 ## F1 — Workflow Core foundation · L (~3 weeks)
 
-**Status:** ✅ Done — backend (PR A #13), identity phase 1 (PR B) and F1.9–F1.12 with identity phase 2 (PR C #15, merge `4ec1468`) merged into `develop`.
+**Status:** ✅ Done — backend (PR A #13), identity phase 1 (PR B) and F1.9–F1.12 with identity phase 2 (PR C #15, merge `4ec1468`) merged into `develop`. Regression pass done (manual pass + code review fixes, Template Library and list per mock v2).
 
 **Backend**
 - ✅ **F1.0 PHPUnit** *([plan-infra](plan-infra.md))* — plain unit tests, no WordPress loaded (`dev/tools/phpunit`); CI step. First tests: template parser, Validator v2, Scope.
@@ -99,7 +99,7 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 - ✅ **F1.10 Port the 7 steps**
   - The 6 built steps' simple forms move to the generic form; their `schema.ts` / `Form.tsx` are deleted. The 3 coming-soon steps (Send email, Generate coupon, Wait) keep their custom forms on the shared widgets until M1 / M2.
   - Condition keeps its custom form, using the `rules` field type, written as a sentence *([plan-identity](plan-identity.md))*.
-  - "Change action" in the panel header swaps an action's step: same node and lines, settings reset (asks first when they were edited).
+  - "Change trigger" / "Change action" in the panel header swaps the step: same node and lines, settings reset (asks first when they were edited).
 - ✅ **F1.11 Template checks in TS** *(§6)* — parser only: errors and paths, same messages as PHP; errors show under variable fields.
 - ✅ **F1.12 "Insert variable"** — lists the step's available variables, incl. step outputs and dotted paths.
 
