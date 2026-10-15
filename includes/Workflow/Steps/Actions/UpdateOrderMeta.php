@@ -38,7 +38,7 @@ class UpdateOrderMeta extends Action {
     }
 
     public function icon(): string {
-        return 'database';
+        return 'list';
     }
 
     public function category(): string {
@@ -71,10 +71,6 @@ class UpdateOrderMeta extends Action {
                 'type'  => Type::string(),
             ],
         ];
-    }
-
-    public function validate( array $config ) {
-        return $this->field_error( $config ) ?? true;
     }
 
     public function run( Scope $scope, array $config ): StepResult {

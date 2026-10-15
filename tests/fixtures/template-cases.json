@@ -1,0 +1,152 @@
+{
+    "//": "Template checks: PHP Data\\Template (errors(), paths()). Shared with the admin app (steps/core/template.test.ts). Add cases here, not in one test only.",
+    "cases": [
+        {
+            "text": "Plain text, no tags",
+            "errors": [],
+            "paths": []
+        },
+        {
+            "text": "Hi {{ customer.first_name | default: \"there\" }}!",
+            "errors": [],
+            "paths": [
+                "customer.first_name"
+            ]
+        },
+        {
+            "text": "{{order.number}}{{order.total}} {{   order.number   }}",
+            "errors": [],
+            "paths": [
+                "order.number",
+                "order.total"
+            ]
+        },
+        {
+            "text": "{{ order.number\n}}",
+            "errors": [],
+            "paths": [
+                "order.number"
+            ]
+        },
+        {
+            "text": "{{{ order.number }}} {{{{ order.total }}}}",
+            "errors": [],
+            "paths": [
+                "order.number",
+                "order.total"
+            ]
+        },
+        {
+            "text": "a {{ b } c {{ order.number }} d } {{ e",
+            "errors": [],
+            "paths": [
+                "order.number"
+            ]
+        },
+        {
+            "text": "{{ order.customer.first_name }} {{ trigger.order.total }} {{ steps.action-k2x9.code }} {{ steps.Email1.code }}",
+            "errors": [],
+            "paths": [
+                "order.customer.first_name",
+                "trigger.order.total",
+                "steps.action-k2x9.code",
+                "steps.Email1.code"
+            ]
+        },
+        {
+            "text": "{{ order.total | money }} {{ order.created_date | date: \"Y-m-d\" }} {{ order.number | upper | lower }}",
+            "errors": [],
+            "paths": [
+                "order.total",
+                "order.created_date",
+                "order.number"
+            ]
+        },
+        {
+            "text": "{{ order.items | join: \",\\\"\" }} {{ order.items | join: \" | \" }}",
+            "errors": [],
+            "paths": [
+                "order.items"
+            ]
+        },
+        {
+            "text": "{{ order. }}",
+            "errors": [
+                "{{ order. }} is written incorrectly. Use {{ variable }} or {{ variable | filter }}."
+            ],
+            "paths": []
+        },
+        {
+            "text": "{{ order }}",
+            "errors": [
+                "{{ order }} is written incorrectly. Use {{ variable }} or {{ variable | filter }}."
+            ],
+            "paths": []
+        },
+        {
+            "text": "{{ Order.Total }} {{ Steps.Email1.code }} {{ 1steps.a }}",
+            "errors": [
+                "{{ Order.Total }} is written incorrectly. Use {{ variable }} or {{ variable | filter }}.",
+                "{{ Steps.Email1.code }} is written incorrectly. Use {{ variable }} or {{ variable | filter }}.",
+                "{{ 1steps.a }} is written incorrectly. Use {{ variable }} or {{ variable | filter }}."
+            ],
+            "paths": []
+        },
+        {
+            "text": "{{}} {{ }} {{ order.number | }}",
+            "errors": [
+                "{{}} is written incorrectly. Use {{ variable }} or {{ variable | filter }}.",
+                "{{ }} is written incorrectly. Use {{ variable }} or {{ variable | filter }}.",
+                "{{ order.number | }} is written incorrectly. Use {{ variable }} or {{ variable | filter }}."
+            ],
+            "paths": []
+        },
+        {
+            "text": "{{ order.number | shout }}",
+            "errors": [
+                "shout isn’t a filter. Available filters: default, upper, lower, join, date, money."
+            ],
+            "paths": [
+                "order.number"
+            ]
+        },
+        {
+            "text": "{{ order.number | default: oops }}",
+            "errors": [
+                "{{ order.number | default: oops }} is written incorrectly. Use {{ variable }} or {{ variable | filter }}."
+            ],
+            "paths": []
+        },
+        {
+            "text": "{{ order.number | default: \"open }}",
+            "errors": [
+                "{{ order.number | default: \"open }} is written incorrectly. Use {{ variable }} or {{ variable | filter }}."
+            ],
+            "paths": []
+        },
+        {
+            "text": "{{ order.number | 2up }}",
+            "errors": [
+                "{{ order.number | 2up }} is written incorrectly. Use {{ variable }} or {{ variable | filter }}."
+            ],
+            "paths": []
+        },
+        {
+            "text": "{{ order.number | default: \"there\", 2 }} {{ order.nope }}",
+            "errors": [],
+            "paths": [
+                "order.number",
+                "order.nope"
+            ]
+        },
+        {
+            "text": "{{\u00a0order.total }} {{ order.number }}",
+            "errors": [
+                "{{\u00a0order.total }} is written incorrectly. Use {{ variable }} or {{ variable | filter }}."
+            ],
+            "paths": [
+                "order.number"
+            ]
+        }
+    ]
+}

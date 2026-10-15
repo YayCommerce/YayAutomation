@@ -13,9 +13,10 @@ import { sprintf } from '@wordpress/i18n';
 import type { DataFieldType } from '@/types/localize';
 import { messages } from '../routes/workflows/model/messages';
 import { steps } from '../routes/workflows/steps';
-import { needsValue, operatorLabels, variableKeys } from '../routes/workflows/steps/core/data';
+import { fieldByPath, needsValue, operatorLabels } from '../routes/workflows/steps/core/data';
 import { stepIcons } from '../routes/workflows/steps/core/icons';
 import { automationMeta, isPendingStep } from '../routes/workflows/steps/core/pending';
+import { templatePaths } from '../routes/workflows/steps/core/template';
 import { isComingSoon, templates } from '../routes/workflows/templates';
 
 const php = window.yayAutomationMeta.automation;
@@ -106,9 +107,10 @@ describe('PHP ↔ TS parity', () => {
     }
   });
 
-  it('operators: every TS operator exists in PHP, and every PHP operator has a TS label', () => {
-    expect(Object.keys(operatorLabels).filter((op) => !phpOperators.has(op))).toEqual([]);
-    expect([...phpOperators].filter((op) => !(op in operatorLabels))).toEqual([]);
+  it('operators: PHP labels each operator once, and TS reads those labels', () => {
+    expect(Object.keys(php.operatorLabels).sort()).toEqual([...phpOperators].sort());
+    expect(Object.values(php.operatorLabels).every((label) => label.trim() !== '')).toBe(true);
+    expect(operatorLabels).toBe(php.operatorLabels);
     expect(Object.keys(php.operators).sort()).toEqual(Object.keys(dataFieldTypes).sort());
     // TS `needsValue()` mirrors PHP: the no-value operators are the boolean and empty checks.
     expect([...phpOperators].filter((op) => !needsValue(op)).sort()).toEqual(
@@ -132,7 +134,7 @@ describe('PHP ↔ TS parity', () => {
         checked++;
       }
     }
-    expect(checked).toBe(4);
+    expect(checked).toBe(5);
   });
 
   describe.each(templates.map((template) => [template.id, template] as const))('template %s', (_id, template) => {
@@ -156,8 +158,8 @@ describe('PHP ↔ TS parity', () => {
             if (rule.valueType === 'variable') expect(dataKeys.has(rule.value), rule.value).toBe(true);
           }
         }
-        for (const key of strings(data.config).flatMap(variableKeys)) {
-          expect(dataKeys.has(key), key).toBe(true);
+        for (const path of strings(data.config).flatMap(templatePaths)) {
+          expect(dataKeys.has(fieldByPath(path)?.key ?? ''), path).toBe(true);
         }
       }
     });

@@ -7,7 +7,8 @@ import { __ } from '@wordpress/i18n';
 import { cn } from '@/lib/utils';
 import { CARD_WIDTH } from '../../model/graph';
 import { plainSummary, stepOf, SummaryText } from '../../steps';
-import { kindIcons, StepEyebrow, StepTile } from '../ui/StepTile';
+import { kindIcons, StepTile } from '../../steps/core/StepTile';
+import { StepEyebrow } from '../ui/StepTile';
 import { sourceHandleStyle, targetHandleStyle, type FlowNode } from './flow';
 
 /**

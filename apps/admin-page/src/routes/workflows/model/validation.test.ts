@@ -2,8 +2,15 @@ import type { WorkflowGraph } from '@yay-automation/types';
 import { describe, expect, it } from 'vitest';
 
 import highValueOrderAlert from '../templates/high-value-order-alert';
-import { addNode, removeNode } from './graph';
-import { activateIssues, availableData, canActivate, stepsNeedingSetup, validateWorkflow } from './validation';
+import { addNode, removeNode, setNodeStep } from './graph';
+import {
+  activateIssues,
+  availableData,
+  canActivate,
+  newStepIssues,
+  stepsNeedingSetup,
+  validateWorkflow,
+} from './validation';
 
 const base = (): WorkflowGraph => structuredClone(highValueOrderAlert.graph);
 /** Steps and edges by id, so editing the template doesn't change what a test covers. */
@@ -48,16 +55,53 @@ describe('validateWorkflow', () => {
       expect.objectContaining({ code: 'invalid_config', nodeId: 'email' }),
     ]);
   });
-  // PHP's Validator accepts these (deep paths, step outputs, filters); the editor must not block them.
-  it('accepts every merge tag the server accepts', () => {
-    const graph = base();
-    node(graph, 'email').data.config = {
-      ...node(graph, 'email').data.config,
-      subject: 'Hi {{ order.customer.first_name | default: "there" }} {{ trigger.order.total }}',
-      message:
-        'Total {{ order.total | money }}; result {{ steps.condition.result }}; {{ steps.action-mv0pf42q0l81.type }}',
+
+  // Same rules as PHP `Validator::tag_error()` / `reach()`.
+  describe('merge tags', () => {
+    const withMessage = (message: string) => {
+      const graph = base();
+      node(graph, 'email').data.config = { ...node(graph, 'email').data.config, message };
+      return validateWorkflow({ name: 'Alert', graph });
     };
-    expect(validateWorkflow({ name: 'Alert', graph })).toEqual([]);
+    const issue = (code: string, message: string) => [{ code, message, nodeId: 'email' }];
+
+    it('accepts deep paths, trigger paths, filters, outputs of a step above and a relation itself', () => {
+      expect(
+        withMessage(
+          'Hi {{ order.customer.first_name | default: "there" }} {{ trigger.order.total | money }} {{ steps.condition.result }} {{ order.customer }}',
+        ),
+      ).toEqual([]);
+    });
+
+    it('flags a malformed tag, an unknown filter and an unknown path', () => {
+      expect(withMessage('{{ order. }}')).toEqual(
+        issue('invalid_config', '{{ order. }} is written incorrectly. Use {{ variable }} or {{ variable | filter }}.'),
+      );
+      expect(withMessage('{{ order.total | shout }}')).toEqual(
+        issue('invalid_config', 'shout isn’t a filter. Available filters: default, upper, lower, join, date, money.'),
+      );
+      expect(withMessage('{{ order.nope }}')).toEqual(
+        issue('invalid_config', '{{ order.nope }} isn’t an available variable.'),
+      );
+    });
+
+    it('flags an output of a missing step or of a missing key', () => {
+      expect(withMessage('{{ steps.gone.result }}')).toEqual(
+        issue('invalid_config', '{{ steps.gone.result }} isn’t an available variable.'),
+      );
+      expect(withMessage('{{ steps.condition.nope }}')).toEqual(
+        issue('invalid_config', '{{ steps.condition.nope }} isn’t an available variable.'),
+      );
+    });
+
+    it("flags an output of a step that isn't above", () => {
+      const graph = addNode(base(), 'condition', 'action', 'otherwise', 'note');
+      node(graph, 'note').data = { block: 'add_order_note', config: { type: 'private', note: 'Big order' } };
+      node(graph, 'email').data.config = { ...node(graph, 'email').data.config, message: '{{ steps.note.type }}' };
+      expect(validateWorkflow({ name: 'Alert', graph })).toEqual([
+        { code: 'missing_data', message: 'Add order note data isn’t available at this step.', nodeId: 'email' },
+      ]);
+    });
   });
 });
 
@@ -75,25 +119,29 @@ describe('availableData', () => {
 });
 
 describe('activateIssues', () => {
-  const broken = () => removeNode(base(), 'email');
+  const noAction = { code: 'no_action', message: 'Add at least one action.' } as const;
+  const noName = { code: 'name_required', message: 'Give this workflow a name.' } as const;
   const codesOf = (workflow: Parameters<typeof activateIssues>[0]) => activateIssues(workflow).map((i) => i.code);
 
-  it('checks the saved content and the draft, like the server, each issue once', () => {
-    expect(codesOf({ name: 'Alert', status: 'inactive', graph: base(), draft: broken() })).toEqual(['no_action']);
-    expect(codesOf({ name: 'Alert', status: 'inactive', graph: broken(), draft: null })).toEqual(['no_action']);
-    expect(codesOf({ name: 'Alert', status: 'inactive', graph: broken(), draft: base() })).toEqual(['no_action']);
-    expect(codesOf({ name: 'Alert', status: 'inactive', graph: broken(), draft: broken() })).toEqual(['no_action']);
-    expect(codesOf({ name: 'Alert', status: 'inactive', graph: base(), draft: base() })).toEqual([]);
+  it("reads the server's issues of the saved content and the draft, each issue once", () => {
+    expect(codesOf({ status: 'inactive', issues: { live: [], draft: [noAction] } })).toEqual(['no_action']);
+    expect(codesOf({ status: 'inactive', issues: { live: [noAction], draft: null } })).toEqual(['no_action']);
+    expect(codesOf({ status: 'inactive', issues: { live: [noAction], draft: [noAction] } })).toEqual(['no_action']);
+    expect(codesOf({ status: 'inactive', issues: { live: [noName], draft: [noAction] } })).toEqual([
+      'name_required',
+      'no_action',
+    ]);
+    expect(codesOf({ status: 'inactive', issues: { live: [], draft: [] } })).toEqual([]);
   });
 
   it('canActivate: only an inactive workflow with no issues', () => {
-    expect(canActivate({ name: 'Alert', status: 'inactive', graph: base(), draft: null })).toBe(true);
-    expect(canActivate({ name: 'Alert', status: 'inactive', graph: broken(), draft: null })).toBe(false);
-    expect(canActivate({ name: 'Alert', status: 'active', graph: base(), draft: null })).toBe(false);
+    expect(canActivate({ status: 'inactive', issues: { live: [], draft: null } })).toBe(true);
+    expect(canActivate({ status: 'inactive', issues: { live: [noAction], draft: null } })).toBe(false);
+    expect(canActivate({ status: 'active', issues: { live: [], draft: null } })).toBe(false);
   });
 
   it('finds nothing for an active workflow', () => {
-    expect(codesOf({ name: 'Alert', status: 'active', graph: base(), draft: broken() })).toEqual([]);
+    expect(codesOf({ status: 'active', issues: { live: [], draft: [noAction] } })).toEqual([]);
   });
 });
 
@@ -107,5 +155,33 @@ describe('stepsNeedingSetup', () => {
         { code: 'no_action', message: '' },
       ]),
     ).toBe(1);
+  });
+});
+
+describe('newStepIssues', () => {
+  // A note step above the email, whose message uses the note's output.
+  const withNote = () => {
+    const graph = addNode(base(), 'condition', 'action', 'then', 'note');
+    node(graph, 'note').data = { block: 'add_order_note', config: { type: 'private', note: 'Big order' } };
+    const email = graph.edges.find((edge) => edge.target === 'email')!;
+    email.source = 'note';
+    email.sourceHandle = undefined;
+    node(graph, 'email').data.config = { ...node(graph, 'email').data.config, message: '{{ steps.note.type }}' };
+    return graph;
+  };
+
+  it('lists the steps a swap breaks, not the swapped step', () => {
+    const before = withNote();
+    expect(validateWorkflow({ name: 'Alert', graph: before })).toEqual([]);
+    const after = setNodeStep(before, 'note', 'change_order_status');
+    expect(newStepIssues([], { name: 'Alert', graph: after }, 'note')).toEqual(['email']);
+  });
+
+  it('skips issues a step already had', () => {
+    const before = withNote();
+    node(before, 'email').data.config = { ...node(before, 'email').data.config, message: '{{ steps.note.nope }}' };
+    const had = validateWorkflow({ name: 'Alert', graph: before });
+    const after = setNodeStep(before, 'note', 'change_order_status');
+    expect(newStepIssues(had, { name: 'Alert', graph: after }, 'note')).toEqual([]);
   });
 });

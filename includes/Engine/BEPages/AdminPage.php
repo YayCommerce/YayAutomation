@@ -4,7 +4,6 @@ namespace YayAutomation\Engine\BEPages;
 
 use YayAutomation\Engine\Register\ScriptName;
 use YayAutomation\Utils\SingletonTrait;
-use YayAutomation\Workflow\Data\OrderData;
 use YayAutomation\Workflow\Definition\Catalog;
 use YayAutomation\Workflow\Steps\Actions\SendInternalEmail;
 use YayAutomation\YayAutomation;
@@ -80,7 +79,6 @@ class AdminPage {
             ],
             'wc'         => [
                 'active'         => class_exists( 'WooCommerce' ),
-                'orderStatuses'  => Catalog::options( OrderData::statuses() ),
                 'currencySymbol' => function_exists( 'get_woocommerce_currency_symbol' )
                     ? html_entity_decode( get_woocommerce_currency_symbol(), ENT_QUOTES, 'UTF-8' )
                     : '',

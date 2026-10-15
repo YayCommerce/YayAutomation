@@ -3,7 +3,7 @@ import type { StepId, WorkflowNodeKind, WorkflowPlugin } from '@yay-automation/t
 import type { LucideIcon } from 'lucide-react';
 import type * as v from 'valibot';
 
-import type { StepMeta } from '@/types/localize';
+import type { StepMeta, StepOutputMeta } from '@/types/localize';
 import type { SummaryValues } from './summary';
 
 export type Config = Record<string, unknown>;
@@ -23,19 +23,23 @@ export interface StepSpec<TConfig extends Config> {
   label?: string;
   description?: string;
   /**
-   * The one source of truth for a valid config: field errors in the form and the workflow's
-   * `invalid_config` issue. Must accept exactly what the PHP step's `validate()` accepts.
+   * Pending steps only: the one source of truth for a valid config (field errors in the form and
+   * the workflow's `invalid_config` issue). A built step's schema comes from its catalog fields.
    */
-  schema: v.GenericSchema<TConfig>;
-  defaults: () => TConfig;
+  schema?: v.GenericSchema<TConfig>;
+  /**
+   * A new step's config. A built step's come from its catalog fields; pass them only for sample
+   * text PHP doesn't keep.
+   */
+  defaults?: () => TConfig;
   /**
    * Brings stored config into the current shape: fills missing keys. Mirrors the PHP step's
    * `sanitize()`. Defaults to merging over `defaults()`.
    */
   normalize?: (config: Config) => TConfig;
   /**
-   * Data items the step reads with this config. Mirrors the PHP step's `uses()`. Defaults to the
-   * step's `requires` plus the items of every merge tag in the config's text.
+   * Data items the step reads with this config, besides its merge tags (the workflow checks those
+   * through `tagPaths`). Mirrors the PHP step's `uses()`. Defaults to the step's `requires`.
    */
   uses?: (config: TConfig) => string[];
   /**
@@ -48,7 +52,7 @@ export interface StepSpec<TConfig extends Config> {
   summaryValues?: SummaryValues<TConfig>;
   /** Pending steps only: replaces the step kind's icon on the card and in the panel header. */
   icon?: LucideIcon;
-  /** Omitted when the step has nothing to configure. */
+  /** A custom form. Without one, a built step's form is drawn from its catalog fields (`StepForm`). */
   Form?: ComponentType<StepFormProps<TConfig>>;
 }
 
@@ -64,6 +68,8 @@ export interface Step {
   provides: string[];
   /** Actions: data items needed whatever the config; the picker dims the action without them. */
   requires: string[];
+  /** What later steps can read at `steps.<id>.<key>`. From PHP's catalog; none while pending. */
+  outputs: StepOutputMeta[];
   /** Actions: picker section. */
   category?: StepMeta['category'];
   /** Its PHP side isn't built yet: shown but can't be picked (see `pending.ts`). */
@@ -72,11 +78,14 @@ export interface Step {
   normalize: (config: Config) => Config;
   /** The first validation message, or null when the config is valid. */
   firstError: (config: Config) => string | null;
-  /** Data items the step reads, `site` excluded. */
+  /** Paths of the well-formed merge tags in the fields that accept them (all text while pending). */
+  tagPaths: (config: Config) => string[];
+  /** Data items the step reads besides its merge tags, `site` excluded. */
   uses: (config: Config) => string[];
   /** Card text, with `SummaryText` marks. */
   summary: (config: Config) => string;
   /** The step's own icon; without one the card shows its kind's. */
   icon?: LucideIcon;
+  /** Omitted when the step has nothing to set. */
   Form?: ComponentType<StepFormProps<Config>>;
 }

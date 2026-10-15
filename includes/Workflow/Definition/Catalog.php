@@ -13,7 +13,7 @@ defined( 'ABSPATH' ) || exit;
 
 /**
  * What Workflow Core knows, for the admin app (`yayAutomationMeta.automation`): plugins, steps
- * with their fields and outputs, data items with their types, operators. PHP is the one source;
+ * with their fields and outputs, data items with their types, operators with their labels. PHP is the one source;
  * the app's parity test (apps/admin-page/src/test/parity.test.ts) checks the TS side against it.
  *
  * Shape must match apps/admin-page/src/types/localize.d.ts: keys in camelCase, option lists as
@@ -23,12 +23,13 @@ final class Catalog {
 
     public static function to_client(): array {
         return [
-            'plugins'   => Plugins::to_client(),
-            'steps'     => self::steps( StepRegistry::all() ),
-            'data'      => DataRegistry::to_client(),
-            'operators' => Operators::BY_TYPE,
-            'always'    => DataRegistry::ALWAYS,
-            'messages'  => Messages::all(),
+            'plugins'        => Plugins::to_client(),
+            'steps'          => self::steps( StepRegistry::all() ),
+            'data'           => DataRegistry::to_client(),
+            'operators'      => Operators::BY_TYPE,
+            'operatorLabels' => Operators::labels(),
+            'always'         => DataRegistry::ALWAYS,
+            'messages'       => Messages::all(),
         ];
     }
 

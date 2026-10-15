@@ -96,7 +96,7 @@ final class FieldTest extends TestCase {
         $this->assertSame( [], $field->sanitize( 'pending' ) );
         $this->assertNull( $field->validate( [] ) );
         $this->assertNull( $field->validate( [ 'processing' ] ) );
-        $this->assertSame( 'Choose options from the list only.', $field->validate( [ 'processing', 'gone' ] ) );
+        $this->assertSame( 'Choose options from the list.', $field->validate( [ 'processing', 'gone' ] ) );
         $this->assertSame( self::REQUIRED, $field->required()->validate( [] ) );
     }
 

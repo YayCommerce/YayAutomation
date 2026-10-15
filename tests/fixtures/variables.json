@@ -1,0 +1,482 @@
+{
+    "//": "Variables a step can use: PHP Validator::variables(). Shared with the admin app's availableVariables() (steps/core/variables.test.ts). Add cases here, not in one test only.",
+    "cases": [
+        {
+            "name": "No trigger chosen: only the always-available data",
+            "graph": {
+                "nodes": [
+                    {
+                        "id": "t",
+                        "kind": "trigger",
+                        "position": {
+                            "x": 0,
+                            "y": 0
+                        },
+                        "data": {
+                            "block": null,
+                            "config": []
+                        }
+                    },
+                    {
+                        "id": "note",
+                        "kind": "action",
+                        "position": {
+                            "x": 0,
+                            "y": 0
+                        },
+                        "data": {
+                            "block": "add_order_note",
+                            "config": []
+                        }
+                    }
+                ],
+                "edges": [
+                    {
+                        "id": "t-note",
+                        "source": "t",
+                        "target": "note"
+                    }
+                ]
+            },
+            "nodeId": "note",
+            "keys": [
+                "site.name",
+                "site.url"
+            ]
+        },
+        {
+            "name": "The trigger itself: its data, no outputs",
+            "graph": {
+                "nodes": [
+                    {
+                        "id": "t",
+                        "kind": "trigger",
+                        "position": {
+                            "x": 0,
+                            "y": 0
+                        },
+                        "data": {
+                            "block": "order_status_changed",
+                            "config": []
+                        }
+                    },
+                    {
+                        "id": "c",
+                        "kind": "condition",
+                        "position": {
+                            "x": 0,
+                            "y": 0
+                        },
+                        "data": {
+                            "block": "condition",
+                            "config": []
+                        }
+                    },
+                    {
+                        "id": "note",
+                        "kind": "action",
+                        "position": {
+                            "x": 0,
+                            "y": 0
+                        },
+                        "data": {
+                            "block": "add_order_note",
+                            "config": []
+                        }
+                    },
+                    {
+                        "id": "status",
+                        "kind": "action",
+                        "position": {
+                            "x": 0,
+                            "y": 0
+                        },
+                        "data": {
+                            "block": "change_order_status",
+                            "config": []
+                        }
+                    },
+                    {
+                        "id": "email",
+                        "kind": "action",
+                        "position": {
+                            "x": 0,
+                            "y": 0
+                        },
+                        "data": {
+                            "block": "send_internal_email",
+                            "config": []
+                        }
+                    }
+                ],
+                "edges": [
+                    {
+                        "id": "t-c",
+                        "source": "t",
+                        "target": "c"
+                    },
+                    {
+                        "id": "c-note",
+                        "source": "c",
+                        "target": "note",
+                        "sourceHandle": "then"
+                    },
+                    {
+                        "id": "note-status",
+                        "source": "note",
+                        "target": "status"
+                    },
+                    {
+                        "id": "c-email",
+                        "source": "c",
+                        "target": "email",
+                        "sourceHandle": "otherwise"
+                    }
+                ]
+            },
+            "nodeId": "t",
+            "keys": [
+                "order.number",
+                "order.total",
+                "order.subtotal",
+                "order.status",
+                "order.payment_method",
+                "order.shipping_method",
+                "order.item_count",
+                "order.created_date",
+                "order.admin_url",
+                "order.items",
+                "order.customer.email",
+                "order.customer.first_name",
+                "order.customer.last_name",
+                "order.customer.full_name",
+                "order.customer.phone",
+                "order.customer.billing_country",
+                "customer.email",
+                "customer.first_name",
+                "customer.last_name",
+                "customer.full_name",
+                "customer.phone",
+                "customer.billing_country",
+                "site.name",
+                "site.url"
+            ]
+        },
+        {
+            "name": "Below a condition and a step: outputs top to bottom",
+            "graph": {
+                "nodes": [
+                    {
+                        "id": "t",
+                        "kind": "trigger",
+                        "position": {
+                            "x": 0,
+                            "y": 0
+                        },
+                        "data": {
+                            "block": "order_status_changed",
+                            "config": []
+                        }
+                    },
+                    {
+                        "id": "c",
+                        "kind": "condition",
+                        "position": {
+                            "x": 0,
+                            "y": 0
+                        },
+                        "data": {
+                            "block": "condition",
+                            "config": []
+                        }
+                    },
+                    {
+                        "id": "note",
+                        "kind": "action",
+                        "position": {
+                            "x": 0,
+                            "y": 0
+                        },
+                        "data": {
+                            "block": "add_order_note",
+                            "config": []
+                        }
+                    },
+                    {
+                        "id": "status",
+                        "kind": "action",
+                        "position": {
+                            "x": 0,
+                            "y": 0
+                        },
+                        "data": {
+                            "block": "change_order_status",
+                            "config": []
+                        }
+                    },
+                    {
+                        "id": "email",
+                        "kind": "action",
+                        "position": {
+                            "x": 0,
+                            "y": 0
+                        },
+                        "data": {
+                            "block": "send_internal_email",
+                            "config": []
+                        }
+                    }
+                ],
+                "edges": [
+                    {
+                        "id": "t-c",
+                        "source": "t",
+                        "target": "c"
+                    },
+                    {
+                        "id": "c-note",
+                        "source": "c",
+                        "target": "note",
+                        "sourceHandle": "then"
+                    },
+                    {
+                        "id": "note-status",
+                        "source": "note",
+                        "target": "status"
+                    },
+                    {
+                        "id": "c-email",
+                        "source": "c",
+                        "target": "email",
+                        "sourceHandle": "otherwise"
+                    }
+                ]
+            },
+            "nodeId": "status",
+            "keys": [
+                "order.number",
+                "order.total",
+                "order.subtotal",
+                "order.status",
+                "order.payment_method",
+                "order.shipping_method",
+                "order.item_count",
+                "order.created_date",
+                "order.admin_url",
+                "order.items",
+                "order.customer.email",
+                "order.customer.first_name",
+                "order.customer.last_name",
+                "order.customer.full_name",
+                "order.customer.phone",
+                "order.customer.billing_country",
+                "customer.email",
+                "customer.first_name",
+                "customer.last_name",
+                "customer.full_name",
+                "customer.phone",
+                "customer.billing_country",
+                "site.name",
+                "site.url",
+                "steps.c.result",
+                "steps.note.type"
+            ]
+        },
+        {
+            "name": "The other branch: the condition, not the note",
+            "graph": {
+                "nodes": [
+                    {
+                        "id": "t",
+                        "kind": "trigger",
+                        "position": {
+                            "x": 0,
+                            "y": 0
+                        },
+                        "data": {
+                            "block": "order_status_changed",
+                            "config": []
+                        }
+                    },
+                    {
+                        "id": "c",
+                        "kind": "condition",
+                        "position": {
+                            "x": 0,
+                            "y": 0
+                        },
+                        "data": {
+                            "block": "condition",
+                            "config": []
+                        }
+                    },
+                    {
+                        "id": "note",
+                        "kind": "action",
+                        "position": {
+                            "x": 0,
+                            "y": 0
+                        },
+                        "data": {
+                            "block": "add_order_note",
+                            "config": []
+                        }
+                    },
+                    {
+                        "id": "status",
+                        "kind": "action",
+                        "position": {
+                            "x": 0,
+                            "y": 0
+                        },
+                        "data": {
+                            "block": "change_order_status",
+                            "config": []
+                        }
+                    },
+                    {
+                        "id": "email",
+                        "kind": "action",
+                        "position": {
+                            "x": 0,
+                            "y": 0
+                        },
+                        "data": {
+                            "block": "send_internal_email",
+                            "config": []
+                        }
+                    }
+                ],
+                "edges": [
+                    {
+                        "id": "t-c",
+                        "source": "t",
+                        "target": "c"
+                    },
+                    {
+                        "id": "c-note",
+                        "source": "c",
+                        "target": "note",
+                        "sourceHandle": "then"
+                    },
+                    {
+                        "id": "note-status",
+                        "source": "note",
+                        "target": "status"
+                    },
+                    {
+                        "id": "c-email",
+                        "source": "c",
+                        "target": "email",
+                        "sourceHandle": "otherwise"
+                    }
+                ]
+            },
+            "nodeId": "email",
+            "keys": [
+                "order.number",
+                "order.total",
+                "order.subtotal",
+                "order.status",
+                "order.payment_method",
+                "order.shipping_method",
+                "order.item_count",
+                "order.created_date",
+                "order.admin_url",
+                "order.items",
+                "order.customer.email",
+                "order.customer.first_name",
+                "order.customer.last_name",
+                "order.customer.full_name",
+                "order.customer.phone",
+                "order.customer.billing_country",
+                "customer.email",
+                "customer.first_name",
+                "customer.last_name",
+                "customer.full_name",
+                "customer.phone",
+                "customer.billing_country",
+                "site.name",
+                "site.url",
+                "steps.c.result"
+            ]
+        },
+        {
+            "name": "Not linked: nothing above it",
+            "graph": {
+                "nodes": [
+                    {
+                        "id": "t",
+                        "kind": "trigger",
+                        "position": {
+                            "x": 0,
+                            "y": 0
+                        },
+                        "data": {
+                            "block": "order_created",
+                            "config": []
+                        }
+                    },
+                    {
+                        "id": "note",
+                        "kind": "action",
+                        "position": {
+                            "x": 0,
+                            "y": 0
+                        },
+                        "data": {
+                            "block": "add_order_note",
+                            "config": []
+                        }
+                    },
+                    {
+                        "id": "meta",
+                        "kind": "action",
+                        "position": {
+                            "x": 0,
+                            "y": 0
+                        },
+                        "data": {
+                            "block": "update_order_meta",
+                            "config": []
+                        }
+                    }
+                ],
+                "edges": [
+                    {
+                        "id": "t-note",
+                        "source": "t",
+                        "target": "note"
+                    }
+                ]
+            },
+            "nodeId": "meta",
+            "keys": [
+                "order.number",
+                "order.total",
+                "order.subtotal",
+                "order.status",
+                "order.payment_method",
+                "order.shipping_method",
+                "order.item_count",
+                "order.created_date",
+                "order.admin_url",
+                "order.items",
+                "order.customer.email",
+                "order.customer.first_name",
+                "order.customer.last_name",
+                "order.customer.full_name",
+                "order.customer.phone",
+                "order.customer.billing_country",
+                "customer.email",
+                "customer.first_name",
+                "customer.last_name",
+                "customer.full_name",
+                "customer.phone",
+                "customer.billing_country",
+                "site.name",
+                "site.url"
+            ]
+        }
+    ]
+}

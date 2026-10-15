@@ -41,7 +41,7 @@ class AddOrderNote extends Action {
     }
 
     public function icon(): string {
-        return 'sticky-note';
+        return 'message-square';
     }
 
     public function category(): string {
@@ -88,10 +88,6 @@ class AddOrderNote extends Action {
             'note' => $config['note'],
             'type' => $config['type'],
         ];
-    }
-
-    public function validate( array $config ) {
-        return $this->field_error( $config ) ?? true;
     }
 
     public function run( Scope $scope, array $config ): StepResult {

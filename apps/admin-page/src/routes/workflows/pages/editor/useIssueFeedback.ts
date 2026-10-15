@@ -32,6 +32,11 @@ export function useIssueFeedback(issues: WorkflowIssue[], startInErrorMode: bool
     [issues],
   );
 
+  /** Steps broken by an edit elsewhere (a swapped step whose data they used): "Needs setup" at once. */
+  const markReview = useCallback((nodeIds: string[]) => {
+    if (nodeIds.length) setVisited((prev) => new Set([...prev, ...nodeIds]));
+  }, []);
+
   /** How one step's panel shows its errors. */
   const feedbackFor = useCallback(
     (nodeId: string): Feedback => (errorMode ? 'error' : visited.has(nodeId) ? 'review' : 'none'),
@@ -53,5 +58,5 @@ export function useIssueFeedback(issues: WorkflowIssue[], startInErrorMode: bool
     [issues, errorMode, feedbackFor],
   );
 
-  return { errorMode, setErrorMode, feedbackFor, markVisited, issueModes };
+  return { errorMode, setErrorMode, feedbackFor, markVisited, markReview, issueModes };
 }

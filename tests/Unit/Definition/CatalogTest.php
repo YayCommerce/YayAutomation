@@ -2,8 +2,10 @@
 namespace YayAutomation\Tests\Unit\Definition;
 
 use PHPUnit\Framework\TestCase;
+use YayAutomation\Workflow\Data\DataRegistry;
 use YayAutomation\Workflow\Data\Type;
 use YayAutomation\Workflow\Definition\Catalog;
+use YayAutomation\Workflow\Steps\Core\StepIcons;
 use YayAutomation\Workflow\Steps\Core\StepRegistry;
 
 require_once dirname( __DIR__, 2 ) . '/Support/woocommerce-stubs.php';
@@ -100,6 +102,30 @@ final class CatalogTest extends TestCase {
             foreach ( $step['outputs'] as $output ) {
                 $this->assertNotNull( Type::parse( $output['type'] ), $output['type'] );
             }
+        }
+    }
+
+    public function test_data_items_list_relations_apart_from_fields(): void {
+        $order = array_column( DataRegistry::to_client(), null, 'id' )['order'];
+
+        $this->assertSame(
+            [
+                [
+                    'key'   => 'order.customer',
+                    'label' => 'Customer',
+                    'item'  => 'customer',
+                ],
+            ],
+            $order['relations'],
+            'one entity: a relation; a list (`order.items`) stays a field'
+        );
+        $this->assertNotContains( 'order.customer', array_column( $order['fields'], 'key' ) );
+        $this->assertContains( 'order.items', array_column( $order['fields'], 'key' ) );
+    }
+
+    public function test_data_items_name_a_step_icon(): void {
+        foreach ( DataRegistry::to_client() as $item ) {
+            $this->assertContains( $item['icon'], StepIcons::NAMES, $item['id'] );
         }
     }
 }

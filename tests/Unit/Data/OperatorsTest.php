@@ -46,6 +46,15 @@ final class OperatorsTest extends TestCase {
         $this->assertSame( ! $truthy, Operators::compare( DataItem::TYPE_BOOLEAN, 'is_false', $actual, null ) );
     }
 
+    public function test_every_operator_has_one_label(): void {
+        $ids = array_values( array_unique( array_merge( ...array_values( Operators::BY_TYPE ) ) ) );
+        sort( $ids );
+        $labels = array_keys( Operators::labels() );
+        sort( $labels );
+        $this->assertSame( $ids, $labels );
+        $this->assertSame( 'is greater than', Operators::labels()['greater_than'] );
+    }
+
     public function test_existing_types_unchanged(): void {
         $this->assertTrue( Operators::compare( DataItem::TYPE_NUMBER, 'greater_than', 10.5, '10' ) );
         $this->assertTrue( Operators::compare( DataItem::TYPE_STRING, 'contains', 'Hello', 'ELL' ) );

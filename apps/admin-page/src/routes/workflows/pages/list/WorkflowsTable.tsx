@@ -11,9 +11,9 @@ import { Pagination } from '@/components/ui/pagination';
 import { Segmented, SegmentedItem } from '@/components/ui/segmented';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { StepTile } from '../../shared/ui/StepTile';
 import { workflowState, WorkflowStatusBadge, type WorkflowState } from '../../shared/ui/WorkflowStatusBadge';
 import { plainSummary, stepOf } from '../../steps';
+import { StepTile } from '../../steps/core/StepTile';
 import { WorkflowBulkActions } from './WorkflowBulkActions';
 import { WorkflowRowDialogs, WorkflowRowMenu, type RowTarget } from './WorkflowRowMenu';
 

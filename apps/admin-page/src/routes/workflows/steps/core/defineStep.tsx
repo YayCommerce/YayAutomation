@@ -1,12 +1,16 @@
-import { useState, type ReactNode } from 'react';
+import { createElement, useState, type ReactNode } from 'react';
 import * as v from 'valibot';
 
 import type { CatalogStepMeta } from '@/types/localize';
-import { alwaysAvailable, itemOf, variableKeys } from './data';
+import { alwaysAvailable } from './data';
+import { defaultsFromFields, schemaFromFields } from './fields/catalogSchema';
+import { StepForm } from './fields/StepForm';
 import { stepIcons } from './icons';
 import { MARKED } from './marks';
+import { stepPanel } from './panels';
 import { automationMeta, isPendingStep } from './pending';
 import { renderSummary } from './summary';
+import { templatePaths } from './template';
 import type { Config, Step, StepFormProps, StepSpec } from './types';
 
 export { PLACEHOLDER, plainSummary, value } from './marks';
@@ -32,10 +36,14 @@ export function SummaryText({ text }: { text: string }) {
   return parts;
 }
 
+/**
+ * A step for the registry. A step PHP has built needs only `id` and `kind`: its schema, defaults
+ * and form come from its catalog fields (`StepForm`), unless it passes its own `Form`.
+ */
 export function defineStep<TConfig extends Config>({
-  schema,
-  defaults,
-  normalize = (config) => ({ ...defaults(), ...config }) as TConfig,
+  schema: ownSchema,
+  defaults: ownDefaults,
+  normalize: ownNormalize,
   uses,
   summary,
   summaryValues,
@@ -49,17 +57,40 @@ export function defineStep<TConfig extends Config>({
   const requires = meta.requires ?? [];
   // PHP's catalog entry once the step is built: its wording, icon and summary win over the stub's.
   const catalog = isPendingStep(spec.id) ? undefined : (meta as CatalogStepMeta);
+  const fields = catalog?.fields ?? [];
 
-  /** Default `uses`: what the action always needs, plus the items of its merge tags. */
-  const usesByDefault = (config: TConfig) => [
-    ...requires,
-    ...Object.values(config).flatMap((value) => (typeof value === 'string' ? variableKeys(value).map(itemOf) : [])),
+  if (!catalog && (!ownSchema || !ownDefaults)) {
+    throw new Error(`Step "${spec.id}" isn't in PHP's catalog yet, so it needs its own schema and defaults.`);
+  }
+  const schema = ownSchema ?? (schemaFromFields(fields, catalog!.label) as v.GenericSchema<TConfig>);
+  const fieldDefaults = defaultsFromFields(fields) as TConfig;
+  const defaults = ownDefaults ?? (() => structuredClone(fieldDefaults));
+  // A built step keeps only its fields' keys, like PHP `Field::sanitize_all()`.
+  const keep = (config: Config) =>
+    catalog ? Object.fromEntries(Object.entries(config).filter(([key]) => key in fieldDefaults)) : config;
+  const normalize = ownNormalize ?? ((config: Config) => ({ ...defaults(), ...keep(config) }) as TConfig);
+
+  // Fields that accept merge tags; a pending step has no catalog yet, so all its text.
+  const variableFields = catalog?.fields.filter((field) => field.variables).map((field) => field.key);
+  const tagPaths = (config: Config) => [
+    ...new Set(
+      Object.entries(config).flatMap(([key, value]) =>
+        typeof value === 'string' && (!variableFields || variableFields.includes(key)) ? templatePaths(value) : [],
+      ),
+    ),
   ];
+
+  // Its own form, else one drawn from the fields. Nothing when there's nothing to set.
+  const hasForm = !!Form || fields.length > 0;
 
   function StepConfigForm({ config, onChange }: StepFormProps<Config>) {
     // Normalized once, so the form's default values keep a stable identity.
     const [initial] = useState(() => normalize(config));
-    return Form && <Form config={initial} onChange={onChange as (config: TConfig) => void} />;
+    if (Form) return <Form config={initial} onChange={onChange as (config: TConfig) => void} />;
+    // A registered panel is the same component on every render, so React keeps its state.
+    const panel = stepPanel(spec.id);
+    if (panel) return createElement(panel, { config: initial, onChange });
+    return <StepForm fields={fields} schema={schema as v.GenericSchema<Config>} config={initial} onChange={onChange} />;
   }
 
   return {
@@ -70,6 +101,7 @@ export function defineStep<TConfig extends Config>({
     plugin: meta.plugin,
     provides: meta.provides ?? [],
     requires,
+    outputs: catalog?.outputs ?? [],
     category: meta.category,
     comingSoon: isPendingStep(spec.id),
     defaults,
@@ -78,14 +110,15 @@ export function defineStep<TConfig extends Config>({
       const result = v.safeParse(schema, normalize(config));
       return result.success ? null : result.issues[0].message;
     },
+    tagPaths: (config) => tagPaths(normalize(config)),
     uses: (config) => {
-      const items = (uses ?? usesByDefault)(normalize(config));
+      const items = uses ? uses(normalize(config)) : requires;
       return [...new Set(items)].filter((item) => !alwaysAvailable.includes(item));
     },
     summary: (config) =>
       catalog
         ? renderSummary(catalog.summary, catalog.fields, normalize(config), summaryValues)
         : (summary?.(normalize(config)) ?? ''),
-    Form: Form && StepConfigForm,
+    Form: hasForm ? StepConfigForm : undefined,
   };
 }

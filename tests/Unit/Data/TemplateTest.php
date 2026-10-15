@@ -5,7 +5,6 @@ use PHPUnit\Framework\TestCase;
 use YayAutomation\Tests\Support\FakeValues;
 use YayAutomation\Workflow\Data\Filters;
 use YayAutomation\Workflow\Data\Template;
-use YayAutomation\Workflow\Data\Variables;
 
 /** Merge tags `{{ path | filter: arg }}`: old tags, paths, filters, escaping, malformed tags. */
 final class TemplateTest extends TestCase {
@@ -20,6 +19,30 @@ final class TemplateTest extends TestCase {
             new \DateTimeZone( 'UTC' )
         );
         $this->template = new Template( $filters );
+    }
+
+    /** @return array[] Cases shared with the admin app's parser (tests/fixtures/template-cases.json). */
+    public function shared_cases(): array {
+        $cases = json_decode( (string) file_get_contents( dirname( __DIR__, 2 ) . '/fixtures/template-cases.json' ), true )['cases'];
+        $sets = [];
+        foreach ( $cases as $case ) {
+            if ( isset( $sets[ $case['text'] ] ) ) {
+                throw new \LogicException( 'Two template cases with the same text: ' . $case['text'] );
+            }
+            $sets[ $case['text'] ] = [ $case['text'], $case['errors'], $case['paths'] ];
+        }
+        return $sets;
+    }
+
+    /**
+     * @dataProvider shared_cases
+     * @param string   $text   Template text.
+     * @param string[] $errors Expected `errors()`.
+     * @param string[] $paths  Expected `paths()`.
+     */
+    public function test_shared_cases( string $text, array $errors, array $paths ): void {
+        $this->assertSame( $errors, $this->template->errors( $text ) );
+        $this->assertSame( $paths, $this->template->paths( $text ) );
     }
 
     public function test_old_tags_render_their_display_text(): void {
@@ -71,9 +94,9 @@ final class TemplateTest extends TestCase {
         $this->assertSame( [], $this->template->paths( '{{ Steps.Email1.code }} {{ 1steps.a }}' ) );
     }
 
-    public function test_paths_match_the_old_merge_tag_keys(): void {
+    public function test_paths_of_old_tags_in_order_without_duplicates(): void {
         $text = 'Order {{ order.number }} for {{customer.email}} ({{ order.number }}), {{ order }} {{ Order.Total }}';
-        $this->assertSame( Variables::keys( $text ), $this->template->paths( $text ) );
+        $this->assertSame( [ 'order.number', 'customer.email' ], $this->template->paths( $text ) );
     }
 
     public function test_deep_paths_and_step_ids(): void {

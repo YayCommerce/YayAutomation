@@ -34,8 +34,13 @@ abstract class DataItem {
 
     abstract public function label(): string;
 
-    /** One line for the "Add a variable" list. */
+    /** One line for the "Insert variable" list. */
     abstract public function description(): string;
+
+    /** Its tile in the "Insert variable" list: a name from `StepIcons::NAMES`. */
+    public function icon(): string {
+        return 'database';
+    }
 
     /** @return array[] Field definitions keyed by field key. */
     abstract protected function define(): array;

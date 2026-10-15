@@ -1,16 +1,16 @@
 import { forwardRef, type ComponentProps } from 'react';
-import { Code, Replace, Trash2 } from 'lucide-react';
+import { ChevronDown, Code, X } from 'lucide-react';
 import { __ } from '@wordpress/i18n';
 
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from '@/components/ui/input-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { fieldByKey, type DataField } from '../../core/data';
+import { focusVariants } from '@/components/ui/variants/focus.variants';
+import { inputVariants } from '@/components/ui/variants/input.variants';
+import { fieldByKey, itemLabel, itemOf, type DataField } from '../../core/data';
 import { VariablePicker } from '../../core/fields/VariablePicker';
 import { comparableWith, VARIABLE_VALUE_TYPES, type Rule } from './schema';
-
-/** "Add a variable" / "Add criteria": tint with the primary color on hover, like the Create workflow pills. */
-export const softButton = 'hover:bg-primary/10 hover:text-primary';
 
 /** For the picker's "Types: …" line. */
 const typeLabels: Partial<Record<DataField['type'], string>> = {
@@ -20,21 +20,51 @@ const typeLabels: Partial<Record<DataField['type'], string>> = {
   enum: __('Option', 'yay-automation'),
 };
 
-/** A chosen variable: its label, and its key underlined. Clicking it re-opens the picker. */
+/** "Order total" under Order → "Total": the item already shows in small text beside it. */
+function shortLabel(field: DataField) {
+  const item = itemLabel(itemOf(field.key));
+  if (!field.label.toLowerCase().startsWith(`${item.toLowerCase()} `)) return field.label;
+  const rest = field.label.slice(item.length + 1);
+  return rest.charAt(0).toUpperCase() + rest.slice(1);
+}
+
+/**
+ * Looks like a select: the chosen data field with its item in small text ("Order  Total"), or a
+ * placeholder. Opens the picker it's wrapped in.
+ */
 // forwardRef: VariablePicker's Slot hands its child a ref.
-export const VariableLabel = forwardRef<HTMLButtonElement, { field: DataField } & ComponentProps<'button'>>(
-  ({ field, ...props }, ref) => (
-    <button ref={ref} type="button" className="flex min-w-0 cursor-pointer flex-col text-left text-sm" {...props}>
-      <span className="font-medium">{field.label}</span>
-      <span className="text-muted-foreground truncate underline decoration-dotted underline-offset-4">{field.key}</span>
-    </button>
-  ),
-);
+export const DataSelect = forwardRef<
+  HTMLButtonElement,
+  { field: DataField | undefined; placeholder: string; invalid?: boolean } & ComponentProps<'button'>
+>(({ field, placeholder, invalid, className, ...props }, ref) => (
+  <button
+    ref={ref}
+    type="button"
+    aria-invalid={invalid || undefined}
+    className={cn(
+      'border-input dark:bg-input/30 dark:hover:bg-input/50 transition-default flex h-9 w-full min-w-0 cursor-pointer items-center justify-between gap-2 rounded-md border bg-transparent px-3 text-left text-sm',
+      focusVariants(),
+      inputVariants({ variant: 'picker' }),
+      className,
+    )}
+    {...props}
+  >
+    {field ? (
+      <span className="flex min-w-0 items-baseline gap-2">
+        <small className="text-muted-foreground shrink-0 text-xs">{itemLabel(itemOf(field.key))}</small>
+        <span className="truncate">{shortLabel(field)}</span>
+      </span>
+    ) : (
+      <span className="text-muted-foreground truncate">{placeholder}</span>
+    )}
+    <ChevronDown className="text-muted-foreground size-4 shrink-0" />
+  </button>
+));
 
 /**
  * The value to compare with: options for enums, a date field for dates, text otherwise. Number, text
- * and date values may instead be another variable of the same type (`</>`), shown like the variable
- * above with ⇄ and delete (back to a typed value).
+ * and date values may instead be another data field of the same type (`</>`), shown like the rule's
+ * data select, with × back to a typed value.
  */
 export function ValueInput({
   id,
@@ -75,33 +105,25 @@ export function ValueInput({
       : null;
 
   if (variables && rule.valueType === 'variable') {
-    const other = fieldByKey(rule.value);
     return (
-      <div className="flex items-start justify-between gap-2">
+      <div className="flex min-w-0 items-center gap-1">
         <VariablePicker {...variables} onSelect={setVariable}>
-          {other ? (
-            <VariableLabel id={id} field={other} />
-          ) : (
-            <Button id={id} variant="secondary" size="sm" className={softButton}>
-              {__('Add a variable', 'yay-automation')}
-            </Button>
-          )}
+          <DataSelect
+            id={id}
+            field={fieldByKey(rule.value)}
+            placeholder={__('Choose data', 'yay-automation')}
+            invalid={invalid}
+          />
         </VariablePicker>
-        <div className="flex shrink-0 items-center">
-          <VariablePicker {...variables} onSelect={setVariable}>
-            <Button variant="ghost" size="icon-sm" aria-label={__('Change variable', 'yay-automation')}>
-              <Replace />
-            </Button>
-          </VariablePicker>
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            aria-label={__('Use a typed value', 'yay-automation')}
-            onClick={() => setValue('')}
-          >
-            <Trash2 />
-          </Button>
-        </div>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          className="shrink-0"
+          aria-label={__('Type a value instead', 'yay-automation')}
+          onClick={() => setValue('')}
+        >
+          <X />
+        </Button>
       </div>
     );
   }
@@ -120,7 +142,7 @@ export function ValueInput({
       {variables && (
         <InputGroupAddon align="inline-end">
           <VariablePicker {...variables} onSelect={setVariable}>
-            <InputGroupButton size="icon-md" aria-label={__('Use a variable', 'yay-automation')}>
+            <InputGroupButton size="icon-md" aria-label={__('Compare with other data', 'yay-automation')}>
               <Code />
             </InputGroupButton>
           </VariablePicker>

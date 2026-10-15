@@ -1,22 +1,19 @@
-import { useRef, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { useForm } from '@tanstack/react-form';
 import { Eye, Send } from 'lucide-react';
 import { __ } from '@wordpress/i18n';
 
 import { Button } from '@/components/ui/button';
-import { FieldDescription, FieldGroup } from '@/components/ui/field';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import { FieldGroup } from '@/components/ui/field';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { AddVariable } from '../../core/fields/AddVariable';
-import { ConfigField } from '../../core/fields/ConfigField';
 import { useMarkInvalid } from '../../core/fields/feedback';
 import { useValidateOnMount } from '../../core/fields/useValidateOnMount';
+import { Notice, TextField } from '../../core/fields/widgets';
 import { comingSoonLabel } from '../../core/pending';
 import type { StepFormProps } from '../../core/types';
 import { schema, type SendEmailConfig } from './schema';
 
-const sender = window.yayAutomationMeta.automation.email;
+const { fromLine } = window.yayAutomationMeta.automation.email;
 
 type TextKey = 'to' | 'subject' | 'heading' | 'message';
 
@@ -28,62 +25,29 @@ export function SendEmailForm({ config, onChange }: StepFormProps<SendEmailConfi
   });
   useValidateOnMount(form);
   const markInvalid = useMarkInvalid();
-  const refs = {
-    to: useRef<HTMLInputElement>(null),
-    subject: useRef<HTMLInputElement>(null),
-    heading: useRef<HTMLInputElement>(null),
-    message: useRef<HTMLTextAreaElement>(null),
-  };
 
-  const textField = (name: TextKey, label: string, description?: string, placeholder?: string) => (
+  const textField = (name: TextKey, label: string, help?: string) => (
     <form.Field name={name}>
       {(field) => (
-        <ConfigField
+        <TextField
+          id={`step-email-${name}`}
           label={label}
-          htmlFor={`step-email-${name}`}
-          description={description}
+          help={help}
+          multiline={name === 'message'}
+          variables
+          value={field.state.value}
+          onChange={field.handleChange}
+          onBlur={field.handleBlur}
+          invalid={markInvalid(field.state.meta)}
           errors={field.state.meta.errors}
-        >
-          {name === 'message' ? (
-            <Textarea
-              ref={refs.message}
-              id="step-email-message"
-              rows={10}
-              value={field.state.value}
-              onChange={(event) => field.handleChange(event.target.value)}
-              onBlur={field.handleBlur}
-              aria-invalid={markInvalid(field.state.meta)}
-            />
-          ) : (
-            <Input
-              ref={refs[name]}
-              id={`step-email-${name}`}
-              value={field.state.value}
-              placeholder={placeholder}
-              onChange={(event) => field.handleChange(event.target.value)}
-              onBlur={field.handleBlur}
-              aria-invalid={markInvalid(field.state.meta)}
-            />
-          )}
-          <AddVariable inputRef={refs[name]} value={field.state.value} onChange={field.handleChange} />
-        </ConfigField>
+        />
       )}
     </form.Field>
   );
 
   return (
     <FieldGroup>
-      <ConfigField label={__('From', 'yay-automation')} htmlFor="step-email-from" errors={[]}>
-        <Input id="step-email-from" value={sender.fromAddress} readOnly disabled />
-        <FieldDescription className="flex justify-between gap-2">
-          {__('The store email used to contact customers', 'yay-automation')}
-          <Button asChild variant="link" size="sm" className="h-auto px-0">
-            <a href={sender.settingsUrl} target="_blank" rel="noreferrer">
-              {__('Change store email', 'yay-automation')}
-            </a>
-          </Button>
-        </FieldDescription>
-      </ConfigField>
+      <Notice label={__('From', 'yay-automation')} text={fromLine} />
 
       {textField('to', __('To', 'yay-automation'), __('Separate addresses with commas.', 'yay-automation'))}
       {textField('subject', __('Subject', 'yay-automation'))}

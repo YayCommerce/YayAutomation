@@ -3,8 +3,9 @@ import { createContext, useContext } from 'react';
 /**
  * How a step form shows its errors, set by the editor per step:
  * - `none`: quiet, the step is being filled in for the first time;
- * - `review`: blue tint + message, the step was left unfinished;
- * - `error`: red, a Turn on / Apply failed.
+ * - `review`: the step was left unfinished (its card says "Needs setup");
+ * - `error`: an Activate / Update failed.
+ * Forms show the same field errors in `review` and `error`; only the card tells them apart.
  */
 export type Feedback = 'none' | 'review' | 'error';
 
@@ -12,17 +13,14 @@ export const FeedbackContext = createContext<Feedback>('error');
 
 export const useFeedback = () => useContext(FeedbackContext);
 
-/**
- * For a control's `aria-invalid`: outlines turn red only after a failed Turn on / Apply. Review mode
- * tints through `ConfigField` instead, and a step being filled in stays quiet.
- */
+/** Whether the open form shows its errors. */
+export const useShowErrors = () => useFeedback() !== 'none';
+
+/** For a control's `aria-invalid`: red outlines only while the form shows its errors. */
 export function useMarkInvalid() {
-  const feedback = useFeedback();
-  return (meta: { isValid: boolean }) => feedback === 'error' && !meta.isValid;
+  const showErrors = useShowErrors();
+  return (meta: { isValid: boolean }) => showErrors && !meta.isValid;
 }
 
-/** Tint and message color per mode, shared by every field and the criteria boxes. */
-export const feedbackStyles = {
-  review: { tint: 'border-primary/40 bg-primary/5', text: 'text-primary' },
-  error: { tint: 'border-destructive bg-destructive/5', text: 'text-destructive' },
-} as const;
+/** Error tint and text color, shared by the condition rule boxes. */
+export const errorStyles = { tint: 'border-destructive bg-destructive/5', text: 'text-destructive' } as const;

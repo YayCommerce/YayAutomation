@@ -1,8 +1,9 @@
 import type { TemplateCategory, WorkflowGraph } from '@yay-automation/types';
 import { __ } from '@wordpress/i18n';
 
-import { variableKeys } from '../../steps/core/data';
+import { fieldByPath } from '../../steps/core/data';
 import { isPendingField, isPendingStep } from '../../steps/core/pending';
+import { templatePaths } from '../../steps/core/template';
 
 /** In library chip order. */
 export const categoryLabels: Record<TemplateCategory, string> = {
@@ -24,5 +25,8 @@ export const isComingSoon = (graph: WorkflowGraph) =>
   graph.nodes.some(
     ({ data }) =>
       (data.block && isPendingStep(data.block)) ||
-      strings(data.config).some((text) => isPendingField(text) || variableKeys(text).some(isPendingField)),
+      strings(data.config).some(
+        (text) =>
+          isPendingField(text) || templatePaths(text).some((path) => isPendingField(fieldByPath(path)?.key ?? '')),
+      ),
   );

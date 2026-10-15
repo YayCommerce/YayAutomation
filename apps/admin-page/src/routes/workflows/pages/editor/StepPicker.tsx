@@ -17,10 +17,10 @@ import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/in
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { ComingSoonChip } from '../../shared/ui/ComingSoonChip';
 import { PluginIcon, plugins } from '../../shared/ui/PluginIcon';
-import { StepTile } from '../../shared/ui/StepTile';
 import { steps, type Step } from '../../steps';
 import { itemLabel } from '../../steps/core/data';
 import { comingSoonLabel } from '../../steps/core/pending';
+import { StepTile } from '../../steps/core/StepTile';
 
 type PickableKind = 'trigger' | 'action';
 

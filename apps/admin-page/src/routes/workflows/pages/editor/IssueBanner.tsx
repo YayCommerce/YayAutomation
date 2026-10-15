@@ -6,8 +6,8 @@ import { __, sprintf } from '@wordpress/i18n';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { kindMeta } from '../../shared/canvas/NodeCardView';
-import { StepTile } from '../../shared/ui/StepTile';
 import { stepOf } from '../../steps';
+import { StepTile } from '../../steps/core/StepTile';
 
 const issueKey = (issue: WorkflowIssue) => `${issue.code}|${issue.nodeId ?? ''}`;
 

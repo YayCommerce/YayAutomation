@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useStore } from '@tanstack/react-form';
 import { useQueryClient } from '@tanstack/react-query';
-import type { Workflow, WorkflowIssue } from '@yay-automation/types';
+import type { StepId, Workflow, WorkflowIssue } from '@yay-automation/types';
 import { AnimatePresence } from 'motion/react';
 import { useLocation, useNavigate } from 'react-router';
 import { __ } from '@wordpress/i18n';
@@ -23,8 +23,8 @@ import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/sonner';
 import { ApiError, errorMessage } from '../../api/workflow.api';
 import { useWorkflowActionMutation, workflowKeys } from '../../api/workflow.query';
-import { removeNode } from '../../model/graph';
-import { createIssuesSelector, sameIssues } from '../../model/validation';
+import { removeNode, setNodeStep } from '../../model/graph';
+import { createIssuesSelector, newStepIssues, sameIssues } from '../../model/validation';
 import { useActivateWorkflow } from '../../shared/actions/useActivateWorkflow';
 import {
   ActivateDialog,
@@ -79,7 +79,7 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
   );
 
   // Quiet → "review" (Needs setup) → red "error". Opened from a failed Activate elsewhere → starts red.
-  const { errorMode, setErrorMode, feedbackFor, markVisited, issueModes } = useIssueFeedback(
+  const { errorMode, setErrorMode, feedbackFor, markVisited, markReview, issueModes } = useIssueFeedback(
     issues,
     !!(location.state as EditorNavState | null)?.showIssues,
   );
@@ -108,6 +108,15 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
     form.setFieldValue('graph', (graph) => ids.reduce((next, id) => removeNode(next, id), graph));
     setStepsToDelete(null);
     if (panel && ids.includes(panel.nodeId)) setPanel(null);
+  };
+
+  /** Sets a step's step, back to its form. Other steps the change breaks show "Needs setup". */
+  const pickStep = (nodeId: string, stepId: StepId) => {
+    const after = setNodeStep(form.state.values.graph, nodeId, stepId);
+    const broken = newStepIssues(issues, { name: workflow.name, graph: after }, nodeId);
+    form.setFieldValue('graph', after);
+    markReview(broken);
+    setPanel({ nodeId, picking: false });
   };
 
   const [confirm, setConfirm] = useState<ConfirmAction | null>(null);
@@ -270,7 +279,8 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
                     picking={panel.picking}
                     feedback={feedbackFor(panel.nodeId)}
                     closable={!panelLocked}
-                    onPicked={() => setPanel({ nodeId: panel.nodeId, picking: false })}
+                    onPick={(stepId) => pickStep(panel.nodeId, stepId)}
+                    onSwap={(picking) => setPanel({ nodeId: panel.nodeId, picking })}
                     onClose={() => showPanel(null)}
                   />
                 </StepPanelFrame>

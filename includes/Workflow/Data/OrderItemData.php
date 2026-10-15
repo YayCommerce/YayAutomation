@@ -5,7 +5,7 @@ defined( 'ABSPATH' ) || exit;
 
 /**
  * One line of an order, reached through `order.items`. Context object: \WC_Order_Item_Product.
- * Not offered in "Add a variable": it isn't something a trigger supplies.
+ * Not offered in "Insert variable": it isn't something a trigger supplies.
  */
 final class OrderItemData extends DataItem {
 
@@ -21,6 +21,10 @@ final class OrderItemData extends DataItem {
 
     public function description(): string {
         return __( 'One line of an order: the product name, quantity and line total.', 'yay-automation' );
+    }
+
+    public function icon(): string {
+        return 'package';
     }
 
     protected function define(): array {

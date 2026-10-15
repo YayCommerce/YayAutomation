@@ -16,40 +16,6 @@
     },
     "wc": {
         "active": true,
-        "orderStatuses": [
-            {
-                "value": "pending",
-                "label": "Pending payment"
-            },
-            {
-                "value": "processing",
-                "label": "Processing"
-            },
-            {
-                "value": "on-hold",
-                "label": "On hold"
-            },
-            {
-                "value": "completed",
-                "label": "Completed"
-            },
-            {
-                "value": "cancelled",
-                "label": "Cancelled"
-            },
-            {
-                "value": "refunded",
-                "label": "Refunded"
-            },
-            {
-                "value": "failed",
-                "label": "Failed"
-            },
-            {
-                "value": "checkout-draft",
-                "label": "Draft"
-            }
-        ],
         "currencySymbol": "$"
     },
     "automation": {
@@ -59,7 +25,7 @@
                 "label": "WooCommerce",
                 "description": "Orders, customers and store emails.",
                 "active": true,
-                "logo": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\"><path d=\"M5.5 8.5h13l-1 11h-11z\" /><path d=\"M9 8.5V7a3 3 0 0 1 6 0v1.5\" /></svg>"
+                "logo": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\"><circle cx=\"8\" cy=\"21\" r=\"1\" /><circle cx=\"19\" cy=\"21\" r=\"1\" /><path d=\"M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12\" /></svg>"
             },
             {
                 "id": "yayautomation",
@@ -80,7 +46,7 @@
                 "module": "core",
                 "label": "Order created",
                 "description": "Starts when a new order is created.",
-                "icon": "shopping-cart",
+                "icon": "shopping-bag",
                 "summary": "When a new order is created",
                 "onError": "stop",
                 "fields": [],
@@ -96,7 +62,7 @@
                 "module": "core",
                 "label": "Order status changed",
                 "description": "Starts when an order moves to another status. Choose which status changes count.",
-                "icon": "refresh-cw",
+                "icon": "shopping-bag",
                 "summary": "%from% → %to%",
                 "onError": "stop",
                 "fields": [
@@ -200,7 +166,7 @@
                 "module": "core",
                 "label": "Condition",
                 "description": "Take the Yes path when the rules match, otherwise the No path.",
-                "icon": "split",
+                "icon": "git-branch",
                 "summary": "%rules%",
                 "onError": "stop",
                 "fields": [
@@ -262,12 +228,13 @@
                         "key": "from",
                         "type": "notice",
                         "label": "From",
-                        "text": "The store email used to contact customers"
+                        "text": "Example Store <store@example.test>"
                     },
                     {
                         "key": "recipients",
                         "type": "emails",
                         "label": "To",
+                        "placeholder": "admin@example.test",
                         "help": "Separate addresses with commas. Leave blank to use the site admin email.",
                         "default": ""
                     },
@@ -308,7 +275,7 @@
                 "module": "core",
                 "label": "Change order status",
                 "description": "Move the order to another status.",
-                "icon": "arrow-right-left",
+                "icon": "tag",
                 "summary": "Set to %status%",
                 "onError": "stop",
                 "fields": [
@@ -317,6 +284,7 @@
                         "type": "select",
                         "label": "New status",
                         "required": true,
+                        "requiredMessage": "Choose the new status.",
                         "placeholder": "Choose a status",
                         "options": [
                             {
@@ -446,7 +414,7 @@
                 "module": "core",
                 "label": "Add order note",
                 "description": "Add a private note to the order, or a note the customer gets by email.",
-                "icon": "sticky-note",
+                "icon": "message-square",
                 "summary": "%type%: %note%",
                 "onError": "stop",
                 "fields": [
@@ -504,7 +472,7 @@
                 "module": "core",
                 "label": "Update order custom field",
                 "description": "Set a custom field (meta) on the order.",
-                "icon": "database",
+                "icon": "list",
                 "summary": "Set %key% to %value%",
                 "onError": "stop",
                 "fields": [
@@ -539,6 +507,7 @@
                 "id": "order",
                 "label": "Order",
                 "description": "The WooCommerce order that started this workflow: its number, totals, status, payment, shipping and items.",
+                "icon": "shopping-bag",
                 "fields": [
                     {
                         "key": "order.number",
@@ -658,12 +627,20 @@
                         "valueType": "list<entity<order_item>>",
                         "conditional": false
                     }
+                ],
+                "relations": [
+                    {
+                        "key": "order.customer",
+                        "label": "Customer",
+                        "item": "customer"
+                    }
                 ]
             },
             {
                 "id": "customer",
                 "label": "Customer",
                 "description": "The person who placed the order, from its billing details. Works for guests too.",
+                "icon": "user",
                 "fields": [
                     {
                         "key": "customer.email",
@@ -1709,12 +1686,14 @@
                             }
                         ]
                     }
-                ]
+                ],
+                "relations": []
             },
             {
                 "id": "site",
                 "label": "Site",
                 "description": "Your WordPress site: its name and address. Available in every workflow.",
+                "icon": "globe",
                 "fields": [
                     {
                         "key": "site.name",
@@ -1730,7 +1709,8 @@
                         "valueType": "string",
                         "conditional": false
                     }
-                ]
+                ],
+                "relations": []
             }
         ],
         "operators": {
@@ -1765,6 +1745,26 @@
                 "is_false"
             ]
         },
+        "operatorLabels": {
+            "equal": "is equal to",
+            "not_equal": "is not equal to",
+            "greater_than": "is greater than",
+            "greater_or_equal": "is greater than or equal to",
+            "less_than": "is less than",
+            "less_or_equal": "is less than or equal to",
+            "contains": "contains",
+            "not_contains": "does not contain",
+            "starts_with": "starts with",
+            "ends_with": "ends with",
+            "is_empty": "is empty",
+            "is_not_empty": "is not empty",
+            "is": "is",
+            "is_not": "is not",
+            "before": "is before",
+            "after": "is after",
+            "is_true": "is true",
+            "is_false": "is false"
+        },
         "always": [
             "site"
         ],
@@ -1779,13 +1779,16 @@
             "unknownVariable": "%s isn’t an available variable.",
             "unknownFilter": "%1$s isn’t a filter. Available filters: %2$s.",
             "malformedTag": "%s is written incorrectly. Use {{ variable }} or {{ variable | filter }}.",
+            "fieldRequired": "This field is required",
             "invalidEmail": "%s isn’t a valid email address.",
-            "chooseNewStatus": "Choose the new status.",
-            "unknownStatus": "Choose statuses from the list.",
+            "chooseOption": "Choose an option from the list.",
+            "chooseOptions": "Choose options from the list.",
+            "numberMin": "Enter %s or more.",
+            "numberMax": "Enter %s or less.",
             "rulesRequired": "Add a rule, or remove this condition.",
-            "ruleVariable": "Choose a variable for each rule.",
+            "ruleVariable": "Choose data for each rule.",
             "ruleComparison": "Choose a comparison for each rule.",
-            "ruleCompareWith": "Choose a variable to compare with.",
+            "ruleCompareWith": "Choose data to compare with.",
             "ruleValueRequired": "Enter a value for %s.",
             "ruleBlankHint": "Or choose “%s” to check for a blank value.",
             "ruleNumber": "Enter a number.",
@@ -1793,9 +1796,7 @@
             "ruleOption": "Choose a value from the list."
         },
         "email": {
-            "fromName": "Example Store",
-            "fromAddress": "store@example.test",
-            "settingsUrl": "https://example.test/wp-admin/admin.php?page=wc-settings&tab=email"
+            "fromLine": "Example Store <store@example.test>"
         }
     },
     "docs": {

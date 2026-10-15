@@ -96,8 +96,8 @@ final class StepConfigsTest extends TestCase {
                 ],
                 self::OK,
             ],
-            'status changed: unknown to'   => [ 'order_status_changed', [ 'to' => [ 'gone' ] ], null, 'Choose statuses from the list.' ],
-            'status changed: unknown from' => [ 'order_status_changed', [ 'from' => [ 'completed', 'gone' ] ], null, 'Choose statuses from the list.' ],
+            'status changed: unknown to'   => [ 'order_status_changed', [ 'to' => [ 'gone' ] ], null, 'Choose options from the list.' ],
+            'status changed: unknown from' => [ 'order_status_changed', [ 'from' => [ 'completed', 'gone' ] ], null, 'Choose options from the list.' ],
 
             // Condition.
             'condition: empty'             => [ 'condition', 'junk', self::criteria( [] ), 'Add a rule, or remove this condition.' ],
@@ -116,17 +116,17 @@ final class StepConfigsTest extends TestCase {
                     ],
                 ],
                 self::criteria( [ self::rule( 'rder.total', 'greater_than', '5' ), self::rule( '', '' ) ] ),
-                'Choose a variable for each rule.',
+                'Choose data for each rule.',
             ],
-            'condition: unknown field'     => [ 'condition', self::criteria( [ self::rule( 'order.foo', 'equal', 'x' ) ] ), null, 'Choose a variable for each rule.' ],
-            'condition: not conditional'   => [ 'condition', self::criteria( [ self::rule( 'order.customer', 'equal', 'x' ) ] ), null, 'Choose a variable for each rule.' ],
+            'condition: unknown field'     => [ 'condition', self::criteria( [ self::rule( 'order.foo', 'equal', 'x' ) ] ), null, 'Choose data for each rule.' ],
+            'condition: not conditional'   => [ 'condition', self::criteria( [ self::rule( 'order.customer', 'equal', 'x' ) ] ), null, 'Choose data for each rule.' ],
             'condition: bad operator'      => [ 'condition', self::criteria( [ self::rule( 'order.total', 'contains', '5' ) ] ), null, 'Choose a comparison for each rule.' ],
             'condition: number blank'      => [ 'condition', self::criteria( [ self::rule( 'order.total', 'greater_or_equal' ) ] ), null, 'Enter a value for Order total.' ],
-            'condition: text blank'        => [ 'condition', self::criteria( [ self::rule( 'order.shipping_method', 'equal' ) ] ), null, 'Enter a value for Shipping method. Or choose “Is empty” to check for a blank value.' ],
+            'condition: text blank'        => [ 'condition', self::criteria( [ self::rule( 'order.shipping_method', 'equal' ) ] ), null, 'Enter a value for Shipping method. Or choose “is empty” to check for a blank value.' ],
             'condition: not a number'      => [ 'condition', self::criteria( [ self::rule( 'order.total', 'greater_than', 'abc' ) ] ), null, 'Enter a number.' ],
             'condition: not a date'        => [ 'condition', self::criteria( [ self::rule( 'order.created_date', 'before', '2026/01/01' ) ] ), null, 'Enter a date (YYYY-MM-DD).' ],
             'condition: unknown option'    => [ 'condition', self::criteria( [ self::rule( 'order.status', 'is', 'gone' ) ] ), null, 'Choose a value from the list.' ],
-            'condition: bad variable'      => [ 'condition', self::criteria( [ self::rule( 'order.total', 'equal', 'order.status', 'variable' ) ] ), null, 'Choose a variable to compare with.' ],
+            'condition: bad variable'      => [ 'condition', self::criteria( [ self::rule( 'order.total', 'equal', 'order.status', 'variable' ) ] ), null, 'Choose data to compare with.' ],
             'condition: later rule bad'    => [ 'condition', self::criteria( [ self::rule( 'order.status', 'is', 'processing' ), self::rule( 'order.total', 'less_than', 'x' ) ], 'any' ), null, 'Enter a number.' ],
             'condition: valid'             => [
                 'condition',
@@ -221,7 +221,7 @@ final class StepConfigsTest extends TestCase {
 
             // Change order status.
             'status: empty'                => [ 'change_order_status', [], [ 'status' => '' ], 'Choose the new status.' ],
-            'status: unknown'              => [ 'change_order_status', [ 'status' => 'gone' ], [ 'status' => 'gone' ], 'Choose the new status.' ],
+            'status: unknown'              => [ 'change_order_status', [ 'status' => 'gone' ], [ 'status' => 'gone' ], 'Choose an option from the list.' ],
             'status: wc- prefix'           => [ 'change_order_status', [ 'status' => 'wc-completed' ], [ 'status' => 'completed' ], self::OK ],
 
             // Add order note.

@@ -77,6 +77,7 @@ const data: DataItemMeta[] = [
     id: 'coupon',
     label: __('Coupon', 'yay-automation'),
     description: __('The coupon made by a Generate coupon step above.', 'yay-automation'),
+    icon: 'ticket',
     fields: [
       { key: 'coupon.code', label: __('Coupon code', 'yay-automation'), type: 'string', conditional: false },
       // Shown with its unit: "10%", "$5.00" or "Free shipping".

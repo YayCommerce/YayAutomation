@@ -15,9 +15,9 @@ import { ReadOnlyCanvas } from '../../shared/canvas/ReadOnlyCanvas';
 import { WorkflowAppIcon } from '../../shared/layout/EditorLayout';
 import type { EditorNavState } from '../../shared/nav/editor.nav';
 import { ErrorAlert } from '../../shared/ui/ErrorAlert';
-import { StepTile } from '../../shared/ui/StepTile';
 import { workflowState, WorkflowStatusBadge } from '../../shared/ui/WorkflowStatusBadge';
 import { plainSummary, stepOf, SummaryText } from '../../steps';
+import { StepTile } from '../../steps/core/StepTile';
 import { shortDay, VersionHistory } from './VersionHistory';
 import { WorkflowRuns } from './WorkflowRuns';
 
@@ -62,8 +62,8 @@ function WorkflowOverview({ workflow }: { workflow: Workflow }) {
   const [activateOpen, setActivateOpen] = useState(false);
   const [deactivateOpen, setDeactivateOpen] = useState(false);
   const issues = useMemo(() => activateIssues(workflow), [workflow]);
-  // What a refused Activate reported: the server may find issues this page doesn't check (e.g. a
-  // malformed tag). Kept for this copy of the workflow only: a refetch shows its own issues again.
+  // What a refused Activate reported: newer than this copy's issues when the workflow changed
+  // elsewhere. Kept for this copy only: a refetch shows its own issues again.
   const [refused, setRefused] = useState<{ workflow: Workflow; issues: WorkflowIssue[] } | null>(null);
   const setupIssues = refused?.workflow === workflow ? refused.issues : issues;
 

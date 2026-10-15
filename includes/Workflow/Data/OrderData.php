@@ -20,6 +20,10 @@ final class OrderData extends DataItem {
         return __( 'The WooCommerce order that started this workflow: its number, totals, status, payment, shipping and items.', 'yay-automation' );
     }
 
+    public function icon(): string {
+        return 'shopping-bag';
+    }
+
     /**
      * Registered order statuses as slug (no `wc-` prefix) => label. Empty without WooCommerce.
      */

@@ -33,18 +33,23 @@ final class Messages {
             /* translators: %s: a merge tag as written, e.g. {{ order. }}. Keep {{ variable }} and {{ variable | filter }} as they are. */
             'malformedTag'      => __( '%s is written incorrectly. Use {{ variable }} or {{ variable | filter }}.', 'yay-automation' ),
             // Step settings.
+            'fieldRequired'     => __( 'This field is required', 'yay-automation' ),
             /* translators: %s: the text entered as an email address */
             'invalidEmail'      => __( '%s isn’t a valid email address.', 'yay-automation' ),
-            'chooseNewStatus'   => __( 'Choose the new status.', 'yay-automation' ),
-            'unknownStatus'     => __( 'Choose statuses from the list.', 'yay-automation' ),
+            'chooseOption'      => __( 'Choose an option from the list.', 'yay-automation' ),
+            'chooseOptions'     => __( 'Choose options from the list.', 'yay-automation' ),
+            /* translators: %s: smallest number allowed */
+            'numberMin'         => __( 'Enter %s or more.', 'yay-automation' ),
+            /* translators: %s: largest number allowed */
+            'numberMax'         => __( 'Enter %s or less.', 'yay-automation' ),
             // Condition rules.
             'rulesRequired'     => __( 'Add a rule, or remove this condition.', 'yay-automation' ),
-            'ruleVariable'      => __( 'Choose a variable for each rule.', 'yay-automation' ),
+            'ruleVariable'      => __( 'Choose data for each rule.', 'yay-automation' ),
             'ruleComparison'    => __( 'Choose a comparison for each rule.', 'yay-automation' ),
-            'ruleCompareWith'   => __( 'Choose a variable to compare with.', 'yay-automation' ),
+            'ruleCompareWith'   => __( 'Choose data to compare with.', 'yay-automation' ),
             /* translators: %s: variable, e.g. "Order total" */
             'ruleValueRequired' => __( 'Enter a value for %s.', 'yay-automation' ),
-            /* translators: %s: comparison name, "Is empty" */
+            /* translators: %s: comparison name, "is empty" */
             'ruleBlankHint'     => __( 'Or choose “%s” to check for a blank value.', 'yay-automation' ),
             'ruleNumber'        => __( 'Enter a number.', 'yay-automation' ),
             'ruleDate'          => __( 'Enter a date (YYYY-MM-DD).', 'yay-automation' ),

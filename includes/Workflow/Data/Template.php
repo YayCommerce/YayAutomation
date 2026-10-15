@@ -17,8 +17,8 @@ defined( 'ABSPATH' ) || exit;
  *   deleted; the executor skips the step for it.
  * - A malformed tag stays as written; `errors()` reports it, and unknown filters, for the validator.
  *
- * This is the only renderer: the admin app only parses (checks and autocomplete), and previews
- * render here.
+ * This is the only renderer: the admin app only parses (`steps/core/template.ts`: checks and
+ * autocomplete), and previews render here.
  */
 final class Template {
 

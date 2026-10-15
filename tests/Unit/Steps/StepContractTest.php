@@ -120,6 +120,8 @@ final class StepContractTest extends TestCase {
         $from = $steps['send_internal_email']->fields()[0];
         $this->assertSame( 'from', $from->key() );
         $this->assertSame( Field::NOTICE, $from->type() );
+        // Site title "Tom &amp; Jerry&#039;s" (stored escaped) and no sender address: the admin's.
+        $this->assertSame( "Tom & Jerry's <admin@shop.test>", $from->to_array()['text'], 'the WooCommerce sender, as plain text' );
         $this->assertArrayNotHasKey( 'from', $steps['send_internal_email']->sanitize( [ 'from' => 'x@y.z' ] ) );
     }
 

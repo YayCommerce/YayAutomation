@@ -1,6 +1,7 @@
 <?php
 namespace YayAutomation\Workflow\Steps\Core;
 
+use YayAutomation\Workflow\Definition\Catalog;
 use YayAutomation\Workflow\Definition\Messages;
 
 defined( 'ABSPATH' ) || exit;
@@ -341,9 +342,9 @@ final class Field {
                 }
                 return null;
             case self::SELECT:
-                return $this->known( [ $value ] ) ? null : __( 'Choose an option from the list.', 'yay-automation' );
+                return $this->known( [ $value ] ) ? null : Messages::get( 'chooseOption' );
             case self::MULTISELECT:
-                return $this->known( $value ) ? null : __( 'Choose options from the list only.', 'yay-automation' );
+                return $this->known( $value ) ? null : Messages::get( 'chooseOptions' );
             case self::NUMBER:
                 return $this->range_error( $value, $step );
             case self::NUMBER_UNIT:
@@ -391,13 +392,7 @@ final class Field {
             $data['showIf'] = $this->show_if;
         }
         if ( null !== $this->options ) {
-            $data['options'] = [];
-            foreach ( $this->options() as $value => $label ) {
-                $data['options'][] = [
-                    'value' => (string) $value,
-                    'label' => (string) $label,
-                ];
-            }
+            $data['options'] = Catalog::options( $this->options() );
         }
         if ( $this->has_value() ) {
             $data['default'] = $this->sanitize( null );
@@ -543,7 +538,7 @@ final class Field {
      */
     private function required_text( string $step ): string {
         return '' === $this->required_message
-            ? __( 'This field is required', 'yay-automation' )
+            ? Messages::get( 'fieldRequired' )
             : sprintf( $this->required_message, $step );
     }
 
@@ -556,12 +551,10 @@ final class Field {
             return $this->required ? $this->required_text( $step ) : null;
         }
         if ( null !== $this->min && $number < $this->min ) {
-            /* translators: %s: smallest number allowed */
-            return sprintf( __( 'Enter %s or more.', 'yay-automation' ), $this->min );
+            return Messages::get( 'numberMin', $this->min );
         }
         if ( null !== $this->max && $number > $this->max ) {
-            /* translators: %s: largest number allowed */
-            return sprintf( __( 'Enter %s or less.', 'yay-automation' ), $this->max );
+            return Messages::get( 'numberMax', $this->max );
         }
         return null;
     }

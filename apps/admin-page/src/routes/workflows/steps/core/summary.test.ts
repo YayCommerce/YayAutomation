@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { StepFieldMeta } from '@/types/localize';
 import { steps } from '..';
 import { PLACEHOLDER, plainSummary, value } from './marks';
-import { renderSummary } from './summary';
+import { renderSummary, variableNames } from './summary';
 
 const plain = plainSummary;
 
@@ -44,6 +44,27 @@ describe('renderSummary', () => {
   it('lets the step write a placeholder, and keeps unknown ones as they are', () => {
     expect(renderSummary('%rules% %nope%', [], {}, { rules: () => 'A and B' })).toBe('A and B %nope%');
     expect(renderSummary('%rules%', [], {}, { rules: () => '' })).toBe(PLACEHOLDER);
+  });
+});
+
+describe('variableNames', () => {
+  it('names known paths, through relations and filters; leaves the rest as typed', () => {
+    expect(variableNames('Order {{ order.number }} for {{ order.customer.first_name | upper }}')).toBe(
+      'Order Order number for Customer first name',
+    );
+    expect(variableNames('{{ order.customer }} {{ trigger.order.total }}')).toBe('Customer Order total');
+    expect(variableNames('{{ order.nope }} {{ steps.n1.code }} {{ bad tag }}')).toBe(
+      '{{ order.nope }} {{ steps.n1.code }} {{ bad tag }}',
+    );
+  });
+
+  it('applies to fields that take merge tags only', () => {
+    const note: StepFieldMeta = { key: 'note', type: 'textarea', label: 'Note', variables: true };
+    expect(plain(renderSummary('%note%', [note], { note: 'New order {{ order.number }}' }))).toBe(
+      'New order Order number',
+    );
+    const key: StepFieldMeta = { key: 'key', type: 'text', label: 'Key' };
+    expect(plain(renderSummary('%key%', [key], { key: '{{ order.number }}' }))).toBe('{{ order.number }}');
   });
 });
 

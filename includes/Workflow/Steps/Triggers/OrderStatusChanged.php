@@ -2,7 +2,6 @@
 namespace YayAutomation\Workflow\Steps\Triggers;
 
 use YayAutomation\Workflow\Data\OrderData;
-use YayAutomation\Workflow\Definition\Messages;
 use YayAutomation\Workflow\Steps\Core\Field;
 
 defined( 'ABSPATH' ) || exit;
@@ -28,7 +27,7 @@ class OrderStatusChanged extends OrderTrigger {
     }
 
     public function icon(): string {
-        return 'refresh-cw';
+        return 'shopping-bag';
     }
 
     public function fields(): array {
@@ -63,17 +62,6 @@ class OrderStatusChanged extends OrderTrigger {
             'to'            => self::status_list( $config['to'] ?? [] ),
             'only_checkout' => ! empty( $config['only_checkout'] ),
         ];
-    }
-
-    public function validate( array $config ) {
-        $known = array_keys( OrderData::statuses() );
-        // Without WooCommerce there's nothing to check against; the trigger just never fires.
-        foreach ( [ 'from', 'to' ] as $key ) {
-            if ( $known && array_diff( $config[ $key ], $known ) ) {
-                return $this->invalid( Messages::get( 'unknownStatus' ), $key );
-            }
-        }
-        return true;
     }
 
     public function listen( callable $emit ): void {

@@ -27,7 +27,7 @@ class OrderCreated extends OrderTrigger {
     }
 
     public function icon(): string {
-        return 'shopping-cart';
+        return 'shopping-bag';
     }
 
     public function fields(): array {

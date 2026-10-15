@@ -8,6 +8,7 @@ use YayAutomation\Workflow\Data\Type;
 use YayAutomation\Workflow\Steps\Core\Field;
 use YayAutomation\Workflow\Steps\Core\Step;
 use YayAutomation\Workflow\Steps\Core\StepRegistry;
+use YayAutomation\Utils\Logger;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -138,6 +139,26 @@ final class Validator {
     }
 
     /**
+     * `issues()` for reading workflows (the list, opening one): never throws, so a workflow that
+     * can't be checked doesn't break the list and can still be opened and fixed. It gets no issues
+     * and the error is logged; Activate and apply still run the full check.
+     *
+     * @param array $workflow Stored workflow: id, name, graph, draft.
+     * @return array [ 'live' => issue[], 'draft' => issue[] ]
+     */
+    public static function list_issues( array $workflow ): array {
+        try {
+            return self::issues( $workflow );
+        } catch ( \Throwable $e ) {
+            Logger::error( 'Could not check workflow ' . ( $workflow['id'] ?? '?' ) . ': ' . $e->getMessage(), [ 'workflow_id' => $workflow['id'] ?? null ] );
+            return [
+                'live'  => [],
+                'draft' => [],
+            ];
+        }
+    }
+
+    /**
      * Problems that block turning a workflow on or applying a draft. Codes match the TS `validateWorkflow()`:
      * name_required, no_trigger (trigger not chosen), no_action (both workflow-level), unlinked (one issue,
      * `nodeIds` = every step not reached from the trigger), and per step: no_block (action not chosen),
@@ -148,15 +169,9 @@ final class Validator {
      * @return array[] [ [ 'code' => string, 'message' => string, 'field'? => string, 'nodeId'? => string, 'nodeIds'? => string[] ], … ]
      */
     public static function errors( array $workflow ): array {
-        $errors  = [];
-        $nodes   = $workflow['graph']['nodes'];
-        $trigger = null;
-        foreach ( $nodes as $node ) {
-            if ( Step::KIND_TRIGGER === $node['kind'] ) {
-                $trigger = $node;
-            }
-        }
-        $trigger_step = $trigger && $trigger['data']['block'] ? StepRegistry::get( $trigger['data']['block'] ) : null;
+        $errors       = [];
+        $nodes        = $workflow['graph']['nodes'];
+        $trigger_step = self::trigger_step( $nodes );
 
         if ( '' === $workflow['name'] ) {
             $errors[] = [
@@ -199,6 +214,93 @@ final class Validator {
             }
         }
         return $errors;
+    }
+
+    /**
+     * Variables one step can use, in the order "Insert variable" lists them: the trigger's data
+     * items and the always-available ones, each item's fields then its relations to one entity
+     * (`order.customer.first_name`; the relation itself has no text), then the outputs of the steps
+     * above it, top to bottom (`steps.<id>.<key>`). Without a trigger only the always-available
+     * items. Cases in tests/fixtures/variables.json, shared with the TS `availableVariables()`.
+     *
+     * @param array  $graph   Well-formed graph (from `GraphSchema::prepare()`).
+     * @param string $node_id The step.
+     * @return array[] [ [ 'key' => string, 'label' => string, 'type' => string ], … ], `type` as data fields' `valueType`.
+     */
+    public static function variables( array $graph, string $node_id ): array {
+        $trigger_step = self::trigger_step( $graph['nodes'] );
+        $items        = array_unique( array_merge( $trigger_step ? $trigger_step->provides() : [], DataRegistry::ALWAYS ) );
+
+        $list = [];
+        foreach ( $items as $id ) {
+            $item = DataRegistry::items()[ $id ] ?? null;
+            if ( $item ) {
+                $list = array_merge( $list, self::entity_variables( $item, $id, [ $id => true ] ) );
+            }
+        }
+
+        $by_id   = array_column( $graph['nodes'], null, 'id' );
+        $parents = array_column( $graph['edges'], 'source', 'target' );
+        // `ancestors()` walks up from the step, so reverse it to list from the trigger down.
+        foreach ( array_reverse( array_keys( self::ancestors( $node_id, $parents ) ) ) as $id ) {
+            $node = $by_id[ $id ] ?? null;
+            $step = $node && $node['data']['block'] ? StepRegistry::get( $node['data']['block'] ) : null;
+            foreach ( $step ? $step->outputs() : [] as $key => $output ) {
+                /** @var Type $type */
+                $type   = $output['type'];
+                $list[] = [
+                    'key'   => "steps.$id.$key",
+                    'label' => $output['label'],
+                    'type'  => $type->to_string(),
+                ];
+            }
+        }
+        return $list;
+    }
+
+    /**
+     * Fields of an entity under a path prefix: its own fields first, then those of each relation to
+     * one entity (the catalog sends them apart, as `fields` and `relations`). A relation back to a
+     * type already on the path isn't followed.
+     *
+     * @param DataItem $entity Entity type.
+     * @param string   $prefix Path so far, e.g. `order` or `order.customer`.
+     * @param array    $seen   Entity type ids on the path => true.
+     */
+    private static function entity_variables( DataItem $entity, string $prefix, array $seen ): array {
+        $list    = [];
+        $related = [];
+        foreach ( $entity->fields() as $key => $field ) {
+            /** @var Type $type */
+            $type = $field['value_type'];
+            if ( ! $type->is( Type::ENTITY ) ) {
+                $list[] = [
+                    'key'   => "$prefix.$key",
+                    'label' => $field['label'],
+                    'type'  => $type->to_string(),
+                ];
+                continue;
+            }
+            $target = DataRegistry::entities()[ $type->entity_type() ] ?? null;
+            if ( $target && ! isset( $seen[ $target->id() ] ) ) {
+                $related[] = self::entity_variables( $target, "$prefix.$key", $seen + [ $target->id() => true ] );
+            }
+        }
+        return array_merge( $list, ...$related );
+    }
+
+    /**
+     * The chosen trigger step, or null.
+     *
+     * @param array[] $nodes Well-formed nodes.
+     */
+    private static function trigger_step( array $nodes ): ?Step {
+        foreach ( $nodes as $node ) {
+            if ( Step::KIND_TRIGGER === $node['kind'] ) {
+                return $node['data']['block'] ? StepRegistry::get( $node['data']['block'] ) : null;
+            }
+        }
+        return null;
     }
 
     /**

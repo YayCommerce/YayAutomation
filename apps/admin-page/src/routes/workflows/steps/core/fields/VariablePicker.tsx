@@ -1,18 +1,20 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { Slot } from '@radix-ui/react-slot';
-import { ArrowLeft, ChevronRight, Search, Zap } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import { __, sprintf } from '@wordpress/i18n';
 
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
-import { dataItems, type DataField } from '../data';
-import { comingSoonLabel, isPendingField } from '../pending';
-import { useVariableScope } from './variableScope';
+import { alwaysAvailable, dataItems, fieldByKey, type DataField } from '../data';
+import { stepIcons } from '../icons';
+import { comingSoonLabel } from '../pending';
+import { StepTile } from '../StepTile';
+import { canInsert, groupVariables, type Variable, type VariableGroup } from '../variables';
+import { useVariableScope, type VariableScope } from './variableScope';
 
-const MODAL_WIDTH = 512;
+const MODAL_WIDTH = 440;
 const MODAL_HEIGHT = 480;
 
 /**
@@ -22,14 +24,46 @@ const MODAL_HEIGHT = 480;
 export const spotlightTarget =
   'data-[spotlit=on]:bg-card data-[spotlit=on]:ring-card data-[spotlit=on]:relative data-[spotlit=on]:z-20 data-[spotlit=on]:rounded-lg data-[spotlit=on]:ring-8';
 
-const matches = (texts: string[], query: string) =>
-  texts.some((text) => text.toLowerCase().includes(query.trim().toLowerCase()));
+const matches = (variable: Variable, query: string) =>
+  [variable.label, variable.key].some((text) => text.toLowerCase().includes(query.trim().toLowerCase()));
+
+const groupKey = (group: VariableGroup) => `${group.source}:${group.id}`;
+
+const countOf = (group: VariableGroup) => group.sections.reduce((sum, section) => sum + section.variables.length, 0);
+
+/** Name, line and tile of a group: a data item tinted by the step that supplies it, or a step above. */
+function describe(group: VariableGroup, { trigger, steps }: VariableScope) {
+  if (group.source === 'step') {
+    const step = steps[group.id];
+    return {
+      label: step?.label ?? group.id,
+      description: step?.summary ?? '',
+      tile: <StepTile kind={step?.kind ?? 'action'} icon={step?.icon} />,
+    };
+  }
+  const item = dataItems.find((i) => i.id === group.id);
+  const kind = trigger?.provides.includes(group.id)
+    ? 'trigger'
+    : alwaysAvailable.includes(group.id)
+      ? 'neutral'
+      : 'action';
+  return {
+    label: item?.label ?? group.id,
+    description: item?.description ?? '',
+    tile: <StepTile kind={kind} icon={item?.icon ? stepIcons[item.icon] : undefined} />,
+  };
+}
 
 /**
- * "Add a variable": a modal beside the step panel, level with the element being
- * edited (the nearest `data-spotlight` around `children`), which stays bright while the rest dims.
- * The trigger first, then the data items the step can read (key, description, `>`), each opening its
- * fields. Searching lists matching fields across items.
+ * "Insert variable": a modal beside the step panel, level with the element being edited (the
+ * nearest `data-spotlight` around `children`), which stays bright while the rest dims. First the
+ * data the step can read (from the trigger, then every workflow's) and the steps above with
+ * outputs, each with how many variables it has; then that group's variables, related items' under
+ * their name, each with its merge-tag key. Searching lists matching variables (in the open group,
+ * or all).
+ *
+ * `conditionalOnly` / `filter`: for condition rules, which compare data fields only (no step
+ * outputs, no related items' fields).
  */
 export function VariablePicker({
   conditionalOnly = false,
@@ -40,9 +74,9 @@ export function VariablePicker({
   onDismiss,
   children,
 }: {
-  /** Leave out display-only fields. */
+  /** Data fields usable in conditions only. */
   conditionalOnly?: boolean;
-  /** Only fields it accepts (e.g. the same type as the other side of a comparison). */
+  /** Data fields it accepts (e.g. the same type as the other side of a comparison). */
   filter?: (field: DataField) => boolean;
   /** "Types: …" line under the search, when `filter` narrows by type. */
   types?: string;
@@ -54,21 +88,22 @@ export function VariablePicker({
   /** The element that opens it. */
   children: ReactNode;
 }) {
-  const { available, trigger } = useVariableScope();
+  const scope = useVariableScope();
   const [open, setOpen] = useState(false);
   const [position, setPosition] = useState<CSSProperties>();
-  const [itemId, setItemId] = useState<string | null>(null);
+  const [openKey, setOpenKey] = useState<string | null>(null);
   const [query, setQuery] = useState('');
 
+  const forConditions = conditionalOnly || !!filter;
+  const accepts = (variable: Variable) => {
+    if (!forConditions) return true;
+    // An item's own field only: `order.total`, not `order.customer.email` or `steps.<id>.<key>`.
+    const field = variable.key.split('.').length === 2 ? fieldByKey(variable.key) : undefined;
+    return !!field && (!conditionalOnly || field.conditional) && (!filter || filter(field));
+  };
   // Built only while open: a criteria box holds several closed pickers.
-  const items = (open ? dataItems : [])
-    .filter((item) => available.includes(item.id))
-    .map((item) => ({
-      ...item,
-      fields: item.fields.filter((field) => (!conditionalOnly || field.conditional) && (!filter || filter(field))),
-    }))
-    .filter((item) => item.fields.length);
-  const item = items.find((i) => i.id === itemId);
+  const groups = open ? groupVariables(scope.variables.filter(accepts)) : [];
+  const group = groups.find((g) => groupKey(g) === openKey);
 
   // Focus goes back to the opener on close: the dialog has no DialogTrigger to return it to.
   const opener = useRef<HTMLElement | null>(null);
@@ -94,7 +129,7 @@ export function VariablePicker({
     } else {
       setPosition(undefined);
     }
-    setItemId(null);
+    setOpenKey(null);
     setQuery('');
     setOpen(true);
   };
@@ -111,6 +146,10 @@ export function VariablePicker({
     onSelect(key);
     close(true);
   };
+  const openGroup = (key: string | null) => {
+    setOpenKey(key);
+    setQuery('');
+  };
 
   const slot = useRef<HTMLElement>(null);
   useEffect(() => {
@@ -119,48 +158,75 @@ export function VariablePicker({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  let list: ReactNode;
-  if (query.trim()) {
-    const found = items.flatMap((i) => i.fields.filter((field) => matches([field.label, field.key], query)));
-    list = found.length ? (
-      found.map((field) => <FieldRow key={field.key} field={field} onPick={pick} />)
-    ) : (
-      <p className="text-muted-foreground p-4 text-sm">{__('No variable found.', 'yay-automation')}</p>
+  const opened = group && describe(group, scope);
+  const dataGroups = groups.filter((g) => g.source === 'data');
+  const stepGroups = groups.filter((g) => g.source === 'step');
+
+  let context: ReactNode = null;
+  if (opened) {
+    context = (
+      <span className="flex items-center gap-1.5">
+        <button
+          type="button"
+          onClick={() => openGroup(null)}
+          className="hover:text-foreground flex cursor-pointer items-center gap-1.5"
+        >
+          <ChevronLeft className="size-3.5" aria-hidden />
+          {__('All data', 'yay-automation')}
+        </button>
+        <ChevronRight className="size-3.5" aria-hidden />
+        <b className="text-foreground font-semibold">{opened.label}</b>
+      </span>
     );
-  } else if (item) {
+  } else if (scope.trigger && dataGroups.length && query.trim() === '') {
+    context = (
+      <>
+        {__('Data from the trigger', 'yay-automation')}
+        <StepTile kind="trigger" icon={scope.trigger.icon} size="sm" />
+        <b className="text-foreground font-medium">{scope.trigger.label}</b>
+      </>
+    );
+  }
+
+  let list: ReactNode;
+  const searching = query.trim() !== '';
+  if (searching) {
+    const found = (group ? [group] : groups).flatMap((g) =>
+      g.sections.flatMap((s) => s.variables.filter((v) => matches(v, query))),
+    );
+    list = found.length ? (
+      found.map((variable) => (
+        <VariableRow key={variable.key} variable={variable} comingSoonStep={scope.comingSoonStep} onPick={pick} />
+      ))
+    ) : (
+      <Empty>{__('No variable found.', 'yay-automation')}</Empty>
+    );
+  } else if (group) {
+    list = group.sections.map((section) => (
+      <div key={section.path} className="flex flex-col">
+        {section.label && <SectionHeading>{section.label}</SectionHeading>}
+        {section.variables.map((variable) => (
+          <VariableRow key={variable.key} variable={variable} comingSoonStep={scope.comingSoonStep} onPick={pick} />
+        ))}
+      </div>
+    ));
+  } else if (groups.length) {
+    const row = (g: VariableGroup) => (
+      <GroupRow key={groupKey(g)} {...describe(g, scope)} count={countOf(g)} onOpen={() => openGroup(groupKey(g))} />
+    );
     list = (
       <>
-        <div className="flex items-center gap-2 border-b px-2 py-1.5">
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            aria-label={__('Back to variables', 'yay-automation')}
-            onClick={() => setItemId(null)}
-          >
-            <ArrowLeft />
-          </Button>
-          <span className="font-mono text-sm">{item.id}</span>
-        </div>
-        {item.fields.map((field) => (
-          <FieldRow key={field.key} field={field} onPick={pick} />
-        ))}
+        {dataGroups.map(row)}
+        {stepGroups.length > 0 && (
+          <>
+            <SectionHeading>{__('From earlier steps', 'yay-automation')}</SectionHeading>
+            {stepGroups.map(row)}
+          </>
+        )}
       </>
     );
   } else {
-    list = items.map((i) => (
-      <button
-        key={i.id}
-        type="button"
-        onClick={() => setItemId(i.id)}
-        className="hover:bg-accent flex w-full cursor-pointer items-center gap-3 border-b px-4 py-3 text-left"
-      >
-        <span className="min-w-0 flex-1">
-          <span className="block font-mono text-sm">{i.id}</span>
-          <span className="text-muted-foreground line-clamp-2 text-xs">{i.description}</span>
-        </span>
-        <ChevronRight className="text-muted-foreground size-4 shrink-0" aria-hidden />
-      </button>
-    ));
+    list = <Empty>{__('No data to insert here yet.', 'yay-automation')}</Empty>;
   }
 
   return (
@@ -173,19 +239,19 @@ export function VariablePicker({
         <DialogContent
           style={{ ...position, width: MODAL_WIDTH, height: MODAL_HEIGHT }}
           // Above the lifted step panel (z-100002), which sits above the overlay (z-100001).
-          className="nokey z-100003 flex max-h-[calc(100vh-2rem)] max-w-[calc(100vw-2rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-[calc(100vw-2rem)]"
+          className="nokey z-100003 flex max-h-[calc(100vh-2rem)] max-w-[calc(100vw-2rem)] flex-col gap-0 overflow-hidden rounded-xl p-0 sm:max-w-[calc(100vw-2rem)]"
           onCloseAutoFocus={(event) => {
             event.preventDefault();
             opener.current?.focus();
           }}
         >
-          <div className="bg-muted/50 border-b px-4 py-3">
-            <DialogTitle className="text-sm font-semibold">{__('Add a variable', 'yay-automation')}</DialogTitle>
+          <div className="py-3 pr-12 pl-4">
+            <DialogTitle className="text-[15px] font-semibold">{__('Insert variable', 'yay-automation')}</DialogTitle>
             <DialogDescription className="sr-only">
               {__('Pick data from the workflow to use here.', 'yay-automation')}
             </DialogDescription>
           </div>
-          <div className="border-b p-2">
+          <div className="px-3 pb-2.5">
             <InputGroup>
               <InputGroupAddon>
                 <Search />
@@ -193,7 +259,12 @@ export function VariablePicker({
               <InputGroupInput
                 autoFocus
                 value={query}
-                placeholder={__('Search by variable name or description', 'yay-automation')}
+                placeholder={
+                  opened
+                    ? /* translators: %s: a data item or step, e.g. "Order" */
+                      sprintf(__('Search in %s', 'yay-automation'), opened.label)
+                    : __('Search all data', 'yay-automation')
+                }
                 onChange={(event) => setQuery(event.target.value)}
               />
             </InputGroup>
@@ -206,38 +277,84 @@ export function VariablePicker({
               </p>
             )}
           </div>
-          {trigger && (
-            <div className="bg-muted/50 flex items-center gap-2 border-b px-4 py-2 text-sm">
-              <Zap className="text-muted-foreground size-4" aria-hidden />
-              <span className="min-w-0 flex-1 truncate">{trigger}</span>
-              <Badge variant="dimmed">{__('Trigger', 'yay-automation')}</Badge>
-            </div>
+          {context && (
+            <div className="text-muted-foreground flex items-center gap-1.5 px-4 pb-2.5 text-[12.5px]">{context}</div>
           )}
-          <div className="min-h-0 flex-1 overflow-y-auto">{list}</div>
+          <div className="flex min-h-0 flex-1 flex-col overflow-y-auto border-t p-2 pt-1.5">{list}</div>
         </DialogContent>
       </Dialog>
     </>
   );
 }
 
-/** A field whose PHP side isn't built yet shows "Coming soon" and can't be picked. */
-function FieldRow({ field, onPick }: { field: DataField; onPick: (key: string) => void }) {
-  const comingSoon = isPendingField(field.key);
+function SectionHeading({ children }: { children: ReactNode }) {
+  return (
+    <p className="text-muted-foreground px-2 pt-2.5 pb-1 text-[11px] font-semibold tracking-wider uppercase">
+      {children}
+    </p>
+  );
+}
+
+function Empty({ children }: { children: ReactNode }) {
+  return <p className="text-muted-foreground p-2 text-sm">{children}</p>;
+}
+
+const rowClass = 'flex w-full items-center gap-3 rounded-lg p-2 text-left';
+
+/** A data item or step: tile, name, line, how many variables, then `>`. */
+function GroupRow({
+  label,
+  description,
+  tile,
+  count,
+  onOpen,
+}: {
+  label: string;
+  description: string;
+  tile: ReactNode;
+  count: number;
+  onOpen: () => void;
+}) {
+  return (
+    <button type="button" onClick={onOpen} className={cn(rowClass, 'hover:bg-accent cursor-pointer')}>
+      {tile}
+      <span className="min-w-0 flex-1">
+        <span className="block text-sm font-medium">{label}</span>
+        <span className="text-muted-foreground block truncate text-[12.5px]">{description}</span>
+      </span>
+      <span className="bg-muted text-muted-foreground rounded-md px-1.75 text-[11.5px]/5 font-medium tabular-nums">
+        {count}
+      </span>
+      <ChevronRight className="text-muted-foreground size-4 shrink-0" aria-hidden />
+    </button>
+  );
+}
+
+/** A variable: its name, then its merge-tag key. One whose PHP side isn't built yet can't be picked, unless the step is coming soon too. */
+function VariableRow({
+  variable,
+  comingSoonStep,
+  onPick,
+}: {
+  variable: Variable;
+  comingSoonStep: boolean;
+  onPick: (key: string) => void;
+}) {
+  const off = !canInsert(variable, comingSoonStep);
   return (
     <button
       type="button"
-      onClick={() => onPick(field.key)}
-      disabled={comingSoon}
-      className={cn(
-        'flex w-full flex-col border-b px-4 py-2.5 text-left',
-        comingSoon ? 'cursor-not-allowed opacity-50' : 'hover:bg-accent cursor-pointer',
-      )}
+      onClick={() => onPick(variable.key)}
+      disabled={off}
+      className={cn(rowClass, off ? 'cursor-not-allowed opacity-50' : 'hover:bg-accent cursor-pointer')}
     >
-      <span className="flex items-center gap-2 text-sm">
-        {field.label}
-        {comingSoon && <Badge variant="dimmed">{comingSoonLabel}</Badge>}
+      <span className="flex min-w-0 flex-1 items-center gap-2 text-sm font-medium">
+        <span className="truncate">{variable.label}</span>
+        {variable.comingSoon && <Badge variant="dimmed">{comingSoonLabel}</Badge>}
       </span>
-      <span className="text-muted-foreground font-mono text-xs">{field.key}</span>
+      <code className="bg-muted text-muted-foreground max-w-[55%] truncate rounded-[5px] px-1.5 py-px font-mono text-[11.5px]">
+        {variable.key}
+      </code>
     </button>
   );
 }

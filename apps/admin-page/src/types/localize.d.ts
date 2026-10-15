@@ -90,8 +90,10 @@ export type DataFieldType = 'number' | 'string' | 'enum' | 'date' | 'boolean';
 export interface DataItemMeta {
   id: string;
   label: string;
-  /** One line for the "Add a variable" list. */
+  /** One line for the "Insert variable" list. */
   description: string;
+  /** Its tile in the "Insert variable" list: a step icon name. Sent by PHP; absent on items the app defines itself. */
+  icon?: string;
   fields: {
     /** Full key, e.g. `order.total`. */
     key: string;
@@ -105,6 +107,8 @@ export interface DataItemMeta {
     /** Enum fields. */
     options?: { value: string; label: string }[];
   }[];
+  /** Links to one other item (`order.customer` → `customer`): its fields read as `order.customer.first_name`. Sent by PHP; absent on items the app defines itself. */
+  relations?: { key: string; label: string; item: string }[];
 }
 
 declare global {
@@ -126,8 +130,6 @@ declare global {
       };
       wc: {
         active: boolean;
-        /** Slugs without the `wc-` prefix. Empty when WooCommerce is inactive. */
-        orderStatuses: { value: string; label: string }[];
         currencySymbol: string;
       };
       automation: {
@@ -135,14 +137,16 @@ declare global {
         /** Steps PHP has built; the admin may list more (see `steps/core/pending.ts`). */
         steps: Partial<Record<StepId, CatalogStepMeta>>;
         data: DataItemMeta[];
-        /** Operator ids per field type. Labels live in the admin app. */
+        /** Operator ids per field type. */
         operators: Record<DataFieldType, string[]>;
+        /** PHP `Operators::labels()`: how each operator reads ("is greater than"), by id. */
+        operatorLabels: Record<string, string>;
         /** Data items every workflow has, whatever the trigger. */
         always: string[];
         /** PHP `Definition\Messages::all()`: messages both sides show, by key. Same as `model/messages.ts`. */
         messages: Record<string, string>;
-        /** WooCommerce email sender, for Send internal email. */
-        email: { fromName: string; fromAddress: string; settingsUrl: string };
+        /** WooCommerce sender for steps not built in PHP yet, e.g. "Store <store@example.com>". */
+        email: { fromLine: string };
       };
       docs: {
         /** Filter `yay_automation_workflow_runs_docs_url`. */

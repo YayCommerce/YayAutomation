@@ -88,7 +88,7 @@ We chose these 8 because they cover what merchants install an automation plugin 
 
 ### Editor
 
-**Today:** a visual canvas with 2 order triggers, 4 actions (staff email, change order status, order note, order custom field), conditions, "Add a variable", and review / error highlights.
+**Today:** a visual canvas with 2 order triggers, 4 actions (staff email, change order status, order note, order custom field), conditions, "Insert variable", and "Needs setup" / error highlights.
 
 **v1.0 adds:**
 - **Pickers:** WooCommerce gets new sections: Carts and Customers for triggers, Coupons for actions. A new YayAutomation group holds Wait. *(M1, M2, M4, M6, M8)*

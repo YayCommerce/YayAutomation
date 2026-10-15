@@ -4,7 +4,6 @@ namespace YayAutomation\Workflow\Steps\Actions;
 use YayAutomation\Workflow\Data\OrderData;
 use YayAutomation\Workflow\Data\Scope;
 use YayAutomation\Workflow\Data\Type;
-use YayAutomation\Workflow\Definition\Messages;
 use YayAutomation\Workflow\Extend\Modules;
 use YayAutomation\Workflow\Extend\Plugins;
 use YayAutomation\Workflow\Steps\Core\Action;
@@ -39,7 +38,7 @@ class ChangeOrderStatus extends Action {
     }
 
     public function icon(): string {
-        return 'arrow-right-left';
+        return 'tag';
     }
 
     public function category(): string {
@@ -53,7 +52,7 @@ class ChangeOrderStatus extends Action {
     public function fields(): array {
         return [
             Field::select( 'status', __( 'New status', 'yay-automation' ), [ OrderData::class, 'statuses' ] )
-                ->required()
+                ->required( __( 'Choose the new status.', 'yay-automation' ) )
                 ->placeholder( __( 'Choose a status', 'yay-automation' ) ),
         ];
     }
@@ -88,14 +87,6 @@ class ChangeOrderStatus extends Action {
         $config = is_array( $config ) ? $config : [];
 
         return [ 'status' => OrderData::status_slug( self::scalar( $config['status'] ?? '' ) ) ];
-    }
-
-    public function validate( array $config ) {
-        $known = array_keys( OrderData::statuses() );
-        if ( '' === $config['status'] || ( $known && ! in_array( $config['status'], $known, true ) ) ) {
-            return $this->invalid( Messages::get( 'chooseNewStatus' ), 'status' );
-        }
-        return true;
     }
 
     /**

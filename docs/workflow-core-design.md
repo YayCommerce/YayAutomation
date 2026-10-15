@@ -20,7 +20,7 @@ Paths are after F0 (move and rename); the behavior described is v0.1's. Files ma
 | Actions | `run()` returns `true` or `WP_Error`, no output | `Workflow/Steps/Core/Action.php` |
 | Loop guard | In-memory chain of workflow ids per subject, passed in job args | `Runner::collect()` *(removed in F1)* |
 | Extending | Hard-coded lists in `StepRegistry`, `DataRegistry`, `Plugins`. No hooks | `Workflow/Steps/Core/StepRegistry.php` |
-| Validation | Written twice: PHP `validate()` must match each step's TS `schema.ts` by hand | `Workflow/Steps/Core/Step.php` |
+| Validation | Written twice: PHP `validate()` must match each step's TS `schema.ts` by hand *(F1: from `fields()`)* | `Workflow/Steps/Core/Step.php` |
 
 **Keep:** batching at shutdown, `claim()` for once-per-subject triggers, the sanitize / validate split, versions, `uses()` / `provides()` checks, "never throw into the host request", Action Scheduler.
 
