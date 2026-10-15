@@ -1,15 +1,14 @@
-import { useMemo, useState } from 'react';
-import type { TemplateCategory, WorkflowPlugin, WorkflowTemplate } from '@yay-automation/types';
-import { Search, SearchX } from 'lucide-react';
+import { useMemo, useState, type ReactNode } from 'react';
+import type { TemplateCategory, WorkflowNode, WorkflowPlugin, WorkflowTemplate } from '@yay-automation/types';
+import { SearchX } from 'lucide-react';
 import { Link } from 'react-router';
-import { __ } from '@wordpress/i18n';
+import { __, sprintf } from '@wordpress/i18n';
 
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
-import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
-import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { stepsInOrder } from '../../../model/graph';
 import type { LibraryNavState } from '../../../shared/nav/library.nav';
 import { ComingSoonChip } from '../../../shared/ui/ComingSoonChip';
@@ -19,6 +18,7 @@ import { StepTile } from '../../../steps/core/StepTile';
 import { categoryLabels, isComingSoon, pluginsOf, templates } from '../../../templates';
 import { usesAnyOf } from './filter';
 import { countLabel, FilterChip, LibrarySidebar } from './LibraryFilters';
+import { SearchInput } from './SearchInput';
 
 type SortKey = 'popular' | 'newest' | 'name';
 
@@ -38,8 +38,8 @@ export function TemplatesDialog({ open, onOpenChange }: { open: boolean; onOpenC
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        // Fixed height (capped on tall screens) so filtering doesn't resize and re-center the dialog.
-        className="flex h-[min(calc(100vh-4rem),60rem)] flex-col gap-0 p-0 sm:max-w-6xl"
+        // Nearly full screen, like the create dialog; a fixed height, so filtering doesn't resize it.
+        className="flex h-[calc(100vh-2rem)] flex-col gap-0 p-0 sm:max-w-[calc(100vw-2rem)]"
       >
         <TemplateLibrary />
       </DialogContent>
@@ -92,28 +92,29 @@ function TemplateLibrary() {
   const visible = matching.filter((t) => !category || t.category === category).sort(compare[sort]);
 
   const filtered = !!category || pluginFilter.length > 0;
+  const clearFilters = () => {
+    setCategory(null);
+    setPluginFilter([]);
+  };
 
   return (
     <>
-      {/* pr-14 keeps the search clear of the dialog's close button. */}
-      <div className="flex flex-wrap items-center gap-4 border-b py-4 pr-14 pl-5">
-        <div className="min-w-0 flex-1">
+      {/* Wide: title, search centered on the dialog, then the dialog's close button (absolute, in the
+          empty third column). Narrower: the search gets its own full-width row. */}
+      <div className="flex flex-col gap-3 border-b px-5 py-4 xl:grid xl:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] xl:items-center xl:gap-6">
+        {/* pr-9 keeps the title clear of the close button. */}
+        <div className="min-w-0 pr-9 xl:pr-0">
           <DialogTitle className="text-lg font-semibold">{__('Template Library', 'yay-automation')}</DialogTitle>
           <DialogDescription className="text-[13px]">
             {__('Ready-made workflows for WooCommerce. Pick one, review it, then activate.', 'yay-automation')}
           </DialogDescription>
         </div>
-        <InputGroup className="w-70 max-sm:w-full">
-          <InputGroupAddon>
-            <Search />
-          </InputGroupAddon>
-          <InputGroupInput
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder={__('Search templates', 'yay-automation')}
-            aria-label={__('Search templates', 'yay-automation')}
-          />
-        </InputGroup>
+        <SearchInput
+          value={search}
+          onChange={setSearch}
+          placeholder={__('Search templates', 'yay-automation')}
+          className="w-full xl:w-120"
+        />
       </div>
 
       <div className="flex min-h-0 flex-1 max-md:flex-col">
@@ -144,15 +145,7 @@ function TemplateLibrary() {
                 />
               ))}
               {filtered && (
-                <Button
-                  variant="link"
-                  size="sm"
-                  className="h-auto px-1 text-[12.5px]"
-                  onClick={() => {
-                    setCategory(null);
-                    setPluginFilter([]);
-                  }}
-                >
+                <Button variant="link" size="sm" className="h-auto px-1 text-[12.5px]" onClick={clearFilters}>
                   {__('Clear all', 'yay-automation')}
                 </Button>
               )}
@@ -172,17 +165,15 @@ function TemplateLibrary() {
           </div>
 
           {visible.length === 0 ? (
-            <Empty className="py-12">
-              <EmptyHeader>
-                <EmptyMedia variant="icon">
-                  <SearchX />
-                </EmptyMedia>
-                <EmptyTitle>{__('No templates found', 'yay-automation')}</EmptyTitle>
-                <EmptyDescription>{__('Try a different search term or filter.', 'yay-automation')}</EmptyDescription>
-              </EmptyHeader>
-            </Empty>
+            <NoResults
+              query={search.trim()}
+              filtered={filtered}
+              onClearSearch={() => setSearch('')}
+              onClearFilters={clearFilters}
+            />
           ) : (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            // As many 280px+ columns as fit, at most 4 (3 gaps of 1rem).
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(max(280px,calc((100%-3rem)/4)),1fr))] gap-4">
               {visible.map((template) => (
                 <TemplateCard key={template.id} template={template} />
               ))}
@@ -191,6 +182,54 @@ function TemplateLibrary() {
         </div>
       </div>
     </>
+  );
+}
+
+/**
+ * Nothing matches: centred in the grid area, with a way out for each cause (the search, the
+ * filters, or both).
+ */
+function NoResults({
+  query,
+  filtered,
+  onClearSearch,
+  onClearFilters,
+}: {
+  query: string;
+  filtered: boolean;
+  onClearSearch: () => void;
+  onClearFilters: () => void;
+}) {
+  return (
+    <div className="flex flex-1 flex-col items-center justify-center gap-2 px-4 py-7 text-center">
+      <div className="bg-muted text-muted-foreground mb-1 flex h-13 w-18 items-center justify-center rounded-xl">
+        <SearchX className="size-6 stroke-[1.6]" aria-hidden />
+      </div>
+      <p className="text-base font-semibold">{__('No templates found', 'yay-automation')}</p>
+      <p className="text-muted-foreground max-w-[52ch] text-[13px]">
+        {query
+          ? sprintf(
+              /* translators: %s: what was searched for */
+              __('No templates match “%s”.', 'yay-automation'),
+              query,
+            )
+          : __('Try a different filter.', 'yay-automation')}
+      </p>
+      {(query || filtered) && (
+        <div className="mt-2 flex flex-wrap justify-center gap-2">
+          {query && (
+            <Button variant="outline" size="sm" onClick={onClearSearch}>
+              {__('Clear search', 'yay-automation')}
+            </Button>
+          )}
+          {filtered && (
+            <Button variant="outline" size="sm" onClick={onClearFilters}>
+              {__('Clear filters', 'yay-automation')}
+            </Button>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -210,41 +249,71 @@ function StepStrip({ template }: { template: WorkflowTemplate }) {
       {shown.map((node, i) => {
         const stepDef = stepOf(node.data);
         return (
-          <span key={node.id} className="flex items-center" title={stepDef?.label}>
+          <span key={node.id} className="flex items-center">
             {i > 0 && (linked[i] ? line : gap)}
-            <StepTile kind={node.kind} icon={stepDef?.icon} empty={!stepDef} size="sm" />
+            <CardTip label={stepDef?.label}>
+              <StepTile kind={node.kind} icon={stepDef?.icon} empty={!stepDef} size="sm" />
+            </CardTip>
           </span>
         );
       })}
       {steps.length > STRIP_STEPS && (
         <>
           {linked[STRIP_STEPS] ? line : gap}
-          <span className="bg-muted text-muted-foreground rounded-md px-1.75 py-0.5 text-[11.5px] font-medium">
-            +{steps.length - STRIP_STEPS}
-          </span>
+          <CardTip label={labelsOf(steps.slice(STRIP_STEPS))}>
+            <span className="bg-muted text-muted-foreground rounded-md px-1.75 py-0.5 text-[11.5px] font-medium">
+              +{steps.length - STRIP_STEPS}
+            </span>
+          </CardTip>
         </>
       )}
     </div>
   );
 }
 
-/** Overlapping plugin icons, up to 3 then "+N"; each name on hover. */
+/** Overlapping plugin icons, up to 3 then "+N"; each name on hover ("+N": the rest). */
 function PluginStack({ ids }: { ids: WorkflowPlugin[] }) {
   const rest = ids.slice(STACK_PLUGINS);
   return (
     <span className="flex items-center">
       {ids.slice(0, STACK_PLUGINS).map((id, i) => (
-        <PluginIcon key={id} plugin={id} size="sm" className={cn('ring-card ring-2', i > 0 && '-ml-1.25')} />
+        <CardTip key={id} label={plugins[id].label} className={cn(i > 0 && '-ml-1.25')}>
+          <PluginIcon plugin={id} size="sm" noTitle className="ring-card ring-2" />
+        </CardTip>
       ))}
       {rest.length > 0 && (
-        <span
-          title={rest.map((id) => plugins[id].label).join(', ')}
-          className="bg-muted text-muted-foreground-600 ring-card -ml-1.25 flex size-5.5 items-center justify-center rounded-md text-[11px] font-semibold ring-2"
-        >
-          +{rest.length}
-        </span>
+        <CardTip label={rest.map((id) => plugins[id].label).join(', ')} className="-ml-1.25">
+          <span className="bg-muted text-muted-foreground-600 ring-card flex size-5.5 items-center justify-center rounded-md text-[11px] font-semibold ring-2">
+            +{rest.length}
+          </span>
+        </CardTip>
       )}
     </span>
+  );
+}
+
+/** Steps' names, e.g. for a "+N" tooltip. */
+const labelsOf = (nodes: WorkflowNode[]) =>
+  nodes
+    .map((node) => stepOf(node.data)?.label)
+    .filter(Boolean)
+    .join(', ');
+
+/**
+ * Kit tooltip over a card's icon. Lifted above the dialog (z-100002), like `HelpTip`. The trigger
+ * is a span: the icons don't take a ref, and the card itself is the link.
+ */
+function CardTip({ label, className, children }: { label?: string; className?: string; children: ReactNode }) {
+  if (!label) return children;
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span className={cn('flex', className)}>{children}</span>
+      </TooltipTrigger>
+      <TooltipContent side="top" className="z-100005">
+        {label}
+      </TooltipContent>
+    </Tooltip>
   );
 }
 

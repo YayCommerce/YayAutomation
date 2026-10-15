@@ -1,12 +1,15 @@
 import type { WorkflowGraph } from '@yay-automation/types';
 import { describe, expect, it } from 'vitest';
 
+import { stepOf } from '../steps';
 import highValueOrderAlert from '../templates/high-value-order-alert';
 import { addNode, removeNode, setNodeStep } from './graph';
 import {
   activateIssues,
+  activateIssueTexts,
   availableData,
   canActivate,
+  issueText,
   newStepIssues,
   stepsNeedingSetup,
   validateWorkflow,
@@ -183,5 +186,46 @@ describe('newStepIssues', () => {
     const had = validateWorkflow({ name: 'Alert', graph: before });
     const after = setNodeStep(before, 'note', 'change_order_status');
     expect(newStepIssues(had, { name: 'Alert', graph: after }, 'note')).toEqual([]);
+  });
+});
+
+describe('issueText', () => {
+  const emailLabel = () => stepOf(node(base(), 'email').data)!.label;
+  const onEmail = { code: 'invalid_config', nodeId: 'email', message: 'Add a recipient.' } as const;
+  // A step only the draft has: Change order status, added below the email.
+  const draft = () =>
+    setNodeStep(addNode(base(), 'email', 'action', undefined, 'extra'), 'extra', 'change_order_status');
+  const onExtra = { code: 'invalid_config', nodeId: 'extra', message: 'Choose an option from the list.' } as const;
+
+  it("puts the step's name before a step's issue", () => {
+    expect(issueText(onEmail, base())).toBe(`${emailLabel()}: Add a recipient.`);
+  });
+
+  it('leaves an issue alone when it names its step already, has none, or the step is gone', () => {
+    const named = { ...onEmail, message: `${emailLabel()} needs a recipient.` };
+    expect(issueText(named, base())).toBe(named.message);
+    expect(issueText({ code: 'no_action', message: 'Add at least one action.' }, base())).toBe(
+      'Add at least one action.',
+    );
+    expect(issueText(onExtra, base())).toBe(onExtra.message);
+  });
+
+  it('looks the step up in the graphs in order', () => {
+    expect(issueText(onExtra, base(), draft())).toBe('Change order status: Choose an option from the list.');
+  });
+
+  it('activateIssueTexts: live issues from the live graph, draft issues from the draft, each line once', () => {
+    const workflow = {
+      status: 'inactive' as const,
+      graph: base(),
+      draft: draft(),
+      issues: { live: [onEmail, onExtra], draft: [onEmail, onExtra] },
+    };
+    expect(activateIssueTexts(workflow)).toEqual([
+      `${emailLabel()}: Add a recipient.`,
+      onExtra.message,
+      'Change order status: Choose an option from the list.',
+    ]);
+    expect(activateIssueTexts({ ...workflow, status: 'active' })).toEqual([]);
   });
 });

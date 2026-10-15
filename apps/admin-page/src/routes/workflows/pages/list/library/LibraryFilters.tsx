@@ -1,13 +1,13 @@
 import { useState, type ReactNode } from 'react';
 import type { TemplateCategory, WorkflowPlugin } from '@yay-automation/types';
-import { ChevronDown, Search, X } from 'lucide-react';
+import { ChevronDown, X } from 'lucide-react';
 import { __, _n, sprintf } from '@wordpress/i18n';
 
 import { cn } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
-import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
 import { PluginIcon, plugins } from '../../../shared/ui/PluginIcon';
 import { categoryLabels } from '../../../templates';
+import { SearchInput } from './SearchInput';
 
 /** Rows a sidebar group shows before "Show N more". */
 const SHOWN = { categories: 6, plugins: 4 };
@@ -105,8 +105,8 @@ export function LibrarySidebar({
   };
 
   return (
-    // Narrow screens: above the grid, shorter, instead of beside it.
-    <aside className="bg-muted/35 flex min-h-0 w-55 shrink-0 flex-col overflow-y-auto border-r p-3 max-md:max-h-56 max-md:w-full max-md:border-r-0 max-md:border-b">
+    // Beside the grid, wider on large screens; narrow screens: above it, shorter.
+    <aside className="bg-muted/35 flex min-h-0 w-55 shrink-0 flex-col overflow-y-auto border-r p-3 max-md:max-h-56 max-md:w-full max-md:border-r-0 max-md:border-b xl:w-64 2xl:w-72">
       <GroupHeading>{__('Categories', 'yay-automation')}</GroupHeading>
       <div className="flex flex-col gap-0.5">
         {categoryRow(null, __('All templates', 'yay-automation'), total)}
@@ -119,18 +119,13 @@ export function LibrarySidebar({
       />
 
       <GroupHeading>{__('Plugins', 'yay-automation')}</GroupHeading>
-      <InputGroup className="mb-1.5 h-7.5">
-        <InputGroupAddon>
-          <Search />
-        </InputGroupAddon>
-        <InputGroupInput
-          value={query}
-          className="text-[13px]"
-          placeholder={__('Find a plugin', 'yay-automation')}
-          aria-label={__('Find a plugin', 'yay-automation')}
-          onChange={(event) => setQuery(event.target.value)}
-        />
-      </InputGroup>
+      <SearchInput
+        value={query}
+        onChange={setQuery}
+        placeholder={__('Find a plugin', 'yay-automation')}
+        className="mb-1.5 h-7.5"
+        inputClassName="text-[13px]"
+      />
       <div className="flex flex-col">
         {shownPlugins.map((id) => (
           <label

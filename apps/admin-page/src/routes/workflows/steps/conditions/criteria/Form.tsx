@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { FieldError } from '@/components/ui/field';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { fieldByKey, needsValue, operatorLabels, operatorsFor } from '../../core/data';
 import { errorStyles, useShowErrors } from '../../core/fields/feedback';
 import { spotlightTarget, VariablePicker } from '../../core/fields/VariablePicker';
@@ -187,15 +188,20 @@ function RuleBox({
             />
           </VariablePicker>
         </div>
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          className="self-center"
-          aria-label={__('Remove rule', 'yay-automation')}
-          onClick={onRemove}
-        >
-          <Trash2 />
-        </Button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              className="self-center"
+              aria-label={__('Remove rule', 'yay-automation')}
+              onClick={onRemove}
+            >
+              <Trash2 />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>{__('Remove rule', 'yay-automation')}</TooltipContent>
+        </Tooltip>
 
         <Select value={rule.operator} onValueChange={(operator) => onChange({ ...rule, operator })} disabled={!field}>
           <SelectTrigger id={`${id}-operator`} className="w-full" aria-label={__('Comparison', 'yay-automation')}>

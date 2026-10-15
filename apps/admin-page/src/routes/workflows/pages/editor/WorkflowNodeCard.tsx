@@ -12,6 +12,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { addNode, createId, hasChild } from '../../model/graph';
 import type { FlowNode } from '../../shared/canvas/flow';
 import { branchLeft, kindMeta, NodeCardView } from '../../shared/canvas/NodeCardView';
@@ -48,32 +49,42 @@ export function WorkflowNodeCard({ id, type, data, selected }: NodeProps<FlowNod
   const control =
     type === 'trigger' ? (
       data.block && (
-        <Button
-          variant="outline"
-          size="icon-sm"
-          className={`${roundButton} ${onHover('left')}`}
-          aria-label={__('Change trigger', 'yay-automation')}
-          onClick={(event: MouseEvent) => {
-            event.stopPropagation();
-            openPanel(id, true);
-          }}
-        >
-          <Replace />
-        </Button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="outline"
+              size="icon-sm"
+              className={`${roundButton} ${onHover('left')}`}
+              aria-label={__('Change trigger', 'yay-automation')}
+              onClick={(event: MouseEvent) => {
+                event.stopPropagation();
+                openPanel(id, true);
+              }}
+            >
+              <Replace />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>{__('Change trigger', 'yay-automation')}</TooltipContent>
+        </Tooltip>
       )
     ) : (
-      <Button
-        variant="outline"
-        size="icon-sm"
-        className={`${roundButton} ${onHover('left')}`}
-        aria-label={__('Delete step', 'yay-automation')}
-        onClick={(event: MouseEvent) => {
-          event.stopPropagation();
-          requestDelete([id]);
-        }}
-      >
-        <Trash2 />
-      </Button>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="outline"
+            size="icon-sm"
+            className={`${roundButton} ${onHover('left')}`}
+            aria-label={__('Delete step', 'yay-automation')}
+            onClick={(event: MouseEvent) => {
+              event.stopPropagation();
+              requestDelete([id]);
+            }}
+          >
+            <Trash2 />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>{__('Delete step', 'yay-automation')}</TooltipContent>
+      </Tooltip>
     );
 
   return (

@@ -18,13 +18,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/sonner';
 import { ApiError, errorMessage } from '../../api/workflow.api';
 import { useWorkflowActionMutation, workflowKeys } from '../../api/workflow.query';
 import { removeNode, setNodeStep } from '../../model/graph';
-import { createIssuesSelector, newStepIssues, sameIssues } from '../../model/validation';
+import { createIssuesSelector, issueText, newStepIssues, sameIssues } from '../../model/validation';
 import { useActivateWorkflow } from '../../shared/actions/useActivateWorkflow';
 import {
   ActivateDialog,
@@ -37,6 +36,7 @@ import {
 } from '../../shared/actions/WorkflowActions';
 import { EditorLayout } from '../../shared/layout/EditorLayout';
 import { type EditorNavState } from '../../shared/nav/editor.nav';
+import { WarningBadge } from '../../shared/ui/WarningBadge';
 import { workflowState, WorkflowStatusBadge } from '../../shared/ui/WorkflowStatusBadge';
 import { EditorContext, type EditorState } from './editor.context';
 import { IssueBanner } from './IssueBanner';
@@ -85,7 +85,14 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
   );
   const blockedByIssues = errorMode && issues.length > 0;
 
-  const { panel, setPanel, showPanel, locked: panelLocked } = useStepPanel(form, markVisited);
+  const {
+    panel,
+    setPanel,
+    showPanel,
+    locked: panelLocked,
+    formVersion,
+    reset: resetPanel,
+  } = useStepPanel(form, markVisited);
   const openNodeId = panel?.nodeId ?? null;
 
   const editorState = useMemo<EditorState>(
@@ -97,12 +104,17 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
       requestDelete: (nodeIds) => {
         const graph = form.state.values.graph;
         const ids = nodeIds.filter((id) => graph.nodes.find((node) => node.id === id)?.kind !== 'trigger');
-        if (ids.length) setStepsToDelete(ids);
+        if (ids.length) {
+          setStepsToDelete(ids);
+          setDeleteCount(ids.length);
+        }
       },
     }),
     [form, openNodeId, showPanel, issueModes],
   );
   const [stepsToDelete, setStepsToDelete] = useState<string[] | null>(null);
+  // Kept after the dialog closes, so its title doesn't change while it fades out.
+  const [deleteCount, setDeleteCount] = useState(1);
   const deleteSteps = () => {
     const ids = stepsToDelete ?? [];
     form.setFieldValue('graph', (graph) => ids.reduce((next, id) => removeNode(next, id), graph));
@@ -138,7 +150,8 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
     const seen = new Set(issues.map((issue) => `${issue.code}|${issue.nodeId ?? ''}`));
     const unseen = refused.filter((issue) => !seen.has(`${issue.code}|${issue.nodeId ?? ''}`));
     if (unseen.length) {
-      toast.error(error.message, { description: unseen.map((issue) => issue.message).join(' ') });
+      const graph = form.state.values.graph;
+      toast.error(error.message, { description: unseen.map((issue) => issueText(issue, graph)).join(' ') });
     }
   };
 
@@ -185,6 +198,7 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
     try {
       const saved = await discard.mutateAsync({ id: workflow.id });
       autosave.reset(saved.graph);
+      resetPanel(saved.graph);
       setErrorMode(false);
       toast.success(__('Changes discarded', 'yay-automation'));
     } catch (error) {
@@ -224,7 +238,7 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
               {/* Edits not yet in the live workflow → Draft changes. Otherwise Draft (never activated),
                   Inactive, or no badge when active. */}
               {hasDraft ? (
-                <Badge variant="warning-soft">{__('Draft changes', 'yay-automation')}</Badge>
+                <WarningBadge>{__('Draft changes', 'yay-automation')}</WarningBadge>
               ) : (
                 !isActive && <WorkflowStatusBadge state={workflowState(workflow)} />
               )}
@@ -274,7 +288,8 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
               {panel && (
                 <StepPanelFrame key="panel" width={panelWidth}>
                   <StepPanel
-                    key={panel.nodeId}
+                    // A reset (discard) starts the panel and its form over: forms keep their own values.
+                    key={`${panel.nodeId}:${formVersion}`}
                     nodeId={panel.nodeId}
                     picking={panel.picking}
                     feedback={feedbackFor(panel.nodeId)}
@@ -328,6 +343,7 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
         />
         <DeleteStepDialog
           open={!!stepsToDelete}
+          count={deleteCount}
           onOpenChange={(open) => !open && setStepsToDelete(null)}
           onConfirm={deleteSteps}
           pending={false}

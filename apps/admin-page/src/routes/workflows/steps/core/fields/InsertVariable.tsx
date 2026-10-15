@@ -28,6 +28,8 @@ export function InsertVariable({ inputRef, value, onChange }: InsertVariableProp
     return () => input?.removeEventListener('focus', onFocus);
   }, [inputRef]);
 
+  // Where the cursor goes once the picker has closed: after the inserted tag.
+  const cursorAfter = useRef(0);
   const insert = (key: string) => {
     const tag = variableTag(key);
     const input = inputRef.current;
@@ -35,15 +37,18 @@ export function InsertVariable({ inputRef, value, onChange }: InsertVariableProp
     const start = cursor?.selectionStart ?? value.length;
     const end = cursor?.selectionEnd ?? value.length;
     onChange(value.slice(0, start) + tag + value.slice(end));
-    // After the popover closes and returns focus, so the cursor lands after the tag.
-    requestAnimationFrame(() => {
-      input?.focus();
-      input?.setSelectionRange(start + tag.length, start + tag.length);
-    });
+    cursorAfter.current = start + tag.length;
+  };
+  const focusInput = () => {
+    const input = inputRef.current;
+    if (!input) return false;
+    input.focus();
+    input.setSelectionRange(cursorAfter.current, cursorAfter.current);
+    return true;
   };
 
   return (
-    <VariablePicker onSelect={insert}>
+    <VariablePicker onSelect={insert} focusAfterPick={focusInput}>
       <Button type="button" variant="link" size="sm" className="h-auto gap-1 px-0 text-[12.5px]">
         <Braces className="size-3.5" aria-hidden />
         {__('Insert variable', 'yay-automation')}

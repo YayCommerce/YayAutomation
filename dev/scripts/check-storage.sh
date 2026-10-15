@@ -41,7 +41,12 @@ $ok( R::claim( $id ) === false, "second claim refused" );
 $ok( R::save( $id, [ "position" => [ "node" => "action-1", "stack" => [] ], "status" => "waiting", "wait_until" => "2030-01-01 00:00:00" ] ), "save position / status / wait_until" );
 $r = R::find( $id );
 $ok( $r["position"] === [ "node" => "action-1", "stack" => [] ] && $r["status"] === "waiting" && $r["wait_until"] === "2030-01-01 00:00:00", "saved values read back" );
-$ok( R::claim( $id ) === true && null === R::find( $id )["wait_until"], "claim from waiting clears wait_until" );
+$ok( R::claim( $id ) === false && R::find( $id )["status"] === "waiting", "waiting run with a future wait_until refused" );
+$past = gmdate( "Y-m-d H:i:s", time() - 60 );
+R::save( $id, [ "wait_until" => $past ] );
+// Claim keeps wait_until: the Executor reads it, then clears it.
+$r = R::claim( $id ) ? R::find( $id ) : null;
+$ok( $r && $r["status"] === "running" && $r["wait_until"] === $past, "waiting run whose wait_until passed claimed, wait_until kept" );
 $ok( R::save( $id, [ "status" => "bogus" ] ) === false && R::find( $id )["status"] === "running", "unknown status rejected" );
 R::save( $id, [ "status" => "completed", "error" => null ] );
 $r = R::find( $id );

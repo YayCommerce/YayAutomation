@@ -72,6 +72,7 @@ export function VariablePicker({
   autoOpen = false,
   onSelect,
   onDismiss,
+  focusAfterPick,
   children,
 }: {
   /** Data fields usable in conditions only. */
@@ -85,6 +86,11 @@ export function VariablePicker({
   onSelect: (key: string) => void;
   /** Closed without a pick. */
   onDismiss?: () => void;
+  /**
+   * Moves focus once it has closed after a pick (e.g. to the edited input); false when it couldn't,
+   * and focus goes back to the opener as after Esc.
+   */
+  focusAfterPick?: () => boolean;
   /** The element that opens it. */
   children: ReactNode;
 }) {
@@ -107,6 +113,7 @@ export function VariablePicker({
 
   // Focus goes back to the opener on close: the dialog has no DialogTrigger to return it to.
   const opener = useRef<HTMLElement | null>(null);
+  const picked = useRef(false);
   // Marked while open: `data-dimmed` on the panel (it lifts and dims) and `data-spotlit` on the edited element.
   const marked = useRef<HTMLElement[]>([]);
 
@@ -133,14 +140,15 @@ export function VariablePicker({
     setQuery('');
     setOpen(true);
   };
-  const close = (picked: boolean) => {
+  const close = (withPick: boolean) => {
+    picked.current = withPick;
     setOpen(false);
     for (const element of marked.current) {
       delete element.dataset.dimmed;
       delete element.dataset.spotlit;
     }
     marked.current = [];
-    if (!picked) onDismiss?.();
+    if (!withPick) onDismiss?.();
   };
   const pick = (key: string) => {
     onSelect(key);
@@ -242,7 +250,7 @@ export function VariablePicker({
           className="nokey z-100003 flex max-h-[calc(100vh-2rem)] max-w-[calc(100vw-2rem)] flex-col gap-0 overflow-hidden rounded-xl p-0 sm:max-w-[calc(100vw-2rem)]"
           onCloseAutoFocus={(event) => {
             event.preventDefault();
-            opener.current?.focus();
+            if (!(picked.current && focusAfterPick?.())) opener.current?.focus();
           }}
         >
           <div className="py-3 pr-12 pl-4">

@@ -343,8 +343,14 @@ export function DeactivateDialog(
       }
       description={
         several
-          ? __('Their runs in progress will be cancelled. You can activate them again at any time.', 'yay-automation')
-          : __('Its runs in progress will be cancelled. You can activate it again at any time.', 'yay-automation')
+          ? __(
+              'New events won’t start them. Runs already under way will finish. You can activate them again at any time.',
+              'yay-automation',
+            )
+          : __(
+              'New events won’t start it. Runs already under way will finish. You can activate it again at any time.',
+              'yay-automation',
+            )
       }
       confirmLabel={__('Deactivate', 'yay-automation')}
     />
@@ -378,12 +384,21 @@ export function DeleteBlockedContent({ several = false, message }: { several?: b
   );
 }
 
-export function DeleteStepDialog(props: ConfirmProps) {
+/** `count`: steps selected on the canvas (Backspace), one by default. */
+export function DeleteStepDialog({ count = 1, ...props }: ConfirmProps & { count?: number }) {
   return (
     <ConfirmDialog
       {...props}
-      title={__('Delete this step?', 'yay-automation')}
-      description={__('Deleting this step cannot be undone.', 'yay-automation')}
+      title={
+        count > 1
+          ? sprintf(
+              /* translators: %d: number of steps */
+              _n('Delete %d step?', 'Delete %d steps?', count, 'yay-automation'),
+              count,
+            )
+          : __('Delete this step?', 'yay-automation')
+      }
+      description={__('This can’t be undone.', 'yay-automation')}
       confirmLabel={__('Delete', 'yay-automation')}
       destructive
     />

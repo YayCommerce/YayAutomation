@@ -1,5 +1,5 @@
 import type { Workflow } from '@yay-automation/types';
-import { Ellipsis, Pencil, Power, PowerOff, SquarePen, Trash2 } from 'lucide-react';
+import { Ellipsis, Pencil, Power, Trash2, Type } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { __, sprintf } from '@wordpress/i18n';
 
@@ -54,16 +54,16 @@ export function WorkflowRowMenu({ workflow, onAction }: { workflow: Workflow; on
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-44">
         <DropdownMenuItem onSelect={() => navigate(`/workflows/${workflow.id}/edit`)}>
-          <SquarePen />
+          <Pencil />
           {__('Edit', 'yay-automation')}
         </DropdownMenuItem>
         <DropdownMenuItem onSelect={() => onAction('rename')}>
-          <Pencil />
+          <Type />
           {__('Rename', 'yay-automation')}
         </DropdownMenuItem>
         {isActive ? (
           <DropdownMenuItem onSelect={() => onAction('deactivate')}>
-            <PowerOff />
+            <Power />
             {__('Deactivate', 'yay-automation')}
           </DropdownMenuItem>
         ) : (

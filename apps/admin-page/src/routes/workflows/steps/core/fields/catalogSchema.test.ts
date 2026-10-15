@@ -71,7 +71,7 @@ describe('schemaFromFields', () => {
 
   it('skips a field hidden by showIf, and checks it once shown', () => {
     expect(issues({ ...valid, type: 'a', extra: '' })).toEqual([]);
-    expect(issues({ ...valid, type: 'b', extra: '' })).toEqual(['extra: This field is required']);
+    expect(issues({ ...valid, type: 'b', extra: '' })).toEqual(['extra: This field is required.']);
   });
 
   it('checks number_unit and rules like PHP: blank value, range, rules without a variable', () => {
@@ -87,8 +87,8 @@ describe('schemaFromFields', () => {
       return result.success ? [] : result.issues.map((issue) => issue.message);
     };
     expect(messages({ delay: { value: null, unit: 'days' }, rules: [{ field: '' }] })).toEqual([
-      'This field is required',
-      'This field is required',
+      'This field is required.',
+      'This field is required.',
     ]);
     expect(messages({ delay: { value: 0, unit: 'days' }, rules: [{ field: 'order.total' }] })).toEqual([
       'Enter 1 or more.',
