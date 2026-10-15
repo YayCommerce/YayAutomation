@@ -1,10 +1,10 @@
 <?php
-namespace YayAutomation\Tests\Unit\Data;
+namespace YayMatik\Tests\Unit\Data;
 
 use PHPUnit\Framework\TestCase;
-use YayAutomation\Tests\Support\FakeValues;
-use YayAutomation\Workflow\Data\Filters;
-use YayAutomation\Workflow\Data\Template;
+use YayMatik\Tests\Support\FakeValues;
+use YayMatik\Workflow\Data\Filters;
+use YayMatik\Workflow\Data\Template;
 
 /** Merge tags `{{ path | filter: arg }}`: old tags, paths, filters, escaping, malformed tags. */
 final class TemplateTest extends TestCase {

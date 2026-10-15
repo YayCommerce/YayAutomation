@@ -1,5 +1,5 @@
 <?php
-namespace YayAutomation\Tests\Support;
+namespace YayMatik\Tests\Support;
 
 if ( ! defined( 'ARRAY_A' ) ) {
     define( 'ARRAY_A', 'ARRAY_A' );

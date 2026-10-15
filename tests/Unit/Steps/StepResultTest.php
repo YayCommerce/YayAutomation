@@ -1,8 +1,8 @@
 <?php
-namespace YayAutomation\Tests\Unit\Steps;
+namespace YayMatik\Tests\Unit\Steps;
 
 use PHPUnit\Framework\TestCase;
-use YayAutomation\Workflow\Steps\Core\StepResult;
+use YayMatik\Workflow\Steps\Core\StepResult;
 
 /** What a step's run() returns. */
 final class StepResultTest extends TestCase {
@@ -28,12 +28,12 @@ final class StepResultTest extends TestCase {
 
     public function test_failed_takes_a_message_or_a_wp_error(): void {
         $plain = StepResult::failed( 'No mail server.' );
-        $error = StepResult::failed( new \WP_Error( 'yay_automation_mail_failed', 'The email could not be sent.' ) );
+        $error = StepResult::failed( new \WP_Error( 'yaymatik_mail_failed', 'The email could not be sent.' ) );
 
         $this->assertTrue( $plain->is_failed() );
         $this->assertSame( 'No mail server.', $plain->message() );
         $this->assertSame( '', $plain->code() );
-        $this->assertSame( 'yay_automation_mail_failed', $error->code() );
+        $this->assertSame( 'yaymatik_mail_failed', $error->code() );
         $this->assertSame( 'The email could not be sent.', $error->message() );
     }
 

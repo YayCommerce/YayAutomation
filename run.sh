@@ -4,7 +4,7 @@
 #   ./run.sh <cmd> [args]    run dev/scripts/<cmd>.sh
 #   ./run.sh <alias> [args]  short name, see ALIASES below
 cd "$(dirname "$0")" || exit 1
-[[ -f yay-automation.php ]] || { echo "Not the plugin root: $(pwd)"; exit 1; }
+[[ -f yaymatik.php ]] || { echo "Not the plugin root: $(pwd)"; exit 1; }
 
 # Personal settings: created once from the example, then yours to edit.
 if [[ ! -f dev/.env.local ]]; then

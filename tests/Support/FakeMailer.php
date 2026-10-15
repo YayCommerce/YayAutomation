@@ -1,5 +1,5 @@
 <?php
-namespace YayAutomation\Tests\Support;
+namespace YayMatik\Tests\Support;
 
 /** WooCommerce's mailer, recording what it sends. `WC()->mailer()` returns `FakeMailer::$current`. */
 final class FakeMailer {

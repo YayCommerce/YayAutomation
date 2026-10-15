@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import type { Workflow } from '@yay-automation/types';
+import type { Workflow } from '@yaymatik/types';
 import { CircleAlert } from 'lucide-react';
 import { Link, useNavigate } from 'react-router';
 import { __, sprintf } from '@wordpress/i18n';
@@ -29,7 +29,7 @@ type Tab = 'all' | WorkflowState;
 function TriggerCell({ workflow }: { workflow: Workflow }) {
   const trigger = workflow.graph.nodes.find((node) => node.kind === 'trigger');
   const stepDef = trigger && stepOf(trigger.data);
-  if (!stepDef) return <span className="text-muted-foreground">{__('No trigger yet', 'yay-automation')}</span>;
+  if (!stepDef) return <span className="text-muted-foreground">{__('No trigger yet', 'yaymatik')}</span>;
   return (
     <span className="flex items-center gap-2" title={plainSummary(stepDef.summary(trigger.data.config))}>
       <StepTile kind="trigger" icon={stepDef.icon} size="sm" />
@@ -45,14 +45,14 @@ function TableHeadRow({ select }: { select: ReactNode }) {
   return (
     <TableRow>
       <TableHead className="w-9">{select}</TableHead>
-      <TableHead>{__('Name', 'yay-automation')}</TableHead>
-      <TableHead>{__('Status', 'yay-automation')}</TableHead>
-      <TableHead>{__('Trigger', 'yay-automation')}</TableHead>
-      <TableHead className="text-right">{__('Runs (30 days)', 'yay-automation')}</TableHead>
-      <TableHead>{__('Last run', 'yay-automation')}</TableHead>
-      <TableHead>{__('Last updated', 'yay-automation')}</TableHead>
+      <TableHead>{__('Name', 'yaymatik')}</TableHead>
+      <TableHead>{__('Status', 'yaymatik')}</TableHead>
+      <TableHead>{__('Trigger', 'yaymatik')}</TableHead>
+      <TableHead className="text-right">{__('Runs (30 days)', 'yaymatik')}</TableHead>
+      <TableHead>{__('Last run', 'yaymatik')}</TableHead>
+      <TableHead>{__('Last updated', 'yaymatik')}</TableHead>
       <TableHead className="w-12">
-        <span className="sr-only">{__('Actions', 'yay-automation')}</span>
+        <span className="sr-only">{__('Actions', 'yaymatik')}</span>
       </TableHead>
     </TableRow>
   );
@@ -109,7 +109,7 @@ export function WorkflowsTable({ workflows }: { workflows: Workflow[] }) {
       // selected" apart from "all selected".
       className="data-[state=indeterminate]:border-primary data-[state=indeterminate]:bg-primary/40 data-[state=indeterminate]:text-primary-foreground"
       onCheckedChange={() => setSelectedIds(allChecked ? new Set() : new Set(inTab.map((workflow) => workflow.id)))}
-      aria-label={__('Select all workflows', 'yay-automation')}
+      aria-label={__('Select all workflows', 'yaymatik')}
     />
   );
 
@@ -129,16 +129,16 @@ export function WorkflowsTable({ workflows }: { workflows: Workflow[] }) {
           className={tabBarClass}
         >
           <SegmentedItem value="all" className={tabClass}>
-            {__('All', 'yay-automation')}
+            {__('All', 'yaymatik')}
           </SegmentedItem>
           <SegmentedItem value="active" className={tabClass}>
-            {__('Active', 'yay-automation')}
+            {__('Active', 'yaymatik')}
           </SegmentedItem>
           <SegmentedItem value="inactive" className={tabClass}>
-            {__('Inactive', 'yay-automation')}
+            {__('Inactive', 'yaymatik')}
           </SegmentedItem>
           <SegmentedItem value="draft" className={tabClass}>
-            {__('Draft', 'yay-automation')}
+            {__('Draft', 'yaymatik')}
           </SegmentedItem>
         </Segmented>
 
@@ -151,7 +151,7 @@ export function WorkflowsTable({ workflows }: { workflows: Workflow[] }) {
               {rows.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={8} className="text-muted-foreground h-24 text-center">
-                    {__('No workflows here yet.', 'yay-automation')}
+                    {__('No workflows here yet.', 'yaymatik')}
                   </TableCell>
                 </TableRow>
               )}
@@ -176,7 +176,7 @@ export function WorkflowsTable({ workflows }: { workflows: Workflow[] }) {
                       onCheckedChange={(checked) => toggle(workflow.id, checked === true)}
                       aria-label={sprintf(
                         /* translators: %s: workflow name */
-                        __('Select %s', 'yay-automation'),
+                        __('Select %s', 'yaymatik'),
                         workflow.name,
                       )}
                     />
@@ -186,7 +186,7 @@ export function WorkflowsTable({ workflows }: { workflows: Workflow[] }) {
                       <Link to={`/workflows/${workflow.id}`} className="hover:text-primary font-medium">
                         {workflow.name}
                       </Link>
-                      {workflow.draft && <WarningBadge>{__('Draft changes', 'yay-automation')}</WarningBadge>}
+                      {workflow.draft && <WarningBadge>{__('Draft changes', 'yaymatik')}</WarningBadge>}
                     </div>
                   </TableCell>
                   <TableCell>
@@ -283,10 +283,10 @@ function NeedsSetupBadge() {
       <TooltipTrigger asChild>
         <Badge variant="secondary" className={cn(appBadge, 'bg-warning text-warning-foreground font-semibold')}>
           <CircleAlert className="stroke-[2.5]" aria-hidden />
-          {__('Needs setup', 'yay-automation')}
+          {__('Needs setup', 'yaymatik')}
         </Badge>
       </TooltipTrigger>
-      <TooltipContent>{__('Fix the issues in the editor before activating.', 'yay-automation')}</TooltipContent>
+      <TooltipContent>{__('Fix the issues in the editor before activating.', 'yaymatik')}</TooltipContent>
     </Tooltip>
   );
 }

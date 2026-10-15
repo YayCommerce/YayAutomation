@@ -1,12 +1,12 @@
 <?php
-namespace YayAutomation\Tests\Unit\Steps;
+namespace YayMatik\Tests\Unit\Steps;
 
 use PHPUnit\Framework\TestCase;
-use YayAutomation\Tests\Support\FakeOrder;
-use YayAutomation\Workflow\Data\Ref;
-use YayAutomation\Workflow\Data\Scope;
-use YayAutomation\Workflow\Steps\Triggers\OrderCreated;
-use YayAutomation\Workflow\Steps\Triggers\OrderStatusChanged;
+use YayMatik\Tests\Support\FakeOrder;
+use YayMatik\Workflow\Data\Ref;
+use YayMatik\Workflow\Data\Scope;
+use YayMatik\Workflow\Steps\Triggers\OrderCreated;
+use YayMatik\Workflow\Steps\Triggers\OrderStatusChanged;
 
 require_once dirname( __DIR__, 2 ) . '/Support/woocommerce-stubs.php';
 

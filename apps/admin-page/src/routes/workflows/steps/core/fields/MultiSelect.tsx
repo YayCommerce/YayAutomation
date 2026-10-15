@@ -52,9 +52,9 @@ export function MultiSelect({
       </ComboboxTrigger>
       <PopoverContent className="w-(--radix-popover-trigger-width) p-0" align="start">
         <Command>
-          <CommandInput placeholder={__('Search', 'yay-automation')} />
+          <CommandInput placeholder={__('Search', 'yaymatik')} />
           <CommandList>
-            <CommandEmpty>{__('Nothing found.', 'yay-automation')}</CommandEmpty>
+            <CommandEmpty>{__('Nothing found.', 'yaymatik')}</CommandEmpty>
             <CommandGroup>
               {options.map((option) => (
                 <CommandItem key={option.value} value={option.label} onSelect={() => toggle(option.value)}>

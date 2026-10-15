@@ -5,20 +5,20 @@
  * Cleans up its order, workflows, runs (by root run, so child runs too) and jobs. Run through
  * check-runs.sh.
  *
- * @package YayAutomation
+ * @package YayMatik
  */
 
 // phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.WP.GlobalVariablesOverride.Prohibited
 
 require_once __DIR__ . '/check-run.php';
 
-use YayAutomation\Workflow\Runtime\ActionSchedulerQueue;
-use YayAutomation\Workflow\Runtime\Runtime;
-use YayAutomation\Workflow\Steps\Core\StepRegistry;
-use YayAutomation\Workflow\Storage\RunStepStore;
-use YayAutomation\Workflow\Storage\RunStore;
+use YayMatik\Workflow\Runtime\ActionSchedulerQueue;
+use YayMatik\Workflow\Runtime\Runtime;
+use YayMatik\Workflow\Steps\Core\StepRegistry;
+use YayMatik\Workflow\Storage\RunStepStore;
+use YayMatik\Workflow\Storage\RunStore;
 
-const CHECK_META  = '_yay_automation_check_runs';
+const CHECK_META  = '_yaymatik_check_runs';
 const CHECK_STAFF = 'staff-check@example.test';
 
 global $wpdb;
@@ -49,7 +49,7 @@ add_filter(
 );
 
 $call = function ( string $method, string $route, ?array $body = null ) {
-    $request = new WP_REST_Request( $method, '/yay-automation/v1/' . $route );
+    $request = new WP_REST_Request( $method, '/yaymatik/v1/' . $route );
     if ( null !== $body ) {
         $request->set_header( 'content-type', 'application/json' );
         $request->set_body( wp_json_encode( $body ) );
@@ -118,7 +118,7 @@ $create    = function ( string $name, array $graph ) use ( $call, &$workflows ) 
 };
 
 // Leftovers of an earlier, interrupted run would match this run's events too.
-$ok( ! yay_automation_check_remove_workflows( 'Check runs:' ), 'setup: no temporary workflows left from earlier runs' );
+$ok( ! yaymatik_check_remove_workflows( 'Check runs:' ), 'setup: no temporary workflows left from earlier runs' );
 
 $since = (int) $wpdb->get_var( 'SELECT COALESCE(MAX(id), 0) FROM ' . RunStore::table() );
 
@@ -264,7 +264,7 @@ try {
     $ok( $notes( wc_get_order( $order->get_id() ) ) === $before, 'off before the job: no step ran' );
 
     // 6. Recovery on the real table: a run left `running` with its step `running` (its job died).
-    $workflow = YayAutomation\Workflow\Storage\WorkflowRepository::find( $created_wf );
+    $workflow = YayMatik\Workflow\Storage\WorkflowRepository::find( $created_wf );
     $run_id   = Runtime::dispatcher()->start_run( $workflow, StepRegistry::get( 'order_created' ), [ 'order_id' => $order->get_id() ] );
     as_unschedule_all_actions( ActionSchedulerQueue::HOOK, [ $run_id ], ActionSchedulerQueue::GROUP );
     RunStore::claim( $run_id );
@@ -316,7 +316,7 @@ try {
 } finally {
     // Cleanup: workflows, order, runs by root (child runs too), their jobs.
     // Every temporary workflow, also any created before an error stopped the script.
-    $ok( ! yay_automation_check_remove_workflows( 'Check runs:' ), 'cleanup: temporary workflows deleted' );
+    $ok( ! yaymatik_check_remove_workflows( 'Check runs:' ), 'cleanup: temporary workflows deleted' );
     if ( isset( $order ) && $order ) {
         $order->delete( true );
     }

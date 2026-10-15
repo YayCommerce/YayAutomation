@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { useStore } from '@tanstack/react-form';
-import type { WorkflowGraph } from '@yay-automation/types';
+import type { WorkflowGraph } from '@yaymatik/types';
 
 import { hasChild, removeNode } from '../../model/graph';
 import type { WorkflowForm } from './useWorkflowForm';

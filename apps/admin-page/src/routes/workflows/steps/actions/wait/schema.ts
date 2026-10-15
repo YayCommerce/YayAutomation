@@ -19,13 +19,13 @@ export const schema = v.pipe(
       v.string(),
       v.check(
         (amount) => /^\s*\d+\s*$/.test(amount) && Number(amount) >= 1,
-        __('Enter a whole number, 1 or more.', 'yay-automation'),
+        __('Enter a whole number, 1 or more.', 'yaymatik'),
       ),
     ),
     unit: v.picklist(UNITS),
   }),
   v.forward(
-    v.check(({ amount, unit }) => Number(amount) <= MAX[unit], __('Wait at most a year.', 'yay-automation')),
+    v.check(({ amount, unit }) => Number(amount) <= MAX[unit], __('Wait at most a year.', 'yaymatik')),
     ['amount'],
   ),
 );

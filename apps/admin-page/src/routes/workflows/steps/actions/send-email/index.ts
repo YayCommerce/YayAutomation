@@ -10,16 +10,16 @@ import { defaults, schema, type SendEmailConfig } from './schema';
 export const sendEmailStep = defineStep<SendEmailConfig>({
   id: 'send_email',
   kind: 'action',
-  label: __('Send email', 'yay-automation'),
+  label: __('Send email', 'yaymatik'),
   description: __(
     'Send an email to a customer in your store’s WooCommerce email style, with an unsubscribe link.',
-    'yay-automation',
+    'yaymatik',
   ),
   icon: User,
   schema,
   defaults,
   summary: ({ to }) =>
     /* translators: %s: recipient(s) */
-    sprintf(__('Send to %s', 'yay-automation'), value(variableNames(splitRecipients(to).join(', ')))),
+    sprintf(__('Send to %s', 'yaymatik'), value(variableNames(splitRecipients(to).join(', ')))),
   Form: SendEmailForm,
 });

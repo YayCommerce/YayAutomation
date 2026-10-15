@@ -1,4 +1,4 @@
-import type { StepId, WorkflowGraph } from '@yay-automation/types';
+import type { StepId, WorkflowGraph } from '@yaymatik/types';
 
 import { steps } from '../steps';
 

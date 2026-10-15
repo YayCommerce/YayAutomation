@@ -1,12 +1,12 @@
 <?php
-namespace YayAutomation\Workflow\Steps\Triggers;
+namespace YayMatik\Workflow\Steps\Triggers;
 
-use YayAutomation\Workflow\Data\CustomerData;
-use YayAutomation\Workflow\Data\OrderData;
-use YayAutomation\Workflow\Data\Ref;
-use YayAutomation\Workflow\Extend\Modules;
-use YayAutomation\Workflow\Extend\Plugins;
-use YayAutomation\Workflow\Steps\Core\Trigger;
+use YayMatik\Workflow\Data\CustomerData;
+use YayMatik\Workflow\Data\OrderData;
+use YayMatik\Workflow\Data\Ref;
+use YayMatik\Workflow\Extend\Modules;
+use YayMatik\Workflow\Extend\Plugins;
+use YayMatik\Workflow\Steps\Core\Trigger;
 
 defined( 'ABSPATH' ) || exit;
 

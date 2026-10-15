@@ -1,19 +1,19 @@
 <?php
-namespace YayAutomation\Tests\Unit\Runtime;
+namespace YayMatik\Tests\Unit\Runtime;
 
 use PHPUnit\Framework\TestCase;
-use YayAutomation\Tests\Support\FakeClock;
-use YayAutomation\Tests\Support\FakeCondition;
-use YayAutomation\Tests\Support\FakeGraphSource;
-use YayAutomation\Tests\Support\FakeQueue;
-use YayAutomation\Tests\Support\FakeRunRepository;
-use YayAutomation\Tests\Support\FakeStep;
-use YayAutomation\Workflow\Data\Ref;
-use YayAutomation\Workflow\Data\RefResolver;
-use YayAutomation\Workflow\Data\Scope;
-use YayAutomation\Workflow\Runtime\Executor;
-use YayAutomation\Workflow\Steps\Core\Step;
-use YayAutomation\Workflow\Steps\Core\StepResult;
+use YayMatik\Tests\Support\FakeClock;
+use YayMatik\Tests\Support\FakeCondition;
+use YayMatik\Tests\Support\FakeGraphSource;
+use YayMatik\Tests\Support\FakeQueue;
+use YayMatik\Tests\Support\FakeRunRepository;
+use YayMatik\Tests\Support\FakeStep;
+use YayMatik\Workflow\Data\Ref;
+use YayMatik\Workflow\Data\RefResolver;
+use YayMatik\Workflow\Data\Scope;
+use YayMatik\Workflow\Runtime\Executor;
+use YayMatik\Workflow\Steps\Core\Step;
+use YayMatik\Workflow\Steps\Core\StepResult;
 
 /** The Executor over fakes: cursor, branches, error policy, waits, slices and safe resume. */
 final class ExecutorTest extends TestCase {
@@ -261,7 +261,7 @@ final class ExecutorTest extends TestCase {
     }
 
     public function test_skipped_condition_ends_its_path(): void {
-        $this->steps['condition'] = new class() extends \YayAutomation\Workflow\Steps\Core\Condition {
+        $this->steps['condition'] = new class() extends \YayMatik\Workflow\Steps\Core\Condition {
             public function id(): string {
                 return 'condition';
             }
@@ -568,7 +568,7 @@ final class ExecutorTest extends TestCase {
 
         $this->setUp();
         $this->graph( [ 'a' => [ 'act', [] ] ], [ [ 't', 'a' ] ] );
-        $this->runs = new class() extends \YayAutomation\Tests\Support\FakeRunRepository {
+        $this->runs = new class() extends \YayMatik\Tests\Support\FakeRunRepository {
             public function start_step( int $run_id, string $step_id, array $input ): int {
                 return 0;
             }
@@ -637,7 +637,7 @@ final class ExecutorTest extends TestCase {
     }
 
     public function test_condition_that_only_implements_evaluate_follows_then_on_yes(): void {
-        $this->steps['minimal'] = new class() extends \YayAutomation\Workflow\Steps\Core\Condition {
+        $this->steps['minimal'] = new class() extends \YayMatik\Workflow\Steps\Core\Condition {
             public function id(): string {
                 return 'minimal';
             }

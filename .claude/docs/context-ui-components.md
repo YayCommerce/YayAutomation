@@ -7,7 +7,7 @@ Source: `../YayUiKits/apps/admin-page/src/components/ui/`. Showcase: `/wp-admin/
 ## Sync from YayUiKits
 
 1. Copy the component file plus missing imports (`variants/`, `hooks/`).
-2. New dep → `pnpm -F @yay-automation/admin add <dep>`, same range as `../YayUiKits/apps/admin-page/package.json`.
+2. New dep → `pnpm -F @yaymatik/admin add <dep>`, same range as `../YayUiKits/apps/admin-page/package.json`.
 
 Don't restyle copies locally — change YayUiKits, then re-copy.
 

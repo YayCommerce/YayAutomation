@@ -1,14 +1,14 @@
 <?php
-namespace YayAutomation\Engine\Register;
+namespace YayMatik\Engine\Register;
 
 /**
  * Script Name Constants
  */
 class ScriptName {
 
-    public const STYLE_ADMIN = 'yay-automation/style/admin';
+    public const STYLE_ADMIN = 'yaymatik/style/admin';
 
-    public const MODULE_PREFIX = 'yay-automation/module/';
+    public const MODULE_PREFIX = 'yaymatik/module/';
 
-    public const PAGE_ADMIN = 'yay-automation/module/page-admin';
+    public const PAGE_ADMIN = 'yaymatik/module/page-admin';
 }

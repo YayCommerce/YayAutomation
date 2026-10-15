@@ -3,10 +3,10 @@
  * `WC()` for tests that send email. Countries and payment gateways are empty, as when WooCommerce
  * is missing, so other tests see the same option lists either way.
  *
- * @package YayAutomation
+ * @package YayMatik
  */
 
-use YayAutomation\Tests\Support\FakeMailer;
+use YayMatik\Tests\Support\FakeMailer;
 
 // phpcs:disable Universal.Files.SeparateFunctionsFromOO.Mixed -- one file of stand-ins.
 

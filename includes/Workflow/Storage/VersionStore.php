@@ -1,14 +1,14 @@
 <?php
-namespace YayAutomation\Workflow\Storage;
+namespace YayMatik\Workflow\Storage;
 
-use YayAutomation\Utils\Logger;
+use YayMatik\Utils\Logger;
 
 defined( 'ABSPATH' ) || exit;
 
 // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
 /**
- * Rows of the `yay_automation_versions` table: one snapshot of a workflow's graph per version, with
+ * Rows of the `yaymatik_versions` table: one snapshot of a workflow's graph per version, with
  * the last action taken on it. Which row is live or the draft is tracked by `WorkflowRepository`.
  * Dates are GMT. Runs pin a version, so a saved version never changes: `update()` is only for the
  * draft row, and for the live row of a workflow never turned on (it has no runs).

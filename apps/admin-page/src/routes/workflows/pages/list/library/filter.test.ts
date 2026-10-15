@@ -8,7 +8,7 @@ describe('usesAnyOf', () => {
   });
 
   it('matches a template that uses any chosen plugin (OR), not all of them', () => {
-    expect(usesAnyOf(['woocommerce'], ['woocommerce', 'yayautomation'])).toBe(true);
-    expect(usesAnyOf(['yayautomation'], ['woocommerce'])).toBe(false);
+    expect(usesAnyOf(['woocommerce'], ['woocommerce', 'yaymatik'])).toBe(true);
+    expect(usesAnyOf(['yaymatik'], ['woocommerce'])).toBe(false);
   });
 });

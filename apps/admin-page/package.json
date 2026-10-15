@@ -1,11 +1,11 @@
 {
-  "name": "@yay-automation/admin",
-  "description": "Admin React application for YayAutomation",
+  "name": "@yaymatik/admin",
+  "description": "Admin React application for YayMatik",
   "private": true,
   "version": "1.0.0",
   "type": "module",
   "keywords": [
-    "YayAutomation",
+    "YayMatik",
     "Workflow",
     "Automation"
   ],
@@ -54,8 +54,8 @@
     "@wordpress/date": "^5.45.0",
     "@wordpress/i18n": "^6.11.0",
     "@xyflow/react": "^12.11.6",
-    "@yay-automation/types": "workspace:*",
-    "@yay-automation/utils": "workspace:*",
+    "@yaymatik/types": "workspace:*",
+    "@yaymatik/utils": "workspace:*",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",

@@ -1,7 +1,7 @@
 <?php
-namespace YayAutomation\Workflow\Steps\Core;
+namespace YayMatik\Workflow\Steps\Core;
 
-use YayAutomation\Workflow\Extend\Modules;
+use YayMatik\Workflow\Extend\Modules;
 
 defined( 'ABSPATH' ) || exit;
 

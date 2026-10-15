@@ -1,5 +1,5 @@
 <?php
-namespace YayAutomation\Utils;
+namespace YayMatik\Utils;
 
 trait SingletonTrait {
     private static $instance;

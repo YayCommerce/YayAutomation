@@ -1,7 +1,7 @@
 <?php
-namespace YayAutomation\Workflow\Steps\Core;
+namespace YayMatik\Workflow\Steps\Core;
 
-use YayAutomation\Workflow\Data\Scope;
+use YayMatik\Workflow\Data\Scope;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -131,7 +131,7 @@ abstract class Step {
      * @param string $field   Field key it is about, if any.
      */
     protected function invalid( string $message, string $field = '' ): \WP_Error {
-        return new \WP_Error( 'yay_automation_invalid_config', $message, '' === $field ? '' : [ 'field' => $field ] );
+        return new \WP_Error( 'yaymatik_invalid_config', $message, '' === $field ? '' : [ 'field' => $field ] );
     }
 
     /**

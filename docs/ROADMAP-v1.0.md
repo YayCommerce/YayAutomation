@@ -1,4 +1,4 @@
-# Workflow page UI Roadmap — YayAutomation v1.0
+# Workflow page UI Roadmap — YayMatik v1.0
 
 **Release date:** estimated after M1 · **Status:** Planning · **Technical plan:** [ROADMAP-dev.md](ROADMAP-dev.md) · [workflow-core-design.md](workflow-core-design.md)
 
@@ -91,7 +91,7 @@ We chose these 8 because they cover what merchants install an automation plugin 
 **Today:** a visual canvas with 2 order triggers, 4 actions (staff email, change order status, order note, order custom field), conditions, "Insert variable", and "Needs setup" / error highlights.
 
 **v1.0 adds:**
-- **Pickers:** WooCommerce gets new sections: Carts and Customers for triggers, Coupons for actions. A new YayAutomation group holds Wait. *(M1, M2, M4, M6, M8)*
+- **Pickers:** WooCommerce gets new sections: Carts and Customers for triggers, Coupons for actions. A new YayMatik group holds Wait. *(M1, M2, M4, M6, M8)*
 - **Trigger panels:** *(M4, M6, M8)*
   - Checkout / Cart abandoned: no settings, a note on when a cart counts as abandoned (set in Settings), and a warning with a link while cart tracking is off. Each panel explains that a cart never starts both: "Carts that reached checkout start Checkout abandoned instead, never this trigger." / "Only carts that reached checkout with an email. They never start Cart abandoned."
   - Customer account created: no settings.

@@ -1,7 +1,7 @@
 <?php
-namespace YayAutomation\Workflow\Data;
+namespace YayMatik\Workflow\Data;
 
-use YayAutomation\Workflow\Definition\Messages;
+use YayMatik\Workflow\Definition\Messages;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -247,7 +247,7 @@ final class Template {
             return '';
         }
         if ( is_bool( $value ) ) {
-            return $value ? __( 'Yes', 'yay-automation' ) : __( 'No', 'yay-automation' );
+            return $value ? __( 'Yes', 'yaymatik' ) : __( 'No', 'yaymatik' );
         }
         if ( is_scalar( $value ) ) {
             return (string) $value;

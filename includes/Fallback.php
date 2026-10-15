@@ -8,8 +8,8 @@ add_action(
             ?>
                 <div class="notice notice-error is-dismissible">
                 <p>
-                    <strong><?php esc_html_e( 'It looks like you have another YayAutomation version installed, please delete it before activating this new version. All of the settings and data are still preserved.', 'yay-automation' ); ?>
-                    <a href="https://docs.yaycommerce.com/"><?php esc_html_e( 'Read more details.', 'yay-automation' ); ?></a>
+                    <strong><?php esc_html_e( 'It looks like you have another YayMatik version installed, please delete it before activating this new version. All of the settings and data are still preserved.', 'yaymatik' ); ?>
+                    <a href="https://docs.yaycommerce.com/"><?php esc_html_e( 'Read more details.', 'yaymatik' ); ?></a>
                     </strong>
                 </p>
                 </div>

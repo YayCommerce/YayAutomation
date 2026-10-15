@@ -1,19 +1,19 @@
 <?php
-namespace YayAutomation\Workflow\Storage;
+namespace YayMatik\Workflow\Storage;
 
-use YayAutomation\Utils\Logger;
+use YayMatik\Utils\Logger;
 
 defined( 'ABSPATH' ) || exit;
 
 /**
- * The plugin's tables, `{prefix}yay_automation_<name>`, and the one installer for all of them.
+ * The plugin's tables, `{prefix}yaymatik_<name>`, and the one installer for all of them.
  * Dates are GMT. JSON columns hold `wp_json_encode()` output.
  */
 final class Schema {
 
     // Bump when a table below changes; dbDelta() then upgrades the tables on the next load.
     private const DB_VERSION        = '2';
-    private const DB_VERSION_OPTION = 'yay_automation_db_version';
+    private const DB_VERSION_OPTION = 'yaymatik_db_version';
 
     public const VERSIONS       = 'versions';
     public const RUNS           = 'runs';
@@ -27,7 +27,7 @@ final class Schema {
      */
     public static function table( string $name ): string {
         global $wpdb;
-        return $wpdb->prefix . 'yay_automation_' . $name;
+        return $wpdb->prefix . 'yaymatik_' . $name;
     }
 
     /** Creates or upgrades the tables. Runs on every load, so it also covers plugin updates. */

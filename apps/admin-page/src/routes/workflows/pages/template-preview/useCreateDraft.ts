@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import type { WorkflowGraph } from '@yay-automation/types';
+import type { WorkflowGraph } from '@yaymatik/types';
 import { useNavigate } from 'react-router';
 import { __, sprintf } from '@wordpress/i18n';
 
@@ -11,7 +11,7 @@ export const installFirst = (pluginNames: string[]) =>
   pluginNames.length
     ? sprintf(
         /* translators: %s: plugin name(s), e.g. "WooCommerce" */
-        __('Install %s before activating.', 'yay-automation'),
+        __('Install %s before activating.', 'yaymatik'),
         pluginNames.join(', '),
       )
     : null;
@@ -28,7 +28,7 @@ export function useCreateDraft() {
   const missing = useRef<string[]>([]);
   const createMutation = useCreateWorkflowMutation({
     onSaved: (workflow) => {
-      toast.success(__('Draft created. Review it, then activate it.', 'yay-automation'), {
+      toast.success(__('Draft created. Review it, then activate it.', 'yaymatik'), {
         description: installFirst(missing.current) ?? undefined,
       });
       navigate(`/workflows/${workflow.id}/edit`);

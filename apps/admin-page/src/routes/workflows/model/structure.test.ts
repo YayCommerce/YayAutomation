@@ -1,4 +1,4 @@
-import type { WorkflowGraph } from '@yay-automation/types';
+import type { WorkflowGraph } from '@yaymatik/types';
 import { describe, expect, it } from 'vitest';
 
 import highValueOrderAlert from '../templates/high-value-order-alert';

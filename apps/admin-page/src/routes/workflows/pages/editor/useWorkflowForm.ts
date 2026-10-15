@@ -1,6 +1,6 @@
 import { createContext, useContext } from 'react';
 import { useForm } from '@tanstack/react-form';
-import type { Workflow } from '@yay-automation/types';
+import type { Workflow } from '@yaymatik/types';
 
 /**
  * The graph being edited: the workflow's draft, or its live / saved graph when there's none. The

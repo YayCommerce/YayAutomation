@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { WorkflowGraph } from '@yay-automation/types';
+import type { WorkflowGraph } from '@yaymatik/types';
 
 import { useAutosaveMutation } from '../../api/workflow.query';
 import type { WorkflowForm } from './useWorkflowForm';

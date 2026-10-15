@@ -14,10 +14,10 @@ import { comparableWith, VARIABLE_VALUE_TYPES, type Rule } from './schema';
 
 /** For the picker's "Types: …" line. */
 const typeLabels: Partial<Record<DataField['type'], string>> = {
-  number: __('Number', 'yay-automation'),
-  string: __('Text', 'yay-automation'),
-  date: __('Date', 'yay-automation'),
-  enum: __('Option', 'yay-automation'),
+  number: __('Number', 'yaymatik'),
+  string: __('Text', 'yaymatik'),
+  date: __('Date', 'yaymatik'),
+  enum: __('Option', 'yaymatik'),
 };
 
 /** "Order total" under Order → "Total": the item already shows in small text beside it. */
@@ -86,7 +86,7 @@ export function ValueInput({
     return (
       <Select value={rule.value} onValueChange={setValue}>
         <SelectTrigger id={id} className="w-full" aria-invalid={invalid}>
-          <SelectValue placeholder={__('Choose a value', 'yay-automation')} />
+          <SelectValue placeholder={__('Choose a value', 'yaymatik')} />
         </SelectTrigger>
         <SelectContent>
           {field.options.map((option) => (
@@ -111,7 +111,7 @@ export function ValueInput({
           <DataSelect
             id={id}
             field={fieldByKey(rule.value)}
-            placeholder={__('Choose data', 'yay-automation')}
+            placeholder={__('Choose data', 'yaymatik')}
             invalid={invalid}
           />
         </VariablePicker>
@@ -119,7 +119,7 @@ export function ValueInput({
           variant="ghost"
           size="icon-sm"
           className="shrink-0"
-          aria-label={__('Type a value instead', 'yay-automation')}
+          aria-label={__('Type a value instead', 'yaymatik')}
           onClick={() => setValue('')}
         >
           <X />
@@ -142,7 +142,7 @@ export function ValueInput({
       {variables && (
         <InputGroupAddon align="inline-end">
           <VariablePicker {...variables} onSelect={setVariable}>
-            <InputGroupButton size="icon-md" aria-label={__('Compare with other data', 'yay-automation')}>
+            <InputGroupButton size="icon-md" aria-label={__('Compare with other data', 'yaymatik')}>
               <Code />
             </InputGroupButton>
           </VariablePicker>

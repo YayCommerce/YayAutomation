@@ -24,7 +24,7 @@ export function cn(...inputs: ClassValue[]) {
  * Reads from a localized meta object passed via `window[metaKey]?.wp`,
  * then falls back to `window.wpDateSettings` injected by WordPress core.
  */
-export function getWpTimezone(metaKey: string = 'yayAutomationMeta'): string {
+export function getWpTimezone(metaKey: string = 'yayMatikMeta'): string {
   const globalMeta = (window as unknown as Record<string, unknown>)[metaKey] as
     | { wp?: { timezoneString?: string; gmtOffset?: number } }
     | undefined;

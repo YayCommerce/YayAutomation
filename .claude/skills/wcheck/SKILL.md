@@ -12,7 +12,7 @@ Workflow - Browser verification. Run before marking any frontend task done.
 
 Ask the user:
 1. Is the **Claude in Chrome** extension installed and enabled for this site?
-2. What is the **WP admin URL**? (e.g. `https://yaydev.test/wp-admin/admin.php?page=yay-automation`)
+2. What is the **WP admin URL**? (e.g. `https://yaydev.test/wp-admin/admin.php?page=yaymatik`)
 
 Do not proceed until confirmed.
 

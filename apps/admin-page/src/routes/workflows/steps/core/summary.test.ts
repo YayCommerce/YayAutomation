@@ -104,7 +104,7 @@ describe('catalog summaries', () => {
   });
 
   it('a built step takes its label and icon from the catalog', () => {
-    const meta = window.yayAutomationMeta.automation.steps.add_order_note!;
+    const meta = window.yayMatikMeta.automation.steps.add_order_note!;
     expect(steps.add_order_note.label).toBe(meta.label);
     expect(steps.add_order_note.icon).toBeDefined();
   });

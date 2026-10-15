@@ -1,13 +1,13 @@
 <?php
-namespace YayAutomation\Workflow\Extend;
+namespace YayMatik\Workflow\Extend;
 
-use YayAutomation\Workflow\Steps\Actions\AddOrderNote;
-use YayAutomation\Workflow\Steps\Actions\ChangeOrderStatus;
-use YayAutomation\Workflow\Steps\Actions\SendInternalEmail;
-use YayAutomation\Workflow\Steps\Actions\UpdateOrderMeta;
-use YayAutomation\Workflow\Steps\Conditions\Criteria;
-use YayAutomation\Workflow\Steps\Triggers\OrderCreated;
-use YayAutomation\Workflow\Steps\Triggers\OrderStatusChanged;
+use YayMatik\Workflow\Steps\Actions\AddOrderNote;
+use YayMatik\Workflow\Steps\Actions\ChangeOrderStatus;
+use YayMatik\Workflow\Steps\Actions\SendInternalEmail;
+use YayMatik\Workflow\Steps\Actions\UpdateOrderMeta;
+use YayMatik\Workflow\Steps\Conditions\Criteria;
+use YayMatik\Workflow\Steps\Triggers\OrderCreated;
+use YayMatik\Workflow\Steps\Triggers\OrderStatusChanged;
 
 defined( 'ABSPATH' ) || exit;
 

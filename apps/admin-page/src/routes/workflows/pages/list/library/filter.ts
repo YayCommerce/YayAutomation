@@ -1,4 +1,4 @@
-import type { WorkflowPlugin } from '@yay-automation/types';
+import type { WorkflowPlugin } from '@yaymatik/types';
 
 /** Plugin filter: with several chosen, a template shows when it uses any of them (OR). None chosen → all show. */
 export const usesAnyOf = (used: WorkflowPlugin[], chosen: WorkflowPlugin[]) =>

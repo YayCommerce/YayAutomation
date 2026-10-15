@@ -19,13 +19,13 @@ export interface WorkflowRun {
 export function WorkflowRuns({ runs, loading = false }: { runs: WorkflowRun[]; loading?: boolean }) {
   const [before, after = ''] = sprintf(
     /* translators: %s: link text, "monitoring workflow runs" */
-    __('Learn more about %s', 'yay-automation'),
+    __('Learn more about %s', 'yaymatik'),
     LINK_SLOT,
   ).split(LINK_SLOT);
 
   return (
     <section className="flex flex-col gap-2">
-      <h2 className="text-sm font-semibold">{__('Workflow runs', 'yay-automation')}</h2>
+      <h2 className="text-sm font-semibold">{__('Workflow runs', 'yaymatik')}</h2>
       {loading ? (
         <Skeleton className="h-48 w-full" />
       ) : (
@@ -35,19 +35,19 @@ export function WorkflowRuns({ runs, loading = false }: { runs: WorkflowRun[]; l
               <EmptyMedia className="bg-muted text-muted-foreground mb-1 flex h-13 w-18 items-center justify-center rounded-xl">
                 <Activity className="size-6" strokeWidth={1.6} aria-hidden />
               </EmptyMedia>
-              <EmptyTitle className="text-base font-semibold">{__('No runs yet', 'yay-automation')}</EmptyTitle>
+              <EmptyTitle className="text-base font-semibold">{__('No runs yet', 'yaymatik')}</EmptyTitle>
               <EmptyDescription className="text-[13px]">
                 {__(
                   'Each time an order starts this workflow, the run shows up here with every step’s result.',
-                  'yay-automation',
+                  'yaymatik',
                 )}
               </EmptyDescription>
             </EmptyHeader>
             <EmptyContent>
               <EmptyDescription className="text-[13px]">
                 {before}
-                <a href={window.yayAutomationMeta.docs.workflowRuns} target="_blank" rel="noreferrer">
-                  {__('monitoring workflow runs', 'yay-automation')}
+                <a href={window.yayMatikMeta.docs.workflowRuns} target="_blank" rel="noreferrer">
+                  {__('monitoring workflow runs', 'yaymatik')}
                 </a>
                 {after}
               </EmptyDescription>

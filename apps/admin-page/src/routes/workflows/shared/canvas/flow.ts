@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react';
 import type { Edge, Node } from '@xyflow/react';
-import type { WorkflowGraph, WorkflowNodeData, WorkflowNodeKind } from '@yay-automation/types';
+import type { WorkflowGraph, WorkflowNodeData, WorkflowNodeKind } from '@yaymatik/types';
 
 import { stepOf } from '../../steps';
 
@@ -12,7 +12,7 @@ export type FlowNode = Node<WorkflowNodeData, WorkflowNodeKind>;
 export const lineColor = 'color-mix(in oklab, var(--muted-foreground) 55%, transparent)';
 
 /** Id of the arrowhead marker every edge ends with, defined by `EdgeArrowDefs`. */
-export const EDGE_ARROW_ID = 'yay-automation-edge-arrow';
+export const EDGE_ARROW_ID = 'yaymatik-edge-arrow';
 
 export const canvasStyle = {
   '--xy-background-color': 'var(--muted)',

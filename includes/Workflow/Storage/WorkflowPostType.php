@@ -1,7 +1,7 @@
 <?php
-namespace YayAutomation\Workflow\Storage;
+namespace YayMatik\Workflow\Storage;
 
-use YayAutomation\Utils\SingletonTrait;
+use YayMatik\Utils\SingletonTrait;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -10,7 +10,7 @@ class WorkflowPostType {
 
     use SingletonTrait;
 
-    public const NAME = 'yay_automation_wf';
+    public const NAME = 'yaymatik_wf';
 
     protected function __construct() {
         add_action( 'init', [ $this, 'register' ] );
@@ -20,7 +20,7 @@ class WorkflowPostType {
         register_post_type(
             self::NAME,
             [
-                'label'        => __( 'Workflows', 'yay-automation' ),
+                'label'        => __( 'Workflows', 'yaymatik' ),
                 'public'       => false,
                 'show_ui'      => false,
                 'show_in_rest' => false,

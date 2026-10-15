@@ -1,7 +1,7 @@
 #!/bin/bash
-# Write the admin app's test fixture: window.yayAutomationMeta from the local site (wp-cli).
+# Write the admin app's test fixture: window.yayMatikMeta from the local site (wp-cli).
 cd "$(dirname "$0")/../.." || exit 1
-[[ -f yay-automation.php ]] || { echo "Not the plugin root: $(pwd)"; exit 1; }
+[[ -f yaymatik.php ]] || { echo "Not the plugin root: $(pwd)"; exit 1; }
 command -v wp >/dev/null || { echo "Missing: wp-cli"; exit 1; }
 
 out=apps/admin-page/src/test/fixtures/meta.json
@@ -16,10 +16,10 @@ add_filter( "pre_option_woocommerce_email_from_name", fn() => "Example Store" );
 add_filter( "pre_option_woocommerce_email_from_address", fn() => "store@example.test" );
 // Also the Send internal email "To" placeholder.
 add_filter( "pre_option_admin_email", fn() => "admin@example.test" );
-$meta = \YayAutomation\Engine\BEPages\AdminPage::client_meta();
+$meta = \YayMatik\Engine\BEPages\AdminPage::client_meta();
 $meta["plugin"]["version"]      = "0.0.0";
 $meta["wc"]["currencySymbol"]   = "$";
-$meta["plugin"]["pluginUrl"]  = "https://example.test/wp-content/plugins/yay-automation/";
+$meta["plugin"]["pluginUrl"]  = "https://example.test/wp-content/plugins/yaymatik/";
 $meta["wp"]["restRoot"]       = "https://example.test/wp-json/";
 $meta["wp"]["restNonce"]      = "test-nonce";
 $meta["wp"]["siteUrl"]        = "https://example.test";

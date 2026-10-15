@@ -1,8 +1,8 @@
 <?php
-namespace YayAutomation\Workflow\Steps\Core;
+namespace YayMatik\Workflow\Steps\Core;
 
-use YayAutomation\Workflow\Data\Scope;
-use YayAutomation\Workflow\Data\Type;
+use YayMatik\Workflow\Data\Scope;
+use YayMatik\Workflow\Data\Type;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -20,11 +20,11 @@ abstract class Condition extends Step {
     public function outputs(): array {
         return [
             'result' => [
-                'label'   => __( 'Result', 'yay-automation' ),
+                'label'   => __( 'Result', 'yaymatik' ),
                 'type'    => Type::enum(),
                 'options' => [
-                    'yes' => __( 'Yes', 'yay-automation' ),
-                    'no'  => __( 'No', 'yay-automation' ),
+                    'yes' => __( 'Yes', 'yaymatik' ),
+                    'no'  => __( 'No', 'yaymatik' ),
                 ],
             ],
         ];

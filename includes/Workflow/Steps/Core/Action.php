@@ -1,9 +1,9 @@
 <?php
-namespace YayAutomation\Workflow\Steps\Core;
+namespace YayMatik\Workflow\Steps\Core;
 
-use YayAutomation\Workflow\Data\DataRegistry;
-use YayAutomation\Workflow\Data\Scope;
-use YayAutomation\Workflow\Data\Template;
+use YayMatik\Workflow\Data\DataRegistry;
+use YayMatik\Workflow\Data\Scope;
+use YayMatik\Workflow\Data\Template;
 
 defined( 'ABSPATH' ) || exit;
 

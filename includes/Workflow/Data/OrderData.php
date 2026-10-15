@@ -1,5 +1,5 @@
 <?php
-namespace YayAutomation\Workflow\Data;
+namespace YayMatik\Workflow\Data;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -13,11 +13,11 @@ final class OrderData extends DataItem {
     }
 
     public function label(): string {
-        return __( 'Order', 'yay-automation' );
+        return __( 'Order', 'yaymatik' );
     }
 
     public function description(): string {
-        return __( 'The WooCommerce order that started this workflow: its number, totals, status, payment, shipping and items.', 'yay-automation' );
+        return __( 'The WooCommerce order that started this workflow: its number, totals, status, payment, shipping and items.', 'yaymatik' );
     }
 
     public function icon(): string {
@@ -51,56 +51,56 @@ final class OrderData extends DataItem {
     protected function define(): array {
         return [
             'number'          => [
-                'label' => __( 'Order number', 'yay-automation' ),
+                'label' => __( 'Order number', 'yaymatik' ),
                 'type'  => self::TYPE_STRING,
                 'value' => fn( \WC_Order $order ) => (string) $order->get_order_number(),
             ],
             'total'           => [
-                'label'      => __( 'Order total', 'yay-automation' ),
+                'label'      => __( 'Order total', 'yaymatik' ),
                 'type'       => self::TYPE_NUMBER,
                 'value_type' => Type::money(),
                 'value'      => fn( \WC_Order $order ) => (float) $order->get_total(),
                 'display'    => fn( \WC_Order $order, bool $html ) => self::price( $order, (float) $order->get_total(), $html ),
             ],
             'subtotal'        => [
-                'label'      => __( 'Order subtotal', 'yay-automation' ),
+                'label'      => __( 'Order subtotal', 'yaymatik' ),
                 'type'       => self::TYPE_NUMBER,
                 'value_type' => Type::money(),
                 'value'      => fn( \WC_Order $order ) => (float) $order->get_subtotal(),
                 'display'    => fn( \WC_Order $order, bool $html ) => self::price( $order, (float) $order->get_subtotal(), $html ),
             ],
             'status'          => [
-                'label'   => __( 'Order status', 'yay-automation' ),
+                'label'   => __( 'Order status', 'yaymatik' ),
                 'type'    => self::TYPE_ENUM,
                 'value'   => fn( \WC_Order $order ) => $order->get_status(),
                 'options' => [ self::class, 'statuses' ],
             ],
             'payment_method'  => [
-                'label'   => __( 'Payment method', 'yay-automation' ),
+                'label'   => __( 'Payment method', 'yaymatik' ),
                 'type'    => self::TYPE_ENUM,
                 'value'   => fn( \WC_Order $order ) => $order->get_payment_method(),
                 'display' => fn( \WC_Order $order, bool $html ) => self::text( $order->get_payment_method_title(), $html ),
                 'options' => [ self::class, 'payment_methods' ],
             ],
             'shipping_method' => [
-                'label' => __( 'Shipping method', 'yay-automation' ),
+                'label' => __( 'Shipping method', 'yaymatik' ),
                 'type'  => self::TYPE_STRING,
                 'value' => fn( \WC_Order $order ) => $order->get_shipping_method(),
             ],
             'item_count'      => [
-                'label' => __( 'Item count', 'yay-automation' ),
+                'label' => __( 'Item count', 'yaymatik' ),
                 'type'  => self::TYPE_NUMBER,
                 'value' => fn( \WC_Order $order ) => (float) $order->get_item_count(),
             ],
             'created_date'    => [
-                'label'   => __( 'Order date', 'yay-automation' ),
+                'label'   => __( 'Order date', 'yaymatik' ),
                 'type'    => self::TYPE_DATE,
                 // WC_DateTime is in the site's timezone, so this is the date the store sees.
                 'value'   => fn( \WC_Order $order ) => $order->get_date_created() ? $order->get_date_created()->date( 'Y-m-d' ) : '',
                 'display' => fn( \WC_Order $order, bool $html ) => self::text( wc_format_datetime( $order->get_date_created() ), $html ),
             ],
             'customer'        => [
-                'label'       => __( 'Customer', 'yay-automation' ),
+                'label'       => __( 'Customer', 'yaymatik' ),
                 'type'        => self::TYPE_STRING,
                 'value_type'  => Type::entity( CustomerData::ID ),
                 // The billing details on the order, so guests have a customer too.
@@ -108,13 +108,13 @@ final class OrderData extends DataItem {
                 'conditional' => false,
             ],
             'admin_url'       => [
-                'label'       => __( 'Order admin URL', 'yay-automation' ),
+                'label'       => __( 'Order admin URL', 'yaymatik' ),
                 'type'        => self::TYPE_STRING,
                 'value'       => fn( \WC_Order $order ) => $order->get_edit_order_url(),
                 'conditional' => false,
             ],
             'items'           => [
-                'label'       => __( 'Order items', 'yay-automation' ),
+                'label'       => __( 'Order items', 'yaymatik' ),
                 'type'        => self::TYPE_STRING,
                 'value_type'  => Type::list_of( Type::entity( OrderItemData::ID ) ),
                 'value'       => fn( \WC_Order $order ) => array_values(
@@ -169,9 +169,9 @@ final class OrderData extends DataItem {
             $totals .= '<tr><th ' . $cell . ' scope="row" colspan="2">' . wp_kses_post( $total['label'] ) . '</th><td ' . $cell . '>' . wp_kses_post( $total['value'] ) . '</td></tr>';
         }
         $table = '<table class="td" cellspacing="0" cellpadding="6" border="1" style="width:100%;">'
-            . '<thead><tr><th ' . $cell . ' scope="col">' . esc_html__( 'Product', 'yay-automation' ) . '</th>'
-            . '<th ' . $cell . ' scope="col">' . esc_html__( 'Quantity', 'yay-automation' ) . '</th>'
-            . '<th ' . $cell . ' scope="col">' . esc_html__( 'Price', 'yay-automation' ) . '</th></tr></thead>'
+            . '<thead><tr><th ' . $cell . ' scope="col">' . esc_html__( 'Product', 'yaymatik' ) . '</th>'
+            . '<th ' . $cell . ' scope="col">' . esc_html__( 'Quantity', 'yaymatik' ) . '</th>'
+            . '<th ' . $cell . ' scope="col">' . esc_html__( 'Price', 'yaymatik' ) . '</th></tr></thead>'
             . '<tbody>' . $rows . '</tbody><tfoot>' . $totals . '</tfoot></table>';
         // One line: the email body goes through wpautop(), which would put <br> between table rows.
         return trim( (string) preg_replace( '/\s*\n\s*/', ' ', $table ) );

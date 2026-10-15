@@ -1,9 +1,9 @@
 <?php
-namespace YayAutomation\Tests\Unit\Definition;
+namespace YayMatik\Tests\Unit\Definition;
 
 use PHPUnit\Framework\TestCase;
-use YayAutomation\Workflow\Definition\GraphSchema;
-use YayAutomation\Workflow\Definition\Validator;
+use YayMatik\Workflow\Definition\GraphSchema;
+use YayMatik\Workflow\Definition\Validator;
 
 require_once dirname( __DIR__, 2 ) . '/Support/woocommerce-stubs.php';
 
@@ -154,7 +154,7 @@ final class GraphShapeTest extends TestCase {
         $result = Validator::prepare_changes( [ 'graph' => $graph ] );
 
         $this->assertInstanceOf( \WP_Error::class, $result );
-        $this->assertSame( 'yay_automation_invalid_workflow', $result->get_error_code() );
+        $this->assertSame( 'yaymatik_invalid_workflow', $result->get_error_code() );
         $this->assertSame( $message, $result->get_error_message() );
         $expected = [ 'status' => 400 ];
         if ( null !== $node_id ) {
@@ -269,7 +269,7 @@ final class GraphShapeTest extends TestCase {
 
         $this->assertInstanceOf( \WP_Error::class, $result );
         $this->assertSame( [ 'status' => 400 ], $result->get_error_data() );
-        $this->assertSame( 'This workflow was saved by a newer version of YayAutomation. Update the plugin to edit it.', $result->get_error_message() );
+        $this->assertSame( 'This workflow was saved by a newer version of YayMatik. Update the plugin to edit it.', $result->get_error_message() );
 
         $graph['schemaVersion'] = 'one';
         $this->assertSame( 'Invalid workflow graph.', Validator::prepare_changes( [ 'graph' => $graph ] )->get_error_message() );

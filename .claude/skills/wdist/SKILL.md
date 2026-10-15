@@ -10,9 +10,9 @@ Workflow - Create a release distribution.
 
 ## Step 1 — Version bump
 
-Read the current version from `yay-automation.php`:
+Read the current version from `yaymatik.php`:
 - Plugin header comment: `* Version: X.Y.Z`
-- PHP constant: `define( 'YAY_AUTOMATION_VERSION', 'X.Y.Z' );`
+- PHP constant: `define( 'YAYMATIK_VERSION', 'X.Y.Z' );`
 
 Ask the user what the new version should be (or suggest a patch bump). Show preview:
 
@@ -44,6 +44,6 @@ If build fails: show last 40 lines, ask user to fix or auto-fix if clearly scope
 
 > **Release complete: v\<version\>**
 >
-> Zip: `release/yay-automation.zip`
+> Zip: `release/yaymatik.zip`
 
 Do not commit the version bump unless the user asks.

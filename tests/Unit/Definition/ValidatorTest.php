@@ -1,9 +1,9 @@
 <?php
-namespace YayAutomation\Tests\Unit\Definition;
+namespace YayMatik\Tests\Unit\Definition;
 
 use PHPUnit\Framework\TestCase;
-use YayAutomation\Workflow\Definition\GraphSchema;
-use YayAutomation\Workflow\Definition\Validator;
+use YayMatik\Workflow\Definition\GraphSchema;
+use YayMatik\Workflow\Definition\Validator;
 
 require_once dirname( __DIR__, 2 ) . '/Support/woocommerce-stubs.php';
 
@@ -352,9 +352,9 @@ final class ValidatorTest extends TestCase {
     }
 
     public function test_the_filter_list_comes_from_the_registry(): void {
-        $filters = new \YayAutomation\Workflow\Data\Filters();
+        $filters = new \YayMatik\Workflow\Data\Filters();
         $filters->add( 'shout', [ 'string' ], 'strtoupper' );
-        $errors = ( new \YayAutomation\Workflow\Data\Template( $filters ) )->errors( '{{ order.number | nope }}' );
+        $errors = ( new \YayMatik\Workflow\Data\Template( $filters ) )->errors( '{{ order.number | nope }}' );
 
         $this->assertSame( [ 'nope isn’t a filter. Available filters: default, upper, lower, join, date, money, shout.' ], $errors );
     }

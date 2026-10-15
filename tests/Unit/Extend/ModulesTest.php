@@ -1,10 +1,10 @@
 <?php
-namespace YayAutomation\Tests\Unit\Extend;
+namespace YayMatik\Tests\Unit\Extend;
 
 use PHPUnit\Framework\TestCase;
-use YayAutomation\Workflow\Extend\Modules;
-use YayAutomation\Workflow\Steps\Core\Step;
-use YayAutomation\Workflow\Steps\Core\StepRegistry;
+use YayMatik\Workflow\Extend\Modules;
+use YayMatik\Workflow\Steps\Core\Step;
+use YayMatik\Workflow\Steps\Core\StepRegistry;
 
 /** The modules manifest and its on/off switch: an off module's steps are unknown. */
 final class ModulesTest extends TestCase {
@@ -49,7 +49,7 @@ final class ModulesTest extends TestCase {
         $manifest['extra']               = [
             'tier'  => Modules::TIER_PRO,
             'on'    => true,
-            'steps' => [ \YayAutomation\Workflow\Steps\Actions\AddOrderNote::class ],
+            'steps' => [ \YayMatik\Workflow\Steps\Actions\AddOrderNote::class ],
         ];
 
         $this->assertSame( [], StepRegistry::from_manifest( [ Modules::CORE => $manifest[ Modules::CORE ] ] ) );

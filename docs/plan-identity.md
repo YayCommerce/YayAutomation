@@ -128,7 +128,7 @@ All in ROADMAP-dev F1 (confirmed 2026-10-08):
 
 - **Step icon and plugin logo in the catalog** (L5, F1.4).
 - **Field name in issues** (F1.6). "Add order note needs a note" needs the missing field; issues have `code`, `message`, `nodeId` only today.
-- **New wording in validator and REST messages** (F1.6), e.g. the delete error in `RestAPI.php` ("turned on… Turn it off"). Step / data / plugin labels sent through `yayAutomationMeta` change with their steps.
+- **New wording in validator and REST messages** (F1.6), e.g. the delete error in `RestAPI.php` ("turned on… Turn it off"). Step / data / plugin labels sent through `yayMatikMeta` change with their steps.
 - **`activatedAt` in workflow responses** (F1.8), for "Active since …" on the overview. Stored already as post meta, not exposed.
 - **Read-only "From" line** uses the `notice` widget (F1.9).
 - **Runs data** for Runs, Last run and the overview summary (F1.1, F1.8, M2.4).

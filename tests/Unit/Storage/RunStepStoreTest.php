@@ -1,18 +1,18 @@
 <?php
-namespace YayAutomation\Tests\Unit\Storage;
+namespace YayMatik\Tests\Unit\Storage;
 
 use PHPUnit\Framework\TestCase;
-use YayAutomation\Tests\Support\FakeClock;
-use YayAutomation\Tests\Support\FakeCondition;
-use YayAutomation\Tests\Support\FakeGraphSource;
-use YayAutomation\Tests\Support\FakeQueue;
-use YayAutomation\Tests\Support\FakeStep;
-use YayAutomation\Tests\Support\FakeWpdb;
-use YayAutomation\Workflow\Data\RefResolver;
-use YayAutomation\Workflow\Runtime\DbRunRepository;
-use YayAutomation\Workflow\Runtime\Executor;
-use YayAutomation\Workflow\Storage\RunStepStore;
-use YayAutomation\Workflow\Storage\RunStore;
+use YayMatik\Tests\Support\FakeClock;
+use YayMatik\Tests\Support\FakeCondition;
+use YayMatik\Tests\Support\FakeGraphSource;
+use YayMatik\Tests\Support\FakeQueue;
+use YayMatik\Tests\Support\FakeStep;
+use YayMatik\Tests\Support\FakeWpdb;
+use YayMatik\Workflow\Data\RefResolver;
+use YayMatik\Workflow\Runtime\DbRunRepository;
+use YayMatik\Workflow\Runtime\Executor;
+use YayMatik\Workflow\Storage\RunStepStore;
+use YayMatik\Workflow\Storage\RunStore;
 
 /** What the run stores send to the database. The real tables are checked with `./run.sh check-runs`. */
 final class RunStepStoreTest extends TestCase {
@@ -36,7 +36,7 @@ final class RunStepStoreTest extends TestCase {
 
         $this->assertSame( 1, $id );
         list( , $table, $data ) = $this->db->calls[0];
-        $this->assertSame( 'wp_yay_automation_run_steps', $table );
+        $this->assertSame( 'wp_yaymatik_run_steps', $table );
         $this->assertSame( 7, $data['run_id'] );
         $this->assertSame( 'n2', $data['step_id'] );
         $this->assertSame( 'running', $data['status'] );
@@ -78,7 +78,7 @@ final class RunStepStoreTest extends TestCase {
 
         $rows = RunStepStore::for_run( 7 );
 
-        $this->assertSame( 'SELECT * FROM wp_yay_automation_run_steps WHERE run_id = 7 ORDER BY id ASC', $this->db->last_sql() );
+        $this->assertSame( 'SELECT * FROM wp_yaymatik_run_steps WHERE run_id = 7 ORDER BY id ASC', $this->db->last_sql() );
         $this->assertSame( 1, $rows[0]['id'] );
         $this->assertSame( [ 'note' => 'x' ], $rows[0]['input'] );
         $this->assertSame( [], $rows[0]['output'] );
@@ -98,7 +98,7 @@ final class RunStepStoreTest extends TestCase {
             RunStore::recent_counts( 5, 60 )
         );
         $this->assertMatchesRegularExpression(
-            "/^SELECT COUNT\(\*\) AS total, COALESCE\(SUM\(depth > 0\), 0\) AS chained FROM wp_yay_automation_runs WHERE workflow_id = 5 AND started_at >= '\d{4}-\d\d-\d\d \d\d:\d\d:\d\d'$/",
+            "/^SELECT COUNT\(\*\) AS total, COALESCE\(SUM\(depth > 0\), 0\) AS chained FROM wp_yaymatik_runs WHERE workflow_id = 5 AND started_at >= '\d{4}-\d\d-\d\d \d\d:\d\d:\d\d'$/",
             $this->db->last_sql()
         );
     }
@@ -216,7 +216,7 @@ final class RunStepStoreTest extends TestCase {
         $this->assertTrue( RunStore::claim( 7 ) );
         $this->assertCount( 1, $this->db->calls );
         $this->assertMatchesRegularExpression(
-            "/^UPDATE wp_yay_automation_runs SET status = 'running' WHERE id = 7 AND status IN \('queued','waiting'\) AND \( status <> 'waiting' OR wait_until IS NULL OR wait_until <= '[0-9: -]+' \)$/",
+            "/^UPDATE wp_yaymatik_runs SET status = 'running' WHERE id = 7 AND status IN \('queued','waiting'\) AND \( status <> 'waiting' OR wait_until IS NULL OR wait_until <= '[0-9: -]+' \)$/",
             $this->db->last_sql()
         );
     }
@@ -225,7 +225,7 @@ final class RunStepStoreTest extends TestCase {
         $this->db->result = 1;
 
         $this->assertTrue( RunStore::claim( 7, [ 'queued', 'waiting', 'running' ] ) );
-        $this->assertSame( "UPDATE wp_yay_automation_runs SET status = 'queued' WHERE id = 7 AND status = 'running'", $this->db->calls[0][1] );
+        $this->assertSame( "UPDATE wp_yaymatik_runs SET status = 'queued' WHERE id = 7 AND status = 'running'", $this->db->calls[0][1] );
         $this->assertStringContainsString( "status IN ('queued','waiting')", $this->db->calls[1][1] );
     }
 }

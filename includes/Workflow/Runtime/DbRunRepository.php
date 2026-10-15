@@ -1,8 +1,8 @@
 <?php
-namespace YayAutomation\Workflow\Runtime;
+namespace YayMatik\Workflow\Runtime;
 
-use YayAutomation\Workflow\Storage\RunStepStore;
-use YayAutomation\Workflow\Storage\RunStore;
+use YayMatik\Workflow\Storage\RunStepStore;
+use YayMatik\Workflow\Storage\RunStore;
 
 defined( 'ABSPATH' ) || exit;
 

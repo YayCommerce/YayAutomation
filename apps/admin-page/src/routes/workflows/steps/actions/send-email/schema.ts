@@ -19,7 +19,7 @@ export const schema = withKnownVariables(
       v.check(
         // Like PHP `Field::emails`: a part with a tag is a variable; the merge-tag check reads it.
         (to) => splitRecipients(to).every((part) => part.includes('{{') || isWpEmail(part)),
-        __('Enter email addresses or variables, separated by commas.', 'yay-automation'),
+        __('Enter email addresses or variables, separated by commas.', 'yaymatik'),
       ),
     ),
     subject: required(),

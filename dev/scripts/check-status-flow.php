@@ -8,14 +8,14 @@
  *
  * Args: order ids.
  *
- * @package YayAutomation
+ * @package YayMatik
  */
 
 // phpcs:disable WordPress.WP.GlobalVariablesOverride.Prohibited -- wp eval-file passes $args.
 
 require_once __DIR__ . '/check-run.php';
 
-const META_KEY      = '_yay_automation_check';
+const META_KEY      = '_yaymatik_check';
 const TARGET_STATUS = 'failed';
 // From on-hold and back: no paid / completed dates, no stock change.
 
@@ -35,7 +35,7 @@ add_filter(
 );
 
 $call = function ( string $method, string $route, ?array $body = null ) {
-    $request = new WP_REST_Request( $method, '/yay-automation/v1/' . $route );
+    $request = new WP_REST_Request( $method, '/yaymatik/v1/' . $route );
     if ( null !== $body ) {
         $request->set_header( 'content-type', 'application/json' );
         $request->set_body( wp_json_encode( $body ) );
@@ -98,7 +98,7 @@ $graph = [
 ];
 
 // A workflow left by an earlier, interrupted run would also act on these orders.
-$left = yay_automation_check_remove_workflows( 'Check status flow' );
+$left = yaymatik_check_remove_workflows( 'Check status flow' );
 if ( $left ) {
     fwrite( STDERR, 'Could not remove leftover workflows: ' . implode( ', ', $left ) . "\n" ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fwrite
     exit( 1 );
@@ -123,7 +123,7 @@ try {
         $before = wp_list_pluck( wc_get_order_notes( [ 'order_id' => $order_id ] ), 'id' );
         $mails  = [];
 
-        yay_automation_check_run(
+        yaymatik_check_run(
             $id,
             'order_status_changed',
             [
@@ -159,7 +159,7 @@ try {
     }//end foreach
 } finally {
     // Before shutdown, so the restores above can't start a run. Also covers a failure midway.
-    $left = yay_automation_check_remove_workflows( 'Check status flow' );
+    $left = yaymatik_check_remove_workflows( 'Check status flow' );
     if ( $left ) {
         fwrite( STDERR, 'Could not remove workflows: ' . implode( ', ', $left ) . "\n" ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fwrite
     }

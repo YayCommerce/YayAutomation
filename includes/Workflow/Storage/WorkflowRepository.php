@@ -1,8 +1,8 @@
 <?php
-namespace YayAutomation\Workflow\Storage;
+namespace YayMatik\Workflow\Storage;
 
-use YayAutomation\Workflow\Steps\Core\Step;
-use YayAutomation\Workflow\Steps\Core\StepRegistry;
+use YayMatik\Workflow\Steps\Core\Step;
+use YayMatik\Workflow\Steps\Core\StepRegistry;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -10,27 +10,27 @@ defined( 'ABSPATH' ) || exit;
  * Workflow storage over the private post type. Returned arrays match the TS `Workflow` type.
  * Input must already be prepared by `Validator`.
  *
- * - `_yay_automation_graph` is the live graph: the only one the runner reads.
- * - `_yay_automation_draft_graph` holds unapplied edits of a workflow that has ever been turned on
+ * - `_yaymatik_graph` is the live graph: the only one the runner reads.
+ * - `_yaymatik_draft_graph` holds unapplied edits of a workflow that has ever been turned on
  *   (active or not). It's kept across turning on and off.
  * - `post_modified` moves with the live graph, status and name only; draft saves write meta alone,
  *   so they don't touch it.
- * - Every graph change is also kept as a version (`VersionStore`). `_yay_automation_live_version`
- *   and `_yay_automation_draft_version` point at the rows holding the live graph and the draft.
+ * - Every graph change is also kept as a version (`VersionStore`). `_yaymatik_live_version`
+ *   and `_yaymatik_draft_version` point at the rows holding the live graph and the draft.
  *   "Last updated" (`lastVersionAt`) is the newest row's time.
  */
 final class WorkflowRepository {
 
-    private const META_STATUS        = '_yay_automation_status';
-    private const META_GRAPH         = '_yay_automation_graph';
-    private const META_TRIGGER       = '_yay_automation_trigger';
-    private const META_DRAFT_GRAPH   = '_yay_automation_draft_graph';
-    private const META_DRAFT_UPDATED = '_yay_automation_draft_updated';
+    private const META_STATUS        = '_yaymatik_status';
+    private const META_GRAPH         = '_yaymatik_graph';
+    private const META_TRIGGER       = '_yaymatik_trigger';
+    private const META_DRAFT_GRAPH   = '_yaymatik_draft_graph';
+    private const META_DRAFT_UPDATED = '_yaymatik_draft_updated';
     // When the workflow was last turned on. Set on every activate; deactivate only adds it when missing,
     // so it also tells "Inactive" (turned off) from "Draft" (never on).
-    private const META_ACTIVATED_AT  = '_yay_automation_activated_at';
-    private const META_LIVE_VERSION  = '_yay_automation_live_version';
-    private const META_DRAFT_VERSION = '_yay_automation_draft_version';
+    private const META_ACTIVATED_AT  = '_yaymatik_activated_at';
+    private const META_LIVE_VERSION  = '_yaymatik_live_version';
+    private const META_DRAFT_VERSION = '_yaymatik_draft_version';
 
     public static function all(): array {
         $posts = get_posts(

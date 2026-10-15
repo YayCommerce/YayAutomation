@@ -1,5 +1,5 @@
 <?php
-namespace YayAutomation\Workflow\Data;
+namespace YayMatik\Workflow\Data;
 
 defined( 'ABSPATH' ) || exit;
 

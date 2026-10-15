@@ -99,7 +99,7 @@ export interface WorkflowVersionsPage {
 }
 
 /** Plugin that triggers and actions are grouped under (PHP `Workflow\Extend\Plugins`). */
-export type WorkflowPlugin = 'woocommerce' | 'yayautomation';
+export type WorkflowPlugin = 'woocommerce' | 'yaymatik';
 
 /** Library chip a template is filed under. Labels live in the admin app. */
 export type TemplateCategory = 'recover_carts' | 'post_purchase' | 'customer_lifecycle' | 'alerts';

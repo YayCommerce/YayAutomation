@@ -1,8 +1,8 @@
 <?php
-namespace YayAutomation\Tests\Unit\Data;
+namespace YayMatik\Tests\Unit\Data;
 
 use PHPUnit\Framework\TestCase;
-use YayAutomation\Workflow\Data\Filters;
+use YayMatik\Workflow\Data\Filters;
 
 /** The filter registry: input types, extension, and inputs the date filter accepts. */
 final class FiltersTest extends TestCase {

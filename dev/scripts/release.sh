@@ -1,9 +1,9 @@
 #!/bin/bash
-# Build the distribution zip: release/yay-automation.zip
+# Build the distribution zip: release/yaymatik.zip
 cd "$(dirname "$0")/../.." || exit 1
-[[ -f yay-automation.php ]] || { echo "Not the plugin root: $(pwd)"; exit 1; }
+[[ -f yaymatik.php ]] || { echo "Not the plugin root: $(pwd)"; exit 1; }
 
-PLUGIN_SLUG="yay-automation"
+PLUGIN_SLUG="yaymatik"
 PROJECT_PATH=$(pwd)
 BUILD_PATH="${PROJECT_PATH}/release"
 DEST_PATH="$BUILD_PATH/$PLUGIN_SLUG"
@@ -44,7 +44,7 @@ else
 fi
 
 # Remove development code
-sed -i "" "/'YAY_AUTOMATION_IS_DEVELOPMENT', true/d" "$DEST_PATH/yay-automation.php"
+sed -i "" "/'YAYMATIK_IS_DEVELOPMENT', true/d" "$DEST_PATH/yaymatik.php"
 rm -f "$DEST_PATH/includes/Engine/Register/RegisterDev.php"
 
 echo "Generating zip file..."

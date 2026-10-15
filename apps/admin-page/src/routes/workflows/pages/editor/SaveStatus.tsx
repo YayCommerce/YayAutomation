@@ -33,20 +33,20 @@ export function SaveStatus({
         <>
           <CircleAlert className="text-destructive size-3.5" aria-hidden />
           <span className="text-destructive" title={error?.message}>
-            {__('Couldn’t save', 'yay-automation')}
+            {__('Couldn’t save', 'yaymatik')}
           </span>
           <Button variant="link" size="sm" className="h-auto p-0 text-xs" onClick={onRetry}>
-            {__('Retry', 'yay-automation')}
+            {__('Retry', 'yaymatik')}
           </Button>
         </>
       ) : status === 'saved' ? (
         <>
           <CircleCheck className="size-3.5" aria-hidden />
-          <span className="text-foreground">{__('Saved', 'yay-automation')}</span>
+          <span className="text-foreground">{__('Saved', 'yaymatik')}</span>
           <span>
             {sprintf(
               /* translators: %s: date and time */
-              __('Last changed on %s', 'yay-automation'),
+              __('Last changed on %s', 'yaymatik'),
               formatDateTime(lastChanged),
             )}
           </span>
@@ -54,7 +54,7 @@ export function SaveStatus({
       ) : (
         <>
           <Loader2 className="size-3.5 animate-spin" aria-hidden />
-          {__('Saving…', 'yay-automation')}
+          {__('Saving…', 'yaymatik')}
         </>
       )}
     </div>

@@ -1,8 +1,8 @@
 <?php
-namespace YayAutomation\Tests\Unit\Runtime;
+namespace YayMatik\Tests\Unit\Runtime;
 
 use PHPUnit\Framework\TestCase;
-use YayAutomation\Workflow\Runtime\ActionSchedulerQueue;
+use YayMatik\Workflow\Runtime\ActionSchedulerQueue;
 
 require_once dirname( __DIR__, 2 ) . '/Support/action-scheduler-stubs.php';
 
@@ -26,7 +26,7 @@ final class ActionSchedulerQueueTest extends TestCase {
         $this->assertTrue( $queue->enqueue( 6 ) );
 
         $this->assertSame(
-            [ [ 'yay_automation_run', [ 5 ], 1791802800 ], [ 'yay_automation_run', [ 6 ], null ] ],
+            [ [ 'yaymatik_run', [ 5 ], 1791802800 ], [ 'yaymatik_run', [ 6 ], null ] ],
             self::jobs()
         );
     }
@@ -52,6 +52,6 @@ final class ActionSchedulerQueueTest extends TestCase {
 
         $GLOBALS['yay_test_as'][0]['status'] = 'complete';
         $queue->recover( 5 );
-        $this->assertSame( 'yay_automation_recover_run', self::jobs()[1][0] );
+        $this->assertSame( 'yaymatik_recover_run', self::jobs()[1][0] );
     }
 }

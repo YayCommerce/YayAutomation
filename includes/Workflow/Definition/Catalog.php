@@ -1,18 +1,18 @@
 <?php
-namespace YayAutomation\Workflow\Definition;
+namespace YayMatik\Workflow\Definition;
 
-use YayAutomation\Workflow\Data\DataRegistry;
-use YayAutomation\Workflow\Data\Operators;
-use YayAutomation\Workflow\Data\Type;
-use YayAutomation\Workflow\Extend\Plugins;
-use YayAutomation\Workflow\Steps\Core\Field;
-use YayAutomation\Workflow\Steps\Core\Step;
-use YayAutomation\Workflow\Steps\Core\StepRegistry;
+use YayMatik\Workflow\Data\DataRegistry;
+use YayMatik\Workflow\Data\Operators;
+use YayMatik\Workflow\Data\Type;
+use YayMatik\Workflow\Extend\Plugins;
+use YayMatik\Workflow\Steps\Core\Field;
+use YayMatik\Workflow\Steps\Core\Step;
+use YayMatik\Workflow\Steps\Core\StepRegistry;
 
 defined( 'ABSPATH' ) || exit;
 
 /**
- * What Workflow Core knows, for the admin app (`yayAutomationMeta.automation`): plugins, steps
+ * What Workflow Core knows, for the admin app (`yayMatikMeta.automation`): plugins, steps
  * with their fields and outputs, data items with their types, operators with their labels. PHP is the one source;
  * the app's parity test (apps/admin-page/src/test/parity.test.ts) checks the TS side against it.
  *

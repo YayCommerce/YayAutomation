@@ -1,5 +1,5 @@
 import type { MouseEventHandler } from 'react';
-import type { WorkflowTemplate } from '@yay-automation/types';
+import type { WorkflowTemplate } from '@yaymatik/types';
 import { ChevronLeft, Info } from 'lucide-react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router';
 import { __ } from '@wordpress/i18n';
@@ -50,10 +50,10 @@ export default function TemplatePreviewPage() {
   };
 
   if (!template) {
-    return <EditorPlaceholder error={new Error(__('Template not found.', 'yay-automation'))} />;
+    return <EditorPlaceholder error={new Error(__('Template not found.', 'yaymatik'))} />;
   }
 
-  const useLabel = __('Use template', 'yay-automation');
+  const useLabel = __('Use template', 'yaymatik');
 
   return (
     <EditorLayout
@@ -64,7 +64,7 @@ export default function TemplatePreviewPage() {
               <BreadcrumbLink asChild>
                 <Link to={LIBRARY_PATH} onClick={toLibrary} className="inline-flex items-center gap-1">
                   <ChevronLeft className="size-4" aria-hidden />
-                  {__('Template Library', 'yay-automation')}
+                  {__('Template Library', 'yaymatik')}
                 </Link>
               </BreadcrumbLink>
             </BreadcrumbItem>
@@ -128,7 +128,7 @@ function TemplateSidePanel({ template }: { template: WorkflowTemplate }) {
       </div>
 
       <section>
-        <h3 className={groupHeading}>{__('What it does', 'yay-automation')}</h3>
+        <h3 className={groupHeading}>{__('What it does', 'yaymatik')}</h3>
         {/* Gap, not `space-y-*`: WP admin's `li { margin-bottom }` beats its zero-specificity margins. */}
         <ol className="flex flex-col gap-2.5">
           {stepsInOrder(template.graph).map((node) => {
@@ -142,7 +142,7 @@ function TemplateSidePanel({ template }: { template: WorkflowTemplate }) {
                   <span className="block font-medium">
                     {branch && (
                       <span className="text-muted-foreground font-normal">
-                        {branch === 'then' ? __('Yes:', 'yay-automation') : __('No:', 'yay-automation')}{' '}
+                        {branch === 'then' ? __('Yes:', 'yaymatik') : __('No:', 'yaymatik')}{' '}
                       </span>
                     )}
                     {stepDef?.label ?? kindMeta[node.kind].label}
@@ -160,16 +160,16 @@ function TemplateSidePanel({ template }: { template: WorkflowTemplate }) {
       </section>
 
       <section>
-        <h3 className={groupHeading}>{__('Plugins used', 'yay-automation')}</h3>
+        <h3 className={groupHeading}>{__('Plugins used', 'yaymatik')}</h3>
         <ul className="flex flex-col gap-2">
           {pluginsOf(template.graph).map((plugin) => (
             <li key={plugin} className="flex items-center gap-2 rounded-lg border px-2.5 py-2">
               <PluginIcon plugin={plugin} />
               <span className="min-w-0 flex-1 truncate font-medium">{plugins[plugin].label}</span>
               {plugins[plugin].active ? (
-                <Badge variant="success-soft">{__('Installed', 'yay-automation')}</Badge>
+                <Badge variant="success-soft">{__('Installed', 'yaymatik')}</Badge>
               ) : (
-                <Badge variant="warning-soft">{__('Not installed', 'yay-automation')}</Badge>
+                <Badge variant="warning-soft">{__('Not installed', 'yaymatik')}</Badge>
               )}
             </li>
           ))}
@@ -184,7 +184,7 @@ function TemplateSidePanel({ template }: { template: WorkflowTemplate }) {
 
       <p className="bg-primary/8 flex items-start gap-2 rounded-lg px-3 py-2.5 text-[13px]">
         <Info className="text-primary mt-0.5 size-4 shrink-0" aria-hidden />
-        {__('Using it creates a draft. Review it, then activate it.', 'yay-automation')}
+        {__('Using it creates a draft. Review it, then activate it.', 'yaymatik')}
       </p>
     </aside>
   );

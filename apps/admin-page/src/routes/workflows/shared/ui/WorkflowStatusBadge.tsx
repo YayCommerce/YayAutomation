@@ -1,4 +1,4 @@
-import type { Workflow } from '@yay-automation/types';
+import type { Workflow } from '@yaymatik/types';
 import { __ } from '@wordpress/i18n';
 
 import { cn } from '@/lib/utils';
@@ -13,9 +13,9 @@ export function workflowState(workflow: Pick<Workflow, 'status' | 'everActivated
 }
 
 const badges = {
-  active: { tone: 'bg-success/15 text-success-soft-foreground', label: __('Active', 'yay-automation') },
-  inactive: { tone: 'bg-muted text-muted-foreground-600', label: __('Inactive', 'yay-automation') },
-  draft: { tone: 'bg-primary/14 text-link', label: __('Draft', 'yay-automation') },
+  active: { tone: 'bg-success/15 text-success-soft-foreground', label: __('Active', 'yaymatik') },
+  inactive: { tone: 'bg-muted text-muted-foreground-600', label: __('Inactive', 'yaymatik') },
+  draft: { tone: 'bg-primary/14 text-link', label: __('Draft', 'yaymatik') },
 } as const;
 
 /** The app's badge shape (6px corners), for the status and the badges beside it. */

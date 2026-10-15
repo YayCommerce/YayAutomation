@@ -10,7 +10,7 @@ Paths are after F0 (move and rename); the behavior described is v0.1's. Files ma
 
 | Area | Today | File |
 |---|---|---|
-| Storage | CPT `yay_automation_wf` + post meta (status, trigger id, live graph JSON, draft graph JSON). Versions in table `yay_automation_versions` | `includes/Workflow/Storage/WorkflowRepository.php`, `VersionStore.php` |
+| Storage | CPT `yaymatik_wf` + post meta (status, trigger id, live graph JSON, draft graph JSON). Versions in table `yaymatik_versions` | `includes/Workflow/Storage/WorkflowRepository.php`, `VersionStore.php` |
 | Graph | React Flow shape (nodes with positions, edges). Tree: one parent per step, one child per handle. Kinds: trigger, condition (`then` / `otherwise`), action | `includes/Workflow/Definition/WorkflowValidator.php` *(removed in F1)* |
 | Trigger → queue | Triggers hook WP actions → `collect()` while the request runs → `flush()` at shutdown → `meta_query` for active workflows → `claim()` → `matches()` → one Action Scheduler async job per workflow | `includes/Workflow/Runtime/Runner.php` *(removed in F1)* |
 | Execution | One job walks the whole graph at once. It reads the live graph at run time, not the version live when the event happened | `Runner::run()` *(removed in F1)* |
@@ -37,7 +37,7 @@ Paths are after F0 (move and rename); the behavior described is v0.1's. Files ma
 ## §1 Naming and layout · C1, C2
 
 - `includes/Engine/` keeps only WP/WC glue: `BEPages/`, `API/`, `Register/`. REST controllers call Workflow Core and hold no workflow logic.
-- Workflow Core moves to `includes/Workflow/`, namespace `YayAutomation\Workflow\`.
+- Workflow Core moves to `includes/Workflow/`, namespace `YayMatik\Workflow\`.
 - "Blocks" becomes **"Steps"**, in PHP and TS (`apps/admin-page/src/routes/workflows/blocks/` → `steps/`). This avoids a clash with Gutenberg blocks and matches the UI wording.
 
 | Folder | Holds |
@@ -52,9 +52,9 @@ Paths are after F0 (move and rename); the behavior described is v0.1's. Files ma
 
 ## §2 Storage · C3, C8, C10
 
-Custom tables replace the CPT and post meta. One installer, `Storage/Schema::maybe_install()`, creates and upgrades them with `dbDelta` + the `yay_automation_db_version` option. `trigger` and `cursor` are MySQL reserved words, so those columns are `trigger_id` and `position`.
+Custom tables replace the CPT and post meta. One installer, `Storage/Schema::maybe_install()`, creates and upgrades them with `dbDelta` + the `yaymatik_db_version` option. `trigger` and `cursor` are MySQL reserved words, so those columns are `trigger_id` and `position`.
 
-Table names below omit the prefix: each is `{prefix}yay_automation_<name>`, e.g. `wp_yay_automation_runs`.
+Table names below omit the prefix: each is `{prefix}yaymatik_<name>`, e.g. `wp_yaymatik_runs`.
 
 | Table | Columns (main) |
 |---|---|
@@ -77,7 +77,7 @@ Table names below omit the prefix: each is `{prefix}yay_automation_<name>`, e.g.
 - **Slices.** A job keeps running steps until the run finishes, hits a Wait, uses ~20 s or its memory budget, or ends a loop batch. It then saves its position (the `position` column) and queues the next slice.
 - **Errors.** Each step has a policy: stop the run (default) or continue. Retries come in v1.1.
 - **Loop safety.** `parent_run_id`, `root_run_id`, `depth` replace the in-memory chain. A workflow never starts again inside its own chain; max depth 5; a max loop size. Rate limits per workflow, per 60 s, pause (turn off) a runaway workflow: 100 runs started by other runs (a loop always has a parent), or 1000 runs in all. Runs from plain events only count toward the 1000, so a bulk edit of hundreds of orders never pauses a workflow.
-- **Scheduled and query triggers.** A schedule fans out to one run per matching subject, in batches. `trigger_claims` stops duplicates ("once per customer per 90 days"). This generalises the `_yay_automation_order_created` order meta in `OrderCreated::claim()`.
+- **Scheduled and query triggers.** A schedule fans out to one run per matching subject, in batches. `trigger_claims` stops duplicates ("once per customer per 90 days"). This generalises the `_yaymatik_order_created` order meta in `OrderCreated::claim()`.
 - **Cancel.** Deactivate and Update cancel waiting runs (v1.0 rule). The API returns the count for the UI.
 - **Known limit.** Action Scheduler fails a job still running after its timeout (~5 min). If a step is still running then, a recovery job can take the run while the old worker is alive. Slices stay far below that (~20 s), so only a single very slow step can hit it.
 
@@ -105,12 +105,12 @@ Step:   id() label() plugin() module()
 ```
 
 - **Field vocabulary** (kept small): text, textarea, emails, select, multiselect, toggle, number, number_unit, notice, rules (core only). Modifiers: `required`, `variables`, `placeholder`, `help`, `show_if`. A form that needs more gets a custom panel, not a new word.
-- **Catalog.** Steps, fields, outputs and data types go to the admin app through `yayAutomationMeta` (and to the AI in v2.0).
+- **Catalog.** Steps, fields, outputs and data types go to the admin app through `yayMatikMeta` (and to the AI in v2.0).
 - **Editor checks.** Automation builds valibot rules from the PHP fields. Validation always runs in Automation, never in a panel. Rules only in PHP `validate()` show up as the step's issue after a save, and still block Activate.
 - **Forms.**
   - No custom form → the generic `StepForm` draws one from the fields. A simple step from a Yay plugin needs PHP only.
   - Core step with a complex form (Send email, Condition rules) → `defineStep( { id, Form } )`, imported directly. No global call, fully typed.
-  - Plugin step with a custom form → `window.yayAutomation.registerStepPanel( id, Panel )`. Internal until §10.
+  - Plugin step with a custom form → `window.yayMatik.registerStepPanel( id, Panel )`. Internal until §10.
   - Both put the form in the same registry. Props: `{ config, onChange, errors }`.
 - **Icons (L5).** A step's `icon()` is a name from a fixed list in core (lucide icons, about 40), never an SVG. The editor draws it in the step's tile, tinted by kind (trigger, condition, action), on the canvas, in the picker, the panel header, template cards and the preview. A missing icon is added to core's list, not shipped by the plugin.
 - The `rules` field type is ours: its checks are written in PHP (`Criteria`) and TS. Plugins never write validation in JS.
@@ -141,7 +141,7 @@ Our own small template module. **No Liquid or other template library, now or lat
 - Steps, templates, conditions and features (run logs, connectors, AI, each integration) belong to **modules**. A manifest entry gives each module its tier (`lite` / `pro`) and an on/off switch.
   - Moving something between Lite and Pro = change its manifest entry.
   - Turning off a module keeps unfinished work out of a release.
-- **Each Yay plugin owns its steps, templates and data types**, registered into Workflow Core. **YayAutomation Pro** owns templates that combine several plugins.
+- **Each Yay plugin owns its steps, templates and data types**, registered into Workflow Core. **YayMatik Pro** owns templates that combine several plugins.
 - **Plugin logo (L5).** Each plugin registers one logo: an SVG that uses `currentColor`, cleaned with `wp_kses` in PHP. It marks who provides a step or template (template cards, library sidebar, picker), never what a step does. One per plugin, not per step.
 - **Feature directory:** a static list in core of every known step and template, its plugin, and where to install it. The editor shows "Install X to use this"; the AI uses it to suggest features.
 

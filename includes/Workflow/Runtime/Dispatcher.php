@@ -1,10 +1,10 @@
 <?php
-namespace YayAutomation\Workflow\Runtime;
+namespace YayMatik\Workflow\Runtime;
 
-use YayAutomation\Utils\Logger;
-use YayAutomation\Workflow\Data\Scope;
-use YayAutomation\Workflow\Steps\Core\StepRegistry;
-use YayAutomation\Workflow\Steps\Core\Trigger;
+use YayMatik\Utils\Logger;
+use YayMatik\Workflow\Data\Scope;
+use YayMatik\Workflow\Steps\Core\StepRegistry;
+use YayMatik\Workflow\Steps\Core\Trigger;
 
 defined( 'ABSPATH' ) || exit;
 

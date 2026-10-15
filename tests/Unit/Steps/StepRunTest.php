@@ -1,22 +1,22 @@
 <?php
-namespace YayAutomation\Tests\Unit\Steps;
+namespace YayMatik\Tests\Unit\Steps;
 
 use PHPUnit\Framework\TestCase;
-use YayAutomation\Tests\Support\FakeMailer;
-use YayAutomation\Tests\Support\FakeOrder;
-use YayAutomation\Workflow\Data\GoneEntity;
-use YayAutomation\Workflow\Data\Ref;
-use YayAutomation\Workflow\Data\RefResolver;
-use YayAutomation\Workflow\Data\Scope;
-use YayAutomation\Workflow\Steps\Actions\AddOrderNote;
-use YayAutomation\Workflow\Steps\Actions\ChangeOrderStatus;
-use YayAutomation\Workflow\Steps\Actions\SendInternalEmail;
-use YayAutomation\Workflow\Steps\Actions\UpdateOrderMeta;
-use YayAutomation\Workflow\Steps\Conditions\Criteria;
-use YayAutomation\Workflow\Steps\Core\Step;
-use YayAutomation\Workflow\Steps\Core\StepResult;
-use YayAutomation\Workflow\Steps\Triggers\OrderCreated;
-use YayAutomation\Workflow\Steps\Triggers\OrderStatusChanged;
+use YayMatik\Tests\Support\FakeMailer;
+use YayMatik\Tests\Support\FakeOrder;
+use YayMatik\Workflow\Data\GoneEntity;
+use YayMatik\Workflow\Data\Ref;
+use YayMatik\Workflow\Data\RefResolver;
+use YayMatik\Workflow\Data\Scope;
+use YayMatik\Workflow\Steps\Actions\AddOrderNote;
+use YayMatik\Workflow\Steps\Actions\ChangeOrderStatus;
+use YayMatik\Workflow\Steps\Actions\SendInternalEmail;
+use YayMatik\Workflow\Steps\Actions\UpdateOrderMeta;
+use YayMatik\Workflow\Steps\Conditions\Criteria;
+use YayMatik\Workflow\Steps\Core\Step;
+use YayMatik\Workflow\Steps\Core\StepResult;
+use YayMatik\Workflow\Steps\Triggers\OrderCreated;
+use YayMatik\Workflow\Steps\Triggers\OrderStatusChanged;
 
 require_once dirname( __DIR__, 2 ) . '/Support/woocommerce-stubs.php';
 require_once dirname( __DIR__, 2 ) . '/Support/fake-wc.php';
@@ -214,7 +214,7 @@ final class StepRunTest extends TestCase {
         );
 
         $this->assertTrue( $result->is_failed() );
-        $this->assertSame( 'yay_automation_mail_failed', $result->code() );
+        $this->assertSame( 'yaymatik_mail_failed', $result->code() );
         $this->assertSame( 'Couldn’t send the email.', $result->message() );
         $this->assertSame( [], $result->outputs() );
     }

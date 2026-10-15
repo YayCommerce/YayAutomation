@@ -77,7 +77,7 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
   - `Step` base, `Field` builder, `outputs()`, `StepResult`, summary templates, `icon()` name *(L5)*.
   - Plugin logo: one SVG per plugin, `currentColor`, cleaned with `wp_kses` *(L5)*.
   - Parity test: the PHP catalog and what TS expects can't drift *([plan-infra](plan-infra.md))*.
-  - Catalog in `yayAutomationMeta`; update `apps/admin-page/src/types/localize.d.ts`.
+  - Catalog in `yayMatikMeta`; update `apps/admin-page/src/types/localize.d.ts`.
 - ✅ **F1.5 Executor** *(§3)*
   - Dispatcher replaces `Runner` collect / flush. Worker: Action Scheduler hook + row lock.
   - Cursor walk, slices, per-step error policy (stop / continue). **Stop is the default** (design §3, confirmed 2026-10-08); a step type may declare `continue` in PHP. No UI toggle in v1.0. A skipped step (gone entity, unsubscribed) is not a failure.
@@ -227,7 +227,7 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 
 ## v1.2 — Yay ecosystem + Pro connectors · L+
 
-- **V12.1 Pro modules** — YayAutomation Pro registers its modules and multi-plugin templates. *(§8)*
+- **V12.1 Pro modules** — YayMatik Pro registers its modules and multi-plugin templates. *(§8)*
 - **V12.2 Yay plugins** — register their steps and templates through the internal registry and `registerStepPanel`. *(§5)*
 - **V12.3 Feature directory** — "Install X to use this" in the pickers and the template library. *(§8)*
 - **V12.4 Connector basics** — credentials store, connector settings UI.

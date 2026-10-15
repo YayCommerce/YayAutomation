@@ -1,4 +1,4 @@
-import type { Workflow, WorkflowIssue } from '@yay-automation/types';
+import type { Workflow, WorkflowIssue } from '@yaymatik/types';
 import { useNavigate } from 'react-router';
 import { __ } from '@wordpress/i18n';
 
@@ -28,7 +28,7 @@ export function useActivateWorkflow(workflow: Workflow) {
   const offerEditor = (error: ApiError) =>
     toast.error(error.message, {
       action: {
-        label: __('Fix in editor', 'yay-automation'),
+        label: __('Fix in editor', 'yaymatik'),
         onClick: () =>
           navigate(`/workflows/${workflow.id}/edit`, { state: { showIssues: true } satisfies EditorNavState }),
       },
@@ -38,7 +38,7 @@ export function useActivateWorkflow(workflow: Workflow) {
     if (before && !(await before())) return;
     try {
       await activateMutation.mutateAsync({ id: workflow.id });
-      toast.success(__('Workflow activated', 'yay-automation'));
+      toast.success(__('Workflow activated', 'yaymatik'));
       onSuccess?.();
     } catch (error) {
       if (error instanceof ApiError && error.issues.length) {
@@ -54,7 +54,7 @@ export function useActivateWorkflow(workflow: Workflow) {
     if (before && !(await before())) return;
     try {
       await deactivateMutation.mutateAsync({ id: workflow.id });
-      toast.success(__('Workflow deactivated', 'yay-automation'));
+      toast.success(__('Workflow deactivated', 'yaymatik'));
       onSuccess?.();
     } catch (error) {
       toast.error(errorMessage(error));

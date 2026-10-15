@@ -1,6 +1,6 @@
 {
-    "name": "yaycommerce/yay-automation-lintphp",
-    "description": "PHP_CodeSniffer + WordPress standards for YayAutomation. Kept out of the plugin's composer.json so it never ships.",
+    "name": "yaycommerce/yaymatik-lintphp",
+    "description": "PHP_CodeSniffer + WordPress standards for YayMatik. Kept out of the plugin's composer.json so it never ships.",
     "minimum-stability": "stable",
     "prefer-stable": true,
     "require-dev": {

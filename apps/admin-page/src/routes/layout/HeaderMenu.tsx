@@ -10,13 +10,13 @@ export default function HeaderMenu() {
       <HeaderNavMenuItem asChild>
         <NavLink to="/workflows">
           <Workflow className="size-4 stroke-2" />
-          <span className="max-sm:hidden">{__('Workflows', 'yay-automation')}</span>
+          <span className="max-sm:hidden">{__('Workflows', 'yaymatik')}</span>
         </NavLink>
       </HeaderNavMenuItem>
       <HeaderNavMenuItem asChild>
         <NavLink to="/settings">
           <Settings className="size-4 stroke-2" />
-          <span className="max-sm:hidden">{__('Settings', 'yay-automation')}</span>
+          <span className="max-sm:hidden">{__('Settings', 'yaymatik')}</span>
         </NavLink>
       </HeaderNavMenuItem>
     </HeaderNavMenuList>

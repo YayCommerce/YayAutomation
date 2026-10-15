@@ -1,7 +1,7 @@
 <?php
-namespace YayAutomation\Tests\Support;
+namespace YayMatik\Tests\Support;
 
-use YayAutomation\Workflow\Runtime\GraphSource;
+use YayMatik\Workflow\Runtime\GraphSource;
 
 /** Version graphs from an array. */
 final class FakeGraphSource implements GraphSource {

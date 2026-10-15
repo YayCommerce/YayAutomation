@@ -1,7 +1,7 @@
 <?php
-namespace YayAutomation\Workflow\Steps\Core;
+namespace YayMatik\Workflow\Steps\Core;
 
-use YayAutomation\Workflow\Data\Scope;
+use YayMatik\Workflow\Data\Scope;
 
 defined( 'ABSPATH' ) || exit;
 

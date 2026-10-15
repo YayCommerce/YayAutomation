@@ -1,4 +1,4 @@
-import type { StepId, WorkflowNodeData, WorkflowNodeKind } from '@yay-automation/types';
+import type { StepId, WorkflowNodeData, WorkflowNodeKind } from '@yaymatik/types';
 
 import type { Step } from './types';
 

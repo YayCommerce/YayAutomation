@@ -1,5 +1,5 @@
 <?php
-namespace YayAutomation\Workflow\Data;
+namespace YayMatik\Workflow\Data;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -24,24 +24,24 @@ final class Operators {
      */
     public static function labels(): array {
         return [
-            'equal'            => __( 'is equal to', 'yay-automation' ),
-            'not_equal'        => __( 'is not equal to', 'yay-automation' ),
-            'greater_than'     => __( 'is greater than', 'yay-automation' ),
-            'greater_or_equal' => __( 'is greater than or equal to', 'yay-automation' ),
-            'less_than'        => __( 'is less than', 'yay-automation' ),
-            'less_or_equal'    => __( 'is less than or equal to', 'yay-automation' ),
-            'contains'         => __( 'contains', 'yay-automation' ),
-            'not_contains'     => __( 'does not contain', 'yay-automation' ),
-            'starts_with'      => __( 'starts with', 'yay-automation' ),
-            'ends_with'        => __( 'ends with', 'yay-automation' ),
-            'is_empty'         => __( 'is empty', 'yay-automation' ),
-            'is_not_empty'     => __( 'is not empty', 'yay-automation' ),
-            'is'               => __( 'is', 'yay-automation' ),
-            'is_not'           => __( 'is not', 'yay-automation' ),
-            'before'           => __( 'is before', 'yay-automation' ),
-            'after'            => __( 'is after', 'yay-automation' ),
-            'is_true'          => __( 'is true', 'yay-automation' ),
-            'is_false'         => __( 'is false', 'yay-automation' ),
+            'equal'            => __( 'is equal to', 'yaymatik' ),
+            'not_equal'        => __( 'is not equal to', 'yaymatik' ),
+            'greater_than'     => __( 'is greater than', 'yaymatik' ),
+            'greater_or_equal' => __( 'is greater than or equal to', 'yaymatik' ),
+            'less_than'        => __( 'is less than', 'yaymatik' ),
+            'less_or_equal'    => __( 'is less than or equal to', 'yaymatik' ),
+            'contains'         => __( 'contains', 'yaymatik' ),
+            'not_contains'     => __( 'does not contain', 'yaymatik' ),
+            'starts_with'      => __( 'starts with', 'yaymatik' ),
+            'ends_with'        => __( 'ends with', 'yaymatik' ),
+            'is_empty'         => __( 'is empty', 'yaymatik' ),
+            'is_not_empty'     => __( 'is not empty', 'yaymatik' ),
+            'is'               => __( 'is', 'yaymatik' ),
+            'is_not'           => __( 'is not', 'yaymatik' ),
+            'before'           => __( 'is before', 'yaymatik' ),
+            'after'            => __( 'is after', 'yaymatik' ),
+            'is_true'          => __( 'is true', 'yaymatik' ),
+            'is_false'         => __( 'is false', 'yaymatik' ),
         ];
     }
 

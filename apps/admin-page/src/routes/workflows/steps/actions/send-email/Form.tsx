@@ -13,7 +13,7 @@ import { comingSoonLabel } from '../../core/pending';
 import type { StepFormProps } from '../../core/types';
 import { schema, type SendEmailConfig } from './schema';
 
-const { fromLine } = window.yayAutomationMeta.automation.email;
+const { fromLine } = window.yayMatikMeta.automation.email;
 
 type TextKey = 'to' | 'subject' | 'heading' | 'message';
 
@@ -47,24 +47,20 @@ export function SendEmailForm({ config, onChange }: StepFormProps<SendEmailConfi
 
   return (
     <FieldGroup>
-      <Notice label={__('From', 'yay-automation')} text={fromLine} />
+      <Notice label={__('From', 'yaymatik')} text={fromLine} />
 
-      {textField('to', __('To', 'yay-automation'), __('Separate addresses with commas.', 'yay-automation'))}
-      {textField('subject', __('Subject', 'yay-automation'))}
+      {textField('to', __('To', 'yaymatik'), __('Separate addresses with commas.', 'yaymatik'))}
+      {textField('subject', __('Subject', 'yaymatik'))}
       {textField(
         'heading',
-        __('Heading', 'yay-automation'),
-        __('Shown at the top of the email. Leave blank to use the subject.', 'yay-automation'),
+        __('Heading', 'yaymatik'),
+        __('Shown at the top of the email. Leave blank to use the subject.', 'yaymatik'),
       )}
-      {textField(
-        'message',
-        __('Message', 'yay-automation'),
-        __('An unsubscribe link is added automatically.', 'yay-automation'),
-      )}
+      {textField('message', __('Message', 'yaymatik'), __('An unsubscribe link is added automatically.', 'yaymatik'))}
 
       <div className="flex gap-2">
-        <ComingSoonButton icon={<Eye />} label={__('Preview', 'yay-automation')} />
-        <ComingSoonButton icon={<Send />} label={__('Send test', 'yay-automation')} />
+        <ComingSoonButton icon={<Eye />} label={__('Preview', 'yaymatik')} />
+        <ComingSoonButton icon={<Send />} label={__('Send test', 'yaymatik')} />
       </div>
     </FieldGroup>
   );

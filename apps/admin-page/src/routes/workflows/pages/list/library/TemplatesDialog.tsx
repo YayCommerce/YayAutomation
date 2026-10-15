@@ -1,5 +1,5 @@
 import { useMemo, useState, type ReactNode } from 'react';
-import type { TemplateCategory, WorkflowNode, WorkflowPlugin, WorkflowTemplate } from '@yay-automation/types';
+import type { TemplateCategory, WorkflowNode, WorkflowPlugin, WorkflowTemplate } from '@yaymatik/types';
 import { SearchX } from 'lucide-react';
 import { Link } from 'react-router';
 import { __, sprintf } from '@wordpress/i18n';
@@ -23,9 +23,9 @@ import { SearchInput } from './SearchInput';
 type SortKey = 'popular' | 'newest' | 'name';
 
 const sortOptions: { value: SortKey; label: string }[] = [
-  { value: 'popular', label: __('Most popular', 'yay-automation') },
-  { value: 'newest', label: __('Newest', 'yay-automation') },
-  { value: 'name', label: __('Name (A–Z)', 'yay-automation') },
+  { value: 'popular', label: __('Most popular', 'yaymatik') },
+  { value: 'newest', label: __('Newest', 'yaymatik') },
+  { value: 'name', label: __('Name (A–Z)', 'yaymatik') },
 ];
 
 const compare: Record<SortKey, (a: WorkflowTemplate, b: WorkflowTemplate) => number> = {
@@ -104,15 +104,15 @@ function TemplateLibrary() {
       <div className="flex flex-col gap-3 border-b px-5 py-4 xl:grid xl:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] xl:items-center xl:gap-6">
         {/* pr-9 keeps the title clear of the close button. */}
         <div className="min-w-0 pr-9 xl:pr-0">
-          <DialogTitle className="text-lg font-semibold">{__('Template Library', 'yay-automation')}</DialogTitle>
+          <DialogTitle className="text-lg font-semibold">{__('Template Library', 'yaymatik')}</DialogTitle>
           <DialogDescription className="text-[13px]">
-            {__('Ready-made workflows for WooCommerce. Pick one, review it, then activate.', 'yay-automation')}
+            {__('Ready-made workflows for WooCommerce. Pick one, review it, then activate.', 'yaymatik')}
           </DialogDescription>
         </div>
         <SearchInput
           value={search}
           onChange={setSearch}
-          placeholder={__('Search templates', 'yay-automation')}
+          placeholder={__('Search templates', 'yaymatik')}
           className="w-full xl:w-120"
         />
       </div>
@@ -146,12 +146,12 @@ function TemplateLibrary() {
               ))}
               {filtered && (
                 <Button variant="link" size="sm" className="h-auto px-1 text-[12.5px]" onClick={clearFilters}>
-                  {__('Clear all', 'yay-automation')}
+                  {__('Clear all', 'yaymatik')}
                 </Button>
               )}
             </div>
             <Select value={sort} onValueChange={(value) => setSort(value as SortKey)}>
-              <SelectTrigger size="sm" className="w-40 shrink-0" aria-label={__('Sort templates', 'yay-automation')}>
+              <SelectTrigger size="sm" className="w-40 shrink-0" aria-label={__('Sort templates', 'yaymatik')}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -205,26 +205,26 @@ function NoResults({
       <div className="bg-muted text-muted-foreground mb-1 flex h-13 w-18 items-center justify-center rounded-xl">
         <SearchX className="size-6 stroke-[1.6]" aria-hidden />
       </div>
-      <p className="text-base font-semibold">{__('No templates found', 'yay-automation')}</p>
+      <p className="text-base font-semibold">{__('No templates found', 'yaymatik')}</p>
       <p className="text-muted-foreground max-w-[52ch] text-[13px]">
         {query
           ? sprintf(
               /* translators: %s: what was searched for */
-              __('No templates match “%s”.', 'yay-automation'),
+              __('No templates match “%s”.', 'yaymatik'),
               query,
             )
-          : __('Try a different filter.', 'yay-automation')}
+          : __('Try a different filter.', 'yaymatik')}
       </p>
       {(query || filtered) && (
         <div className="mt-2 flex flex-wrap justify-center gap-2">
           {query && (
             <Button variant="outline" size="sm" onClick={onClearSearch}>
-              {__('Clear search', 'yay-automation')}
+              {__('Clear search', 'yaymatik')}
             </Button>
           )}
           {filtered && (
             <Button variant="outline" size="sm" onClick={onClearFilters}>
-              {__('Clear filters', 'yay-automation')}
+              {__('Clear filters', 'yaymatik')}
             </Button>
           )}
         </div>

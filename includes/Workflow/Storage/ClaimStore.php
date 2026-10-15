@@ -1,5 +1,5 @@
 <?php
-namespace YayAutomation\Workflow\Storage;
+namespace YayMatik\Workflow\Storage;
 
 defined( 'ABSPATH' ) || exit;
 

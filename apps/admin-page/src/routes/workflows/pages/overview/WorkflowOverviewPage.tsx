@@ -1,5 +1,5 @@
 import { useMemo, useState, type ReactNode } from 'react';
-import type { Workflow, WorkflowIssue } from '@yay-automation/types';
+import type { Workflow, WorkflowIssue } from '@yaymatik/types';
 import { ChevronLeft, CircleAlert, Pencil } from 'lucide-react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { __, _n, sprintf } from '@wordpress/i18n';
@@ -78,10 +78,8 @@ function WorkflowOverview({ workflow }: { workflow: Workflow }) {
 
   // The workflow as it runs (or as saved), then draft changes when there are any.
   const tabs: { value: string; label: string; graph: Workflow['graph'] }[] = [
-    { value: 'live', label: __('Workflow', 'yay-automation'), graph: workflow.graph },
-    ...(workflow.draft
-      ? [{ value: 'draft', label: __('Draft changes', 'yay-automation'), graph: workflow.draft }]
-      : []),
+    { value: 'live', label: __('Workflow', 'yaymatik'), graph: workflow.graph },
+    ...(workflow.draft ? [{ value: 'draft', label: __('Draft changes', 'yaymatik'), graph: workflow.draft }] : []),
   ];
   const [tab, setTab] = useState(tabs[0].value);
   const [historyPage, setHistoryPage] = useState(1);
@@ -101,19 +99,19 @@ function WorkflowOverview({ workflow }: { workflow: Workflow }) {
           <Button variant="outline" size="sm" asChild>
             <Link to={editPath}>
               <Pencil />
-              {__('Edit', 'yay-automation')}
+              {__('Edit', 'yaymatik')}
             </Link>
           </Button>
           <MoreActionsMenu workflow={workflow} />
           {isActive ? (
             <Button variant="destructive-outline" size="sm" onClick={() => setDeactivateOpen(true)}>
-              {__('Deactivate', 'yay-automation')}
+              {__('Deactivate', 'yaymatik')}
             </Button>
           ) : (
             // Not offered while it has issues; the notice below says what to fix.
             issues.length === 0 && (
               <Button size="sm" onClick={() => setActivateOpen(true)}>
-                {__('Activate', 'yay-automation')}
+                {__('Activate', 'yaymatik')}
               </Button>
             )
           )}
@@ -137,7 +135,7 @@ function WorkflowOverview({ workflow }: { workflow: Workflow }) {
               </TabsTrigger>
             ))}
             <TabsTrigger value={HISTORY_TAB} className={underlineTabClass}>
-              {__('Version history', 'yay-automation')}
+              {__('Version history', 'yaymatik')}
             </TabsTrigger>
           </TabsList>
           {tabs.map((t) => (
@@ -147,7 +145,7 @@ function WorkflowOverview({ workflow }: { workflow: Workflow }) {
                 graph={t.graph}
                 controls={
                   <Button variant="outline" size="icon-sm" className="bg-card" asChild>
-                    <Link to={editPath} aria-label={__('Edit workflow', 'yay-automation')}>
+                    <Link to={editPath} aria-label={__('Edit workflow', 'yaymatik')}>
                       <Pencil />
                     </Link>
                   </Button>
@@ -206,7 +204,7 @@ function SetupNotice({ issues, messages, onFix }: { issues: WorkflowIssue[]; mes
                 '%d step needs setup before this workflow can run.',
                 '%d steps need setup before this workflow can run.',
                 steps,
-                'yay-automation',
+                'yaymatik',
               ),
               steps,
             )}
@@ -219,7 +217,7 @@ function SetupNotice({ issues, messages, onFix }: { issues: WorkflowIssue[]; mes
         </ul>
       </div>
       <Button variant="destructive-soft" size="sm" onClick={onFix}>
-        {__('Fix in editor', 'yay-automation')}
+        {__('Fix in editor', 'yaymatik')}
       </Button>
     </ErrorAlert>
   );
@@ -246,13 +244,13 @@ function SummaryRow({ workflow }: { workflow: Workflow }) {
       ? workflow.activatedAt
         ? sprintf(
             /* translators: %s: date, e.g. "Oct 2" */
-            __('Active since %s', 'yay-automation'),
+            __('Active since %s', 'yaymatik'),
             shortDay(workflow.activatedAt),
           )
-        : __('Active', 'yay-automation')
+        : __('Active', 'yaymatik')
       : state === 'inactive'
-        ? __('Inactive', 'yay-automation')
-        : __('Draft', 'yay-automation');
+        ? __('Inactive', 'yaymatik')
+        : __('Draft', 'yaymatik');
   const trigger = workflow.graph.nodes.find((node) => node.kind === 'trigger');
   const triggerStep = trigger && stepOf(trigger.data);
   const summary = triggerStep && trigger ? triggerStep.summary(trigger.data.config) : '';
@@ -260,8 +258,8 @@ function SummaryRow({ workflow }: { workflow: Workflow }) {
 
   return (
     <div className="bg-card grid grid-cols-2 rounded-lg border md:grid-cols-4 md:divide-x max-md:[&>*:nth-child(even)]:border-l max-md:[&>*:nth-child(n+3)]:border-t">
-      <SummaryCell label={__('Status', 'yay-automation')}>{status}</SummaryCell>
-      <SummaryCell label={__('Trigger', 'yay-automation')}>
+      <SummaryCell label={__('Status', 'yaymatik')}>{status}</SummaryCell>
+      <SummaryCell label={__('Trigger', 'yaymatik')}>
         {triggerStep ? (
           <>
             <StepTile kind="trigger" icon={triggerStep.icon} size="sm" />
@@ -276,8 +274,8 @@ function SummaryRow({ workflow }: { workflow: Workflow }) {
           none
         )}
       </SummaryCell>
-      <SummaryCell label={__('Runs (30 days)', 'yay-automation')}>{none}</SummaryCell>
-      <SummaryCell label={__('Last run', 'yay-automation')}>{none}</SummaryCell>
+      <SummaryCell label={__('Runs (30 days)', 'yaymatik')}>{none}</SummaryCell>
+      <SummaryCell label={__('Last run', 'yaymatik')}>{none}</SummaryCell>
     </div>
   );
 }
@@ -289,7 +287,7 @@ function OverviewLayout({ title, actions, children }: { title: ReactNode; action
     <div className="flex h-[calc(100vh-32px-3.375rem)] flex-col">
       <div className="bg-background flex h-12 shrink-0 items-center gap-2 border-y px-4">
         <Button variant="ghost" size="icon-sm" asChild>
-          <Link to="/workflows" aria-label={__('Back to workflows', 'yay-automation')}>
+          <Link to="/workflows" aria-label={__('Back to workflows', 'yaymatik')}>
             <ChevronLeft />
           </Link>
         </Button>

@@ -3,7 +3,7 @@
  * Minimal stand-ins for the WordPress functions the unit-tested classes call. Each one behaves
  * like WordPress for the inputs the tests use; add a stub only when a test needs it.
  *
- * @package YayAutomation
+ * @package YayMatik
  */
 
 if ( ! function_exists( '__' ) ) {

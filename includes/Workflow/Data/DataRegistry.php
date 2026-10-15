@@ -1,7 +1,7 @@
 <?php
-namespace YayAutomation\Workflow\Data;
+namespace YayMatik\Workflow\Data;
 
-use YayAutomation\Workflow\Definition\Catalog;
+use YayMatik\Workflow\Definition\Catalog;
 
 defined( 'ABSPATH' ) || exit;
 

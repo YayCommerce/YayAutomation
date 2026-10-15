@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { WorkflowIssue } from '@yay-automation/types';
+import type { WorkflowIssue } from '@yaymatik/types';
 
 import type { IssueMode } from '../../shared/canvas/NodeCardView';
 import type { Feedback } from '../../steps/core/fields/feedback';

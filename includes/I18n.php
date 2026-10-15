@@ -1,8 +1,8 @@
 <?php
 
-namespace YayAutomation;
+namespace YayMatik;
 
-use YayAutomation\Utils\SingletonTrait;
+use YayMatik\Utils\SingletonTrait;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -23,8 +23,8 @@ class I18n {
         } else {
             $locale = is_admin() ? get_user_locale() : get_locale();
         }
-        unload_textdomain( 'yay-automation' );
-        load_textdomain( 'yay-automation', YAY_AUTOMATION_PLUGIN_DIR . 'languages/yay-automation-' . $locale . '.mo' );
-        load_plugin_textdomain( 'yay-automation', false, YAY_AUTOMATION_PLUGIN_DIR . 'languages/' );
+        unload_textdomain( 'yaymatik' );
+        load_textdomain( 'yaymatik', YAYMATIK_PLUGIN_DIR . 'languages/yaymatik-' . $locale . '.mo' );
+        load_plugin_textdomain( 'yaymatik', false, YAYMATIK_PLUGIN_DIR . 'languages/' );
     }
 }

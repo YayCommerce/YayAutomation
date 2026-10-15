@@ -1,4 +1,4 @@
-import type { Workflow } from '@yay-automation/types';
+import type { Workflow } from '@yaymatik/types';
 import { Ellipsis, Pencil, Power, Trash2, Type } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { __, sprintf } from '@wordpress/i18n';
@@ -45,7 +45,7 @@ export function WorkflowRowMenu({ workflow, onAction }: { workflow: Workflow; on
           size="icon-sm"
           aria-label={sprintf(
             /* translators: %s: workflow name */
-            __('Actions for %s', 'yay-automation'),
+            __('Actions for %s', 'yaymatik'),
             workflow.name,
           )}
         >
@@ -55,30 +55,30 @@ export function WorkflowRowMenu({ workflow, onAction }: { workflow: Workflow; on
       <DropdownMenuContent align="end" className="min-w-44">
         <DropdownMenuItem onSelect={() => navigate(`/workflows/${workflow.id}/edit`)}>
           <Pencil />
-          {__('Edit', 'yay-automation')}
+          {__('Edit', 'yaymatik')}
         </DropdownMenuItem>
         <DropdownMenuItem onSelect={() => onAction('rename')}>
           <Type />
-          {__('Rename', 'yay-automation')}
+          {__('Rename', 'yaymatik')}
         </DropdownMenuItem>
         {isActive ? (
           <DropdownMenuItem onSelect={() => onAction('deactivate')}>
             <Power />
-            {__('Deactivate', 'yay-automation')}
+            {__('Deactivate', 'yaymatik')}
           </DropdownMenuItem>
         ) : (
           // Not offered while what Activate would make live has issues: the server would refuse.
           canActivate(workflow) && (
             <DropdownMenuItem onSelect={() => onAction('activate')}>
               <Power />
-              {__('Activate', 'yay-automation')}
+              {__('Activate', 'yaymatik')}
             </DropdownMenuItem>
           )
         )}
         <DropdownMenuSeparator />
         <DropdownMenuItem variant="destructive" onSelect={() => onAction('delete')}>
           <Trash2 />
-          {__('Delete', 'yay-automation')}
+          {__('Delete', 'yaymatik')}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

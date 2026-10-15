@@ -1,8 +1,8 @@
 <?php
-namespace YayAutomation\Workflow\Steps\Triggers;
+namespace YayMatik\Workflow\Steps\Triggers;
 
-use YayAutomation\Workflow\Data\OrderData;
-use YayAutomation\Workflow\Steps\Core\Field;
+use YayMatik\Workflow\Data\OrderData;
+use YayMatik\Workflow\Steps\Core\Field;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -19,11 +19,11 @@ class OrderStatusChanged extends OrderTrigger {
     }
 
     public function label(): string {
-        return __( 'Order status changed', 'yay-automation' );
+        return __( 'Order status changed', 'yaymatik' );
     }
 
     public function description(): string {
-        return __( 'Starts when an order moves to another status. Choose which status changes count.', 'yay-automation' );
+        return __( 'Starts when an order moves to another status. Choose which status changes count.', 'yaymatik' );
     }
 
     public function icon(): string {
@@ -33,20 +33,20 @@ class OrderStatusChanged extends OrderTrigger {
     public function fields(): array {
         $statuses = [ OrderData::class, 'statuses' ];
         return [
-            Field::multiselect( 'from', __( 'Status changes from', 'yay-automation' ), $statuses )
-                ->placeholder( __( 'Any status', 'yay-automation' ) )
-                ->help( __( 'Leave empty for any previous status.', 'yay-automation' ) ),
-            Field::multiselect( 'to', __( 'Status changes to', 'yay-automation' ), $statuses )
-                ->placeholder( __( 'Any status', 'yay-automation' ) )
-                ->help( __( 'Leave empty for any new status.', 'yay-automation' ) ),
-            Field::toggle( 'only_checkout', __( 'Only run for checkout orders', 'yay-automation' ) )
-                ->help( __( 'Skips orders created by admin, REST API, import tools, and other non-checkout sources.', 'yay-automation' ) ),
+            Field::multiselect( 'from', __( 'Status changes from', 'yaymatik' ), $statuses )
+                ->placeholder( __( 'Any status', 'yaymatik' ) )
+                ->help( __( 'Leave empty for any previous status.', 'yaymatik' ) ),
+            Field::multiselect( 'to', __( 'Status changes to', 'yaymatik' ), $statuses )
+                ->placeholder( __( 'Any status', 'yaymatik' ) )
+                ->help( __( 'Leave empty for any new status.', 'yaymatik' ) ),
+            Field::toggle( 'only_checkout', __( 'Only run for checkout orders', 'yaymatik' ) )
+                ->help( __( 'Skips orders created by admin, REST API, import tools, and other non-checkout sources.', 'yaymatik' ) ),
         ];
     }
 
     public function summary(): string {
         /* translators: %from% and %to%: order statuses; keep the placeholders as they are. */
-        return __( '%from% → %to%', 'yay-automation' );
+        return __( '%from% → %to%', 'yaymatik' );
     }
 
     /**

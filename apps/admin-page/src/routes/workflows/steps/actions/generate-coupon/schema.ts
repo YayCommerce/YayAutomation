@@ -31,11 +31,11 @@ export const schema = v.pipe(
   v.object({
     discount_type: v.picklist(['percent', 'fixed_cart', 'free_shipping']),
     amount: v.string(),
-    expiry_days: optional(WHOLE, __('Enter a whole number of days.', 'yay-automation')),
-    minimum_spend: optional(NUMBER, __('Enter an amount.', 'yay-automation')),
+    expiry_days: optional(WHOLE, __('Enter a whole number of days.', 'yaymatik')),
+    minimum_spend: optional(NUMBER, __('Enter an amount.', 'yaymatik')),
     individual_use: v.boolean(),
     limit_to_customer: v.boolean(),
-    code_prefix: optional(/^[A-Za-z0-9_-]+$/, __('Use letters, numbers, - and _ only.', 'yay-automation')),
+    code_prefix: optional(/^[A-Za-z0-9_-]+$/, __('Use letters, numbers, - and _ only.', 'yaymatik')),
   }),
   v.forward(
     v.check(
@@ -44,7 +44,7 @@ export const schema = v.pipe(
         const number = Number(amount);
         return NUMBER.test(amount) && number > 0 && (discount_type !== 'percent' || number <= 100);
       },
-      __('Enter an amount above 0 (up to 100 for a percentage).', 'yay-automation'),
+      __('Enter an amount above 0 (up to 100 for a percentage).', 'yaymatik'),
     ),
     ['amount'],
   ),
