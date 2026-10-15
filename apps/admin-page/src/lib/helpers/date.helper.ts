@@ -1,6 +1,6 @@
 import { dateI18n, getDate, getSettings } from '@wordpress/date';
 
-export { getWpTimezone } from '@yay-automation/utils';
+export { getWpTimezone } from '@yaymatik/utils';
 
 export function formatDate(date: Date | string | undefined, format?: string) {
   const { formats } = getSettings();

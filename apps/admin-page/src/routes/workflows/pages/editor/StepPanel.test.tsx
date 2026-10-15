@@ -1,5 +1,5 @@
 import { act } from 'react';
-import type { Workflow, WorkflowGraph } from '@yay-automation/types';
+import type { Workflow, WorkflowGraph } from '@yaymatik/types';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 

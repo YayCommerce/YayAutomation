@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import type { WorkflowGraph } from '@yay-automation/types';
+import type { WorkflowGraph } from '@yaymatik/types';
 import { describe, expect, it } from 'vitest';
 
 import { steps } from '..';

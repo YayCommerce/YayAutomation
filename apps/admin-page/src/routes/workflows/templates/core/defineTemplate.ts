@@ -1,4 +1,4 @@
-import type { WorkflowTemplate } from '@yay-automation/types';
+import type { WorkflowTemplate } from '@yaymatik/types';
 
 import type { TemplateSpec } from './types';
 

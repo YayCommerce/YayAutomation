@@ -1,9 +1,9 @@
 import ky, { Options, ResponsePromise } from 'ky';
 
 const _ky = ky.create({
-  prefixUrl: window.yayAutomationMeta.wp.restRoot,
+  prefixUrl: window.yayMatikMeta.wp.restRoot,
   headers: {
-    'X-WP-Nonce': window.yayAutomationMeta.wp.restNonce,
+    'X-WP-Nonce': window.yayMatikMeta.wp.restNonce,
   },
   hooks: {
     afterResponse: [
@@ -38,7 +38,7 @@ interface AbstractApi {
 class PrettyApi implements AbstractApi {
   readonly base: string;
 
-  constructor(base = window.yayAutomationMeta.wp.restBase) {
+  constructor(base = window.yayMatikMeta.wp.restBase) {
     this.base = base;
   }
 
@@ -116,7 +116,7 @@ class UglyApi implements AbstractApi {
 }
 
 export function createApi(base: string): AbstractApi {
-  const baseUrl = new URL(`${window.yayAutomationMeta.wp.restRoot}${base}`);
+  const baseUrl = new URL(`${window.yayMatikMeta.wp.restRoot}${base}`);
   const restRoute = baseUrl.searchParams.get('rest_route');
 
   if (!restRoute) {
@@ -126,7 +126,7 @@ export function createApi(base: string): AbstractApi {
   }
 }
 
-export const yayAutomationApi = createApi(window.yayAutomationMeta.wp.restBase);
+export const yayMatikApi = createApi(window.yayMatikMeta.wp.restBase);
 export const wordpressApi = createApi('wp/v2');
 
-export const api = yayAutomationApi;
+export const api = yayMatikApi;

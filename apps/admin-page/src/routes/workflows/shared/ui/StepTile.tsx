@@ -1,4 +1,4 @@
-import type { WorkflowNodeKind, WorkflowPlugin } from '@yay-automation/types';
+import type { WorkflowNodeKind, WorkflowPlugin } from '@yaymatik/types';
 
 import { cn } from '@/lib/utils';
 import { plugins } from './PluginIcon';

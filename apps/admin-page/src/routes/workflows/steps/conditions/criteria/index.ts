@@ -15,7 +15,7 @@ function describe({ field: key, operator, value: compared, valueType }: Rule) {
       : (field?.options?.find((option) => option.value === compared)?.label ?? compared);
   /* translators: 1: variable, 2: comparison, e.g. "is greater than", 3: value */
   return sprintf(
-    __('%1$s %2$s %3$s', 'yay-automation'),
+    __('%1$s %2$s %3$s', 'yaymatik'),
     field?.label ?? PLACEHOLDER,
     operatorLabels[operator] ?? PLACEHOLDER,
     shown ? value(shown) : needsValue(operator) ? PLACEHOLDER : '',
@@ -38,7 +38,7 @@ export const criteriaStep = defineStep<CriteriaConfig>({
   // The rules on one line, joined by "and" / "or"; blank until a rule has its variable.
   summaryValues: {
     rules: ({ match, rules }) => {
-      const joiner = match === 'any' ? __('or', 'yay-automation') : __('and', 'yay-automation');
+      const joiner = match === 'any' ? __('or', 'yaymatik') : __('and', 'yaymatik');
       return rules
         .filter((rule) => rule.field)
         .map(describe)

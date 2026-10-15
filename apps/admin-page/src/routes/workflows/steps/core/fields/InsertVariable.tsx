@@ -51,7 +51,7 @@ export function InsertVariable({ inputRef, value, onChange }: InsertVariableProp
     <VariablePicker onSelect={insert} focusAfterPick={focusInput}>
       <Button type="button" variant="link" size="sm" className="h-auto gap-1 px-0 text-[12.5px]">
         <Braces className="size-3.5" aria-hidden />
-        {__('Insert variable', 'yay-automation')}
+        {__('Insert variable', 'yaymatik')}
       </Button>
     </VariablePicker>
   );

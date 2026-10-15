@@ -1,4 +1,4 @@
-import type { StepId } from '@yay-automation/types';
+import type { StepId } from '@yaymatik/types';
 import { __ } from '@wordpress/i18n';
 
 import type { DataFieldType, DataItemMeta, StepMeta } from '@/types/localize';
@@ -7,7 +7,7 @@ import type { DataFieldType, DataItemMeta, StepMeta } from '@/types/localize';
  * Placeholder engine meta for steps and data fields whose PHP side isn't built yet, so their forms,
  * summaries and templates work in the admin. PHP meta always wins: an entry stops being "coming
  * soon" as soon as PHP sends it. Once PHP sends everything here, delete this file and read
- * `window.yayAutomationMeta.automation` directly again.
+ * `window.yayMatikMeta.automation` directly again.
  *
  * What PHP has to match: each pending step's `schema.ts` (its `sanitize()` / `validate()`), the
  * meta and fields below, boolean operators with no value (`needsValue()`), and action `provides`
@@ -17,38 +17,38 @@ import type { DataFieldType, DataItemMeta, StepMeta } from '@/types/localize';
 const steps: Partial<Record<StepId, StepMeta>> = {
   send_email: { kind: 'action', plugin: 'woocommerce', category: 'email', requires: [] },
   generate_coupon: { kind: 'action', plugin: 'woocommerce', category: 'coupon', requires: [], provides: ['coupon'] },
-  wait: { kind: 'action', plugin: 'yayautomation', category: 'flow', requires: [] },
+  wait: { kind: 'action', plugin: 'yaymatik', category: 'flow', requires: [] },
 };
 
 const data: DataItemMeta[] = [
   {
     id: 'order',
-    label: __('Order', 'yay-automation'),
+    label: __('Order', 'yaymatik'),
     description: '',
     fields: [
       // Cross-sells / upsells of the order's products, minus what the order already has.
       {
         key: 'order.has_cross_sells',
-        label: __('Order has cross-sell products', 'yay-automation'),
+        label: __('Order has cross-sell products', 'yaymatik'),
         type: 'boolean',
         conditional: true,
       },
       {
         key: 'order.has_upsells',
-        label: __('Order has upsell products', 'yay-automation'),
+        label: __('Order has upsell products', 'yaymatik'),
         type: 'boolean',
         conditional: true,
       },
       // Shown as a product grid (image, name, price, link).
       {
         key: 'order.cross_sell_products',
-        label: __('Cross-sell products', 'yay-automation'),
+        label: __('Cross-sell products', 'yaymatik'),
         type: 'string',
         conditional: false,
       },
       {
         key: 'order.upsell_products',
-        label: __('Upsell products', 'yay-automation'),
+        label: __('Upsell products', 'yaymatik'),
         type: 'string',
         conditional: false,
       },
@@ -56,18 +56,18 @@ const data: DataItemMeta[] = [
   },
   {
     id: 'customer',
-    label: __('Customer', 'yay-automation'),
+    label: __('Customer', 'yaymatik'),
     description: '',
     fields: [
       {
         key: 'customer.paid_order_count',
-        label: __('Customer paid order count', 'yay-automation'),
+        label: __('Customer paid order count', 'yaymatik'),
         type: 'number',
         conditional: true,
       },
       {
         key: 'customer.unsubscribed',
-        label: __('Customer unsubscribed', 'yay-automation'),
+        label: __('Customer unsubscribed', 'yaymatik'),
         type: 'boolean',
         conditional: true,
       },
@@ -75,22 +75,22 @@ const data: DataItemMeta[] = [
   },
   {
     id: 'coupon',
-    label: __('Coupon', 'yay-automation'),
-    description: __('The coupon made by a Generate coupon step above.', 'yay-automation'),
+    label: __('Coupon', 'yaymatik'),
+    description: __('The coupon made by a Generate coupon step above.', 'yaymatik'),
     icon: 'ticket',
     fields: [
-      { key: 'coupon.code', label: __('Coupon code', 'yay-automation'), type: 'string', conditional: false },
+      { key: 'coupon.code', label: __('Coupon code', 'yaymatik'), type: 'string', conditional: false },
       // Shown with its unit: "10%", "$5.00" or "Free shipping".
-      { key: 'coupon.amount', label: __('Coupon amount', 'yay-automation'), type: 'string', conditional: false },
+      { key: 'coupon.amount', label: __('Coupon amount', 'yaymatik'), type: 'string', conditional: false },
       {
         key: 'coupon.expiry_date',
-        label: __('Coupon expiry date', 'yay-automation'),
+        label: __('Coupon expiry date', 'yaymatik'),
         type: 'date',
         conditional: false,
       },
       {
         key: 'coupon.description',
-        label: __('Coupon description', 'yay-automation'),
+        label: __('Coupon description', 'yaymatik'),
         type: 'string',
         conditional: false,
       },
@@ -102,7 +102,7 @@ const operators: Partial<Record<DataFieldType, string[]>> = {
   boolean: ['is_true', 'is_false'],
 };
 
-const php = window.yayAutomationMeta.automation;
+const php = window.yayMatikMeta.automation;
 
 const pendingSteps = new Set(Object.keys(steps).filter((id) => !php.steps[id as StepId]) as StepId[]);
 
@@ -121,7 +121,7 @@ function mergeData(): DataItemMeta[] {
   return [...merged, ...newItems];
 }
 
-/** `window.yayAutomationMeta.automation` with the stubs filled in under it. */
+/** `window.yayMatikMeta.automation` with the stubs filled in under it. */
 export const automationMeta = {
   ...php,
   steps: { ...steps, ...php.steps } as Record<StepId, StepMeta>,
@@ -135,4 +135,4 @@ export const isPendingStep = (id: StepId) => pendingSteps.has(id);
 /** The field's PHP side isn't built yet: shown, but can't be picked. */
 export const isPendingField = (key: string) => pendingFields.has(key);
 
-export const comingSoonLabel = __('Coming soon', 'yay-automation');
+export const comingSoonLabel = __('Coming soon', 'yaymatik');

@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
-import type { WorkflowBranch, WorkflowNodeData, WorkflowNodeKind } from '@yay-automation/types';
+import type { WorkflowBranch, WorkflowNodeData, WorkflowNodeKind } from '@yaymatik/types';
 import { Check, CircleAlert, X, type LucideIcon } from 'lucide-react';
 import { __ } from '@wordpress/i18n';
 
@@ -19,19 +19,19 @@ export type IssueMode = 'review' | 'error';
 
 export const kindMeta: Record<WorkflowNodeKind, { label: string; icon: LucideIcon; choose: string }> = {
   trigger: {
-    label: __('Trigger', 'yay-automation'),
+    label: __('Trigger', 'yaymatik'),
     icon: kindIcons.trigger,
-    choose: __('Choose a trigger', 'yay-automation'),
+    choose: __('Choose a trigger', 'yaymatik'),
   },
   condition: {
-    label: __('Condition', 'yay-automation'),
+    label: __('Condition', 'yaymatik'),
     icon: kindIcons.condition,
-    choose: __('Choose a condition', 'yay-automation'),
+    choose: __('Choose a condition', 'yaymatik'),
   },
   action: {
-    label: __('Action', 'yay-automation'),
+    label: __('Action', 'yaymatik'),
     icon: kindIcons.action,
-    choose: __('Choose an action', 'yay-automation'),
+    choose: __('Choose an action', 'yaymatik'),
   },
 };
 
@@ -107,11 +107,11 @@ export function NodeCardView({
           <div className="relative mt-2.5 h-5.5 basis-full text-xs font-semibold" aria-hidden>
             <span className={branchPill} style={{ left: branchLeft.then }}>
               <Check className="text-kind-action size-3.25 stroke-[2.5]" />
-              {__('Yes', 'yay-automation')}
+              {__('Yes', 'yaymatik')}
             </span>
             <span className={branchPill} style={{ left: branchLeft.otherwise }}>
               <X className="text-muted-foreground size-3.25 stroke-[2.5]" />
-              {__('No', 'yay-automation')}
+              {__('No', 'yaymatik')}
             </span>
           </div>
         )}
@@ -125,7 +125,7 @@ export function NodeCardView({
             )}
           >
             <CircleAlert className="size-3 stroke-[2.5]" aria-hidden />
-            {issue === 'error' ? __('Error', 'yay-automation') : __('Needs setup', 'yay-automation')}
+            {issue === 'error' ? __('Error', 'yaymatik') : __('Needs setup', 'yaymatik')}
           </span>
         )}
       </div>

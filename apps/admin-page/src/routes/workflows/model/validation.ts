@@ -1,4 +1,4 @@
-import type { Workflow, WorkflowGraph, WorkflowIssue, WorkflowNode } from '@yay-automation/types';
+import type { Workflow, WorkflowGraph, WorkflowIssue, WorkflowNode } from '@yaymatik/types';
 import { __, sprintf } from '@wordpress/i18n';
 
 import { stepOf } from '../steps';
@@ -87,7 +87,7 @@ export function issueText(issue: WorkflowIssue, ...graphs: (WorkflowGraph | null
   const label = node && stepOf(node.data)?.label;
   if (!label || issue.message.includes(label)) return issue.message;
   /* translators: 1: a step, e.g. "Change order status", 2: what's wrong with it */
-  return sprintf(__('%1$s: %2$s', 'yay-automation'), label, issue.message);
+  return sprintf(__('%1$s: %2$s', 'yaymatik'), label, issue.message);
 }
 
 /**

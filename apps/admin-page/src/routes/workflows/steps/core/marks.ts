@@ -6,7 +6,7 @@ const EMPTY_MARK = '⁠';
 const VALUE_MARK = '⁡';
 
 /** Shown in summaries where a required value is still missing: an italic "Not set". */
-export const PLACEHOLDER = `${EMPTY_MARK}${__('Not set', 'yay-automation')}${EMPTY_MARK}`;
+export const PLACEHOLDER = `${EMPTY_MARK}${__('Not set', 'yaymatik')}${EMPTY_MARK}`;
 
 /** A configured value in a summary, shown bold; blank → the italic placeholder. */
 export const value = (text: string) => (text.trim() ? `${VALUE_MARK}${text}${VALUE_MARK}` : PLACEHOLDER);

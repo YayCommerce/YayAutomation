@@ -1,4 +1,4 @@
-import type { StepId, WorkflowGraph } from '@yay-automation/types';
+import type { StepId, WorkflowGraph } from '@yaymatik/types';
 
 import type { DataItemMeta } from '@/types/localize';
 import { alwaysAvailable, dataItems, pathLabel } from './data';
@@ -43,7 +43,7 @@ export function availableVariables(graph: WorkflowGraph, nodeId: string): Variab
   for (const id of above) {
     const stepId = block(id);
     // Only PHP's catalog has outputs; a pending step has none yet.
-    const outputs = stepId ? (window.yayAutomationMeta.automation.steps[stepId]?.outputs ?? []) : [];
+    const outputs = stepId ? (window.yayMatikMeta.automation.steps[stepId]?.outputs ?? []) : [];
     for (const output of outputs) {
       list.push({ key: `steps.${id}.${output.key}`, label: output.label, type: output.type, comingSoon: false });
     }

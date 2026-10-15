@@ -6,10 +6,10 @@ import { defineTemplate } from '../core/defineTemplate';
 /** Email the store team when a big order is placed. */
 export default defineTemplate({
   id: 'high-value-order-alert',
-  name: __('High-value order alert', 'yay-automation'),
+  name: __('High-value order alert', 'yaymatik'),
   description: __(
     'Email the store team when an order above an amount you choose is placed, so big orders get attention fast.',
-    'yay-automation',
+    'yaymatik',
   ),
   category: 'alerts',
   popularity: 0,
@@ -41,10 +41,10 @@ export default defineTemplate({
           config: {
             // Blank: the site admin email.
             recipients: '',
-            subject: __('High-value order {{ order.number }} - {{ order.total }}', 'yay-automation'),
+            subject: __('High-value order {{ order.number }} - {{ order.total }}', 'yaymatik'),
             message: __(
               'A high-value order was placed on {{ site.name }}.\n\nOrder: {{ order.number }}\nTotal: {{ order.total }}\nCustomer: {{ customer.first_name }} {{ customer.last_name }} ({{ customer.email }})\n\nItems:\n{{ order.items }}',
-              'yay-automation',
+              'yaymatik',
             ),
           },
         },

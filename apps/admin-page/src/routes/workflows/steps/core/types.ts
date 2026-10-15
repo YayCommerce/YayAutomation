@@ -1,5 +1,5 @@
 import type { ComponentType } from 'react';
-import type { StepId, WorkflowNodeKind, WorkflowPlugin } from '@yay-automation/types';
+import type { StepId, WorkflowNodeKind, WorkflowPlugin } from '@yaymatik/types';
 import type { LucideIcon } from 'lucide-react';
 import type * as v from 'valibot';
 

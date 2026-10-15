@@ -1,4 +1,4 @@
-import type { StepId, WorkflowNodeKind, WorkflowPlugin } from '@yay-automation/types';
+import type { StepId, WorkflowNodeKind, WorkflowPlugin } from '@yaymatik/types';
 
 /** PHP `Workflow\Extend\Plugins::to_client()`. */
 export interface PluginMeta {
@@ -113,7 +113,7 @@ export interface DataItemMeta {
 
 declare global {
   interface Window {
-    yayAutomationMeta: {
+    yayMatikMeta: {
       plugin: {
         pluginUrl: string;
         version: string;
@@ -149,7 +149,7 @@ declare global {
         email: { fromLine: string };
       };
       docs: {
-        /** Filter `yay_automation_workflow_runs_docs_url`. */
+        /** Filter `yaymatik_workflow_runs_docs_url`. */
         workflowRuns: string;
       };
     };

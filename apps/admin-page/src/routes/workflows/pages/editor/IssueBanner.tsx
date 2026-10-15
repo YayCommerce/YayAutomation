@@ -1,5 +1,5 @@
 import { useState, type CSSProperties, type ReactNode } from 'react';
-import type { WorkflowIssue, WorkflowNode } from '@yay-automation/types';
+import type { WorkflowIssue, WorkflowNode } from '@yaymatik/types';
 import { ChevronLeft, ChevronRight, CircleAlert } from 'lucide-react';
 import { __, sprintf } from '@wordpress/i18n';
 
@@ -84,8 +84,8 @@ export function IssueBanner({
       <p className="min-w-0 flex-1">
         {withStepName(issue.message, stepName)}{' '}
         {stepId
-          ? link(__('Show step', 'yay-automation'), () => onView(stepId))
-          : issue.code === 'name_required' && link(__('Rename workflow', 'yay-automation'), onRename)}
+          ? link(__('Show step', 'yaymatik'), () => onView(stepId))
+          : issue.code === 'name_required' && link(__('Rename workflow', 'yaymatik'), onRename)}
       </p>
       {issues.length > 1 && (
         <div className="text-muted-foreground flex shrink-0 items-center gap-0.5 text-xs">
@@ -94,7 +94,7 @@ export function IssueBanner({
             size="icon-sm"
             className="size-6"
             disabled={current === 0}
-            aria-label={__('Previous issue', 'yay-automation')}
+            aria-label={__('Previous issue', 'yaymatik')}
             onClick={() => show(current - 1)}
           >
             <ChevronLeft />
@@ -102,7 +102,7 @@ export function IssueBanner({
           <span className="tabular-nums">
             {sprintf(
               /* translators: 1: current issue number, 2: number of issues */
-              __('%1$d / %2$d', 'yay-automation'),
+              __('%1$d / %2$d', 'yaymatik'),
               current + 1,
               issues.length,
             )}
@@ -112,7 +112,7 @@ export function IssueBanner({
             size="icon-sm"
             className="size-6"
             disabled={current === issues.length - 1}
-            aria-label={__('Next issue', 'yay-automation')}
+            aria-label={__('Next issue', 'yaymatik')}
             onClick={() => show(current + 1)}
           >
             <ChevronRight />

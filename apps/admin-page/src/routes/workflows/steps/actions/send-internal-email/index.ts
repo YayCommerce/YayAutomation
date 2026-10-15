@@ -4,7 +4,7 @@ import { defineStep, value } from '../../core/defineStep';
 import { splitRecipients } from '../../core/fields/email';
 import { variableNames } from '../../core/summary';
 
-const adminEmail = window.yayAutomationMeta.wp.adminEmail;
+const adminEmail = window.yayMatikMeta.wp.adminEmail;
 
 /**
  * Form and checks come from includes/Workflow/Steps/Actions/SendInternalEmail.php `fields()`.
@@ -15,10 +15,10 @@ export const sendInternalEmailStep = defineStep({
   kind: 'action',
   defaults: () => ({
     recipients: '',
-    subject: __('Order {{ order.number }} is {{ order.status }}', 'yay-automation'),
+    subject: __('Order {{ order.number }} is {{ order.status }}', 'yaymatik'),
     message: __(
       'Order {{ order.number }} from {{ customer.full_name }} is {{ order.status }}.\n\nTotal: {{ order.total }}\n\n{{ order.items }}',
-      'yay-automation',
+      'yaymatik',
     ),
   }),
   // Blank sends to the site admin (PHP `run()`), so the card names that address.

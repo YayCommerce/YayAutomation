@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import type { Workflow, WorkflowVersion, WorkflowVersionAction } from '@yay-automation/types';
+import type { Workflow, WorkflowVersion, WorkflowVersionAction } from '@yaymatik/types';
 import { ChevronLeft, ChevronRight, TriangleAlert } from 'lucide-react';
 import { __, sprintf } from '@wordpress/i18n';
 
@@ -20,18 +20,18 @@ export const shortDay = (date: string) =>
 export function formatVersionDate(date: string) {
   const day = shortDay(date);
   /* translators: 1: date, 2: time */
-  return sprintf(__('%1$s at %2$s', 'yay-automation'), day, formatTime(date));
+  return sprintf(__('%1$s at %2$s', 'yaymatik'), day, formatTime(date));
 }
 
 const actionLabels: Record<WorkflowVersionAction, (user: string) => string> = {
   /* translators: %s: user display name */
-  created: (user: string) => sprintf(__('Created by %s', 'yay-automation'), user),
+  created: (user: string) => sprintf(__('Created by %s', 'yaymatik'), user),
   /* translators: %s: user display name */
-  edited: (user: string) => sprintf(__('Edited by %s', 'yay-automation'), user),
+  edited: (user: string) => sprintf(__('Edited by %s', 'yaymatik'), user),
   /* translators: %s: user display name */
-  activated: (user: string) => sprintf(__('Activated by %s', 'yay-automation'), user),
+  activated: (user: string) => sprintf(__('Activated by %s', 'yaymatik'), user),
   /* translators: %s: user display name */
-  deactivated: (user: string) => sprintf(__('Deactivated by %s', 'yay-automation'), user),
+  deactivated: (user: string) => sprintf(__('Deactivated by %s', 'yaymatik'), user),
 };
 
 /**
@@ -59,9 +59,9 @@ export function VersionHistory({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-1/4">{__('Version created', 'yay-automation')}</TableHead>
-            <TableHead className="w-2/5">{__('Recent history', 'yay-automation')}</TableHead>
-            <TableHead>{__('Status', 'yay-automation')}</TableHead>
+            <TableHead className="w-1/4">{__('Version created', 'yaymatik')}</TableHead>
+            <TableHead className="w-2/5">{__('Recent history', 'yaymatik')}</TableHead>
+            <TableHead>{__('Status', 'yaymatik')}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -84,7 +84,7 @@ export function VersionHistory({
           ) : data.items.length === 0 ? (
             <TableRow>
               <TableCell colSpan={3} className="text-muted-foreground">
-                {__('No versions yet.', 'yay-automation')}
+                {__('No versions yet.', 'yaymatik')}
               </TableCell>
             </TableRow>
           ) : (
@@ -96,7 +96,7 @@ export function VersionHistory({
         <Button
           variant="ghost"
           size="icon-sm"
-          aria-label={__('Previous page', 'yay-automation')}
+          aria-label={__('Previous page', 'yaymatik')}
           disabled={page === 1 || isPlaceholderData}
           onClick={() => onPageChange(page - 1)}
         >
@@ -105,7 +105,7 @@ export function VersionHistory({
         <Button
           variant="ghost"
           size="icon-sm"
-          aria-label={__('Next page', 'yay-automation')}
+          aria-label={__('Next page', 'yaymatik')}
           disabled={!data?.hasMore || isPlaceholderData}
           onClick={() => onPageChange(page + 1)}
         >
@@ -134,15 +134,15 @@ function VersionRow({ version }: { version: WorkflowVersion }) {
                 <TriangleAlert
                   className="text-warning size-4"
                   role="img"
-                  aria-label={__('This version has errors', 'yay-automation')}
+                  aria-label={__('This version has errors', 'yaymatik')}
                 />
               </TooltipTrigger>
-              <TooltipContent>{__('This version has errors', 'yay-automation')}</TooltipContent>
+              <TooltipContent>{__('This version has errors', 'yaymatik')}</TooltipContent>
             </Tooltip>
           )}
         </span>
       </TableCell>
-      <TableCell>{actionLabels[version.action](version.user ?? __('a deleted user', 'yay-automation'))}</TableCell>
+      <TableCell>{actionLabels[version.action](version.user ?? __('a deleted user', 'yaymatik'))}</TableCell>
       <TableCell>{version.status && <WorkflowStatusBadge state={version.status} />}</TableCell>
     </TableRow>
   );

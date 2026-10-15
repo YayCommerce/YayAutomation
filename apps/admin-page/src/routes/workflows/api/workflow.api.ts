@@ -1,11 +1,11 @@
-import type { Workflow, WorkflowIssue, WorkflowVersionsPage } from '@yay-automation/types';
+import type { Workflow, WorkflowIssue, WorkflowVersionsPage } from '@yaymatik/types';
 import { HTTPError, type Options, type ResponsePromise } from 'ky';
 import { __ } from '@wordpress/i18n';
 
 import { api } from '@/lib/api/api';
 import { getErrorJson, getErrorMsg } from '@/lib/helpers/response.helper';
 
-/** REST client for `yay-automation/v1/workflows`. Errors are rethrown as `ApiError` with the server's message. */
+/** REST client for `yaymatik/v1/workflows`. Errors are rethrown as `ApiError` with the server's message. */
 
 /** Any thrown value as text for a toast. */
 export const errorMessage = (reason: unknown) => (reason instanceof Error ? reason.message : String(reason));
@@ -17,7 +17,7 @@ export class ApiError extends Error {
     readonly status?: number,
     /** What the server's workflow validation rejected (400 `data.errors`). */
     readonly issues: WorkflowIssue[] = [],
-    /** WP_Error code, e.g. `yay_automation_no_draft`. */
+    /** WP_Error code, e.g. `yaymatik_no_draft`. */
     readonly code?: string,
   ) {
     super(message);
@@ -40,7 +40,7 @@ async function request<T>(response: ResponsePromise): Promise<T> {
       // Error body isn't JSON (PHP fatal, proxy error page): fall back to the generic message.
     }
     throw new ApiError(
-      message || __('Something went wrong. Please try again.', 'yay-automation'),
+      message || __('Something went wrong. Please try again.', 'yaymatik'),
       error instanceof HTTPError ? error.response.status : undefined,
       issues,
       code,
@@ -57,7 +57,7 @@ export const listWorkflows = () => request<Workflow[]>(api.get('workflows'));
 export const getWorkflow = (id: string) =>
   /^\d+$/.test(id)
     ? request<Workflow>(api.get(`workflows/${id}`))
-    : Promise.reject(new ApiError(__('Workflow not found.', 'yay-automation'), 404));
+    : Promise.reject(new ApiError(__('Workflow not found.', 'yaymatik'), 404));
 
 /** New inactive workflow. Issues are allowed. */
 /** Without a name and graph the server creates a blank "New workflow" with an unchosen trigger. */

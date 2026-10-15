@@ -1,7 +1,7 @@
 import type { MouseEvent } from 'react';
 import { useStore } from '@tanstack/react-form';
 import type { NodeProps } from '@xyflow/react';
-import type { WorkflowBranch, WorkflowNodeKind } from '@yay-automation/types';
+import type { WorkflowBranch, WorkflowNodeKind } from '@yaymatik/types';
 import { GitBranch, Play, Plus, Replace, Trash2 } from 'lucide-react';
 import { __ } from '@wordpress/i18n';
 
@@ -55,7 +55,7 @@ export function WorkflowNodeCard({ id, type, data, selected }: NodeProps<FlowNod
               variant="outline"
               size="icon-sm"
               className={`${roundButton} ${onHover('left')}`}
-              aria-label={__('Change trigger', 'yay-automation')}
+              aria-label={__('Change trigger', 'yaymatik')}
               onClick={(event: MouseEvent) => {
                 event.stopPropagation();
                 openPanel(id, true);
@@ -64,7 +64,7 @@ export function WorkflowNodeCard({ id, type, data, selected }: NodeProps<FlowNod
               <Replace />
             </Button>
           </TooltipTrigger>
-          <TooltipContent>{__('Change trigger', 'yay-automation')}</TooltipContent>
+          <TooltipContent>{__('Change trigger', 'yaymatik')}</TooltipContent>
         </Tooltip>
       )
     ) : (
@@ -74,7 +74,7 @@ export function WorkflowNodeCard({ id, type, data, selected }: NodeProps<FlowNod
             variant="outline"
             size="icon-sm"
             className={`${roundButton} ${onHover('left')}`}
-            aria-label={__('Delete step', 'yay-automation')}
+            aria-label={__('Delete step', 'yaymatik')}
             onClick={(event: MouseEvent) => {
               event.stopPropagation();
               requestDelete([id]);
@@ -83,7 +83,7 @@ export function WorkflowNodeCard({ id, type, data, selected }: NodeProps<FlowNod
             <Trash2 />
           </Button>
         </TooltipTrigger>
-        <TooltipContent>{__('Delete step', 'yay-automation')}</TooltipContent>
+        <TooltipContent>{__('Delete step', 'yaymatik')}</TooltipContent>
       </Tooltip>
     );
 
@@ -137,7 +137,7 @@ function AddNodeButton({ nodeId, branch, left }: { nodeId: string; branch?: Work
             variant="outline"
             size="icon-sm"
             className={`${roundButton} ${onHover('top')}`}
-            aria-label={__('Add step', 'yay-automation')}
+            aria-label={__('Add step', 'yaymatik')}
           >
             <Plus />
           </Button>

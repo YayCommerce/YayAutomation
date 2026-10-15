@@ -22,7 +22,7 @@ export function EditorLayout({
   actions,
   children,
   closeTo = '/workflows',
-  closeLabel = __('Close', 'yay-automation'),
+  closeLabel = __('Close', 'yaymatik'),
   onClose,
 }: EditorCloseProps & { title: ReactNode; actions?: ReactNode; children: ReactNode }) {
   return (

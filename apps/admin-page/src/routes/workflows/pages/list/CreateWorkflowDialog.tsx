@@ -9,10 +9,10 @@ import { StepTile } from '../../steps/core/StepTile';
 
 /** Example prompts for the describe box; shown, not usable, until the assistant ships (v2.0). */
 const ideas = [
-  __('Thank first-time buyers', 'yay-automation'),
-  __('Alert me about big orders', 'yay-automation'),
-  __('Remind shoppers about their cart', 'yay-automation'),
-  __('Ask for a review after delivery', 'yay-automation'),
+  __('Thank first-time buyers', 'yaymatik'),
+  __('Alert me about big orders', 'yaymatik'),
+  __('Remind shoppers about their cart', 'yaymatik'),
+  __('Ask for a review after delivery', 'yaymatik'),
 ];
 
 /**
@@ -45,18 +45,18 @@ export function CreateWorkflowDialog({
       >
         <div className="flex h-12 shrink-0 items-center gap-2 border-b px-4">
           <WorkflowAppIcon />
-          <DialogTitle className="text-sm font-medium">{__('New workflow', 'yay-automation')}</DialogTitle>
+          <DialogTitle className="text-sm font-medium">{__('New workflow', 'yaymatik')}</DialogTitle>
         </div>
 
         <div className="flex flex-1 flex-col items-center justify-center gap-4.5 overflow-y-auto px-6 pt-12 pb-14">
           <div className="text-center">
             <h2 className="text-[22px] font-semibold tracking-tight">
-              {__('What do you want to automate?', 'yay-automation')}
+              {__('What do you want to automate?', 'yaymatik')}
             </h2>
             <DialogDescription className="text-muted-foreground mt-1 text-[13.5px]">
               {__(
                 'Soon you can describe it and get a draft to review. Until then, start on your own below.',
-                'yay-automation',
+                'yaymatik',
               )}
             </DialogDescription>
           </div>
@@ -69,7 +69,7 @@ export function CreateWorkflowDialog({
             <div className="flex min-h-11 gap-2.5 text-[14.5px]/normal">
               <Sparkles className="text-primary mt-0.75 size-4 shrink-0" aria-hidden />
               <span className="text-muted-foreground">
-                {__('e.g. Email customers who haven’t ordered in 90 days with a coupon', 'yay-automation')}
+                {__('e.g. Email customers who haven’t ordered in 90 days with a coupon', 'yaymatik')}
               </span>
             </div>
             <div className="flex items-center justify-end gap-2">
@@ -84,10 +84,7 @@ export function CreateWorkflowDialog({
           </div>
 
           {/* Examples of what to describe; not clickable until the assistant ships. */}
-          <ul
-            className="flex max-w-160 flex-wrap justify-center gap-2"
-            aria-label={__('Example prompts', 'yay-automation')}
-          >
+          <ul className="flex max-w-160 flex-wrap justify-center gap-2" aria-label={__('Example prompts', 'yaymatik')}>
             {ideas.map((idea) => (
               <li
                 key={idea}
@@ -101,7 +98,7 @@ export function CreateWorkflowDialog({
 
           <div className="text-muted-foreground flex w-full max-w-150 items-center gap-3 text-[12.5px]">
             <span className="bg-border h-px flex-1" />
-            {__('or start on your own', 'yay-automation')}
+            {__('or start on your own', 'yaymatik')}
             <span className="bg-border h-px flex-1" />
           </div>
 
@@ -112,14 +109,14 @@ export function CreateWorkflowDialog({
                   <LayoutTemplate className="size-4" />
                 </span>
               }
-              title={__('Browse templates', 'yay-automation')}
-              description={__('Ready-made workflows to review and activate', 'yay-automation')}
+              title={__('Browse templates', 'yaymatik')}
+              description={__('Ready-made workflows to review and activate', 'yaymatik')}
               onClick={onBrowseTemplates}
             />
             <StartCard
               tile={<StepTile kind="trigger" size="md" />}
-              title={__('Choose a trigger', 'yay-automation')}
-              description={__('Build it step by step', 'yay-automation')}
+              title={__('Choose a trigger', 'yaymatik')}
+              description={__('Build it step by step', 'yaymatik')}
               busy={creating}
               onClick={onSelectTrigger}
             />

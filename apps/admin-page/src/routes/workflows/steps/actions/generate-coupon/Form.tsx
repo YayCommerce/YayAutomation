@@ -10,12 +10,12 @@ import { TextField, ToggleField } from '../../core/fields/widgets';
 import type { StepFormProps } from '../../core/types';
 import { schema, type DiscountType, type GenerateCouponConfig } from './schema';
 
-const { currencySymbol } = window.yayAutomationMeta.wc;
+const { currencySymbol } = window.yayMatikMeta.wc;
 
 export const discountTypeLabels: Record<DiscountType, string> = {
-  percent: __('Percentage', 'yay-automation'),
-  fixed_cart: __('Fixed amount', 'yay-automation'),
-  free_shipping: __('Free shipping', 'yay-automation'),
+  percent: __('Percentage', 'yaymatik'),
+  fixed_cart: __('Fixed amount', 'yaymatik'),
+  free_shipping: __('Free shipping', 'yaymatik'),
 };
 
 type TextKey = 'amount' | 'expiry_days' | 'minimum_spend' | 'code_prefix';
@@ -68,7 +68,7 @@ export function GenerateCouponForm({ config, onChange }: StepFormProps<GenerateC
     <FieldGroup>
       <form.Field name="discount_type">
         {(field) => (
-          <ConfigField label={__('Discount type', 'yay-automation')} htmlFor="step-coupon-type" errors={[]}>
+          <ConfigField label={__('Discount type', 'yaymatik')} htmlFor="step-coupon-type" errors={[]}>
             <Segmented
               id="step-coupon-type"
               shape="square"
@@ -89,39 +89,37 @@ export function GenerateCouponForm({ config, onChange }: StepFormProps<GenerateC
       {discountType !== 'free_shipping' &&
         textField(
           'amount',
-          discountType === 'percent'
-            ? __('Amount (%)', 'yay-automation')
-            : `${__('Amount', 'yay-automation')} (${currencySymbol})`,
+          discountType === 'percent' ? __('Amount (%)', 'yaymatik') : `${__('Amount', 'yaymatik')} (${currencySymbol})`,
         )}
       {textField(
         'expiry_days',
-        __('Expires after (days)', 'yay-automation'),
-        __('Leave blank for a coupon that never expires.', 'yay-automation'),
+        __('Expires after (days)', 'yaymatik'),
+        __('Leave blank for a coupon that never expires.', 'yaymatik'),
       )}
       {textField(
         'minimum_spend',
-        `${__('Minimum spend', 'yay-automation')} (${currencySymbol})`,
-        __('Leave blank for no minimum.', 'yay-automation'),
+        `${__('Minimum spend', 'yaymatik')} (${currencySymbol})`,
+        __('Leave blank for no minimum.', 'yaymatik'),
       )}
       {textField(
         'code_prefix',
-        __('Code prefix', 'yay-automation'),
-        __('Added before the random part of the code, e.g. THANKS-7K2P9Q.', 'yay-automation'),
+        __('Code prefix', 'yaymatik'),
+        __('Added before the random part of the code, e.g. THANKS-7K2P9Q.', 'yaymatik'),
         'THANKS-',
       )}
       {toggleField(
         'limit_to_customer',
-        __("Limit to the customer's email", 'yay-automation'),
-        __('Only the customer the workflow runs for can use it.', 'yay-automation'),
+        __("Limit to the customer's email", 'yaymatik'),
+        __('Only the customer the workflow runs for can use it.', 'yaymatik'),
       )}
       {toggleField(
         'individual_use',
-        __('Individual use only', 'yay-automation'),
-        __("Can't be combined with other coupons.", 'yay-automation'),
+        __('Individual use only', 'yaymatik'),
+        __("Can't be combined with other coupons.", 'yaymatik'),
       )}
 
       <p className="text-muted-foreground text-xs">
-        {__('Each coupon can be used once. Use {{ coupon.code }} in a later email.', 'yay-automation')}
+        {__('Each coupon can be used once. Use {{ coupon.code }} in a later email.', 'yaymatik')}
       </p>
     </FieldGroup>
   );

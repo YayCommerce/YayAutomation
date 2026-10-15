@@ -2,7 +2,7 @@ import '@xyflow/react/dist/style.css';
 
 import { useEffect, useMemo, type ReactNode } from 'react';
 import { Background, Panel, ReactFlow, useNodesInitialized, useReactFlow, useStore } from '@xyflow/react';
-import type { WorkflowGraph } from '@yay-automation/types';
+import type { WorkflowGraph } from '@yaymatik/types';
 import { Maximize2, Minus, Plus } from 'lucide-react';
 import { __ } from '@wordpress/i18n';
 
@@ -121,7 +121,7 @@ function CanvasControls({ fitViewOptions }: { fitViewOptions: FitViewOptions }) 
           size="icon-sm"
           className="bg-card"
           onClick={() => zoomOut()}
-          aria-label={__('Zoom out', 'yay-automation')}
+          aria-label={__('Zoom out', 'yaymatik')}
         >
           <Minus />
         </Button>
@@ -130,7 +130,7 @@ function CanvasControls({ fitViewOptions }: { fitViewOptions: FitViewOptions }) 
           size="icon-sm"
           className="bg-card"
           onClick={() => zoomIn()}
-          aria-label={__('Zoom in', 'yay-automation')}
+          aria-label={__('Zoom in', 'yaymatik')}
         >
           <Plus />
         </Button>
@@ -140,7 +140,7 @@ function CanvasControls({ fitViewOptions }: { fitViewOptions: FitViewOptions }) 
         size="icon-sm"
         className="bg-card"
         onClick={() => fitView(fitViewOptions)}
-        aria-label={__('Fit view', 'yay-automation')}
+        aria-label={__('Fit view', 'yaymatik')}
       >
         <Maximize2 />
       </Button>

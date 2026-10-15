@@ -1,4 +1,4 @@
-import type { WorkflowGraph } from '@yay-automation/types';
+import type { WorkflowGraph } from '@yaymatik/types';
 import { __ } from '@wordpress/i18n';
 
 import { BRANCH_OFFSET, ROW_GAP } from '../../model/graph';
@@ -13,14 +13,14 @@ import { defineTemplate } from '../core/defineTemplate';
 function graph(coupon: Partial<GenerateCouponConfig>, offer: string): WorkflowGraph {
   const email: SendEmailConfig = {
     to: '{{ customer.email }}',
-    subject: __('Thank you for your first order, {{ customer.first_name }}!', 'yay-automation'),
-    heading: __('Thanks for shopping with us', 'yay-automation'),
+    subject: __('Thank you for your first order, {{ customer.first_name }}!', 'yaymatik'),
+    heading: __('Thanks for shopping with us', 'yaymatik'),
     message: [
-      __('Hi {{ customer.first_name }},', 'yay-automation'),
-      __('Thank you for your first order with {{ site.name }}. We hope you love it!', 'yay-automation'),
+      __('Hi {{ customer.first_name }},', 'yaymatik'),
+      __('Thank you for your first order with {{ site.name }}. We hope you love it!', 'yaymatik'),
       offer,
-      __('Coupon code: {{ coupon.code }}\nExpires: {{ coupon.expiry_date }}', 'yay-automation'),
-      __('See you again soon,\n{{ site.name }}', 'yay-automation'),
+      __('Coupon code: {{ coupon.code }}\nExpires: {{ coupon.expiry_date }}', 'yaymatik'),
+      __('See you again soon,\n{{ site.name }}', 'yaymatik'),
     ].join('\n\n'),
   };
 
@@ -82,32 +82,32 @@ function graph(coupon: Partial<GenerateCouponConfig>, offer: string): WorkflowGr
 
 export const firstOrderDiscount = defineTemplate({
   id: 'first-order-thank-you-discount',
-  name: __('First-order thank-you: % off next order', 'yay-automation'),
+  name: __('First-order thank-you: % off next order', 'yaymatik'),
   description: __(
     'Thank customers when their first order is completed, with a 10% off coupon for their next order, valid for 30 days.',
-    'yay-automation',
+    'yaymatik',
   ),
   category: 'post_purchase',
   popularity: 0,
   createdAt: '2026-10-07',
   graph: graph(
     { discount_type: 'percent', amount: '10' },
-    __('As a thank you, here is {{ coupon.amount }} off your next order:', 'yay-automation'),
+    __('As a thank you, here is {{ coupon.amount }} off your next order:', 'yaymatik'),
   ),
 });
 
 export const firstOrderFreeShipping = defineTemplate({
   id: 'first-order-thank-you-free-shipping',
-  name: __('First-order thank-you: free shipping', 'yay-automation'),
+  name: __('First-order thank-you: free shipping', 'yaymatik'),
   description: __(
     'Thank customers when their first order is completed, with a free shipping coupon for their next order, valid for 30 days.',
-    'yay-automation',
+    'yaymatik',
   ),
   category: 'post_purchase',
   popularity: 0,
   createdAt: '2026-10-07',
   graph: graph(
     { discount_type: 'free_shipping', amount: '' },
-    __('As a thank you, your next order ships free:', 'yay-automation'),
+    __('As a thank you, your next order ships free:', 'yaymatik'),
   ),
 });

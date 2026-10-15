@@ -1,6 +1,6 @@
 import { useState, type FormEvent, type ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import type { Workflow } from '@yay-automation/types';
+import type { Workflow } from '@yaymatik/types';
 import { ChevronDown, Pencil, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { __, _n, sprintf } from '@wordpress/i18n';
@@ -51,18 +51,18 @@ export function MoreActionsMenu({ workflow, onDeleted }: { workflow: Workflow; o
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
           <Button variant="outline" size="sm">
-            {__('More actions', 'yay-automation')}
+            {__('More actions', 'yaymatik')}
             <ChevronDown />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuItem onSelect={() => setDialog('rename')}>
             <Pencil />
-            {__('Rename', 'yay-automation')}
+            {__('Rename', 'yaymatik')}
           </DropdownMenuItem>
           <DropdownMenuItem variant="destructive" onSelect={() => setDialog('delete')}>
             <Trash2 />
-            {__('Delete', 'yay-automation')}
+            {__('Delete', 'yaymatik')}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -92,7 +92,7 @@ export function RenameWorkflowDialog({ workflow, onClose }: { workflow: Workflow
       { id: workflow.id, name: name.trim() },
       {
         onSuccess: () => {
-          toast.success(__('Workflow renamed', 'yay-automation'));
+          toast.success(__('Workflow renamed', 'yaymatik'));
           onClose();
         },
         onError: (error) => toast.error(error.message),
@@ -105,19 +105,19 @@ export function RenameWorkflowDialog({ workflow, onClose }: { workflow: Workflow
       <DialogContent className="sm:max-w-md">
         <form onSubmit={submit} className="grid gap-4">
           <DialogHeader>
-            <DialogTitle>{__('Rename workflow', 'yay-automation')}</DialogTitle>
+            <DialogTitle>{__('Rename workflow', 'yaymatik')}</DialogTitle>
             <DialogDescription className="sr-only">
-              {__('Enter a new name for this workflow.', 'yay-automation')}
+              {__('Enter a new name for this workflow.', 'yaymatik')}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-2">
-            <Label htmlFor="workflow-name">{__('Name', 'yay-automation')}</Label>
+            <Label htmlFor="workflow-name">{__('Name', 'yaymatik')}</Label>
             <Input id="workflow-name" value={name} onChange={(event) => setName(event.target.value)} autoFocus />
           </div>
           <DialogFooter>
             <DialogClose asChild>
               <Button variant="outline" disabled={updateMutation.isPending}>
-                {__('Cancel', 'yay-automation')}
+                {__('Cancel', 'yaymatik')}
               </Button>
             </DialogClose>
             <LoadingButton
@@ -125,7 +125,7 @@ export function RenameWorkflowDialog({ workflow, onClose }: { workflow: Workflow
               loading={updateMutation.isPending}
               disabled={!name.trim() || updateMutation.isPending}
             >
-              {__('Save', 'yay-automation')}
+              {__('Save', 'yaymatik')}
             </LoadingButton>
           </DialogFooter>
         </form>
@@ -163,12 +163,12 @@ export function DeleteWorkflowDialog({
     if (!workflow) return;
     deleteMutation.mutate(workflow.id, {
       onSuccess: () => {
-        toast.success(__('Workflow deleted', 'yay-automation'));
+        toast.success(__('Workflow deleted', 'yaymatik'));
         onClose();
         onDeleted?.();
       },
       onError: (error) => {
-        if (error instanceof ApiError && error.code === 'yay_automation_delete_active') {
+        if (error instanceof ApiError && error.code === 'yaymatik_delete_active') {
           setShown({ workflow, refusedMessage: error.message });
           // This copy was stale; refetch so the page shows it's active (and offers Deactivate).
           void queryClient.invalidateQueries({ queryKey: workflowKeys.all });
@@ -191,16 +191,14 @@ export function DeleteWorkflowDialog({
               <AlertDialogTitle>
                 {sprintf(
                   /* translators: %s: workflow name */
-                  __('Delete “%s”?', 'yay-automation'),
+                  __('Delete “%s”?', 'yaymatik'),
                   shown?.workflow.name ?? '',
                 )}
               </AlertDialogTitle>
-              <AlertDialogDescription>{__('This can’t be undone.', 'yay-automation')}</AlertDialogDescription>
+              <AlertDialogDescription>{__('This can’t be undone.', 'yaymatik')}</AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel disabled={deleteMutation.isPending}>
-                {__('Cancel', 'yay-automation')}
-              </AlertDialogCancel>
+              <AlertDialogCancel disabled={deleteMutation.isPending}>{__('Cancel', 'yaymatik')}</AlertDialogCancel>
               {/* Not AlertDialogAction: that closes the dialog before the request finishes. */}
               <LoadingButton
                 variant="destructive"
@@ -208,7 +206,7 @@ export function DeleteWorkflowDialog({
                 disabled={deleteMutation.isPending}
                 onClick={confirm}
               >
-                {__('Delete', 'yay-automation')}
+                {__('Delete', 'yaymatik')}
               </LoadingButton>
             </AlertDialogFooter>
           </>
@@ -231,7 +229,7 @@ export function ConfirmDialog({
   title,
   description,
   confirmLabel,
-  cancelLabel = __('Cancel', 'yay-automation'),
+  cancelLabel = __('Cancel', 'yaymatik'),
   destructive,
   open,
   onOpenChange,
@@ -278,20 +276,20 @@ export function ActivateDialog({ name, hasDraft, ...props }: ConfirmProps & { na
       {...props}
       title={sprintf(
         /* translators: %s: workflow name */
-        __('Activate “%s”?', 'yay-automation'),
+        __('Activate “%s”?', 'yaymatik'),
         name,
       )}
       description={
         <>
-          {__('It starts running right away. You can deactivate it at any time.', 'yay-automation')}
+          {__('It starts running right away. You can deactivate it at any time.', 'yaymatik')}
           {hasDraft && (
             <span className="mt-2 block">
-              {__('Your draft changes aren’t included. Update first to include them.', 'yay-automation')}
+              {__('Your draft changes aren’t included. Update first to include them.', 'yaymatik')}
             </span>
           )}
         </>
       }
-      confirmLabel={__('Activate', 'yay-automation')}
+      confirmLabel={__('Activate', 'yaymatik')}
     />
   );
 }
@@ -300,9 +298,9 @@ export function UpdateDialog(props: ConfirmProps) {
   return (
     <ConfirmDialog
       {...props}
-      title={__('Update this workflow?', 'yay-automation')}
-      description={__('It’s active, so your draft changes take effect right away.', 'yay-automation')}
-      confirmLabel={__('Update', 'yay-automation')}
+      title={__('Update this workflow?', 'yaymatik')}
+      description={__('It’s active, so your draft changes take effect right away.', 'yaymatik')}
+      confirmLabel={__('Update', 'yaymatik')}
     />
   );
 }
@@ -311,9 +309,9 @@ export function DiscardChangesDialog(props: ConfirmProps) {
   return (
     <ConfirmDialog
       {...props}
-      title={__('Discard draft changes?', 'yay-automation')}
-      description={__('Your draft changes will be deleted. The workflow stays as it was.', 'yay-automation')}
-      confirmLabel={__('Discard changes', 'yay-automation')}
+      title={__('Discard draft changes?', 'yaymatik')}
+      description={__('Your draft changes will be deleted. The workflow stays as it was.', 'yaymatik')}
+      confirmLabel={__('Discard changes', 'yaymatik')}
       destructive
     />
   );
@@ -332,12 +330,12 @@ export function DeactivateDialog(
         count === undefined
           ? sprintf(
               /* translators: %s: workflow name */
-              __('Deactivate “%s”?', 'yay-automation'),
+              __('Deactivate “%s”?', 'yaymatik'),
               name,
             )
           : sprintf(
               /* translators: %d: number of workflows */
-              _n('Deactivate %d workflow?', 'Deactivate %d workflows?', count, 'yay-automation'),
+              _n('Deactivate %d workflow?', 'Deactivate %d workflows?', count, 'yaymatik'),
               count,
             )
       }
@@ -345,14 +343,14 @@ export function DeactivateDialog(
         several
           ? __(
               'New events won’t start them. Runs already under way will finish. You can activate them again at any time.',
-              'yay-automation',
+              'yaymatik',
             )
           : __(
               'New events won’t start it. Runs already under way will finish. You can activate it again at any time.',
-              'yay-automation',
+              'yaymatik',
             )
       }
-      confirmLabel={__('Deactivate', 'yay-automation')}
+      confirmLabel={__('Deactivate', 'yaymatik')}
     />
   );
 }
@@ -367,18 +365,16 @@ export function DeleteBlockedContent({ several = false, message }: { several?: b
       <AlertDialogHeader>
         <AlertDialogTitle>
           {several
-            ? __('There was a problem deleting some workflows', 'yay-automation')
-            : __('There was a problem deleting this workflow', 'yay-automation')}
+            ? __('There was a problem deleting some workflows', 'yaymatik')
+            : __('There was a problem deleting this workflow', 'yaymatik')}
         </AlertDialogTitle>
         <AlertDialogDescription>
           {message ??
-            (several
-              ? __('Deactivate these workflows before you delete them.', 'yay-automation')
-              : messages.deleteActive)}
+            (several ? __('Deactivate these workflows before you delete them.', 'yaymatik') : messages.deleteActive)}
         </AlertDialogDescription>
       </AlertDialogHeader>
       <AlertDialogFooter>
-        <AlertDialogCancel>{__('Back', 'yay-automation')}</AlertDialogCancel>
+        <AlertDialogCancel>{__('Back', 'yaymatik')}</AlertDialogCancel>
       </AlertDialogFooter>
     </>
   );
@@ -393,13 +389,13 @@ export function DeleteStepDialog({ count = 1, ...props }: ConfirmProps & { count
         count > 1
           ? sprintf(
               /* translators: %d: number of steps */
-              _n('Delete %d step?', 'Delete %d steps?', count, 'yay-automation'),
+              _n('Delete %d step?', 'Delete %d steps?', count, 'yaymatik'),
               count,
             )
-          : __('Delete this step?', 'yay-automation')
+          : __('Delete this step?', 'yaymatik')
       }
-      description={__('This can’t be undone.', 'yay-automation')}
-      confirmLabel={__('Delete', 'yay-automation')}
+      description={__('This can’t be undone.', 'yaymatik')}
+      confirmLabel={__('Delete', 'yaymatik')}
       destructive
     />
   );

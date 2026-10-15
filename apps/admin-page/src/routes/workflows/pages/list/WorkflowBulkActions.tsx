@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import type { Workflow } from '@yay-automation/types';
+import type { Workflow } from '@yaymatik/types';
 import { __, _n, sprintf } from '@wordpress/i18n';
 
 import { AlertDialog, AlertDialogContent } from '@/components/ui/alert-dialog';
@@ -57,19 +57,14 @@ export function WorkflowBulkActions({
     setDialog(null);
     if (done) {
       /* translators: %d: number of workflows */
-      toast.success(sprintf(_n('%d workflow deactivated', '%d workflows deactivated', done, 'yay-automation'), done));
+      toast.success(sprintf(_n('%d workflow deactivated', '%d workflows deactivated', done, 'yaymatik'), done));
     }
     if (failed.length) {
       const reason = results.find((result) => result.status === 'rejected')?.reason;
       toast.error(
         sprintf(
           /* translators: %d: number of workflows */
-          _n(
-            '%d workflow couldn’t be deactivated',
-            '%d workflows couldn’t be deactivated',
-            failed.length,
-            'yay-automation',
-          ),
+          _n('%d workflow couldn’t be deactivated', '%d workflows couldn’t be deactivated', failed.length, 'yaymatik'),
           failed.length,
         ),
         { description: errorMessage(reason) },
@@ -104,7 +99,7 @@ export function WorkflowBulkActions({
       return (
         result.status === 'rejected' &&
         result.reason instanceof ApiError &&
-        result.reason.code === 'yay_automation_delete_active'
+        result.reason.code === 'yaymatik_delete_active'
       );
     });
     const failed = targets.filter((_, i) => results[i].status === 'rejected' && !refused.includes(targets[i]));
@@ -114,7 +109,7 @@ export function WorkflowBulkActions({
     setDialog(refused.length ? 'deleteBlocked' : null);
     if (done) {
       /* translators: %d: number of workflows */
-      toast.success(sprintf(_n('%d workflow deleted', '%d workflows deleted', done, 'yay-automation'), done));
+      toast.success(sprintf(_n('%d workflow deleted', '%d workflows deleted', done, 'yaymatik'), done));
     }
     if (failed.length) {
       const index = targets.indexOf(failed[0]);
@@ -122,7 +117,7 @@ export function WorkflowBulkActions({
       toast.error(
         sprintf(
           /* translators: %d: number of workflows */
-          _n('%d workflow couldn’t be deleted', '%d workflows couldn’t be deleted', failed.length, 'yay-automation'),
+          _n('%d workflow couldn’t be deleted', '%d workflows couldn’t be deleted', failed.length, 'yaymatik'),
           failed.length,
         ),
         { description: result.status === 'rejected' ? errorMessage(result.reason) : undefined },
@@ -137,14 +132,14 @@ export function WorkflowBulkActions({
         <span className="text-sm whitespace-nowrap">
           {sprintf(
             /* translators: %d: number of selected workflows */
-            __('%d selected', 'yay-automation'),
+            __('%d selected', 'yaymatik'),
             selected.length,
           )}
         </span>
         <Separator orientation="vertical" className="ml-2 h-5!" />
         {active.length > 0 && (
           <Button variant="ghost" size="sm" onClick={() => open('deactivate', active)}>
-            {__('Deactivate', 'yay-automation')}
+            {__('Deactivate', 'yaymatik')}
           </Button>
         )}
         <Button
@@ -154,7 +149,7 @@ export function WorkflowBulkActions({
           // Any selected workflow still on → explain instead of offering to delete.
           onClick={() => open(active.length ? 'deleteBlocked' : 'delete', selected)}
         >
-          {__('Delete', 'yay-automation')}
+          {__('Delete', 'yaymatik')}
         </Button>
       </BulkActionBox>
 
@@ -172,11 +167,11 @@ export function WorkflowBulkActions({
         pending={pending}
         title={sprintf(
           /* translators: %d: number of workflows */
-          _n('Delete %d workflow?', 'Delete %d workflows?', targets.length, 'yay-automation'),
+          _n('Delete %d workflow?', 'Delete %d workflows?', targets.length, 'yaymatik'),
           targets.length,
         )}
-        description={__('These workflows will be permanently deleted.', 'yay-automation')}
-        confirmLabel={__('Delete', 'yay-automation')}
+        description={__('These workflows will be permanently deleted.', 'yaymatik')}
+        confirmLabel={__('Delete', 'yaymatik')}
         destructive
       />
       <AlertDialog open={dialog === 'deleteBlocked'} onOpenChange={(isOpen) => !isOpen && setDialog(null)}>

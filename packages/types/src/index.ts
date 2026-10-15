@@ -1,6 +1,6 @@
 /**
  * Shared TypeScript types for YayCommerce WordPress plugins.
- * Import via `@yay-automation/types` in any plugin scaffold.
+ * Import via `@yaymatik/types` in any plugin scaffold.
  */
 
 /** WordPress site settings localized by the PHP backend. */

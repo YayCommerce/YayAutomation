@@ -14,7 +14,7 @@ import type { StepFormProps } from '../../core/types';
 import { comparableWith, criteriaErrors, emptyRule, type CriteriaConfig, type Rule } from './schema';
 import { DataSelect, ValueInput } from './ValueInput';
 
-const joinerText = { all: __('and', 'yay-automation'), any: __('or', 'yay-automation') };
+const joinerText = { all: __('and', 'yaymatik'), any: __('or', 'yaymatik') };
 
 /**
  * The condition as a sentence: "Take the Yes path when [all / any] of these match:", one box per rule
@@ -50,7 +50,7 @@ export function CriteriaForm({ config, onChange }: StepFormProps<CriteriaConfig>
     <div className="flex flex-col gap-3.5">
       <div className="flex flex-wrap items-center gap-1.5 text-sm/7.5">
         {/* translators: 1: the Yes path's tag, 2: "all" or "any" */}
-        {__('Take the %1$s path when %2$s of these match:', 'yay-automation')
+        {__('Take the %1$s path when %2$s of these match:', 'yaymatik')
           .split(/(%\d\$s)/)
           .map((part, i) =>
             part === '%1$s' ? (
@@ -59,7 +59,7 @@ export function CriteriaForm({ config, onChange }: StepFormProps<CriteriaConfig>
                 className="inline-flex h-5.5 items-center gap-1 rounded-full border pr-2 pl-1.5 text-[12.5px] font-semibold"
               >
                 <Check className="text-kind-action size-3 stroke-[2.5]" aria-hidden />
-                {__('Yes', 'yay-automation')}
+                {__('Yes', 'yaymatik')}
               </span>
             ) : part === '%2$s' ? (
               <Select
@@ -67,12 +67,12 @@ export function CriteriaForm({ config, onChange }: StepFormProps<CriteriaConfig>
                 value={value.match}
                 onValueChange={(match) => update({ ...value, match: match as 'all' | 'any' })}
               >
-                <SelectTrigger size="sm" className="h-7.5 px-2.5" aria-label={__('Match', 'yay-automation')}>
+                <SelectTrigger size="sm" className="h-7.5 px-2.5" aria-label={__('Match', 'yaymatik')}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">{__('all', 'yay-automation')}</SelectItem>
-                  <SelectItem value="any">{__('any', 'yay-automation')}</SelectItem>
+                  <SelectItem value="all">{__('all', 'yaymatik')}</SelectItem>
+                  <SelectItem value="any">{__('any', 'yaymatik')}</SelectItem>
                 </SelectContent>
               </Select>
             ) : (
@@ -110,12 +110,12 @@ export function CriteriaForm({ config, onChange }: StepFormProps<CriteriaConfig>
 
       <Button variant="ghost" size="sm" className="w-fit pl-1" onClick={addRule}>
         <Plus />
-        {__('Add rule', 'yay-automation')}
+        {__('Add rule', 'yaymatik')}
       </Button>
 
       <p className="text-muted-foreground flex items-center gap-1.5 text-[12.5px]">
         <Info className="size-3.25 shrink-0" aria-hidden />
-        {__('Otherwise the No path runs.', 'yay-automation')}
+        {__('Otherwise the No path runs.', 'yaymatik')}
       </p>
     </div>
   );
@@ -183,7 +183,7 @@ function RuleBox({
             <DataSelect
               id={`${id}-data`}
               field={field}
-              placeholder={__('Choose data', 'yay-automation')}
+              placeholder={__('Choose data', 'yaymatik')}
               invalid={!!error && !field}
             />
           </VariablePicker>
@@ -194,18 +194,18 @@ function RuleBox({
               variant="ghost"
               size="icon-sm"
               className="self-center"
-              aria-label={__('Remove rule', 'yay-automation')}
+              aria-label={__('Remove rule', 'yaymatik')}
               onClick={onRemove}
             >
               <Trash2 />
             </Button>
           </TooltipTrigger>
-          <TooltipContent>{__('Remove rule', 'yay-automation')}</TooltipContent>
+          <TooltipContent>{__('Remove rule', 'yaymatik')}</TooltipContent>
         </Tooltip>
 
         <Select value={rule.operator} onValueChange={(operator) => onChange({ ...rule, operator })} disabled={!field}>
-          <SelectTrigger id={`${id}-operator`} className="w-full" aria-label={__('Comparison', 'yay-automation')}>
-            <SelectValue placeholder={__('Choose a comparison', 'yay-automation')} />
+          <SelectTrigger id={`${id}-operator`} className="w-full" aria-label={__('Comparison', 'yaymatik')}>
+            <SelectValue placeholder={__('Choose a comparison', 'yaymatik')} />
           </SelectTrigger>
           <SelectContent>
             {field &&
@@ -220,7 +220,7 @@ function RuleBox({
         {needsValue(rule.operator) && (
           <div data-spotlight className={cn('min-w-0', spotlightTarget)}>
             <label htmlFor={`${id}-value`} className="sr-only">
-              {field?.label ?? __('Value', 'yay-automation')}
+              {field?.label ?? __('Value', 'yaymatik')}
             </label>
             <ValueInput id={`${id}-value`} invalid={!!error} field={field} rule={rule} onChange={onChange} />
           </div>

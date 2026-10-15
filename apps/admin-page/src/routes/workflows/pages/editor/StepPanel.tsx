@@ -1,6 +1,6 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { useStore } from '@tanstack/react-form';
-import type { StepId, WorkflowGraph } from '@yay-automation/types';
+import type { StepId, WorkflowGraph } from '@yaymatik/types';
 import { ArrowLeft, ArrowRightLeft, X } from 'lucide-react';
 import { m } from 'motion/react';
 import { __, sprintf } from '@wordpress/i18n';
@@ -142,7 +142,7 @@ export function StepPanel({
   const update = (change: (graph: WorkflowGraph) => WorkflowGraph) => form.setFieldValue('graph', change);
 
   const close = closable && (
-    <Button variant="ghost" size="icon-sm" aria-label={__('Close', 'yay-automation')} onClick={onClose}>
+    <Button variant="ghost" size="icon-sm" aria-label={__('Close', 'yaymatik')} onClick={onClose}>
       <X />
     </Button>
   );
@@ -162,7 +162,7 @@ export function StepPanel({
               variant="ghost"
               size="icon-sm"
               className="-ml-1.5"
-              aria-label={__('Back to settings', 'yay-automation')}
+              aria-label={__('Back to settings', 'yaymatik')}
               onClick={() => onSwap(false)}
             >
               <ArrowLeft />
@@ -178,9 +178,7 @@ export function StepPanel({
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>
-                {node.kind === 'trigger'
-                  ? __('Change the trigger?', 'yay-automation')
-                  : __('Change the action?', 'yay-automation')}
+                {node.kind === 'trigger' ? __('Change the trigger?', 'yaymatik') : __('Change the action?', 'yaymatik')}
               </AlertDialogTitle>
               <AlertDialogDescription>
                 {swapTo &&
@@ -188,7 +186,7 @@ export function StepPanel({
                     /* translators: 1: current step, 2: new step */
                     __(
                       '“%1$s” becomes “%2$s” and its settings are cleared. Steps that used its data will need setup.',
-                      'yay-automation',
+                      'yaymatik',
                     ),
                     stepDef?.label ?? '',
                     stepDefs[swapTo].label,
@@ -196,10 +194,8 @@ export function StepPanel({
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>{__('Cancel', 'yay-automation')}</AlertDialogCancel>
-              <AlertDialogAction onClick={() => swapTo && onPick(swapTo)}>
-                {__('Change', 'yay-automation')}
-              </AlertDialogAction>
+              <AlertDialogCancel>{__('Cancel', 'yaymatik')}</AlertDialogCancel>
+              <AlertDialogAction onClick={() => swapTo && onPick(swapTo)}>{__('Change', 'yaymatik')}</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
@@ -208,8 +204,7 @@ export function StepPanel({
   }
   if (!stepDef) return null;
 
-  const swapLabel =
-    node.kind === 'trigger' ? __('Change trigger', 'yay-automation') : __('Change action', 'yay-automation');
+  const swapLabel = node.kind === 'trigger' ? __('Change trigger', 'yaymatik') : __('Change action', 'yaymatik');
 
   return (
     <>
@@ -253,7 +248,7 @@ export function StepPanel({
             </VariableScopeContext.Provider>
           </FeedbackContext.Provider>
         ) : (
-          <p className="text-muted-foreground text-sm">{__('No settings needed.', 'yay-automation')}</p>
+          <p className="text-muted-foreground text-sm">{__('No settings needed.', 'yaymatik')}</p>
         )}
       </div>
     </>

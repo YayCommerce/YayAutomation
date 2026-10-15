@@ -1,4 +1,4 @@
-import type { TemplateCategory, WorkflowGraph } from '@yay-automation/types';
+import type { TemplateCategory, WorkflowGraph } from '@yaymatik/types';
 import { __ } from '@wordpress/i18n';
 
 import { fieldByPath } from '../../steps/core/data';
@@ -7,10 +7,10 @@ import { templatePaths } from '../../steps/core/template';
 
 /** In library chip order. */
 export const categoryLabels: Record<TemplateCategory, string> = {
-  recover_carts: __('Recover carts', 'yay-automation'),
-  post_purchase: __('Post-purchase', 'yay-automation'),
-  customer_lifecycle: __('Customer lifecycle', 'yay-automation'),
-  alerts: __('Alerts', 'yay-automation'),
+  recover_carts: __('Recover carts', 'yaymatik'),
+  post_purchase: __('Post-purchase', 'yaymatik'),
+  customer_lifecycle: __('Customer lifecycle', 'yaymatik'),
+  alerts: __('Alerts', 'yaymatik'),
 };
 
 const strings = (value: unknown): string[] =>

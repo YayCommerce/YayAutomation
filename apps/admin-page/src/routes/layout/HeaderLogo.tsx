@@ -6,7 +6,7 @@ export default function HeaderLogo() {
       <span className="bg-primary text-primary-foreground flex size-7 items-center justify-center rounded-md">
         <Workflow className="size-4" />
       </span>
-      <span className="text-base font-semibold max-md:hidden">YayAutomation</span>
+      <span className="text-base font-semibold max-md:hidden">YayMatik</span>
     </div>
   );
 }

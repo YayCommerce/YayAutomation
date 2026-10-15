@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useStore } from '@tanstack/react-form';
 import { useQueryClient } from '@tanstack/react-query';
-import type { StepId, Workflow, WorkflowIssue } from '@yay-automation/types';
+import type { StepId, Workflow, WorkflowIssue } from '@yaymatik/types';
 import { AnimatePresence } from 'motion/react';
 import { useLocation, useNavigate } from 'react-router';
 import { __ } from '@wordpress/i18n';
@@ -140,7 +140,7 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
   /** Saves pending edits first; false (and a toast) when that fails. */
   const saveFirst = async () => {
     const saved = await autosave.flush();
-    if (!saved) toast.error(__('Couldn’t save your latest changes. Try again.', 'yay-automation'));
+    if (!saved) toast.error(__('Couldn’t save your latest changes. Try again.', 'yaymatik'));
     return saved;
   };
 
@@ -176,12 +176,12 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
       try {
         await apply.mutateAsync({ id: workflow.id });
         setErrorMode(false);
-        toast.success(__('Workflow updated', 'yay-automation'));
+        toast.success(__('Workflow updated', 'yaymatik'));
       } catch (error) {
-        if (error instanceof ApiError && error.code === 'yay_automation_no_draft') {
+        if (error instanceof ApiError && error.code === 'yaymatik_no_draft') {
           // The edits ended up matching the live workflow, so the server dropped the draft. Refetch so
           // the header stops offering Update.
-          toast.info(__('There were no changes to update.', 'yay-automation'));
+          toast.info(__('There were no changes to update.', 'yaymatik'));
           void queryClient.invalidateQueries({ queryKey: workflowKeys.detail(workflow.id) });
         } else if (error instanceof ApiError && error.issues.length) {
           showRefusal(error.issues, error);
@@ -200,7 +200,7 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
       autosave.reset(saved.graph);
       resetPanel(saved.graph);
       setErrorMode(false);
-      toast.success(__('Changes discarded', 'yay-automation'));
+      toast.success(__('Changes discarded', 'yaymatik'));
     } catch (error) {
       // Nothing was discarded; the edits keep saving.
       autosave.resume();
@@ -231,14 +231,14 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
       <EditorContext.Provider value={editorState}>
         <EditorLayout
           closeTo={`/workflows/${workflow.id}`}
-          closeLabel={__('Close editor', 'yay-automation')}
+          closeLabel={__('Close editor', 'yaymatik')}
           title={
             <>
               <span className="truncate font-medium">{workflow.name}</span>
               {/* Edits not yet in the live workflow → Draft changes. Otherwise Draft (never activated),
                   Inactive, or no badge when active. */}
               {hasDraft ? (
-                <WarningBadge>{__('Draft changes', 'yay-automation')}</WarningBadge>
+                <WarningBadge>{__('Draft changes', 'yaymatik')}</WarningBadge>
               ) : (
                 !isActive && <WorkflowStatusBadge state={workflowState(workflow)} />
               )}
@@ -250,7 +250,7 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
               {hasDraft ? (
                 <>
                   <Button variant="outline" size="sm" disabled={busy} onClick={() => setConfirm('discard')}>
-                    {__('Discard changes', 'yay-automation')}
+                    {__('Discard changes', 'yaymatik')}
                   </Button>
                   {/* Only a running workflow asks first: updating an inactive one changes nothing live. */}
                   <Button
@@ -258,12 +258,12 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
                     disabled={busy || blockedByIssues}
                     onClick={() => (isActive ? setConfirm('update') : void runUpdate())}
                   >
-                    {__('Update', 'yay-automation')}
+                    {__('Update', 'yaymatik')}
                   </Button>
                 </>
               ) : !isActive ? (
                 <Button size="sm" disabled={busy || blockedByIssues} onClick={() => setConfirm('activate')}>
-                  {__('Activate', 'yay-automation')}
+                  {__('Activate', 'yaymatik')}
                 </Button>
               ) : (
                 <Button
@@ -272,7 +272,7 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
                   disabled={busy}
                   onClick={() => setConfirm('deactivate')}
                 >
-                  {__('Deactivate', 'yay-automation')}
+                  {__('Deactivate', 'yaymatik')}
                 </Button>
               )}
             </>
@@ -361,13 +361,13 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
         <AlertDialog open={leaveGuard.showDialog} onOpenChange={(open) => !open && leaveGuard.cancelLeave()}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>{__('Leave without saving?', 'yay-automation')}</AlertDialogTitle>
+              <AlertDialogTitle>{__('Leave without saving?', 'yaymatik')}</AlertDialogTitle>
               <AlertDialogDescription>
-                {__('Your latest changes couldn’t be saved and will be lost.', 'yay-automation')}
+                {__('Your latest changes couldn’t be saved and will be lost.', 'yaymatik')}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>{__('Stay', 'yay-automation')}</AlertDialogCancel>
+              <AlertDialogCancel>{__('Stay', 'yaymatik')}</AlertDialogCancel>
               {/* Not AlertDialogAction: that also fires onOpenChange(false), which would reset the blocker. */}
               <Button
                 variant="destructive"
@@ -376,7 +376,7 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
                   leaveGuard.confirmLeave();
                 }}
               >
-                {__('Leave', 'yay-automation')}
+                {__('Leave', 'yaymatik')}
               </Button>
             </AlertDialogFooter>
           </AlertDialogContent>

@@ -1,5 +1,5 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { Workflow } from '@yay-automation/types';
+import type { Workflow } from '@yaymatik/types';
 
 import {
   activateWorkflow,

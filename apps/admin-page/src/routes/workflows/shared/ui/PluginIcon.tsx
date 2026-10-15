@@ -1,4 +1,4 @@
-import type { WorkflowPlugin } from '@yay-automation/types';
+import type { WorkflowPlugin } from '@yaymatik/types';
 
 import type { PluginMeta } from '@/types/localize';
 import { cn } from '@/lib/utils';
@@ -13,7 +13,7 @@ export const plugins = Object.fromEntries(automationMeta.plugins.map((plugin) =>
 const tones: Record<WorkflowPlugin, string> = {
   woocommerce: 'bg-primary/10 text-primary',
   // Same look as the app's own icon in the header.
-  yayautomation: 'bg-primary text-primary-foreground',
+  yaymatik: 'bg-primary text-primary-foreground',
 };
 
 /** Small tinted tile with the plugin's logo. `sm`: in lists and stacks (sidebar, card footers). */

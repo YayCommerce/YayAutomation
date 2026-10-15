@@ -1,4 +1,4 @@
-import type { WorkflowNodeKind } from '@yay-automation/types';
+import type { WorkflowNodeKind } from '@yaymatik/types';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { Database, GitBranch, Play, Zap, type LucideIcon } from 'lucide-react';
 

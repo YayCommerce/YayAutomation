@@ -1,4 +1,4 @@
-import type { StepId } from '@yay-automation/types';
+import type { StepId } from '@yaymatik/types';
 import * as v from 'valibot';
 import { sprintf } from '@wordpress/i18n';
 
@@ -22,7 +22,7 @@ export const requiredFor = (stepId: StepId, message: string) =>
     v.check(
       (value) => value.trim() !== '',
       // `message` holds one %s; the cast tells sprintf's types to expect one argument.
-      sprintf(message as '%s', window.yayAutomationMeta.automation.steps[stepId]?.label ?? stepId),
+      sprintf(message as '%s', window.yayMatikMeta.automation.steps[stepId]?.label ?? stepId),
     ),
   );
 

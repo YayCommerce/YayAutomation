@@ -1,5 +1,5 @@
 import { createContext, useContext } from 'react';
-import type { WorkflowNodeKind } from '@yay-automation/types';
+import type { WorkflowNodeKind } from '@yaymatik/types';
 import type { LucideIcon } from 'lucide-react';
 
 import { availableVariables, type Variable } from '../variables';

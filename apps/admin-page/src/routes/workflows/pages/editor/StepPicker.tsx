@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import type { StepId, WorkflowPlugin } from '@yay-automation/types';
+import type { StepId, WorkflowPlugin } from '@yaymatik/types';
 import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import { __, sprintf } from '@wordpress/i18n';
 
@@ -25,15 +25,15 @@ import { StepTile } from '../../steps/core/StepTile';
 type PickableKind = 'trigger' | 'action';
 
 const categoryLabels: Record<NonNullable<Step['category']>, string> = {
-  email: __('Email', 'yay-automation'),
-  order: __('Order', 'yay-automation'),
-  coupon: __('Coupons', 'yay-automation'),
-  flow: __('Flow', 'yay-automation'),
+  email: __('Email', 'yaymatik'),
+  order: __('Order', 'yaymatik'),
+  coupon: __('Coupons', 'yaymatik'),
+  flow: __('Flow', 'yaymatik'),
 };
 
 const searchLabels: Record<PickableKind, string> = {
-  trigger: __('Search plugins and triggers', 'yay-automation'),
-  action: __('Search plugins and actions', 'yay-automation'),
+  trigger: __('Search plugins and triggers', 'yaymatik'),
+  action: __('Search plugins and actions', 'yaymatik'),
 };
 
 const matches = (text: string, query: string) => text.toLowerCase().includes(query.trim().toLowerCase());
@@ -80,7 +80,7 @@ export function StepPicker({
               : missing &&
                 /* translators: %s: data item, e.g. "Order" */
                 sprintf(
-                  __('Requires %s data. Choose a trigger or add a step above that provides it.', 'yay-automation'),
+                  __('Requires %s data. Choose a trigger or add a step above that provides it.', 'yaymatik'),
                   itemLabel(missing),
                 )
           }
@@ -133,7 +133,7 @@ export function StepPicker({
           // Typing is the reason the picker is open.
           autoFocus
           value={query}
-          placeholder={plugin ? sprintf(__('Search %s', 'yay-automation'), plugins[plugin].label) : searchLabels[kind]}
+          placeholder={plugin ? sprintf(__('Search %s', 'yaymatik'), plugins[plugin].label) : searchLabels[kind]}
           onChange={(event) => setQuery(event.target.value)}
         />
       </InputGroup>
@@ -148,7 +148,7 @@ export function StepPicker({
                   onClick={() => open(null)}
                 >
                   <ChevronLeft className="size-3.5" aria-hidden />
-                  {__('All plugins', 'yay-automation')}
+                  {__('All plugins', 'yaymatik')}
                 </button>
               </BreadcrumbLink>
             </BreadcrumbItem>
@@ -162,7 +162,7 @@ export function StepPicker({
       <div className="-mx-2 flex flex-col">
         {list}
         {Array.isArray(list) && !list.length && (
-          <p className="text-muted-foreground p-2 text-sm">{__('Nothing found.', 'yay-automation')}</p>
+          <p className="text-muted-foreground p-2 text-sm">{__('Nothing found.', 'yaymatik')}</p>
         )}
       </div>
     </div>

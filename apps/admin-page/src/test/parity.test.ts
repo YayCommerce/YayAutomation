@@ -5,7 +5,7 @@
  */
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import type { StepId, WorkflowPlugin } from '@yay-automation/types';
+import type { StepId, WorkflowPlugin } from '@yaymatik/types';
 import { icons } from 'lucide-react';
 import { describe, expect, it } from 'vitest';
 import { sprintf } from '@wordpress/i18n';
@@ -19,7 +19,7 @@ import { automationMeta, isPendingStep } from '../routes/workflows/steps/core/pe
 import { templatePaths } from '../routes/workflows/steps/core/template';
 import { isComingSoon, templates } from '../routes/workflows/templates';
 
-const php = window.yayAutomationMeta.automation;
+const php = window.yayMatikMeta.automation;
 const phpStepIds = Object.keys(php.steps) as StepId[];
 const tsStepIds = Object.keys(steps) as StepId[];
 const phpDataKeys = new Set(php.data.flatMap((item) => item.fields.map((field) => field.key)));
@@ -31,7 +31,7 @@ const dataFieldTypes = { number: true, string: true, enum: true, date: true, boo
   DataFieldType,
   true
 >;
-const workflowPlugins = { woocommerce: true, yayautomation: true } satisfies Record<WorkflowPlugin, true>;
+const workflowPlugins = { woocommerce: true, yaymatik: true } satisfies Record<WorkflowPlugin, true>;
 
 /** PHP `Type::to_string()`: a scalar name, `entity<id>` or `list<…>`. */
 const TYPE_NAME = /^(string|number|boolean|date|datetime|money|enum|object|entity<[a-z_]+>)$/;

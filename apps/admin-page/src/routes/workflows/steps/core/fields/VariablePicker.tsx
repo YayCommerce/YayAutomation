@@ -180,7 +180,7 @@ export function VariablePicker({
           className="hover:text-foreground flex cursor-pointer items-center gap-1.5"
         >
           <ChevronLeft className="size-3.5" aria-hidden />
-          {__('All data', 'yay-automation')}
+          {__('All data', 'yaymatik')}
         </button>
         <ChevronRight className="size-3.5" aria-hidden />
         <b className="text-foreground font-semibold">{opened.label}</b>
@@ -189,7 +189,7 @@ export function VariablePicker({
   } else if (scope.trigger && dataGroups.length && query.trim() === '') {
     context = (
       <>
-        {__('Data from the trigger', 'yay-automation')}
+        {__('Data from the trigger', 'yaymatik')}
         <StepTile kind="trigger" icon={scope.trigger.icon} size="sm" />
         <b className="text-foreground font-medium">{scope.trigger.label}</b>
       </>
@@ -207,7 +207,7 @@ export function VariablePicker({
         <VariableRow key={variable.key} variable={variable} comingSoonStep={scope.comingSoonStep} onPick={pick} />
       ))
     ) : (
-      <Empty>{__('No variable found.', 'yay-automation')}</Empty>
+      <Empty>{__('No variable found.', 'yaymatik')}</Empty>
     );
   } else if (group) {
     list = group.sections.map((section) => (
@@ -227,14 +227,14 @@ export function VariablePicker({
         {dataGroups.map(row)}
         {stepGroups.length > 0 && (
           <>
-            <SectionHeading>{__('From earlier steps', 'yay-automation')}</SectionHeading>
+            <SectionHeading>{__('From earlier steps', 'yaymatik')}</SectionHeading>
             {stepGroups.map(row)}
           </>
         )}
       </>
     );
   } else {
-    list = <Empty>{__('No data to insert here yet.', 'yay-automation')}</Empty>;
+    list = <Empty>{__('No data to insert here yet.', 'yaymatik')}</Empty>;
   }
 
   return (
@@ -254,9 +254,9 @@ export function VariablePicker({
           }}
         >
           <div className="py-3 pr-12 pl-4">
-            <DialogTitle className="text-[15px] font-semibold">{__('Insert variable', 'yay-automation')}</DialogTitle>
+            <DialogTitle className="text-[15px] font-semibold">{__('Insert variable', 'yaymatik')}</DialogTitle>
             <DialogDescription className="sr-only">
-              {__('Pick data from the workflow to use here.', 'yay-automation')}
+              {__('Pick data from the workflow to use here.', 'yaymatik')}
             </DialogDescription>
           </div>
           <div className="px-3 pb-2.5">
@@ -270,8 +270,8 @@ export function VariablePicker({
                 placeholder={
                   opened
                     ? /* translators: %s: a data item or step, e.g. "Order" */
-                      sprintf(__('Search in %s', 'yay-automation'), opened.label)
-                    : __('Search all data', 'yay-automation')
+                      sprintf(__('Search in %s', 'yaymatik'), opened.label)
+                    : __('Search all data', 'yaymatik')
                 }
                 onChange={(event) => setQuery(event.target.value)}
               />
@@ -280,7 +280,7 @@ export function VariablePicker({
               <p className="bg-muted text-muted-foreground mt-2 w-fit rounded-md px-2 py-0.5 text-xs">
                 {
                   /* translators: %s: variable types, e.g. "Number" */
-                  sprintf(__('Types: %s', 'yay-automation'), types)
+                  sprintf(__('Types: %s', 'yaymatik'), types)
                 }
               </p>
             )}

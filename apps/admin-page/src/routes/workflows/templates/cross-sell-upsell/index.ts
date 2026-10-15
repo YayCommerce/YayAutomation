@@ -1,4 +1,4 @@
-import type { StepId, WorkflowEdge, WorkflowGraph, WorkflowNode } from '@yay-automation/types';
+import type { StepId, WorkflowEdge, WorkflowGraph, WorkflowNode } from '@yaymatik/types';
 import { __ } from '@wordpress/i18n';
 
 import { BRANCH_OFFSET, ROW_GAP } from '../../model/graph';
@@ -75,11 +75,11 @@ function graph({
 
 const hasCrossSells = rule('order.has_cross_sells', 'is_true');
 
-const greeting = __('Hi {{ customer.first_name }},', 'yay-automation');
-const signOff = __('See you soon,\n{{ site.name }}', 'yay-automation');
+const greeting = __('Hi {{ customer.first_name }},', 'yaymatik');
+const signOff = __('See you soon,\n{{ site.name }}', 'yaymatik');
 const couponLines = __(
   'Use this coupon for {{ coupon.amount }} off your next order:\n\nCoupon code: {{ coupon.code }}\nExpires: {{ coupon.expiry_date }}',
-  'yay-automation',
+  'yaymatik',
 );
 
 const email = (subject: string, heading: string, lines: string[]): SendEmailConfig => ({
@@ -90,25 +90,21 @@ const email = (subject: string, heading: string, lines: string[]): SendEmailConf
 });
 
 const crossSellEmail = (extra: string[] = []) =>
-  email(
-    __('Picked for you, {{ customer.first_name }}', 'yay-automation'),
-    __('You might also like', 'yay-automation'),
-    [
-      __('Thanks again for your order {{ order.number }}. These go well with what you bought:', 'yay-automation'),
-      '{{ order.cross_sell_products }}',
-      ...extra,
-    ],
-  );
+  email(__('Picked for you, {{ customer.first_name }}', 'yaymatik'), __('You might also like', 'yaymatik'), [
+    __('Thanks again for your order {{ order.number }}. These go well with what you bought:', 'yaymatik'),
+    '{{ order.cross_sell_products }}',
+    ...extra,
+  ]);
 
 const shared = { category: 'post_purchase', popularity: 0, createdAt: '2026-10-07' } as const;
 
 export const crossSellFirstTime = defineTemplate({
   ...shared,
   id: 'cross-sell-first-time-buyers',
-  name: __('Cross-sell to first-time buyers', 'yay-automation'),
+  name: __('Cross-sell to first-time buyers', 'yaymatik'),
   description: __(
     '7 days after a first order is completed, suggest products that go well with what the customer bought.',
-    'yay-automation',
+    'yaymatik',
   ),
   graph: graph({
     audience: [rule('customer.paid_order_count', 'equal', '1')],
@@ -121,10 +117,10 @@ export const crossSellFirstTime = defineTemplate({
 export const crossSellRepeat = defineTemplate({
   ...shared,
   id: 'cross-sell-repeat-buyers',
-  name: __('Cross-sell to repeat buyers', 'yay-automation'),
+  name: __('Cross-sell to repeat buyers', 'yaymatik'),
   description: __(
     '7 days after a returning customer’s order is completed, suggest products that go well with what they bought.',
-    'yay-automation',
+    'yaymatik',
   ),
   graph: graph({
     audience: [rule('customer.paid_order_count', 'greater_than', '1')],
@@ -137,10 +133,10 @@ export const crossSellRepeat = defineTemplate({
 export const crossSellCoupon = defineTemplate({
   ...shared,
   id: 'cross-sell-coupon',
-  name: __('Cross-sell with a coupon', 'yay-automation'),
+  name: __('Cross-sell with a coupon', 'yaymatik'),
   description: __(
     '14 days after an order is completed, suggest products that go well with it, with a 10% off coupon valid for 14 days.',
-    'yay-automation',
+    'yaymatik',
   ),
   graph: graph({
     suggestions: hasCrossSells,
@@ -153,22 +149,22 @@ export const crossSellCoupon = defineTemplate({
 export const upsellAfter30Days = defineTemplate({
   ...shared,
   id: 'upsell-after-30-days',
-  name: __('Upsell after 30 days', 'yay-automation'),
+  name: __('Upsell after 30 days', 'yaymatik'),
   description: __(
     '30 days after an order is completed, suggest upgrades to what the customer bought, with a 15% off coupon valid for 14 days.',
-    'yay-automation',
+    'yaymatik',
   ),
   graph: graph({
     suggestions: rule('order.has_upsells', 'is_true'),
     days: 30,
     coupon: { amount: '15', expiry_days: '14' },
     email: email(
-      __('Ready for an upgrade, {{ customer.first_name }}?', 'yay-automation'),
-      __('Upgrade what you love', 'yay-automation'),
+      __('Ready for an upgrade, {{ customer.first_name }}?', 'yaymatik'),
+      __('Upgrade what you love', 'yaymatik'),
       [
         __(
           'It’s been a month since your order {{ order.number }}. Here are a few upgrades you might like:',
-          'yay-automation',
+          'yaymatik',
         ),
         '{{ order.upsell_products }}',
         couponLines,

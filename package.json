@@ -1,8 +1,8 @@
 {
-  "name": "yay-automation",
+  "name": "yaymatik",
   "private": true,
   "scripts": {
-    "dev": "([ -f vendor/autoload.php ] || ./run.sh setup) && pnpm -F @yay-automation/admin dev",
+    "dev": "([ -f vendor/autoload.php ] || ./run.sh setup) && pnpm -F @yaymatik/admin dev",
     "build": "pnpm -r build",
     "lint": "pnpm -r lint",
     "lint:fix": "pnpm -r lint:fix",
@@ -11,7 +11,7 @@
     "test": "pnpm -r test",
     "test:php": "dev/tools/phpunit/vendor/bin/phpunit",
     "format": "pnpm -r format",
-    "analyze": "pnpm -F @yay-automation/admin analyze"
+    "analyze": "pnpm -F @yaymatik/admin analyze"
   },
   "engines": {
     "node": ">=18",
