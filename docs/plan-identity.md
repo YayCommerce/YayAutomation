@@ -1,6 +1,6 @@
 # Plan: Editor Identity
 
-Status: design approved (mock v2). Phase 1 (frontend restyle) merged. Phase 2 (forms, with F1.9–F1.12) done on `jack/feature/step-forms`, merge pending. See [Phases](#phases).
+Status: design approved (mock v2). Phase 1 (frontend restyle) and phase 2 (forms, with F1.9–F1.12, PR #15) merged. See [Phases](#phases).
 
 ## Goal
 
@@ -116,8 +116,8 @@ Full wording list: see the mock's Wording section. The main ones:
 
 Decided 2026-10-08.
 
-1. **Phase 1, after the F1 backend: frontend restyle.** It reads step icons and summaries from the new step catalog. Canvas and cards, list (Runs and Last run show "—" until runs exist, as in [ROADMAP-v1.0](ROADMAP-v1.0.md)), create dialog, Template Library, template preview, overview, dialogs, wording in TS. No PHP logic change: PHP step wording (labels, descriptions, short card summaries) only. ✅ built on `jack/feature/identity-phase-1`.
-2. **Phase 2, with F1.9–F1.12:** step forms, condition form and Insert variable. F1 replaces today's forms with the generic `StepForm` and changes the data layer to scopes and step outputs, so doing them earlier means doing them twice. ⏳ built on `jack/feature/step-forms`: forms per mock "Step form", condition written as a sentence ("Take the Yes path when all / any of these match", "Add rule", "Otherwise the No path runs"), "Insert variable", "Change action" in the panel header.
+1. **Phase 1, after the F1 backend: frontend restyle.** It reads step icons and summaries from the new step catalog. Canvas and cards, list (Runs and Last run show "—" until runs exist, as in [ROADMAP-v1.0](ROADMAP-v1.0.md)), create dialog, Template Library, template preview, overview, dialogs, wording in TS. No PHP logic change: PHP step wording (labels, descriptions, short card summaries) only. ✅ merged (PR B).
+2. **Phase 2, with F1.9–F1.12:** step forms, condition form and Insert variable. F1 replaces today's forms with the generic `StepForm` and changes the data layer to scopes and step outputs, so doing them earlier means doing them twice. ✅ merged (PR #15): forms per mock "Step form", condition written as a sentence ("Take the Yes path when all / any of these match", "Add rule", "Otherwise the No path runs"), "Insert variable", "Change action" in the panel header.
 3. **After M2:** real data in Last run and the overview summary row.
 
 ### Backend notes for F1

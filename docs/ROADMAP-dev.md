@@ -21,7 +21,7 @@ Changes from the ROADMAP-v1.0 order:
 | # | Phase | Size | Risk | Depends on | Status |
 |---|---|---|---|---|---|
 | F0 | Move and rename | S | 1 | — | ✅ Done |
-| F1 | Workflow Core foundation | L | 3 | F0 | In progress |
+| F1 | Workflow Core foundation | L | 3 | F0 | ✅ Done |
 | M1 | Customer emails + coupons | L | 3 | F1 | — |
 | M2 | Wait + run history | L | 3 | F1 | — |
 | F2 | Workflows table | M | 3 | F1 | — |
@@ -59,7 +59,7 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 
 ## F1 — Workflow Core foundation · L (~3 weeks)
 
-**Status:** In progress — backend (PR A #13) and identity phase 1 (PR B) merged; F1.9–F1.12 and identity phase 2 done on `jack/feature/step-forms` (PR C), merge pending.
+**Status:** ✅ Done — backend (PR A #13), identity phase 1 (PR B) and F1.9–F1.12 with identity phase 2 (PR C #15, merge `4ec1468`) merged into `develop`.
 
 **Backend**
 - ✅ **F1.0 PHPUnit** *([plan-infra](plan-infra.md))* — plain unit tests, no WordPress loaded (`dev/tools/phpunit`); CI step. First tests: template parser, Validator v2, Scope.
@@ -91,17 +91,17 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 - ✅ **F1.8 Runs REST** — list and detail endpoints (the UI comes in M2). Workflow responses also return `activatedAt`, for "Active since …" on the overview *([plan-identity](plan-identity.md))*.
 
 **UI**
-- ⏳ **F1.9 Step forms** *(§5)*
+- ✅ **F1.9 Step forms** *(§5)*
   - Generic `StepForm` with widgets: text, textarea, emails, select, multiselect, toggle, number, notice.
   - Read-only lines (e.g. "From" in Send internal email) use `notice`, not a new widget *([plan-identity](plan-identity.md))*.
   - valibot rules built from the catalog.
   - `defineStep( { id, Form } )` for core; internal `registerStepPanel`.
-- ⏳ **F1.10 Port the 7 steps**
+- ✅ **F1.10 Port the 7 steps**
   - The 6 built steps' simple forms move to the generic form; their `schema.ts` / `Form.tsx` are deleted. The 3 coming-soon steps (Send email, Generate coupon, Wait) keep their custom forms on the shared widgets until M1 / M2.
   - Condition keeps its custom form, using the `rules` field type, written as a sentence *([plan-identity](plan-identity.md))*.
   - "Change action" in the panel header swaps an action's step: same node and lines, settings reset (asks first when they were edited).
-- ⏳ **F1.11 Template checks in TS** *(§6)* — parser only: errors and paths, same messages as PHP; errors show under variable fields.
-- ⏳ **F1.12 "Insert variable"** — lists the step's available variables, incl. step outputs and dotted paths.
+- ✅ **F1.11 Template checks in TS** *(§6)* — parser only: errors and paths, same messages as PHP; errors show under variable fields.
+- ✅ **F1.12 "Insert variable"** — lists the step's available variables, incl. step outputs and dotted paths.
 
 **Done when:** both triggers and all 4 actions behave as today when they succeed, and a failing step stops the run (design §3); every run and step is stored; `pnpm build`, `pnpm lint:php`, `pnpm test` and PHPUnit pass in CI.
 
