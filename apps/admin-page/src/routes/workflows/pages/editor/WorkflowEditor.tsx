@@ -85,7 +85,14 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
   );
   const blockedByIssues = errorMode && issues.length > 0;
 
-  const { panel, setPanel, showPanel, locked: panelLocked } = useStepPanel(form, markVisited);
+  const {
+    panel,
+    setPanel,
+    showPanel,
+    locked: panelLocked,
+    formVersion,
+    reset: resetPanel,
+  } = useStepPanel(form, markVisited);
   const openNodeId = panel?.nodeId ?? null;
 
   const editorState = useMemo<EditorState>(
@@ -185,6 +192,7 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
     try {
       const saved = await discard.mutateAsync({ id: workflow.id });
       autosave.reset(saved.graph);
+      resetPanel(saved.graph);
       setErrorMode(false);
       toast.success(__('Changes discarded', 'yay-automation'));
     } catch (error) {
@@ -274,7 +282,8 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
               {panel && (
                 <StepPanelFrame key="panel" width={panelWidth}>
                   <StepPanel
-                    key={panel.nodeId}
+                    // A reset (discard) starts the panel and its form over: forms keep their own values.
+                    key={`${panel.nodeId}:${formVersion}`}
                     nodeId={panel.nodeId}
                     picking={panel.picking}
                     feedback={feedbackFor(panel.nodeId)}
