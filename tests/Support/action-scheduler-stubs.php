@@ -3,7 +3,7 @@
  * Action Scheduler functions over `$GLOBALS['yay_test_as']` (list of `hook`, `args`, `group`, `at`,
  * `status`). Loaded only by the tests that need it.
  *
- * @package YayAutomation
+ * @package YayMatik
  */
 
 // phpcs:disable Universal.Files.SeparateFunctionsFromOO.Mixed

@@ -1,7 +1,7 @@
 #!/bin/bash
 # Write the admin app's test fixture: window.yayAutomationMeta from the local site (wp-cli).
 cd "$(dirname "$0")/../.." || exit 1
-[[ -f yay-automation.php ]] || { echo "Not the plugin root: $(pwd)"; exit 1; }
+[[ -f yaymatik.php ]] || { echo "Not the plugin root: $(pwd)"; exit 1; }
 command -v wp >/dev/null || { echo "Missing: wp-cli"; exit 1; }
 
 out=apps/admin-page/src/test/fixtures/meta.json

@@ -1,17 +1,17 @@
 <?php
-namespace YayAutomation\Workflow\Runtime;
+namespace YayMatik\Workflow\Runtime;
 
-use YayAutomation\Utils\Logger;
-use YayAutomation\Workflow\Data\DataRegistry;
-use YayAutomation\Workflow\Data\GoneEntity;
-use YayAutomation\Workflow\Data\RefResolver;
-use YayAutomation\Workflow\Data\Scope;
-use YayAutomation\Workflow\Steps\Core\Condition;
-use YayAutomation\Workflow\Steps\Core\Step;
-use YayAutomation\Workflow\Steps\Core\StepRegistry;
-use YayAutomation\Workflow\Steps\Core\StepResult;
-use YayAutomation\Workflow\Storage\RunStepStore;
-use YayAutomation\Workflow\Storage\RunStore;
+use YayMatik\Utils\Logger;
+use YayMatik\Workflow\Data\DataRegistry;
+use YayMatik\Workflow\Data\GoneEntity;
+use YayMatik\Workflow\Data\RefResolver;
+use YayMatik\Workflow\Data\Scope;
+use YayMatik\Workflow\Steps\Core\Condition;
+use YayMatik\Workflow\Steps\Core\Step;
+use YayMatik\Workflow\Steps\Core\StepRegistry;
+use YayMatik\Workflow\Steps\Core\StepResult;
+use YayMatik\Workflow\Storage\RunStepStore;
+use YayMatik\Workflow\Storage\RunStore;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -107,7 +107,7 @@ final class Executor {
         $id    = (int) $run['id'];
         $graph = $this->graphs->graph( (int) $run['version_id'] );
         if ( ! $graph || ! is_array( $graph['nodes'] ?? null ) ) {
-            return $this->fail( $id, null, null, __( 'The workflow version this run started on no longer exists.', 'yay-automation' ) );
+            return $this->fail( $id, null, null, __( 'The workflow version this run started on no longer exists.', 'yaymatik' ) );
         }
         $nodes = array_column( $graph['nodes'], null, 'id' );
         $edges = is_array( $graph['edges'] ?? null ) ? $graph['edges'] : [];
@@ -191,14 +191,14 @@ final class Executor {
         if ( $row ) {
             switch ( $row['status'] ) {
                 case RunStepStore::STATUS_RUNNING:
-                    $error = __( 'Interrupted.', 'yay-automation' );
+                    $error = __( 'Interrupted.', 'yaymatik' );
                     $this->runs->finish_step( (int) $row['id'], RunStepStore::STATUS_FAILED, [], $error );
                     return self::result( RunStepStore::STATUS_FAILED, [], $error );
                 case RunStepStore::STATUS_WAITING:
                     $until = empty( $run['wait_until'] ) ? 0 : (int) strtotime( $run['wait_until'] . ' UTC' );
                     if ( ! $until ) {
                         // The run was never saved as waiting (crash right after the step): its time is unknown.
-                        $error = __( 'Interrupted.', 'yay-automation' );
+                        $error = __( 'Interrupted.', 'yaymatik' );
                         $this->runs->finish_step( (int) $row['id'], RunStepStore::STATUS_FAILED, [], $error );
                         return self::result( RunStepStore::STATUS_FAILED, [], $error );
                     }
@@ -226,7 +226,7 @@ final class Executor {
         }
         $row_id = $this->runs->start_step( $run_id, $step_id, $config );
         if ( ! $row_id ) {
-            throw new \RuntimeException( __( 'Could not save the step result.', 'yay-automation' ) );
+            throw new \RuntimeException( __( 'Could not save the step result.', 'yaymatik' ) );
         }
 
         $result = $broken ?? self::run_step( $node, $step, $config, $scope );
@@ -251,13 +251,13 @@ final class Executor {
     private static function run_step( ?array $node, ?Step $step, array $config, Scope $scope ): StepResult {
         if ( ! $step ) {
             /* translators: %s: step type id */
-            return StepResult::failed( sprintf( __( 'Step type "%s" is not available.', 'yay-automation' ), (string) ( $node['data']['block'] ?? '' ) ) );
+            return StepResult::failed( sprintf( __( 'Step type "%s" is not available.', 'yaymatik' ), (string) ( $node['data']['block'] ?? '' ) ) );
         }
         try {
             $valid = $step->validate( $config );
             if ( true !== $valid ) {
                 /* translators: %s: what is wrong with the step's settings */
-                return StepResult::failed( sprintf( __( 'Invalid settings: %s', 'yay-automation' ), is_wp_error( $valid ) ? $valid->get_error_message() : '' ) );
+                return StepResult::failed( sprintf( __( 'Invalid settings: %s', 'yaymatik' ), is_wp_error( $valid ) ? $valid->get_error_message() : '' ) );
             }
             return $step->run( $scope, $config );
         } catch ( GoneEntity $gone ) {
@@ -275,7 +275,7 @@ final class Executor {
     public static function gone_message( GoneEntity $gone ): string {
         $entity = DataRegistry::entities()[ $gone->ref()->type() ] ?? null;
         /* translators: %s: what was deleted, e.g. "Order" */
-        return sprintf( __( '%s no longer exists.', 'yay-automation' ), $entity ? $entity->label() : $gone->ref()->type() );
+        return sprintf( __( '%s no longer exists.', 'yaymatik' ), $entity ? $entity->label() : $gone->ref()->type() );
     }
 
     /**
@@ -290,7 +290,7 @@ final class Executor {
     private function wait( int $id, array $queue, Scope $scope, array $outcome ): string {
         $until = (int) $outcome['until'];
         if ( ! $this->queue->available() ) {
-            $error = __( 'This run can\'t wait: Action Scheduler is not available.', 'yay-automation' );
+            $error = __( 'This run can\'t wait: Action Scheduler is not available.', 'yaymatik' );
             $this->runs->finish_step( (int) $outcome['row'], RunStepStore::STATUS_FAILED, [], $error );
             return $this->fail( $id, $queue, $scope, $error );
         }

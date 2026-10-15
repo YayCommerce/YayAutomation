@@ -1,14 +1,14 @@
 <?php
-namespace YayAutomation\Workflow\Steps\Actions;
+namespace YayMatik\Workflow\Steps\Actions;
 
-use YayAutomation\Workflow\Data\OrderData;
-use YayAutomation\Workflow\Data\Scope;
-use YayAutomation\Workflow\Data\Type;
-use YayAutomation\Workflow\Extend\Modules;
-use YayAutomation\Workflow\Extend\Plugins;
-use YayAutomation\Workflow\Steps\Core\Action;
-use YayAutomation\Workflow\Steps\Core\Field;
-use YayAutomation\Workflow\Steps\Core\StepResult;
+use YayMatik\Workflow\Data\OrderData;
+use YayMatik\Workflow\Data\Scope;
+use YayMatik\Workflow\Data\Type;
+use YayMatik\Workflow\Extend\Modules;
+use YayMatik\Workflow\Extend\Plugins;
+use YayMatik\Workflow\Steps\Core\Action;
+use YayMatik\Workflow\Steps\Core\Field;
+use YayMatik\Workflow\Steps\Core\StepResult;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -22,11 +22,11 @@ class UpdateOrderMeta extends Action {
     }
 
     public function label(): string {
-        return __( 'Update order custom field', 'yay-automation' );
+        return __( 'Update order custom field', 'yaymatik' );
     }
 
     public function description(): string {
-        return __( 'Set a custom field (meta) on the order.', 'yay-automation' );
+        return __( 'Set a custom field (meta) on the order.', 'yaymatik' );
     }
 
     public function plugin(): string {
@@ -51,23 +51,23 @@ class UpdateOrderMeta extends Action {
 
     public function fields(): array {
         return [
-            Field::text( 'key', __( 'Field name', 'yay-automation' ) )
+            Field::text( 'key', __( 'Field name', 'yaymatik' ) )
                 /* translators: %s: step name, e.g. "Update order custom field" */
-                ->required( __( '%s needs a field name.', 'yay-automation' ) )
-                ->help( __( 'The meta key, e.g. _vip_order.', 'yay-automation' ) ),
-            Field::text( 'value', __( 'Value', 'yay-automation' ) )->variables(),
+                ->required( __( '%s needs a field name.', 'yaymatik' ) )
+                ->help( __( 'The meta key, e.g. _vip_order.', 'yaymatik' ) ),
+            Field::text( 'value', __( 'Value', 'yaymatik' ) )->variables(),
         ];
     }
 
     public function summary(): string {
         /* translators: %key%: custom field name, %value%: its value; keep the placeholders as they are. */
-        return __( 'Set %key% to %value%', 'yay-automation' );
+        return __( 'Set %key% to %value%', 'yaymatik' );
     }
 
     public function outputs(): array {
         return [
             'key' => [
-                'label' => __( 'Field name', 'yay-automation' ),
+                'label' => __( 'Field name', 'yaymatik' ),
                 'type'  => Type::string(),
             ],
         ];
@@ -76,7 +76,7 @@ class UpdateOrderMeta extends Action {
     public function run( Scope $scope, array $config ): StepResult {
         $order = $scope->entity( OrderData::ID );
         if ( ! $order ) {
-            return StepResult::skipped( __( 'There is no order to update.', 'yay-automation' ) );
+            return StepResult::skipped( __( 'There is no order to update.', 'yaymatik' ) );
         }
         $order->update_meta_data( $config['key'], self::render( $config['value'], $scope ) );
         $order->save();

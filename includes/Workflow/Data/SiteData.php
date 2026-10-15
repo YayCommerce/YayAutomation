@@ -1,5 +1,5 @@
 <?php
-namespace YayAutomation\Workflow\Data;
+namespace YayMatik\Workflow\Data;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -13,11 +13,11 @@ final class SiteData extends DataItem {
     }
 
     public function label(): string {
-        return __( 'Site', 'yay-automation' );
+        return __( 'Site', 'yaymatik' );
     }
 
     public function description(): string {
-        return __( 'Your WordPress site: its name and address. Available in every workflow.', 'yay-automation' );
+        return __( 'Your WordPress site: its name and address. Available in every workflow.', 'yaymatik' );
     }
 
     public function icon(): string {
@@ -27,12 +27,12 @@ final class SiteData extends DataItem {
     protected function define(): array {
         return [
             'name' => [
-                'label' => __( 'Site name', 'yay-automation' ),
+                'label' => __( 'Site name', 'yaymatik' ),
                 'type'  => self::TYPE_STRING,
                 'value' => fn() => wp_specialchars_decode( get_bloginfo( 'name' ), ENT_QUOTES ),
             ],
             'url'  => [
-                'label'       => __( 'Site URL', 'yay-automation' ),
+                'label'       => __( 'Site URL', 'yaymatik' ),
                 'type'        => self::TYPE_STRING,
                 'value'       => fn() => home_url(),
                 'conditional' => false,

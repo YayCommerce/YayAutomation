@@ -1,15 +1,15 @@
 <?php
-namespace YayAutomation\Tests\Unit\Steps;
+namespace YayMatik\Tests\Unit\Steps;
 
 use PHPUnit\Framework\TestCase;
-use YayAutomation\Workflow\Steps\Actions\AddOrderNote;
-use YayAutomation\Workflow\Steps\Actions\ChangeOrderStatus;
-use YayAutomation\Workflow\Steps\Actions\SendInternalEmail;
-use YayAutomation\Workflow\Steps\Actions\UpdateOrderMeta;
-use YayAutomation\Workflow\Steps\Conditions\Criteria;
-use YayAutomation\Workflow\Steps\Core\Step;
-use YayAutomation\Workflow\Steps\Triggers\OrderCreated;
-use YayAutomation\Workflow\Steps\Triggers\OrderStatusChanged;
+use YayMatik\Workflow\Steps\Actions\AddOrderNote;
+use YayMatik\Workflow\Steps\Actions\ChangeOrderStatus;
+use YayMatik\Workflow\Steps\Actions\SendInternalEmail;
+use YayMatik\Workflow\Steps\Actions\UpdateOrderMeta;
+use YayMatik\Workflow\Steps\Conditions\Criteria;
+use YayMatik\Workflow\Steps\Core\Step;
+use YayMatik\Workflow\Steps\Triggers\OrderCreated;
+use YayMatik\Workflow\Steps\Triggers\OrderStatusChanged;
 
 require_once dirname( __DIR__, 2 ) . '/Support/woocommerce-stubs.php';
 
@@ -316,7 +316,7 @@ final class StepConfigsTest extends TestCase {
             return;
         }
         $this->assertInstanceOf( \WP_Error::class, $result );
-        $this->assertSame( 'yay_automation_invalid_config', $result->get_error_code() );
+        $this->assertSame( 'yaymatik_invalid_config', $result->get_error_code() );
         $this->assertSame( $expected, $result->get_error_message() );
     }
 }

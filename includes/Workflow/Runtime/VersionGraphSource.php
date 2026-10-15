@@ -1,7 +1,7 @@
 <?php
-namespace YayAutomation\Workflow\Runtime;
+namespace YayMatik\Workflow\Runtime;
 
-use YayAutomation\Workflow\Storage\VersionStore;
+use YayMatik\Workflow\Storage\VersionStore;
 
 defined( 'ABSPATH' ) || exit;
 

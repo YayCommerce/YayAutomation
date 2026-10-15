@@ -1,5 +1,5 @@
 <?php
-namespace YayAutomation\Workflow\Steps\Triggers;
+namespace YayMatik\Workflow\Steps\Triggers;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -12,18 +12,18 @@ class OrderCreated extends OrderTrigger {
     public const ID = 'order_created';
 
     /** Set on the order once its workflows are queued, so later hooks for the same order are ignored. */
-    private const META_FIRED = '_yay_automation_order_created';
+    private const META_FIRED = '_yaymatik_order_created';
 
     public function id(): string {
         return self::ID;
     }
 
     public function label(): string {
-        return __( 'Order created', 'yay-automation' );
+        return __( 'Order created', 'yaymatik' );
     }
 
     public function description(): string {
-        return __( 'Starts when a new order is created.', 'yay-automation' );
+        return __( 'Starts when a new order is created.', 'yaymatik' );
     }
 
     public function icon(): string {
@@ -35,7 +35,7 @@ class OrderCreated extends OrderTrigger {
     }
 
     public function summary(): string {
-        return __( 'When a new order is created', 'yay-automation' );
+        return __( 'When a new order is created', 'yaymatik' );
     }
 
     public function listen( callable $emit ): void {

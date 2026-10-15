@@ -1,24 +1,24 @@
 <?php
-namespace YayAutomation\Engine\API;
+namespace YayMatik\Engine\API;
 
-use YayAutomation\Engine\BEPages\AdminPage;
-use YayAutomation\Utils\SingletonTrait;
-use YayAutomation\Workflow\Definition\GraphSchema;
-use YayAutomation\Workflow\Definition\Messages;
-use YayAutomation\Workflow\Definition\Validator;
-use YayAutomation\Workflow\Runtime\RunPresenter;
-use YayAutomation\Workflow\Storage\RunStepStore;
-use YayAutomation\Workflow\Storage\RunStore;
-use YayAutomation\Workflow\Storage\WorkflowRepository;
+use YayMatik\Engine\BEPages\AdminPage;
+use YayMatik\Utils\SingletonTrait;
+use YayMatik\Workflow\Definition\GraphSchema;
+use YayMatik\Workflow\Definition\Messages;
+use YayMatik\Workflow\Definition\Validator;
+use YayMatik\Workflow\Runtime\RunPresenter;
+use YayMatik\Workflow\Storage\RunStepStore;
+use YayMatik\Workflow\Storage\RunStore;
+use YayMatik\Workflow\Storage\WorkflowRepository;
 
 defined( 'ABSPATH' ) || exit;
 
-/** REST routes under yay-automation/v1 */
+/** REST routes under yaymatik/v1 */
 class RestAPI {
 
     use SingletonTrait;
 
-    public const REST_NAMESPACE = 'yay-automation/v1';
+    public const REST_NAMESPACE = 'yaymatik/v1';
 
     protected function __construct() {
         add_action( 'rest_api_init', [ $this, 'register_routes' ] );
@@ -142,7 +142,7 @@ class RestAPI {
         return rest_ensure_response(
             [
                 'ok'      => true,
-                'version' => YAY_AUTOMATION_VERSION,
+                'version' => YAYMATIK_VERSION,
             ]
         );
     }
@@ -291,7 +291,7 @@ class RestAPI {
                 (int) $request['id'],
                 function ( int $id, array $current ) {
                     if ( null === $current['draft'] ) {
-                        return new \WP_Error( 'yay_automation_no_draft', __( 'There are no draft changes to update.', 'yay-automation' ), [ 'status' => 409 ] );
+                        return new \WP_Error( 'yaymatik_no_draft', __( 'There are no draft changes to update.', 'yaymatik' ), [ 'status' => 409 ] );
                     }
                     $errors = Validator::errors(
                         [
@@ -375,7 +375,7 @@ class RestAPI {
     public function get_run( \WP_REST_Request $request ) {
         $run = RunStore::find( (int) $request['id'] );
         if ( ! $run ) {
-            return new \WP_Error( 'yay_automation_not_found', __( 'Run not found.', 'yay-automation' ), [ 'status' => 404 ] );
+            return new \WP_Error( 'yaymatik_not_found', __( 'Run not found.', 'yaymatik' ), [ 'status' => 404 ] );
         }
         return rest_ensure_response( RunPresenter::detail( $run, RunStepStore::for_run( (int) $run['id'] ) ) );
     }
@@ -392,10 +392,10 @@ class RestAPI {
      */
     private function with_workflow( int $id, callable $change ) {
         global $wpdb;
-        $lock = 'yay_automation_workflow_' . $id;
+        $lock = 'yaymatik_workflow_' . $id;
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         if ( '1' !== (string) $wpdb->get_var( $wpdb->prepare( 'SELECT GET_LOCK( %s, 10 )', $lock ) ) ) {
-            return new \WP_Error( 'yay_automation_busy', __( 'This workflow is being saved. Try again.', 'yay-automation' ), [ 'status' => 409 ] );
+            return new \WP_Error( 'yaymatik_busy', __( 'This workflow is being saved. Try again.', 'yaymatik' ), [ 'status' => 409 ] );
         }
         try {
             // Read inside the lock, so the change sees what the previous request wrote.
@@ -426,14 +426,14 @@ class RestAPI {
             function ( int $id, array $current ) {
                 if ( 'active' === $current['status'] ) {
                     return new \WP_Error(
-                        'yay_automation_delete_active',
+                        'yaymatik_delete_active',
                         Messages::get( 'deleteActive' ),
                         [ 'status' => 409 ]
                     );
                 }
                 // It exists (checked under the lock), so a false here is a failed delete, not a 404.
                 if ( ! WorkflowRepository::delete( $id ) ) {
-                    return new \WP_Error( 'yay_automation_delete_failed', __( 'Couldn’t delete the workflow. Try again.', 'yay-automation' ), [ 'status' => 500 ] );
+                    return new \WP_Error( 'yaymatik_delete_failed', __( 'Couldn’t delete the workflow. Try again.', 'yaymatik' ), [ 'status' => 500 ] );
                 }
                 return rest_ensure_response( [ 'deleted' => true ] );
             }
@@ -452,6 +452,6 @@ class RestAPI {
     }
 
     private function not_found(): \WP_Error {
-        return new \WP_Error( 'yay_automation_not_found', __( 'Workflow not found.', 'yay-automation' ), [ 'status' => 404 ] );
+        return new \WP_Error( 'yaymatik_not_found', __( 'Workflow not found.', 'yaymatik' ), [ 'status' => 404 ] );
     }
 }

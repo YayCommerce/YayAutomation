@@ -1,14 +1,14 @@
 <?php
-namespace YayAutomation\Workflow\Steps\Actions;
+namespace YayMatik\Workflow\Steps\Actions;
 
-use YayAutomation\Workflow\Data\OrderData;
-use YayAutomation\Workflow\Data\Scope;
-use YayAutomation\Workflow\Data\Type;
-use YayAutomation\Workflow\Extend\Modules;
-use YayAutomation\Workflow\Extend\Plugins;
-use YayAutomation\Workflow\Steps\Core\Action;
-use YayAutomation\Workflow\Steps\Core\Field;
-use YayAutomation\Workflow\Steps\Core\StepResult;
+use YayMatik\Workflow\Data\OrderData;
+use YayMatik\Workflow\Data\Scope;
+use YayMatik\Workflow\Data\Type;
+use YayMatik\Workflow\Extend\Modules;
+use YayMatik\Workflow\Extend\Plugins;
+use YayMatik\Workflow\Steps\Core\Action;
+use YayMatik\Workflow\Steps\Core\Field;
+use YayMatik\Workflow\Steps\Core\StepResult;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -22,11 +22,11 @@ class ChangeOrderStatus extends Action {
     }
 
     public function label(): string {
-        return __( 'Change order status', 'yay-automation' );
+        return __( 'Change order status', 'yaymatik' );
     }
 
     public function description(): string {
-        return __( 'Move the order to another status.', 'yay-automation' );
+        return __( 'Move the order to another status.', 'yaymatik' );
     }
 
     public function plugin(): string {
@@ -51,27 +51,27 @@ class ChangeOrderStatus extends Action {
 
     public function fields(): array {
         return [
-            Field::select( 'status', __( 'New status', 'yay-automation' ), [ OrderData::class, 'statuses' ] )
-                ->required( __( 'Choose the new status.', 'yay-automation' ) )
-                ->placeholder( __( 'Choose a status', 'yay-automation' ) ),
+            Field::select( 'status', __( 'New status', 'yaymatik' ), [ OrderData::class, 'statuses' ] )
+                ->required( __( 'Choose the new status.', 'yaymatik' ) )
+                ->placeholder( __( 'Choose a status', 'yaymatik' ) ),
         ];
     }
 
     public function summary(): string {
         /* translators: %status%: order status; keep the placeholder as it is. */
-        return __( 'Set to %status%', 'yay-automation' );
+        return __( 'Set to %status%', 'yaymatik' );
     }
 
     public function outputs(): array {
         $statuses = [ OrderData::class, 'statuses' ];
         return [
             'from' => [
-                'label'   => __( 'Previous status', 'yay-automation' ),
+                'label'   => __( 'Previous status', 'yaymatik' ),
                 'type'    => Type::enum(),
                 'options' => $statuses,
             ],
             'to'   => [
-                'label'   => __( 'New status', 'yay-automation' ),
+                'label'   => __( 'New status', 'yaymatik' ),
                 'type'    => Type::enum(),
                 'options' => $statuses,
             ],
@@ -98,11 +98,11 @@ class ChangeOrderStatus extends Action {
     public function run( Scope $scope, array $config ): StepResult {
         $order = $scope->entity( OrderData::ID );
         if ( ! $order ) {
-            return StepResult::skipped( __( 'There is no order to change.', 'yay-automation' ) );
+            return StepResult::skipped( __( 'There is no order to change.', 'yaymatik' ) );
         }
         $from = $order->get_status();
         if ( $from !== $config['status'] ) {
-            $order->update_status( $config['status'], __( 'Status changed by a YayAutomation workflow.', 'yay-automation' ) );
+            $order->update_status( $config['status'], __( 'Status changed by a YayMatik workflow.', 'yaymatik' ) );
         }
         return StepResult::ok(
             [

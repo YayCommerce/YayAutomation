@@ -1,8 +1,8 @@
 <?php
-namespace YayAutomation\Workflow\Steps\Core;
+namespace YayMatik\Workflow\Steps\Core;
 
-use YayAutomation\Workflow\Definition\Catalog;
-use YayAutomation\Workflow\Definition\Messages;
+use YayMatik\Workflow\Definition\Catalog;
+use YayMatik\Workflow\Definition\Messages;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -13,8 +13,8 @@ defined( 'ABSPATH' ) || exit;
  * Kept small on purpose: a form that needs more than these widgets gets a custom panel, not a new
  * widget. `rules` (Condition rules builder) is for core steps only.
  *
- *     Field::text( 'key', __( 'Field name', 'yay-automation' ) )->required( __( '%s needs a field name.', 'yay-automation' ) )
- *     Field::select( 'type', __( 'Note type', 'yay-automation' ), $options )->default( 'private' )
+ *     Field::text( 'key', __( 'Field name', 'yaymatik' ) )->required( __( '%s needs a field name.', 'yaymatik' ) )
+ *     Field::select( 'type', __( 'Note type', 'yaymatik' ), $options )->default( 'private' )
  *
  * `sanitize()` never fails; `validate()` checks only the field's own rules. Template paths and
  * filters are checked by the workflow Validator, which knows the variables each step can use.
@@ -366,7 +366,7 @@ final class Field {
         return in_array( $config[ $this->show_if['field'] ] ?? null, $wanted, true );
     }
 
-    /** Shape for the admin app (`yayAutomationMeta.automation`): only keys that are set. */
+    /** Shape for the admin app (`yayMatikMeta.automation`): only keys that are set. */
     public function to_array(): array {
         $data = [
             'key'   => $this->key,

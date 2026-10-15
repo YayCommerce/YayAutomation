@@ -1,13 +1,13 @@
 <?php
-namespace YayAutomation\Workflow\Steps\Actions;
+namespace YayMatik\Workflow\Steps\Actions;
 
-use YayAutomation\Workflow\Data\Scope;
-use YayAutomation\Workflow\Data\Type;
-use YayAutomation\Workflow\Extend\Modules;
-use YayAutomation\Workflow\Extend\Plugins;
-use YayAutomation\Workflow\Steps\Core\Action;
-use YayAutomation\Workflow\Steps\Core\Field;
-use YayAutomation\Workflow\Steps\Core\StepResult;
+use YayMatik\Workflow\Data\Scope;
+use YayMatik\Workflow\Data\Type;
+use YayMatik\Workflow\Extend\Modules;
+use YayMatik\Workflow\Extend\Plugins;
+use YayMatik\Workflow\Steps\Core\Action;
+use YayMatik\Workflow\Steps\Core\Field;
+use YayMatik\Workflow\Steps\Core\StepResult;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -26,11 +26,11 @@ class SendInternalEmail extends Action {
     }
 
     public function label(): string {
-        return __( 'Send internal email', 'yay-automation' );
+        return __( 'Send internal email', 'yaymatik' );
     }
 
     public function description(): string {
-        return __( 'Email your store team, from your WooCommerce store email address.', 'yay-automation' );
+        return __( 'Email your store team, from your WooCommerce store email address.', 'yaymatik' );
     }
 
     public function plugin(): string {
@@ -56,30 +56,30 @@ class SendInternalEmail extends Action {
     /** The read-only From line is the WooCommerce sender, e.g. "Store <store@example.com>". */
     public function fields(): array {
         return [
-            Field::notice( 'from', __( 'From', 'yay-automation' ), self::from_line() ),
-            Field::emails( 'recipients', __( 'To', 'yay-automation' ) )
+            Field::notice( 'from', __( 'From', 'yaymatik' ), self::from_line() ),
+            Field::emails( 'recipients', __( 'To', 'yaymatik' ) )
                 ->placeholder( (string) get_option( 'admin_email' ) )
-                ->help( __( 'Separate addresses with commas. Leave blank to use the site admin email.', 'yay-automation' ) ),
-            Field::text( 'subject', __( 'Subject', 'yay-automation' ) )
+                ->help( __( 'Separate addresses with commas. Leave blank to use the site admin email.', 'yaymatik' ) ),
+            Field::text( 'subject', __( 'Subject', 'yaymatik' ) )
                 /* translators: %s: step name, e.g. "Send internal email" */
-                ->required( __( '%s needs a subject.', 'yay-automation' ) )
+                ->required( __( '%s needs a subject.', 'yaymatik' ) )
                 ->variables(),
-            Field::textarea( 'message', __( 'Message', 'yay-automation' ) )
+            Field::textarea( 'message', __( 'Message', 'yaymatik' ) )
                 /* translators: %s: step name, e.g. "Send internal email" */
-                ->required( __( '%s needs a message.', 'yay-automation' ) )
+                ->required( __( '%s needs a message.', 'yaymatik' ) )
                 ->variables(),
         ];
     }
 
     public function summary(): string {
         /* translators: %recipients%: email addresses; keep the placeholder as it is. */
-        return __( 'Send to %recipients%', 'yay-automation' );
+        return __( 'Send to %recipients%', 'yaymatik' );
     }
 
     public function outputs(): array {
         return [
             'to' => [
-                'label' => __( 'Sent to', 'yay-automation' ),
+                'label' => __( 'Sent to', 'yaymatik' ),
                 'type'  => Type::list_of( Type::string() ),
             ],
         ];
@@ -103,7 +103,7 @@ class SendInternalEmail extends Action {
         $body    = $mailer->wrap_message( $subject, self::render( $config['message'], $scope, true ) );
 
         if ( ! $mailer->send( $recipients, $subject, $body ) ) {
-            return StepResult::failed( new \WP_Error( 'yay_automation_mail_failed', __( 'Couldn’t send the email.', 'yay-automation' ) ) );
+            return StepResult::failed( new \WP_Error( 'yaymatik_mail_failed', __( 'Couldn’t send the email.', 'yaymatik' ) ) );
         }
         return StepResult::ok( [ 'to' => $recipients ] );
     }

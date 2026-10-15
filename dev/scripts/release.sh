@@ -1,7 +1,7 @@
 #!/bin/bash
 # Build the distribution zip: release/yay-automation.zip
 cd "$(dirname "$0")/../.." || exit 1
-[[ -f yay-automation.php ]] || { echo "Not the plugin root: $(pwd)"; exit 1; }
+[[ -f yaymatik.php ]] || { echo "Not the plugin root: $(pwd)"; exit 1; }
 
 PLUGIN_SLUG="yay-automation"
 PROJECT_PATH=$(pwd)

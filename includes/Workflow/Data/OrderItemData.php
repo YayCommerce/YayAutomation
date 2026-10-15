@@ -1,5 +1,5 @@
 <?php
-namespace YayAutomation\Workflow\Data;
+namespace YayMatik\Workflow\Data;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -16,11 +16,11 @@ final class OrderItemData extends DataItem {
     }
 
     public function label(): string {
-        return __( 'Order item', 'yay-automation' );
+        return __( 'Order item', 'yaymatik' );
     }
 
     public function description(): string {
-        return __( 'One line of an order: the product name, quantity and line total.', 'yay-automation' );
+        return __( 'One line of an order: the product name, quantity and line total.', 'yaymatik' );
     }
 
     public function icon(): string {
@@ -30,17 +30,17 @@ final class OrderItemData extends DataItem {
     protected function define(): array {
         return [
             'name'     => [
-                'label' => __( 'Item name', 'yay-automation' ),
+                'label' => __( 'Item name', 'yaymatik' ),
                 'type'  => self::TYPE_STRING,
                 'value' => fn( \WC_Order_Item $item ) => $item->get_name(),
             ],
             'quantity' => [
-                'label' => __( 'Item quantity', 'yay-automation' ),
+                'label' => __( 'Item quantity', 'yaymatik' ),
                 'type'  => self::TYPE_NUMBER,
                 'value' => fn( \WC_Order_Item $item ) => (float) $item->get_quantity(),
             ],
             'total'    => [
-                'label'      => __( 'Item total', 'yay-automation' ),
+                'label'      => __( 'Item total', 'yaymatik' ),
                 'type'       => self::TYPE_NUMBER,
                 'value_type' => Type::money(),
                 'value'      => fn( \WC_Order_Item $item ) => (float) $item->get_total(),

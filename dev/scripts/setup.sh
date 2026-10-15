@@ -1,7 +1,7 @@
 #!/bin/bash
 # Install PHP dependencies: vendor/autoload.php + vendor-prefixed/ (scoped admin-shell) + lint and test tools.
 cd "$(dirname "$0")/../.." || exit 1
-[[ -f yay-automation.php ]] || { echo "Not the plugin root: $(pwd)"; exit 1; }
+[[ -f yaymatik.php ]] || { echo "Not the plugin root: $(pwd)"; exit 1; }
 command -v composer >/dev/null || { echo "Missing: composer"; exit 1; }
 
 # composer.json classmaps vendor-prefixed/src, so it must exist before install.

@@ -1,12 +1,12 @@
 <?php
-namespace YayAutomation\Utils;
+namespace YayMatik\Utils;
 
 defined( 'ABSPATH' ) || exit;
 
-/** Writes to WooCommerce → Status → Logs (source `yay-automation`), or the PHP error log without WooCommerce. */
+/** Writes to WooCommerce → Status → Logs (source `yaymatik`), or the PHP error log without WooCommerce. */
 final class Logger {
 
-    public const SOURCE = 'yay-automation';
+    public const SOURCE = 'yaymatik';
 
     /**
      * Never throws: callers use it inside catch blocks that must not fail.

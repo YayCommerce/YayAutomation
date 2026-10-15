@@ -1,8 +1,8 @@
 <?php
-namespace YayAutomation\Engine\Register;
+namespace YayMatik\Engine\Register;
 
-use YayAutomation\Utils\SingletonTrait;
-use YayAutomation\YayAutomation;
+use YayMatik\Utils\SingletonTrait;
+use YayMatik\YayMatik;
 
 /**
  * Register Facade.
@@ -17,11 +17,11 @@ class RegisterFacade {
         add_filter( 'script_loader_tag', [ $this, 'add_entry_as_module' ], 10, 3 );
         add_action( 'init', [ $this, 'register_all_assets' ] );
 
-        $is_prod = YayAutomation::is_prod();
-        if ( $is_prod && class_exists( '\YayAutomation\Engine\Register\RegisterProd' ) ) {
-            \YayAutomation\Engine\Register\RegisterProd::get_instance();
-        } elseif ( ! $is_prod && class_exists( '\YayAutomation\Engine\Register\RegisterDev' ) ) {
-            \YayAutomation\Engine\Register\RegisterDev::get_instance();
+        $is_prod = YayMatik::is_prod();
+        if ( $is_prod && class_exists( '\YayMatik\Engine\Register\RegisterProd' ) ) {
+            \YayMatik\Engine\Register\RegisterProd::get_instance();
+        } elseif ( ! $is_prod && class_exists( '\YayMatik\Engine\Register\RegisterDev' ) ) {
+            \YayMatik\Engine\Register\RegisterDev::get_instance();
         }
     }
 
@@ -54,9 +54,9 @@ class RegisterFacade {
     public function register_all_assets() {
         wp_register_style(
             ScriptName::STYLE_ADMIN,
-            YAY_AUTOMATION_PLUGIN_URL . 'assets/dist/admin-page/style.css',
+            YAYMATIK_PLUGIN_URL . 'assets/dist/admin-page/style.css',
             [],
-            YAY_AUTOMATION_VERSION
+            YAYMATIK_VERSION
         );
     }
 }

@@ -1,5 +1,5 @@
 <?php
-namespace YayAutomation\Workflow\Data;
+namespace YayMatik\Workflow\Data;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -79,7 +79,7 @@ abstract class DataItem {
         }
         $text = (string) $value;
         if ( is_bool( $value ) ) {
-            $text = $value ? __( 'Yes', 'yay-automation' ) : __( 'No', 'yay-automation' );
+            $text = $value ? __( 'Yes', 'yaymatik' ) : __( 'No', 'yaymatik' );
         } elseif ( self::TYPE_ENUM === $field['type'] ) {
             $text = (string) ( ( $field['options'] )()[ $text ] ?? $text );
         }

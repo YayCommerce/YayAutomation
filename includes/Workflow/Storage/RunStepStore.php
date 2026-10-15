@@ -1,7 +1,7 @@
 <?php
-namespace YayAutomation\Workflow\Storage;
+namespace YayMatik\Workflow\Storage;
 
-use YayAutomation\Utils\Logger;
+use YayMatik\Utils\Logger;
 
 defined( 'ABSPATH' ) || exit;
 

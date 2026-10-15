@@ -1,5 +1,5 @@
 <?php
-namespace YayAutomation\Tests\Support;
+namespace YayMatik\Tests\Support;
 
 /**
  * An order (WC_Order stand-in, see woocommerce-stubs.php) that records what steps do to it.

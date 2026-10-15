@@ -1,5 +1,5 @@
 {
-  "name": "yaycommerce/yay-automation",
+  "name": "yaycommerce/yaymatik",
   "type": "wordpress-plugin",
   "prefer-dist": true,
   "optimize-autoloader": true,
@@ -20,7 +20,7 @@
   "config": {},
   "autoload": {
     "psr-4": {
-      "YayAutomation\\": "includes/"
+      "YayMatik\\": "includes/"
     },
     "classmap": [
       "vendor-prefixed/src"

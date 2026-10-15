@@ -1,12 +1,12 @@
 <?php
-namespace YayAutomation\Tests\Unit\Definition;
+namespace YayMatik\Tests\Unit\Definition;
 
 use PHPUnit\Framework\TestCase;
-use YayAutomation\Workflow\Data\DataRegistry;
-use YayAutomation\Workflow\Data\Type;
-use YayAutomation\Workflow\Definition\Catalog;
-use YayAutomation\Workflow\Steps\Core\StepIcons;
-use YayAutomation\Workflow\Steps\Core\StepRegistry;
+use YayMatik\Workflow\Data\DataRegistry;
+use YayMatik\Workflow\Data\Type;
+use YayMatik\Workflow\Definition\Catalog;
+use YayMatik\Workflow\Steps\Core\StepIcons;
+use YayMatik\Workflow\Steps\Core\StepRegistry;
 
 require_once dirname( __DIR__, 2 ) . '/Support/woocommerce-stubs.php';
 
@@ -27,7 +27,7 @@ final class CatalogTest extends TestCase {
                 $this->assertArrayHasKey( $key, $step, "$id.$key" );
             }
         }
-        $this->assertSame( 'yayautomation', $steps['condition']['plugin'] );
+        $this->assertSame( 'yaymatik', $steps['condition']['plugin'] );
     }
 
     public function test_it_is_plain_json_in_camel_case(): void {

@@ -1,7 +1,7 @@
 <?php
-namespace YayAutomation\Engine\Register;
+namespace YayMatik\Engine\Register;
 
-use YayAutomation\Utils\SingletonTrait;
+use YayMatik\Utils\SingletonTrait;
 
 /** Register in Production Mode */
 class RegisterProd {
@@ -15,6 +15,6 @@ class RegisterProd {
     public function register_all_scripts() {
         $deps = [ 'react', 'react-dom', 'wp-hooks', 'wp-i18n' ];
 
-        wp_register_script( ScriptName::PAGE_ADMIN, YAY_AUTOMATION_PLUGIN_URL . 'assets/dist/admin-page/main.js', $deps, YAY_AUTOMATION_VERSION, true );
+        wp_register_script( ScriptName::PAGE_ADMIN, YAYMATIK_PLUGIN_URL . 'assets/dist/admin-page/main.js', $deps, YAYMATIK_VERSION, true );
     }
 }

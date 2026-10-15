@@ -3,7 +3,7 @@
  * Just enough WooCommerce and WordPress for the real data items to read an order in unit tests.
  * Loaded only by the tests that need it.
  *
- * @package YayAutomation
+ * @package YayMatik
  */
 
 // phpcs:disable Generic.Files.OneObjectStructurePerFile.MultipleFound, Generic.CodeAnalysis.UnusedFunctionParameter, Universal.Files.SeparateFunctionsFromOO.Mixed, Squiz.Classes.ClassFileName.NoMatch -- one file of stand-ins with WooCommerce's names and signatures.
@@ -134,6 +134,6 @@ if ( ! function_exists( 'wc_get_order_statuses' ) ) {
 if ( ! function_exists( 'wc_get_order' ) ) {
     // Orders a test put in `FakeOrder::$found`, by id.
     function wc_get_order( $order_id ) {
-        return \YayAutomation\Tests\Support\FakeOrder::$found[ (int) $order_id ] ?? false;
+        return \YayMatik\Tests\Support\FakeOrder::$found[ (int) $order_id ] ?? false;
     }
 }

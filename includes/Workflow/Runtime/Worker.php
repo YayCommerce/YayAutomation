@@ -1,11 +1,11 @@
 <?php
-namespace YayAutomation\Workflow\Runtime;
+namespace YayMatik\Workflow\Runtime;
 
-use YayAutomation\Utils\Logger;
-use YayAutomation\Workflow\Data\GoneEntity;
-use YayAutomation\Workflow\Data\Ref;
-use YayAutomation\Workflow\Data\RefResolver;
-use YayAutomation\Workflow\Storage\RunStore;
+use YayMatik\Utils\Logger;
+use YayMatik\Workflow\Data\GoneEntity;
+use YayMatik\Workflow\Data\Ref;
+use YayMatik\Workflow\Data\RefResolver;
+use YayMatik\Workflow\Storage\RunStore;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -198,8 +198,8 @@ final class Worker {
         $workflow = $this->workflows->find( (int) $run['workflow_id'] );
         if ( ! $workflow || 'active' !== ( $workflow['status'] ?? '' ) ) {
             $reason = $workflow
-                ? __( 'The workflow was deactivated before this run started.', 'yay-automation' )
-                : __( 'The workflow was deleted before this run started.', 'yay-automation' );
+                ? __( 'The workflow was deactivated before this run started.', 'yaymatik' )
+                : __( 'The workflow was deleted before this run started.', 'yaymatik' );
             return $this->end( (int) $run['id'], RunStore::STATUS_CANCELLED, $reason );
         }
         try {

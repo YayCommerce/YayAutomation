@@ -1,22 +1,22 @@
 <?php
-namespace YayAutomation\Tests\Unit\Runtime;
+namespace YayMatik\Tests\Unit\Runtime;
 
 use PHPUnit\Framework\TestCase;
-use YayAutomation\Tests\Support\FakeClock;
-use YayAutomation\Tests\Support\FakeGraphSource;
-use YayAutomation\Tests\Support\FakeOrder;
-use YayAutomation\Tests\Support\FakeQueue;
-use YayAutomation\Tests\Support\FakeRunRepository;
-use YayAutomation\Tests\Support\FakeStep;
-use YayAutomation\Tests\Support\FakeWorkflows;
-use YayAutomation\Workflow\Data\Ref;
-use YayAutomation\Workflow\Data\RefResolver;
-use YayAutomation\Workflow\Data\Scope;
-use YayAutomation\Workflow\Runtime\ActionSchedulerQueue;
-use YayAutomation\Workflow\Runtime\Dispatcher;
-use YayAutomation\Workflow\Runtime\Worker;
-use YayAutomation\Workflow\Steps\Core\StepResult;
-use YayAutomation\Workflow\Steps\Triggers\OrderStatusChanged;
+use YayMatik\Tests\Support\FakeClock;
+use YayMatik\Tests\Support\FakeGraphSource;
+use YayMatik\Tests\Support\FakeOrder;
+use YayMatik\Tests\Support\FakeQueue;
+use YayMatik\Tests\Support\FakeRunRepository;
+use YayMatik\Tests\Support\FakeStep;
+use YayMatik\Tests\Support\FakeWorkflows;
+use YayMatik\Workflow\Data\Ref;
+use YayMatik\Workflow\Data\RefResolver;
+use YayMatik\Workflow\Data\Scope;
+use YayMatik\Workflow\Runtime\ActionSchedulerQueue;
+use YayMatik\Workflow\Runtime\Dispatcher;
+use YayMatik\Workflow\Runtime\Worker;
+use YayMatik\Workflow\Steps\Core\StepResult;
+use YayMatik\Workflow\Steps\Triggers\OrderStatusChanged;
 
 require_once dirname( __DIR__, 2 ) . '/Support/woocommerce-stubs.php';
 

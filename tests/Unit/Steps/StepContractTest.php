@@ -1,20 +1,20 @@
 <?php
-namespace YayAutomation\Tests\Unit\Steps;
+namespace YayMatik\Tests\Unit\Steps;
 
 use PHPUnit\Framework\TestCase;
-use YayAutomation\Workflow\Data\Type;
-use YayAutomation\Workflow\Extend\Modules;
-use YayAutomation\Workflow\Extend\Plugins;
-use YayAutomation\Workflow\Steps\Actions\AddOrderNote;
-use YayAutomation\Workflow\Steps\Actions\ChangeOrderStatus;
-use YayAutomation\Workflow\Steps\Actions\SendInternalEmail;
-use YayAutomation\Workflow\Steps\Actions\UpdateOrderMeta;
-use YayAutomation\Workflow\Steps\Conditions\Criteria;
-use YayAutomation\Workflow\Steps\Core\Field;
-use YayAutomation\Workflow\Steps\Core\Step;
-use YayAutomation\Workflow\Steps\Core\StepIcons;
-use YayAutomation\Workflow\Steps\Triggers\OrderCreated;
-use YayAutomation\Workflow\Steps\Triggers\OrderStatusChanged;
+use YayMatik\Workflow\Data\Type;
+use YayMatik\Workflow\Extend\Modules;
+use YayMatik\Workflow\Extend\Plugins;
+use YayMatik\Workflow\Steps\Actions\AddOrderNote;
+use YayMatik\Workflow\Steps\Actions\ChangeOrderStatus;
+use YayMatik\Workflow\Steps\Actions\SendInternalEmail;
+use YayMatik\Workflow\Steps\Actions\UpdateOrderMeta;
+use YayMatik\Workflow\Steps\Conditions\Criteria;
+use YayMatik\Workflow\Steps\Core\Field;
+use YayMatik\Workflow\Steps\Core\Step;
+use YayMatik\Workflow\Steps\Core\StepIcons;
+use YayMatik\Workflow\Steps\Triggers\OrderCreated;
+use YayMatik\Workflow\Steps\Triggers\OrderStatusChanged;
 
 require_once dirname( __DIR__, 2 ) . '/Support/woocommerce-stubs.php';
 
@@ -42,7 +42,7 @@ final class StepContractTest extends TestCase {
     public function test_declares_its_identity( Step $step ): void {
         $this->assertNotSame( '', $step->label() );
         $this->assertNotSame( '', $step->description() );
-        $this->assertContains( $step->plugin(), [ Plugins::WOOCOMMERCE, Plugins::YAYAUTOMATION ] );
+        $this->assertContains( $step->plugin(), [ Plugins::WOOCOMMERCE, Plugins::YAYMATIK ] );
         $this->assertSame( Modules::CORE, $step->module() );
         $this->assertContains( $step->on_error(), [ Step::ON_ERROR_STOP, Step::ON_ERROR_CONTINUE ] );
     }
@@ -115,7 +115,7 @@ final class StepContractTest extends TestCase {
 
     public function test_condition_is_core_and_email_from_is_a_notice(): void {
         $steps = self::steps();
-        $this->assertSame( Plugins::YAYAUTOMATION, $steps['condition']->plugin() );
+        $this->assertSame( Plugins::YAYMATIK, $steps['condition']->plugin() );
 
         $from = $steps['send_internal_email']->fields()[0];
         $this->assertSame( 'from', $from->key() );

@@ -1,26 +1,26 @@
 <?php
-namespace YayAutomation;
+namespace YayMatik;
 
-use YayAutomation\Utils\SingletonTrait;
+use YayMatik\Utils\SingletonTrait;
 
 /**
- * YayAutomation Plugin Entry Point
+ * YayMatik Plugin Entry Point
  */
-final class YayAutomation {
+final class YayMatik {
     use SingletonTrait;
 
     protected function __construct() {
-        \YayAutomation\Engine\Register\RegisterFacade::get_instance();
-        \YayAutomation\Engine\BEPages\AdminPage::get_instance();
-        \YayAutomation\Engine\API\RestAPI::get_instance();
-        \YayAutomation\Workflow\Storage\WorkflowPostType::get_instance();
-        \YayAutomation\Workflow\Storage\Schema::maybe_install();
+        \YayMatik\Engine\Register\RegisterFacade::get_instance();
+        \YayMatik\Engine\BEPages\AdminPage::get_instance();
+        \YayMatik\Engine\API\RestAPI::get_instance();
+        \YayMatik\Workflow\Storage\WorkflowPostType::get_instance();
+        \YayMatik\Workflow\Storage\Schema::maybe_install();
         if ( class_exists( 'WooCommerce' ) ) {
-            \YayAutomation\Workflow\Runtime\Runtime::boot();
+            \YayMatik\Workflow\Runtime\Runtime::boot();
         }
 
         // TODO: EDD setup
-        // if ( ! YayAutomationProLicenseAdapter::is_licensed() ) {
+        // if ( ! YayMatikProLicenseAdapter::is_licensed() ) {
         // return;
         // }
 
@@ -31,15 +31,15 @@ final class YayAutomation {
 
     public function before_woocommerce_init() {
         if ( class_exists( \Automattic\WooCommerce\Utilities\FeaturesUtil::class ) ) {
-            \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'custom_order_tables', YAY_AUTOMATION_FILE, true );
+            \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'custom_order_tables', YAYMATIK_FILE, true );
         }
     }
 
     private function register_admin_menu() {
-        \YayAutomationScoped\YayCommerce\AdminShell\AdminShell::boot();
-        \YayAutomationScoped\YayCommerce\AdminShell\AdminShell::register_plugin(
-            new YayAutomationLicenseAdapter()
-            // Pro adds YayAutomationProLicenseAdapter here.
+        \YayMatikScoped\YayCommerce\AdminShell\AdminShell::boot();
+        \YayMatikScoped\YayCommerce\AdminShell\AdminShell::register_plugin(
+            new YayMatikLicenseAdapter()
+            // Pro adds YayMatikProLicenseAdapter here.
         );
     }
 
@@ -48,6 +48,6 @@ final class YayAutomation {
     }
 
     public static function is_prod() {
-        return ! defined( 'YAY_AUTOMATION_IS_DEVELOPMENT' ) || YAY_AUTOMATION_IS_DEVELOPMENT !== true;
+        return ! defined( 'YAYMATIK_IS_DEVELOPMENT' ) || YAYMATIK_IS_DEVELOPMENT !== true;
     }
 }

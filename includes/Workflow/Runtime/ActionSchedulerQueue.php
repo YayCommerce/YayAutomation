@@ -1,5 +1,5 @@
 <?php
-namespace YayAutomation\Workflow\Runtime;
+namespace YayMatik\Workflow\Runtime;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -11,12 +11,12 @@ defined( 'ABSPATH' ) || exit;
 final class ActionSchedulerQueue implements Queue {
 
     /** Action Scheduler hook; args `[ run_id ]`. */
-    public const HOOK = 'yay_automation_run';
+    public const HOOK = 'yaymatik_run';
 
     /** Recovery job for a run whose job died; args `[ run_id ]`. */
-    public const RECOVER_HOOK = 'yay_automation_recover_run';
+    public const RECOVER_HOOK = 'yaymatik_recover_run';
 
-    public const GROUP = 'yay-automation';
+    public const GROUP = 'yaymatik';
 
     public function available(): bool {
         return function_exists( 'as_enqueue_async_action' ) && function_exists( 'as_schedule_single_action' )

@@ -1,14 +1,14 @@
 <?php
-namespace YayAutomation\Workflow\Definition;
+namespace YayMatik\Workflow\Definition;
 
-use YayAutomation\Workflow\Data\DataItem;
-use YayAutomation\Workflow\Data\DataRegistry;
-use YayAutomation\Workflow\Data\Template;
-use YayAutomation\Workflow\Data\Type;
-use YayAutomation\Workflow\Steps\Core\Field;
-use YayAutomation\Workflow\Steps\Core\Step;
-use YayAutomation\Workflow\Steps\Core\StepRegistry;
-use YayAutomation\Utils\Logger;
+use YayMatik\Workflow\Data\DataItem;
+use YayMatik\Workflow\Data\DataRegistry;
+use YayMatik\Workflow\Data\Template;
+use YayMatik\Workflow\Data\Type;
+use YayMatik\Workflow\Steps\Core\Field;
+use YayMatik\Workflow\Steps\Core\Step;
+use YayMatik\Workflow\Steps\Core\StepRegistry;
+use YayMatik\Utils\Logger;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -40,7 +40,7 @@ final class Validator {
             return $graph;
         }
         return [
-            'name'  => array_key_exists( 'name', $input ) ? self::prepare_name( $input['name'] ) : __( 'New workflow', 'yay-automation' ),
+            'name'  => array_key_exists( 'name', $input ) ? self::prepare_name( $input['name'] ) : __( 'New workflow', 'yaymatik' ),
             'graph' => $graph,
         ];
     }
@@ -54,7 +54,7 @@ final class Validator {
      */
     public static function prepare_changes( $input ) {
         if ( ! is_array( $input ) ) {
-            return self::error( __( 'Invalid workflow.', 'yay-automation' ) );
+            return self::error( __( 'Invalid workflow.', 'yaymatik' ) );
         }
         $changes = [];
         if ( array_key_exists( 'name', $input ) ) {
@@ -92,11 +92,11 @@ final class Validator {
         $count   = count( $errors );
         $message = 'apply' === $action
             /* translators: %d: number of issues */
-            ? _n( 'Fix %d issue before you update this workflow.', 'Fix %d issues before you update this workflow.', $count, 'yay-automation' )
+            ? _n( 'Fix %d issue before you update this workflow.', 'Fix %d issues before you update this workflow.', $count, 'yaymatik' )
             /* translators: %d: number of issues */
-            : _n( 'Fix %d issue before you activate this workflow.', 'Fix %d issues before you activate this workflow.', $count, 'yay-automation' );
+            : _n( 'Fix %d issue before you activate this workflow.', 'Fix %d issues before you activate this workflow.', $count, 'yaymatik' );
         return new \WP_Error(
-            'yay_automation_invalid_workflow',
+            'yaymatik_invalid_workflow',
             sprintf( $message, $count ),
             [
                 'status' => 400,
@@ -502,6 +502,6 @@ final class Validator {
      * @param string $message What's wrong with the request body.
      */
     private static function error( string $message ): \WP_Error {
-        return new \WP_Error( 'yay_automation_invalid_workflow', $message, [ 'status' => 400 ] );
+        return new \WP_Error( 'yaymatik_invalid_workflow', $message, [ 'status' => 400 ] );
     }
 }

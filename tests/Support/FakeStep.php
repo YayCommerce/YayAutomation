@@ -1,10 +1,10 @@
 <?php
-namespace YayAutomation\Tests\Support;
+namespace YayMatik\Tests\Support;
 
-use YayAutomation\Workflow\Data\Scope;
-use YayAutomation\Workflow\Data\Type;
-use YayAutomation\Workflow\Steps\Core\Action;
-use YayAutomation\Workflow\Steps\Core\StepResult;
+use YayMatik\Workflow\Data\Scope;
+use YayMatik\Workflow\Data\Type;
+use YayMatik\Workflow\Steps\Core\Action;
+use YayMatik\Workflow\Steps\Core\StepResult;
 
 /**
  * An action whose run() a test supplies. Declares one output, `to`. Config is kept as given;
@@ -49,7 +49,7 @@ final class FakeStep extends Action {
     }
 
     public function plugin(): string {
-        return 'yayautomation';
+        return 'yaymatik';
     }
 
     public function module(): string {

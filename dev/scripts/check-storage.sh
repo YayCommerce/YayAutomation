@@ -1,7 +1,7 @@
 #!/bin/bash
 # Check the run storage on the local site (wp-cli): runs, claims, versions. Removes its test rows.
 cd "$(dirname "$0")/../.." || exit 1
-[[ -f yay-automation.php ]] || { echo "Not the plugin root: $(pwd)"; exit 1; }
+[[ -f yaymatik.php ]] || { echo "Not the plugin root: $(pwd)"; exit 1; }
 command -v wp >/dev/null || { echo "Missing: wp-cli"; exit 1; }
 
 # Test rows use a workflow id no real workflow has.

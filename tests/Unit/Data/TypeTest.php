@@ -1,9 +1,9 @@
 <?php
-namespace YayAutomation\Tests\Unit\Data;
+namespace YayMatik\Tests\Unit\Data;
 
 use PHPUnit\Framework\TestCase;
-use YayAutomation\Workflow\Data\DataItem;
-use YayAutomation\Workflow\Data\Type;
+use YayMatik\Workflow\Data\DataItem;
+use YayMatik\Workflow\Data\Type;
 
 /** Value types: text form, parsing, and the condition type each maps to. */
 final class TypeTest extends TestCase {
@@ -71,7 +71,7 @@ final class TypeTest extends TestCase {
     }
 
     public function test_fields_default_their_full_type_from_the_condition_type(): void {
-        $entity = new \YayAutomation\Tests\Support\FakeEntity(
+        $entity = new \YayMatik\Tests\Support\FakeEntity(
             'thing',
             [
                 'count' => [

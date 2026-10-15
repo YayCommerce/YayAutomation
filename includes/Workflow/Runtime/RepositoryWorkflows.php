@@ -1,7 +1,7 @@
 <?php
-namespace YayAutomation\Workflow\Runtime;
+namespace YayMatik\Workflow\Runtime;
 
-use YayAutomation\Workflow\Storage\WorkflowRepository;
+use YayMatik\Workflow\Storage\WorkflowRepository;
 
 defined( 'ABSPATH' ) || exit;
 

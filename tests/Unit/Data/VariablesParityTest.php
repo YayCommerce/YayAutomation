@@ -1,11 +1,11 @@
 <?php
-namespace YayAutomation\Tests\Unit\Data;
+namespace YayMatik\Tests\Unit\Data;
 
 use PHPUnit\Framework\TestCase;
-use YayAutomation\Tests\Support\ContextScope;
-use YayAutomation\Tests\Support\LegacyVariables;
-use YayAutomation\Workflow\Data\DataRegistry;
-use YayAutomation\Workflow\Data\Template;
+use YayMatik\Tests\Support\ContextScope;
+use YayMatik\Tests\Support\LegacyVariables;
+use YayMatik\Workflow\Data\DataRegistry;
+use YayMatik\Workflow\Data\Template;
 
 require_once dirname( __DIR__, 2 ) . '/Support/woocommerce-stubs.php';
 

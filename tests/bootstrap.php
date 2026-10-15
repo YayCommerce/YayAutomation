@@ -15,10 +15,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 spl_autoload_register(
     static function ( string $class_name ): void {
-        // Test helpers first (YayAutomation\Tests\ → tests/), then the plugin (YayAutomation\ → includes/).
+        // Test helpers first (YayMatik\Tests\ → tests/), then the plugin (YayMatik\ → includes/).
         $roots = [
-            'YayAutomation\\Tests\\' => __DIR__ . '/',
-            'YayAutomation\\'        => __DIR__ . '/../includes/',
+            'YayMatik\\Tests\\' => __DIR__ . '/',
+            'YayMatik\\'        => __DIR__ . '/../includes/',
         ];
         foreach ( $roots as $prefix => $dir ) {
             if ( 0 === strpos( $class_name, $prefix ) ) {

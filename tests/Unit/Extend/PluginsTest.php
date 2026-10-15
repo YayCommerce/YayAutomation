@@ -1,8 +1,8 @@
 <?php
-namespace YayAutomation\Tests\Unit\Extend;
+namespace YayMatik\Tests\Unit\Extend;
 
 use PHPUnit\Framework\TestCase;
-use YayAutomation\Workflow\Extend\Plugins;
+use YayMatik\Workflow\Extend\Plugins;
 
 /**
  * Plugin entries and logos. A logo uses only `LOGO_TAGS` (what `wp_kses()` keeps; the real call is
@@ -15,7 +15,7 @@ final class PluginsTest extends TestCase {
     }
 
     public function test_every_plugin_has_a_logo(): void {
-        $this->assertSame( [ Plugins::WOOCOMMERCE, Plugins::YAYAUTOMATION ], array_keys( Plugins::logos() ) );
+        $this->assertSame( [ Plugins::WOOCOMMERCE, Plugins::YAYMATIK ], array_keys( Plugins::logos() ) );
     }
 
     /**
@@ -61,7 +61,7 @@ final class PluginsTest extends TestCase {
             $this->assertSame( [ 'id', 'label', 'description', 'active', 'logo' ], array_keys( $plugin ) );
             $this->assertSame( Plugins::logos()[ $plugin['id'] ], $plugin['logo'], 'cleaned logo is the source logo' );
         }
-        $this->assertTrue( $plugins[ Plugins::YAYAUTOMATION ]['active'], 'always active' );
+        $this->assertTrue( $plugins[ Plugins::YAYMATIK ]['active'], 'always active' );
     }
 
     /**

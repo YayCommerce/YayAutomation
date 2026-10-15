@@ -1,15 +1,15 @@
 <?php
-namespace YayAutomation\Workflow\Steps\Conditions;
+namespace YayMatik\Workflow\Steps\Conditions;
 
-use YayAutomation\Workflow\Data\DataItem;
-use YayAutomation\Workflow\Data\DataRegistry;
-use YayAutomation\Workflow\Data\Operators;
-use YayAutomation\Workflow\Data\Scope;
-use YayAutomation\Workflow\Definition\Messages;
-use YayAutomation\Workflow\Extend\Modules;
-use YayAutomation\Workflow\Extend\Plugins;
-use YayAutomation\Workflow\Steps\Core\Condition;
-use YayAutomation\Workflow\Steps\Core\Field;
+use YayMatik\Workflow\Data\DataItem;
+use YayMatik\Workflow\Data\DataRegistry;
+use YayMatik\Workflow\Data\Operators;
+use YayMatik\Workflow\Data\Scope;
+use YayMatik\Workflow\Definition\Messages;
+use YayMatik\Workflow\Extend\Modules;
+use YayMatik\Workflow\Extend\Plugins;
+use YayMatik\Workflow\Steps\Core\Condition;
+use YayMatik\Workflow\Steps\Core\Field;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -33,15 +33,15 @@ class Criteria extends Condition {
     }
 
     public function label(): string {
-        return __( 'Condition', 'yay-automation' );
+        return __( 'Condition', 'yaymatik' );
     }
 
     public function description(): string {
-        return __( 'Take the Yes path when the rules match, otherwise the No path.', 'yay-automation' );
+        return __( 'Take the Yes path when the rules match, otherwise the No path.', 'yaymatik' );
     }
 
     public function plugin(): string {
-        return Plugins::YAYAUTOMATION;
+        return Plugins::YAYMATIK;
     }
 
     public function module(): string {
@@ -56,13 +56,13 @@ class Criteria extends Condition {
         return [
             Field::select(
                 'match',
-                __( 'Match', 'yay-automation' ),
+                __( 'Match', 'yaymatik' ),
                 [
-                    'all' => __( 'All', 'yay-automation' ),
-                    'any' => __( 'Any', 'yay-automation' ),
+                    'all' => __( 'All', 'yaymatik' ),
+                    'any' => __( 'Any', 'yaymatik' ),
                 ]
             )->default( 'all' ),
-            Field::rules( 'rules', __( 'Rules', 'yay-automation' ) )->required(),
+            Field::rules( 'rules', __( 'Rules', 'yaymatik' ) )->required(),
         ];
     }
 

@@ -1,7 +1,7 @@
 <?php
-namespace YayAutomation\Engine\Register;
+namespace YayMatik\Engine\Register;
 
-use YayAutomation\Utils\SingletonTrait;
+use YayMatik\Utils\SingletonTrait;
 
 /**
  * Register in Development Mode
@@ -18,7 +18,7 @@ class RegisterDev {
     }
 
     public function render_dev_refresh() {
-        $port = defined( 'YAY_AUTOMATION_VITE_PORT' ) ? \YAY_AUTOMATION_VITE_PORT : 3020;
+        $port = defined( 'YAYMATIK_VITE_PORT' ) ? \YAYMATIK_VITE_PORT : 3020;
         echo '<script type="module">
         import RefreshRuntime from "http://localhost:' . (int) $port . '/@react-refresh"
         RefreshRuntime.injectIntoGlobalHook(window)
@@ -29,7 +29,7 @@ class RegisterDev {
     }
 
     public function register_all_scripts() {
-        $port = defined( 'YAY_AUTOMATION_VITE_PORT' ) ? \YAY_AUTOMATION_VITE_PORT : 3020;
+        $port = defined( 'YAYMATIK_VITE_PORT' ) ? \YAYMATIK_VITE_PORT : 3020;
         $deps = [ 'react', 'react-dom', 'wp-hooks', 'wp-i18n' ];
 
         wp_register_script( ScriptName::PAGE_ADMIN, 'http://localhost:' . $port . '/main.tsx', $deps, null, true ); // phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion

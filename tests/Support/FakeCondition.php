@@ -1,8 +1,8 @@
 <?php
-namespace YayAutomation\Tests\Support;
+namespace YayMatik\Tests\Support;
 
-use YayAutomation\Workflow\Data\Scope;
-use YayAutomation\Workflow\Steps\Core\Condition;
+use YayMatik\Workflow\Data\Scope;
+use YayMatik\Workflow\Steps\Core\Condition;
 
 /** A condition that says yes when its config has `yes` true; `result` comes from the base class. Counts its runs. */
 final class FakeCondition extends Condition {
@@ -23,7 +23,7 @@ final class FakeCondition extends Condition {
     }
 
     public function plugin(): string {
-        return 'yayautomation';
+        return 'yaymatik';
     }
 
     public function module(): string {

@@ -1,5 +1,5 @@
 <?php
-namespace YayAutomation\Workflow\Data;
+namespace YayMatik\Workflow\Data;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -15,7 +15,7 @@ final class GoneEntity extends \RuntimeException {
     public function __construct( Ref $ref ) {
         $this->ref = $ref;
         /* translators: %s: entity, e.g. order:12 */
-        parent::__construct( sprintf( __( '%s no longer exists.', 'yay-automation' ), $ref->key() ) );
+        parent::__construct( sprintf( __( '%s no longer exists.', 'yaymatik' ), $ref->key() ) );
     }
 
     public function ref(): Ref {

@@ -1,5 +1,5 @@
 <?php
-namespace YayAutomation\Workflow\Extend;
+namespace YayMatik\Workflow\Extend;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -16,7 +16,7 @@ final class Plugins {
     public const WOOCOMMERCE = 'woocommerce';
 
     /** Steps built into Workflow Core itself, e.g. Condition. */
-    public const YAYAUTOMATION = 'yayautomation';
+    public const YAYMATIK = 'yaymatik';
 
     /** Tags and attributes a logo may use: lines and simple shapes, no styles, links or scripts. */
     public const LOGO_TAGS = [
@@ -54,17 +54,17 @@ final class Plugins {
         return [
             [
                 'id'          => self::WOOCOMMERCE,
-                'label'       => __( 'WooCommerce', 'yay-automation' ),
-                'description' => __( 'Orders, customers and store emails.', 'yay-automation' ),
+                'label'       => __( 'WooCommerce', 'yaymatik' ),
+                'description' => __( 'Orders, customers and store emails.', 'yaymatik' ),
                 'active'      => class_exists( 'WooCommerce' ),
                 'logo'        => self::clean( self::logos()[ self::WOOCOMMERCE ] ),
             ],
             [
-                'id'          => self::YAYAUTOMATION,
-                'label'       => __( 'YayAutomation', 'yay-automation' ),
-                'description' => __( 'Workflow logic: conditions and waits.', 'yay-automation' ),
+                'id'          => self::YAYMATIK,
+                'label'       => __( 'YayMatik', 'yaymatik' ),
+                'description' => __( 'Workflow logic: conditions and waits.', 'yaymatik' ),
                 'active'      => true,
-                'logo'        => self::clean( self::logos()[ self::YAYAUTOMATION ] ),
+                'logo'        => self::clean( self::logos()[ self::YAYMATIK ] ),
             ],
         ];
     }
@@ -87,9 +87,9 @@ final class Plugins {
     public static function logos(): array {
         return [
             // A shopping cart outline (lucide `shopping-cart`): a store, not WooCommerce's own mark.
-            self::WOOCOMMERCE   => self::SVG_OPEN . '<circle cx="8" cy="21" r="1" /><circle cx="19" cy="21" r="1" /><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12" /></svg>',
+            self::WOOCOMMERCE => self::SVG_OPEN . '<circle cx="8" cy="21" r="1" /><circle cx="19" cy="21" r="1" /><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12" /></svg>',
             // Three steps joined: one that starts, two it leads to.
-            self::YAYAUTOMATION => self::SVG_OPEN . '<rect x="9" y="3" width="6" height="5" rx="1.5" /><circle cx="6.5" cy="18" r="2.5" /><circle cx="17.5" cy="18" r="2.5" /><path d="M12 8v3.5M6.5 15.5v-4h11v4" /></svg>',
+            self::YAYMATIK    => self::SVG_OPEN . '<rect x="9" y="3" width="6" height="5" rx="1.5" /><circle cx="6.5" cy="18" r="2.5" /><circle cx="17.5" cy="18" r="2.5" /><path d="M12 8v3.5M6.5 15.5v-4h11v4" /></svg>',
         ];
     }
 }

@@ -65,13 +65,13 @@
 	<rule ref="WordPress.WP.I18n">
 		<properties>
 			<property name="text_domain" type="array">
-				<element value="yay-automation"/>
+				<element value="yaymatik"/>
 			</property>
 		</properties>
 	</rule>
 
 	<!-- Files and directories to check && auto fix -->
-	<file>yay-automation.php</file>
+	<file>yaymatik.php</file>
 	<file>includes/</file>
 	<exclude-pattern>/vendor/</exclude-pattern>
 	<exclude-pattern>/node_modules/</exclude-pattern>

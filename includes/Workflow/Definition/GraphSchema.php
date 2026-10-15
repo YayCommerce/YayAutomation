@@ -1,8 +1,8 @@
 <?php
-namespace YayAutomation\Workflow\Definition;
+namespace YayMatik\Workflow\Definition;
 
-use YayAutomation\Workflow\Steps\Core\Step;
-use YayAutomation\Workflow\Steps\Core\StepRegistry;
+use YayMatik\Workflow\Steps\Core\Step;
+use YayMatik\Workflow\Steps\Core\StepRegistry;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -36,14 +36,14 @@ final class GraphSchema {
      */
     public static function prepare( $graph ) {
         if ( ! is_array( $graph ) || ! is_array( $graph['nodes'] ?? null ) || ! is_array( $graph['edges'] ?? null ) ) {
-            return self::error( __( 'Invalid workflow graph.', 'yay-automation' ) );
+            return self::error( __( 'Invalid workflow graph.', 'yaymatik' ) );
         }
         $version = self::version( $graph );
         if ( null === $version ) {
-            return self::error( __( 'Invalid workflow graph.', 'yay-automation' ) );
+            return self::error( __( 'Invalid workflow graph.', 'yaymatik' ) );
         }
         if ( $version > self::VERSION ) {
-            return self::error( __( 'This workflow was saved by a newer version of YayAutomation. Update the plugin to edit it.', 'yay-automation' ) );
+            return self::error( __( 'This workflow was saved by a newer version of YayMatik. Update the plugin to edit it.', 'yaymatik' ) );
         }
 
         $nodes    = [];
@@ -51,7 +51,7 @@ final class GraphSchema {
         foreach ( $graph['nodes'] as $raw ) {
             $id = is_array( $raw ) ? (string) ( $raw['id'] ?? '' ) : '';
             if ( ! self::is_valid_id( $id ) || isset( $nodes[ $id ] ) ) {
-                return self::error( __( 'Invalid or duplicate step id.', 'yay-automation' ) );
+                return self::error( __( 'Invalid or duplicate step id.', 'yaymatik' ) );
             }
 
             $kind    = (string) ( $raw['kind'] ?? '' );
@@ -61,7 +61,7 @@ final class GraphSchema {
             $step  = null === $step_id ? null : StepRegistry::get( (string) $step_id );
             $known = $step ? $step->kind() === $kind : ( null === $step_id && Step::KIND_CONDITION !== $kind );
             if ( ! in_array( $kind, self::KINDS, true ) || ! $known ) {
-                return self::error( __( 'Unknown step type.', 'yay-automation' ), $id );
+                return self::error( __( 'Unknown step type.', 'yaymatik' ), $id );
             }
             if ( Step::KIND_TRIGGER === $kind ) {
                 ++$triggers;
@@ -83,7 +83,7 @@ final class GraphSchema {
         }//end foreach
 
         if ( 1 !== $triggers ) {
-            return self::error( __( 'A workflow needs exactly one trigger.', 'yay-automation' ) );
+            return self::error( __( 'A workflow needs exactly one trigger.', 'yaymatik' ) );
         }
 
         $edges = [];
@@ -107,7 +107,7 @@ final class GraphSchema {
                 && ! isset( $has_parent[ $target['id'] ] )
                 && ! isset( $used_slots[ $source['id'] . '|' . $handle ] );
             if ( ! $valid ) {
-                return self::error( __( 'Invalid connection between steps.', 'yay-automation' ) );
+                return self::error( __( 'Invalid connection between steps.', 'yaymatik' ) );
             }
 
             $has_parent[ $target['id'] ]                 = true;
@@ -201,6 +201,6 @@ final class GraphSchema {
         if ( null !== $node_id ) {
             $data['nodeId'] = $node_id;
         }
-        return new \WP_Error( 'yay_automation_invalid_workflow', $message, $data );
+        return new \WP_Error( 'yaymatik_invalid_workflow', $message, $data );
     }
 }
