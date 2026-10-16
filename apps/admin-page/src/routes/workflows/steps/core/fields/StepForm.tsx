@@ -83,13 +83,15 @@ function Widget({ errors, ...props }: WidgetProps & { errors: ({ message?: strin
     case 'text':
     case 'emails':
     case 'textarea':
+    // Until the rich editor lands, HTML is edited as text.
+    case 'html':
       return (
         <TextField
           id={id}
           label={field.label}
           help={field.help}
           placeholder={field.placeholder}
-          multiline={field.type === 'textarea'}
+          multiline={field.type !== 'text' && field.type !== 'emails'}
           variables={!!field.variables}
           value={String(value ?? '')}
           onChange={onChange}

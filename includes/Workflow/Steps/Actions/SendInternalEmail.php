@@ -3,6 +3,7 @@ namespace YayMatik\Workflow\Steps\Actions;
 
 use YayMatik\Workflow\Data\Scope;
 use YayMatik\Workflow\Data\Type;
+use YayMatik\Workflow\Email\EmailBody;
 use YayMatik\Workflow\Extend\Modules;
 use YayMatik\Workflow\Extend\Plugins;
 use YayMatik\Workflow\Steps\Core\Action;
@@ -14,8 +15,9 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Email to the store team, sent like WooCommerce's own "New order" email: from the WooCommerce
  * sender, wrapped in the WooCommerce email template.
- * Config: [ 'recipients' => comma-separated emails, blank = site admin email, 'subject' => string, 'message' => string ].
- * Subject and message accept merge tags. The subject is also the email heading.
+ * Config: [ 'recipients' => comma-separated emails, blank = site admin email, 'subject' => string, 'message' => HTML ].
+ * Subject and message accept merge tags. The subject is also the email heading. A new step starts
+ * with a sample subject and message. Unsubscribes don't apply: it goes to the store team.
  */
 class SendInternalEmail extends Action {
 
@@ -63,11 +65,13 @@ class SendInternalEmail extends Action {
             Field::text( 'subject', __( 'Subject', 'yaymatik' ) )
                 /* translators: %s: step name, e.g. "Send internal email" */
                 ->required( __( '%s needs a subject.', 'yaymatik' ) )
-                ->variables(),
-            Field::textarea( 'message', __( 'Message', 'yaymatik' ) )
+                ->variables()
+                ->default( __( 'Order {{ order.number }} is {{ order.status }}', 'yaymatik' ) ),
+            Field::html( 'message', __( 'Message', 'yaymatik' ) )
                 /* translators: %s: step name, e.g. "Send internal email" */
                 ->required( __( '%s needs a message.', 'yaymatik' ) )
-                ->variables(),
+                ->variables()
+                ->default( self::sample_message() ),
         ];
     }
 
@@ -100,12 +104,19 @@ class SendInternalEmail extends Action {
         // Merged values may contain line breaks; a subject must stay one line.
         $subject = Field::single_line( self::render( $config['subject'], $scope ) );
         $mailer  = WC()->mailer();
-        $body    = $mailer->wrap_message( $subject, self::render( $config['message'], $scope, true ) );
+        $body    = $mailer->wrap_message( $subject, EmailBody::render( $config['message'], $scope ) );
 
         if ( ! $mailer->send( $recipients, $subject, $body ) ) {
             return StepResult::failed( new \WP_Error( 'yaymatik_mail_failed', __( 'Couldn’t send the email.', 'yaymatik' ) ) );
         }
         return StepResult::ok( [ 'to' => $recipients ] );
+    }
+
+    /** A new step's message: who ordered, the total and the items. */
+    private static function sample_message(): string {
+        return '<p>' . __( 'Order {{ order.number }} from {{ customer.full_name }} is {{ order.status }}.', 'yaymatik' ) . '</p>'
+            . '<p>' . __( 'Total: {{ order.total }}', 'yaymatik' ) . '</p>'
+            . '<p>{{ order.items }}</p>';
     }
 
     /**

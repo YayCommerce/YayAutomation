@@ -187,7 +187,7 @@ final class StepRunTest extends TestCase {
 
         $this->assert_ok_outputs( $step, $result );
         $this->assertSame( [ 'to' => [ 'a@x.com', 'b@x.com' ] ], $result->outputs(), 'no subject or body' );
-        $this->assertSame( [ [ 'a@x.com', 'b@x.com' ], 'Order 1012', '<h1>Order 1012</h1>From &lt;ann@x.com&gt;' ], FakeMailer::$current->sent[0] );
+        $this->assertSame( [ [ 'a@x.com', 'b@x.com' ], 'Order 1012', '<h1>Order 1012</h1>' . "<p>From &lt;ann@x.com&gt;</p>\n" ], FakeMailer::$current->sent[0] );
     }
 
     public function test_send_internal_email_falls_back_to_the_admin_email(): void {

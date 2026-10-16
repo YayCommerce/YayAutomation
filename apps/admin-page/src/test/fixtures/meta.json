@@ -245,16 +245,16 @@
                         "required": true,
                         "requiredMessage": "%s needs a subject.",
                         "variables": true,
-                        "default": ""
+                        "default": "Order {{ order.number }} is {{ order.status }}"
                     },
                     {
                         "key": "message",
-                        "type": "textarea",
+                        "type": "html",
                         "label": "Message",
                         "required": true,
                         "requiredMessage": "%s needs a message.",
                         "variables": true,
-                        "default": ""
+                        "default": "<p>Order {{ order.number }} from {{ customer.full_name }} is {{ order.status }}.</p><p>Total: {{ order.total }}</p><p>{{ order.items }}</p>"
                     }
                 ],
                 "outputs": [
@@ -1685,6 +1685,20 @@
                                 "label": "Zimbabwe"
                             }
                         ]
+                    },
+                    {
+                        "key": "customer.is_first_order",
+                        "label": "Customer’s first order",
+                        "type": "boolean",
+                        "valueType": "boolean",
+                        "conditional": true
+                    },
+                    {
+                        "key": "customer.unsubscribed",
+                        "label": "Customer unsubscribed",
+                        "type": "boolean",
+                        "valueType": "boolean",
+                        "conditional": true
                     }
                 ],
                 "relations": []

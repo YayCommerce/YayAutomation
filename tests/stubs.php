@@ -13,8 +13,69 @@ if ( ! function_exists( '__' ) ) {
 }
 
 if ( ! function_exists( 'esc_html' ) ) {
+    // Like WordPress: entities already in the text aren't encoded again.
     function esc_html( $text ) {
-        return htmlspecialchars( (string) $text, ENT_QUOTES, 'UTF-8' );
+        return htmlspecialchars( (string) $text, ENT_QUOTES, 'UTF-8', false );
+    }
+}
+
+if ( ! function_exists( 'esc_attr' ) ) {
+    function esc_attr( $text ) {
+        return htmlspecialchars( (string) $text, ENT_QUOTES, 'UTF-8', false );
+    }
+}
+
+if ( ! function_exists( 'esc_url' ) ) {
+    // Like WordPress: spaces encoded, other unsafe characters dropped, only known protocols kept,
+    // `http://` added to a bare host, `&` and `'` as entities.
+    function esc_url( $url ) {
+        $url = str_replace( ' ', '%20', ltrim( (string) $url ) );
+        $url = (string) preg_replace( '|[^a-z0-9-~+_.?#=!&;,/:%@$\|*\'()\[\]\x80-\xff]|i', '', $url );
+        if ( '' === $url ) {
+            return '';
+        }
+        if ( preg_match( '/^([a-z][a-z0-9+.-]*):/i', $url, $match ) ) {
+            if ( ! in_array( strtolower( $match[1] ), [ 'http', 'https', 'mailto', 'tel' ], true ) ) {
+                return '';
+            }
+        } elseif ( ! in_array( $url[0], [ '/', '#', '?' ], true ) ) {
+            $url = 'http://' . $url;
+        }
+        $url = (string) preg_replace( '/&(?!#?[a-z0-9]+;)/i', '&amp;', $url );
+        return str_replace( [ '&amp;', "'" ], [ '&#038;', '&#039;' ], $url );
+    }
+}
+
+if ( ! function_exists( 'wp_kses_post' ) ) {
+    // Only drops script elements and on* attributes; the real allowlist runs on the site (check-orders).
+    function wp_kses_post( $text ) {
+        $text = (string) preg_replace( '#<script\b[^>]*>.*?</script>#is', '', (string) $text );
+        return (string) preg_replace( '#\s+on[a-z]+\s*=\s*("[^"]*"|\'[^\']*\'|[^\s>]+)#i', '', $text );
+    }
+}
+
+if ( ! function_exists( 'wp_strip_all_tags' ) ) {
+    function wp_strip_all_tags( $text ) {
+        return trim( strip_tags( (string) $text ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.strip_tags_strip_tags -- this is the wp_strip_all_tags() stand-in.
+    }
+}
+
+if ( ! function_exists( 'wpautop' ) ) {
+    // Like WordPress for simple input: blank lines split paragraphs, single line breaks become
+    // `<br />`, blocks that already are HTML paragraphs or tables are left alone.
+    function wpautop( $text ) {
+        $text = trim( str_replace( "\r\n", "\n", (string) $text ) );
+        if ( '' === $text ) {
+            return '';
+        }
+        $out = [];
+        foreach ( preg_split( '/\n\s*\n/', $text ) as $chunk ) {
+            $chunk = trim( $chunk );
+            $out[] = preg_match( '/^<(?:p|table|div|ul|ol|h[1-6]|blockquote)\b/i', $chunk )
+                ? $chunk
+                : '<p>' . str_replace( "\n", "<br />\n", $chunk ) . '</p>';
+        }
+        return implode( "\n", $out ) . "\n";
     }
 }
 
