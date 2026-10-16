@@ -3,6 +3,7 @@ namespace YayMatik\Workflow\Steps\Actions;
 
 use YayMatik\Workflow\Data\Scope;
 use YayMatik\Workflow\Data\Template;
+use YayMatik\Workflow\Data\Values;
 use YayMatik\Workflow\Data\Type;
 use YayMatik\Workflow\Email\EmailBody;
 use YayMatik\Workflow\Email\UnsubscribeLink;
@@ -139,7 +140,7 @@ class SendEmail extends Action {
      * @param array $config Sanitized, valid config.
      */
     public function run( Scope $scope, array $config ): StepResult {
-        $to = UnsubscribeLink::normalize( Field::single_line( self::render( $config['to'], $scope ) ) );
+        $to = self::recipient( $config, $scope );
         if ( '' === $to ) {
             return StepResult::failed( new \WP_Error( 'yaymatik_no_email', __( 'No valid email address.', 'yaymatik' ) ) );
         }
@@ -147,7 +148,7 @@ class SendEmail extends Action {
             return StepResult::skipped( self::SKIPPED_UNSUBSCRIBED );
         }
 
-        $email = $this->compose( $config, $scope, $to );
+        $email = $this->compose( $config, $scope, $this->links()->url( $to ) );
         if ( ! WC()->mailer()->send( $to, $email['subject'], $email['body'], $email['headers'] ) ) {
             return StepResult::failed( new \WP_Error( 'yaymatik_mail_failed', __( 'Couldn’t send the email.', 'yaymatik' ) ) );
         }
@@ -157,25 +158,36 @@ class SendEmail extends Action {
     /**
      * The email as it goes out: subject, wrapped body with the unsubscribe link, headers.
      *
-     * @param array  $config Sanitized config.
-     * @param Scope  $scope  Where the data comes from.
-     * @param string $to     Final address, normalized.
+     * @param array       $config      Sanitized config.
+     * @param Values      $values      Run scope, or sample values in a preview.
+     * @param string|null $unsubscribe The address's unsubscribe link; null = a link that goes nowhere
+     *                                 (`#`, same look) and no List-Unsubscribe headers, for previews
+     *                                 and test emails, which must never carry a real token.
      * @return array [ 'subject' => string, 'heading' => string, 'body' => HTML, 'headers' => string ].
      */
-    public function compose( array $config, Scope $scope, string $to ): array {
-        $subject = self::plain_line( $config['subject'], $scope );
-        $heading = self::plain_line( $config['heading'], $scope );
+    public function compose( array $config, Values $values, ?string $unsubscribe ): array {
+        $subject = self::plain_line( $config['subject'], $values );
+        $heading = self::plain_line( $config['heading'], $values );
         $heading = '' === $heading ? $subject : $heading;
-        $url     = $this->links()->url( $to );
 
-        $body = EmailBody::render( $config['message'], $scope ) . self::footer( $url );
+        $body = EmailBody::render( $config['message'], $values ) . self::footer( $unsubscribe ?? '#' );
         return [
             'subject' => $subject,
             'heading' => $heading,
             // WooCommerce's template; the mailer inlines its styles when it sends.
             'body'    => WC()->mailer()->wrap_message( $heading, $body ),
-            'headers' => self::headers( $url ),
+            'headers' => self::headers( (string) $unsubscribe ),
         ];
+    }
+
+    /**
+     * The To address a config gives, normalized; empty when it isn't one email.
+     *
+     * @param array  $config Sanitized config.
+     * @param Values $values Where the data comes from.
+     */
+    public static function recipient( array $config, Values $values ): string {
+        return UnsubscribeLink::normalize( Field::single_line( self::render( $config['to'], $values ) ) );
     }
 
     /**
@@ -211,9 +223,9 @@ class SendEmail extends Action {
      * today". Values are data and are never stripped.
      *
      * @param string $text  Stored text.
-     * @param Scope  $scope Where the data comes from.
+     * @param Values $scope Where the data comes from.
      */
-    public static function plain_line( string $text, Scope $scope ): string {
+    public static function plain_line( string $text, Values $scope ): string {
         $template = new Template();
         $stripped = '';
         foreach ( $template->parse( $text ) as $token ) {

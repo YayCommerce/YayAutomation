@@ -71,6 +71,15 @@
 	</rule>
 
 	<!-- Files and directories to check && auto fix -->
+	<!-- WooCommerce's own capability: previews and test emails are for store managers. -->
+	<rule ref="WordPress.WP.Capabilities">
+		<properties>
+			<property name="custom_capabilities" type="array">
+				<element value="manage_woocommerce"/>
+			</property>
+		</properties>
+	</rule>
+
 	<file>yaymatik.php</file>
 	<file>includes/</file>
 	<exclude-pattern>/vendor/</exclude-pattern>

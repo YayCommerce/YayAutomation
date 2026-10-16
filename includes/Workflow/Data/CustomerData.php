@@ -99,6 +99,27 @@ final class CustomerData extends DataItem {
     }
 
     /**
+     * Made-up customer for previews when the store has no paid order yet (labelled "Sample data").
+     *
+     * @return array Field key => value, or [ 'value', 'text' ] when it reads differently.
+     */
+    public function sample(): array {
+        return [
+            'email'           => 'jane.doe@example.com',
+            'first_name'      => 'Jane',
+            'last_name'       => 'Doe',
+            'full_name'       => 'Jane Doe',
+            'phone'           => '555-0100',
+            'billing_country' => [
+                'value' => 'US',
+                'text'  => self::countries()['US'] ?? 'United States (US)',
+            ],
+            'is_first_order'  => true,
+            'unsubscribed'    => false,
+        ];
+    }
+
+    /**
      * Whether the customer has no paid order (processing or completed) besides this one, whatever
      * this order's status. Orders are found by account and by billing email, so a guest order with
      * the same email counts too. Refunded, cancelled, failed and unpaid orders don't count. Without

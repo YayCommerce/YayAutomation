@@ -45,6 +45,9 @@ class GenerateCoupon extends Action {
 
     private const DEFAULT_PREFIX = 'YM';
 
+    /** The code previews and test emails show; never a real coupon. */
+    public const SAMPLE_CODE = 'YMSAMPLE';
+
     /** @var CouponWriter */
     private $coupons;
 
@@ -256,6 +259,22 @@ class GenerateCoupon extends Action {
                 'expires_at' => $expires ? $expires->format( 'Y-m-d' ) : '',
             ]
         );
+    }
+
+    /**
+     * What a preview shows for this step's coupon: the sample code, the configured discount and expiry.
+     * No coupon is made.
+     *
+     * @param array $config Sanitized config.
+     */
+    public function sample_outputs( array $config ): array {
+        $type    = (string) $config['discount_type'];
+        $expires = null === $config['expiry_days'] ? null : $this->expiry( max( 1, (int) $config['expiry_days'] ) );
+        return [
+            'code'       => self::SAMPLE_CODE,
+            'amount'     => self::amount_text( $type, self::FREE_SHIPPING === $type ? 0.0 : (float) $config['amount'] ),
+            'expires_at' => $expires ? $expires->format( 'Y-m-d' ) : '',
+        ];
     }
 
     /**

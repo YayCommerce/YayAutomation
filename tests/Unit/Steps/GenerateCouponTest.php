@@ -281,6 +281,38 @@ final class GenerateCouponTest extends TestCase {
         $this->assertSame( 'Couldn’t save the coupon.', $this->run_step( $this->config() )->message() );
     }
 
+    public function test_previews_get_the_sample_code_and_no_coupon(): void {
+        $this->assertSame(
+            [
+                'code'       => 'YMSAMPLE',
+                'amount'     => '15%',
+                'expires_at' => '2026-10-23',
+            ],
+            $this->step()->sample_outputs(
+                $this->config(
+                    [
+                        'amount'      => 15,
+                        'expiry_days' => 7,
+                    ]
+                )
+            )
+        );
+        $this->assertSame(
+            'Free shipping',
+            $this->step()->sample_outputs(
+                $this->config(
+                    [
+                        'discount_type' => 'free_shipping',
+                        'amount'        => '',
+                    ]
+                )
+            )['amount']
+        );
+        $this->assertSame( '', $this->step()->sample_outputs( $this->config( [ 'expiry_days' => '' ] ) )['expires_at'] );
+        $this->assertSame( [], $this->coupons->created );
+        $this->assertSame( [], $this->coupons->checked );
+    }
+
     public function test_the_box_escapes_its_values(): void {
         $outputs = [
             'code'       => 'YM<b>"X"',

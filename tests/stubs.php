@@ -228,3 +228,16 @@ if ( ! function_exists( 'esc_url_raw' ) ) {
         return str_replace( [ '&#038;', '&#039;' ], [ '&', "'" ], esc_url( $url ) );
     }
 }
+
+if ( ! function_exists( 'wp_date' ) ) {
+    // UTC only.
+    function wp_date( $format, $timestamp = null ) {
+        return gmdate( (string) $format, null === $timestamp ? time() : (int) $timestamp );
+    }
+}
+
+if ( ! function_exists( 'admin_url' ) ) {
+    function admin_url( $path = '' ) {
+        return 'https://shop.test/wp-admin/' . ltrim( (string) $path, '/' );
+    }
+}
