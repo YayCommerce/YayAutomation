@@ -29,6 +29,7 @@ const externalOptions: Options = {
     externals: {
       '@wordpress/hooks': 'wp.hooks',
       '@wordpress/i18n': 'wp.i18n',
+      '@wordpress/date': 'wp.date',
     },
   },
 

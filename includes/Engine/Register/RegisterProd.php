@@ -13,8 +13,6 @@ class RegisterProd {
     }
 
     public function register_all_scripts() {
-        $deps = [ 'react', 'react-dom', 'wp-hooks', 'wp-i18n' ];
-
-        wp_register_script( ScriptName::PAGE_ADMIN, YAYMATIK_PLUGIN_URL . 'assets/dist/admin-page/main.js', $deps, YAYMATIK_VERSION, true );
+        wp_register_script( ScriptName::PAGE_ADMIN, YAYMATIK_PLUGIN_URL . 'assets/dist/admin-page/main.js', ScriptName::ADMIN_DEPS, YAYMATIK_VERSION, true );
     }
 }

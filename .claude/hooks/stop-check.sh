@@ -42,10 +42,12 @@ if [ -n "$php_files" ]; then
   fi
 
   # Coding standard, changed files only. Skipped until `./run.sh setup` installs the tools.
+  # scoper.inc.php is skipped: yaycommerce-prerelease rewrites it in its own format on every release.
   phpcs=dev/tools/lintphp/vendor/bin/phpcs
-  if [ -z "$php_out" ] && [ -x "$phpcs" ]; then
+  cs_files=$(echo "$php_files" | grep -vx 'scoper.inc.php')
+  if [ -z "$php_out" ] && [ -x "$phpcs" ] && [ -n "$cs_files" ]; then
     # shellcheck disable=SC2086
-    if ! cs_out=$($phpcs -q --report=emacs $php_files 2>&1); then
+    if ! cs_out=$($phpcs -q --report=emacs $cs_files 2>&1); then
       fail+="PHP lint (phpcs) failed. Try: pnpm lint:php:fix"$'\n'"$(echo "$cs_out" | head -25)"$'\n'
     fi
   fi

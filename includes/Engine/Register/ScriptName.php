@@ -11,4 +11,7 @@ class ScriptName {
     public const MODULE_PREFIX = 'yaymatik/module/';
 
     public const PAGE_ADMIN = 'yaymatik/module/page-admin';
+
+    /** WordPress handles of the admin script's externals (apps/admin-page/vite.config.ts). */
+    public const ADMIN_DEPS = [ 'react', 'react-dom', 'wp-hooks', 'wp-i18n', 'wp-date' ];
 }

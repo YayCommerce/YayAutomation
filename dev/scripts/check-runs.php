@@ -320,21 +320,8 @@ try {
     if ( isset( $order ) && $order ) {
         $order->delete( true );
     }
-    $roots = array_map( 'intval', $wpdb->get_col( $wpdb->prepare( 'SELECT DISTINCT root_run_id FROM ' . RunStore::table() . ' WHERE id > %d', $since ) ) );
-    if ( $roots ) {
-        $in  = implode( ',', $roots );
-        $ids = array_map( 'intval', $wpdb->get_col( 'SELECT id FROM ' . RunStore::table() . " WHERE root_run_id IN ({$in})" ) );
-        foreach ( $ids as $id ) {
-            as_unschedule_all_actions( ActionSchedulerQueue::HOOK, [ $id ], ActionSchedulerQueue::GROUP );
-            as_unschedule_all_actions( ActionSchedulerQueue::RECOVER_HOOK, [ $id ], ActionSchedulerQueue::GROUP );
-        }
-        if ( $ids ) {
-            $wpdb->query( 'DELETE FROM ' . RunStepStore::table() . ' WHERE run_id IN (' . implode( ',', $ids ) . ')' );
-        }
-        $wpdb->query( 'DELETE FROM ' . RunStore::table() . " WHERE root_run_id IN ({$in})" );
-    }
-    $left = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM ' . RunStore::table() . ' WHERE id > %d', $since ) );
-    $ok( 0 === $left, 'cleanup: no runs left' );
+    $left = yaymatik_check_remove_runs( $since );
+    $ok( 0 === $left['runs'] && 0 === $left['jobs'], 'cleanup: no runs or jobs left' );
 }//end try
 
 echo $fails ? "{$fails} failed\n" : "All passed\n"; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped

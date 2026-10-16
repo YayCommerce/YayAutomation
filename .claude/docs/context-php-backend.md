@@ -41,5 +41,5 @@
 - `vendor/` is dumped classmap-authoritative: after adding a PHP class, run `composer dump-autoload`.
 - Every REST route needs `permission_callback` (see `RestAPI::can_manage`).
 - Changing `yayMatikMeta` → update `apps/admin-page/src/types/localize.d.ts` and run `./run.sh meta-fixture`.
-- PHP tests: `pnpm test:php` (plain PHPUnit, no WordPress; `tests/`). Real-site checks: `./run.sh check-storage`, `check-orders`, `check-status-flow`, `check-runs` (runs end to end: events → Dispatcher → Worker; temporary order and workflows, removed after).
+- PHP tests: `pnpm test:php` (plain PHPUnit, no WordPress; `tests/`). Real-site checks: `./run.sh check-storage`, `check-orders` (a high-value-style workflow on two orders: emails, notes and meta as JSON for before/after diffs; mail goes to the local mail catcher), `check-status-flow`, `check-runs` (runs end to end: events → Dispatcher → Worker). Both use temporary orders and workflows and remove them after.
 - Style: `phpcs.xml` (WPCS, 4 spaces, PHP 7.4+).

@@ -2,6 +2,7 @@
 
 namespace YayMatik\Engine\BEPages;
 
+use YayMatik\Engine\API\RestAPI;
 use YayMatik\Engine\Register\ScriptName;
 use YayMatik\Utils\SingletonTrait;
 use YayMatik\Workflow\Definition\Catalog;
@@ -50,6 +51,7 @@ class AdminPage {
         }
 
         wp_localize_script( ScriptName::PAGE_ADMIN, 'yayMatikMeta', self::client_meta() );
+        wp_set_script_translations( ScriptName::PAGE_ADMIN, 'yaymatik', YAYMATIK_PLUGIN_DIR . 'languages' );
 
         wp_enqueue_script( ScriptName::PAGE_ADMIN );
         if ( YayMatik::is_prod() ) {
@@ -69,7 +71,7 @@ class AdminPage {
             ],
             'wp'         => [
                 'restRoot'       => esc_url_raw( rest_url() ),
-                'restBase'       => 'yaymatik/v1',
+                'restBase'       => RestAPI::REST_NAMESPACE,
                 'restNonce'      => wp_create_nonce( 'wp_rest' ),
                 'siteUrl'        => site_url(),
                 'adminUrl'       => admin_url(),

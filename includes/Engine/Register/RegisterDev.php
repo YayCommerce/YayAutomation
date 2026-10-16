@@ -30,8 +30,6 @@ class RegisterDev {
 
     public function register_all_scripts() {
         $port = defined( 'YAYMATIK_VITE_PORT' ) ? \YAYMATIK_VITE_PORT : 3020;
-        $deps = [ 'react', 'react-dom', 'wp-hooks', 'wp-i18n' ];
-
-        wp_register_script( ScriptName::PAGE_ADMIN, 'http://localhost:' . $port . '/main.tsx', $deps, null, true ); // phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion
+        wp_register_script( ScriptName::PAGE_ADMIN, 'http://localhost:' . $port . '/main.tsx', ScriptName::ADMIN_DEPS, null, true ); // phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion
     }
 }
