@@ -48,7 +48,7 @@ const strings = (value: unknown): string[] =>
 
 describe('PHP ↔ TS parity', () => {
   it('every TS step is in the PHP catalog or listed as pending', () => {
-    expect(phpStepIds).toHaveLength(8);
+    expect(phpStepIds).toHaveLength(9);
     expect(tsStepIds.filter((id) => !php.steps[id] && !isPendingStep(id))).toEqual([]);
   });
 
@@ -127,14 +127,18 @@ describe('PHP ↔ TS parity', () => {
     for (const id of phpStepIds) {
       const meta = php.steps[id]!;
       for (const field of meta.fields.filter((f) => f.requiredMessage)) {
-        const config = { ...steps[id].defaults(), [field.key]: '' };
+        // The other required fields filled in, so this one's message is the first.
+        const filled = Object.fromEntries(
+          meta.fields.filter((f) => f.requiredMessage && f.key !== field.key).map((f) => [f.key, 'a@x.com']),
+        );
+        const config = { ...steps[id].defaults(), ...filled, [field.key]: '' };
         expect(steps[id].firstError(config), `${id}.${field.key}`).toBe(
           sprintf(field.requiredMessage as '%s', meta.label),
         );
         checked++;
       }
     }
-    expect(checked).toBe(5);
+    expect(checked).toBe(8);
   });
 
   describe.each(templates.map((template) => [template.id, template] as const))('template %s', (_id, template) => {

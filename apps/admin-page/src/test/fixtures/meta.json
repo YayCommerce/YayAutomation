@@ -213,6 +213,69 @@
                     }
                 ]
             },
+            "send_email": {
+                "kind": "action",
+                "plugin": "woocommerce",
+                "category": "email",
+                "requires": [],
+                "module": "core",
+                "label": "Send email",
+                "description": "Send an email to a customer in your store’s WooCommerce email style, with an unsubscribe link.",
+                "icon": "send",
+                "summary": "Send to %to%",
+                "onError": "stop",
+                "fields": [
+                    {
+                        "key": "from",
+                        "type": "notice",
+                        "label": "From",
+                        "text": "Example Store <store@example.test>"
+                    },
+                    {
+                        "key": "to",
+                        "type": "text",
+                        "label": "To",
+                        "required": true,
+                        "requiredMessage": "%s needs an email address.",
+                        "variables": true,
+                        "help": "One email address, or a variable such as the customer’s email.",
+                        "default": "{{ customer.email }}"
+                    },
+                    {
+                        "key": "subject",
+                        "type": "text",
+                        "label": "Subject",
+                        "required": true,
+                        "requiredMessage": "%s needs a subject.",
+                        "variables": true,
+                        "default": ""
+                    },
+                    {
+                        "key": "heading",
+                        "type": "text",
+                        "label": "Heading",
+                        "variables": true,
+                        "help": "Shown at the top of the email. Leave blank to use the subject.",
+                        "default": ""
+                    },
+                    {
+                        "key": "message",
+                        "type": "html",
+                        "label": "Message",
+                        "required": true,
+                        "requiredMessage": "%s needs a message.",
+                        "variables": true,
+                        "default": ""
+                    }
+                ],
+                "outputs": [
+                    {
+                        "key": "to",
+                        "label": "Sent to",
+                        "type": "string"
+                    }
+                ]
+            },
             "send_internal_email": {
                 "kind": "action",
                 "plugin": "woocommerce",

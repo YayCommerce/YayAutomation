@@ -221,3 +221,10 @@ if ( ! function_exists( 'date_i18n' ) ) {
         return gmdate( (string) $format, false === $timestamp ? time() : (int) $timestamp );
     }
 }
+
+if ( ! function_exists( 'esc_url_raw' ) ) {
+    // Like WordPress: `esc_url()` without turning `&` into an entity, for headers and redirects.
+    function esc_url_raw( $url ) {
+        return str_replace( [ '&#038;', '&#039;' ], [ '&', "'" ], esc_url( $url ) );
+    }
+}

@@ -2,11 +2,13 @@ import type { WorkflowTemplate } from '@yaymatik/types';
 
 import { structureErrors } from '../../model/structure';
 import { validateWorkflow } from '../../model/validation';
+import { isComingSoon } from './meta';
 
 /**
  * Lists templates and finds one by id. Throws on a duplicate id so a copy-pasted template folder fails
  * fast. In development it also throws when a template's graph would be rejected by the server's
  * shape checks or has issues: Use template has to give a workflow that saves and can be activated as is.
+ * A template still coming soon can't be used yet, so only its shape is checked.
  */
 export function createTemplateRegistry(list: WorkflowTemplate[]) {
   const byId = new Map<string, WorkflowTemplate>();
@@ -20,9 +22,10 @@ export function createTemplateRegistry(list: WorkflowTemplate[]) {
       // Shape first (what Use template's save would reject), then issues (what Activate would reject);
       // the issue check assumes every step exists.
       const broken = structureErrors(template.graph);
-      const problems = broken.length
-        ? broken
-        : validateWorkflow({ name: template.name, graph: template.graph }).map(
+      const problems =
+        broken.length || isComingSoon(template.graph)
+          ? broken
+          : validateWorkflow({ name: template.name, graph: template.graph }).map(
             (issue) => `${issue.code} (${issue.message})`,
           );
       if (problems.length) {

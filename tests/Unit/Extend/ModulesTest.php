@@ -13,6 +13,7 @@ final class ModulesTest extends TestCase {
         'order_created',
         'order_status_changed',
         'condition',
+        'send_email',
         'send_internal_email',
         'change_order_status',
         'add_order_note',

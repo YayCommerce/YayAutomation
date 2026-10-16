@@ -15,7 +15,6 @@ import type { DataFieldType, DataItemMeta, StepMeta } from '@/types/localize';
  */
 
 const steps: Partial<Record<StepId, StepMeta>> = {
-  send_email: { kind: 'action', plugin: 'woocommerce', category: 'email', requires: [] },
   wait: { kind: 'action', plugin: 'yaymatik', category: 'flow', requires: [] },
 };
 

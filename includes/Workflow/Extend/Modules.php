@@ -4,6 +4,7 @@ namespace YayMatik\Workflow\Extend;
 use YayMatik\Workflow\Steps\Actions\AddOrderNote;
 use YayMatik\Workflow\Steps\Actions\ChangeOrderStatus;
 use YayMatik\Workflow\Steps\Actions\GenerateCoupon;
+use YayMatik\Workflow\Steps\Actions\SendEmail;
 use YayMatik\Workflow\Steps\Actions\SendInternalEmail;
 use YayMatik\Workflow\Steps\Actions\UpdateOrderMeta;
 use YayMatik\Workflow\Steps\Conditions\Criteria;
@@ -42,6 +43,7 @@ final class Modules {
                     OrderCreated::class,
                     OrderStatusChanged::class,
                     Criteria::class,
+                    SendEmail::class,
                     SendInternalEmail::class,
                     ChangeOrderStatus::class,
                     AddOrderNote::class,

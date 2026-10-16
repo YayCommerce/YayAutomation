@@ -1,7 +1,9 @@
 <?php
 /**
  * Runs a temporary high-value-style workflow on two temporary orders, through real WooCommerce
- * events, the Dispatcher and the Worker, and prints the emails, order notes and order meta it made,
+ * events, the Dispatcher and the Worker, and prints the emails, order notes and order meta it made.
+ * The high order also gets a customer email (Send email): its WooCommerce look, unsubscribe link and
+ * one-click headers are printed too. Output is
  * as JSON keyed `high` / `low`; order numbers read `{order}` and mail bodies are text, so two runs
  * diff cleanly. Each order has one line item of a temporary product. Mail is really sent (local
  * Mailpit) and captured too. Removes the workflow, the orders and the product (force delete), their
@@ -35,11 +37,19 @@ add_filter(
     'wp_mail',
     function ( $atts ) use ( &$mails ) {
         // Text only: the store's email wrapper would bury the workflow's content in the diff.
-        $text    = html_entity_decode( wp_strip_all_tags( (string) $atts['message'] ), ENT_QUOTES, 'UTF-8' );
+        $html    = (string) $atts['message'];
+        $text    = html_entity_decode( wp_strip_all_tags( $html ), ENT_QUOTES, 'UTF-8' );
+        $headers = is_array( $atts['headers'] ) ? $atts['headers'] : explode( "\n", str_replace( "\r\n", "\n", (string) $atts['headers'] ) );
+        // The unsubscribe token is per address; masked so two runs diff cleanly.
+        $mask    = fn( string $line ) => (string) preg_replace( '/yaymatik_token=[A-Za-z0-9_-]+/', 'yaymatik_token={token}', $line );
         $mails[] = [
-            'to'      => implode( ', ', (array) $atts['to'] ),
-            'subject' => $atts['subject'],
-            'message' => implode( "\n", array_filter( array_map( 'trim', explode( "\n", $text ) ) ) ),
+            'to'          => implode( ', ', (array) $atts['to'] ),
+            'subject'     => $atts['subject'],
+            'message'     => implode( "\n", array_filter( array_map( 'trim', explode( "\n", $text ) ) ) ),
+            // WooCommerce's email template wraps it, with its styles inlined.
+            'wc_look'     => false !== strpos( $html, 'id="template_container"' ) && false !== strpos( $html, 'style="' ),
+            'unsubscribe' => (bool) preg_match( '#<a [^>]*href="[^"]*yaymatik_unsub=[^"]*"[^>]*>Unsubscribe</a>#', $html ),
+            'headers'     => array_values( array_map( $mask, preg_grep( '/^List-Unsubscribe/i', array_map( 'trim', $headers ) ) ) ),
         ];
         return $atts;
     }
@@ -107,12 +117,25 @@ $graph = [
                 'value' => 'High-value order {{ order.number }} for {{ customer.email }}',
             ]
         ),
+        $node(
+            'customer_email',
+            'action',
+            680,
+            'send_email',
+            [
+                'to'      => '{{ customer.email }}',
+                'subject' => 'Check orders: thanks for order {{ order.number }}, {{ customer.first_name }}',
+                'heading' => 'Thanks, {{ customer.first_name }}!',
+                'message' => '<p>Hi {{ customer.first_name }},</p><p>Order {{ order.number }} total: <strong>{{ order.total }}</strong></p><p>{{ order.items }}</p><p><a href="{{ site.url }}">Visit the shop</a></p>',
+            ]
+        ),
         $node( 'note', 'action', 340, 'add_order_note', [ 'note' => 'Check-orders: order {{ order.number }} is under 500 ({{ order.total }})' ] ),
     ],
     'edges' => [
         $edge( 'trigger', 'condition' ),
         $edge( 'condition', 'email', 'then' ),
         $edge( 'email', 'meta' ),
+        $edge( 'meta', 'customer_email' ),
         $edge( 'condition', 'note', 'otherwise' ),
     ],
 ];
@@ -191,7 +214,7 @@ try {
 
         $out[ $label ] = [
             'run'   => $run ? $run['status'] . ( $run['error'] ? ': ' . $run['error'] : '' ) : 'no run',
-            'mails' => array_map( fn( $m ) => array_map( $plain, $m ), $mails ),
+            'mails' => array_map( fn( $m ) => array_map( fn( $v ) => is_string( $v ) ? $plain( $v ) : $v, $m ), $mails ),
             'notes' => array_map( $plain, wp_list_pluck( wc_get_order_notes( [ 'order_id' => $order->get_id() ] ), 'content' ) ),
             'meta'  => $plain( $order->get_meta( CHECK_ORDERS_META ) ),
         ];
