@@ -62,3 +62,65 @@ function yaymatik_check_remove_workflows( string $prefix ): array {
     }
     return $left;
 }
+
+/**
+ * Removes a check script's runs, with their child runs (by root run), run_steps rows and jobs.
+ *
+ * @param int   $since        Only runs with a higher id.
+ * @param int[] $workflow_ids Runs of these workflows, or of the orders below.
+ * @param int[] $order_ids    Order ids. Both lists empty: every run after `$since`.
+ * @return array{runs: int, jobs: int} What is still there afterwards (should be 0 each).
+ */
+function yaymatik_check_remove_runs( int $since, array $workflow_ids = [], array $order_ids = [] ): array {
+    // phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+    global $wpdb;
+    $runs  = YayMatik\Workflow\Storage\RunStore::table();
+    $steps = YayMatik\Workflow\Storage\RunStepStore::table();
+    $queue = YayMatik\Workflow\Runtime\ActionSchedulerQueue::class;
+
+    $where = $wpdb->prepare( 'id > %d', $since );
+    $match = [];
+    if ( $workflow_ids ) {
+        $match[] = 'workflow_id IN (' . implode( ',', array_map( 'intval', $workflow_ids ) ) . ')';
+    }
+    if ( $order_ids ) {
+        $subjects = array_map( fn( $id ) => "'order:" . (int) $id . "'", $order_ids );
+        $match[]  = 'subject IN (' . implode( ',', $subjects ) . ')';
+    }
+    if ( $match ) {
+        $where .= ' AND (' . implode( ' OR ', $match ) . ')';
+    }
+
+    $roots = array_map( 'intval', $wpdb->get_col( "SELECT DISTINCT root_run_id FROM {$runs} WHERE {$where}" ) );
+    $ids   = $roots ? array_map( 'intval', $wpdb->get_col( "SELECT id FROM {$runs} WHERE root_run_id IN (" . implode( ',', $roots ) . ')' ) ) : [];
+    foreach ( $ids as $id ) {
+        as_unschedule_all_actions( $queue::HOOK, [ $id ], $queue::GROUP );
+        as_unschedule_all_actions( $queue::RECOVER_HOOK, [ $id ], $queue::GROUP );
+    }
+    if ( $ids ) {
+        $wpdb->query( "DELETE FROM {$steps} WHERE run_id IN (" . implode( ',', $ids ) . ')' );
+        $wpdb->query( "DELETE FROM {$runs} WHERE id IN (" . implode( ',', $ids ) . ')' );
+    }
+
+    $jobs = 0;
+    foreach ( $ids as $id ) {
+        foreach ( [ $queue::HOOK, $queue::RECOVER_HOOK ] as $hook ) {
+            $jobs += count(
+                as_get_scheduled_actions(
+                    [
+                        'hook'   => $hook,
+                        'args'   => [ $id ],
+                        'group'  => $queue::GROUP,
+                        'status' => 'pending',
+                    ],
+                    'ids'
+                )
+            );
+        }
+    }
+    return [
+        'runs' => (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$runs} WHERE {$where}" ),
+        'jobs' => $jobs,
+    ];
+    // phpcs:enable
+}
