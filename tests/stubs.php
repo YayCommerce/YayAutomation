@@ -128,3 +128,22 @@ if ( ! function_exists( 'current_time' ) ) {
         return 'mysql' === $type ? gmdate( 'Y-m-d H:i:s' ) : time();
     }
 }
+
+if ( ! function_exists( 'home_url' ) ) {
+    function home_url( $path = '' ) {
+        return 'https://shop.test' . $path;
+    }
+}
+
+if ( ! function_exists( 'add_query_arg' ) ) {
+    // Array form only, on a URL without a query string.
+    function add_query_arg( $args, $url ) {
+        return $url . '?' . http_build_query( $args );
+    }
+}
+
+if ( ! function_exists( 'wp_parse_url' ) ) {
+    function wp_parse_url( $url, $component = -1 ) {
+        return parse_url( $url, $component ); // phpcs:ignore WordPress.WP.AlternativeFunctions.parse_url_parse_url -- this is the wp_parse_url() stand-in.
+    }
+}
