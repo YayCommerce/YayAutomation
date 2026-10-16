@@ -13,8 +13,9 @@ defined( 'ABSPATH' ) || exit;
  */
 abstract class Action extends Step {
 
-    public const CATEGORY_EMAIL = 'email';
-    public const CATEGORY_ORDER = 'order';
+    public const CATEGORY_EMAIL  = 'email';
+    public const CATEGORY_ORDER  = 'order';
+    public const CATEGORY_COUPON = 'coupon';
 
     public function kind(): string {
         return self::KIND_ACTION;

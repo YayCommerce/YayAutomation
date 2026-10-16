@@ -48,7 +48,7 @@ const strings = (value: unknown): string[] =>
 
 describe('PHP ↔ TS parity', () => {
   it('every TS step is in the PHP catalog or listed as pending', () => {
-    expect(phpStepIds).toHaveLength(7);
+    expect(phpStepIds).toHaveLength(8);
     expect(tsStepIds.filter((id) => !php.steps[id] && !isPendingStep(id))).toEqual([]);
   });
 
@@ -159,6 +159,14 @@ describe('PHP ↔ TS parity', () => {
           }
         }
         for (const path of strings(data.config).flatMap(templatePaths)) {
+          // `steps.<node id>.<output>`: an output PHP declares for that node's step.
+          const [root, nodeId, output] = path.split('.');
+          if (root === 'steps') {
+            const block = template.graph.nodes.find((node) => node.id === nodeId)?.data.block;
+            const outputs = (block && php.steps[block]?.outputs) || [];
+            expect(outputs.some((o) => o.key === output), path).toBe(true);
+            continue;
+          }
           expect(dataKeys.has(fieldByPath(path)?.key ?? ''), path).toBe(true);
         }
       }

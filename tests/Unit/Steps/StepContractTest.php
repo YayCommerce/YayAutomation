@@ -7,6 +7,7 @@ use YayMatik\Workflow\Extend\Modules;
 use YayMatik\Workflow\Extend\Plugins;
 use YayMatik\Workflow\Steps\Actions\AddOrderNote;
 use YayMatik\Workflow\Steps\Actions\ChangeOrderStatus;
+use YayMatik\Workflow\Steps\Actions\GenerateCoupon;
 use YayMatik\Workflow\Steps\Actions\SendInternalEmail;
 use YayMatik\Workflow\Steps\Actions\UpdateOrderMeta;
 use YayMatik\Workflow\Steps\Conditions\Criteria;
@@ -24,7 +25,7 @@ final class StepContractTest extends TestCase {
     /** @return Step[] Keyed by id. */
     private static function steps(): array {
         $steps = [];
-        foreach ( [ new OrderCreated(), new OrderStatusChanged(), new Criteria(), new SendInternalEmail(), new ChangeOrderStatus(), new AddOrderNote(), new UpdateOrderMeta() ] as $step ) {
+        foreach ( [ new OrderCreated(), new OrderStatusChanged(), new Criteria(), new SendInternalEmail(), new ChangeOrderStatus(), new AddOrderNote(), new UpdateOrderMeta(), new GenerateCoupon() ] as $step ) {
             $steps[ $step->id() ] = $step;
         }
         return $steps;
@@ -104,6 +105,7 @@ final class StepContractTest extends TestCase {
                 'change_order_status'  => [ 'from', 'to' ],
                 'add_order_note'       => [ 'type' ],
                 'update_order_meta'    => [ 'key' ],
+                'generate_coupon'      => [ 'code', 'amount', 'expires_at', 'box' ],
             ],
             $outputs
         );

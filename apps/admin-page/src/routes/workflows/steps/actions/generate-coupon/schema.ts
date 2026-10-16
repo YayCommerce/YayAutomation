@@ -2,9 +2,9 @@ import * as v from 'valibot';
 import { __ } from '@wordpress/i18n';
 
 /**
- * A WooCommerce coupon for later steps (`{{ coupon.code }}`). Numbers are kept as typed. Blank
+ * A WooCommerce coupon for later steps (`{{ steps.<id>.code }}`). Numbers are kept as typed. Blank
  * `expiry_days` = never expires, blank `minimum_spend` = none; `amount` is ignored for free shipping.
- * Its PHP side isn't built yet (see `pending.ts`).
+ * PHP `GenerateCoupon` sanitizes the saved config into numbers.
  */
 export type DiscountType = 'percent' | 'fixed_cart' | 'free_shipping';
 export type GenerateCouponConfig = {

@@ -103,6 +103,21 @@ final class Executor {
         }
     }
 
+    /**
+     * Step outputs' own display texts (`outputs()` `display`), for `Scope::set_output_display()`.
+     *
+     * @param array[]  $nodes Graph nodes by id.
+     * @param callable $steps fn( string $id ): ?Step.
+     */
+    public static function output_display( array $nodes, callable $steps ): callable {
+        return function ( string $step_id, string $key, array $outputs, bool $html ) use ( $nodes, $steps ): ?string {
+            $id      = (string) ( $nodes[ $step_id ]['data']['block'] ?? '' );
+            $step    = '' === $id ? null : $steps( $id );
+            $display = $step instanceof Step ? ( $step->outputs()[ $key ]['display'] ?? null ) : null;
+            return $display ? (string) $display( $outputs, $html ) : null;
+        };
+    }
+
     private function slice( array $run ): string {
         $id    = (int) $run['id'];
         $graph = $this->graphs->graph( (int) $run['version_id'] );
@@ -112,6 +127,7 @@ final class Executor {
         $nodes = array_column( $graph['nodes'], null, 'id' );
         $edges = is_array( $graph['edges'] ?? null ) ? $graph['edges'] : [];
         $scope = Scope::from_array( is_array( $run['scope'] ?? null ) ? $run['scope'] : [], ( $this->resolver )() );
+        $scope->set_output_display( self::output_display( $nodes, $this->steps ) );
         $queue = is_array( $run['position']['queue'] ?? null )
             ? array_values( array_map( 'strval', $run['position']['queue'] ) )
             : self::children( $edges, self::trigger_id( $graph['nodes'] ) );
@@ -229,6 +245,7 @@ final class Executor {
             throw new \RuntimeException( __( 'Could not save the step result.', 'yaymatik' ) );
         }
 
+        $scope->set_current_step( $run_id, $step_id );
         $result = $broken ?? self::run_step( $node, $step, $config, $scope );
         $status = self::STATUS_OF[ $result->status() ];
         $output = $result->is_ok() || $result->is_wait() ? array_intersect_key( $result->outputs(), $step ? $step->outputs() : [] ) : [];

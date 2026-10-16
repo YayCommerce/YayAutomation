@@ -52,6 +52,8 @@ export interface StepOutputMeta {
   /** Same text form as a data field's `valueType`, e.g. `enum`, `list<string>`. */
   type: string;
   options?: OptionMeta[];
+  /** A ready-made email block (e.g. a coupon box), rendered on the server; inserted on its own line. */
+  block?: boolean;
 }
 
 /** What the admin knows about each step: PHP's catalog entry (`CatalogStepMeta`) or a pending stub. */
@@ -131,6 +133,11 @@ declare global {
       wc: {
         active: boolean;
         currencySymbol: string;
+        /**
+         * What free shipping coupons need to work: a Free shipping method that takes a coupon alone,
+         * one that also needs a minimum order amount, or '' when none takes a coupon.
+         */
+        freeShippingCoupon: 'coupon' | 'coupon_and_minimum' | '';
       };
       automation: {
         plugins: PluginMeta[];

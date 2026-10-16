@@ -119,7 +119,7 @@ export function GenerateCouponForm({ config, onChange }: StepFormProps<GenerateC
       )}
 
       <p className="text-muted-foreground text-xs">
-        {__('Each coupon can be used once. Use {{ coupon.code }} in a later email.', 'yaymatik')}
+        {__('Each coupon can be used once. Add its code to a later email with Insert variable.', 'yaymatik')}
       </p>
     </FieldGroup>
   );

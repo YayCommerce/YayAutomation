@@ -17,9 +17,10 @@ final class ModulesTest extends TestCase {
         'change_order_status',
         'add_order_note',
         'update_order_meta',
+        'generate_coupon',
     ];
 
-    public function test_core_is_lite_and_on_with_the_seven_steps(): void {
+    public function test_core_is_lite_and_on_with_its_steps(): void {
         $core = Modules::manifest()[ Modules::CORE ];
 
         $this->assertSame( Modules::TIER_LITE, $core['tier'] );

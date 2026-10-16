@@ -98,6 +98,17 @@ final class CatalogTest extends TestCase {
         );
         $this->assertSame( 'list<string>', $steps['send_internal_email']['outputs'][0]['type'] );
         $this->assertSame( [ 'from', 'to' ], array_column( $steps['change_order_status']['outputs'], 'key' ) );
+        $this->assertSame(
+            [
+                'key'   => 'box',
+                'label' => 'Coupon box',
+                'type'  => 'string',
+                'block' => true,
+            ],
+            $steps['generate_coupon']['outputs'][3],
+            'a block says so; its display callback stays on the server'
+        );
+        $this->assertArrayNotHasKey( 'block', $steps['generate_coupon']['outputs'][0] );
         foreach ( $steps as $step ) {
             foreach ( $step['outputs'] as $output ) {
                 $this->assertNotNull( Type::parse( $output['type'] ), $output['type'] );

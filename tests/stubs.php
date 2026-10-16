@@ -208,3 +208,16 @@ if ( ! function_exists( 'wp_parse_url' ) ) {
         return parse_url( $url, $component ); // phpcs:ignore WordPress.WP.AlternativeFunctions.parse_url_parse_url -- this is the wp_parse_url() stand-in.
     }
 }
+
+if ( ! function_exists( 'sanitize_hex_color' ) ) {
+    function sanitize_hex_color( $color ) {
+        return preg_match( '|^#([A-Fa-f0-9]{3}){1,2}$|', (string) $color ) ? $color : null;
+    }
+}
+
+if ( ! function_exists( 'date_i18n' ) ) {
+    // English month names only.
+    function date_i18n( $format, $timestamp = false ) {
+        return gmdate( (string) $format, false === $timestamp ? time() : (int) $timestamp );
+    }
+}
