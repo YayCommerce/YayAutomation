@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Stop hook: build, tests and PHP lint for this branch's changes (commits since develop + uncommitted).
+# Stop hook: build, lint, tests and PHP lint for this branch's changes (commits since develop + uncommitted).
 # Skips a state that already passed. Prints only on failure; exit 2 blocks the stop with stderr as the reason.
 root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0
 cd "$root" || exit 0
@@ -21,8 +21,20 @@ hash=$({
 fail=""
 if echo "$changed" | grep -qE '^(apps|packages)/|^(package\.json|pnpm-lock\.yaml|pnpm-workspace\.yaml)$'; then
   if ! out=$(pnpm build 2>&1); then
-    errs=$(echo "$out" | grep -E 'error|Error' | head -25)
+    # Vite's message spans the lines after "error during build"; tsc prints one "error TS" line per problem.
+    errs=$(echo "$out" | grep -A8 'error during build' | grep -vE '^[^ ]+ build: +at ' | head -25)
+    [ -z "$errs" ] && errs=$(echo "$out" | grep -E 'error|Error' | head -25)
     fail+="Build failed:"$'\n'"${errs:-$(echo "$out" | tail -25)}"$'\n'
+  fi
+  # Same command as CI: eslint + prettier --check in every package.
+  if ! out=$(pnpm lint 2>&1); then
+    # Drop pnpm's "<pkg> lint:" prefix; keep ESLint errors under their file and Prettier's [warn] lines.
+    errs=$(echo "$out" | sed -E 's/^[^ ]+ lint: //' | awk '
+      /^\// { file = $0; next }
+      / error / { if (file != shown) { print file; shown = file } print; next }
+      /✖ .*\(0 errors/ { next }
+      /^\[warn\]|✖|ERR_/ { print }' | head -25)
+    fail+="Lint failed. Try: pnpm lint:fix"$'\n'"${errs:-$(echo "$out" | tail -25)}"$'\n'
   fi
   if ! out=$(pnpm test 2>&1); then
     errs=$(echo "$out" | grep -E 'FAIL|AssertionError|Error|×' | head -25)

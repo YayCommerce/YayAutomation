@@ -18,8 +18,8 @@ Without it, WP loads the prod build in `assets/dist/admin-page/`.
 
 ## Verify
 
-- Stop hook (`.claude/hooks/stop-check.sh`) runs on uncommitted changes and blocks on failure: `pnpm build` + `pnpm test` when `apps/` or `packages/` change, `php -l` + PHPUnit + phpcs when PHP changes. A change set that passed is skipped.
-- `pnpm lint:fix` and `pnpm lint:php:fix` before commit. CI (`.github/workflows/ci.yml`) runs lint, lint:php, test, test:php and build on every PR to `develop`.
+- Stop hook (`.claude/hooks/stop-check.sh`) runs on uncommitted changes and blocks on failure: `pnpm build` + `pnpm lint` (same as CI) + `pnpm test` when `apps/` or `packages/` change, `php -l` + PHPUnit + phpcs when PHP changes. A change set that passed is skipped.
+- `pnpm lint:fix` (skips ESLint fixes in `components/ui/`, the YayUiKits copies) and `pnpm lint:php:fix` before commit. CI (`.github/workflows/ci.yml`) runs lint, lint:php, test, test:php and build on every PR to `develop`.
 - A change in behavior adds or updates a test: Vitest (`*.test.ts` next to the code) or PHPUnit (`tests/Unit/`, mirrors `includes/`, no WordPress loaded; WP-bound code is checked with wp-cli). Tests read PHP's meta from `apps/admin-page/src/test/fixtures/meta.json`; run `./run.sh meta-fixture` after changing what PHP sends.
 - UI change → `/wcheck`. REST change → `fetch('/wp-json/yaymatik/v1/…')` in console.
 
