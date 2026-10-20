@@ -26,8 +26,8 @@ export function createTemplateRegistry(list: WorkflowTemplate[]) {
         broken.length || isComingSoon(template.graph)
           ? broken
           : validateWorkflow({ name: template.name, graph: template.graph }).map(
-            (issue) => `${issue.code} (${issue.message})`,
-          );
+              (issue) => `${issue.code} (${issue.message})`,
+            );
       if (problems.length) {
         throw new Error(`Template "${template.id}" has issues: ${problems.join('; ')}`);
       }

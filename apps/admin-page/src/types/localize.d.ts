@@ -18,7 +18,17 @@ export interface OptionMeta {
 
 /** PHP `Steps\Core\Field` widgets. `rules` is the Condition rules builder (core steps only). */
 export type FieldWidget =
-  'text' | 'textarea' | 'html' | 'emails' | 'select' | 'multiselect' | 'toggle' | 'number' | 'number_unit' | 'notice' | 'rules';
+  | 'text'
+  | 'textarea'
+  | 'html'
+  | 'emails'
+  | 'select'
+  | 'multiselect'
+  | 'toggle'
+  | 'number'
+  | 'number_unit'
+  | 'notice'
+  | 'rules';
 
 /** PHP `Field::to_array()`: one setting of a step. Optional keys are sent only when set. */
 export interface StepFieldMeta {

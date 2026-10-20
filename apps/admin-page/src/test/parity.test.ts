@@ -168,7 +168,10 @@ describe('PHP ↔ TS parity', () => {
           if (root === 'steps') {
             const block = template.graph.nodes.find((node) => node.id === nodeId)?.data.block;
             const outputs = (block && php.steps[block]?.outputs) || [];
-            expect(outputs.some((o) => o.key === output), path).toBe(true);
+            expect(
+              outputs.some((o) => o.key === output),
+              path,
+            ).toBe(true);
             continue;
           }
           expect(dataKeys.has(fieldByPath(path)?.key ?? ''), path).toBe(true);
