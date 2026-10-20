@@ -61,7 +61,7 @@ describe('canInsert', () => {
   });
 
   it('lets a coming-soon step insert coming-soon fields too', () => {
-    for (const id of ['send_email', 'generate_coupon'] as const) {
+    for (const id of ['wait'] as const) {
       expect(steps[id].comingSoon).toBe(true);
       expect(canInsert(comingSoon, steps[id].comingSoon)).toBe(true);
     }

@@ -16,7 +16,8 @@
     },
     "wc": {
         "active": true,
-        "currencySymbol": "$"
+        "currencySymbol": "$",
+        "freeShippingCoupon": ""
     },
     "automation": {
         "plugins": [
@@ -212,6 +213,69 @@
                     }
                 ]
             },
+            "send_email": {
+                "kind": "action",
+                "plugin": "woocommerce",
+                "category": "email",
+                "requires": [],
+                "module": "core",
+                "label": "Send email",
+                "description": "Send an email to a customer in your store’s WooCommerce email style, with an unsubscribe link.",
+                "icon": "send",
+                "summary": "Send to %to%",
+                "onError": "stop",
+                "fields": [
+                    {
+                        "key": "from",
+                        "type": "notice",
+                        "label": "From",
+                        "text": "Example Store <store@example.test>"
+                    },
+                    {
+                        "key": "to",
+                        "type": "text",
+                        "label": "To",
+                        "required": true,
+                        "requiredMessage": "%s needs an email address.",
+                        "variables": true,
+                        "help": "One email address, or a variable such as the customer’s email.",
+                        "default": "{{ customer.email }}"
+                    },
+                    {
+                        "key": "subject",
+                        "type": "text",
+                        "label": "Subject",
+                        "required": true,
+                        "requiredMessage": "%s needs a subject.",
+                        "variables": true,
+                        "default": ""
+                    },
+                    {
+                        "key": "heading",
+                        "type": "text",
+                        "label": "Heading",
+                        "variables": true,
+                        "help": "Shown at the top of the email. Leave blank to use the subject.",
+                        "default": ""
+                    },
+                    {
+                        "key": "message",
+                        "type": "html",
+                        "label": "Message",
+                        "required": true,
+                        "requiredMessage": "%s needs a message.",
+                        "variables": true,
+                        "default": ""
+                    }
+                ],
+                "outputs": [
+                    {
+                        "key": "to",
+                        "label": "Sent to",
+                        "type": "string"
+                    }
+                ]
+            },
             "send_internal_email": {
                 "kind": "action",
                 "plugin": "woocommerce",
@@ -245,16 +309,16 @@
                         "required": true,
                         "requiredMessage": "%s needs a subject.",
                         "variables": true,
-                        "default": ""
+                        "default": "Order {{ order.number }} is {{ order.status }}"
                     },
                     {
                         "key": "message",
-                        "type": "textarea",
+                        "type": "html",
                         "label": "Message",
                         "required": true,
                         "requiredMessage": "%s needs a message.",
                         "variables": true,
-                        "default": ""
+                        "default": "<p>Order {{ order.number }} from {{ customer.full_name }} is {{ order.status }}.</p><p>Total: {{ order.total }}</p><p>{{ order.items }}</p>"
                     }
                 ],
                 "outputs": [
@@ -498,6 +562,112 @@
                         "key": "key",
                         "label": "Field name",
                         "type": "string"
+                    }
+                ]
+            },
+            "generate_coupon": {
+                "kind": "action",
+                "plugin": "woocommerce",
+                "category": "coupon",
+                "requires": [],
+                "module": "core",
+                "label": "Generate coupon",
+                "description": "Create a single-use WooCommerce coupon to send in a later email.",
+                "icon": "ticket",
+                "summary": "%1$discount_type%, expires in %2$expiry_days% days",
+                "onError": "stop",
+                "fields": [
+                    {
+                        "key": "discount_type",
+                        "type": "select",
+                        "label": "Discount type",
+                        "options": [
+                            {
+                                "value": "percent",
+                                "label": "Percentage discount"
+                            },
+                            {
+                                "value": "fixed_cart",
+                                "label": "Fixed amount off the cart"
+                            },
+                            {
+                                "value": "free_shipping",
+                                "label": "Free shipping"
+                            }
+                        ],
+                        "default": "percent"
+                    },
+                    {
+                        "key": "amount",
+                        "type": "number",
+                        "label": "Amount",
+                        "help": "A percentage from 1 to 100, or an amount in your store currency.",
+                        "showIf": {
+                            "field": "discount_type",
+                            "value": [
+                                "percent",
+                                "fixed_cart"
+                            ]
+                        },
+                        "default": 10
+                    },
+                    {
+                        "key": "expiry_days",
+                        "type": "number",
+                        "label": "Expires after (days)",
+                        "help": "The coupon ends at the end of that day, in your store’s timezone. Leave blank for no expiry.",
+                        "default": 30
+                    },
+                    {
+                        "key": "minimum_spend",
+                        "type": "number",
+                        "label": "Minimum spend",
+                        "help": "Leave blank for none.",
+                        "default": null,
+                        "min": 0
+                    },
+                    {
+                        "key": "individual_use",
+                        "type": "toggle",
+                        "label": "Can’t be combined with other coupons",
+                        "default": false
+                    },
+                    {
+                        "key": "limit_to_customer",
+                        "type": "toggle",
+                        "label": "Only the customer can use it",
+                        "help": "Limited to the customer’s billing email.",
+                        "default": true
+                    },
+                    {
+                        "key": "code_prefix",
+                        "type": "text",
+                        "label": "Code prefix",
+                        "help": "Letters, numbers, - and _. The code is the prefix and 8 random characters.",
+                        "default": "YM"
+                    }
+                ],
+                "outputs": [
+                    {
+                        "key": "code",
+                        "label": "Coupon code",
+                        "type": "string"
+                    },
+                    {
+                        "key": "amount",
+                        "label": "Coupon amount",
+                        "type": "string"
+                    },
+                    {
+                        "key": "expires_at",
+                        "label": "Coupon expiry date",
+                        "type": "date"
+                    },
+                    {
+                        "key": "box",
+                        "label": "Coupon box",
+                        "type": "string",
+                        "block": true
                     }
                 ]
             }
@@ -1685,6 +1855,20 @@
                                 "label": "Zimbabwe"
                             }
                         ]
+                    },
+                    {
+                        "key": "customer.is_first_order",
+                        "label": "Customer’s first order",
+                        "type": "boolean",
+                        "valueType": "boolean",
+                        "conditional": true
+                    },
+                    {
+                        "key": "customer.unsubscribed",
+                        "label": "Customer unsubscribed",
+                        "type": "boolean",
+                        "valueType": "boolean",
+                        "conditional": true
                     }
                 ],
                 "relations": []

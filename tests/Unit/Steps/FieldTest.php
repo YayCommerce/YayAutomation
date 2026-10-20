@@ -38,6 +38,35 @@ final class FieldTest extends TestCase {
         $this->assertSame( "Hi <{{ order.number }}>\nbye", Field::textarea( 'note', 'Note' )->variables()->sanitize( "Hi <{{ order.number }}>\r\nbye\x07" ) );
     }
 
+    public function test_html_is_cleaned_and_keeps_merge_tags(): void {
+        $field = Field::html( 'message', 'Message' )->variables();
+
+        $this->assertSame(
+            "<p>Hi <a href=\"{{ site.url }}\">{{ customer.first_name }}</a></p>\n<p>bye</p>",
+            $field->sanitize( "<p onclick=\"x()\">Hi <a href=\"{{ site.url }}\">{{ customer.first_name }}</a></p>\r\n<p>bye</p>\x07<script>alert(1)</script> " )
+        );
+        foreach ( $this->junk() as $raw ) {
+            $this->assertIsString( $field->sanitize( $raw ) );
+        }
+    }
+
+    public function test_an_emptied_rich_editor_is_blank(): void {
+        $field = Field::html( 'message', 'Message' )->required( '%s needs a message.' );
+
+        $this->assertSame( 'Email needs a message.', $field->validate( '<p>&nbsp;</p>', [], 'Email' ) );
+        $this->assertSame( 'Email needs a message.', $field->validate( "<p>\u{00A0}</p><p></p>", [], 'Email' ) );
+        $this->assertNull( $field->validate( '<p><img src="a.png" alt=""></p>', [], 'Email' ), 'an image alone counts' );
+        $this->assertNull( $field->validate( '<p>Hi</p>', [], 'Email' ) );
+    }
+
+    public function test_a_text_default_reaches_the_catalog_but_not_a_save(): void {
+        $field = Field::html( 'message', 'Message' )->default( '<p>Sample</p>' );
+
+        $this->assertSame( '<p>Sample</p>', $field->to_array()['default'], 'a new step starts with it' );
+        $this->assertSame( '', $field->sanitize( null ), 'a missing value stays blank' );
+        $this->assertSame( 'Hi', Field::text( 'subject', 'Subject' )->default( 'Hi' )->to_array()['default'] );
+    }
+
     public function test_emails_checks_each_address(): void {
         $field = Field::emails( 'recipients', 'Recipients' );
 

@@ -4,6 +4,7 @@ namespace YayMatik\Engine\API;
 use YayMatik\Engine\BEPages\AdminPage;
 use YayMatik\Utils\SingletonTrait;
 use YayMatik\Workflow\Definition\GraphSchema;
+use YayMatik\Workflow\Email\EmailPreview;
 use YayMatik\Workflow\Definition\Messages;
 use YayMatik\Workflow\Definition\Validator;
 use YayMatik\Workflow\Runtime\RunPresenter;
@@ -123,6 +124,23 @@ class RestAPI {
             ]
         );
 
+        // Body: { nodeId, config, graph? } — the editor's unsaved step and graph; graph defaults to the
+        // workflow's draft, else its live graph.
+        foreach ( [
+            'preview'   => 'preview_email',
+            'send-test' => 'send_test_email',
+        ] as $route => $callback ) {
+            register_rest_route(
+                self::REST_NAMESPACE,
+                '/workflows/(?P<id>\d+)/' . $route,
+                [
+                    'methods'             => \WP_REST_Server::CREATABLE,
+                    'callback'            => [ $this, $callback ],
+                    'permission_callback' => [ $this, 'can_email' ],
+                ]
+            );
+        }
+
         register_rest_route(
             self::REST_NAMESPACE,
             '/runs/(?P<id>\d+)',
@@ -136,6 +154,55 @@ class RestAPI {
 
     public function can_manage() {
         return current_user_can( AdminPage::CAPABILITY );
+    }
+
+    /** Previews read store orders; a test email goes out from the store. */
+    public function can_email() {
+        return current_user_can( 'manage_woocommerce' );
+    }
+
+    /**
+     * The email an email step would send, rendered with a recent order or sample data. Renders only.
+     *
+     * @param \WP_REST_Request $request Request.
+     */
+    public function preview_email( \WP_REST_Request $request ) {
+        $input = $this->email_input( $request );
+        return is_wp_error( $input ) ? $input : rest_ensure_response( EmailPreview::render( ...$input ) );
+    }
+
+    /**
+     * Sends that email to the logged-in user, subject prefixed "[Test]".
+     *
+     * @param \WP_REST_Request $request Request.
+     */
+    public function send_test_email( \WP_REST_Request $request ) {
+        $input = $this->email_input( $request );
+        if ( is_wp_error( $input ) ) {
+            return $input;
+        }
+        list( $graph, $node_id, $config ) = $input;
+        return rest_ensure_response( EmailPreview::send_test( $graph, $node_id, $config, (string) wp_get_current_user()->user_email ) );
+    }
+
+    /**
+     * [ graph, nodeId, config ] from a preview / send-test request.
+     *
+     * @param \WP_REST_Request $request Request.
+     * @return array|\WP_Error
+     */
+    private function email_input( \WP_REST_Request $request ) {
+        $workflow = WorkflowRepository::find( (int) $request['id'] );
+        if ( ! $workflow ) {
+            return $this->not_found();
+        }
+        $body    = (array) $request->get_json_params();
+        $node_id = is_string( $body['nodeId'] ?? null ) ? $body['nodeId'] : '';
+        if ( '' === $node_id ) {
+            return new \WP_Error( 'yaymatik_no_node', __( 'Choose an email step to preview.', 'yaymatik' ), [ 'status' => 400 ] );
+        }
+        $graph = $body['graph'] ?? ( $workflow['draft'] ?? $workflow['graph'] );
+        return [ $graph, $node_id, $body['config'] ?? [] ];
     }
 
     public function get_health() {

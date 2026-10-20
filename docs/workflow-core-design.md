@@ -99,21 +99,23 @@ Step:   id() label() plugin() module()
         icon(): string           a name from core's step icon list, e.g. "mail" (L5)
         fields(): Field[]        settings, rules, widgets
         validate( config )       optional extra checks the field rules can't express
-        outputs(): array         what later steps can use: key => [ label, type, options? ]
+        outputs(): array         what later steps can use: key => [ label, type, options?, display?, block? ]
+        sample_outputs( config ) made-up outputs for previews of later steps (Generate coupon → YMSAMPLE)
         summary(): string        card text, one short line, e.g. "Send to %recipients%"
         run( Scope, config ): StepResult   ok( outputs ) | skipped( reason ) | failed( error )
 ```
 
-- **Field vocabulary** (kept small): text, textarea, emails, select, multiselect, toggle, number, number_unit, notice, rules (core only). Modifiers: `required`, `variables`, `placeholder`, `help`, `show_if`. A form that needs more gets a custom panel, not a new word.
+- **Field vocabulary** (kept small): text, textarea, html (rich text, cleaned with `wp_kses_post`), emails, select, multiselect, toggle, number, number_unit, notice, rules (core only). Modifiers: `required`, `variables`, `placeholder`, `help`, `show_if`. A form that needs more gets a custom panel, not a new word.
 - **Catalog.** Steps, fields, outputs and data types go to the admin app through `yayMatikMeta` (and to the AI in v2.0).
 - **Editor checks.** Automation builds valibot rules from the PHP fields. Validation always runs in Automation, never in a panel. Rules only in PHP `validate()` show up as the step's issue after a save, and still block Activate.
 - **Forms.**
   - No custom form → the generic `StepForm` draws one from the fields. A simple step from a Yay plugin needs PHP only.
-  - Core step with a complex form (Send email, Condition rules) → `defineStep( { id, Form } )`, imported directly. No global call, fully typed.
+  - Core step with a complex form (Condition rules) → `defineStep( { id, Form } )`, imported directly. No global call, fully typed.
   - Plugin step with a custom form → `window.yayMatik.registerStepPanel( id, Panel )`. Internal until §10.
   - Both put the form in the same registry. Props: `{ config, onChange, errors }`.
 - **Icons (L5).** A step's `icon()` is a name from a fixed list in core (lucide icons, about 40), never an SVG. The editor draws it in the step's tile, tinted by kind (trigger, condition, action), on the canvas, in the picker, the panel header, template cards and the preview. A missing icon is added to core's list, not shipped by the plugin.
 - The `rules` field type is ours: its checks are written in PHP (`Criteria`) and TS. Plugins never write validation in JS.
+- **Output display.** An output may have its own display text, built from the step's other outputs when read and never stored (`display`), e.g. a coupon's expiry in the site's date format. `block: true` marks a ready-made email block (the coupon box). `Scope::set_output_display()`; the Executor and Preview wire it from the graph.
 
 ## §6 Templates · L3
 
@@ -126,8 +128,15 @@ Our own small template module. **No Liquid or other template library, now or lat
   - Output is escaped in HTML. No `raw` filter for users.
   - **One renderer, in PHP.** TS only parses, for checks and autocomplete. Preview and Send test call the server.
   - Today's `{{ item.field }}` tags keep working.
-- **Tier 2 (on demand):** lists come from server-rendered email blocks (product grid, cart items, coupon box). Conditional text comes from a "Show if" setting on a block, using the Condition rules builder.
+  - **HTML messages** (`html` fields): the stored HTML stays as written; each value is escaped for where it lands: `esc_html` in text, `esc_url` over a whole `href` / `src` (a value after the start of the URL is `rawurlencode`d first), `esc_attr` in other attributes, dropped inside a tag. A block value alone in a paragraph replaces it. Then `wpautop`. A message with no HTML tags (saved before the field was rich) is read as plain text. `Template::render_html()`, `Email\EmailBody`.
+  - Subjects and headings are plain text on one line: typed HTML tags removed, values never stripped.
+- **Tier 2 (on demand):** lists come from server-rendered email blocks (product grid, cart items, coupon box; the coupon box exists). Conditional text comes from a "Show if" setting on a block, using the Condition rules builder.
 - **Escape valve (only if users ask):** `{% if path %}…{% else %}…{% endif %}`, truthy check only.
+
+**Customer emails** (Send email):
+- WooCommerce sender and email template, styles inlined by WooCommerce's mailer. One To address; the final address (after variables) decides.
+- Every customer email has an "Unsubscribe" link under the message and `List-Unsubscribe` / `List-Unsubscribe-Post` (one-click) headers. The link carries base64url(email) and an HMAC of it (own secret, no expiry). Unsubscribes are per address, for all YayMatik customer emails; the step is skipped (`unsubscribed`) and the run goes on. Staff email ignores them.
+- **Preview / Send test** render only, from the editor's unsaved step: the latest paid order, or made-up data (`DataItem::sample()`, flagged for the "Sample data" badge); steps above give sample outputs. The unsubscribe link goes nowhere (`#`) and there are no List-Unsubscribe headers. A test goes to the logged-in admin, subject prefixed `[Test]`.
 
 ## §7 Graph · P7
 

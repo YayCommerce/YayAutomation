@@ -4,6 +4,7 @@ namespace YayMatik\Workflow\Steps\Core;
 use YayMatik\Workflow\Data\DataRegistry;
 use YayMatik\Workflow\Data\Scope;
 use YayMatik\Workflow\Data\Template;
+use YayMatik\Workflow\Data\Values;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -13,8 +14,9 @@ defined( 'ABSPATH' ) || exit;
  */
 abstract class Action extends Step {
 
-    public const CATEGORY_EMAIL = 'email';
-    public const CATEGORY_ORDER = 'order';
+    public const CATEGORY_EMAIL  = 'email';
+    public const CATEGORY_ORDER  = 'order';
+    public const CATEGORY_COUPON = 'coupon';
 
     public function kind(): string {
         return self::KIND_ACTION;
@@ -46,13 +48,13 @@ abstract class Action extends Step {
     }
 
     /**
-     * Text with its merge tags filled in from the Scope. A missing value prints empty.
+     * Text with its merge tags filled in. A missing value prints empty.
      *
      * @param string $text  Text with merge tags.
-     * @param Scope  $scope Run scope.
+     * @param Values $scope Run scope, or sample values in a preview.
      * @param bool   $html  Safe HTML: the text around the tags is escaped too.
      */
-    protected static function render( string $text, Scope $scope, bool $html = false ): string {
+    protected static function render( string $text, Values $scope, bool $html = false ): string {
         static $template = null;
         $template        = $template ?? new Template();
         return $template->render( $text, $scope, $html );

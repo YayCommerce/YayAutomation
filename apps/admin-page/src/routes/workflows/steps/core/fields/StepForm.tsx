@@ -80,16 +80,18 @@ function Widget({ errors, ...props }: WidgetProps & { errors: ({ message?: strin
   switch (field.type) {
     case 'toggle':
       return <ToggleField id={id} label={field.label} help={field.help} checked={value === true} onChange={onChange} />;
+    // html is edited as text until the rich editor lands.
     case 'text':
     case 'emails':
     case 'textarea':
+    case 'html':
       return (
         <TextField
           id={id}
           label={field.label}
           help={field.help}
           placeholder={field.placeholder}
-          multiline={field.type === 'textarea'}
+          multiline={field.type !== 'text' && field.type !== 'emails'}
           variables={!!field.variables}
           value={String(value ?? '')}
           onChange={onChange}

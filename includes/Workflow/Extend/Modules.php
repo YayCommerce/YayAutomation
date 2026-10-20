@@ -3,6 +3,8 @@ namespace YayMatik\Workflow\Extend;
 
 use YayMatik\Workflow\Steps\Actions\AddOrderNote;
 use YayMatik\Workflow\Steps\Actions\ChangeOrderStatus;
+use YayMatik\Workflow\Steps\Actions\GenerateCoupon;
+use YayMatik\Workflow\Steps\Actions\SendEmail;
 use YayMatik\Workflow\Steps\Actions\SendInternalEmail;
 use YayMatik\Workflow\Steps\Actions\UpdateOrderMeta;
 use YayMatik\Workflow\Steps\Conditions\Criteria;
@@ -24,7 +26,7 @@ final class Modules {
     public const TIER_LITE = 'lite';
     public const TIER_PRO  = 'pro';
 
-    /** Workflow Core's own steps: the order triggers, Condition and the order / email actions. */
+    /** Workflow Core's own steps: the order triggers, Condition and the order / email / coupon actions. */
     public const CORE = 'core';
 
     /**
@@ -41,10 +43,12 @@ final class Modules {
                     OrderCreated::class,
                     OrderStatusChanged::class,
                     Criteria::class,
+                    SendEmail::class,
                     SendInternalEmail::class,
                     ChangeOrderStatus::class,
                     AddOrderNote::class,
                     UpdateOrderMeta::class,
+                    GenerateCoupon::class,
                 ],
             ],
         ];

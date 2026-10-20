@@ -2,6 +2,7 @@
 namespace YayMatik\Workflow\Storage;
 
 use YayMatik\Utils\Logger;
+use YayMatik\Workflow\Email\UnsubscribeLink;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -12,13 +13,14 @@ defined( 'ABSPATH' ) || exit;
 final class Schema {
 
     // Bump when a table below changes; dbDelta() then upgrades the tables on the next load.
-    private const DB_VERSION        = '2';
+    private const DB_VERSION        = '3';
     private const DB_VERSION_OPTION = 'yaymatik_db_version';
 
     public const VERSIONS       = 'versions';
     public const RUNS           = 'runs';
     public const RUN_STEPS      = 'run_steps';
     public const TRIGGER_CLAIMS = 'trigger_claims';
+    public const UNSUBSCRIBES   = 'unsubscribes';
 
     /**
      * Full table name.
@@ -35,12 +37,13 @@ final class Schema {
         if ( self::DB_VERSION === get_option( self::DB_VERSION_OPTION ) ) {
             return;
         }
+        UnsubscribeLink::create_secret();
         global $wpdb;
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
         $charset = $wpdb->get_charset_collate();
         dbDelta( array_map( fn( string $columns ) => $columns . " {$charset};", self::tables() ) );
         // Without every table, keep the old version so the next load tries again.
-        foreach ( [ self::VERSIONS, self::RUNS, self::RUN_STEPS, self::TRIGGER_CLAIMS ] as $name ) {
+        foreach ( [ self::VERSIONS, self::RUNS, self::RUN_STEPS, self::TRIGGER_CLAIMS, self::UNSUBSCRIBES ] as $name ) {
             $table = self::table( $name );
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- install check, runs once per DB version.
             if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $table ) ) ) !== $table ) {
@@ -60,6 +63,7 @@ final class Schema {
         $runs     = self::table( self::RUNS );
         $steps    = self::table( self::RUN_STEPS );
         $claims   = self::table( self::TRIGGER_CLAIMS );
+        $unsubs   = self::table( self::UNSUBSCRIBES );
         return [
             // A saved version never changes; only the draft row is edited in place.
             "CREATE TABLE {$versions} (
@@ -118,6 +122,14 @@ final class Schema {
                 subject varchar(100) NOT NULL,
                 claimed_at datetime NOT NULL,
                 PRIMARY KEY  (workflow_id,subject)
+            )",
+            // Addresses that get no customer emails, lowercased. 190 chars keeps the key within utf8mb4 index limits.
+            "CREATE TABLE {$unsubs} (
+                id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+                email varchar(190) NOT NULL,
+                created_at datetime NOT NULL,
+                PRIMARY KEY  (id),
+                UNIQUE KEY email (email)
             )",
         ];
     }

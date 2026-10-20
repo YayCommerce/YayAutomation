@@ -163,18 +163,90 @@ final class OrderData extends DataItem {
             return html_entity_decode( $text, ENT_QUOTES, 'UTF-8' );
         }
 
-        $cell   = 'class="td" style="text-align:left;"';
-        $totals = '';
-        foreach ( $order->get_order_item_totals() as $total ) {
-            $totals .= '<tr><th ' . $cell . ' scope="row" colspan="2">' . wp_kses_post( $total['label'] ) . '</th><td ' . $cell . '>' . wp_kses_post( $total['value'] ) . '</td></tr>';
+        return self::items_table( $rows, $order->get_order_item_totals() );
+    }
+
+    /**
+     * The items table of WooCommerce's order emails.
+     *
+     * @param string  $rows   Item rows, safe HTML.
+     * @param array[] $totals [ [ 'label' => HTML, 'value' => HTML ], … ].
+     */
+    private static function items_table( string $rows, array $totals ): string {
+        $cell = 'class="td" style="text-align:left;"';
+        $foot = '';
+        foreach ( $totals as $total ) {
+            $foot .= '<tr><th ' . $cell . ' scope="row" colspan="2">' . wp_kses_post( $total['label'] ) . '</th><td ' . $cell . '>' . wp_kses_post( $total['value'] ) . '</td></tr>';
         }
         $table = '<table class="td" cellspacing="0" cellpadding="6" border="1" style="width:100%;">'
             . '<thead><tr><th ' . $cell . ' scope="col">' . esc_html__( 'Product', 'yaymatik' ) . '</th>'
             . '<th ' . $cell . ' scope="col">' . esc_html__( 'Quantity', 'yaymatik' ) . '</th>'
             . '<th ' . $cell . ' scope="col">' . esc_html__( 'Price', 'yaymatik' ) . '</th></tr></thead>'
-            . '<tbody>' . $rows . '</tbody><tfoot>' . $totals . '</tfoot></table>';
+            . '<tbody>' . $rows . '</tbody><tfoot>' . $foot . '</tfoot></table>';
         // One line: the email body goes through wpautop(), which would put <br> between table rows.
         return trim( (string) preg_replace( '/\s*\n\s*/', ' ', $table ) );
+    }
+
+    /**
+     * Made-up order for previews when the store has no paid order yet (labelled "Sample data").
+     *
+     * @return array Field key => value, or [ 'value', 'text', 'html'? ] when it reads differently.
+     */
+    public function sample(): array {
+        $price = fn( float $amount ) => [
+            'value' => $amount,
+            'text'  => html_entity_decode( wp_strip_all_tags( wc_price( $amount ) ), ENT_QUOTES, 'UTF-8' ),
+            'html'  => wc_price( $amount ),
+        ];
+        $lines = [
+            [ __( 'Sample product', 'yaymatik' ), 1, 29.0 ],
+            [ __( 'Another sample product', 'yaymatik' ), 2, 20.0 ],
+        ];
+        $cell  = 'class="td" style="text-align:left;"';
+        $rows  = '';
+        $text  = [];
+        foreach ( $lines as list( $name, $quantity, $amount ) ) {
+            $rows  .= '<tr><td ' . $cell . '>' . esc_html( $name ) . '</td><td ' . $cell . '>' . (int) $quantity . '</td><td ' . $cell . '>' . $price( $amount )['html'] . '</td></tr>';
+            $text[] = $name . ' ×' . $quantity . ' ' . $price( $amount )['text'];
+        }
+        $totals = [
+            [
+                'label' => __( 'Subtotal:', 'yaymatik' ),
+                'value' => $price( 49.0 )['html'],
+            ],
+            [
+                'label' => __( 'Total:', 'yaymatik' ),
+                'value' => $price( 54.0 )['html'],
+            ],
+        ];
+        $text[] = __( 'Subtotal:', 'yaymatik' ) . ' ' . $price( 49.0 )['text'];
+        $text[] = __( 'Total:', 'yaymatik' ) . ' ' . $price( 54.0 )['text'];
+
+        return [
+            'number'          => '1001',
+            'total'           => $price( 54.0 ),
+            'subtotal'        => $price( 49.0 ),
+            'status'          => [
+                'value' => 'processing',
+                'text'  => self::statuses()['processing'] ?? __( 'Processing', 'yaymatik' ),
+            ],
+            'payment_method'  => [
+                'value' => 'card',
+                'text'  => __( 'Credit card', 'yaymatik' ),
+            ],
+            'shipping_method' => __( 'Flat rate', 'yaymatik' ),
+            'item_count'      => 3.0,
+            'created_date'    => [
+                'value' => wp_date( 'Y-m-d' ),
+                'text'  => wp_date( (string) get_option( 'date_format', 'F j, Y' ) ),
+            ],
+            'admin_url'       => admin_url( 'admin.php?page=wc-orders' ),
+            'items'           => [
+                'value' => [],
+                'text'  => implode( "\n", $text ),
+                'html'  => self::items_table( $rows, $totals ),
+            ],
+        ];
     }
 
     /**

@@ -45,6 +45,15 @@ abstract class DataItem {
     /** @return array[] Field definitions keyed by field key. */
     abstract protected function define(): array;
 
+    /**
+     * Made-up values for previews when there's no real data (labelled "Sample data"): field key =>
+     * value, or [ 'value' => typed, 'text' => plain, 'html' => safe HTML (optional) ] when it reads
+     * differently. Relations aren't listed: their item's own sample is used. Empty = none.
+     */
+    public function sample(): array {
+        return [];
+    }
+
     /** @return array[] Field definitions keyed by field key, with defaults filled in. */
     public function fields(): array {
         if ( null === $this->fields ) {

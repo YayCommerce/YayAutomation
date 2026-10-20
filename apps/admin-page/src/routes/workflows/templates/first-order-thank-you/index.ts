@@ -19,7 +19,7 @@ function graph(coupon: Partial<GenerateCouponConfig>, offer: string): WorkflowGr
       __('Hi {{ customer.first_name }},', 'yaymatik'),
       __('Thank you for your first order with {{ site.name }}. We hope you love it!', 'yaymatik'),
       offer,
-      __('Coupon code: {{ coupon.code }}\nExpires: {{ coupon.expiry_date }}', 'yaymatik'),
+      __('Coupon code: {{ steps.coupon.code }}\nExpires: {{ steps.coupon.expires_at }}', 'yaymatik'),
       __('See you again soon,\n{{ site.name }}', 'yaymatik'),
     ].join('\n\n'),
   };
@@ -92,7 +92,7 @@ export const firstOrderDiscount = defineTemplate({
   createdAt: '2026-10-07',
   graph: graph(
     { discount_type: 'percent', amount: '10' },
-    __('As a thank you, here is {{ coupon.amount }} off your next order:', 'yaymatik'),
+    __('As a thank you, here is {{ steps.coupon.amount }} off your next order:', 'yaymatik'),
   ),
 });
 

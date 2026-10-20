@@ -23,6 +23,7 @@ final class Field {
 
     public const TEXT        = 'text';
     public const TEXTAREA    = 'textarea';
+    public const HTML        = 'html';
     public const EMAILS      = 'emails';
     public const SELECT      = 'select';
     public const MULTISELECT = 'multiselect';
@@ -98,6 +99,17 @@ final class Field {
      */
     public static function textarea( string $key, string $label ): self {
         return ( new self( self::TEXTAREA, $key, $label ) )->default( '' );
+    }
+
+    /**
+     * Formatted text (the rich editor), stored as HTML cleaned by `wp_kses_post()`. Text without
+     * HTML tags (saved before the field was rich) still works: it's read as plain text.
+     *
+     * @param string $key   Config key.
+     * @param string $label Label in the form.
+     */
+    public static function html( string $key, string $label ): self {
+        return ( new self( self::HTML, $key, $label ) )->default( '' );
     }
 
     /**
@@ -301,6 +313,8 @@ final class Field {
             case self::TEXTAREA:
                 $text = str_replace( "\r\n", "\n", self::scalar_text( $raw ) );
                 return $this->variables ? self::plain_text( $text ) : sanitize_textarea_field( $text );
+            case self::HTML:
+                return wp_kses_post( self::plain_text( self::scalar_text( $raw ) ) );
             case self::EMAILS:
                 return sanitize_text_field( self::scalar_text( $raw ) );
             case self::SELECT:
@@ -395,7 +409,11 @@ final class Field {
             $data['options'] = Catalog::options( $this->options() );
         }
         if ( $this->has_value() ) {
-            $data['default'] = $this->sanitize( null );
+            // Text keeps its default as written (a new step's sample subject): a missing value on
+            // save stays blank, so it can't turn into the sample.
+            $data['default'] = in_array( $this->type, [ self::TEXT, self::TEXTAREA, self::HTML ], true )
+                ? (string) $this->default
+                : $this->sanitize( null );
         }
         if ( null !== $this->min ) {
             $data['min'] = $this->min;
@@ -572,6 +590,11 @@ final class Field {
         }
         if ( self::TOGGLE === $this->type ) {
             return false;
+        }
+        if ( self::HTML === $this->type ) {
+            // An emptied rich editor leaves `<p>&nbsp;</p>`; an image alone still counts.
+            return ! preg_match( '/<img\b/i', (string) $value )
+                && '' === trim( str_replace( [ '&nbsp;', "\xC2\xA0" ], ' ', wp_strip_all_tags( (string) $value ) ) );
         }
         return null === $value || '' === $value || [] === $value;
     }

@@ -118,18 +118,66 @@ final class Template {
                 $out .= $html ? esc_html( $token['text'] ) : $token['text'];
             } elseif ( null !== $token['error'] ) {
                 $out .= $html ? esc_html( $token['raw'] ) : $token['raw'];
-            } elseif ( ! $token['filters'] ) {
-                $out .= $values->text( $token['path'], $html );
             } else {
-                $value = $values->get( $token['path'] );
-                foreach ( $token['filters'] as $filter ) {
-                    $value = $this->filters->apply( $filter['name'], $value, $filter['args'] );
-                }
-                $value = self::to_text( $value );
-                $out  .= $html ? esc_html( $value ) : $value;
+                $out .= $this->tag_text( $token, $values, $html );
             }
         }
         return $out;
+    }
+
+    /**
+     * Fills in the tags of HTML that is already safe (cleaned by `wp_kses_post()` when saved). The
+     * HTML stays as written; each value is escaped for where it lands:
+     *
+     * - in text: `esc_html()`. A display text that is HTML already (`order.items`, a coupon box)
+     *   goes in as it is: its display callback escapes its own values. Alone in a paragraph, a value
+     *   that starts with a block element (table, div, …) replaces the paragraph.
+     * - in `href` / `src`: a value that starts the URL goes in as it is, one further in through
+     *   `rawurlencode()`; then the whole attribute value, once filled in, through `esc_url()`.
+     * - in any other attribute: `esc_attr()`.
+     * - inside a tag but outside any attribute value (`<a {{ x }}>`): dropped.
+     *
+     * A malformed tag stays as written, escaped like the text around it.
+     *
+     * @param string $html   Safe HTML with merge tags.
+     * @param Values $values Where the data comes from.
+     */
+    public function render_html( string $html, Values $values ): string {
+        $context = new HtmlContext();
+        foreach ( $this->parse( $html ) as $token ) {
+            if ( 'text' === $token['type'] ) {
+                $context->literal( $token['text'] );
+                continue;
+            }
+            if ( null !== $token['error'] ) {
+                $context->value( $token['raw'], esc_html( $token['raw'] ) );
+                continue;
+            }
+            $context->value(
+                $this->tag_text( $token, $values, false ),
+                $context->in_text() ? $this->tag_text( $token, $values, true ) : ''
+            );
+        }
+        return $context->result();
+    }
+
+    /**
+     * A well-formed tag's text: its display text, or the filtered value.
+     *
+     * @param array  $token  Tag token from `parse()`.
+     * @param Values $values Where the data comes from.
+     * @param bool   $html   Safe HTML instead of plain text.
+     */
+    private function tag_text( array $token, Values $values, bool $html ): string {
+        if ( ! $token['filters'] ) {
+            return $values->text( $token['path'], $html );
+        }
+        $value = $values->get( $token['path'] );
+        foreach ( $token['filters'] as $filter ) {
+            $value = $this->filters->apply( $filter['name'], $value, $filter['args'] );
+        }
+        $value = self::to_text( $value );
+        return $html ? esc_html( $value ) : $value;
     }
 
     /**
