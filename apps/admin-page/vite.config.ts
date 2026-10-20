@@ -34,6 +34,8 @@ const externalOptions: Options = {
   },
 
   production: {
+    // Own stand-in folder: dev rewrites node_modules/.vite_external while a build may be reading it.
+    cacheDir: 'node_modules/.vite_external_build',
     externals: {
       '@wordpress/hooks': 'wp.hooks',
       '@wordpress/i18n': 'wp.i18n',
