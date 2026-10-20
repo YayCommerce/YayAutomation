@@ -290,6 +290,7 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
                   <StepPanel
                     // A reset (discard) starts the panel and its form over: forms keep their own values.
                     key={`${panel.nodeId}:${formVersion}`}
+                    workflowId={workflow.id}
                     nodeId={panel.nodeId}
                     picking={panel.picking}
                     feedback={feedbackFor(panel.nodeId)}

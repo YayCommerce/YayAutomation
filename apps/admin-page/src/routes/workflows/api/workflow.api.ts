@@ -1,4 +1,11 @@
-import type { Workflow, WorkflowIssue, WorkflowVersionsPage } from '@yaymatik/types';
+import type {
+  EmailPreview,
+  EmailTestResult,
+  Workflow,
+  WorkflowGraph,
+  WorkflowIssue,
+  WorkflowVersionsPage,
+} from '@yaymatik/types';
 import { HTTPError, type Options, type ResponsePromise } from 'ky';
 import { __ } from '@wordpress/i18n';
 
@@ -90,3 +97,19 @@ export const deleteWorkflow = (id: string) => request<{ deleted: boolean }>(api.
 /** Version history, newest first, 10 per page. `page` is 1-based. */
 export const listVersions = (id: string, page: number) =>
   request<WorkflowVersionsPage>(api.get(`workflows/${id}/versions`, { searchParams: { page } }));
+
+/** An email step's unsaved config and the graph it sits in, as the editor has them. */
+export interface EmailStepInput {
+  nodeId: string;
+  config: Record<string, unknown>;
+  graph: WorkflowGraph;
+}
+
+/** Renders only: no coupon, no run. 400 with `issues` when the step's settings have any. */
+export const previewEmail = (id: string, input: EmailStepInput) =>
+  request<EmailPreview>(api.post(`workflows/${id}/preview`, { json: input }));
+
+/** Sends to the logged-in user, subject prefixed "[Test]". 400 with `issues` as for Preview. */
+export const sendTestEmail = (id: string, input: EmailStepInput) =>
+  // A slow mail server can take longer than the client's usual timeout.
+  request<EmailTestResult>(api.post(`workflows/${id}/send-test`, { json: input, timeout: 60000 }));

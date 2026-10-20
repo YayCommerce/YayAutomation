@@ -139,6 +139,8 @@ declare global {
         timezoneString: string;
         gmtOffset: number;
         adminEmail: string;
+        /** The logged-in user's: where Send test emails go. */
+        userEmail: string;
       };
       wc: {
         active: boolean;
@@ -163,7 +165,8 @@ declare global {
         /** PHP `Definition\Messages::all()`: messages both sides show, by key. Same as `model/messages.ts`. */
         messages: Record<string, string>;
         /** WooCommerce sender for steps not built in PHP yet, e.g. "Store <store@example.com>". */
-        email: { fromLine: string };
+        /** Who emails come from (WooCommerce's sender); `fromName` is plain text, may be blank. */
+        email: { fromLine: string; fromName: string; fromAddress: string };
       };
       docs: {
         /** Filter `yaymatik_workflow_runs_docs_url`. */

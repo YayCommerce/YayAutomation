@@ -49,16 +49,25 @@ export function InsertVariable({ inputRef, value, onChange }: InsertVariableProp
   return <InsertVariableLink onInsert={insert} focusAfter={focusInput} />;
 }
 
-/** The "Insert variable" link and its picker, for a control that inserts the tag itself. */
+/**
+ * The "Insert variable" link and its picker, for a control that inserts the tag itself. `blocks`:
+ * also offers block outputs (rich text), `onInsert` gets `block` true for one.
+ */
 export function InsertVariableLink({
+  blocks = false,
   onInsert,
   focusAfter,
 }: {
-  onInsert: (tag: string) => void;
+  blocks?: boolean;
+  onInsert: (tag: string, block: boolean) => void;
   focusAfter: () => boolean;
 }) {
   return (
-    <VariablePicker onSelect={(key) => onInsert(variableTag(key))} focusAfterPick={focusAfter}>
+    <VariablePicker
+      blocks={blocks}
+      onSelect={(key, block) => onInsert(variableTag(key), block)}
+      focusAfterPick={focusAfter}
+    >
       <Button type="button" variant="link" size="sm" className="h-auto gap-1 px-0 text-[12.5px]">
         <Braces className="size-3.5" aria-hidden />
         {__('Insert variable', 'yaymatik')}

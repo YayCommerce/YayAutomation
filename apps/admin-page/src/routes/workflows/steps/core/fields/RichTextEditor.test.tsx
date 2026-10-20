@@ -10,7 +10,8 @@ import { RichTextEditor } from './RichTextEditor';
 
 /**
  * Stand-in for TinyMCE: the content is a string with a cursor; `save()` spells it the way the real
- * editor may (`<br>` → `<br />`), so a load + save without an edit isn't the stored string.
+ * editor may (`<br>` → `<br />`), so a load + save without an edit isn't the stored string. With
+ * `body` set, the content is that element instead and `node` holds the cursor.
  */
 class FakeTinyMce implements TinyMceEditor {
   initialized = false;
@@ -25,7 +26,11 @@ class FakeTinyMce implements TinyMceEditor {
     moveToBookmark: (bookmark: unknown) => void (this.cursor = bookmark as number),
     select: () => {},
     collapse: () => void (this.cursor = this.content.length),
+    getNode: () => this.node ?? this.getBody(),
   };
+  body: HTMLElement | null = null;
+  node: Element | null = null;
+  undoManager = { transact: vi.fn((change: () => void) => change()) };
   constructor(readonly textarea: HTMLTextAreaElement) {
     this.content = textarea.value;
   }
@@ -41,13 +46,13 @@ class FakeTinyMce implements TinyMceEditor {
     this.fire('input');
   }
   isHidden = () => this.hidden;
-  save = () => (this.textarea.value = this.content.replace(/<br>/g, '<br />'));
+  save = () => (this.textarea.value = this.body ? this.body.innerHTML : this.content.replace(/<br>/g, '<br />'));
   focus = () => void (this.focused = true);
   insertContent = (html: string) => {
     this.content = this.content.slice(0, this.cursor) + html + this.content.slice(this.cursor);
     this.cursor += html.length;
   };
-  getBody = () => document.body;
+  getBody = () => this.body ?? document.body;
 }
 
 /**
@@ -288,6 +293,71 @@ describe('mountClassicEditor insert', () => {
     expect(onEdit).toHaveBeenLastCalledWith(`<p>Hi ${tag}!</p>`);
     editor.focus();
     expect(textarea.selectionStart).toBe(6 + tag.length);
+    editor.destroy();
+  });
+});
+
+describe('mountClassicEditor insertBlock', () => {
+  const box = '{{ steps.coupon.box }}';
+  let host: HTMLDivElement;
+  beforeEach(() => {
+    host = document.createElement('div');
+    document.body.append(host);
+  });
+  afterEach(() => host.remove());
+
+  it('inserts a paragraph of its own in the Visual tab', () => {
+    installOldEditor();
+    const onEdit = vi.fn();
+    const editor = mountClassicEditor(host, { id: 'b1', value: '<p>Thanks!</p>', onEdit });
+
+    editor.insertBlock(box);
+    expect(onEdit).toHaveBeenLastCalledWith(`<p>Thanks!</p><p>${box}</p>`);
+    editor.destroy();
+  });
+
+  it.each([
+    [
+      'a list item',
+      '<ul><li>One</li><li>Two</li></ul><p>End</p>',
+      'li:last-child',
+      '<ul><li>One</li><li>Two</li></ul>',
+    ],
+    ['a heading', '<h2>Hi <strong>you</strong></h2><p>End</p>', 'strong', '<h2>Hi <strong>you</strong></h2>'],
+    ['a quote', '<blockquote><p>Said</p></blockquote><p>End</p>', 'p', '<blockquote><p>Said</p></blockquote>'],
+  ])('in the Visual tab, puts it after %s, not inside', (_name, html, cursorIn, outer) => {
+    const { only } = installOldEditor();
+    const onEdit = vi.fn();
+    const editor = mountClassicEditor(host, { id: 'b3', value: html, onEdit });
+    const mce = only();
+    mce.body = document.createElement('div');
+    mce.body.innerHTML = html;
+    mce.node = mce.body.querySelector(cursorIn);
+    mce.fire('focus');
+
+    editor.insertBlock(box);
+    expect(onEdit).toHaveBeenLastCalledWith(`${outer}<p>${box}</p><p>End</p>`);
+    expect(mce.undoManager.transact).toHaveBeenCalledTimes(1);
+    editor.destroy();
+  });
+
+  it.each([
+    ['in the middle of a line', 'Hi there', 3, `Hi \n\n${box}\n\nthere`],
+    ['after a blank line', 'Hi\n\nthere', 4, `Hi\n\n${box}\n\nthere`],
+    ['after one line break', 'Hi\nthere', 3, `Hi\n\n${box}\n\nthere`],
+    ['at the start', 'Hi', 0, `${box}\n\nHi`],
+    ['at the end', 'Hi', 2, `Hi\n\n${box}`],
+  ])('puts it between blank lines in the Code tab: %s', (_name, value, cursor, expected) => {
+    const { only } = installOldEditor();
+    const onEdit = vi.fn();
+    const editor = mountClassicEditor(host, { id: 'b2', value, onEdit });
+    only().hidden = true;
+    const textarea = host.querySelector('textarea') as HTMLTextAreaElement;
+    textarea.dispatchEvent(new Event('focus'));
+    textarea.setSelectionRange(cursor, cursor);
+
+    editor.insertBlock(box);
+    expect(onEdit).toHaveBeenLastCalledWith(expected);
     editor.destroy();
   });
 });

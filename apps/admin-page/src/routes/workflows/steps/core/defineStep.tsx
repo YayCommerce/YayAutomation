@@ -51,6 +51,7 @@ export function defineStep<TConfig extends Config>({
   label = '',
   description = '',
   Form,
+  Footer,
   ...spec
 }: StepSpec<TConfig>): Step {
   const meta = automationMeta.steps[spec.id];
@@ -81,16 +82,27 @@ export function defineStep<TConfig extends Config>({
   ];
 
   // Its own form, else one drawn from the fields. Nothing when there's nothing to set.
-  const hasForm = !!Form || fields.length > 0;
+  const hasForm = !!Form || fields.length > 0 || !!Footer;
 
   function StepConfigForm({ config, onChange }: StepFormProps<Config>) {
     // Normalized once, so the form's default values keep a stable identity.
     const [initial] = useState(() => normalize(config));
-    if (Form) return <Form config={initial} onChange={onChange as (config: TConfig) => void} />;
     // A registered panel is the same component on every render, so React keeps its state.
     const panel = stepPanel(spec.id);
-    if (panel) return createElement(panel, { config: initial, onChange });
-    return <StepForm fields={fields} schema={schema as v.GenericSchema<Config>} config={initial} onChange={onChange} />;
+    const form = Form ? (
+      <Form config={initial} onChange={onChange as (config: TConfig) => void} />
+    ) : panel ? (
+      createElement(panel, { config: initial, onChange })
+    ) : (
+      <StepForm fields={fields} schema={schema as v.GenericSchema<Config>} config={initial} onChange={onChange} />
+    );
+    if (!Footer) return form;
+    return (
+      <div className="flex flex-col gap-2">
+        {form}
+        <Footer />
+      </div>
+    );
   }
 
   return {

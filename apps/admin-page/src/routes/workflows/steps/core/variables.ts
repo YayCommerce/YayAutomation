@@ -13,6 +13,8 @@ export interface Variable {
   type: string;
   /** Its PHP side isn't built yet: listed, but can't be picked. */
   comingSoon: boolean;
+  /** A ready-made email block (e.g. a coupon box): inserted on its own line, in rich text only. */
+  block: boolean;
 }
 
 /**
@@ -45,7 +47,13 @@ export function availableVariables(graph: WorkflowGraph, nodeId: string): Variab
     // Only PHP's catalog has outputs; a pending step has none yet.
     const outputs = stepId ? (window.yayMatikMeta.automation.steps[stepId]?.outputs ?? []) : [];
     for (const output of outputs) {
-      list.push({ key: `steps.${id}.${output.key}`, label: output.label, type: output.type, comingSoon: false });
+      list.push({
+        key: `steps.${id}.${output.key}`,
+        label: output.label,
+        type: output.type,
+        comingSoon: false,
+        block: !!output.block,
+      });
     }
   }
   return list;
@@ -62,6 +70,7 @@ function itemVariables(item: DataItemMeta, prefix: string, seen: Set<string>): V
     label: field.label,
     type: field.valueType ?? field.type,
     comingSoon: isPendingField(field.key),
+    block: false,
   }));
   const related = (item.relations ?? []).flatMap((relation) => {
     const target = dataItems.find((i) => i.id === relation.item);
@@ -87,11 +96,14 @@ export function ancestors(graph: WorkflowGraph, nodeId: string): string[] {
 /** Whether "Insert variable" lets a step insert it: a coming-soon field only into a step that's coming soon too. */
 export const canInsert = (variable: Variable, comingSoonStep: boolean) => !variable.comingSoon || comingSoonStep;
 
-/** One row of the first "Insert variable" level: a data item, or a step above and its outputs. */
+/**
+ * One row of the first "Insert variable" level: a data item, a step above and its outputs, or the
+ * email blocks of the steps above (`blocks`, built by the picker).
+ */
 export interface VariableGroup {
   /** Data item id (`order`) or, for `source: 'step'`, the step's node id. */
   id: string;
-  source: 'data' | 'step';
+  source: 'data' | 'step' | 'blocks';
   /** The item's own fields (`label` null), then one section per relation path (`order.customer` → "Customer"). */
   sections: { path: string; label: string | null; variables: Variable[] }[];
 }

@@ -138,6 +138,28 @@ export interface WorkflowIssue {
   nodeIds?: string[];
 }
 
+/** `POST /workflows/{id}/preview`: an email step as the recipient would see it. Renders only. */
+export interface EmailPreview {
+  subject: string;
+  heading: string;
+  /** The whole email (WooCommerce wrapper, styles inlined), for an iframe. */
+  html: string;
+  /** Who it goes to, variables filled in. */
+  to: string;
+  /** Made-up values: the store has no paid order (or the trigger supplies none). */
+  sample: boolean;
+  /** The number of the order whose data it shows; null with made-up values. */
+  order: string | null;
+}
+
+/** `POST /workflows/{id}/send-test`: the test email went to the logged-in user. */
+export interface EmailTestResult {
+  sentTo: string;
+  /** With the "[Test] " prefix. */
+  subject: string;
+  sample: boolean;
+}
+
 export type RunStatus = 'queued' | 'running' | 'waiting' | 'completed' | 'failed' | 'cancelled' | 'skipped';
 
 /** One run of a workflow, as `GET /workflows/{id}/runs` lists it. Dates are ISO 8601 in UTC. */

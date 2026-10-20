@@ -12,7 +12,8 @@
         "adminUrl": "https://example.test/wp-admin/",
         "timezoneString": "UTC",
         "gmtOffset": 0,
-        "adminEmail": "admin@example.test"
+        "adminEmail": "admin@example.test",
+        "userEmail": "you@example.test"
     },
     "wc": {
         "active": true,
@@ -1980,7 +1981,9 @@
             "ruleOption": "Choose a value from the list."
         },
         "email": {
-            "fromLine": "Example Store <store@example.test>"
+            "fromLine": "Example Store <store@example.test>",
+            "fromName": "Example Store",
+            "fromAddress": "store@example.test"
         }
     },
     "docs": {

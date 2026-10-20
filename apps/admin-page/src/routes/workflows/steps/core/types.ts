@@ -54,6 +54,10 @@ export interface StepSpec<TConfig extends Config> {
   icon?: LucideIcon;
   /** A custom form. Without one, a built step's form is drawn from its catalog fields (`StepForm`). */
   Form?: ComponentType<StepFormProps<TConfig>>;
+  /** Drawn under the form, e.g. Send email's unsubscribe note. */
+  Footer?: ComponentType;
+  /** Drawn in the panel header under the title, e.g. Send email's Preview and Send test. */
+  Actions?: ComponentType;
 }
 
 /** A step with its config type erased, so one registry can hold them all. Every method normalizes first. */
@@ -88,4 +92,6 @@ export interface Step {
   icon?: LucideIcon;
   /** Omitted when the step has nothing to set. */
   Form?: ComponentType<StepFormProps<Config>>;
+  /** Panel header actions under the title (`StepSpec.Actions`). */
+  Actions?: ComponentType;
 }

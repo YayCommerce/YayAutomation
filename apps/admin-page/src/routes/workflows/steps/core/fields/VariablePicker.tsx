@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { Slot } from '@radix-ui/react-slot';
-import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
+import { Blocks, ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import { __, sprintf } from '@wordpress/i18n';
 
 import { cn } from '@/lib/utils';
@@ -33,6 +33,13 @@ const countOf = (group: VariableGroup) => group.sections.reduce((sum, section) =
 
 /** Name, line and tile of a group: a data item tinted by the step that supplies it, or a step above. */
 function describe(group: VariableGroup, { trigger, steps }: VariableScope) {
+  if (group.source === 'blocks') {
+    return {
+      label: __('Blocks', 'yaymatik'),
+      description: __('Ready-made parts of the email, e.g. a coupon box', 'yaymatik'),
+      tile: <StepTile kind="action" icon={Blocks} />,
+    };
+  }
   if (group.source === 'step') {
     const step = steps[group.id];
     return {
@@ -62,6 +69,9 @@ function describe(group: VariableGroup, { trigger, steps }: VariableScope) {
  * their name, each with its merge-tag key. Searching lists matching variables (in the open group,
  * or all).
  *
+ * `blocks`: the steps' ready-made email blocks (a coupon box) are offered in a "Blocks" group, for
+ * rich text; elsewhere they're left out. `onSelect` says whether the pick is one.
+ *
  * `conditionalOnly` / `filter`: for condition rules, which compare data fields only (no step
  * outputs, no related items' fields).
  */
@@ -70,6 +80,7 @@ export function VariablePicker({
   filter,
   types,
   autoOpen = false,
+  blocks = false,
   onSelect,
   onDismiss,
   focusAfterPick,
@@ -83,7 +94,10 @@ export function VariablePicker({
   types?: string;
   /** Open as soon as it mounts (a criteria just added). */
   autoOpen?: boolean;
-  onSelect: (key: string) => void;
+  /** Offer block outputs (rich text fields). */
+  blocks?: boolean;
+  /** `block`: a block output, to go on its own line. */
+  onSelect: (key: string, block: boolean) => void;
   /** Closed without a pick. */
   onDismiss?: () => void;
   /**
@@ -102,13 +116,27 @@ export function VariablePicker({
 
   const forConditions = conditionalOnly || !!filter;
   const accepts = (variable: Variable) => {
+    if (variable.block) return blocks && !forConditions;
     if (!forConditions) return true;
     // An item's own field only: `order.total`, not `order.customer.email` or `steps.<id>.<key>`.
     const field = variable.key.split('.').length === 2 ? fieldByKey(variable.key) : undefined;
     return !!field && (!conditionalOnly || field.conditional) && (!filter || filter(field));
   };
   // Built only while open: a criteria box holds several closed pickers.
-  const groups = open ? groupVariables(scope.variables.filter(accepts)) : [];
+  const offered = open ? scope.variables.filter(accepts) : [];
+  // One section per step, named by its card summary: two coupons tell apart.
+  const blockSections = groupVariables(offered.filter((variable) => variable.block)).map((g) => ({
+    path: g.id,
+    label: scope.steps[g.id]?.summary || scope.steps[g.id]?.label || g.id,
+    variables: g.sections.flatMap((section) => section.variables),
+  }));
+  const blockGroup: VariableGroup | null = blockSections.length
+    ? { id: 'blocks', source: 'blocks', sections: blockSections }
+    : null;
+  const groups = [
+    ...groupVariables(offered.filter((variable) => !variable.block)),
+    ...(blockGroup ? [blockGroup] : []),
+  ];
   const group = groups.find((g) => groupKey(g) === openKey);
 
   // Focus goes back to the opener on close: the dialog has no DialogTrigger to return it to.
@@ -150,8 +178,8 @@ export function VariablePicker({
     marked.current = [];
     if (!withPick) onDismiss?.();
   };
-  const pick = (key: string) => {
-    onSelect(key);
+  const pick = (variable: Variable) => {
+    onSelect(variable.key, variable.block);
     close(true);
   };
   const openGroup = (key: string | null) => {
@@ -225,9 +253,10 @@ export function VariablePicker({
     list = (
       <>
         {dataGroups.map(row)}
-        {stepGroups.length > 0 && (
+        {(blockGroup || stepGroups.length > 0) && (
           <>
             <SectionHeading>{__('From earlier steps', 'yaymatik')}</SectionHeading>
+            {blockGroup && row(blockGroup)}
             {stepGroups.map(row)}
           </>
         )}
@@ -346,13 +375,13 @@ function VariableRow({
 }: {
   variable: Variable;
   comingSoonStep: boolean;
-  onPick: (key: string) => void;
+  onPick: (variable: Variable) => void;
 }) {
   const off = !canInsert(variable, comingSoonStep);
   return (
     <button
       type="button"
-      onClick={() => onPick(variable.key)}
+      onClick={() => onPick(variable)}
       disabled={off}
       className={cn(rowClass, off ? 'cursor-not-allowed opacity-50' : 'hover:bg-accent cursor-pointer')}
     >

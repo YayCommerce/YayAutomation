@@ -1,7 +1,7 @@
 import type { StepId } from '@yaymatik/types';
 import { __ } from '@wordpress/i18n';
 
-import type { DataFieldType, DataItemMeta, StepMeta } from '@/types/localize';
+import type { DataItemMeta, StepMeta } from '@/types/localize';
 
 /**
  * Placeholder engine meta for steps and data fields whose PHP side isn't built yet, so their forms,
@@ -10,8 +10,7 @@ import type { DataFieldType, DataItemMeta, StepMeta } from '@/types/localize';
  * `window.yayMatikMeta.automation` directly again.
  *
  * What PHP has to match: each pending step's `schema.ts` (its `sanitize()` / `validate()`), the
- * meta and fields below, boolean operators with no value (`needsValue()`), and action `provides`
- * in `Validator` (`availableData()`).
+ * meta and fields below, and action `provides` in `Validator` (`availableData()`).
  */
 
 const steps: Partial<Record<StepId, StepMeta>> = {
@@ -63,19 +62,9 @@ const data: DataItemMeta[] = [
         type: 'number',
         conditional: true,
       },
-      {
-        key: 'customer.unsubscribed',
-        label: __('Customer unsubscribed', 'yaymatik'),
-        type: 'boolean',
-        conditional: true,
-      },
     ],
   },
 ];
-
-const operators: Partial<Record<DataFieldType, string[]>> = {
-  boolean: ['is_true', 'is_false'],
-};
 
 const php = window.yayMatikMeta.automation;
 
@@ -101,7 +90,6 @@ export const automationMeta = {
   ...php,
   steps: { ...steps, ...php.steps } as Record<StepId, StepMeta>,
   data: mergeData(),
-  operators: { ...operators, ...php.operators } as Record<DataFieldType, string[]>,
 };
 
 /** The step's PHP side isn't built yet: shown, but can't be picked or installed. */

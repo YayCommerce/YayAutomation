@@ -28,6 +28,7 @@ function Harness({ graph, editor }: { graph: WorkflowGraph; editor: Partial<Edit
         <div data-testid="panel">
           <StepPanel
             key={`${open.nodeId}:${panel.formVersion}`}
+            workflowId="1"
             nodeId={open.nodeId}
             picking={open.picking}
             feedback="none"

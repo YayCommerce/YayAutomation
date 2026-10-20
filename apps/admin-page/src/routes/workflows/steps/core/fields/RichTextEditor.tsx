@@ -8,8 +8,8 @@ import { useTagIssue, type FieldErrors } from './widgets';
 
 /**
  * Labelled WordPress editor (Visual / Code tabs) for an `html` field. `variables`: "Insert variable"
- * puts a merge tag at the cursor in either tab. `onChange` only fires on an edit, so opening and
- * closing the form leaves the value as stored. The content inside the editor stays light in dark
+ * puts a merge tag at the cursor in either tab; a block (e.g. a coupon box) goes on its own line.
+ * `onChange` only fires on an edit, so opening and closing the form leaves the value as stored. The content inside the editor stays light in dark
  * mode (it's an iframe with WordPress's own styles).
  */
 export function RichTextEditor({
@@ -83,7 +83,8 @@ export function RichTextEditor({
       action={
         variables ? (
           <InsertVariableLink
-            onInsert={(tag) => editor.current?.insert(tag)}
+            blocks
+            onInsert={(tag, block) => (block ? editor.current?.insertBlock(tag) : editor.current?.insert(tag))}
             focusAfter={() => {
               editor.current?.focus();
               return !!editor.current;

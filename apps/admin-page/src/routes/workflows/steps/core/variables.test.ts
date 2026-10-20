@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import type { WorkflowGraph } from '@yaymatik/types';
+import type { StepId, WorkflowGraph } from '@yaymatik/types';
 import { describe, expect, it } from 'vitest';
 
 import { steps } from '..';
@@ -20,9 +20,44 @@ describe('availableVariables', () => {
   it('carries label and type, and lists fields PHP lacks as coming soon', () => {
     const { graph } = cases.find((c) => c.nodeId === 'status')!;
     const variables = availableVariables(graph, 'status');
-    expect(variables).toContainEqual({ key: 'order.total', label: 'Order total', type: 'money', comingSoon: false });
-    expect(variables).toContainEqual({ key: 'steps.c.result', label: 'Result', type: 'enum', comingSoon: false });
+    expect(variables).toContainEqual({
+      key: 'order.total',
+      label: 'Order total',
+      type: 'money',
+      comingSoon: false,
+      block: false,
+    });
+    expect(variables).toContainEqual({
+      key: 'steps.c.result',
+      label: 'Result',
+      type: 'enum',
+      comingSoon: false,
+      block: false,
+    });
     expect(variables.find((variable) => variable.key === 'order.has_upsells')?.comingSoon).toBe(true);
+  });
+
+  it('flags block outputs, e.g. the coupon box of a Generate coupon above', () => {
+    const node = (id: string, kind: 'trigger' | 'action', block: StepId) => ({
+      id,
+      kind,
+      position: { x: 0, y: 0 },
+      data: { block, config: {} },
+    });
+    const graph: WorkflowGraph = {
+      nodes: [
+        node('t', 'trigger', 'order_created'),
+        node('c', 'action', 'generate_coupon'),
+        node('m', 'action', 'send_email'),
+      ],
+      edges: [
+        { id: 't-c', source: 't', target: 'c' },
+        { id: 'c-m', source: 'c', target: 'm' },
+      ],
+    };
+    const variables = availableVariables(graph, 'm');
+    expect(variables.filter((variable) => variable.block).map((variable) => variable.key)).toEqual(['steps.c.box']);
+    expect(variables.find((variable) => variable.key === 'steps.c.code')?.block).toBe(false);
   });
 });
 

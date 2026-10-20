@@ -20,8 +20,8 @@ defined( 'ABSPATH' ) || exit;
  * Preview and Send test for an email step in the editor, from its unsaved config. Only renders:
  * no step runs, so no coupon, order note or meta, no run row and no scheduled job.
  *
- * - Data: the store's latest paid order when the trigger supplies orders; otherwise made-up values
- *   (`sample` is true, for the "Sample data" badge).
+ * - Data: the store's latest paid order when the trigger supplies orders (`order` is its number);
+ *   otherwise made-up values (`sample` is true, for the "Sample data" badge).
  * - Steps above give made-up outputs (`Step::sample_outputs()`; Generate coupon → YMSAMPLE).
  * - The unsubscribe link goes nowhere (`#`, same look) and there are no List-Unsubscribe headers:
  *   neither may carry a real customer's token. A test email goes to the admin, unsubscribed or not.
@@ -41,7 +41,8 @@ final class EmailPreview {
      * @param string   $node_id  The email step's node.
      * @param mixed    $config   Its config, as the editor has it.
      * @param int|null $order_id Order to read; null = the latest paid one, 0 = made-up data.
-     * @return array|\WP_Error [ 'subject', 'heading', 'html' (wrapped, styles inlined), 'to', 'sample' ].
+     * @return array|\WP_Error [ 'subject', 'heading', 'html' (wrapped, styles inlined), 'to', 'sample',
+     *                         'order' (the order's number; null with made-up data) ].
      */
     public static function render( $graph, string $node_id, $config, ?int $order_id = null ) {
         $email = self::compose( $graph, $node_id, $config, $order_id );
@@ -54,6 +55,7 @@ final class EmailPreview {
             'html'    => self::inline_styles( $email['body'] ),
             'to'      => $email['to'],
             'sample'  => $email['sample'],
+            'order'   => $email['order'],
         ];
     }
 
@@ -91,7 +93,7 @@ final class EmailPreview {
      * @param string   $node_id  Node.
      * @param mixed    $config   Raw config.
      * @param int|null $order_id Order.
-     * @return array|\WP_Error Compose output + `to`, `sample`.
+     * @return array|\WP_Error Compose output + `to`, `sample`, `order`.
      */
     private static function compose( $graph, string $node_id, $config, ?int $order_id ) {
         $graph = GraphSchema::prepare( is_array( $graph ) ? self::with_config( $graph, $node_id, $config ) : $graph );
@@ -128,8 +130,8 @@ final class EmailPreview {
             );
         }
 
-        $config                  = $step->sanitize( $node['data']['config'] );
-        list( $values, $sample ) = self::values( $graph, $nodes, $node_id, $order_id );
+        $config                          = $step->sanitize( $node['data']['config'] );
+        list( $values, $sample, $order ) = self::values( $graph, $nodes, $node_id, $order_id );
         if ( $step instanceof SendEmail ) {
             $email       = $step->compose( $config, $values, null );
             $email['to'] = SendEmail::recipient( $config, $values );
@@ -138,6 +140,7 @@ final class EmailPreview {
             $email['to'] = (string) $config['recipients'];
         }
         $email['sample'] = $sample;
+        $email['order']  = $order;
         return $email;
     }
 
@@ -148,7 +151,7 @@ final class EmailPreview {
      * @param array[]  $nodes    Nodes by id.
      * @param string   $node_id  The email step.
      * @param int|null $order_id Order to read; null = latest paid; 0 = made-up.
-     * @return array [ Values, bool $sample ].
+     * @return array [ Values, bool $sample, string|null $order_number ].
      */
     private static function values( array $graph, array $nodes, string $node_id, ?int $order_id ): array {
         $trigger = null;
@@ -177,9 +180,10 @@ final class EmailPreview {
         );
         $scope->set_output_display( Executor::output_display( $nodes, [ StepRegistry::class, 'get' ] ) );
         if ( $refs ) {
-            return [ $scope, false ];
+            $order = wc_get_order( $order_id );
+            return [ $scope, false, $order ? (string) $order->get_order_number() : null ];
         }
-        return [ new SampleValues( $scope, array_intersect_key( DataRegistry::items(), array_flip( $provides ) ) ), true ];
+        return [ new SampleValues( $scope, array_intersect_key( DataRegistry::items(), array_flip( $provides ) ) ), true, null ];
     }
 
     /** The newest processing or completed order's id; 0 when there's none. */

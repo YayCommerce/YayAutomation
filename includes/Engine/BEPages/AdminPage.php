@@ -81,6 +81,8 @@ class AdminPage {
                 'timezoneString' => get_option( 'timezone_string' ),
                 'gmtOffset'      => (float) get_option( 'gmt_offset', 0 ),
                 'adminEmail'     => get_option( 'admin_email' ),
+                // Where Send test emails go (`RestAPI::send_test_email()`).
+                'userEmail'      => wp_get_current_user()->user_email,
             ],
             'wc'         => [
                 'active'             => class_exists( 'WooCommerce' ),

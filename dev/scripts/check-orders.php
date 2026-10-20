@@ -4,7 +4,8 @@
  * events, the Dispatcher and the Worker, and prints the emails, order notes and order meta it made.
  * The high orders also get a customer email (Send email): its WooCommerce look, unsubscribe link and
  * one-click headers are printed too, and each run's step statuses (with the skip reason). A third
- * order's customer is unsubscribed: its customer email is skipped, the run still completes. Output is
+ * order's customer is unsubscribed: its customer email is skipped, the run still completes. `preview`
+ * checks that Preview's HTML is what Send test hands wp_mail(), for the high order. Output is
  * as JSON keyed `high` / `low`; order numbers read `{order}` and mail bodies are text, so two runs
  * diff cleanly. Each order has one line item of a temporary product. Mail is really sent (local
  * Mailpit) and captured too. Removes the workflow, the orders and the product (force delete), their
@@ -18,6 +19,7 @@
 
 require_once __DIR__ . '/check-run.php';
 
+use YayMatik\Workflow\Email\EmailPreview;
 use YayMatik\Workflow\Runtime\ActionSchedulerQueue;
 use YayMatik\Workflow\Runtime\Runtime;
 use YayMatik\Workflow\Storage\RunStepStore;
@@ -239,6 +241,23 @@ try {
             'meta'  => $plain( $order->get_meta( CHECK_ORDERS_META ) ),
         ];
     }//end foreach
+
+    // Preview shows what Send test sends: the HTML wp_mail() gets, byte for byte, with WooCommerce's
+    // styles inlined in both; only the subject differs ("[Test] " in front). Nothing is sent.
+    $test_mail = null;
+    $capture   = function ( $short_circuit, $atts ) use ( &$test_mail ) {
+        $test_mail = $atts;
+        return true;
+    };
+    $config    = (array) array_column( $graph['nodes'], 'data', 'id' )['customer_email']['config'];
+    add_filter( 'pre_wp_mail', $capture, 10, 2 );
+    $preview = EmailPreview::render( $graph, 'customer_email', $config, $orders['high'] );
+    EmailPreview::send_test( $graph, 'customer_email', $config, CHECK_ORDERS_STAFF, $orders['high'] );
+    remove_filter( 'pre_wp_mail', $capture, 10 );
+    $out['preview'] = [
+        'same_html'    => is_array( $preview ) && is_array( $test_mail ) && $test_mail['message'] === $preview['html'],
+        'test_subject' => is_array( $preview ) && is_array( $test_mail ) && EmailPreview::TEST_PREFIX . $preview['subject'] === $test_mail['subject'],
+    ];
 } catch ( Throwable $e ) {
     $error = $e->getMessage();
 } finally {
