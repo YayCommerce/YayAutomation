@@ -54,6 +54,8 @@ class AdminPage {
         wp_localize_script( ScriptName::PAGE_ADMIN, 'yayMatikMeta', self::client_meta() );
         wp_set_script_translations( ScriptName::PAGE_ADMIN, 'yaymatik', YAYMATIK_PLUGIN_DIR . 'languages' );
 
+        // TinyMCE + Quicktags for `html` step fields (apps/admin-page …/fields/classicEditor.ts).
+        wp_enqueue_editor();
         wp_enqueue_script( ScriptName::PAGE_ADMIN );
         if ( YayMatik::is_prod() ) {
             wp_enqueue_style( ScriptName::STYLE_ADMIN );

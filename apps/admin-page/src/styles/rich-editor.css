@@ -1,0 +1,51 @@
+/*
+ * Visual / Code tabs of the WordPress editor (RichTextEditor). Our preflight's `.yay-ui button`
+ * outranks WordPress's `.wp-switch-editor`, so the tab look is set again here, from theme tokens
+ * (dark mode follows). The TinyMCE iframe keeps WordPress's own styles.
+ */
+.yaymatik-rich-editor {
+  .wp-editor-tabs {
+    display: flex;
+    justify-content: flex-end;
+    gap: 4px;
+    float: none;
+  }
+
+  .wp-switch-editor {
+    float: none;
+    position: relative;
+    top: 1px;
+    box-sizing: content-box;
+    height: 20px;
+    margin: 0;
+    padding: 3px 10px 4px;
+    font-size: 13px;
+    line-height: 20px;
+    color: var(--muted-foreground);
+    background: var(--muted);
+    border: 1px solid var(--border);
+    border-radius: 4px 4px 0 0;
+    cursor: pointer;
+
+    &:hover {
+      color: var(--foreground);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--ring);
+      outline-offset: -2px;
+    }
+  }
+
+  /* The open tab joins the editor below it. */
+  .tmce-active .switch-tmce,
+  .html-active .switch-html {
+    color: var(--foreground);
+    background: var(--card);
+    border-bottom-color: var(--card);
+  }
+
+  .wp-editor-container {
+    border-color: var(--border);
+  }
+}
