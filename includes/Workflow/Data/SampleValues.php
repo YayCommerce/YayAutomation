@@ -86,7 +86,7 @@ final class SampleValues implements Values {
                 'text'  => Template::to_text( $raw ),
                 'html'  => null,
             ];
-        }//end foreach
+        }
         return null;
     }
 }

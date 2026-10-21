@@ -38,7 +38,7 @@ function TriggerCell({ workflow }: { workflow: Workflow }) {
   );
 }
 
-/** Shown in the run columns until run history (M2) fills them. */
+/** Shown in the run columns. */
 const noRuns = <span className="text-muted-foreground">—</span>;
 
 function TableHeadRow({ select }: { select: ReactNode }) {

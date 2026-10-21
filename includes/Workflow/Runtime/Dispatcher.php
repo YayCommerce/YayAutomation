@@ -215,7 +215,7 @@ final class Dispatcher {
             }
         } catch ( \Throwable $e ) {
             Logger::error( "Could not start workflows for {$trigger->id()}: " . $e->getMessage(), [ 'args' => $args ] );
-        }//end try
+        }
     }
 
     /**

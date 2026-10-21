@@ -58,7 +58,7 @@ if ( ! function_exists( 'YayMatik\\plugin_init' ) ) {
         YayMatik::initialize();
         I18n::get_instance();
     }
-}//end if
+}
 
 if ( ! wp_installing() ) {
     add_action( 'plugins_loaded', 'YayMatik\\plugin_init' );

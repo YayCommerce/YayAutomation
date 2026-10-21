@@ -235,7 +235,7 @@ final class Scope implements Values {
                 return null;
             }
             $value = $value[ $segment ];
-        }//end foreach
+        }
 
         if ( null === $value ) {
             return null;

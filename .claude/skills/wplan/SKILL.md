@@ -79,7 +79,7 @@ Present the plan to the user and ask for a single confirmation:
 
 **Wait for approval.** On confirmation:
 
-1. Save the plan to `.claude/plans/<NNN>-<slug>.md`:
+1. Save the plan to `.claude/plans/dev/<NNN>-<slug>.md` (gitignored; never commit it):
 
 ```markdown
 # Plan: <title>
@@ -98,14 +98,7 @@ Present the plan to the user and ask for a single confirmation:
 
 ## Meta
 - Target branch: <current branch>
-- Base branch: main
+- Base branch: develop
 ```
 
-2. Commit the plan file:
-
-```bash
-git add .claude/plans/<NNN>-<slug>.md
-git commit -m "plan: <slug>"
-```
-
-3. **Immediately continue into `/wdev`** — do not stop or ask the user to run it manually.
+2. **Immediately continue into `/wdev`** — do not stop or ask the user to run it manually.

@@ -371,7 +371,7 @@ final class DispatcherWorkerTest extends TestCase {
         $this->runs->save_run( $id, [ 'position' => [ 'queue' => [ 'b' ] ] ] );
         $this->workflows->workflows[1]['status'] = 'inactive';
 
-        // Turning a workflow off doesn't stop a run already going (cancelling those is M2.2).
+        // Turning a workflow off doesn't stop a run already going.
         $this->assertSame( 'completed', $this->worker->run( $id ) );
         $this->assertSame( [ 'b' ], array_column( $this->runs->steps( $id ), 'step_id' ) );
     }

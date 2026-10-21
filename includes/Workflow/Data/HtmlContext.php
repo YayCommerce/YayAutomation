@@ -132,8 +132,8 @@ final class HtmlContext {
                         $this->value_char( $char );
                     }
                     break;
-            }//end switch
-        }//end for
+            }
+        }
     }
 
     /**

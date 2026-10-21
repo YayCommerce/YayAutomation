@@ -7,15 +7,12 @@ import { Skeleton } from '@/components/ui/skeleton';
 // Stands in for the link while splitting the sentence, so translations may use `%s` or `%1$s`.
 const LINK_SLOT = '\u0000';
 
-/** One execution of a workflow. The fields come with the runs table (M2). */
+/** One execution of a workflow. */
 export interface WorkflowRun {
   id: string;
 }
 
-/**
- * The "Workflow runs" section below the tabs. Only the empty state exists for now: the runs table
- * (M2) goes where `runs` has items.
- */
+/** The "Workflow runs" section below the tabs. Only the empty state exists. */
 export function WorkflowRuns({ runs, loading = false }: { runs: WorkflowRun[]; loading?: boolean }) {
   const [before, after = ''] = sprintf(
     /* translators: %s: link text, "monitoring workflow runs" */

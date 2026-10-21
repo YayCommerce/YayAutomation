@@ -101,7 +101,7 @@ final class Operators {
                 return '' !== $actual && $lower < $expected;
             case 'after':
                 return '' !== $actual && $lower > $expected;
-        }//end switch
+        }
         return false;
     }
 
