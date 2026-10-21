@@ -1,7 +1,10 @@
 <?php
 /**
  * Runs a temporary high-value-style workflow on two temporary orders, through real WooCommerce
- * events, the Dispatcher and the Worker, and prints the emails, order notes and order meta it made,
+ * events, the Dispatcher and the Worker, and prints the emails, order notes and order meta it made.
+ * The high orders also get a customer email (Send email): its WooCommerce look, unsubscribe link and
+ * one-click headers are printed too, and each run's step statuses (with the skip reason). A third
+ * order's customer is unsubscribed: its customer email is skipped, the run still completes. Output is
  * as JSON keyed `high` / `low`; order numbers read `{order}` and mail bodies are text, so two runs
  * diff cleanly. Each order has one line item of a temporary product. Mail is really sent (local
  * Mailpit) and captured too. Removes the workflow, the orders and the product (force delete), their
@@ -17,12 +20,16 @@ require_once __DIR__ . '/check-run.php';
 
 use YayMatik\Workflow\Runtime\ActionSchedulerQueue;
 use YayMatik\Workflow\Runtime\Runtime;
+use YayMatik\Workflow\Storage\RunStepStore;
 use YayMatik\Workflow\Storage\RunStore;
+use YayMatik\Workflow\Storage\Schema;
+use YayMatik\Workflow\Storage\UnsubscribeStore;
 use YayMatik\Workflow\Storage\WorkflowRepository;
 
 const CHECK_ORDERS_PREFIX = 'Check orders:';
 const CHECK_ORDERS_META   = '_yaymatik_check_orders';
 const CHECK_ORDERS_STAFF  = 'staff-check@example.test';
+const CHECK_ORDERS_UNSUB  = 'zed.unsubscribed@example.test';
 
 global $wpdb;
 wp_set_current_user( 1 );
@@ -30,16 +37,29 @@ if ( ! Runtime::worker() ) {
     WP_CLI::error( 'Runtime not booted (WooCommerce off?).' );
 }
 
+// WooCommerce's own order emails stay off, so the mail catcher shows only YayMatik mail.
+foreach ( WC()->mailer()->get_emails() as $wc_email ) {
+    add_filter( 'woocommerce_email_enabled_' . $wc_email->id, '__return_false' );
+}
+
 $mails = [];
 add_filter(
     'wp_mail',
     function ( $atts ) use ( &$mails ) {
         // Text only: the store's email wrapper would bury the workflow's content in the diff.
-        $text    = html_entity_decode( wp_strip_all_tags( (string) $atts['message'] ), ENT_QUOTES, 'UTF-8' );
+        $html    = (string) $atts['message'];
+        $text    = html_entity_decode( wp_strip_all_tags( $html ), ENT_QUOTES, 'UTF-8' );
+        $headers = is_array( $atts['headers'] ) ? $atts['headers'] : explode( "\n", str_replace( "\r\n", "\n", (string) $atts['headers'] ) );
+        // The unsubscribe token is per address; masked so two runs diff cleanly.
+        $mask    = fn( string $line ) => (string) preg_replace( '/yaymatik_token=[A-Za-z0-9_-]+/', 'yaymatik_token={token}', $line );
         $mails[] = [
-            'to'      => implode( ', ', (array) $atts['to'] ),
-            'subject' => $atts['subject'],
-            'message' => implode( "\n", array_filter( array_map( 'trim', explode( "\n", $text ) ) ) ),
+            'to'          => implode( ', ', (array) $atts['to'] ),
+            'subject'     => $atts['subject'],
+            'message'     => implode( "\n", array_filter( array_map( 'trim', explode( "\n", $text ) ) ) ),
+            // WooCommerce's email template wraps it, with its styles inlined.
+            'wc_look'     => false !== strpos( $html, 'id="template_container"' ) && false !== strpos( $html, 'style="' ),
+            'unsubscribe' => (bool) preg_match( '#<a [^>]*href="[^"]*yaymatik_unsub=[^"]*"[^>]*>Unsubscribe</a>#', $html ),
+            'headers'     => array_values( array_map( $mask, preg_grep( '/^List-Unsubscribe/i', array_map( 'trim', $headers ) ) ) ),
         ];
         return $atts;
     }
@@ -107,12 +127,28 @@ $graph = [
                 'value' => 'High-value order {{ order.number }} for {{ customer.email }}',
             ]
         ),
+        $node(
+            'customer_email',
+            'action',
+            680,
+            'send_email',
+            [
+                'to'      => '{{ customer.email }}',
+                'subject' => 'Check orders: thanks for order {{ order.number }}, {{ customer.first_name }}',
+                'heading' => 'Thanks, {{ customer.first_name }}!',
+                'message' => '<p>Hi {{ customer.first_name }},</p><p>Order {{ order.number }} total: <strong>{{ order.total }}</strong></p><p>{{ order.items }}</p><p><a href="{{ site.url }}">Visit the shop</a></p>',
+            ]
+        ),
+        // Runs after the customer email, also when that one is skipped.
+        $node( 'after_email', 'action', 850, 'add_order_note', [ 'note' => 'Check-orders: after the customer email' ] ),
         $node( 'note', 'action', 340, 'add_order_note', [ 'note' => 'Check-orders: order {{ order.number }} is under 500 ({{ order.total }})' ] ),
     ],
     'edges' => [
         $edge( 'trigger', 'condition' ),
         $edge( 'condition', 'email', 'then' ),
         $edge( 'email', 'meta' ),
+        $edge( 'meta', 'customer_email' ),
+        $edge( 'customer_email', 'after_email' ),
         $edge( 'condition', 'note', 'otherwise' ),
     ],
 ];
@@ -158,15 +194,17 @@ try {
     $product->set_regular_price( '1' );
     $product_id = $product->save();
 
+    UnsubscribeStore::add( CHECK_ORDERS_UNSUB );
     foreach ( [
-        'high' => 600,
-        'low'  => 100,
-    ] as $label => $total ) {
+        'high'         => [ 600, 'zed.checkorder@example.test' ],
+        'low'          => [ 100, 'zed.checkorder@example.test' ],
+        'unsubscribed' => [ 600, CHECK_ORDERS_UNSUB ],
+    ] as $label => list( $total, $email ) ) {
         $mails = [];
         $order = wc_create_order( [ 'status' => 'pending' ] );
         $order->set_billing_first_name( 'Zed' );
         $order->set_billing_last_name( 'Checkorder' );
-        $order->set_billing_email( 'zed.checkorder@example.test' );
+        $order->set_billing_email( $email );
         $order->add_product(
             $product,
             1,
@@ -191,7 +229,12 @@ try {
 
         $out[ $label ] = [
             'run'   => $run ? $run['status'] . ( $run['error'] ? ': ' . $run['error'] : '' ) : 'no run',
-            'mails' => array_map( fn( $m ) => array_map( $plain, $m ), $mails ),
+            // Node id => status, with the reason when skipped or failed.
+            'steps' => array_map(
+                fn( array $step ) => $step['status'] . ( $step['error'] ? ' (' . $step['error'] . ')' : '' ),
+                array_column( $run_id ? RunStepStore::for_run( $run_id ) : [], null, 'step_id' )
+            ),
+            'mails' => array_map( fn( $m ) => array_map( fn( $v ) => is_string( $v ) ? $plain( $v ) : $v, $m ), $mails ),
             'notes' => array_map( $plain, wp_list_pluck( wc_get_order_notes( [ 'order_id' => $order->get_id() ] ), 'content' ) ),
             'meta'  => $plain( $order->get_meta( CHECK_ORDERS_META ) ),
         ];
@@ -199,6 +242,7 @@ try {
 } catch ( Throwable $e ) {
     $error = $e->getMessage();
 } finally {
+    $wpdb->delete( Schema::table( Schema::UNSUBSCRIBES ), [ 'email' => CHECK_ORDERS_UNSUB ] ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
     yaymatik_check_remove_workflows( CHECK_ORDERS_PREFIX );
     foreach ( $orders as $order_id ) {
         $order = wc_get_order( $order_id );
@@ -220,6 +264,7 @@ $left = [
     'orders'   => count( array_filter( array_map( 'wc_get_order', $orders ) ) ),
     'product'  => $product_id && wc_get_product( $product_id ) ? 1 : 0,
     'runs'     => $left['runs'],
+    'unsub'    => UnsubscribeStore::has( CHECK_ORDERS_UNSUB ) ? 1 : 0,
     'jobs'     => $left['jobs'],
 ];
 // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fwrite

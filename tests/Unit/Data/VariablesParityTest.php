@@ -48,10 +48,16 @@ final class VariablesParityTest extends TestCase {
     }
 
     /** Every old tag, in the spellings the old pattern accepted. */
+    private const NEW_FIELDS = [ 'customer.is_first_order', 'customer.unsubscribed' ];
+
     private function old_tags(): string {
         $tags = [];
         foreach ( DataRegistry::items() as $item ) {
             foreach ( array_keys( $item->fields() ) as $key ) {
+                // Fields added after v0.1 had no old rendering (and read the database).
+                if ( in_array( $item->id() . '.' . $key, self::NEW_FIELDS, true ) ) {
+                    continue;
+                }
                 $tags[] = '{{ ' . $item->id() . '.' . $key . ' }}';
             }
         }

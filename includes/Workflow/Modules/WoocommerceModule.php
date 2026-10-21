@@ -5,6 +5,8 @@ use YayMatik\Workflow\Data\CustomerData;
 use YayMatik\Workflow\Data\OrderData;
 use YayMatik\Workflow\Steps\Actions\AddOrderNote;
 use YayMatik\Workflow\Steps\Actions\ChangeOrderStatus;
+use YayMatik\Workflow\Steps\Actions\GenerateCoupon;
+use YayMatik\Workflow\Steps\Actions\SendEmail;
 use YayMatik\Workflow\Steps\Actions\SendInternalEmail;
 use YayMatik\Workflow\Steps\Actions\UpdateOrderMeta;
 use YayMatik\Workflow\Steps\Triggers\OrderCreated;
@@ -12,7 +14,7 @@ use YayMatik\Workflow\Steps\Triggers\OrderStatusChanged;
 
 defined( 'ABSPATH' ) || exit;
 
-/** Core's WooCommerce part: the order triggers, the order and email actions, orders and customers. */
+/** Core's WooCommerce part: the order triggers, the order, email and coupon actions, orders and customers. */
 final class WoocommerceModule implements ModuleInterface {
 
     public const ID = 'woocommerce';
@@ -50,10 +52,12 @@ final class WoocommerceModule implements ModuleInterface {
         return [
             OrderCreated::class,
             OrderStatusChanged::class,
+            SendEmail::class,
             SendInternalEmail::class,
             ChangeOrderStatus::class,
             AddOrderNote::class,
             UpdateOrderMeta::class,
+            GenerateCoupon::class,
         ];
     }
 

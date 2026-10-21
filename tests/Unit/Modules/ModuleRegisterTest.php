@@ -32,7 +32,7 @@ final class ModuleRegisterTest extends TestCase {
 
     public function test_registries_read_the_modules(): void {
         $this->assertSame(
-            [ 'order_created', 'order_status_changed', 'send_internal_email', 'change_order_status', 'add_order_note', 'update_order_meta', 'condition' ],
+            [ 'order_created', 'order_status_changed', 'send_email', 'send_internal_email', 'change_order_status', 'add_order_note', 'update_order_meta', 'generate_coupon', 'condition' ],
             array_keys( StepRegistry::all() )
         );
         $this->assertSame( [ 'order', 'customer', 'site' ], array_keys( DataRegistry::items() ) );

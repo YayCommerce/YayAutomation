@@ -19,8 +19,69 @@ if ( ! function_exists( 'apply_filters' ) ) {
 }
 
 if ( ! function_exists( 'esc_html' ) ) {
+    // Like WordPress: entities already in the text aren't encoded again.
     function esc_html( $text ) {
-        return htmlspecialchars( (string) $text, ENT_QUOTES, 'UTF-8' );
+        return htmlspecialchars( (string) $text, ENT_QUOTES, 'UTF-8', false );
+    }
+}
+
+if ( ! function_exists( 'esc_attr' ) ) {
+    function esc_attr( $text ) {
+        return htmlspecialchars( (string) $text, ENT_QUOTES, 'UTF-8', false );
+    }
+}
+
+if ( ! function_exists( 'esc_url' ) ) {
+    // Like WordPress: spaces encoded, other unsafe characters dropped, only known protocols kept,
+    // `http://` added to a bare host, `&` and `'` as entities.
+    function esc_url( $url ) {
+        $url = str_replace( ' ', '%20', ltrim( (string) $url ) );
+        $url = (string) preg_replace( '|[^a-z0-9-~+_.?#=!&;,/:%@$\|*\'()\[\]\x80-\xff]|i', '', $url );
+        if ( '' === $url ) {
+            return '';
+        }
+        if ( preg_match( '/^([a-z][a-z0-9+.-]*):/i', $url, $match ) ) {
+            if ( ! in_array( strtolower( $match[1] ), [ 'http', 'https', 'mailto', 'tel' ], true ) ) {
+                return '';
+            }
+        } elseif ( ! in_array( $url[0], [ '/', '#', '?' ], true ) ) {
+            $url = 'http://' . $url;
+        }
+        $url = (string) preg_replace( '/&(?!#?[a-z0-9]+;)/i', '&amp;', $url );
+        return str_replace( [ '&amp;', "'" ], [ '&#038;', '&#039;' ], $url );
+    }
+}
+
+if ( ! function_exists( 'wp_kses_post' ) ) {
+    // Only drops script elements and on* attributes; the real allowlist runs on the site (check-orders).
+    function wp_kses_post( $text ) {
+        $text = (string) preg_replace( '#<script\b[^>]*>.*?</script>#is', '', (string) $text );
+        return (string) preg_replace( '#\s+on[a-z]+\s*=\s*("[^"]*"|\'[^\']*\'|[^\s>]+)#i', '', $text );
+    }
+}
+
+if ( ! function_exists( 'wp_strip_all_tags' ) ) {
+    function wp_strip_all_tags( $text ) {
+        return trim( strip_tags( (string) $text ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.strip_tags_strip_tags -- this is the wp_strip_all_tags() stand-in.
+    }
+}
+
+if ( ! function_exists( 'wpautop' ) ) {
+    // Like WordPress for simple input: blank lines split paragraphs, single line breaks become
+    // `<br />`, blocks that already are HTML paragraphs or tables are left alone.
+    function wpautop( $text ) {
+        $text = trim( str_replace( "\r\n", "\n", (string) $text ) );
+        if ( '' === $text ) {
+            return '';
+        }
+        $out = [];
+        foreach ( preg_split( '/\n\s*\n/', $text ) as $chunk ) {
+            $chunk = trim( $chunk );
+            $out[] = preg_match( '/^<(?:p|table|div|ul|ol|h[1-6]|blockquote)\b/i', $chunk )
+                ? $chunk
+                : '<p>' . str_replace( "\n", "<br />\n", $chunk ) . '</p>';
+        }
+        return implode( "\n", $out ) . "\n";
     }
 }
 
@@ -132,5 +193,57 @@ if ( ! function_exists( 'current_time' ) ) {
     // GMT only: the plugin always asks for GMT.
     function current_time( $type, $gmt = 0 ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- same signature as WordPress.
         return 'mysql' === $type ? gmdate( 'Y-m-d H:i:s' ) : time();
+    }
+}
+
+if ( ! function_exists( 'home_url' ) ) {
+    function home_url( $path = '' ) {
+        return 'https://shop.test' . $path;
+    }
+}
+
+if ( ! function_exists( 'add_query_arg' ) ) {
+    // Array form only, on a URL without a query string.
+    function add_query_arg( $args, $url ) {
+        return $url . '?' . http_build_query( $args );
+    }
+}
+
+if ( ! function_exists( 'wp_parse_url' ) ) {
+    function wp_parse_url( $url, $component = -1 ) {
+        return parse_url( $url, $component ); // phpcs:ignore WordPress.WP.AlternativeFunctions.parse_url_parse_url -- this is the wp_parse_url() stand-in.
+    }
+}
+
+if ( ! function_exists( 'sanitize_hex_color' ) ) {
+    function sanitize_hex_color( $color ) {
+        return preg_match( '|^#([A-Fa-f0-9]{3}){1,2}$|', (string) $color ) ? $color : null;
+    }
+}
+
+if ( ! function_exists( 'date_i18n' ) ) {
+    // English month names only.
+    function date_i18n( $format, $timestamp = false ) {
+        return gmdate( (string) $format, false === $timestamp ? time() : (int) $timestamp );
+    }
+}
+
+if ( ! function_exists( 'esc_url_raw' ) ) {
+    // Like WordPress: `esc_url()` without turning `&` into an entity, for headers and redirects.
+    function esc_url_raw( $url ) {
+        return str_replace( [ '&#038;', '&#039;' ], [ '&', "'" ], esc_url( $url ) );
+    }
+}
+
+if ( ! function_exists( 'wp_date' ) ) {
+    // UTC only.
+    function wp_date( $format, $timestamp = null ) {
+        return gmdate( (string) $format, null === $timestamp ? time() : (int) $timestamp );
+    }
+}
+
+if ( ! function_exists( 'admin_url' ) ) {
+    function admin_url( $path = '' ) {
+        return 'https://shop.test/wp-admin/' . ltrim( (string) $path, '/' );
     }
 }

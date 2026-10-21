@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { structureErrors } from '../model/structure';
 import { validateWorkflow } from '../model/validation';
-import { templates } from './index';
+import { isComingSoon, templates } from './index';
 
 describe('templates', () => {
   it('has templates with unique ids', () => {
@@ -14,7 +14,10 @@ describe('templates', () => {
     '%s saves and can be activated as is',
     (_id, template) => {
       expect(structureErrors(template.graph)).toEqual([]);
-      expect(validateWorkflow({ name: template.name, graph: template.graph })).toEqual([]);
+      // Coming soon: uses steps or variables PHP doesn't have yet, so Activate would reject it.
+      if (!isComingSoon(template.graph)) {
+        expect(validateWorkflow({ name: template.name, graph: template.graph })).toEqual([]);
+      }
     },
   );
 });

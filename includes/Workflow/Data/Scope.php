@@ -29,6 +29,9 @@ final class Scope implements Values {
     /** @var DataItem[] Keyed by entity type id. */
     private $entities;
 
+    /** @var callable|null fn( string $step_id, string $key, array $outputs, bool $html ): ?string */
+    private $output_display = null;
+
     /**
      * @param array            $data     Section => values; values may hold Refs.
      * @param RefResolver|null $resolver Loads Refs; null = a new one (one per slice).
@@ -71,6 +74,29 @@ final class Scope implements Values {
      */
     public function set_step_outputs( string $step_id, array $outputs ): void {
         $this->data['steps'][ $step_id ] = $outputs;
+    }
+
+    /**
+     * How step outputs with a display text of their own read (a formatted date, a coupon box): built
+     * from the step's other outputs when read, never stored. Set by whoever knows the graph.
+     *
+     * @param callable $display fn( string $step_id, string $key, array $outputs, bool $html ): ?string —
+     *                          null when the output has no display text of its own.
+     */
+    public function set_output_display( callable $display ): void {
+        $this->output_display = $display;
+    }
+
+    /**
+     * The run and the step running now, as `run.id` and `run.step`, for steps that record where
+     * something came from (e.g. the coupon they make).
+     *
+     * @param int    $run_id  Run id.
+     * @param string $step_id Graph node id.
+     */
+    public function set_current_step( int $run_id, string $step_id ): void {
+        $this->data['run']['id']   = $run_id;
+        $this->data['run']['step'] = $step_id;
     }
 
     /**
@@ -117,6 +143,10 @@ final class Scope implements Values {
      * @throws GoneEntity When an entity on the path no longer exists.
      */
     public function text( string $path, bool $html ): string {
+        $output = $this->output_text( $path, $html );
+        if ( null !== $output ) {
+            return $output;
+        }
         $found = $this->resolve( $path );
         if ( ! $found ) {
             return '';
@@ -126,6 +156,26 @@ final class Scope implements Values {
         }
         $text = Template::to_text( $found['value'] );
         return $html ? esc_html( $text ) : $text;
+    }
+
+    /**
+     * A step output's own display text (`steps.<id>.<key>`), or null when it has none. A step that
+     * didn't run has no outputs, so its display text isn't asked for and reads empty.
+     *
+     * @param string $path Dot path.
+     * @param bool   $html Safe HTML instead of plain text.
+     */
+    private function output_text( string $path, bool $html ): ?string {
+        $segments = explode( '.', $path );
+        if ( ! $this->output_display || 3 !== count( $segments ) || 'steps' !== $segments[0] ) {
+            return null;
+        }
+        $outputs = $this->data['steps'][ $segments[1] ] ?? null;
+        if ( ! is_array( $outputs ) ) {
+            return null;
+        }
+        $text = ( $this->output_display )( $segments[1], $segments[2], $outputs, $html );
+        return null === $text ? null : (string) $text;
     }
 
     /**

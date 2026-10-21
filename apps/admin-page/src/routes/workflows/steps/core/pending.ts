@@ -15,8 +15,6 @@ import type { DataFieldType, DataItemMeta, StepMeta } from '@/types/localize';
  */
 
 const steps: Partial<Record<StepId, StepMeta>> = {
-  send_email: { kind: 'action', plugin: 'woocommerce', category: 'email', requires: [] },
-  generate_coupon: { kind: 'action', plugin: 'woocommerce', category: 'coupon', requires: [], provides: ['coupon'] },
   wait: { kind: 'action', plugin: 'yaymatik', category: 'flow', requires: [] },
 };
 
@@ -70,29 +68,6 @@ const data: DataItemMeta[] = [
         label: __('Customer unsubscribed', 'yaymatik'),
         type: 'boolean',
         conditional: true,
-      },
-    ],
-  },
-  {
-    id: 'coupon',
-    label: __('Coupon', 'yaymatik'),
-    description: __('The coupon made by a Generate coupon step above.', 'yaymatik'),
-    icon: 'ticket',
-    fields: [
-      { key: 'coupon.code', label: __('Coupon code', 'yaymatik'), type: 'string', conditional: false },
-      // Shown with its unit: "10%", "$5.00" or "Free shipping".
-      { key: 'coupon.amount', label: __('Coupon amount', 'yaymatik'), type: 'string', conditional: false },
-      {
-        key: 'coupon.expiry_date',
-        label: __('Coupon expiry date', 'yaymatik'),
-        type: 'date',
-        conditional: false,
-      },
-      {
-        key: 'coupon.description',
-        label: __('Coupon description', 'yaymatik'),
-        type: 'string',
-        conditional: false,
       },
     ],
   },

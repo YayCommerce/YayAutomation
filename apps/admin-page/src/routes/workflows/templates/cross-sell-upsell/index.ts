@@ -78,7 +78,7 @@ const hasCrossSells = rule('order.has_cross_sells', 'is_true');
 const greeting = __('Hi {{ customer.first_name }},', 'yaymatik');
 const signOff = __('See you soon,\n{{ site.name }}', 'yaymatik');
 const couponLines = __(
-  'Use this coupon for {{ coupon.amount }} off your next order:\n\nCoupon code: {{ coupon.code }}\nExpires: {{ coupon.expiry_date }}',
+  'Use this coupon for {{ steps.coupon.amount }} off your next order:\n\nCoupon code: {{ steps.coupon.code }}\nExpires: {{ steps.coupon.expires_at }}',
   'yaymatik',
 );
 

@@ -108,6 +108,16 @@ abstract class Step {
         return [];
     }
 
+    /**
+     * Made-up outputs for a preview of a later step (an email that shows a coupon code): the step
+     * itself never runs there. Empty = its outputs read empty in previews.
+     *
+     * @param array $config Output of `sanitize()`.
+     */
+    public function sample_outputs( array $config ): array {
+        return [];
+    }
+
     /** Extra facts for the admin app, merged into this step's catalog entry (`Definition\Catalog`). */
     public function client_meta(): array {
         return [];

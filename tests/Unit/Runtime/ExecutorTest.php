@@ -361,6 +361,28 @@ final class ExecutorTest extends TestCase {
         $this->assertSame( 'a@x.com', $seen );
     }
 
+    public function test_a_step_knows_its_run_and_node(): void {
+        $seen                = [];
+        $this->steps['read'] = new FakeStep(
+            'read',
+            function ( Scope $scope ) use ( &$seen ) {
+                $seen[] = [ $scope->get( 'run.id' ), $scope->get( 'run.step' ) ];
+                return StepResult::ok();
+            }
+        );
+        $this->graph(
+            [
+                'a' => [ 'read', [] ],
+                'b' => [ 'read', [] ],
+            ],
+            [ [ 't', 'a' ], [ 'a', 'b' ] ]
+        );
+        $id = $this->new_run();
+        $this->slice( $id );
+
+        $this->assertSame( [ [ $id, 'a' ], [ $id, 'b' ] ], $seen );
+    }
+
     public function test_wait_pauses_the_run_and_resumes_at_the_next_step(): void {
         $until               = $this->clock->now + 3600;
         $this->steps['wait'] = new FakeStep( 'wait', fn() => StepResult::wait( $until ) );

@@ -4,6 +4,7 @@ namespace YayMatik\Engine\BEPages;
 
 use YayMatik\Engine\API\RestAPI;
 use YayMatik\Engine\Register\ScriptName;
+use YayMatik\Workflow\Coupon\FreeShipping;
 use YayMatik\Utils\SingletonTrait;
 use YayMatik\Workflow\Definition\Catalog;
 use YayMatik\Workflow\Steps\Actions\SendInternalEmail;
@@ -80,10 +81,12 @@ class AdminPage {
                 'adminEmail'     => get_option( 'admin_email' ),
             ],
             'wc'         => [
-                'active'         => class_exists( 'WooCommerce' ),
-                'currencySymbol' => function_exists( 'get_woocommerce_currency_symbol' )
+                'active'             => class_exists( 'WooCommerce' ),
+                'currencySymbol'     => function_exists( 'get_woocommerce_currency_symbol' )
                     ? html_entity_decode( get_woocommerce_currency_symbol(), ENT_QUOTES, 'UTF-8' )
                     : '',
+                // What free shipping coupons need: 'coupon', 'coupon_and_minimum', or '' (they do nothing).
+                'freeShippingCoupon' => FreeShipping::coupon_mode(),
             ],
             'automation' => Catalog::to_client() + [ 'email' => SendInternalEmail::sender() ],
             'docs'       => [

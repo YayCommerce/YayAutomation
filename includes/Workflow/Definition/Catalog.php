@@ -81,6 +81,10 @@ final class Catalog {
                 'label' => $output['label'],
                 'type'  => $type->to_string(),
             ];
+            // A ready-made email block (e.g. a coupon box): rendered on the server, inserted on its own line.
+            if ( ! empty( $output['block'] ) ) {
+                $entry['block'] = true;
+            }
             if ( isset( $output['options'] ) ) {
                 $options          = is_callable( $output['options'] ) ? ( $output['options'] )() : $output['options'];
                 $entry['options'] = self::options( (array) $options );

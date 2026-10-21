@@ -433,6 +433,18 @@ final class Validator {
     }
 
     /**
+     * Ids of the steps above a step, from the trigger down.
+     *
+     * @param array  $graph   Well-formed graph.
+     * @param string $node_id The step.
+     * @return string[]
+     */
+    public static function steps_above( array $graph, string $node_id ): array {
+        $parents = array_column( $graph['edges'], 'source', 'target' );
+        return array_map( 'strval', array_reverse( array_keys( self::ancestors( $node_id, $parents ) ) ) );
+    }
+
+    /**
      * Ids of the steps above a step => true: its parent, the parent's parent, up to the trigger.
      *
      * @param string $id      Step id.

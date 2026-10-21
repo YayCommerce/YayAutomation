@@ -1,25 +1,12 @@
-import { User } from 'lucide-react';
-import { __, sprintf } from '@wordpress/i18n';
-
 import { defineStep, value } from '../../core/defineStep';
-import { splitRecipients } from '../../core/fields/email';
 import { variableNames } from '../../core/summary';
-import { SendEmailForm } from './Form';
-import { defaults, schema, type SendEmailConfig } from './schema';
+import type { SendEmailConfig } from './schema';
 
+/** Form and checks come from includes/Workflow/Steps/Actions/SendEmail.php `fields()`. */
 export const sendEmailStep = defineStep<SendEmailConfig>({
   id: 'send_email',
   kind: 'action',
-  label: __('Send email', 'yaymatik'),
-  description: __(
-    'Send an email to a customer in your store’s WooCommerce email style, with an unsubscribe link.',
-    'yaymatik',
-  ),
-  icon: User,
-  schema,
-  defaults,
-  summary: ({ to }) =>
-    /* translators: %s: recipient(s) */
-    sprintf(__('Send to %s', 'yaymatik'), value(variableNames(splitRecipients(to).join(', ')))),
-  Form: SendEmailForm,
+  summaryValues: {
+    to: ({ to }) => value(variableNames(to)),
+  },
 });
