@@ -37,7 +37,7 @@ Paths are after F0 (move and rename); the behavior described is v0.1's. Files ma
 ## §1 Naming and layout · C1, C2
 
 - `includes/Engine/` keeps only WP/WC glue: `BEPages/`, `API/`, `Register/`. REST controllers call Workflow Core and hold no workflow logic.
-- Workflow Core moves to `includes/Workflow/`, namespace `YayMatik\Workflow\`. The top level holds what modules register; `Core/` holds the engine. A folder is named for the plural of the base class it holds; namespaces follow folders.
+- Workflow Core moves to `includes/Workflow/`, namespace `YayMatik\Workflow\`. The top level holds what modules register; `Core/` holds the shared code every module uses. `includes/Engine/` = WordPress glue (REST, admin pages, scripts). A folder is named for the plural of the base class it holds; namespaces follow folders.
 - "Blocks" becomes **"Steps"**, in PHP and TS (`apps/admin-page/src/routes/workflows/blocks/` → `steps/`). This avoids a clash with Gutenberg blocks and matches the UI wording.
 
 | Folder | Holds |
@@ -150,7 +150,7 @@ Our own small template module. **No Liquid or other template library, now or lat
 - **Branches never merge.** Shared steps go in a separate workflow started by Call workflow.
 - Stored JSON gets `schemaVersion`, with logic kept apart from layout (positions).
 
-## §8 Modules, tiers and the Yay ecosystem · P1, P2
+## §8 Modules and the Yay ecosystem · P1, P2
 
 - The runtime is **100% free**: executor, Wait, loops, Call workflow, scheduled triggers, run history.
 - Steps and data items belong to **modules**, one per plugin (`ModuleRegistry`, `Modules/`). A module lists its triggers, conditions, actions and data items by class name; the catalog sends its id as each step's `plugin`.
