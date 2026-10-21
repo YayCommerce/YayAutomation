@@ -1,5 +1,5 @@
 /**
- * PHP ↔ TS parity over the fixture (`src/test/fixtures/meta.json`, PHP `Definition\Catalog`).
+ * PHP ↔ TS parity over the fixture (`src/test/fixtures/meta.json`, PHP `Core\Definition\Catalog`).
  * PHP is the one source for steps, plugins, data and operators; these checks catch the TS side
  * drifting from it. Catalog change → `./run.sh meta-fixture`, then run this test.
  */
@@ -73,17 +73,19 @@ describe('PHP ↔ TS parity', () => {
   });
 
   it('the TS icon map has exactly the names in PHP StepIcons::NAMES', () => {
-    const php = readFileSync(resolve(__dirname, '../../../../includes/Workflow/Steps/Core/StepIcons.php'), 'utf8');
+    const php = readFileSync(resolve(__dirname, '../../../../includes/Workflow/Core/Steps/StepIcons.php'), 'utf8');
     const list = /NAMES = \[([\s\S]*?)\];/.exec(php)![1];
     const names = [...list.matchAll(/'([a-z0-9-]+)'/g)].map((m) => m[1]);
     expect(names.length).toBeGreaterThan(0);
     expect(Object.keys(stepIcons)).toEqual(names);
   });
 
-  it('plugins match: PHP sends every plugin TS knows, each with a currentColor logo', () => {
+  it('plugins match: PHP sends every plugin TS knows, each with a one-colour SVG logo file', () => {
     expect(php.plugins.map((plugin) => plugin.id).sort()).toEqual(Object.keys(workflowPlugins).sort());
     for (const plugin of php.plugins) {
-      expect(plugin.logo, plugin.id).toMatch(/^<svg [^>]*viewBox="0 0 24 24"[^>]*stroke="currentColor"/);
+      expect(plugin.logo, plugin.id).toMatch(new RegExp(`/assets/logos/${plugin.id}\\.svg$`));
+      const svg = readFileSync(resolve(__dirname, `../../../../assets/logos/${plugin.id}.svg`), 'utf8');
+      expect(svg, plugin.id).toMatch(/^<svg [^>]*viewBox="0 0 24 24"[^>]*stroke="currentColor"/);
     }
     for (const meta of Object.values(automationMeta.steps)) {
       if (meta.plugin) expect(workflowPlugins).toHaveProperty(meta.plugin);

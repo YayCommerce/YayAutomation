@@ -1,9 +1,13 @@
 #!/bin/bash
-# Build the distribution zip: release/yaymatik.zip
+# Build the distribution zip: release/yaymatik.zip, or with `pro` release/yaymatik-pro.zip (includes/Pro kept).
 cd "$(dirname "$0")/../.." || exit 1
 [[ -f yaymatik.php ]] || { echo "Not the plugin root: $(pwd)"; exit 1; }
 
+EDITION=${1:-free}
+[[ $EDITION == free || $EDITION == pro ]] || { echo "Usage: ./run.sh release [pro]"; exit 1; }
 PLUGIN_SLUG="yaymatik"
+ZIP_NAME=$PLUGIN_SLUG
+[[ $EDITION == pro ]] && ZIP_NAME="$PLUGIN_SLUG-pro"
 PROJECT_PATH=$(pwd)
 BUILD_PATH="${PROJECT_PATH}/release"
 DEST_PATH="$BUILD_PATH/$PLUGIN_SLUG"
@@ -17,7 +21,8 @@ echo "Rebuilding scoped admin-shell..."
 ./vendor/bin/yaycommerce-prerelease || exit 1
 
 echo "Generating build directory..."
-[[ -n $PLUGIN_SLUG && -d $BUILD_PATH ]] && rm -rf "$BUILD_PATH"
+# Only this edition's output: the other edition's zip stays.
+[[ -n $PLUGIN_SLUG ]] && rm -rf "$DEST_PATH" "$BUILD_PATH/$ZIP_NAME.zip"
 mkdir -p "$DEST_PATH"
 
 echo "Installing JS dependencies..."
@@ -26,7 +31,13 @@ echo "Running JS Build..."
 pnpm build || exit 1
 
 echo "Syncing files..."
-rsync -rc --exclude-from="$PROJECT_PATH/.distignore" "$PROJECT_PATH/" "$DEST_PATH/" --delete --delete-excluded
+EXCLUDES="$PROJECT_PATH/.distignore"
+if [[ $EDITION == pro ]]; then
+    EXCLUDES=$(mktemp)
+    trap 'rm -f "$EXCLUDES"' EXIT
+    grep -vx '/includes/Pro' "$PROJECT_PATH/.distignore" > "$EXCLUDES"
+fi
+rsync -rc --exclude-from="$EXCLUDES" "$PROJECT_PATH/" "$DEST_PATH/" --delete --delete-excluded
 
 # Ship only the runtime autoloader: drop dev packages + unscoped admin-shell, rebuild a no-dev classmap.
 find "$DEST_PATH/vendor" -mindepth 1 -maxdepth 1 ! -name autoload.php ! -name composer -exec rm -rf {} +
@@ -49,8 +60,8 @@ rm -f "$DEST_PATH/includes/Engine/Register/RegisterDev.php"
 
 echo "Generating zip file..."
 cd "$BUILD_PATH" || exit
-zip -q -r "${PLUGIN_SLUG}.zip" "$PLUGIN_SLUG/"
+zip -q -r "${ZIP_NAME}.zip" "$PLUGIN_SLUG/"
 rm -rf "$PLUGIN_SLUG"
-echo "${PLUGIN_SLUG}.zip file generated!"
+echo "${ZIP_NAME}.zip file generated!"
 
 echo "Build successfully"

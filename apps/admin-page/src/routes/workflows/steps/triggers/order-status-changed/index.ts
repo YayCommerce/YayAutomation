@@ -1,7 +1,7 @@
 import { defineStep } from '../../core/defineStep';
 
 /**
- * Form and checks come from includes/Workflow/Steps/Triggers/OrderStatusChanged.php `fields()`.
+ * Form and checks come from includes/Workflow/Triggers/OrderStatusChanged.php `fields()`.
  * Statuses are slugs without the `wc-` prefix; empty `from` / `to` means any status.
  */
 export const orderStatusChangedStep = defineStep({

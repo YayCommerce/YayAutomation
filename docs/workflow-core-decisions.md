@@ -26,7 +26,7 @@ Each note: **Decision** · **Why** · **Rejected** · **Cost** · **For devs** (
 | [L3](#l3-own-template-module-no-liquid) | Own template module, no Liquid | Owner |
 | [L4](#l4-foundation-before-m1) | Foundation before M1 | Owner |
 | [L5](#l5-step-icons-and-plugin-logos) | Step icons by name, plugin logos as SVG | Owner |
-| [P1](#p1-runtime-free-modules-with-tiers) | Runtime free; modules with tiers | Owner |
+| [P1](#p1-runtime-free-free-vs-pro-by-folder) | Runtime free; Free vs Pro by folder | Owner |
 | [P2](#p2-yay-plugins-own-their-steps) | Yay plugins own their steps | Owner |
 | [P3–P6](#p3p6-smaller-decisions) | Cancel on Update, API last, AI later, Health check | Owner |
 
@@ -294,7 +294,7 @@ Today errors only go to the WooCommerce log, which merchants never open.
 
 **Decision.** Two kinds of icon, two formats:
 - **Step icon** = what a step does (mail, coupon, clock). The step's `icon()` returns a name from a fixed list in core (lucide, about 40 icons).
-- **Plugin logo** = who provides it (WooCommerce, YayMail). Each plugin registers one SVG that uses `currentColor`; PHP cleans it with `wp_kses`.
+- **Plugin logo** = who provides it (WooCommerce, YayMail). Each module gives the URL of one one-colour SVG file its plugin ships; the admin app draws it as a CSS mask in the tile's text colour.
 
 **Why.**
 - Since L2, a step can be PHP only, so the editor can't know its icon unless the catalog sends it.
@@ -312,19 +312,22 @@ Today errors only go to the WooCommerce log, which merchants never open.
 
 **For devs.**
 - New step: `icon()` returns a name from the list. Never return SVG or a URL.
-- New plugin: register one logo SVG with `currentColor`. Don't hard-code colors.
+- New plugin: ship one one-colour SVG (viewBox 0 0 24 24) and return its URL from the module's `logo()`. Its colours never show.
+- Logos are files, not markup in PHP: a Yay plugin defines its module in its own repo, and there is no SVG to sanitize. Cost: the mask loads in CORS mode, so a CDN without CORS headers shows a solid tile.
 
-## P1. Runtime free; modules with tiers
+## P1. Runtime free; Free vs Pro by folder
 
-**Decision.** The runtime is 100% free. Steps, templates and features belong to modules. A manifest gives each module its tier (`lite` / `pro`) and an on/off switch.
+**Decision.** The runtime is 100% free. Steps and data items belong to modules, one per plugin. Free vs Pro is the folder: Pro modules live in `includes/Pro/`, extend the free ones, and the free zip leaves the folder out. An unfinished step is simply not registered.
 
 **Why.**
 - A free runtime keeps Lite useful and makes Yay plugins' steps work for everyone.
 - Merchants pay for features, not for the ability to run them.
-- Tiers in a manifest make moving something between Lite and Pro a one-line change, not a code move.
-- Switches keep unfinished modules (run logs, connectors, AI) out of a release without deleting them.
+- The folder is the tier: Pro code is absent from the free zip, so there is nothing to switch on in it. No tier flags or switches to keep in sync.
+- Not registering an unfinished step keeps it out of a release without deleting it.
 
-**For devs.** Every new step or template is registered under a module. Never check "is Pro" inside a step.
+**Rejected.** A manifest with a tier and an on/off switch per module (F1): Pro code still shipped in the free zip, and the switches duplicated what registering already says.
+
+**For devs.** Every new step is listed in its module. A Pro step goes in `includes/Pro/` and its Pro module. Never check "is Pro" inside a step. Another plugin adds its module on `yaymatik_modules` before `init`.
 
 ## P2. Yay plugins own their steps
 

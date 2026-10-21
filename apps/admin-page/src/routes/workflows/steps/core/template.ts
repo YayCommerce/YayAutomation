@@ -4,7 +4,7 @@ import { messages } from '../../model/messages';
 
 /**
  * Merge tags in step text: `{{ path | filter: arg, arg }}`. Parses only (checks and autocomplete);
- * PHP renders. Mirrors includes/Workflow/Data/Template.php: same grammar, same messages. Shared
+ * PHP renders. Mirrors includes/Workflow/Core/Data/Template.php: same grammar, same messages. Shared
  * cases in tests/fixtures/template-cases.json.
  */
 

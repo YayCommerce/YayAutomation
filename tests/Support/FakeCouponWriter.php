@@ -1,7 +1,7 @@
 <?php
 namespace YayMatik\Tests\Support;
 
-use YayMatik\Workflow\Coupon\CouponWriter;
+use YayMatik\Workflow\Core\Coupon\CouponWriter;
 
 /** Coupons in memory: what Generate coupon asked to create, and which codes "exist". */
 final class FakeCouponWriter implements CouponWriter {

@@ -37,18 +37,23 @@ Paths are after F0 (move and rename); the behavior described is v0.1's. Files ma
 ## §1 Naming and layout · C1, C2
 
 - `includes/Engine/` keeps only WP/WC glue: `BEPages/`, `API/`, `Register/`. REST controllers call Workflow Core and hold no workflow logic.
-- Workflow Core moves to `includes/Workflow/`, namespace `YayMatik\Workflow\`.
+- Workflow Core moves to `includes/Workflow/`, namespace `YayMatik\Workflow\`. The top level holds what modules register; `Core/` holds the shared code every module uses. `includes/Engine/` = WordPress glue (REST, admin pages, scripts). A folder is named for the plural of the base class it holds; namespaces follow folders.
 - "Blocks" becomes **"Steps"**, in PHP and TS (`apps/admin-page/src/routes/workflows/blocks/` → `steps/`). This avoids a clash with Gutenberg blocks and matches the UI wording.
 
 | Folder | Holds |
 |---|---|
-| `Storage/` | Tables, upgrades, `WorkflowStore`, `VersionStore`, `RunStore`, `ClaimStore` |
-| `Definition/` | Graph schema, `Validator`, `Catalog` (steps, fields, outputs, data types → admin app and AI) |
-| `Data/` | Types, entity types, `RefResolver`, `Scope`, `Template` |
-| `Runtime/` | `Dispatcher`, `Scheduler`, `Executor`, `Worker`, `Cancellation`, `Retention` |
-| `Steps/` | `Triggers/`, `Actions/`, `Conditions/`, `Control/` (Wait, For each, Switch, Call workflow, Set variable, Stop) |
-| `Extend/` | Registry, modules, connectors |
+| `ModuleRegistry.php`, `Modules/` | The modules and what they register (§8); planned: connectors |
+| `Triggers/`, `Conditions/`, `Actions/` | One class per step; planned: control steps (Wait, For each, Switch, Call workflow, Set variable, Stop) |
+| `DataItems/` | Data items (order, customer, site, order_item) |
+| `Core/Steps/` | The step contract (`Step`, `Trigger`, `Condition`, `Action`, `Field`, `StepResult`, `StepIcons`, `StepRegistry`) |
+| `Core/Data/` | `DataItem`, `DataRegistry`, `Type`, `Operators`, `Ref`, `RefResolver`, `Scope`, `Template`, `Filters` |
+| `Core/Definition/` | Graph schema, `Validator`, `Catalog` (steps, fields, outputs, data types → admin app and AI) |
+| `Core/Runtime/` | `Dispatcher`, `Executor`, `Worker`, `Runtime`; planned: `Scheduler`, `Cancellation`, `Retention` |
+| `Core/Storage/` | Tables, upgrades, `WorkflowRepository`, `VersionStore`, `RunStore`, `ClaimStore` |
+| `Core/Email/`, `Core/Coupon/` | Email rendering and unsubscribe; coupon writing |
 | `AI/` | Provider interface and AI features (v2.0) |
+
+`includes/Pro/Workflow/` (namespace `YayMatik\Pro\Workflow\`) copies the top level once a Pro file needs a folder; the free zip leaves it out.
 
 ## §2 Storage · C3, C8, C10
 
@@ -145,14 +150,15 @@ Our own small template module. **No Liquid or other template library, now or lat
 - **Branches never merge.** Shared steps go in a separate workflow started by Call workflow.
 - Stored JSON gets `schemaVersion`, with logic kept apart from layout (positions).
 
-## §8 Modules, tiers and the Yay ecosystem · P1, P2
+## §8 Modules and the Yay ecosystem · P1, P2
 
 - The runtime is **100% free**: executor, Wait, loops, Call workflow, scheduled triggers, run history.
-- Steps, templates, conditions and features (run logs, connectors, AI, each integration) belong to **modules**. A manifest entry gives each module its tier (`lite` / `pro`) and an on/off switch.
-  - Moving something between Lite and Pro = change its manifest entry.
-  - Turning off a module keeps unfinished work out of a release.
+- Steps and data items belong to **modules**, one per plugin (`ModuleRegistry`, `Modules/`). A module lists its triggers, conditions, actions and data items by class name; the catalog sends its id as each step's `plugin`.
+  - **Free vs Pro is the folder.** `includes/Pro/` holds Pro modules that extend the free ones; the free zip leaves it out, and the registry loads the Pro modules only when their classes exist.
+  - An unfinished step is not registered, so it stays out of a release. No tier checks inside steps.
+  - Another plugin adds its module class on the filter `yaymatik_modules`, before `init` (the registry is first read on `init`). A taken id (module, step, data item) keeps its first owner.
 - **Each Yay plugin owns its steps, templates and data types**, registered into Workflow Core. **YayMatik Pro** owns templates that combine several plugins.
-- **Plugin logo (L5).** Each plugin registers one logo: an SVG that uses `currentColor`, cleaned with `wp_kses` in PHP. It marks who provides a step or template (template cards, library sidebar, picker), never what a step does. One per plugin, not per step.
+- **Plugin logo (L5).** Each module gives one logo: the URL of a one-colour SVG file its plugin ships (core's in `assets/logos/`). The admin app draws it as a CSS mask in the tile's text colour. It marks who provides a step or template (template cards, library sidebar, picker), never what a step does. One per plugin, not per step.
 - **Feature directory:** a static list in core of every known step and template, its plugin, and where to install it. The editor shows "Install X to use this"; the AI uses it to suggest features.
 
 ## §9 Health check · P6
@@ -197,8 +203,8 @@ All confirmed 2026-10-07, except L5 (2026-10-08). Reasons, rejected options and 
 | L2 | Step settings defined in PHP; editor checks built from them; small generic form; core imports custom forms; plugins use `registerStepPanel` | §5 |
 | L3 | Own template module, tiers 1 → 2 → escape valve; no Liquid | §6 |
 | L4 | Jack builds everything: F0 rename, then F1 foundation before M1; F2 workflows table after M2 | [ROADMAP-dev.md](ROADMAP-dev.md) |
-| L5 | Step icons: a lucide name from core's list; plugin logos: one SVG per plugin | §5, §8 |
-| P1 | Runtime free; modules with tier + switch | §8 |
+| L5 | Step icons: a lucide name from core's list; plugin logos: one SVG file per plugin | §5, §8 |
+| P1 | Runtime free; Free vs Pro by folder | §8 |
 | P2 | Yay plugins own their steps; Pro owns multi-plugin templates; feature directory | §8 |
 | P3 | Cancel waiting runs on Update in v1.0 | §10 |
 | P4 | Public extension API last | §10 |

@@ -2,8 +2,8 @@
 namespace YayMatik\Engine\FEPages;
 
 use YayMatik\Utils\SingletonTrait;
-use YayMatik\Workflow\Email\UnsubscribeLink;
-use YayMatik\Workflow\Storage\UnsubscribeStore;
+use YayMatik\Workflow\Core\Email\UnsubscribeLink;
+use YayMatik\Workflow\Core\Storage\UnsubscribeStore;
 
 defined( 'ABSPATH' ) || exit;
 

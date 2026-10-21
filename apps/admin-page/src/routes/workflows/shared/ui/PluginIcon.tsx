@@ -4,13 +4,14 @@ import type { PluginMeta } from '@/types/localize';
 import { cn } from '@/lib/utils';
 import { automationMeta } from '../../steps/core/pending';
 
-/** Plugin facts from PHP (`Workflow\Extend\Plugins`), by id. */
+/** Plugin facts from PHP (`Workflow\ModuleRegistry`), by id. */
 export const plugins = Object.fromEntries(automationMeta.plugins.map((plugin) => [plugin.id, plugin])) as Record<
   WorkflowPlugin,
   PluginMeta
 >;
 
-const tones: Record<WorkflowPlugin, string> = {
+/** Core's own tints; another plugin's logo sits on a neutral tile. */
+const tones: Partial<Record<WorkflowPlugin, string>> = {
   woocommerce: 'bg-primary/10 text-primary',
   // Same look as the app's own icon in the header.
   yaymatik: 'bg-primary text-primary-foreground',
@@ -29,7 +30,11 @@ export function PluginIcon({
   noTitle?: boolean;
   className?: string;
 }) {
-  const { label, logo } = plugins[plugin];
+  const meta = plugins[plugin] as PluginMeta | undefined;
+  if (!meta) return null;
+  const { label, logo } = meta;
+  // The logo file only gives the shape: painted with the tile's text colour, so it follows the theme.
+  const mask = `url("${logo}") center / contain no-repeat`;
 
   return (
     <span
@@ -37,14 +42,14 @@ export function PluginIcon({
       className={cn(
         'flex shrink-0 items-center justify-center',
         size === 'sm' ? 'size-5.5 rounded-md' : 'size-7 rounded-md',
-        tones[plugin],
+        tones[plugin] ?? 'bg-muted text-foreground',
         className,
       )}
     >
-      {/* PHP cleans the SVG with wp_kses() and it draws in currentColor. */}
       <span
-        className={cn('flex', size === 'sm' ? '[&>svg]:size-3' : '[&>svg]:size-4')}
-        dangerouslySetInnerHTML={{ __html: logo }}
+        aria-hidden
+        className={cn('bg-current', size === 'sm' ? 'size-3' : 'size-4')}
+        style={{ mask, WebkitMask: mask }}
       />
       <span className="sr-only">{label}</span>
     </span>

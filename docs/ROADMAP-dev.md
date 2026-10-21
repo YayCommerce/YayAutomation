@@ -75,7 +75,7 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
   - Rendering moved from `Data/Variables.php` to `Template` + `Scope`; `Variables` removed in PR C (`Validator::tag_error()` covers merge tags). Old `{{ item.field }}` tags keep working.
 - ✅ **F1.4 Step contract** *(§5)*
   - `Step` base, `Field` builder, `outputs()`, `StepResult`, summary templates, `icon()` name *(L5)*.
-  - Plugin logo: one SVG per plugin, `currentColor`, cleaned with `wp_kses` *(L5)*.
+  - Plugin logo: one one-colour SVG file per plugin, drawn as a CSS mask *(L5)*.
   - Parity test: the PHP catalog and what TS expects can't drift *([plan-infra](plan-infra.md))*.
   - Catalog in `yayMatikMeta`; update `apps/admin-page/src/types/localize.d.ts`.
 - ✅ **F1.5 Executor** *(§3)*
@@ -87,7 +87,7 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
   - Same issue codes as today (`no_trigger`, `unlinked`, `invalid_config`, `missing_data`, …).
   - An issue on a step names the field it's about (`field`), so the editor can say "Add order note needs a note" *([plan-identity](plan-identity.md))*.
   - Validator and REST messages use the plan-identity wording (Activate / Deactivate, Update).
-- ✅ **F1.7 Modules** *(§8)* — manifest with tier and on/off switch; the registry reads it.
+- ✅ **F1.7 Modules** *(§8)* — one module per plugin lists its steps and data items; the registry reads the modules. Free vs Pro is the folder (`includes/Pro/`).
 - ✅ **F1.8 Runs REST** — list and detail endpoints (the UI comes in M2). Workflow responses also return `activatedAt`, for "Active since …" on the overview *([plan-identity](plan-identity.md))*.
 
 **UI**
@@ -221,7 +221,7 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 
 - **M9.1** End-to-end test of all 18 templates; classic and block checkout; light and dark admin.
 - **M9.2** Translations and release build.
-- **M9.3** Turn off modules not ready for release. *(§8)*
+- **M9.3** Leave unfinished steps unregistered for the release; check plugin logos load (CSS mask) when assets come from a CDN. *(§8)*
 - **M9.4** Release checklist items picked in ROADMAP-v1.0.
 
 ---

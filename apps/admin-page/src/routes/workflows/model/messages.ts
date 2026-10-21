@@ -1,7 +1,7 @@
 import { __ } from '@wordpress/i18n';
 
 /**
- * Messages PHP shows too, same keys and text as PHP `Definition\Messages::all()` (sent as
+ * Messages PHP shows too, same keys and text as PHP `Core\Definition\Messages::all()` (sent as
  * `yayMatikMeta.automation.messages`). The parity test fails when one differs: change both.
  * Placeholders stay in; fill them with `sprintf()`.
  */

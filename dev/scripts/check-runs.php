@@ -12,11 +12,11 @@
 
 require_once __DIR__ . '/check-run.php';
 
-use YayMatik\Workflow\Runtime\ActionSchedulerQueue;
-use YayMatik\Workflow\Runtime\Runtime;
-use YayMatik\Workflow\Steps\Core\StepRegistry;
-use YayMatik\Workflow\Storage\RunStepStore;
-use YayMatik\Workflow\Storage\RunStore;
+use YayMatik\Workflow\Core\Runtime\ActionSchedulerQueue;
+use YayMatik\Workflow\Core\Runtime\Runtime;
+use YayMatik\Workflow\Core\Steps\StepRegistry;
+use YayMatik\Workflow\Core\Storage\RunStepStore;
+use YayMatik\Workflow\Core\Storage\RunStore;
 
 const CHECK_META  = '_yaymatik_check_runs';
 const CHECK_STAFF = 'staff-check@example.test';
@@ -264,7 +264,7 @@ try {
     $ok( $notes( wc_get_order( $order->get_id() ) ) === $before, 'off before the job: no step ran' );
 
     // 6. Recovery on the real table: a run left `running` with its step `running` (its job died).
-    $workflow = YayMatik\Workflow\Storage\WorkflowRepository::find( $created_wf );
+    $workflow = YayMatik\Workflow\Core\Storage\WorkflowRepository::find( $created_wf );
     $run_id   = Runtime::dispatcher()->start_run( $workflow, StepRegistry::get( 'order_created' ), [ 'order_id' => $order->get_id() ] );
     as_unschedule_all_actions( ActionSchedulerQueue::HOOK, [ $run_id ], ActionSchedulerQueue::GROUP );
     RunStore::claim( $run_id );

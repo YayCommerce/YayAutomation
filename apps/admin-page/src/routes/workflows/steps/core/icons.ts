@@ -46,7 +46,7 @@ import {
 } from 'lucide-react';
 
 /**
- * The icons a step can name: PHP `Steps\Core\StepIcons::NAMES`, same order. Listed one by one so
+ * The icons a step can name: PHP `Core\Steps\StepIcons::NAMES`, same order. Listed one by one so
  * only these ship, not all of lucide. A name added in PHP is added here too (the parity test checks).
  */
 export const stepIcons: Record<string, LucideIcon> = {

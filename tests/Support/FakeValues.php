@@ -1,7 +1,7 @@
 <?php
 namespace YayMatik\Tests\Support;
 
-use YayMatik\Workflow\Data\Values;
+use YayMatik\Workflow\Core\Data\Values;
 
 /** Values from plain arrays: typed values by path, and display text by path. */
 final class FakeValues implements Values {

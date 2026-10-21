@@ -14,10 +14,10 @@ final class YayMatik {
         \YayMatik\Engine\BEPages\AdminPage::get_instance();
         \YayMatik\Engine\API\RestAPI::get_instance();
         \YayMatik\Engine\FEPages\UnsubscribePage::get_instance();
-        \YayMatik\Workflow\Storage\WorkflowPostType::get_instance();
-        \YayMatik\Workflow\Storage\Schema::maybe_install();
+        \YayMatik\Workflow\Core\Storage\WorkflowPostType::get_instance();
+        \YayMatik\Workflow\Core\Storage\Schema::maybe_install();
         if ( class_exists( 'WooCommerce' ) ) {
-            \YayMatik\Workflow\Runtime\Runtime::boot();
+            \YayMatik\Workflow\Core\Runtime\Runtime::boot();
         }
 
         // TODO: EDD setup

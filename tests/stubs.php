@@ -12,6 +12,29 @@ if ( ! function_exists( '__' ) ) {
     }
 }
 
+if ( ! function_exists( 'add_filter' ) ) {
+    function add_filter( $hook_name, $callback ) {
+        $GLOBALS['yaymatik_test_filters'][ $hook_name ][] = $callback;
+        return true;
+    }
+}
+
+if ( ! function_exists( 'remove_filter' ) ) {
+    function remove_filter( $hook_name, $callback ) {
+        $GLOBALS['yaymatik_test_filters'][ $hook_name ] = array_filter( $GLOBALS['yaymatik_test_filters'][ $hook_name ] ?? [], fn( $added ) => $added !== $callback );
+        return true;
+    }
+}
+
+if ( ! function_exists( 'apply_filters' ) ) {
+    function apply_filters( $hook_name, $value ) {
+        foreach ( $GLOBALS['yaymatik_test_filters'][ $hook_name ] ?? [] as $callback ) {
+            $value = $callback( $value );
+        }
+        return $value;
+    }
+}
+
 if ( ! function_exists( 'esc_html' ) ) {
     // Like WordPress: entities already in the text aren't encoded again.
     function esc_html( $text ) {

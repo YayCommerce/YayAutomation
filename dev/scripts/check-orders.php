@@ -19,14 +19,14 @@
 
 require_once __DIR__ . '/check-run.php';
 
-use YayMatik\Workflow\Email\EmailPreview;
-use YayMatik\Workflow\Runtime\ActionSchedulerQueue;
-use YayMatik\Workflow\Runtime\Runtime;
-use YayMatik\Workflow\Storage\RunStepStore;
-use YayMatik\Workflow\Storage\RunStore;
-use YayMatik\Workflow\Storage\Schema;
-use YayMatik\Workflow\Storage\UnsubscribeStore;
-use YayMatik\Workflow\Storage\WorkflowRepository;
+use YayMatik\Workflow\Core\Email\EmailPreview;
+use YayMatik\Workflow\Core\Runtime\ActionSchedulerQueue;
+use YayMatik\Workflow\Core\Runtime\Runtime;
+use YayMatik\Workflow\Core\Storage\RunStepStore;
+use YayMatik\Workflow\Core\Storage\RunStore;
+use YayMatik\Workflow\Core\Storage\Schema;
+use YayMatik\Workflow\Core\Storage\UnsubscribeStore;
+use YayMatik\Workflow\Core\Storage\WorkflowRepository;
 
 const CHECK_ORDERS_PREFIX = 'Check orders:';
 const CHECK_ORDERS_META   = '_yaymatik_check_orders';

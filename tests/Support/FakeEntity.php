@@ -1,7 +1,7 @@
 <?php
 namespace YayMatik\Tests\Support;
 
-use YayMatik\Workflow\Data\DataItem;
+use YayMatik\Workflow\Core\Data\DataItem;
 
 /** An entity type whose fields are given, read from plain arrays instead of WooCommerce objects. */
 final class FakeEntity extends DataItem {
