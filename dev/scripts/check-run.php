@@ -6,9 +6,9 @@
  * @package YayMatik
  */
 
-use YayMatik\Workflow\Runtime\Runtime;
-use YayMatik\Workflow\Steps\Core\StepRegistry;
-use YayMatik\Workflow\Storage\WorkflowRepository;
+use YayMatik\Workflow\Core\Runtime\Runtime;
+use YayMatik\Workflow\Core\Steps\StepRegistry;
+use YayMatik\Workflow\Core\Storage\WorkflowRepository;
 
 /**
  * @param int    $workflow_id Workflow id.
@@ -19,7 +19,7 @@ use YayMatik\Workflow\Storage\WorkflowRepository;
 function yaymatik_check_run( int $workflow_id, string $trigger_id, array $event ): ?array {
     $workflow = WorkflowRepository::find( $workflow_id );
     $trigger  = StepRegistry::get( $trigger_id );
-    if ( ! $workflow || ! $trigger instanceof YayMatik\Workflow\Steps\Core\Trigger || ! Runtime::worker() ) {
+    if ( ! $workflow || ! $trigger instanceof YayMatik\Workflow\Core\Steps\Trigger || ! Runtime::worker() ) {
         fwrite( STDERR, "Workflow {$workflow_id} or trigger {$trigger_id} not found, or WooCommerce is off.\n" ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fwrite
         return null;
     }
@@ -28,14 +28,14 @@ function yaymatik_check_run( int $workflow_id, string $trigger_id, array $event 
         return null;
     }
     Runtime::worker()->run( $run_id );
-    $run = YayMatik\Workflow\Storage\RunStore::find( $run_id );
+    $run = YayMatik\Workflow\Core\Storage\RunStore::find( $run_id );
     if ( $run ) {
-        $run['steps'] = YayMatik\Workflow\Storage\RunStepStore::for_run( $run_id );
+        $run['steps'] = YayMatik\Workflow\Core\Storage\RunStepStore::for_run( $run_id );
     }
     // Leave no rows behind.
     global $wpdb;
-    $wpdb->delete( YayMatik\Workflow\Storage\RunStepStore::table(), [ 'run_id' => $run_id ] ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
-    $wpdb->delete( YayMatik\Workflow\Storage\RunStore::table(), [ 'id' => $run_id ] ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+    $wpdb->delete( YayMatik\Workflow\Core\Storage\RunStepStore::table(), [ 'run_id' => $run_id ] ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+    $wpdb->delete( YayMatik\Workflow\Core\Storage\RunStore::table(), [ 'id' => $run_id ] ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
     return $run;
 }
 
@@ -74,9 +74,9 @@ function yaymatik_check_remove_workflows( string $prefix ): array {
 function yaymatik_check_remove_runs( int $since, array $workflow_ids = [], array $order_ids = [] ): array {
     // phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
     global $wpdb;
-    $runs  = YayMatik\Workflow\Storage\RunStore::table();
-    $steps = YayMatik\Workflow\Storage\RunStepStore::table();
-    $queue = YayMatik\Workflow\Runtime\ActionSchedulerQueue::class;
+    $runs  = YayMatik\Workflow\Core\Storage\RunStore::table();
+    $steps = YayMatik\Workflow\Core\Storage\RunStepStore::table();
+    $queue = YayMatik\Workflow\Core\Runtime\ActionSchedulerQueue::class;
 
     $where = $wpdb->prepare( 'id > %d', $since );
     $match = [];

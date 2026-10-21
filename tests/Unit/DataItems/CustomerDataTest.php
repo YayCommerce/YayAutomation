@@ -1,8 +1,8 @@
 <?php
-namespace YayMatik\Tests\Unit\Data;
+namespace YayMatik\Tests\Unit\DataItems;
 
 use PHPUnit\Framework\TestCase;
-use YayMatik\Workflow\Data\CustomerData;
+use YayMatik\Workflow\DataItems\CustomerData;
 
 require_once dirname( __DIR__, 2 ) . '/Support/woocommerce-stubs.php';
 

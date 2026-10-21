@@ -1,9 +1,9 @@
 <?php
-namespace YayMatik\Tests\Unit\Email;
+namespace YayMatik\Tests\Unit\Core\Email;
 
 use PHPUnit\Framework\TestCase;
 use YayMatik\Tests\Support\FakeValues;
-use YayMatik\Workflow\Email\EmailBody;
+use YayMatik\Workflow\Core\Email\EmailBody;
 
 /** A stored message as the email body: HTML as written, or plain text saved before the rich editor. */
 final class EmailBodyTest extends TestCase {

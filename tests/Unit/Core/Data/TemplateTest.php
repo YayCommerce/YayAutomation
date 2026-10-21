@@ -1,10 +1,10 @@
 <?php
-namespace YayMatik\Tests\Unit\Data;
+namespace YayMatik\Tests\Unit\Core\Data;
 
 use PHPUnit\Framework\TestCase;
 use YayMatik\Tests\Support\FakeValues;
-use YayMatik\Workflow\Data\Filters;
-use YayMatik\Workflow\Data\Template;
+use YayMatik\Workflow\Core\Data\Filters;
+use YayMatik\Workflow\Core\Data\Template;
 
 /** Merge tags `{{ path | filter: arg }}`: old tags, paths, filters, escaping, malformed tags. */
 final class TemplateTest extends TestCase {
@@ -23,7 +23,7 @@ final class TemplateTest extends TestCase {
 
     /** @return array[] Cases shared with the admin app's parser (tests/fixtures/template-cases.json). */
     public function shared_cases(): array {
-        $cases = json_decode( (string) file_get_contents( dirname( __DIR__, 2 ) . '/fixtures/template-cases.json' ), true )['cases'];
+        $cases = json_decode( (string) file_get_contents( dirname( __DIR__, 3 ) . '/fixtures/template-cases.json' ), true )['cases'];
         $sets = [];
         foreach ( $cases as $case ) {
             if ( isset( $sets[ $case['text'] ] ) ) {

@@ -1,12 +1,12 @@
 <?php
-namespace YayMatik\Tests\Unit\Email;
+namespace YayMatik\Tests\Unit\Core\Email;
 
 use PHPUnit\Framework\TestCase;
 use YayMatik\Tests\Support\FakeMailer;
-use YayMatik\Workflow\Email\EmailPreview;
+use YayMatik\Workflow\Core\Email\EmailPreview;
 
-require_once dirname( __DIR__, 2 ) . '/Support/woocommerce-stubs.php';
-require_once dirname( __DIR__, 2 ) . '/Support/fake-wc.php';
+require_once dirname( __DIR__, 3 ) . '/Support/woocommerce-stubs.php';
+require_once dirname( __DIR__, 3 ) . '/Support/fake-wc.php';
 
 /**
  * Preview and Send test build one email: what the mailer gets from Send test is what Preview shows,

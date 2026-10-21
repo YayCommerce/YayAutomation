@@ -1,5 +1,5 @@
 <?php
-namespace YayMatik\Workflow\Steps;
+namespace YayMatik\Workflow\Core\Steps;
 
 defined( 'ABSPATH' ) || exit;
 

@@ -2,7 +2,7 @@
 namespace YayMatik\Tests\Support;
 
 use YayMatik\Workflow\Conditions\Criteria;
-use YayMatik\Workflow\Data\SiteData;
+use YayMatik\Workflow\DataItems\SiteData;
 use YayMatik\Workflow\Modules\Module;
 
 /** Another plugin's module: one new condition, ids core already owns, and a class under the wrong kind. */

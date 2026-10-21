@@ -1,7 +1,8 @@
 <?php
-namespace YayMatik\Workflow\Data;
+namespace YayMatik\Workflow\DataItems;
 
-use YayMatik\Workflow\Storage\UnsubscribeStore;
+use YayMatik\Workflow\Core\Data\DataItem;
+use YayMatik\Workflow\Core\Storage\UnsubscribeStore;
 
 defined( 'ABSPATH' ) || exit;
 

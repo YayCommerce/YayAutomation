@@ -1,8 +1,8 @@
 <?php
-namespace YayMatik\Workflow\Email;
+namespace YayMatik\Workflow\Core\Email;
 
-use YayMatik\Workflow\Data\Template;
-use YayMatik\Workflow\Data\Values;
+use YayMatik\Workflow\Core\Data\Template;
+use YayMatik\Workflow\Core\Data\Values;
 
 defined( 'ABSPATH' ) || exit;
 

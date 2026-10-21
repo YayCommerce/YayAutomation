@@ -1,14 +1,14 @@
 <?php
 namespace YayMatik\Workflow\Actions;
 
-use YayMatik\Workflow\Coupon\CouponWriter;
-use YayMatik\Workflow\Coupon\WcCouponWriter;
-use YayMatik\Workflow\Data\CustomerData;
-use YayMatik\Workflow\Data\Scope;
-use YayMatik\Workflow\Data\Type;
-use YayMatik\Workflow\Steps\Action;
-use YayMatik\Workflow\Steps\Field;
-use YayMatik\Workflow\Steps\StepResult;
+use YayMatik\Workflow\Core\Coupon\CouponWriter;
+use YayMatik\Workflow\Core\Coupon\WcCouponWriter;
+use YayMatik\Workflow\DataItems\CustomerData;
+use YayMatik\Workflow\Core\Data\Scope;
+use YayMatik\Workflow\Core\Data\Type;
+use YayMatik\Workflow\Core\Steps\Action;
+use YayMatik\Workflow\Core\Steps\Field;
+use YayMatik\Workflow\Core\Steps\StepResult;
 
 defined( 'ABSPATH' ) || exit;
 

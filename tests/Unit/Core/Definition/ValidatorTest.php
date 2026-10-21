@@ -1,11 +1,11 @@
 <?php
-namespace YayMatik\Tests\Unit\Definition;
+namespace YayMatik\Tests\Unit\Core\Definition;
 
 use PHPUnit\Framework\TestCase;
-use YayMatik\Workflow\Definition\GraphSchema;
-use YayMatik\Workflow\Definition\Validator;
+use YayMatik\Workflow\Core\Definition\GraphSchema;
+use YayMatik\Workflow\Core\Definition\Validator;
 
-require_once dirname( __DIR__, 2 ) . '/Support/woocommerce-stubs.php';
+require_once dirname( __DIR__, 3 ) . '/Support/woocommerce-stubs.php';
 
 /**
  * Workflow issues (`errors()`): codes, messages and the step they point at. The first group pins
@@ -353,16 +353,16 @@ final class ValidatorTest extends TestCase {
     }
 
     public function test_the_filter_list_comes_from_the_registry(): void {
-        $filters = new \YayMatik\Workflow\Data\Filters();
+        $filters = new \YayMatik\Workflow\Core\Data\Filters();
         $filters->add( 'shout', [ 'string' ], 'strtoupper' );
-        $errors = ( new \YayMatik\Workflow\Data\Template( $filters ) )->errors( '{{ order.number | nope }}' );
+        $errors = ( new \YayMatik\Workflow\Core\Data\Template( $filters ) )->errors( '{{ order.number | nope }}' );
 
         $this->assertSame( [ 'nope isn’t a filter. Available filters: default, upper, lower, join, date, money, shout.' ], $errors );
     }
 
     /** @return array[] Cases shared with the admin app's `availableVariables()` (tests/fixtures/variables.json). */
     public function variable_cases(): array {
-        $cases = json_decode( (string) file_get_contents( dirname( __DIR__, 2 ) . '/fixtures/variables.json' ), true )['cases'];
+        $cases = json_decode( (string) file_get_contents( dirname( __DIR__, 3 ) . '/fixtures/variables.json' ), true )['cases'];
         $sets = [];
         foreach ( $cases as $case ) {
             if ( isset( $sets[ $case['name'] ] ) ) {

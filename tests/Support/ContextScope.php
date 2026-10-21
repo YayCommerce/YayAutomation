@@ -1,10 +1,10 @@
 <?php
 namespace YayMatik\Tests\Support;
 
-use YayMatik\Workflow\Data\DataRegistry;
-use YayMatik\Workflow\Data\Ref;
-use YayMatik\Workflow\Data\RefResolver;
-use YayMatik\Workflow\Data\Scope;
+use YayMatik\Workflow\Core\Data\DataRegistry;
+use YayMatik\Workflow\Core\Data\Ref;
+use YayMatik\Workflow\Core\Data\RefResolver;
+use YayMatik\Workflow\Core\Data\Scope;
 
 /**
  * A v0.1 run context (data item id => object or plain value) as a Scope: objects become trigger

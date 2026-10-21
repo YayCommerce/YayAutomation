@@ -1,9 +1,9 @@
 <?php
-namespace YayMatik\Tests\Unit\Data;
+namespace YayMatik\Tests\Unit\Core\Data;
 
 use PHPUnit\Framework\TestCase;
-use YayMatik\Workflow\Data\DataItem;
-use YayMatik\Workflow\Data\Operators;
+use YayMatik\Workflow\Core\Data\DataItem;
+use YayMatik\Workflow\Core\Data\Operators;
 
 /** Condition operators per field type, with the new boolean ones. */
 final class OperatorsTest extends TestCase {

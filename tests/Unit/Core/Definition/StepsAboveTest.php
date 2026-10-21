@@ -1,11 +1,11 @@
 <?php
-namespace YayMatik\Tests\Unit\Definition;
+namespace YayMatik\Tests\Unit\Core\Definition;
 
 use PHPUnit\Framework\TestCase;
-use YayMatik\Workflow\Definition\GraphSchema;
-use YayMatik\Workflow\Definition\Validator;
+use YayMatik\Workflow\Core\Definition\GraphSchema;
+use YayMatik\Workflow\Core\Definition\Validator;
 
-require_once dirname( __DIR__, 2 ) . '/Support/woocommerce-stubs.php';
+require_once dirname( __DIR__, 3 ) . '/Support/woocommerce-stubs.php';
 
 /** `Validator::steps_above()`: what Preview walks to give earlier steps' sample outputs. */
 final class StepsAboveTest extends TestCase {

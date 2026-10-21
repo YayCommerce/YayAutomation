@@ -1,9 +1,9 @@
 <?php
-namespace YayMatik\Tests\Unit\Data;
+namespace YayMatik\Tests\Unit\Core\Data;
 
 use PHPUnit\Framework\TestCase;
 use YayMatik\Tests\Support\FakeValues;
-use YayMatik\Workflow\Data\Template;
+use YayMatik\Workflow\Core\Data\Template;
 
 /** `Template::render_html()`: stored HTML kept, each value escaped for where it lands. */
 final class TemplateHtmlTest extends TestCase {

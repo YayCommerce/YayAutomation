@@ -1,10 +1,10 @@
 <?php
-namespace YayMatik\Workflow\Steps;
+namespace YayMatik\Workflow\Core\Steps;
 
-use YayMatik\Workflow\Data\DataRegistry;
-use YayMatik\Workflow\Data\Scope;
-use YayMatik\Workflow\Data\Template;
-use YayMatik\Workflow\Data\Values;
+use YayMatik\Workflow\Core\Data\DataRegistry;
+use YayMatik\Workflow\Core\Data\Scope;
+use YayMatik\Workflow\Core\Data\Template;
+use YayMatik\Workflow\Core\Data\Values;
 
 defined( 'ABSPATH' ) || exit;
 

@@ -1,8 +1,8 @@
 <?php
-namespace YayMatik\Workflow\Steps;
+namespace YayMatik\Workflow\Core\Steps;
 
-use YayMatik\Workflow\Definition\Catalog;
-use YayMatik\Workflow\Definition\Messages;
+use YayMatik\Workflow\Core\Definition\Catalog;
+use YayMatik\Workflow\Core\Definition\Messages;
 
 defined( 'ABSPATH' ) || exit;
 

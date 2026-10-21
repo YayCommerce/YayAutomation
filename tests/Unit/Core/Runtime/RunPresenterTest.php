@@ -1,8 +1,8 @@
 <?php
-namespace YayMatik\Tests\Unit\Runtime;
+namespace YayMatik\Tests\Unit\Core\Runtime;
 
 use PHPUnit\Framework\TestCase;
-use YayMatik\Workflow\Runtime\RunPresenter;
+use YayMatik\Workflow\Core\Runtime\RunPresenter;
 
 /** The REST shape of runs: camelCase, ISO dates in UTC, no scope or cursor. */
 final class RunPresenterTest extends TestCase {

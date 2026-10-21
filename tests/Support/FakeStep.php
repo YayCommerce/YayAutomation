@@ -1,10 +1,10 @@
 <?php
 namespace YayMatik\Tests\Support;
 
-use YayMatik\Workflow\Data\Scope;
-use YayMatik\Workflow\Data\Type;
-use YayMatik\Workflow\Steps\Action;
-use YayMatik\Workflow\Steps\StepResult;
+use YayMatik\Workflow\Core\Data\Scope;
+use YayMatik\Workflow\Core\Data\Type;
+use YayMatik\Workflow\Core\Steps\Action;
+use YayMatik\Workflow\Core\Steps\StepResult;
 
 /**
  * An action whose run() a test supplies. Declares one output, `to`. Config is kept as given;

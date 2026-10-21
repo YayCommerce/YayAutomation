@@ -1,5 +1,5 @@
 <?php
-namespace YayMatik\Workflow\Email;
+namespace YayMatik\Workflow\Core\Email;
 
 defined( 'ABSPATH' ) || exit;
 

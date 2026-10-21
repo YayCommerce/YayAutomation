@@ -1,8 +1,8 @@
 <?php
 namespace YayMatik\Tests\Support;
 
-use YayMatik\Workflow\Data\DataItem;
-use YayMatik\Workflow\Data\DataRegistry;
+use YayMatik\Workflow\Core\Data\DataItem;
+use YayMatik\Workflow\Core\Data\DataRegistry;
 
 /**
  * Merge tags as v0.1 rendered them (`Data/Variables` before Template), frozen as the oracle: Template + Scope must

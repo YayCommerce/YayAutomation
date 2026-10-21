@@ -1,8 +1,8 @@
 <?php
-namespace YayMatik\Workflow\Storage;
+namespace YayMatik\Workflow\Core\Storage;
 
-use YayMatik\Workflow\Steps\Step;
-use YayMatik\Workflow\Steps\StepRegistry;
+use YayMatik\Workflow\Core\Steps\Step;
+use YayMatik\Workflow\Core\Steps\StepRegistry;
 
 defined( 'ABSPATH' ) || exit;
 

@@ -3,14 +3,14 @@ namespace YayMatik\Engine\API;
 
 use YayMatik\Engine\BEPages\AdminPage;
 use YayMatik\Utils\SingletonTrait;
-use YayMatik\Workflow\Definition\GraphSchema;
-use YayMatik\Workflow\Email\EmailPreview;
-use YayMatik\Workflow\Definition\Messages;
-use YayMatik\Workflow\Definition\Validator;
-use YayMatik\Workflow\Runtime\RunPresenter;
-use YayMatik\Workflow\Storage\RunStepStore;
-use YayMatik\Workflow\Storage\RunStore;
-use YayMatik\Workflow\Storage\WorkflowRepository;
+use YayMatik\Workflow\Core\Definition\GraphSchema;
+use YayMatik\Workflow\Core\Email\EmailPreview;
+use YayMatik\Workflow\Core\Definition\Messages;
+use YayMatik\Workflow\Core\Definition\Validator;
+use YayMatik\Workflow\Core\Runtime\RunPresenter;
+use YayMatik\Workflow\Core\Storage\RunStepStore;
+use YayMatik\Workflow\Core\Storage\RunStore;
+use YayMatik\Workflow\Core\Storage\WorkflowRepository;
 
 defined( 'ABSPATH' ) || exit;
 

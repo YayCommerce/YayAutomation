@@ -1,10 +1,10 @@
 <?php
 namespace YayMatik\Workflow\Triggers;
 
-use YayMatik\Workflow\Data\CustomerData;
-use YayMatik\Workflow\Data\OrderData;
-use YayMatik\Workflow\Data\Ref;
-use YayMatik\Workflow\Steps\Trigger;
+use YayMatik\Workflow\DataItems\CustomerData;
+use YayMatik\Workflow\DataItems\OrderData;
+use YayMatik\Workflow\Core\Data\Ref;
+use YayMatik\Workflow\Core\Steps\Trigger;
 
 defined( 'ABSPATH' ) || exit;
 

@@ -1,16 +1,16 @@
 <?php
-namespace YayMatik\Tests\Unit\Data;
+namespace YayMatik\Tests\Unit\Core\Data;
 
 use PHPUnit\Framework\TestCase;
 use YayMatik\Tests\Support\FakeEntity;
-use YayMatik\Workflow\Data\DataItem;
-use YayMatik\Workflow\Data\Filters;
-use YayMatik\Workflow\Data\GoneEntity;
-use YayMatik\Workflow\Data\Ref;
-use YayMatik\Workflow\Data\RefResolver;
-use YayMatik\Workflow\Data\Scope;
-use YayMatik\Workflow\Data\Template;
-use YayMatik\Workflow\Data\Type;
+use YayMatik\Workflow\Core\Data\DataItem;
+use YayMatik\Workflow\Core\Data\Filters;
+use YayMatik\Workflow\Core\Data\GoneEntity;
+use YayMatik\Workflow\Core\Data\Ref;
+use YayMatik\Workflow\Core\Data\RefResolver;
+use YayMatik\Workflow\Core\Data\Scope;
+use YayMatik\Workflow\Core\Data\Template;
+use YayMatik\Workflow\Core\Data\Type;
 
 /** Run scope: paths, shortcuts, relations, JSON round-trip, sample values, gone entities. */
 final class ScopeTest extends TestCase {

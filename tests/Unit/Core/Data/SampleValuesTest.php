@@ -1,14 +1,14 @@
 <?php
-namespace YayMatik\Tests\Unit\Data;
+namespace YayMatik\Tests\Unit\Core\Data;
 
 use PHPUnit\Framework\TestCase;
-use YayMatik\Workflow\Data\CustomerData;
-use YayMatik\Workflow\Data\DataRegistry;
-use YayMatik\Workflow\Data\SampleValues;
-use YayMatik\Workflow\Data\Scope;
-use YayMatik\Workflow\Data\Template;
+use YayMatik\Workflow\DataItems\CustomerData;
+use YayMatik\Workflow\Core\Data\DataRegistry;
+use YayMatik\Workflow\Core\Data\SampleValues;
+use YayMatik\Workflow\Core\Data\Scope;
+use YayMatik\Workflow\Core\Data\Template;
 
-require_once dirname( __DIR__, 2 ) . '/Support/woocommerce-stubs.php';
+require_once dirname( __DIR__, 3 ) . '/Support/woocommerce-stubs.php';
 
 /** Made-up values for previews: the items' samples, relations followed, the rest from a Scope. */
 final class SampleValuesTest extends TestCase {

@@ -1,8 +1,8 @@
 <?php
-namespace YayMatik\Tests\Unit\Steps;
+namespace YayMatik\Tests\Unit\Core\Steps;
 
 use PHPUnit\Framework\TestCase;
-use YayMatik\Workflow\Data\Type;
+use YayMatik\Workflow\Core\Data\Type;
 use YayMatik\Workflow\Actions\AddOrderNote;
 use YayMatik\Workflow\Actions\ChangeOrderStatus;
 use YayMatik\Workflow\Actions\GenerateCoupon;
@@ -10,13 +10,13 @@ use YayMatik\Workflow\Actions\SendEmail;
 use YayMatik\Workflow\Actions\SendInternalEmail;
 use YayMatik\Workflow\Actions\UpdateOrderMeta;
 use YayMatik\Workflow\Conditions\Criteria;
-use YayMatik\Workflow\Steps\Field;
-use YayMatik\Workflow\Steps\Step;
-use YayMatik\Workflow\Steps\StepIcons;
+use YayMatik\Workflow\Core\Steps\Field;
+use YayMatik\Workflow\Core\Steps\Step;
+use YayMatik\Workflow\Core\Steps\StepIcons;
 use YayMatik\Workflow\Triggers\OrderCreated;
 use YayMatik\Workflow\Triggers\OrderStatusChanged;
 
-require_once dirname( __DIR__, 2 ) . '/Support/woocommerce-stubs.php';
+require_once dirname( __DIR__, 3 ) . '/Support/woocommerce-stubs.php';
 
 /** The declarative step contract, for each of the 7 core steps. */
 final class StepContractTest extends TestCase {

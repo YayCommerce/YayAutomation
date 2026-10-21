@@ -1,13 +1,13 @@
 <?php
-namespace YayMatik\Tests\Unit\Data;
+namespace YayMatik\Tests\Unit\Core\Data;
 
 use PHPUnit\Framework\TestCase;
 use YayMatik\Tests\Support\ContextScope;
 use YayMatik\Tests\Support\LegacyVariables;
-use YayMatik\Workflow\Data\DataRegistry;
-use YayMatik\Workflow\Data\Template;
+use YayMatik\Workflow\Core\Data\DataRegistry;
+use YayMatik\Workflow\Core\Data\Template;
 
-require_once dirname( __DIR__, 2 ) . '/Support/woocommerce-stubs.php';
+require_once dirname( __DIR__, 3 ) . '/Support/woocommerce-stubs.php';
 
 /** Template + Scope render every old `{{ item.field }}` tag byte for byte as v0.1 did (`LegacyVariables`). */
 final class VariablesParityTest extends TestCase {

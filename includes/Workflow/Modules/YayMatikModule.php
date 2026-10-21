@@ -2,7 +2,7 @@
 namespace YayMatik\Workflow\Modules;
 
 use YayMatik\Workflow\Conditions\Criteria;
-use YayMatik\Workflow\Data\SiteData;
+use YayMatik\Workflow\DataItems\SiteData;
 
 defined( 'ABSPATH' ) || exit;
 

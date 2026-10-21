@@ -1,5 +1,5 @@
 <?php
-namespace YayMatik\Tests\Unit\Runtime;
+namespace YayMatik\Tests\Unit\Core\Runtime;
 
 use PHPUnit\Framework\TestCase;
 use YayMatik\Tests\Support\FakeClock;
@@ -8,12 +8,12 @@ use YayMatik\Tests\Support\FakeGraphSource;
 use YayMatik\Tests\Support\FakeQueue;
 use YayMatik\Tests\Support\FakeRunRepository;
 use YayMatik\Tests\Support\FakeStep;
-use YayMatik\Workflow\Data\Ref;
-use YayMatik\Workflow\Data\RefResolver;
-use YayMatik\Workflow\Data\Scope;
-use YayMatik\Workflow\Runtime\Executor;
-use YayMatik\Workflow\Steps\Step;
-use YayMatik\Workflow\Steps\StepResult;
+use YayMatik\Workflow\Core\Data\Ref;
+use YayMatik\Workflow\Core\Data\RefResolver;
+use YayMatik\Workflow\Core\Data\Scope;
+use YayMatik\Workflow\Core\Runtime\Executor;
+use YayMatik\Workflow\Core\Steps\Step;
+use YayMatik\Workflow\Core\Steps\StepResult;
 
 /** The Executor over fakes: cursor, branches, error policy, waits, slices and safe resume. */
 final class ExecutorTest extends TestCase {
@@ -261,7 +261,7 @@ final class ExecutorTest extends TestCase {
     }
 
     public function test_skipped_condition_ends_its_path(): void {
-        $this->steps['condition'] = new class() extends \YayMatik\Workflow\Steps\Condition {
+        $this->steps['condition'] = new class() extends \YayMatik\Workflow\Core\Steps\Condition {
             public function id(): string {
                 return 'condition';
             }
@@ -653,7 +653,7 @@ final class ExecutorTest extends TestCase {
     }
 
     public function test_condition_that_only_implements_evaluate_follows_then_on_yes(): void {
-        $this->steps['minimal'] = new class() extends \YayMatik\Workflow\Steps\Condition {
+        $this->steps['minimal'] = new class() extends \YayMatik\Workflow\Core\Steps\Condition {
             public function id(): string {
                 return 'minimal';
             }

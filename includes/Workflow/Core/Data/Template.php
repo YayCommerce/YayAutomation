@@ -1,7 +1,7 @@
 <?php
-namespace YayMatik\Workflow\Data;
+namespace YayMatik\Workflow\Core\Data;
 
-use YayMatik\Workflow\Definition\Messages;
+use YayMatik\Workflow\Core\Definition\Messages;
 
 defined( 'ABSPATH' ) || exit;
 

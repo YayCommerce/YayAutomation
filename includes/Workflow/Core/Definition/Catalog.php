@@ -1,13 +1,13 @@
 <?php
-namespace YayMatik\Workflow\Definition;
+namespace YayMatik\Workflow\Core\Definition;
 
-use YayMatik\Workflow\Data\DataRegistry;
-use YayMatik\Workflow\Data\Operators;
-use YayMatik\Workflow\Data\Type;
+use YayMatik\Workflow\Core\Data\DataRegistry;
+use YayMatik\Workflow\Core\Data\Operators;
+use YayMatik\Workflow\Core\Data\Type;
 use YayMatik\Workflow\ModuleRegistry;
-use YayMatik\Workflow\Steps\Field;
-use YayMatik\Workflow\Steps\Step;
-use YayMatik\Workflow\Steps\StepRegistry;
+use YayMatik\Workflow\Core\Steps\Field;
+use YayMatik\Workflow\Core\Steps\Step;
+use YayMatik\Workflow\Core\Steps\StepRegistry;
 
 defined( 'ABSPATH' ) || exit;
 

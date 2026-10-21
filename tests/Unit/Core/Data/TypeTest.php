@@ -1,9 +1,9 @@
 <?php
-namespace YayMatik\Tests\Unit\Data;
+namespace YayMatik\Tests\Unit\Core\Data;
 
 use PHPUnit\Framework\TestCase;
-use YayMatik\Workflow\Data\DataItem;
-use YayMatik\Workflow\Data\Type;
+use YayMatik\Workflow\Core\Data\DataItem;
+use YayMatik\Workflow\Core\Data\Type;
 
 /** Value types: text form, parsing, and the condition type each maps to. */
 final class TypeTest extends TestCase {

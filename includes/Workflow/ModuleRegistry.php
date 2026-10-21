@@ -3,14 +3,14 @@ namespace YayMatik\Workflow;
 
 use YayMatik\Pro\Workflow\Modules\WoocommerceProModule;
 use YayMatik\Pro\Workflow\Modules\YayMatikProModule;
-use YayMatik\Workflow\Data\DataItem;
+use YayMatik\Workflow\Core\Data\DataItem;
 use YayMatik\Workflow\Modules\Module;
 use YayMatik\Workflow\Modules\WoocommerceModule;
 use YayMatik\Workflow\Modules\YayMatikModule;
-use YayMatik\Workflow\Steps\Action;
-use YayMatik\Workflow\Steps\Condition;
-use YayMatik\Workflow\Steps\Step;
-use YayMatik\Workflow\Steps\Trigger;
+use YayMatik\Workflow\Core\Steps\Action;
+use YayMatik\Workflow\Core\Steps\Condition;
+use YayMatik\Workflow\Core\Steps\Step;
+use YayMatik\Workflow\Core\Steps\Trigger;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -24,6 +24,9 @@ final class ModuleRegistry {
 
     /** @var Module[]|null */
     private static $modules = null;
+
+    /** @var array|null `build()` of `modules()`. */
+    private static $built = null;
 
     /** Module classes: the Pro ones when the Pro folder ships, then the filter's. */
     public static function classes(): array {
@@ -115,6 +118,17 @@ final class ModuleRegistry {
      * @param Module[] $modules
      */
     private static function build( array $modules ): array {
+        if ( null === self::$modules || $modules !== self::$modules ) {
+            return self::collect( $modules );
+        }
+        if ( null === self::$built ) {
+            self::$built = self::collect( $modules );
+        }
+        return self::$built;
+    }
+
+    /** @param Module[] $modules */
+    private static function collect( array $modules ): array {
         $steps   = [];
         $plugins = [];
         foreach ( $modules as $module ) {

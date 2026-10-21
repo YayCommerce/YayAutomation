@@ -1,10 +1,10 @@
 <?php
-namespace YayMatik\Tests\Unit\Runtime;
+namespace YayMatik\Tests\Unit\Core\Runtime;
 
 use PHPUnit\Framework\TestCase;
-use YayMatik\Workflow\Runtime\ActionSchedulerQueue;
+use YayMatik\Workflow\Core\Runtime\ActionSchedulerQueue;
 
-require_once dirname( __DIR__, 2 ) . '/Support/action-scheduler-stubs.php';
+require_once dirname( __DIR__, 3 ) . '/Support/action-scheduler-stubs.php';
 
 /** One job per run: no second pending run job, no second recovery job. */
 final class ActionSchedulerQueueTest extends TestCase {

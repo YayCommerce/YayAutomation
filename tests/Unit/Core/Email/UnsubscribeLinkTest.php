@@ -1,8 +1,8 @@
 <?php
-namespace YayMatik\Tests\Unit\Email;
+namespace YayMatik\Tests\Unit\Core\Email;
 
 use PHPUnit\Framework\TestCase;
-use YayMatik\Workflow\Email\UnsubscribeLink;
+use YayMatik\Workflow\Core\Email\UnsubscribeLink;
 
 /** Signed unsubscribe links. The page and the table are checked on a real site. */
 final class UnsubscribeLinkTest extends TestCase {

@@ -7,13 +7,13 @@ use YayMatik\Pro\Workflow\Modules\YayMatikProModule;
 use YayMatik\Tests\Support\FakeCondition;
 use YayMatik\Tests\Support\FakeModule;
 use YayMatik\Workflow\Conditions\Criteria;
-use YayMatik\Workflow\Data\DataRegistry;
-use YayMatik\Workflow\Data\SiteData;
+use YayMatik\Workflow\Core\Data\DataRegistry;
+use YayMatik\Workflow\DataItems\SiteData;
 use YayMatik\Workflow\ModuleRegistry;
 use YayMatik\Workflow\Modules\Module;
 use YayMatik\Workflow\Modules\WoocommerceModule;
 use YayMatik\Workflow\Modules\YayMatikModule;
-use YayMatik\Workflow\Steps\StepRegistry;
+use YayMatik\Workflow\Core\Steps\StepRegistry;
 
 require_once dirname( __DIR__ ) . '/Support/woocommerce-stubs.php';
 
@@ -73,6 +73,14 @@ final class ModuleRegistryTest extends TestCase {
         $this->assertEqualsCanonicalizing( self::STEPS, array_keys( StepRegistry::all() ) );
         $this->assertSame( [ 'site', 'order', 'customer' ], array_keys( DataRegistry::items() ), 'order_item only through order.items' );
         $this->assertArrayHasKey( 'order_item', DataRegistry::entities() );
+    }
+
+    public function test_the_loaded_modules_build_their_steps_once(): void {
+        $modules = ModuleRegistry::modules();
+        ModuleRegistry::plugins( $modules );
+
+        $this->assertSame( StepRegistry::all(), ModuleRegistry::steps( $modules ) );
+        $this->assertNotSame( StepRegistry::all()['condition'], ModuleRegistry::steps( ModuleRegistry::from( self::FREE ) )['condition'], 'another set is built on its own' );
     }
 
     public function test_a_filter_adds_a_module_whose_steps_name_it(): void {

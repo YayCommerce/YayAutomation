@@ -1,5 +1,5 @@
 <?php
-namespace YayMatik\Tests\Unit\Steps;
+namespace YayMatik\Tests\Unit\Core\Steps;
 
 use PHPUnit\Framework\TestCase;
 use YayMatik\Workflow\Actions\AddOrderNote;
@@ -7,11 +7,11 @@ use YayMatik\Workflow\Actions\ChangeOrderStatus;
 use YayMatik\Workflow\Actions\SendInternalEmail;
 use YayMatik\Workflow\Actions\UpdateOrderMeta;
 use YayMatik\Workflow\Conditions\Criteria;
-use YayMatik\Workflow\Steps\Step;
+use YayMatik\Workflow\Core\Steps\Step;
 use YayMatik\Workflow\Triggers\OrderCreated;
 use YayMatik\Workflow\Triggers\OrderStatusChanged;
 
-require_once dirname( __DIR__, 2 ) . '/Support/woocommerce-stubs.php';
+require_once dirname( __DIR__, 3 ) . '/Support/woocommerce-stubs.php';
 
 /**
  * Characterization of the 7 steps' configs: what each one stores and what it accepts or rejects,

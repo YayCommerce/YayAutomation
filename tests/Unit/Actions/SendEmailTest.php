@@ -1,12 +1,12 @@
 <?php
-namespace YayMatik\Tests\Unit\Steps;
+namespace YayMatik\Tests\Unit\Actions;
 
 use PHPUnit\Framework\TestCase;
 use YayMatik\Tests\Support\FakeMailer;
-use YayMatik\Workflow\Data\Scope;
-use YayMatik\Workflow\Email\UnsubscribeLink;
+use YayMatik\Workflow\Core\Data\Scope;
+use YayMatik\Workflow\Core\Email\UnsubscribeLink;
 use YayMatik\Workflow\Actions\SendEmail;
-use YayMatik\Workflow\Steps\StepResult;
+use YayMatik\Workflow\Core\Steps\StepResult;
 
 require_once dirname( __DIR__, 2 ) . '/Support/woocommerce-stubs.php';
 require_once dirname( __DIR__, 2 ) . '/Support/fake-wc.php';

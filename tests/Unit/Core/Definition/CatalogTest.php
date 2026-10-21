@@ -1,14 +1,14 @@
 <?php
-namespace YayMatik\Tests\Unit\Definition;
+namespace YayMatik\Tests\Unit\Core\Definition;
 
 use PHPUnit\Framework\TestCase;
-use YayMatik\Workflow\Data\DataRegistry;
-use YayMatik\Workflow\Data\Type;
-use YayMatik\Workflow\Definition\Catalog;
-use YayMatik\Workflow\Steps\StepIcons;
-use YayMatik\Workflow\Steps\StepRegistry;
+use YayMatik\Workflow\Core\Data\DataRegistry;
+use YayMatik\Workflow\Core\Data\Type;
+use YayMatik\Workflow\Core\Definition\Catalog;
+use YayMatik\Workflow\Core\Steps\StepIcons;
+use YayMatik\Workflow\Core\Steps\StepRegistry;
 
-require_once dirname( __DIR__, 2 ) . '/Support/woocommerce-stubs.php';
+require_once dirname( __DIR__, 3 ) . '/Support/woocommerce-stubs.php';
 
 /** The step catalog sent to the admin app: v0.1 keys kept, contract keys added, JSON-safe, camelCase. */
 final class CatalogTest extends TestCase {

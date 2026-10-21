@@ -1,7 +1,7 @@
 <?php
 namespace YayMatik\Tests\Support;
 
-use YayMatik\Workflow\Runtime\Workflows;
+use YayMatik\Workflow\Core\Runtime\Workflows;
 
 /** Workflows from an array. `deactivate()` turns one off and records it. */
 class FakeWorkflows implements Workflows {

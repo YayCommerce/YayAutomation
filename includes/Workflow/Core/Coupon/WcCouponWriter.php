@@ -1,5 +1,5 @@
 <?php
-namespace YayMatik\Workflow\Coupon;
+namespace YayMatik\Workflow\Core\Coupon;
 
 defined( 'ABSPATH' ) || exit;
 

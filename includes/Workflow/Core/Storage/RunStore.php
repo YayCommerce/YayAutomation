@@ -1,5 +1,5 @@
 <?php
-namespace YayMatik\Workflow\Storage;
+namespace YayMatik\Workflow\Core\Storage;
 
 use YayMatik\Utils\Logger;
 

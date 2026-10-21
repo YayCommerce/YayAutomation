@@ -1,13 +1,13 @@
 <?php
-namespace YayMatik\Tests\Unit\Steps;
+namespace YayMatik\Tests\Unit\Actions;
 
 use PHPUnit\Framework\TestCase;
 use YayMatik\Tests\Support\FakeCouponWriter;
-use YayMatik\Workflow\Data\Scope;
-use YayMatik\Workflow\Data\Template;
-use YayMatik\Workflow\Runtime\Executor;
+use YayMatik\Workflow\Core\Data\Scope;
+use YayMatik\Workflow\Core\Data\Template;
+use YayMatik\Workflow\Core\Runtime\Executor;
 use YayMatik\Workflow\Actions\GenerateCoupon;
-use YayMatik\Workflow\Steps\StepResult;
+use YayMatik\Workflow\Core\Steps\StepResult;
 
 require_once dirname( __DIR__, 2 ) . '/Support/woocommerce-stubs.php';
 

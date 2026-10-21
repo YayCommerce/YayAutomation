@@ -1,7 +1,7 @@
 <?php
 namespace YayMatik\Tests\Support;
 
-use YayMatik\Workflow\Runtime\Clock;
+use YayMatik\Workflow\Core\Runtime\Clock;
 
 /** A clock the test sets. `$tick` seconds pass on every elapsed() read. */
 final class FakeClock implements Clock {

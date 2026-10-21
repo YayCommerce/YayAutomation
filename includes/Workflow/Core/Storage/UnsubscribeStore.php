@@ -1,7 +1,7 @@
 <?php
-namespace YayMatik\Workflow\Storage;
+namespace YayMatik\Workflow\Core\Storage;
 
-use YayMatik\Workflow\Email\UnsubscribeLink;
+use YayMatik\Workflow\Core\Email\UnsubscribeLink;
 
 defined( 'ABSPATH' ) || exit;
 

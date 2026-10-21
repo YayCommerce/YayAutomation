@@ -1,7 +1,8 @@
 <?php
-namespace YayMatik\Workflow\Data;
+namespace YayMatik\Workflow\Core\Data;
 
-use YayMatik\Workflow\Definition\Catalog;
+use YayMatik\Workflow\Core\Definition\Catalog;
+use YayMatik\Workflow\DataItems\SiteData;
 use YayMatik\Workflow\ModuleRegistry;
 
 defined( 'ABSPATH' ) || exit;

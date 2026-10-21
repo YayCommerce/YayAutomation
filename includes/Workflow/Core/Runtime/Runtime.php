@@ -1,5 +1,5 @@
 <?php
-namespace YayMatik\Workflow\Runtime;
+namespace YayMatik\Workflow\Core\Runtime;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -32,7 +32,8 @@ final class Runtime {
             [ $worker, 'current' ]
         );
         $worker->register();
-        self::$dispatcher->register();
+        // Not on plugins_loaded: the trigger list reads the modules, and a plugin loaded after this one adds its own then.
+        add_action( 'init', [ self::$dispatcher, 'register' ], 0 );
     }
 
     /** Null before `boot()` (e.g. without WooCommerce). */

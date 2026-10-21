@@ -1,25 +1,25 @@
 <?php
-namespace YayMatik\Tests\Unit\Steps;
+namespace YayMatik\Tests\Unit\Core\Steps;
 
 use PHPUnit\Framework\TestCase;
 use YayMatik\Tests\Support\FakeMailer;
 use YayMatik\Tests\Support\FakeOrder;
-use YayMatik\Workflow\Data\GoneEntity;
-use YayMatik\Workflow\Data\Ref;
-use YayMatik\Workflow\Data\RefResolver;
-use YayMatik\Workflow\Data\Scope;
+use YayMatik\Workflow\Core\Data\GoneEntity;
+use YayMatik\Workflow\Core\Data\Ref;
+use YayMatik\Workflow\Core\Data\RefResolver;
+use YayMatik\Workflow\Core\Data\Scope;
 use YayMatik\Workflow\Actions\AddOrderNote;
 use YayMatik\Workflow\Actions\ChangeOrderStatus;
 use YayMatik\Workflow\Actions\SendInternalEmail;
 use YayMatik\Workflow\Actions\UpdateOrderMeta;
 use YayMatik\Workflow\Conditions\Criteria;
-use YayMatik\Workflow\Steps\Step;
-use YayMatik\Workflow\Steps\StepResult;
+use YayMatik\Workflow\Core\Steps\Step;
+use YayMatik\Workflow\Core\Steps\StepResult;
 use YayMatik\Workflow\Triggers\OrderCreated;
 use YayMatik\Workflow\Triggers\OrderStatusChanged;
 
-require_once dirname( __DIR__, 2 ) . '/Support/woocommerce-stubs.php';
-require_once dirname( __DIR__, 2 ) . '/Support/fake-wc.php';
+require_once dirname( __DIR__, 3 ) . '/Support/woocommerce-stubs.php';
+require_once dirname( __DIR__, 3 ) . '/Support/fake-wc.php';
 
 /** Each step's run(): ok / skipped / failed, and outputs exactly as declared. */
 final class StepRunTest extends TestCase {

@@ -1,17 +1,17 @@
 <?php
-namespace YayMatik\Workflow\Runtime;
+namespace YayMatik\Workflow\Core\Runtime;
 
 use YayMatik\Utils\Logger;
-use YayMatik\Workflow\Data\DataRegistry;
-use YayMatik\Workflow\Data\GoneEntity;
-use YayMatik\Workflow\Data\RefResolver;
-use YayMatik\Workflow\Data\Scope;
-use YayMatik\Workflow\Steps\Condition;
-use YayMatik\Workflow\Steps\Step;
-use YayMatik\Workflow\Steps\StepRegistry;
-use YayMatik\Workflow\Steps\StepResult;
-use YayMatik\Workflow\Storage\RunStepStore;
-use YayMatik\Workflow\Storage\RunStore;
+use YayMatik\Workflow\Core\Data\DataRegistry;
+use YayMatik\Workflow\Core\Data\GoneEntity;
+use YayMatik\Workflow\Core\Data\RefResolver;
+use YayMatik\Workflow\Core\Data\Scope;
+use YayMatik\Workflow\Core\Steps\Condition;
+use YayMatik\Workflow\Core\Steps\Step;
+use YayMatik\Workflow\Core\Steps\StepRegistry;
+use YayMatik\Workflow\Core\Steps\StepResult;
+use YayMatik\Workflow\Core\Storage\RunStepStore;
+use YayMatik\Workflow\Core\Storage\RunStore;
 
 defined( 'ABSPATH' ) || exit;
 

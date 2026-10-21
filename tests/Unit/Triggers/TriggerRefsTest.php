@@ -1,10 +1,10 @@
 <?php
-namespace YayMatik\Tests\Unit\Steps;
+namespace YayMatik\Tests\Unit\Triggers;
 
 use PHPUnit\Framework\TestCase;
 use YayMatik\Tests\Support\FakeOrder;
-use YayMatik\Workflow\Data\Ref;
-use YayMatik\Workflow\Data\Scope;
+use YayMatik\Workflow\Core\Data\Ref;
+use YayMatik\Workflow\Core\Data\Scope;
 use YayMatik\Workflow\Triggers\OrderCreated;
 use YayMatik\Workflow\Triggers\OrderStatusChanged;
 

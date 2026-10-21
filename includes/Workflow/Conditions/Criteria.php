@@ -1,13 +1,13 @@
 <?php
 namespace YayMatik\Workflow\Conditions;
 
-use YayMatik\Workflow\Data\DataItem;
-use YayMatik\Workflow\Data\DataRegistry;
-use YayMatik\Workflow\Data\Operators;
-use YayMatik\Workflow\Data\Scope;
-use YayMatik\Workflow\Definition\Messages;
-use YayMatik\Workflow\Steps\Condition;
-use YayMatik\Workflow\Steps\Field;
+use YayMatik\Workflow\Core\Data\DataItem;
+use YayMatik\Workflow\Core\Data\DataRegistry;
+use YayMatik\Workflow\Core\Data\Operators;
+use YayMatik\Workflow\Core\Data\Scope;
+use YayMatik\Workflow\Core\Definition\Messages;
+use YayMatik\Workflow\Core\Steps\Condition;
+use YayMatik\Workflow\Core\Steps\Field;
 
 defined( 'ABSPATH' ) || exit;
 

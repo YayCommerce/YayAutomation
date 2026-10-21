@@ -1,9 +1,9 @@
 <?php
 namespace YayMatik\Tests\Support;
 
-use YayMatik\Workflow\Runtime\RunRepository;
-use YayMatik\Workflow\Storage\RunStepStore;
-use YayMatik\Workflow\Storage\RunStore;
+use YayMatik\Workflow\Core\Runtime\RunRepository;
+use YayMatik\Workflow\Core\Storage\RunStepStore;
+use YayMatik\Workflow\Core\Storage\RunStore;
 
 /** In-memory `runs` and `run_steps`, with the same rules as the stores (claim, finished_at, root id). */
 class FakeRunRepository implements RunRepository {

@@ -4,9 +4,9 @@ namespace YayMatik\Engine\BEPages;
 
 use YayMatik\Engine\API\RestAPI;
 use YayMatik\Engine\Register\ScriptName;
-use YayMatik\Workflow\Coupon\FreeShipping;
+use YayMatik\Workflow\Core\Coupon\FreeShipping;
 use YayMatik\Utils\SingletonTrait;
-use YayMatik\Workflow\Definition\Catalog;
+use YayMatik\Workflow\Core\Definition\Catalog;
 use YayMatik\Workflow\Actions\SendInternalEmail;
 use YayMatik\YayMatik;
 

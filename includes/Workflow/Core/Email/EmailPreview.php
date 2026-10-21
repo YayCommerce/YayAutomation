@@ -1,18 +1,18 @@
 <?php
-namespace YayMatik\Workflow\Email;
+namespace YayMatik\Workflow\Core\Email;
 
-use YayMatik\Workflow\Data\DataRegistry;
-use YayMatik\Workflow\Data\OrderData;
-use YayMatik\Workflow\Data\SampleValues;
-use YayMatik\Workflow\Data\Scope;
-use YayMatik\Workflow\Definition\GraphSchema;
-use YayMatik\Workflow\Definition\Validator;
-use YayMatik\Workflow\Runtime\Executor;
+use YayMatik\Workflow\Core\Data\DataRegistry;
+use YayMatik\Workflow\DataItems\OrderData;
+use YayMatik\Workflow\Core\Data\SampleValues;
+use YayMatik\Workflow\Core\Data\Scope;
+use YayMatik\Workflow\Core\Definition\GraphSchema;
+use YayMatik\Workflow\Core\Definition\Validator;
+use YayMatik\Workflow\Core\Runtime\Executor;
 use YayMatik\Workflow\Actions\SendEmail;
 use YayMatik\Workflow\Actions\SendInternalEmail;
-use YayMatik\Workflow\Steps\Step;
-use YayMatik\Workflow\Steps\StepRegistry;
-use YayMatik\Workflow\Steps\Trigger;
+use YayMatik\Workflow\Core\Steps\Step;
+use YayMatik\Workflow\Core\Steps\StepRegistry;
+use YayMatik\Workflow\Core\Steps\Trigger;
 
 defined( 'ABSPATH' ) || exit;
 

@@ -1,5 +1,5 @@
 <?php
-namespace YayMatik\Tests\Unit\Storage;
+namespace YayMatik\Tests\Unit\Core\Storage;
 
 use PHPUnit\Framework\TestCase;
 use YayMatik\Tests\Support\FakeClock;
@@ -8,11 +8,11 @@ use YayMatik\Tests\Support\FakeGraphSource;
 use YayMatik\Tests\Support\FakeQueue;
 use YayMatik\Tests\Support\FakeStep;
 use YayMatik\Tests\Support\FakeWpdb;
-use YayMatik\Workflow\Data\RefResolver;
-use YayMatik\Workflow\Runtime\DbRunRepository;
-use YayMatik\Workflow\Runtime\Executor;
-use YayMatik\Workflow\Storage\RunStepStore;
-use YayMatik\Workflow\Storage\RunStore;
+use YayMatik\Workflow\Core\Data\RefResolver;
+use YayMatik\Workflow\Core\Runtime\DbRunRepository;
+use YayMatik\Workflow\Core\Runtime\Executor;
+use YayMatik\Workflow\Core\Storage\RunStepStore;
+use YayMatik\Workflow\Core\Storage\RunStore;
 
 /** What the run stores send to the database. The real tables are checked with `./run.sh check-runs`. */
 final class RunStepStoreTest extends TestCase {

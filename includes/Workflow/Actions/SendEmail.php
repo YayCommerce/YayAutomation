@@ -1,16 +1,16 @@
 <?php
 namespace YayMatik\Workflow\Actions;
 
-use YayMatik\Workflow\Data\Scope;
-use YayMatik\Workflow\Data\Template;
-use YayMatik\Workflow\Data\Values;
-use YayMatik\Workflow\Data\Type;
-use YayMatik\Workflow\Email\EmailBody;
-use YayMatik\Workflow\Email\UnsubscribeLink;
-use YayMatik\Workflow\Steps\Action;
-use YayMatik\Workflow\Steps\Field;
-use YayMatik\Workflow\Steps\StepResult;
-use YayMatik\Workflow\Storage\UnsubscribeStore;
+use YayMatik\Workflow\Core\Data\Scope;
+use YayMatik\Workflow\Core\Data\Template;
+use YayMatik\Workflow\Core\Data\Values;
+use YayMatik\Workflow\Core\Data\Type;
+use YayMatik\Workflow\Core\Email\EmailBody;
+use YayMatik\Workflow\Core\Email\UnsubscribeLink;
+use YayMatik\Workflow\Core\Steps\Action;
+use YayMatik\Workflow\Core\Steps\Field;
+use YayMatik\Workflow\Core\Steps\StepResult;
+use YayMatik\Workflow\Core\Storage\UnsubscribeStore;
 
 defined( 'ABSPATH' ) || exit;
 

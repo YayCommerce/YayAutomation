@@ -1,11 +1,11 @@
 <?php
-namespace YayMatik\Workflow\Runtime;
+namespace YayMatik\Workflow\Core\Runtime;
 
 use YayMatik\Utils\Logger;
-use YayMatik\Workflow\Data\GoneEntity;
-use YayMatik\Workflow\Data\Ref;
-use YayMatik\Workflow\Data\RefResolver;
-use YayMatik\Workflow\Storage\RunStore;
+use YayMatik\Workflow\Core\Data\GoneEntity;
+use YayMatik\Workflow\Core\Data\Ref;
+use YayMatik\Workflow\Core\Data\RefResolver;
+use YayMatik\Workflow\Core\Storage\RunStore;
 
 defined( 'ABSPATH' ) || exit;
 

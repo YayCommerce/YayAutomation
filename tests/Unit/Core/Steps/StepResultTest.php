@@ -1,8 +1,8 @@
 <?php
-namespace YayMatik\Tests\Unit\Steps;
+namespace YayMatik\Tests\Unit\Core\Steps;
 
 use PHPUnit\Framework\TestCase;
-use YayMatik\Workflow\Steps\StepResult;
+use YayMatik\Workflow\Core\Steps\StepResult;
 
 /** What a step's run() returns. */
 final class StepResultTest extends TestCase {

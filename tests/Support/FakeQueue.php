@@ -1,7 +1,7 @@
 <?php
 namespace YayMatik\Tests\Support;
 
-use YayMatik\Workflow\Runtime\Queue;
+use YayMatik\Workflow\Core\Runtime\Queue;
 
 /** Records queued jobs instead of scheduling them. */
 final class FakeQueue implements Queue {

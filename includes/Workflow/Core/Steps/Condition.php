@@ -1,8 +1,8 @@
 <?php
-namespace YayMatik\Workflow\Steps;
+namespace YayMatik\Workflow\Core\Steps;
 
-use YayMatik\Workflow\Data\Scope;
-use YayMatik\Workflow\Data\Type;
+use YayMatik\Workflow\Core\Data\Scope;
+use YayMatik\Workflow\Core\Data\Type;
 
 defined( 'ABSPATH' ) || exit;
 

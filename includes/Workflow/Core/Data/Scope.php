@@ -1,5 +1,7 @@
 <?php
-namespace YayMatik\Workflow\Data;
+namespace YayMatik\Workflow\Core\Data;
+
+use YayMatik\Workflow\DataItems\SiteData;
 
 defined( 'ABSPATH' ) || exit;
 

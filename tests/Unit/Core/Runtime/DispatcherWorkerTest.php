@@ -1,5 +1,5 @@
 <?php
-namespace YayMatik\Tests\Unit\Runtime;
+namespace YayMatik\Tests\Unit\Core\Runtime;
 
 use PHPUnit\Framework\TestCase;
 use YayMatik\Tests\Support\FakeClock;
@@ -9,16 +9,16 @@ use YayMatik\Tests\Support\FakeQueue;
 use YayMatik\Tests\Support\FakeRunRepository;
 use YayMatik\Tests\Support\FakeStep;
 use YayMatik\Tests\Support\FakeWorkflows;
-use YayMatik\Workflow\Data\Ref;
-use YayMatik\Workflow\Data\RefResolver;
-use YayMatik\Workflow\Data\Scope;
-use YayMatik\Workflow\Runtime\ActionSchedulerQueue;
-use YayMatik\Workflow\Runtime\Dispatcher;
-use YayMatik\Workflow\Runtime\Worker;
-use YayMatik\Workflow\Steps\StepResult;
+use YayMatik\Workflow\Core\Data\Ref;
+use YayMatik\Workflow\Core\Data\RefResolver;
+use YayMatik\Workflow\Core\Data\Scope;
+use YayMatik\Workflow\Core\Runtime\ActionSchedulerQueue;
+use YayMatik\Workflow\Core\Runtime\Dispatcher;
+use YayMatik\Workflow\Core\Runtime\Worker;
+use YayMatik\Workflow\Core\Steps\StepResult;
 use YayMatik\Workflow\Triggers\OrderStatusChanged;
 
-require_once dirname( __DIR__, 2 ) . '/Support/woocommerce-stubs.php';
+require_once dirname( __DIR__, 3 ) . '/Support/woocommerce-stubs.php';
 
 /** Dispatcher (events → runs) and Worker (job → slice) over fakes. */
 final class DispatcherWorkerTest extends TestCase {

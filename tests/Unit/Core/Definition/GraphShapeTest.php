@@ -1,11 +1,11 @@
 <?php
-namespace YayMatik\Tests\Unit\Definition;
+namespace YayMatik\Tests\Unit\Core\Definition;
 
 use PHPUnit\Framework\TestCase;
-use YayMatik\Workflow\Definition\GraphSchema;
-use YayMatik\Workflow\Definition\Validator;
+use YayMatik\Workflow\Core\Definition\GraphSchema;
+use YayMatik\Workflow\Core\Definition\Validator;
 
-require_once dirname( __DIR__, 2 ) . '/Support/woocommerce-stubs.php';
+require_once dirname( __DIR__, 3 ) . '/Support/woocommerce-stubs.php';
 
 /**
  * Characterization of graph shape checks on save (v0.1 `prepare_graph()`, now `GraphSchema`): each

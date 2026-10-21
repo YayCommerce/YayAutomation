@@ -7,9 +7,9 @@ use YayMatik\Workflow\Actions\GenerateCoupon;
 use YayMatik\Workflow\Actions\SendEmail;
 use YayMatik\Workflow\Actions\SendInternalEmail;
 use YayMatik\Workflow\Actions\UpdateOrderMeta;
-use YayMatik\Workflow\Data\CustomerData;
-use YayMatik\Workflow\Data\OrderData;
-use YayMatik\Workflow\Data\OrderItemData;
+use YayMatik\Workflow\DataItems\CustomerData;
+use YayMatik\Workflow\DataItems\OrderData;
+use YayMatik\Workflow\DataItems\OrderItemData;
 use YayMatik\Workflow\Triggers\OrderCreated;
 use YayMatik\Workflow\Triggers\OrderStatusChanged;
 
