@@ -233,10 +233,7 @@ function SummaryCell({ label, children }: { label: string; children: ReactNode }
   );
 }
 
-/**
- * Status, trigger, runs in the last 30 days, last run. The run cells show "—" until run history
- * (M2) fills them.
- */
+/** Status, trigger, runs in the last 30 days, last run. The run cells show "—". */
 function SummaryRow({ workflow }: { workflow: Workflow }) {
   const state = workflowState(workflow);
   const status =

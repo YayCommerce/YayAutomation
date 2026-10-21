@@ -416,7 +416,7 @@ class RestAPI {
     }
 
     /**
-     * A workflow's newest runs (`RunPresenter::run()`). Status filter and paging come in M2.3.
+     * A workflow's newest runs (`RunPresenter::run()`).
      *
      * @param \WP_REST_Request $request Request.
      */

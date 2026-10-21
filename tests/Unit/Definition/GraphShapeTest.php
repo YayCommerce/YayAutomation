@@ -178,7 +178,7 @@ final class GraphShapeTest extends TestCase {
 
         $prepared = Validator::prepare_changes( [ 'graph' => $graph ] )['graph'];
 
-        // schemaVersion (F1.6) is the one addition to the v0.1 shape: always first.
+        // schemaVersion is the one addition to the v0.1 shape: always first.
         $this->assertSame( [ 'schemaVersion', 'nodes', 'edges' ], array_keys( $prepared ) );
         $this->assertSame( 1, $prepared['schemaVersion'] );
         $this->assertSame( [ 'id', 'kind', 'position', 'data' ], array_keys( $prepared['nodes'][0] ) );

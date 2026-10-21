@@ -36,7 +36,8 @@ Work through the plan's checkpoints one at a time:
 3. Before asking for review:
    - **Format + typecheck**: run `pnpm build` from root (runs `tsc --noEmit && vite build`)
    - **Dev server**: tell the user to run `pnpm dev` to verify in the browser
-   - No comments with session rationale — WHY only, not how we got here
+   - Comments only for a quirk, a workaround or why not the obvious way; never decisions, history or restating code
+   - Search for every symbol you added; delete any with no caller
 4. Present a summary:
 
 > **Checkpoint 1 complete: \<name\>**
@@ -62,7 +63,7 @@ Work through the plan's checkpoints one at a time:
 After all checkpoints approved:
 
 1. Push: `git push -u origin <branch>`
-2. Create PR: `gh pr create` targeting `main`
+2. Create PR: `gh pr create` targeting `develop`
 3. Poll CI: `gh pr checks <number>` every 60s until pass or fail
 4. If CI fails: `gh run view --log-failed`, fix, push, re-poll
 5. Report:

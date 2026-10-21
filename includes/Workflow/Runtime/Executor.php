@@ -177,7 +177,7 @@ final class Executor {
                 }
                 return RunStore::STATUS_QUEUED;
             }
-        }//end while
+        }
 
         $this->runs->save_run(
             $id,
@@ -229,8 +229,8 @@ final class Executor {
                     return self::result( RunStepStore::STATUS_COMPLETED, (array) $row['output'] );
                 default:
                     return self::result( (string) $row['status'], (array) $row['output'], $row['error'] );
-            }//end switch
-        }//end if
+            }
+        }
 
         // A sanitize() that throws still gets a row (with the raw config), so run history names the step.
         $config = is_array( $node['data']['config'] ?? null ) ? $node['data']['config'] : [];

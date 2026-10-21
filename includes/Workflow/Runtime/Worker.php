@@ -158,7 +158,7 @@ final class Worker {
             return RunStore::STATUS_FAILED;
         } finally {
             $this->current = null;
-        }//end try
+        }
     }
 
     /**

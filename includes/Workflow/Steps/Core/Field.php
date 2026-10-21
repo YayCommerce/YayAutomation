@@ -329,7 +329,7 @@ final class Field {
                 return $this->sanitize_number_unit( $raw );
             case self::RULES:
                 return is_array( $raw ) ? array_values( $raw ) : $this->default;
-        }//end switch
+        }
         return null;
     }
 

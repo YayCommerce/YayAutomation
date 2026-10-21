@@ -2,11 +2,20 @@
 
 WordPress plugin: automation workflows + template library. Inspired by Shopify Flow, Klaviyo, AutomateWoo.
 
-## Conventions
-
-- Bottom line up front. Short sentences, no preamble.
-- Build only what the current plan asks for.
+## Mandatory conventions
+- Bottom line up front. Short sentences, active voice, no preamble or trailing summaries.
 - **pnpm only.** Never npm or yarn.
+- Code comments: only when needed and worth their upkeep (a quirk, a workaround, why not the obvious way); length is fine. Never record decisions, plans, history or discussion (decisions go to docs/workflow-core-decisions.md), and never restate the code.
+- Docblocks: one line of purpose at most. Types only: `@param Type $name`, no text that repeats the name. phpcs needs a class comment, and every @param with its type once a function has a docblock.
+- No plan or checkpoint numbers in code comments or code.
+- Keep CLAUDE.md lean: no net growth; detail goes in a .claude/docs file behind an existing pointer.
+
+## Scope and dead code
+- Write only what the current task uses. No helpers, options, params, filters, hooks or catalog keys "for later".
+- Before finishing, search for every function, class, constant, option and export you added; delete any with no caller. A test alone is not a caller.
+- Never leave commented-out code. Git keeps history.
+- No fallbacks or backward-compat code unless the task asks. Before v1.0 nothing has shipped: data saved by earlier dev builds is reset, not migrated.
+- Unused code you notice outside the task: list it at the end of your report; don't delete it in the same change.
 
 ## Layout
 

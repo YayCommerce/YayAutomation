@@ -47,7 +47,7 @@ final class ActionSchedulerQueue implements Queue {
                 : as_schedule_single_action( $at, self::HOOK, [ $run_id ], self::GROUP );
         } catch ( \Throwable $e ) {
             return false;
-        }//end try
+        }
         return (bool) $job;
     }
 

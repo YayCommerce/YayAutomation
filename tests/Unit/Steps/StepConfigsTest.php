@@ -16,7 +16,7 @@ require_once dirname( __DIR__, 2 ) . '/Support/woocommerce-stubs.php';
 /**
  * Characterization of the 7 steps' configs: what each one stores and what it accepts or rejects,
  * with the exact message. Written against v0.1 steps; the step contract must keep it passing.
- * Unknown merge tags pass here since F1.6: the Validator reports them, with the same message
+ * Unknown merge tags pass here: the Validator reports them, with the same message
  * (see ValidatorTest).
  */
 final class StepConfigsTest extends TestCase {

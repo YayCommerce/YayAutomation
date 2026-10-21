@@ -35,6 +35,7 @@
 		<exclude name="Squiz.Commenting.FunctionComment.WrongStyle" />
 		<exclude name="Squiz.Commenting.FunctionCommentThrowTag.Missing" />
 		<exclude name="Squiz.Commenting.VariableComment.MissingVar" />
+		<exclude name="Squiz.Commenting.LongConditionClosingComment" />
 	</rule>
 
 	<rule ref="Generic.Commenting.DocComment">

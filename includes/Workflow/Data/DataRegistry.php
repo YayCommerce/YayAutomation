@@ -97,7 +97,7 @@ final class DataRegistry {
                     $client['options'] = Catalog::options( ( $field['options'] )() );
                 }
                 $fields[] = $client;
-            }//end foreach
+            }
             $items[] = [
                 'id'          => $item->id(),
                 'label'       => $item->label(),
@@ -106,7 +106,7 @@ final class DataRegistry {
                 'fields'      => $fields,
                 'relations'   => $relations,
             ];
-        }//end foreach
+        }
         return $items;
     }
 }

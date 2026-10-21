@@ -80,7 +80,7 @@ final class GraphSchema {
                     'config' => $step ? $step->sanitize( $data['config'] ?? [] ) : [],
                 ],
             ];
-        }//end foreach
+        }
 
         if ( 1 !== $triggers ) {
             return self::error( __( 'A workflow needs exactly one trigger.', 'yaymatik' ) );
@@ -121,7 +121,7 @@ final class GraphSchema {
             if ( null !== $handle ) {
                 $edges[ $id ]['sourceHandle'] = $handle;
             }
-        }//end foreach
+        }
 
         return [
             'schemaVersion' => self::VERSION,
