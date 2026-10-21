@@ -30,9 +30,18 @@ function isBlank(field: StepFieldMeta, value: unknown) {
   if (field.type === 'rules') {
     return !Array.isArray(value) || !value.some((rule) => !!(rule as { field?: unknown } | null)?.field);
   }
+  if (field.type === 'html') return isBlankHtml(String(value ?? ''));
   if (typeof value === 'string') return value.trim() === '';
   return value === null || value === undefined || (Array.isArray(value) && value.length === 0);
 }
+
+/** PHP `Field::is_blank()` for `html`: an emptied rich editor leaves `<p>&nbsp;</p>`; an image alone still counts. */
+export const isBlankHtml = (html: string) =>
+  !/<img\b/i.test(html) &&
+  html
+    .replace(/<[^>]*>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .trim() === '';
 
 const numberUnitValue = (value: unknown) => {
   const number = (value as { value?: unknown } | null)?.value;

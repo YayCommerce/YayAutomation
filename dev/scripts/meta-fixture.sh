@@ -25,6 +25,7 @@ $meta["wp"]["restNonce"]      = "test-nonce";
 $meta["wp"]["siteUrl"]        = "https://example.test";
 $meta["wp"]["adminUrl"]       = "https://example.test/wp-admin/";
 $meta["wp"]["adminEmail"]     = "admin@example.test";
+$meta["wp"]["userEmail"]      = "you@example.test";
 $meta["wp"]["timezoneString"] = "UTC";
 $meta["wp"]["gmtOffset"]      = 0;
 // JSON has no comments: this first key is the header.

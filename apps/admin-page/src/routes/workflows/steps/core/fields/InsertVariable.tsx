@@ -30,8 +30,7 @@ export function InsertVariable({ inputRef, value, onChange }: InsertVariableProp
 
   // Where the cursor goes once the picker has closed: after the inserted tag.
   const cursorAfter = useRef(0);
-  const insert = (key: string) => {
-    const tag = variableTag(key);
+  const insert = (tag: string) => {
     const input = inputRef.current;
     const cursor = focused.current && input ? input : null;
     const start = cursor?.selectionStart ?? value.length;
@@ -47,8 +46,28 @@ export function InsertVariable({ inputRef, value, onChange }: InsertVariableProp
     return true;
   };
 
+  return <InsertVariableLink onInsert={insert} focusAfter={focusInput} />;
+}
+
+/**
+ * The "Insert variable" link and its picker, for a control that inserts the tag itself. `blocks`:
+ * also offers block outputs (rich text), `onInsert` gets `block` true for one.
+ */
+export function InsertVariableLink({
+  blocks = false,
+  onInsert,
+  focusAfter,
+}: {
+  blocks?: boolean;
+  onInsert: (tag: string, block: boolean) => void;
+  focusAfter: () => boolean;
+}) {
   return (
-    <VariablePicker onSelect={insert} focusAfterPick={focusInput}>
+    <VariablePicker
+      blocks={blocks}
+      onSelect={(key, block) => onInsert(variableTag(key), block)}
+      focusAfterPick={focusAfter}
+    >
       <Button type="button" variant="link" size="sm" className="h-auto gap-1 px-0 text-[12.5px]">
         <Braces className="size-3.5" aria-hidden />
         {__('Insert variable', 'yaymatik')}

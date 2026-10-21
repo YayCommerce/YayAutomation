@@ -32,10 +32,7 @@ export const itemLabel = (id: string) => dataItems.find((item) => item.id === id
 /** Operator ids for a field type, from PHP `Operators::BY_TYPE`. */
 export const operatorsFor = (type: DataFieldType) => meta.operators[type];
 
-/**
- * Operators that compare against nothing. Mirrors PHP `Operators::needs_value()`, which doesn't
- * have the boolean ones yet (see `pending.ts`).
- */
+/** Operators that compare against nothing. Mirrors PHP `Operators::needs_value()`. */
 export const needsValue = (operator: string) => !['is_empty', 'is_not_empty', 'is_true', 'is_false'].includes(operator);
 
 /** How each operator reads in the condition's rules and summary ("is greater than"), from PHP `Operators::labels()`. */

@@ -22,7 +22,7 @@ Changes from the ROADMAP-v1.0 order:
 |---|---|---|---|---|---|
 | F0 | Move and rename | S | 1 | — | ✅ Done |
 | F1 | Workflow Core foundation | L | 3 | F0 | ✅ Done |
-| M1 | Customer emails + coupons | L | 3 | F1 | — |
+| M1 | Customer emails + coupons | L | 3 | F1 | ⏳ Merge pending |
 | M2 | Wait + run history | L | 3 | F1 | — |
 | F2 | Workflows table | M | 3 | F1 | — |
 | M7 | Cart tracking + Settings + Health check | L | 3 | F1 | — |
@@ -107,23 +107,35 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 
 ## M1 — Customer emails + coupons · L · risk 3
 
+**Status:** ⏳ Done, merge pending. Backend merged (PR #19, A1–A5); UI + templates on `jack/feature/m1b-emails-coupons-ui` (B1 `0050eaa`, B2 `a051e06`, B3 `275e6c6`, B4 `3a81ab3`).
+
 **Backend**
-- **M1.1 Send email** — WooCommerce email look; To defaults to the customer; subject, heading, message; unsubscribe link added automatically.
-- **M1.2 Generate coupon** — outputs `code`, `amount`, `expires_at`; limited to the customer's email; single use.
-- **M1.3 Unsubscribe** — storage, token link, confirmation page in the store theme; unsubscribed customers are skipped, with the reason in run history.
-- **M1.4 Yes/no fields** — `customer.is_first_order`, `customer.unsubscribed`.
-- **M1.5 Preview + Send test REST** — render with a sample scope: a recent order, or made-up data labelled "Sample data".
-- **M1.6 Email block: coupon box.**
+- ✅ **M1.1 Send email** — WooCommerce email look; To defaults to the customer; subject, heading, message; unsubscribe link added automatically.
+- ✅ **M1.2 Generate coupon** — outputs `code`, `amount`, `expires_at`; limited to the customer's email; single use.
+- ✅ **M1.3 Unsubscribe** — storage, token link, confirmation page; unsubscribed customers are skipped, with the reason in run history. The page is self-contained, not wrapped in the store theme, so it works on block and classic themes.
+- ✅ **M1.4 Yes/no fields** — `customer.is_first_order`, `customer.unsubscribed`.
+- ✅ **M1.5 Preview + Send test REST** — render with a sample scope: a recent order, or made-up data labelled "Sample data".
+- ✅ **M1.6 Email block: coupon box.** Inserted from the "Blocks" group of Insert variable (UI in B2).
 
 **UI**
-- **M1.7 Send email panel** (core custom form) — fields with "Insert variable", Preview, Send test, unsubscribe note.
-- **M1.8 Generate coupon** — generic form; card reads e.g. "10 % off, expires in 7 days".
-- **M1.9 Condition** — Is true / Is false for yes/no fields, no value needed.
-- **M1.10 Warning before Activate** — a step uses a coupon with no Generate coupon above it.
-- **M1.11 Template Library** — category filters.
-- **M1.12 Template preview** — Other versions and Steps.
+- ⏳ **M1.7 Send email panel** — generic form with a rich editor for the message (WordPress classic editor, Visual / Code), "Insert variable" incl. Blocks, Preview dialog, Send test, unsubscribe note. Not a custom form: `defineStep` `Footer` / `Actions`.
+- ⏳ **M1.8 Generate coupon** — generic form; card reads e.g. "10% off, expires in 30 days". Free shipping with no shipping method that takes a coupon (or only ones that also need a minimum) shows a notice in the panel; it never blocks Activate.
+- ⏳ **M1.9 Condition** — Is true / Is false for yes/no fields, no value needed.
+- ⏳ **M1.10 Warning before Activate** — a step uses a coupon tag with no Generate coupon above it (or that step was removed): a step issue on the tag, which blocks Activate. Rules only PHP checks (e.g. a percentage over 100) show under their field after a save and block Activate too. The free shipping notice (M1.8) is not an issue: a store without a coupon free shipping method can still activate.
+- ✅ **M1.11 Template Library** — category filters (already in `develop`); "Most popular" in a fixed order until installs are tracked.
+- ⏳ **M1.12 Template preview** — Other versions and Steps; "Before you start" when the free shipping coupon needs a shipping method.
 
-**Templates:** First-order thank-you ×2.
+**Templates:** ⏳ First-order thank-you ×2 (10% off; free shipping), on `customer.is_first_order` with the coupon box.
+
+**Moved or open**
+- Cross-sell / upsell templates: coupon paths updated, still locked until Wait (M2).
+- Unsubscribe page text in Settings → M7.6; privacy exporter / eraser for unsubscribes → M7.4; product grid → M2.5.
+- Not planned yet: admin list of unsubscribes, multiple To addresses, dark mode inside the editor's iframe (stays light).
+
+**Follow-ups**
+- Flaky `pnpm build` while `pnpm dev` runs (`vite-plugin-external` stand-ins): upgrade or replace the plugin.
+- Preview / Send test show to anyone who can open the editor, the REST routes need `manage_woocommerce`. Fine while the page needs `manage_options`; revisit if that changes.
+- Editor-level test for server issues (merged after autosave, "Needs setup", passed to the panel): in the e2e plan.
 
 ## M2 — Wait + run history · L · risk 3
 

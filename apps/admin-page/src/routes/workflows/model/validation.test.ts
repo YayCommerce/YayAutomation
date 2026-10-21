@@ -3,16 +3,18 @@ import { describe, expect, it } from 'vitest';
 
 import { stepOf } from '../steps';
 import highValueOrderAlert from '../templates/high-value-order-alert';
-import { addNode, removeNode, setNodeStep } from './graph';
+import { addNode, removeNode, setNodeStep, updateNodeConfig } from './graph';
 import {
   activateIssues,
   activateIssueTexts,
   availableData,
   canActivate,
+  editedIssues,
   issueText,
   newStepIssues,
   stepsNeedingSetup,
   validateWorkflow,
+  withServerIssues,
 } from './validation';
 
 const base = (): WorkflowGraph => structuredClone(highValueOrderAlert.graph);
@@ -66,7 +68,8 @@ describe('validateWorkflow', () => {
       node(graph, 'email').data.config = { ...node(graph, 'email').data.config, message };
       return validateWorkflow({ name: 'Alert', graph });
     };
-    const issue = (code: string, message: string) => [{ code, message, nodeId: 'email' }];
+    // Each names the field that holds the tag, like PHP.
+    const issue = (code: string, message: string) => [{ code, message, field: 'message', nodeId: 'email' }];
 
     it('accepts deep paths, trigger paths, filters, outputs of a step above and a relation itself', () => {
       expect(
@@ -90,7 +93,10 @@ describe('validateWorkflow', () => {
 
     it('flags an output of a missing step or of a missing key', () => {
       expect(withMessage('{{ steps.gone.result }}')).toEqual(
-        issue('invalid_config', '{{ steps.gone.result }} isn’t an available variable.'),
+        issue(
+          'invalid_config',
+          '{{ steps.gone.result }} comes from a step that isn’t in this workflow anymore. Add that step above this one, or remove the variable.',
+        ),
       );
       expect(withMessage('{{ steps.condition.nope }}')).toEqual(
         issue('invalid_config', '{{ steps.condition.nope }} isn’t an available variable.'),
@@ -102,7 +108,32 @@ describe('validateWorkflow', () => {
       node(graph, 'note').data = { block: 'add_order_note', config: { type: 'private', note: 'Big order' } };
       node(graph, 'email').data.config = { ...node(graph, 'email').data.config, message: '{{ steps.note.type }}' };
       expect(validateWorkflow({ name: 'Alert', graph })).toEqual([
-        { code: 'missing_data', message: 'Add order note data isn’t available at this step.', nodeId: 'email' },
+        {
+          code: 'missing_data',
+          message:
+            '{{ steps.note.type }} needs the Add order note step above this one. Move it above, or remove the variable.',
+          field: 'message',
+          nodeId: 'email',
+        },
+      ]);
+    });
+
+    it('says when an email uses a coupon with no Generate coupon above', () => {
+      const uses = (graph: WorkflowGraph) => {
+        node(graph, 'email').data.config = { ...node(graph, 'email').data.config, message: '{{ steps.coupon.code }}' };
+        return validateWorkflow({ name: 'Alert', graph }).map(({ message }) => message);
+      };
+      expect(uses(base())).toEqual([
+        '{{ steps.coupon.code }} comes from a step that isn’t in this workflow anymore. Add that step above this one, or remove the variable.',
+      ]);
+
+      const elsewhere = addNode(base(), 'condition', 'action', 'otherwise', 'coupon');
+      node(elsewhere, 'coupon').data = {
+        block: 'generate_coupon',
+        config: stepOf({ block: 'generate_coupon', config: {} })!.defaults(),
+      };
+      expect(uses(elsewhere)).toEqual([
+        '{{ steps.coupon.code }} needs the Generate coupon step above this one. Move it above, or remove the variable.',
       ]);
     });
   });
@@ -227,5 +258,48 @@ describe('issueText', () => {
       'Change order status: Choose an option from the list.',
     ]);
     expect(activateIssueTexts({ ...workflow, status: 'active' })).toEqual([]);
+  });
+});
+
+describe('withServerIssues', () => {
+  // A rule only PHP checks, e.g. a percentage over 100.
+  const percent = {
+    code: 'invalid_config',
+    message: 'Enter a percentage from 1 to 100.',
+    field: 'amount',
+    nodeId: 'email',
+  } as const;
+  const checked = base();
+
+  it('adds a step issue only the server found while the step is unchanged', () => {
+    expect(withServerIssues([], { graph: checked, issues: [percent] }, checked)).toEqual([percent]);
+    const moved = { ...checked, nodes: checked.nodes.map((n) => ({ ...n, position: { x: 1, y: 1 }, data: n.data })) };
+    expect(withServerIssues([], { graph: checked, issues: [percent] }, moved)).toEqual([percent]);
+  });
+
+  it('drops it once the step is edited, until the next save checks it again', () => {
+    const edited = updateNodeConfig(checked, 'email', { ...node(checked, 'email').data.config, subject: 'New' });
+    expect(withServerIssues([], { graph: checked, issues: [percent] }, edited)).toEqual([]);
+  });
+
+  it("keeps the editor's own issue for a step and the server's other issues out", () => {
+    const own = { code: 'invalid_config', message: 'Add a subject.', nodeId: 'email' } as const;
+    expect(withServerIssues([own], { graph: checked, issues: [percent] }, checked)).toEqual([own]);
+    const missing = {
+      code: 'missing_data',
+      message: 'Order data isn’t available at this step.',
+      nodeId: 'email',
+    } as const;
+    expect(
+      withServerIssues([], { graph: checked, issues: [missing, { code: 'no_action', message: 'x' }] }, checked),
+    ).toEqual([]);
+  });
+
+  it("reads the draft's issues while there is a draft, else the live graph's", () => {
+    const issues = { live: [{ code: 'no_action', message: 'live' }], draft: [percent] } as const;
+    expect(editedIssues({ draft: checked, issues: { live: [...issues.live], draft: [...issues.draft] } })).toEqual([
+      percent,
+    ]);
+    expect(editedIssues({ draft: null, issues: { live: [...issues.live], draft: null } })).toEqual(issues.live);
   });
 });

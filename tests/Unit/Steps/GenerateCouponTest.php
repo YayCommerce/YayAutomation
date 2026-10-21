@@ -91,6 +91,21 @@ final class GenerateCouponTest extends TestCase {
         $this->assertSame( 30, $this->step()->sanitize( [] )['expiry_days'], 'a missing value takes the default' );
     }
 
+    public function test_null_from_a_cleared_number_field_means_none(): void {
+        $config = $this->config(
+            [
+                'amount'        => null,
+                'expiry_days'   => null,
+                'minimum_spend' => null,
+            ]
+        );
+
+        $this->assertNull( $config['amount'] );
+        $this->assertNull( $config['expiry_days'] );
+        $this->assertNull( $config['minimum_spend'] );
+        $this->assertSame( 30, $this->config( [ 'expiry_days' => '30' ] )['expiry_days'], 'text numbers from older configs' );
+    }
+
     public function test_a_missing_prefix_is_ym_and_an_empty_one_is_none(): void {
         $this->assertSame( 'YM', $this->step()->sanitize( [ 'discount_type' => 'percent' ] )['code_prefix'] );
         $this->assertSame( '', $this->step()->sanitize( [ 'code_prefix' => '' ] )['code_prefix'] );
@@ -112,20 +127,34 @@ final class GenerateCouponTest extends TestCase {
 
     public function test_percent_is_1_to_100(): void {
         $message = [ 'amount', 'Enter a percentage from 1 to 100.' ];
-        $this->assertSame( $message, $this->error( [ 'amount' => 0 ] ) );
+        $this->assertSame( [ 'amount', 'Enter 0.01 or more.' ], $this->error( [ 'amount' => 0 ] ), 'the field’s min, checked in the editor too' );
+        $this->assertSame( $message, $this->error( [ 'amount' => 0.5 ] ) );
         $this->assertSame( $message, $this->error( [ 'amount' => 100.5 ] ) );
+        $this->assertSame( $message, $this->error( [ 'amount' => 150 ] ) );
         $this->assertSame( $message, $this->error( [ 'amount' => '' ] ) );
         $this->assertNull( $this->error( [ 'amount' => 1 ] ) );
         $this->assertNull( $this->error( [ 'amount' => '100' ] ) );
     }
 
     public function test_fixed_amount_is_above_0_and_free_shipping_needs_none(): void {
+        foreach ( [ 0, -5 ] as $amount ) {
+            $this->assertSame(
+                [ 'amount', 'Enter 0.01 or more.' ],
+                $this->error(
+                    [
+                        'discount_type' => 'fixed_cart',
+                        'amount'        => $amount,
+                    ]
+                ),
+                (string) $amount
+            );
+        }
         $this->assertSame(
             [ 'amount', 'Enter an amount above 0.' ],
             $this->error(
                 [
                     'discount_type' => 'fixed_cart',
-                    'amount'        => 0,
+                    'amount'        => '',
                 ]
             )
         );
@@ -158,7 +187,7 @@ final class GenerateCouponTest extends TestCase {
 
     public function test_expiry_is_whole_days_from_1_or_blank(): void {
         $message = [ 'expiry_days', 'Enter a whole number of days, 1 or more, or leave it blank for no expiry.' ];
-        $this->assertSame( $message, $this->error( [ 'expiry_days' => 0 ] ) );
+        $this->assertSame( [ 'expiry_days', 'Enter 1 or more.' ], $this->error( [ 'expiry_days' => 0 ] ), 'the field’s min, checked in the editor too' );
         $this->assertSame( $message, $this->error( [ 'expiry_days' => 1.5 ] ) );
         $this->assertNull( $this->error( [ 'expiry_days' => 1 ] ) );
         $this->assertNull( $this->error( [ 'expiry_days' => '' ] ) );

@@ -104,14 +104,27 @@ export type WorkflowPlugin = 'woocommerce' | 'yaymatik';
 /** Library chip a template is filed under. Labels live in the admin app. */
 export type TemplateCategory = 'recover_carts' | 'post_purchase' | 'customer_lifecycle' | 'alerts';
 
+/**
+ * The workflow a template is a version of (e.g. the abandoned cart versions). Versions show each
+ * other under "Other versions"; "Most popular" sorts by workflow.
+ */
+export type TemplateWorkflow =
+  | 'abandoned_cart'
+  | 'abandoned_checkout'
+  | 'first_order_thank_you'
+  | 'cross_sell_upsell'
+  | 'review_request'
+  | 'welcome'
+  | 'win_back'
+  | 'high_value_order_alert';
+
 /** Pre-built workflow shown in the template library. Use template creates an inactive draft from `graph`. */
 export interface WorkflowTemplate {
   id: string;
   name: string;
   description: string;
   category: TemplateCategory;
-  /** How often it was used. Sort key for "Most popular". */
-  popularity: number;
+  workflow: TemplateWorkflow;
   /** ISO date. Sort key for "Newest". */
   createdAt: string;
   graph: WorkflowGraph;
@@ -136,6 +149,28 @@ export interface WorkflowIssue {
   field?: string;
   /** `unlinked` only: every step not connected to the trigger. Workflow-level, so no `nodeId`. */
   nodeIds?: string[];
+}
+
+/** `POST /workflows/{id}/preview`: an email step as the recipient would see it. Renders only. */
+export interface EmailPreview {
+  subject: string;
+  heading: string;
+  /** The whole email (WooCommerce wrapper, styles inlined), for an iframe. */
+  html: string;
+  /** Who it goes to, variables filled in. */
+  to: string;
+  /** Made-up values: the store has no paid order (or the trigger supplies none). */
+  sample: boolean;
+  /** The number of the order whose data it shows; null with made-up values. */
+  order: string | null;
+}
+
+/** `POST /workflows/{id}/send-test`: the test email went to the logged-in user. */
+export interface EmailTestResult {
+  sentTo: string;
+  /** With the "[Test] " prefix. */
+  subject: string;
+  sample: boolean;
 }
 
 export type RunStatus = 'queued' | 'running' | 'waiting' | 'completed' | 'failed' | 'cancelled' | 'skipped';

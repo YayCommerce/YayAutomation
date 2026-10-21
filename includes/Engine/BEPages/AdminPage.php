@@ -54,6 +54,8 @@ class AdminPage {
         wp_localize_script( ScriptName::PAGE_ADMIN, 'yayMatikMeta', self::client_meta() );
         wp_set_script_translations( ScriptName::PAGE_ADMIN, 'yaymatik', YAYMATIK_PLUGIN_DIR . 'languages' );
 
+        // TinyMCE + Quicktags for `html` step fields (apps/admin-page …/fields/classicEditor.ts).
+        wp_enqueue_editor();
         wp_enqueue_script( ScriptName::PAGE_ADMIN );
         if ( YayMatik::is_prod() ) {
             wp_enqueue_style( ScriptName::STYLE_ADMIN );
@@ -79,6 +81,8 @@ class AdminPage {
                 'timezoneString' => get_option( 'timezone_string' ),
                 'gmtOffset'      => (float) get_option( 'gmt_offset', 0 ),
                 'adminEmail'     => get_option( 'admin_email' ),
+                // Where Send test emails go (`RestAPI::send_test_email()`).
+                'userEmail'      => wp_get_current_user()->user_email,
             ],
             'wc'         => [
                 'active'             => class_exists( 'WooCommerce' ),

@@ -11,7 +11,18 @@ import { useVariableScope } from './variableScope';
 
 /** Field widgets shared by `StepForm` and the custom forms of steps not built in PHP yet. */
 
-type FieldErrors = ({ message?: string } | undefined)[];
+export type FieldErrors = ({ message?: string } | undefined)[];
+
+/**
+ * A broken merge tag in `value`, once the field was left (`setLeft(true)` on blur, `false` on
+ * focus): while typing, `{{ ord` is a tag being written, not a mistake.
+ */
+export function useTagIssue(variables: boolean, value: string) {
+  const [left, setLeft] = useState(false);
+  const { comingSoonStep } = useVariableScope();
+  const tagIssue = variables && left ? tagError([value], { allowPending: comingSoonStep }) : null;
+  return { tagIssue, setLeft };
+}
 
 /**
  * Labelled text input or textarea. `variables`: "Insert variable" on the label row puts a merge tag
@@ -46,10 +57,7 @@ export function TextField({
   errors: FieldErrors;
 }) {
   const ref = useRef<HTMLInputElement & HTMLTextAreaElement>(null);
-  // Only once the field is left: while typing, `{{ ord` is a tag being written, not a mistake.
-  const [left, setLeft] = useState(false);
-  const { comingSoonStep } = useVariableScope();
-  const tagIssue = variables && left ? tagError([value], { allowPending: comingSoonStep }) : null;
+  const { tagIssue, setLeft } = useTagIssue(variables, value);
   useLayoutEffect(() => {
     if (multiline && ref.current) fitHeight(ref.current);
   }, [multiline, value]);

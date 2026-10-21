@@ -1,3 +1,4 @@
+import { useContext } from 'react';
 import { useForm, useStore } from '@tanstack/react-form';
 import type * as v from 'valibot';
 import { __ } from '@wordpress/i18n';
@@ -9,8 +10,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import type { Config, StepFormProps } from '../types';
 import { isFieldVisible } from './catalogSchema';
 import { ConfigField } from './ConfigField';
-import { useMarkInvalid } from './feedback';
+import { FieldIssueContext, useMarkInvalid, useShowErrors } from './feedback';
 import { MultiSelect } from './MultiSelect';
+import { RichTextEditor } from './RichTextEditor';
 import { useValidateOnMount } from './useValidateOnMount';
 import { Notice, TextField, ToggleField } from './widgets';
 
@@ -42,6 +44,9 @@ export function StepForm({
   });
   useValidateOnMount(form);
   const markInvalid = useMarkInvalid();
+  const showErrors = useShowErrors();
+  // A rule only the server checks (e.g. a percentage over 100), after the last save.
+  const fieldIssue = useContext(FieldIssueContext);
   const values = useStore(form.store, (state) => state.values);
 
   return (
@@ -59,8 +64,8 @@ export function StepForm({
                   value={api.state.value}
                   onChange={api.handleChange}
                   onBlur={api.handleBlur}
-                  invalid={markInvalid(api.state.meta)}
-                  errors={api.state.meta.errors}
+                  invalid={markInvalid(api.state.meta) || (showErrors && fieldIssue?.field === field.key)}
+                  errors={[...api.state.meta.errors, fieldIssue?.field === field.key ? fieldIssue : undefined]}
                 />
               )}
             </form.Field>
@@ -80,18 +85,30 @@ function Widget({ errors, ...props }: WidgetProps & { errors: ({ message?: strin
   switch (field.type) {
     case 'toggle':
       return <ToggleField id={id} label={field.label} help={field.help} checked={value === true} onChange={onChange} />;
-    // html is edited as text until the rich editor lands.
+    case 'html':
+      return (
+        <RichTextEditor
+          id={id}
+          label={field.label}
+          help={field.help}
+          variables={!!field.variables}
+          value={String(value ?? '')}
+          onChange={onChange}
+          onBlur={onBlur}
+          invalid={invalid}
+          errors={errors}
+        />
+      );
     case 'text':
     case 'emails':
     case 'textarea':
-    case 'html':
       return (
         <TextField
           id={id}
           label={field.label}
           help={field.help}
           placeholder={field.placeholder}
-          multiline={field.type !== 'text' && field.type !== 'emails'}
+          multiline={field.type === 'textarea'}
           variables={!!field.variables}
           value={String(value ?? '')}
           onChange={onChange}

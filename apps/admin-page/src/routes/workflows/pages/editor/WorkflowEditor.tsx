@@ -23,7 +23,14 @@ import { toast } from '@/components/ui/sonner';
 import { ApiError, errorMessage } from '../../api/workflow.api';
 import { useWorkflowActionMutation, workflowKeys } from '../../api/workflow.query';
 import { removeNode, setNodeStep } from '../../model/graph';
-import { createIssuesSelector, issueText, newStepIssues, sameIssues } from '../../model/validation';
+import {
+  createIssuesSelector,
+  editedIssues,
+  issueText,
+  newStepIssues,
+  sameIssues,
+  withServerIssues,
+} from '../../model/validation';
 import { useActivateWorkflow } from '../../shared/actions/useActivateWorkflow';
 import {
   ActivateDialog,
@@ -56,7 +63,7 @@ type ConfirmAction = 'activate' | 'deactivate' | 'update' | 'discard';
  */
 export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
   const form = useWorkflowForm(workflow);
-  const autosave = useAutosave(form, workflow.id);
+  const autosave = useAutosave(form, workflow.id, editedIssues(workflow));
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const location = useLocation();
@@ -71,10 +78,16 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
   const hasDraft = workflow.everActivated && (workflow.draft !== null || autosave.status !== 'saved');
 
   // Reused across drag frames and compared by content, so the header re-renders only when issues change.
+  // Plus what only the server checks, from the last save, until the step changes again.
   const [selectIssues] = useState(createIssuesSelector);
   const issues = useStore(
     form.store,
-    (state) => selectIssues({ name: workflow.name, graph: state.values.graph }),
+    (state) =>
+      withServerIssues(
+        selectIssues({ name: workflow.name, graph: state.values.graph }),
+        autosave.server,
+        state.values.graph,
+      ),
     sameIssues,
   );
 
@@ -94,6 +107,15 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
     reset: resetPanel,
   } = useStepPanel(form, markVisited);
   const openNodeId = panel?.nodeId ?? null;
+
+  // An issue only the server finds arrives after the save, maybe once the step's panel is closed:
+  // its card says "Needs setup" then, like a step left with an issue.
+  const serverIssues = autosave.server.issues;
+  useEffect(() => {
+    markReview(
+      issues.flatMap((issue) => (serverIssues.includes(issue) && issue.nodeId !== openNodeId ? [issue.nodeId!] : [])),
+    );
+  }, [issues, serverIssues, openNodeId, markReview]);
 
   const editorState = useMemo<EditorState>(
     () => ({
@@ -197,7 +219,7 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
     await autosave.settle();
     try {
       const saved = await discard.mutateAsync({ id: workflow.id });
-      autosave.reset(saved.graph);
+      autosave.reset(saved.graph, editedIssues(saved));
       resetPanel(saved.graph);
       setErrorMode(false);
       toast.success(__('Changes discarded', 'yaymatik'));
@@ -290,9 +312,11 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
                   <StepPanel
                     // A reset (discard) starts the panel and its form over: forms keep their own values.
                     key={`${panel.nodeId}:${formVersion}`}
+                    workflowId={workflow.id}
                     nodeId={panel.nodeId}
                     picking={panel.picking}
                     feedback={feedbackFor(panel.nodeId)}
+                    issue={issues.find((issue) => issue.nodeId === panel.nodeId)}
                     closable={!panelLocked}
                     onPick={(stepId) => pickStep(panel.nodeId, stepId)}
                     onSwap={(picking) => setPanel({ nodeId: panel.nodeId, picking })}

@@ -1,9 +1,12 @@
 import { act } from 'react';
-import type { Workflow, WorkflowGraph } from '@yaymatik/types';
+import { useStore } from '@tanstack/react-form';
+import type { Workflow, WorkflowGraph, WorkflowIssue } from '@yaymatik/types';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { addNode, updateNodeConfig } from '../../model/graph';
+import { sameIssues, validateWorkflow, withServerIssues } from '../../model/validation';
+import type { Feedback } from '../../steps/core/fields/feedback';
 import highValueOrderAlert from '../../templates/high-value-order-alert';
 import { StepPanel } from './StepPanel';
 import { useStepPanel } from './useStepPanel';
@@ -17,20 +20,44 @@ const live = (): WorkflowGraph => structuredClone(highValueOrderAlert.graph);
 type Editor = { form: WorkflowForm; panel: ReturnType<typeof useStepPanel> };
 
 /** The editor's form and panel, without the canvas and the requests around them. */
-function Harness({ graph, editor }: { graph: WorkflowGraph; editor: Partial<Editor> }) {
+function Harness({
+  graph,
+  editor,
+  feedback = 'none',
+  serverIssues = [],
+}: {
+  graph: WorkflowGraph;
+  editor: Partial<Editor>;
+  feedback?: Feedback;
+  /** What the server found in `graph`. */
+  serverIssues?: WorkflowIssue[];
+}) {
   const form = useWorkflowForm({ draft: graph, graph } as Workflow);
   const panel = useStepPanel(form, () => {});
   Object.assign(editor, { form, panel });
   const open = panel.panel;
+  // As the editor finds them.
+  const issues = useStore(
+    form.store,
+    (state) =>
+      withServerIssues(
+        validateWorkflow({ name: 'Test', graph: state.values.graph }),
+        { graph, issues: serverIssues },
+        state.values.graph,
+      ),
+    sameIssues,
+  );
   return (
     <WorkflowFormContext.Provider value={form}>
       {open && (
         <div data-testid="panel">
           <StepPanel
             key={`${open.nodeId}:${panel.formVersion}`}
+            workflowId="1"
             nodeId={open.nodeId}
             picking={open.picking}
-            feedback="none"
+            feedback={feedback}
+            issue={issues.find((issue) => issue.nodeId === open.nodeId)}
             closable
             onPick={() => {}}
             onSwap={() => {}}
@@ -66,9 +93,9 @@ afterEach(() => {
   container.remove();
 });
 
-const mount = (graph: WorkflowGraph, nodeId: string) => {
+const mount = (graph: WorkflowGraph, nodeId: string, feedback?: Feedback, serverIssues?: WorkflowIssue[]) => {
   const editor: Partial<Editor> = {};
-  act(() => root.render(<Harness graph={graph} editor={editor} />));
+  act(() => root.render(<Harness graph={graph} editor={editor} feedback={feedback} serverIssues={serverIssues} />));
   act(() => editor.panel!.setPanel({ nodeId, picking: false }));
   return editor as Editor;
 };
@@ -120,5 +147,117 @@ describe('discarding draft changes with a step panel open', () => {
 
     expect(editor.panel.panel).toBeNull();
     expect(container.querySelector('[data-testid="panel"]')).toBeNull();
+  });
+});
+
+describe('reopening a saved Generate coupon', () => {
+  const withCoupon = (config: Record<string, unknown>) => {
+    const graph = addNode(live(), 'email', 'action', undefined, 'coupon');
+    graph.nodes.find((node) => node.id === 'coupon')!.data = { block: 'generate_coupon', config };
+    return graph;
+  };
+  const saved = {
+    discount_type: 'percent',
+    amount: 30,
+    expiry_days: 30,
+    minimum_spend: null,
+    individual_use: false,
+    limit_to_customer: true,
+    code_prefix: 'YM',
+  };
+
+  it.each([
+    ['as PHP saves it', saved],
+    ['saved with numbers as text', { ...saved, amount: '30', expiry_days: '30', minimum_spend: '' }],
+  ])('shows no errors and keeps the draft clean (%s)', (_, config) => {
+    const graph = withCoupon(config);
+    // Shows field errors, as for a step left unfinished.
+    const editor = mount(graph, 'coupon', 'review');
+    expect(inputValues()).toContain('30');
+    act(() => editor.panel.setPanel(null));
+    act(() => editor.panel.setPanel({ nodeId: 'coupon', picking: false }));
+
+    expect(container.querySelector('[aria-invalid="true"]')).toBeNull();
+    expect(container.textContent).not.toMatch(/Invalid type|Expected/);
+    expect(editor.form.state.values.graph).toBe(graph);
+  });
+});
+
+describe('an issue only the server found', () => {
+  it('shows under its field', () => {
+    const graph = addNode(live(), 'email', 'action', undefined, 'coupon');
+    graph.nodes.find((node) => node.id === 'coupon')!.data = {
+      block: 'generate_coupon',
+      config: { discount_type: 'percent', amount: 150, expiry_days: 30, minimum_spend: null },
+    };
+    const issue = {
+      code: 'invalid_config',
+      message: 'Enter a percentage from 1 to 100.',
+      field: 'amount',
+      nodeId: 'coupon',
+    } as const;
+    mount(graph, 'coupon', 'review', [issue]);
+
+    const amount = container.querySelector('#step-field-amount')!;
+    expect(amount.getAttribute('aria-invalid')).toBe('true');
+    expect(amount.closest('[data-slot="field"]')?.textContent ?? container.textContent).toContain(issue.message);
+    expect(container.querySelectorAll('[aria-invalid="true"]')).toHaveLength(1);
+  });
+});
+
+/** The panel's error notice above the form, if any. */
+const notice = () => container.querySelector('[data-slot="alert"]')?.textContent ?? null;
+
+describe('a step issue in its panel', () => {
+  const sendEmail = (message: string) => {
+    // Send email on the No path; Generate coupon under the alert on the Yes path.
+    let graph = addNode(live(), 'condition', 'action', 'otherwise', 'customer');
+    graph = addNode(graph, 'email', 'action', undefined, 'coupon');
+    const data = (id: string) => graph.nodes.find((node) => node.id === id)!;
+    data('coupon').data = { block: 'generate_coupon', config: { discount_type: 'percent', amount: 10 } };
+    data('customer').data = {
+      block: 'send_email',
+      config: { to: '{{ customer.email }}', subject: 'Thanks', heading: '', message },
+    };
+    return graph;
+  };
+
+  it('shows a variable issue under the field that holds the tag', () => {
+    mount(sendEmail('<p>Your code: {{ steps.coupon.code }}</p>'), 'customer', 'review');
+
+    const message = [...container.querySelectorAll('[data-slot="field"]')].find((field) =>
+      field.querySelector('label')?.textContent?.startsWith('Message'),
+    )!;
+    expect(message.textContent).toContain('{{ steps.coupon.code }} needs the Generate coupon step above this one.');
+    expect(message.querySelector('.yaymatik-rich-editor.ring-destructive')).not.toBeNull();
+    expect(notice()).toBeNull();
+  });
+
+  it('stays quiet while the step is being set up', () => {
+    mount(sendEmail('<p>{{ steps.coupon.code }}</p>'), 'customer', 'none');
+    expect(container.textContent).not.toContain('needs the Generate coupon step');
+  });
+
+  it("shows a condition's rule error once, in its rule", () => {
+    const graph = live();
+    graph.nodes.find((node) => node.id === 'condition')!.data.config = {
+      match: 'all',
+      rules: [{ field: 'order.total', operator: 'greater_or_equal', value: '', valueType: 'value' }],
+    };
+    mount(graph, 'condition', 'review');
+
+    expect(container.textContent).toContain('Enter a value for Order total.');
+    expect(notice()).toBeNull();
+  });
+
+  it('shows an issue no field of the form holds at the top', () => {
+    const issue = {
+      code: 'invalid_config',
+      message: 'Order data isn’t available at this step.',
+      field: 'rules',
+      nodeId: 'condition',
+    } as const;
+    mount(live(), 'condition', 'review', [issue]);
+    expect(notice()).toBe(issue.message);
   });
 });

@@ -30,6 +30,10 @@ final class Messages {
             'unknownVariable'   => __( '%s isn’t an available variable.', 'yaymatik' ),
             /* translators: 1: filter name, e.g. shout; 2: the available filters, e.g. "default, upper" */
             'unknownFilter'     => __( '%1$s isn’t a filter. Available filters: %2$s.', 'yaymatik' ),
+            /* translators: %s: merge tag, e.g. {{ steps.coupon.code }} */
+            'stepGone'          => __( '%s comes from a step that isn’t in this workflow anymore. Add that step above this one, or remove the variable.', 'yaymatik' ),
+            /* translators: 1: merge tag, e.g. {{ steps.coupon.code }}; 2: step name, e.g. "Generate coupon" */
+            'stepNotAbove'      => __( '%1$s needs the %2$s step above this one. Move it above, or remove the variable.', 'yaymatik' ),
             /* translators: %s: a merge tag as written, e.g. {{ order. }}. Keep {{ variable }} and {{ variable | filter }} as they are. */
             'malformedTag'      => __( '%s is written incorrectly. Use {{ variable }} or {{ variable | filter }}.', 'yaymatik' ),
             // Step settings.

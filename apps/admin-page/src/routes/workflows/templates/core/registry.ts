@@ -34,5 +34,11 @@ export function createTemplateRegistry(list: WorkflowTemplate[]) {
     }
   }
 
-  return { templates: list, findTemplate: (id: string) => byId.get(id) };
+  return {
+    templates: list,
+    findTemplate: (id: string) => byId.get(id),
+    /** The other templates of the same workflow, in list order. */
+    versionsOf: (template: WorkflowTemplate) =>
+      list.filter((other) => other.workflow === template.workflow && other.id !== template.id),
+  };
 }

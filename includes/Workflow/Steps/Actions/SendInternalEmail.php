@@ -138,18 +138,22 @@ class SendInternalEmail extends Action {
      * Shape must match `automation.email` in apps/admin-page/src/types/localize.d.ts.
      */
     public static function sender(): array {
-        return [ 'fromLine' => self::from_line() ];
+        return [
+            'fromLine'    => self::from_line(),
+            'fromName'    => self::from_name(),
+            'fromAddress' => self::from_address(),
+        ];
     }
 
     /** "Store <store@example.com>"; the address alone when the sender has no name. */
     private static function from_line(): string {
-        // Stored escaped, like the site title; the notice is plain text.
-        $name = wp_specialchars_decode( self::from_name(), ENT_QUOTES );
+        $name = self::from_name();
         return '' === $name ? self::from_address() : sprintf( '%s <%s>', $name, self::from_address() );
     }
 
+    /** Plain text: stored escaped, like the site title. */
     private static function from_name(): string {
-        return (string) get_option( 'woocommerce_email_from_name', get_bloginfo( 'name' ) );
+        return wp_specialchars_decode( (string) get_option( 'woocommerce_email_from_name', get_bloginfo( 'name' ) ), ENT_QUOTES );
     }
 
     /** A blank address falls back to the site admin's, as WooCommerce's own default. */

@@ -53,6 +53,11 @@
   --yay-success-soft-foreground: #15803d;
   --yay-link: #3858e9;
 
+  /* Email preview (app-only): the page around the email, light in both themes; the sender's avatar. */
+  --yay-email-canvas: #f7f7f7;
+  --yay-avatar-soft: #ede7f6;
+  --yay-avatar-soft-foreground: #5b3a8e;
+
   --radius: 0.625rem;
   --default-transition-duration: 0.3s;
 }
@@ -114,6 +119,9 @@
   --color-warning-soft-foreground: var(--yay-warning-soft-foreground) /* #92400e */;
   --color-success-soft-foreground: var(--yay-success-soft-foreground) /* #15803d */;
   --color-link: var(--yay-link) /* #3858e9 */;
+  --color-email-canvas: var(--yay-email-canvas) /* #f7f7f7 */;
+  --color-avatar-soft: var(--yay-avatar-soft) /* #ede7f6 */;
+  --color-avatar-soft-foreground: var(--yay-avatar-soft-foreground) /* #5b3a8e */;
 
   --font-sans:
     -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif,
@@ -178,4 +186,6 @@
   --yay-warning-soft-foreground: #fde68a;
   --yay-success-soft-foreground: #4ade80;
   --yay-link: #8ea0ff;
+  --yay-avatar-soft: rgb(166 140 255 / 18%);
+  --yay-avatar-soft-foreground: #c9b8ff;
 }

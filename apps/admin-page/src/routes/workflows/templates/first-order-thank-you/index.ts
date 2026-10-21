@@ -2,9 +2,10 @@ import type { WorkflowGraph } from '@yaymatik/types';
 import { __ } from '@wordpress/i18n';
 
 import { BRANCH_OFFSET, ROW_GAP } from '../../model/graph';
-import type { GenerateCouponConfig } from '../../steps/actions/generate-coupon/schema';
+import { generateCouponStep, type GenerateCouponConfig } from '../../steps/actions/generate-coupon';
 import type { SendEmailConfig } from '../../steps/actions/send-email/schema';
 import { defineTemplate } from '../core/defineTemplate';
+import { emailMessage } from '../core/email';
 
 /**
  * Thank a customer for their first completed order with a coupon for the next one. Two versions
@@ -13,15 +14,16 @@ import { defineTemplate } from '../core/defineTemplate';
 function graph(coupon: Partial<GenerateCouponConfig>, offer: string): WorkflowGraph {
   const email: SendEmailConfig = {
     to: '{{ customer.email }}',
-    subject: __('Thank you for your first order, {{ customer.first_name }}!', 'yaymatik'),
+    subject: __('Thanks for your first order — a gift for your next one', 'yaymatik'),
     heading: __('Thanks for shopping with us', 'yaymatik'),
-    message: [
-      __('Hi {{ customer.first_name }},', 'yaymatik'),
+    message: emailMessage([
+      __('Hi {{ customer.first_name | default: "there" }},', 'yaymatik'),
       __('Thank you for your first order with {{ site.name }}. We hope you love it!', 'yaymatik'),
       offer,
-      __('Coupon code: {{ steps.coupon.code }}\nExpires: {{ steps.coupon.expires_at }}', 'yaymatik'),
+      '{{ steps.coupon.box }}',
+      __('Enter the code at checkout to use it.', 'yaymatik'),
       __('See you again soon,\n{{ site.name }}', 'yaymatik'),
-    ].join('\n\n'),
+    ]),
   };
 
   return {
@@ -41,7 +43,7 @@ function graph(coupon: Partial<GenerateCouponConfig>, offer: string): WorkflowGr
           config: {
             match: 'all',
             rules: [
-              { field: 'customer.paid_order_count', operator: 'equal', value: '1', valueType: 'value' },
+              { field: 'customer.is_first_order', operator: 'is_true', value: '', valueType: 'value' },
               { field: 'customer.unsubscribed', operator: 'is_false', value: '', valueType: 'value' },
             ],
           },
@@ -53,16 +55,7 @@ function graph(coupon: Partial<GenerateCouponConfig>, offer: string): WorkflowGr
         position: { x: -BRANCH_OFFSET, y: ROW_GAP * 2 },
         data: {
           block: 'generate_coupon',
-          config: {
-            discount_type: 'percent',
-            amount: '10',
-            expiry_days: '30',
-            minimum_spend: '',
-            individual_use: false,
-            limit_to_customer: true,
-            code_prefix: 'THANKS-',
-            ...coupon,
-          } satisfies GenerateCouponConfig,
+          config: { ...generateCouponStep.defaults(), expiry_days: 30, ...coupon },
         },
       },
       {
@@ -88,10 +81,10 @@ export const firstOrderDiscount = defineTemplate({
     'yaymatik',
   ),
   category: 'post_purchase',
-  popularity: 0,
+  workflow: 'first_order_thank_you',
   createdAt: '2026-10-07',
   graph: graph(
-    { discount_type: 'percent', amount: '10' },
+    { discount_type: 'percent', amount: 10 },
     __('As a thank you, here is {{ steps.coupon.amount }} off your next order:', 'yaymatik'),
   ),
 });
@@ -104,10 +97,10 @@ export const firstOrderFreeShipping = defineTemplate({
     'yaymatik',
   ),
   category: 'post_purchase',
-  popularity: 0,
+  workflow: 'first_order_thank_you',
   createdAt: '2026-10-07',
   graph: graph(
-    { discount_type: 'free_shipping', amount: '' },
+    { discount_type: 'free_shipping', amount: null },
     __('As a thank you, your next order ships free:', 'yaymatik'),
   ),
 });

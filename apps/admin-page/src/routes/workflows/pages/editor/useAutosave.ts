@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { WorkflowGraph } from '@yaymatik/types';
+import type { WorkflowGraph, WorkflowIssue } from '@yaymatik/types';
 
 import { useAutosaveMutation } from '../../api/workflow.query';
+import { editedIssues, type ServerCheck } from '../../model/validation';
 import type { WorkflowForm } from './useWorkflowForm';
 
 const DELAY_MS = 800;
@@ -16,8 +17,10 @@ export type AutosaveStatus = 'saved' | 'pending' | 'saving' | 'error';
 /**
  * Saves the form's graph shortly after each change, one request at a time. The server decides where
  * the graph goes (the draft once the workflow has ever been activated, the workflow itself before).
+ * `server`: the issues the server found in the last graph sent, starting with `initialIssues` for
+ * the graph the form opened with.
  */
-export function useAutosave(form: WorkflowForm, workflowId: string) {
+export function useAutosave(form: WorkflowForm, workflowId: string, initialIssues: WorkflowIssue[] = []) {
   // `mutateAsync` is stable across renders (the mutation object isn't), so the callbacks below are too.
   const { mutateAsync: update } = useAutosaveMutation();
 
@@ -30,6 +33,7 @@ export function useAutosave(form: WorkflowForm, workflowId: string) {
   const stoppedRef = useRef(false);
   const [status, setStatusState] = useState<AutosaveStatus>('saved');
   const [error, setError] = useState<Error | null>(null);
+  const [server, setServer] = useState<ServerCheck>(() => ({ graph: form.state.values.graph, issues: initialIssues }));
   // Mirrors `status` for callers that read it outside render (route blocker) and for the callbacks.
   const statusRef = useRef<AutosaveStatus>('saved');
   const setStatus = useCallback((next: AutosaveStatus) => {
@@ -44,7 +48,8 @@ export function useAutosave(form: WorkflowForm, workflowId: string) {
     if (pausedRef.current || stoppedRef.current || current === savedRef.current) return true;
     setStatus('saving');
     try {
-      await update({ id: workflowId, graph: current });
+      const saved = await update({ id: workflowId, graph: current });
+      setServer({ graph: current, issues: editedIssues(saved) });
     } catch (caught) {
       setError(caught instanceof Error ? caught : new Error(String(caught)));
       setStatus('error');
@@ -129,10 +134,11 @@ export function useAutosave(form: WorkflowForm, workflowId: string) {
     }
   }, [hasUnsent, schedule, setStatus]);
 
-  /** The server now has `graph` (e.g. the live graph after a discard); the form shows it too. */
+  /** The server now has `graph` (e.g. the live graph after a discard), with `issues`; the form shows it too. */
   const reset = useCallback(
-    (next: WorkflowGraph) => {
+    (next: WorkflowGraph, issues: WorkflowIssue[] = []) => {
       savedRef.current = next;
+      setServer({ graph: next, issues });
       form.reset({ graph: next });
       pausedRef.current = false;
       setError(null);
@@ -148,5 +154,5 @@ export function useAutosave(form: WorkflowForm, workflowId: string) {
     setStatus('saved');
   }, [setStatus]);
 
-  return { status, statusRef, error, flush, settle, resume, reset, stop };
+  return { status, statusRef, error, server, flush, settle, resume, reset, stop };
 }

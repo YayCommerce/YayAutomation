@@ -3,7 +3,7 @@ import { crossSellCoupon, crossSellFirstTime, crossSellRepeat, upsellAfter30Days
 import { firstOrderDiscount, firstOrderFreeShipping } from './first-order-thank-you';
 import highValueOrderAlert from './high-value-order-alert';
 
-export { categoryLabels, isComingSoon } from './core/meta';
+export { categoryLabels, isComingSoon, sendsCustomerEmail, workflowRank } from './core/meta';
 export { pluginsOf } from './core/plugins';
 
 /**
@@ -11,7 +11,7 @@ export { pluginsOf } from './core/plugins';
  * `index.ts` that default-exports `defineTemplate({...})`, and list it here. Versions of one workflow
  * share a folder, which exports each one by name.
  */
-export const { templates, findTemplate } = createTemplateRegistry([
+export const { templates, findTemplate, versionsOf } = createTemplateRegistry([
   highValueOrderAlert,
   firstOrderDiscount,
   firstOrderFreeShipping,

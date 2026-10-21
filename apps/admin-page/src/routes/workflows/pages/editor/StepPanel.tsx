@@ -1,10 +1,11 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { useStore } from '@tanstack/react-form';
-import type { StepId, WorkflowGraph } from '@yaymatik/types';
-import { ArrowLeft, ArrowRightLeft, X } from 'lucide-react';
+import type { StepId, WorkflowGraph, WorkflowIssue } from '@yaymatik/types';
+import { ArrowLeft, ArrowRightLeft, CircleAlert, X } from 'lucide-react';
 import { m } from 'motion/react';
 import { __, sprintf } from '@wordpress/i18n';
 
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,13 +18,15 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { previewEmail, sendTestEmail } from '../../api/workflow.api';
 import { updateNodeConfig } from '../../model/graph';
 import { availableData, sameItems } from '../../model/validation';
 import { kindMeta } from '../../shared/canvas/NodeCardView';
 import { StepEyebrow } from '../../shared/ui/StepTile';
 import { steps as stepDefs, stepOf } from '../../steps';
 import { alwaysAvailable } from '../../steps/core/data';
-import { FeedbackContext, type Feedback } from '../../steps/core/fields/feedback';
+import { EmailToolsContext, type EmailTools } from '../../steps/core/fields/emailTools';
+import { FeedbackContext, FieldIssueContext, type Feedback } from '../../steps/core/fields/feedback';
 import { VariableScopeContext, type VariableScope } from '../../steps/core/fields/variableScope';
 import { plainSummary } from '../../steps/core/marks';
 import { StepTile } from '../../steps/core/StepTile';
@@ -67,18 +70,27 @@ export const panelWidthFor = (canvasWidth: number) => (canvasWidth >= 1200 ? 480
  * Swapping a step whose settings were edited asks first: its settings reset to the new step's defaults.
  */
 export function StepPanel({
+  workflowId,
   nodeId,
   picking,
   feedback,
+  issue,
   closable,
   onPick,
   onSwap,
   onClose,
 }: {
+  /** The saved workflow, for an email step's Preview and Send test. */
+  workflowId: string;
   nodeId: string;
   picking: boolean;
   /** How the form shows its errors (see `Feedback`). */
   feedback: Feedback;
+  /**
+   * This step's issue (the editor's or the server's). Shown, unless the form already shows it, under
+   * its field when the form draws that field, else at the top of the panel body.
+   */
+  issue?: WorkflowIssue;
   /** False for a new workflow's first trigger picker: a trigger must be chosen first. */
   closable: boolean;
   /** A step was chosen in the picker (the same one keeps its settings). */
@@ -136,6 +148,19 @@ export function StepPanel({
     };
     return { variables, trigger: trigger ?? null, steps, comingSoonStep };
   }, [steps, triggerStep, variables, comingSoonStep]);
+  // Posted when clicked: the step's config and the graph as they are now, saved or not.
+  const config = node?.data.config;
+  const emailTools = useMemo<EmailTools>(() => {
+    const input = () => {
+      const graph = form.state.values.graph;
+      return { nodeId, config: graph.nodes.find((n) => n.id === nodeId)?.data.config ?? {}, graph };
+    };
+    return {
+      config: config ?? {},
+      preview: () => previewEmail(workflowId, input()),
+      sendTest: () => sendTestEmail(workflowId, input()),
+    };
+  }, [config, form, nodeId, workflowId]);
   if (!node) return null;
 
   const stepDef = stepOf(node.data);
@@ -206,52 +231,70 @@ export function StepPanel({
 
   const swapLabel = node.kind === 'trigger' ? __('Change trigger', 'yaymatik') : __('Change action', 'yaymatik');
 
+  // Shown while the form shows its errors. The form shows its own first error itself (under a field,
+  // or in a condition's rule); anything else goes under its field, or at the top.
+  const shown =
+    feedback !== 'none' && issue && issue.message !== stepDef.firstError(node.data.config) ? issue : undefined;
+  const underField = shown?.field && stepDef.drawsField(shown.field) ? shown : undefined;
+  const notice = underField ? undefined : shown;
+
   return (
-    <>
-      {/* The card's tile and eyebrow, so the panel reads as the step it belongs to. */}
-      <div className="flex items-start gap-3 border-b p-4">
-        <StepTile kind={node.kind} icon={stepDef.icon} size="lg" />
-        <div className="min-w-0 flex-1">
-          <StepEyebrow
-            kind={node.kind}
-            kindLabel={kindMeta[node.kind].label}
-            stepLabel={stepDef.label}
-            plugin={stepDef.plugin}
-          />
-          <h2 className="text-[15px]/5 font-semibold">{stepDef.label}</h2>
-          {/* The condition's sentence says what it does. */}
-          {node.kind !== 'condition' && <p className="text-muted-foreground mt-0.5 text-xs">{stepDef.description}</p>}
+    <EmailToolsContext.Provider value={emailTools}>
+      {/* The card's tile and eyebrow, so the panel reads as the step it belongs to; then its actions. */}
+      <div className="flex flex-col gap-3 border-b p-4">
+        <div className="flex items-start gap-3">
+          <StepTile kind={node.kind} icon={stepDef.icon} size="lg" />
+          <div className="min-w-0 flex-1">
+            <StepEyebrow
+              kind={node.kind}
+              kindLabel={kindMeta[node.kind].label}
+              stepLabel={stepDef.label}
+              plugin={stepDef.plugin}
+            />
+            <h2 className="text-[15px]/5 font-semibold">{stepDef.label}</h2>
+            {/* The condition's sentence says what it does. */}
+            {node.kind !== 'condition' && <p className="text-muted-foreground mt-0.5 text-xs">{stepDef.description}</p>}
+          </div>
+          {node.kind !== 'condition' && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon-sm" aria-label={swapLabel} onClick={() => onSwap(true)}>
+                  <ArrowRightLeft />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{swapLabel}</TooltipContent>
+            </Tooltip>
+          )}
+          {close}
         </div>
-        {node.kind !== 'condition' && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon-sm" aria-label={swapLabel} onClick={() => onSwap(true)}>
-                <ArrowRightLeft />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>{swapLabel}</TooltipContent>
-          </Tooltip>
-        )}
-        {close}
+        {stepDef.Actions && <stepDef.Actions />}
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto p-4">
+        {notice && (
+          <Alert destructive className="border-destructive/30 mb-4 border">
+            <CircleAlert aria-hidden />
+            <AlertDescription>{notice.message}</AlertDescription>
+          </Alert>
+        )}
         {stepDef.Form ? (
           <FeedbackContext.Provider value={feedback}>
-            <VariableScopeContext.Provider value={scope}>
-              {/* Keyed by step and step, so switching either starts a fresh form. */}
-              <stepDef.Form
-                key={`${node.id}:${stepDef.id}`}
-                config={node.data.config}
-                onChange={(config) => update((graph) => updateNodeConfig(graph, node.id, config))}
-              />
-            </VariableScopeContext.Provider>
+            <FieldIssueContext.Provider value={underField}>
+              <VariableScopeContext.Provider value={scope}>
+                {/* Keyed by step and step, so switching either starts a fresh form. */}
+                <stepDef.Form
+                  key={`${node.id}:${stepDef.id}`}
+                  config={node.data.config}
+                  onChange={(config) => update((graph) => updateNodeConfig(graph, node.id, config))}
+                />
+              </VariableScopeContext.Provider>
+            </FieldIssueContext.Provider>
           </FeedbackContext.Provider>
         ) : (
           <p className="text-muted-foreground text-sm">{__('No settings needed.', 'yaymatik')}</p>
         )}
       </div>
-    </>
+    </EmailToolsContext.Provider>
   );
 }
 

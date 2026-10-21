@@ -51,6 +51,7 @@ export function defineStep<TConfig extends Config>({
   label = '',
   description = '',
   Form,
+  Footer,
   ...spec
 }: StepSpec<TConfig>): Step {
   const meta = automationMeta.steps[spec.id];
@@ -72,25 +73,49 @@ export function defineStep<TConfig extends Config>({
 
   // Fields that accept merge tags; a pending step has no catalog yet, so all its text.
   const variableFields = catalog?.fields.filter((field) => field.variables).map((field) => field.key);
-  const tagPaths = (config: Config) => [
-    ...new Set(
-      Object.entries(config).flatMap(([key, value]) =>
-        typeof value === 'string' && (!variableFields || variableFields.includes(key)) ? templatePaths(value) : [],
-      ),
-    ),
-  ];
+  const tags = (config: Config) =>
+    Object.entries(config).flatMap(([field, value]) =>
+      typeof value === 'string' && (!variableFields || variableFields.includes(field))
+        ? [...new Set(templatePaths(value))].map((path) => ({ field, path }))
+        : [],
+    );
+
+  const firstIssue = (config: Config) => {
+    const result = v.safeParse(schema, normalize(config));
+    if (result.success) return null;
+    const [{ message, path }] = result.issues;
+    const field = path?.[0]?.key;
+    return typeof field === 'string' ? { message, field } : { message };
+  };
 
   // Its own form, else one drawn from the fields. Nothing when there's nothing to set.
-  const hasForm = !!Form || fields.length > 0;
+  const hasForm = !!Form || fields.length > 0 || !!Footer;
 
   function StepConfigForm({ config, onChange }: StepFormProps<Config>) {
     // Normalized once, so the form's default values keep a stable identity.
     const [initial] = useState(() => normalize(config));
-    if (Form) return <Form config={initial} onChange={onChange as (config: TConfig) => void} />;
+    // The latest values, for the footer.
+    const [current, setCurrent] = useState(initial);
+    const change = (next: Config) => {
+      setCurrent(next as TConfig);
+      onChange(next);
+    };
     // A registered panel is the same component on every render, so React keeps its state.
     const panel = stepPanel(spec.id);
-    if (panel) return createElement(panel, { config: initial, onChange });
-    return <StepForm fields={fields} schema={schema as v.GenericSchema<Config>} config={initial} onChange={onChange} />;
+    const form = Form ? (
+      <Form config={initial} onChange={change as (config: TConfig) => void} />
+    ) : panel ? (
+      createElement(panel, { config: initial, onChange: change })
+    ) : (
+      <StepForm fields={fields} schema={schema as v.GenericSchema<Config>} config={initial} onChange={change} />
+    );
+    if (!Footer) return form;
+    return (
+      <div className="flex flex-col gap-2">
+        {form}
+        <Footer config={current} />
+      </div>
+    );
   }
 
   return {
@@ -106,11 +131,14 @@ export function defineStep<TConfig extends Config>({
     comingSoon: isPendingStep(spec.id),
     defaults,
     normalize,
-    firstError: (config) => {
-      const result = v.safeParse(schema, normalize(config));
-      return result.success ? null : result.issues[0].message;
-    },
-    tagPaths: (config) => tagPaths(normalize(config)),
+    firstIssue,
+    firstError: (config) => firstIssue(config)?.message ?? null,
+    tags: (config) => tags(normalize(config)),
+    // An issue about one of these shows under it; a custom form draws its own fields.
+    drawsField: (key) =>
+      !Form &&
+      !stepPanel(spec.id) &&
+      fields.some((field) => field.key === key && !['notice', 'rules', 'number_unit'].includes(field.type)),
     uses: (config) => {
       const items = uses ? uses(normalize(config)) : requires;
       return [...new Set(items)].filter((item) => !alwaysAvailable.includes(item));

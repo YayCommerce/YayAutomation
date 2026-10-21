@@ -148,7 +148,7 @@ export const sameItems = (a: string[], b: string[]) => a.length === b.length && 
 
 /**
  * The one issue of a step's own settings. Mirrors PHP `Validator::step_error()`: its settings and
- * merge-tag syntax (`firstError`), then its tags' paths (a step output not above it, data the trigger
+ * merge-tag syntax (`firstIssue`), then its tags' paths (a step output not above it, data the trigger
  * doesn't supply), then the data it needs.
  */
 function stepIssue(
@@ -162,17 +162,17 @@ function stepIssue(
     return node.kind === 'action' ? { code: 'no_block', message: messages.noBlock } : null;
   }
 
-  const error = stepDef.firstError(node.data.config);
-  if (error) return { code: 'invalid_config', message: error };
+  const error = stepDef.firstIssue(node.data.config);
+  if (error) return { code: 'invalid_config', ...error };
 
-  let missing: string | null = null;
-  for (const path of stepDef.tagPaths(node.data.config)) {
-    const reach = reachOf(path, available, graph, above);
-    if (reach === null)
-      return { code: 'invalid_config', message: sprintf(messages.unknownVariable, variableTag(path)) };
-    if (reach !== true) missing ??= reach;
+  // Each names the field that holds the tag, like PHP.
+  let missing: Omit<WorkflowIssue, 'nodeId'> | null = null;
+  for (const { field, path } of stepDef.tags(node.data.config)) {
+    const problem = reachProblem(path, available, graph, above);
+    if (problem?.code === 'invalid_config') return { ...problem, field };
+    if (problem) missing ??= { ...problem, field };
   }
-  if (missing) return { code: 'missing_data', message: sprintf(messages.missingData, missing) };
+  if (missing) return missing;
 
   const missingItem = available && stepDef.uses(node.data.config).find((item) => !available.includes(item));
   if (missingItem) {
@@ -185,19 +185,59 @@ function stepIssue(
 }
 
 /**
- * Whether a step can read a tag's path: true, null when no step above or elsewhere defines it, or
- * the label of the data (an item, or the step whose output it is) it can't reach. Data paths were
- * checked by the step's schema. Mirrors PHP `Validator::reach()`.
+ * Why a step can't read a tag's path, or null when it can: `invalid_config` when nothing defines it
+ * (or the step it reads isn't in the workflow), `missing_data` when the data or the step it reads
+ * isn't above it. Data paths were checked by the step's schema. Mirrors PHP `Validator::reach()`.
  */
-function reachOf(path: string, available: string[] | null, graph: WorkflowGraph, above: Set<string>) {
+function reachProblem(
+  path: string,
+  available: string[] | null,
+  graph: WorkflowGraph,
+  above: Set<string>,
+): Omit<WorkflowIssue, 'nodeId'> | null {
+  const tag = variableTag(path);
   const segments = pathSegments(path);
   if (isStepPath(segments)) {
     const node = graph.nodes.find((n) => n.id === segments[1]);
-    const stepDef = node && stepOf(node.data);
-    if (!node || !stepDef?.outputs.some((output) => output.key === segments[2])) return null;
-    return above.has(node.id) || stepDef.label;
+    if (!node) return { code: 'invalid_config', message: sprintf(messages.stepGone, tag) };
+    const stepDef = stepOf(node.data);
+    if (!stepDef?.outputs.some((output) => output.key === segments[2])) {
+      return { code: 'invalid_config', message: sprintf(messages.unknownVariable, tag) };
+    }
+    return above.has(node.id)
+      ? null
+      : { code: 'missing_data', message: sprintf(messages.stepNotAbove, tag, stepDef.label) };
   }
-  return available === null || available.includes(segments[0]) || itemLabel(segments[0]);
+  if (available === null || available.includes(segments[0])) return null;
+  return { code: 'missing_data', message: sprintf(messages.missingData, itemLabel(segments[0])) };
+}
+
+/** Issues the server found in a graph the editor sent (or opened with), and that graph. */
+export interface ServerCheck {
+  graph: WorkflowGraph;
+  issues: WorkflowIssue[];
+}
+
+/** The server's issues for the graph the editor edits: the draft's while there is one, else the live graph's. */
+export const editedIssues = (workflow: Pick<Workflow, 'draft' | 'issues'>) =>
+  workflow.draft !== null ? (workflow.issues.draft ?? []) : workflow.issues.live;
+
+/**
+ * The editor's issues plus the step settings issues only PHP finds (`Step::validate()` rules such as
+ * a percentage over 100), from the server's last check. A server issue counts while its step's data
+ * is the same object as in the graph that was checked and the editor has no issue of its own for it.
+ */
+export function withServerIssues(issues: WorkflowIssue[], server: ServerCheck, graph: WorkflowGraph): WorkflowIssue[] {
+  const checked = new Map(server.graph.nodes.map((node) => [node.id, node.data]));
+  const own = new Set(issues.map((issue) => issue.nodeId));
+  const extra = server.issues.filter(
+    ({ code, nodeId }) =>
+      code === 'invalid_config' &&
+      !!nodeId &&
+      !own.has(nodeId) &&
+      graph.nodes.some((node) => node.id === nodeId && node.data === checked.get(nodeId)),
+  );
+  return extra.length ? [...issues, ...extra] : issues;
 }
 
 /** For `useStore`: a fresh array each run, so compare contents to avoid re-rendering on every edit. */
