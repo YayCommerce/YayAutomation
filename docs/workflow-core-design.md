@@ -19,7 +19,7 @@ Paths are after F0 (move and rename); the behavior described is v0.1's. Files ma
 | Data | Fields typed number / string / enum / date. 3 items: order, customer, site. Merge tags have 2 parts (`{{ order.total }}`). No booleans, lists, relations or step outputs | `includes/Workflow/Data/` |
 | Actions | `run()` returns `true` or `WP_Error`, no output | `Workflow/Steps/Core/Action.php` |
 | Loop guard | In-memory chain of workflow ids per subject, passed in job args | `Runner::collect()` *(removed in F1)* |
-| Extending | Hard-coded lists in `StepRegistry`, `DataRegistry`, `Plugins`. No hooks | `Workflow/Steps/Core/StepRegistry.php` |
+| Extending | Hard-coded lists in `StepRegistry`, `DataRegistry`, `Plugins`. No hooks *(F1: modules, filter `yaymatik_modules`)* | `Workflow/Steps/Core/StepRegistry.php` |
 | Validation | Written twice: PHP `validate()` must match each step's TS `schema.ts` by hand *(F1: from `fields()`)* | `Workflow/Steps/Core/Step.php` |
 
 **Keep:** batching at shutdown, `claim()` for once-per-subject triggers, the sanitize / validate split, versions, `uses()` / `provides()` checks, "never throw into the host request", Action Scheduler.
@@ -47,7 +47,7 @@ Paths are after F0 (move and rename); the behavior described is v0.1's. Files ma
 | `Data/` | Types, entity types, `RefResolver`, `Scope`, `Template` |
 | `Runtime/` | `Dispatcher`, `Scheduler`, `Executor`, `Worker`, `Cancellation`, `Retention` |
 | `Steps/` | `Triggers/`, `Actions/`, `Conditions/`, `Control/` (Wait, For each, Switch, Call workflow, Set variable, Stop) |
-| `Extend/` | Registry, modules, connectors |
+| `Modules/`, `ModuleRegister.php` | Modules (one per plugin) and the register; connectors later |
 | `AI/` | Provider interface and AI features (v2.0) |
 
 ## §2 Storage · C3, C8, C10

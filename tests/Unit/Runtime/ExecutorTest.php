@@ -274,9 +274,6 @@ final class ExecutorTest extends TestCase {
             public function plugin(): string {
                 return '';
             }
-            public function module(): string {
-                return '';
-            }
             public function icon(): string {
                 return '';
             }
@@ -648,9 +645,6 @@ final class ExecutorTest extends TestCase {
                 return '';
             }
             public function plugin(): string {
-                return '';
-            }
-            public function module(): string {
                 return '';
             }
             public function icon(): string {

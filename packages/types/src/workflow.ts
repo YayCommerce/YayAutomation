@@ -8,8 +8,8 @@ export type WorkflowNodeKind = 'trigger' | 'condition' | 'action';
 export type WorkflowBranch = 'then' | 'otherwise';
 
 /**
- * Step type. Each id has a TS folder (admin app `steps/<kind>/<id-in-kebab-case>/`) and a PHP class
- * (`includes/Workflow/Steps/<Kind>/`).
+ * Step type. Core's have a TS folder (admin app `steps/<kind>/<id-in-kebab-case>/`) and a PHP class
+ * (`includes/Workflow/Steps/<Kind>/`); another plugin's step has only its PHP class.
  */
 export type StepId =
   | 'order_created'
@@ -21,7 +21,8 @@ export type StepId =
   | 'wait'
   | 'change_order_status'
   | 'add_order_note'
-  | 'update_order_meta';
+  | 'update_order_meta'
+  | (string & {});
 
 /** `type` (not `interface`) so it satisfies ReactFlow's `Record<string, unknown>` data constraint. */
 export type WorkflowNodeData = {
@@ -98,8 +99,8 @@ export interface WorkflowVersionsPage {
   hasMore: boolean;
 }
 
-/** Plugin that triggers and actions are grouped under (PHP `Workflow\Extend\Plugins`). */
-export type WorkflowPlugin = 'woocommerce' | 'yaymatik';
+/** Plugin that triggers and actions are grouped under: a module id in PHP `Workflow\ModuleRegister`. */
+export type WorkflowPlugin = 'woocommerce' | 'yaymatik' | (string & {});
 
 /** Library chip a template is filed under. Labels live in the admin app. */
 export type TemplateCategory = 'recover_carts' | 'post_purchase' | 'customer_lifecycle' | 'alerts';

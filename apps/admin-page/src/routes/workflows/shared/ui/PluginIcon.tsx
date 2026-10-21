@@ -4,13 +4,14 @@ import type { PluginMeta } from '@/types/localize';
 import { cn } from '@/lib/utils';
 import { automationMeta } from '../../steps/core/pending';
 
-/** Plugin facts from PHP (`Workflow\Extend\Plugins`), by id. */
+/** Plugin facts from PHP (`Workflow\ModuleRegister`), by id. */
 export const plugins = Object.fromEntries(automationMeta.plugins.map((plugin) => [plugin.id, plugin])) as Record<
   WorkflowPlugin,
   PluginMeta
 >;
 
-const tones: Record<WorkflowPlugin, string> = {
+/** Core's own tints; another plugin's logo sits on a neutral tile. */
+const tones: Partial<Record<WorkflowPlugin, string>> = {
   woocommerce: 'bg-primary/10 text-primary',
   // Same look as the app's own icon in the header.
   yaymatik: 'bg-primary text-primary-foreground',
@@ -29,7 +30,9 @@ export function PluginIcon({
   noTitle?: boolean;
   className?: string;
 }) {
-  const { label, logo } = plugins[plugin];
+  const meta = plugins[plugin] as PluginMeta | undefined;
+  if (!meta) return null;
+  const { label, logo } = meta;
 
   return (
     <span
@@ -37,7 +40,7 @@ export function PluginIcon({
       className={cn(
         'flex shrink-0 items-center justify-center',
         size === 'sm' ? 'size-5.5 rounded-md' : 'size-7 rounded-md',
-        tones[plugin],
+        tones[plugin] ?? 'bg-muted text-foreground',
         className,
       )}
     >

@@ -6,8 +6,7 @@ use YayMatik\Workflow\Data\DataRegistry;
 use YayMatik\Workflow\Data\Operators;
 use YayMatik\Workflow\Data\Scope;
 use YayMatik\Workflow\Definition\Messages;
-use YayMatik\Workflow\Extend\Modules;
-use YayMatik\Workflow\Extend\Plugins;
+use YayMatik\Workflow\Modules\MatikModule;
 use YayMatik\Workflow\Steps\Core\Condition;
 use YayMatik\Workflow\Steps\Core\Field;
 
@@ -41,11 +40,7 @@ class Criteria extends Condition {
     }
 
     public function plugin(): string {
-        return Plugins::YAYMATIK;
-    }
-
-    public function module(): string {
-        return Modules::CORE;
+        return MatikModule::ID;
     }
 
     public function icon(): string {

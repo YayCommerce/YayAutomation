@@ -43,7 +43,6 @@
                     "order",
                     "customer"
                 ],
-                "module": "core",
                 "label": "Order created",
                 "description": "Starts when a new order is created.",
                 "icon": "shopping-bag",
@@ -59,7 +58,6 @@
                     "order",
                     "customer"
                 ],
-                "module": "core",
                 "label": "Order status changed",
                 "description": "Starts when an order moves to another status. Choose which status changes count.",
                 "icon": "shopping-bag",
@@ -160,64 +158,11 @@
                 ],
                 "outputs": []
             },
-            "condition": {
-                "kind": "condition",
-                "plugin": "yaymatik",
-                "module": "core",
-                "label": "Condition",
-                "description": "Take the Yes path when the rules match, otherwise the No path.",
-                "icon": "git-branch",
-                "summary": "%rules%",
-                "onError": "stop",
-                "fields": [
-                    {
-                        "key": "match",
-                        "type": "select",
-                        "label": "Match",
-                        "options": [
-                            {
-                                "value": "all",
-                                "label": "All"
-                            },
-                            {
-                                "value": "any",
-                                "label": "Any"
-                            }
-                        ],
-                        "default": "all"
-                    },
-                    {
-                        "key": "rules",
-                        "type": "rules",
-                        "label": "Rules",
-                        "required": true,
-                        "default": []
-                    }
-                ],
-                "outputs": [
-                    {
-                        "key": "result",
-                        "label": "Result",
-                        "type": "enum",
-                        "options": [
-                            {
-                                "value": "yes",
-                                "label": "Yes"
-                            },
-                            {
-                                "value": "no",
-                                "label": "No"
-                            }
-                        ]
-                    }
-                ]
-            },
             "send_internal_email": {
                 "kind": "action",
                 "plugin": "woocommerce",
                 "category": "email",
                 "requires": [],
-                "module": "core",
                 "label": "Send internal email",
                 "description": "Email your store team, from your WooCommerce store email address.",
                 "icon": "mail",
@@ -272,7 +217,6 @@
                 "requires": [
                     "order"
                 ],
-                "module": "core",
                 "label": "Change order status",
                 "description": "Move the order to another status.",
                 "icon": "tag",
@@ -411,7 +355,6 @@
                 "requires": [
                     "order"
                 ],
-                "module": "core",
                 "label": "Add order note",
                 "description": "Add a private note to the order, or a note the customer gets by email.",
                 "icon": "message-square",
@@ -469,7 +412,6 @@
                 "requires": [
                     "order"
                 ],
-                "module": "core",
                 "label": "Update order custom field",
                 "description": "Set a custom field (meta) on the order.",
                 "icon": "list",
@@ -498,6 +440,57 @@
                         "key": "key",
                         "label": "Field name",
                         "type": "string"
+                    }
+                ]
+            },
+            "condition": {
+                "kind": "condition",
+                "plugin": "yaymatik",
+                "label": "Condition",
+                "description": "Take the Yes path when the rules match, otherwise the No path.",
+                "icon": "git-branch",
+                "summary": "%rules%",
+                "onError": "stop",
+                "fields": [
+                    {
+                        "key": "match",
+                        "type": "select",
+                        "label": "Match",
+                        "options": [
+                            {
+                                "value": "all",
+                                "label": "All"
+                            },
+                            {
+                                "value": "any",
+                                "label": "Any"
+                            }
+                        ],
+                        "default": "all"
+                    },
+                    {
+                        "key": "rules",
+                        "type": "rules",
+                        "label": "Rules",
+                        "required": true,
+                        "default": []
+                    }
+                ],
+                "outputs": [
+                    {
+                        "key": "result",
+                        "label": "Result",
+                        "type": "enum",
+                        "options": [
+                            {
+                                "value": "yes",
+                                "label": "Yes"
+                            },
+                            {
+                                "value": "no",
+                                "label": "No"
+                            }
+                        ]
                     }
                 ]
             }
@@ -578,14 +571,6 @@
                         "valueType": "enum",
                         "conditional": true,
                         "options": [
-                            {
-                                "value": "bacs",
-                                "label": "Direct bank transfer"
-                            },
-                            {
-                                "value": "cheque",
-                                "label": "Check payments"
-                            },
                             {
                                 "value": "cod",
                                 "label": "Cash on delivery"

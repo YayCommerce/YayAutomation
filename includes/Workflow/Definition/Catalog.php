@@ -4,7 +4,7 @@ namespace YayMatik\Workflow\Definition;
 use YayMatik\Workflow\Data\DataRegistry;
 use YayMatik\Workflow\Data\Operators;
 use YayMatik\Workflow\Data\Type;
-use YayMatik\Workflow\Extend\Plugins;
+use YayMatik\Workflow\ModuleRegister;
 use YayMatik\Workflow\Steps\Core\Field;
 use YayMatik\Workflow\Steps\Core\Step;
 use YayMatik\Workflow\Steps\Core\StepRegistry;
@@ -23,7 +23,7 @@ final class Catalog {
 
     public static function to_client(): array {
         return [
-            'plugins'        => Plugins::to_client(),
+            'plugins'        => ModuleRegister::to_client(),
             'steps'          => self::steps( StepRegistry::all() ),
             'data'           => DataRegistry::to_client(),
             'operators'      => Operators::BY_TYPE,
@@ -55,7 +55,6 @@ final class Catalog {
     public static function step( Step $step ): array {
         return [ 'kind' => $step->kind() ] + $step->client_meta() + [
             'plugin'      => $step->plugin(),
-            'module'      => $step->module(),
             'label'       => $step->label(),
             'description' => $step->description(),
             'icon'        => $step->icon(),

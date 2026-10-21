@@ -2,12 +2,14 @@
 namespace YayMatik\Workflow\Data;
 
 use YayMatik\Workflow\Definition\Catalog;
+use YayMatik\Workflow\ModuleRegister;
 
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Every data item, and fields by their full key (`order.total`). The admin app gets the same
- * list through `to_client()`, so field labels, types and options live only here.
+ * Every data item, and fields by their full key (`order.total`). The items come from the modules
+ * (`ModuleRegister`). The admin app gets the same list through `to_client()`, so field labels,
+ * types and options live only here.
  */
 final class DataRegistry {
 
@@ -23,10 +25,7 @@ final class DataRegistry {
     /** @return DataItem[] */
     public static function items(): array {
         if ( null === self::$items ) {
-            self::$items = [];
-            foreach ( [ new OrderData(), new CustomerData(), new SiteData() ] as $item ) {
-                self::$items[ $item->id() ] = $item;
-            }
+            self::$items = ModuleRegister::items();
         }
         return self::$items;
     }

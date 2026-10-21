@@ -4,8 +4,7 @@ namespace YayMatik\Workflow\Steps\Triggers;
 use YayMatik\Workflow\Data\CustomerData;
 use YayMatik\Workflow\Data\OrderData;
 use YayMatik\Workflow\Data\Ref;
-use YayMatik\Workflow\Extend\Modules;
-use YayMatik\Workflow\Extend\Plugins;
+use YayMatik\Workflow\Modules\WoocommerceModule;
 use YayMatik\Workflow\Steps\Core\Trigger;
 
 defined( 'ABSPATH' ) || exit;
@@ -17,11 +16,7 @@ abstract class OrderTrigger extends Trigger {
     protected const DRAFT_STATUSES = [ 'auto-draft', 'new', 'checkout-draft' ];
 
     public function plugin(): string {
-        return Plugins::WOOCOMMERCE;
-    }
-
-    public function module(): string {
-        return Modules::CORE;
+        return WoocommerceModule::ID;
     }
 
     public function provides(): array {

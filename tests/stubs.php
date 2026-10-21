@@ -12,6 +12,12 @@ if ( ! function_exists( '__' ) ) {
     }
 }
 
+if ( ! function_exists( 'apply_filters' ) ) {
+    function apply_filters( $hook_name, $value ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundBeforeLastUsed -- same signature as WordPress.
+        return $value;
+    }
+}
+
 if ( ! function_exists( 'esc_html' ) ) {
     function esc_html( $text ) {
         return htmlspecialchars( (string) $text, ENT_QUOTES, 'UTF-8' );

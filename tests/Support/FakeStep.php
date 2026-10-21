@@ -52,10 +52,6 @@ final class FakeStep extends Action {
         return 'yaymatik';
     }
 
-    public function module(): string {
-        return 'core';
-    }
-
     public function icon(): string {
         return 'mail';
     }

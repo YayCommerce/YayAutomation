@@ -26,10 +26,6 @@ final class FakeCondition extends Condition {
         return 'yaymatik';
     }
 
-    public function module(): string {
-        return 'core';
-    }
-
     public function icon(): string {
         return 'split';
     }

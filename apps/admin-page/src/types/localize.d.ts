@@ -1,6 +1,6 @@
 import type { StepId, WorkflowNodeKind, WorkflowPlugin } from '@yaymatik/types';
 
-/** PHP `Workflow\Extend\Plugins::to_client()`. */
+/** PHP `Workflow\ModuleRegister::to_client()`. */
 export interface PluginMeta {
   id: WorkflowPlugin;
   label: string;
@@ -70,8 +70,6 @@ export interface StepMeta {
 /** PHP `Definition\Catalog::step()`: a step PHP has built, with its full contract. */
 export interface CatalogStepMeta extends StepMeta {
   plugin: WorkflowPlugin;
-  /** `Extend\Modules` id. */
-  module: string;
   label: string;
   description: string;
   /** A name from PHP `StepIcons::NAMES` (lucide). */

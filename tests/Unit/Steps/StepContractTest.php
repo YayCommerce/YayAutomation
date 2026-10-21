@@ -3,8 +3,8 @@ namespace YayMatik\Tests\Unit\Steps;
 
 use PHPUnit\Framework\TestCase;
 use YayMatik\Workflow\Data\Type;
-use YayMatik\Workflow\Extend\Modules;
-use YayMatik\Workflow\Extend\Plugins;
+use YayMatik\Workflow\Modules\MatikModule;
+use YayMatik\Workflow\Modules\WoocommerceModule;
 use YayMatik\Workflow\Steps\Actions\AddOrderNote;
 use YayMatik\Workflow\Steps\Actions\ChangeOrderStatus;
 use YayMatik\Workflow\Steps\Actions\SendInternalEmail;
@@ -42,8 +42,7 @@ final class StepContractTest extends TestCase {
     public function test_declares_its_identity( Step $step ): void {
         $this->assertNotSame( '', $step->label() );
         $this->assertNotSame( '', $step->description() );
-        $this->assertContains( $step->plugin(), [ Plugins::WOOCOMMERCE, Plugins::YAYMATIK ] );
-        $this->assertSame( Modules::CORE, $step->module() );
+        $this->assertContains( $step->plugin(), [ WoocommerceModule::ID, MatikModule::ID ] );
         $this->assertContains( $step->on_error(), [ Step::ON_ERROR_STOP, Step::ON_ERROR_CONTINUE ] );
     }
 
@@ -115,7 +114,7 @@ final class StepContractTest extends TestCase {
 
     public function test_condition_is_core_and_email_from_is_a_notice(): void {
         $steps = self::steps();
-        $this->assertSame( Plugins::YAYMATIK, $steps['condition']->plugin() );
+        $this->assertSame( MatikModule::ID, $steps['condition']->plugin() );
 
         $from = $steps['send_internal_email']->fields()[0];
         $this->assertSame( 'from', $from->key() );

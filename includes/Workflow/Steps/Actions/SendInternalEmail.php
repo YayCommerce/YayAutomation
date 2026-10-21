@@ -3,8 +3,7 @@ namespace YayMatik\Workflow\Steps\Actions;
 
 use YayMatik\Workflow\Data\Scope;
 use YayMatik\Workflow\Data\Type;
-use YayMatik\Workflow\Extend\Modules;
-use YayMatik\Workflow\Extend\Plugins;
+use YayMatik\Workflow\Modules\WoocommerceModule;
 use YayMatik\Workflow\Steps\Core\Action;
 use YayMatik\Workflow\Steps\Core\Field;
 use YayMatik\Workflow\Steps\Core\StepResult;
@@ -34,11 +33,7 @@ class SendInternalEmail extends Action {
     }
 
     public function plugin(): string {
-        return Plugins::WOOCOMMERCE;
-    }
-
-    public function module(): string {
-        return Modules::CORE;
+        return WoocommerceModule::ID;
     }
 
     public function icon(): string {
