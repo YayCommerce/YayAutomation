@@ -12,7 +12,7 @@ export default defineTemplate({
     'yaymatik',
   ),
   category: 'alerts',
-  popularity: 0,
+  workflow: 'high_value_order_alert',
   createdAt: '2026-09-28',
   graph: {
     nodes: [

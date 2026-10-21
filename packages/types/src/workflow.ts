@@ -104,14 +104,27 @@ export type WorkflowPlugin = 'woocommerce' | 'yaymatik';
 /** Library chip a template is filed under. Labels live in the admin app. */
 export type TemplateCategory = 'recover_carts' | 'post_purchase' | 'customer_lifecycle' | 'alerts';
 
+/**
+ * The workflow a template is a version of (e.g. the abandoned cart versions). Versions show each
+ * other under "Other versions"; "Most popular" sorts by workflow.
+ */
+export type TemplateWorkflow =
+  | 'abandoned_cart'
+  | 'abandoned_checkout'
+  | 'first_order_thank_you'
+  | 'cross_sell_upsell'
+  | 'review_request'
+  | 'welcome'
+  | 'win_back'
+  | 'high_value_order_alert';
+
 /** Pre-built workflow shown in the template library. Use template creates an inactive draft from `graph`. */
 export interface WorkflowTemplate {
   id: string;
   name: string;
   description: string;
   category: TemplateCategory;
-  /** How often it was used. Sort key for "Most popular". */
-  popularity: number;
+  workflow: TemplateWorkflow;
   /** ISO date. Sort key for "Newest". */
   createdAt: string;
   graph: WorkflowGraph;

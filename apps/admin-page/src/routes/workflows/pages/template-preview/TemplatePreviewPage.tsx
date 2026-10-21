@@ -22,9 +22,11 @@ import { EditorLayout, EditorPlaceholder } from '../../shared/layout/EditorLayou
 import { LIBRARY_PATH, readLibraryNavState } from '../../shared/nav/library.nav';
 import { PluginIcon, plugins } from '../../shared/ui/PluginIcon';
 import { stepOf, SummaryText } from '../../steps';
+import { generateCouponStep, type GenerateCouponConfig } from '../../steps/actions/generate-coupon';
+import { FreeShippingWarning, needsShippingSetup } from '../../steps/actions/generate-coupon/FreeShippingWarning';
 import { comingSoonLabel } from '../../steps/core/pending';
 import { StepTile } from '../../steps/core/StepTile';
-import { categoryLabels, findTemplate, isComingSoon, pluginsOf } from '../../templates';
+import { categoryLabels, findTemplate, isComingSoon, pluginsOf, sendsCustomerEmail, versionsOf } from '../../templates';
 import { installFirst, useCreateDraft } from './useCreateDraft';
 
 /** Names of the plugins a template uses that aren't installed. */
@@ -105,7 +107,8 @@ export default function TemplatePreviewPage() {
         <div className="relative min-h-0 min-w-0 flex-1">
           <ReadOnlyCanvas key={template.id} graph={template.graph} maxZoom={2} />
         </div>
-        <TemplateSidePanel template={template} />
+        {/* Keyed: another version opens with the panel scrolled to the top. */}
+        <TemplateSidePanel key={template.id} template={template} navState={location.state} />
       </div>
     </EditorLayout>
   );
@@ -113,9 +116,21 @@ export default function TemplatePreviewPage() {
 
 const groupHeading = 'text-muted-foreground mb-2 text-[11px] font-semibold tracking-wider uppercase';
 
-/** Docked beside the canvas: what the template is, what it does step by step, its plugins, what's next. */
-function TemplateSidePanel({ template }: { template: WorkflowTemplate }) {
+/** Coupon steps whose free shipping no shipping method takes as is. */
+const shippingSetupCoupons = (template: WorkflowTemplate) =>
+  template.graph.nodes
+    .filter((node) => node.data.block === 'generate_coupon')
+    .map((node) => generateCouponStep.normalize(node.data.config) as GenerateCouponConfig)
+    .filter(needsShippingSetup);
+
+/**
+ * Docked beside the canvas: what the template is, what it does step by step, its plugins, its other
+ * versions, what to set up first, what's next.
+ */
+function TemplateSidePanel({ template, navState }: { template: WorkflowTemplate; navState: unknown }) {
   const incoming = new Map(template.graph.edges.map((edge) => [edge.target, edge.sourceHandle]));
+  const versions = versionsOf(template);
+  const setupCoupon = shippingSetupCoupons(template)[0];
 
   return (
     <aside className="bg-background flex w-75 shrink-0 flex-col gap-5 overflow-y-auto border-l p-4.5 text-[13.5px] max-md:max-h-[45%] max-md:w-full max-md:border-t max-md:border-l-0">
@@ -182,9 +197,40 @@ function TemplateSidePanel({ template }: { template: WorkflowTemplate }) {
         )}
       </section>
 
+      {versions.length > 0 && (
+        <section>
+          <h3 className={groupHeading}>{__('Other versions', 'yaymatik')}</h3>
+          <ul className="flex flex-col gap-1.5">
+            {versions.map((version) => (
+              <li key={version.id}>
+                {/* Replace, keeping the state: the breadcrumb still goes back to the library. */}
+                <Link
+                  to={`/workflows/templates/${version.id}`}
+                  replace
+                  state={navState}
+                  className="text-primary font-medium hover:underline"
+                >
+                  {version.name}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {/* Hidden when nothing is missing. */}
+      {setupCoupon && (
+        <section>
+          <h3 className={groupHeading}>{__('Before you start', 'yaymatik')}</h3>
+          <FreeShippingWarning config={setupCoupon} />
+        </section>
+      )}
+
       <p className="bg-primary/8 flex items-start gap-2 rounded-lg px-3 py-2.5 text-[13px]">
         <Info className="text-primary mt-0.5 size-4 shrink-0" aria-hidden />
-        {__('Using it creates a draft. Review it, then activate it.', 'yaymatik')}
+        {sendsCustomerEmail(template.graph)
+          ? __('Using it creates a draft. Review the emails, then activate it.', 'yaymatik')
+          : __('Using it creates a draft. Review it, then activate it.', 'yaymatik')}
       </p>
     </aside>
   );

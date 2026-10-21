@@ -15,7 +15,7 @@ import { ComingSoonChip } from '../../../shared/ui/ComingSoonChip';
 import { PluginIcon, plugins } from '../../../shared/ui/PluginIcon';
 import { stepOf } from '../../../steps';
 import { StepTile } from '../../../steps/core/StepTile';
-import { categoryLabels, isComingSoon, pluginsOf, templates } from '../../../templates';
+import { categoryLabels, isComingSoon, pluginsOf, templates, workflowRank } from '../../../templates';
 import { usesAnyOf } from './filter';
 import { countLabel, FilterChip, LibrarySidebar } from './LibraryFilters';
 import { SearchInput } from './SearchInput';
@@ -29,7 +29,8 @@ const sortOptions: { value: SortKey; label: string }[] = [
 ];
 
 const compare: Record<SortKey, (a: WorkflowTemplate, b: WorkflowTemplate) => number> = {
-  popular: (a, b) => b.popularity - a.popularity,
+  // Versions of one workflow keep their list order (a stable sort).
+  popular: (a, b) => workflowRank[a.workflow] - workflowRank[b.workflow],
   newest: (a, b) => b.createdAt.localeCompare(a.createdAt),
   name: (a, b) => a.name.localeCompare(b.name),
 };

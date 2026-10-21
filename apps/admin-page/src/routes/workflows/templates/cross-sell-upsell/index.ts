@@ -7,6 +7,7 @@ import type { SendEmailConfig } from '../../steps/actions/send-email/schema';
 import type { WaitConfig } from '../../steps/actions/wait/schema';
 import type { Rule } from '../../steps/conditions/criteria/schema';
 import { defineTemplate } from '../core/defineTemplate';
+import { emailMessage } from '../core/email';
 
 const rule = (field: string, operator: string, value = ''): Rule => ({ field, operator, value, valueType: 'value' });
 
@@ -77,16 +78,16 @@ const hasCrossSells = rule('order.has_cross_sells', 'is_true');
 
 const greeting = __('Hi {{ customer.first_name }},', 'yaymatik');
 const signOff = __('See you soon,\n{{ site.name }}', 'yaymatik');
-const couponLines = __(
-  'Use this coupon for {{ steps.coupon.amount }} off your next order:\n\nCoupon code: {{ steps.coupon.code }}\nExpires: {{ steps.coupon.expires_at }}',
-  'yaymatik',
-);
+const couponLines = [
+  __('Use this coupon for {{ steps.coupon.amount }} off your next order:', 'yaymatik'),
+  '{{ steps.coupon.box }}',
+];
 
 const email = (subject: string, heading: string, lines: string[]): SendEmailConfig => ({
   to: '{{ customer.email }}',
   subject,
   heading,
-  message: [greeting, ...lines, signOff].join('\n\n'),
+  message: emailMessage([greeting, ...lines, signOff]),
 });
 
 const crossSellEmail = (extra: string[] = []) =>
@@ -96,7 +97,7 @@ const crossSellEmail = (extra: string[] = []) =>
     ...extra,
   ]);
 
-const shared = { category: 'post_purchase', popularity: 0, createdAt: '2026-10-07' } as const;
+const shared = { category: 'post_purchase', workflow: 'cross_sell_upsell', createdAt: '2026-10-07' } as const;
 
 export const crossSellFirstTime = defineTemplate({
   ...shared,
@@ -142,7 +143,7 @@ export const crossSellCoupon = defineTemplate({
     suggestions: hasCrossSells,
     days: 14,
     coupon: { amount: 10, expiry_days: 14 },
-    email: crossSellEmail([couponLines]),
+    email: crossSellEmail(couponLines),
   }),
 });
 
@@ -167,7 +168,7 @@ export const upsellAfter30Days = defineTemplate({
           'yaymatik',
         ),
         '{{ order.upsell_products }}',
-        couponLines,
+        ...couponLines,
       ],
     ),
   }),
