@@ -2,7 +2,7 @@ import type { StepId, WorkflowEdge, WorkflowGraph, WorkflowNode } from '@yaymati
 import { __ } from '@wordpress/i18n';
 
 import { BRANCH_OFFSET, ROW_GAP } from '../../model/graph';
-import { defaults as couponDefaults, type GenerateCouponConfig } from '../../steps/actions/generate-coupon/schema';
+import { generateCouponStep, type GenerateCouponConfig } from '../../steps/actions/generate-coupon';
 import type { SendEmailConfig } from '../../steps/actions/send-email/schema';
 import type { WaitConfig } from '../../steps/actions/wait/schema';
 import type { Rule } from '../../steps/conditions/criteria/schema';
@@ -63,7 +63,7 @@ function graph({
   let last = 'still-valid';
   let row = 4;
   if (coupon) {
-    nodes.push(step('coupon', 2, row++, 'action', 'generate_coupon', { ...couponDefaults(), ...coupon }));
+    nodes.push(step('coupon', 2, row++, 'action', 'generate_coupon', { ...generateCouponStep.defaults(), ...coupon }));
     edges.push({ id: 'e-still-valid-coupon', source: last, target: 'coupon', sourceHandle: 'then' });
     last = 'coupon';
   }
@@ -141,7 +141,7 @@ export const crossSellCoupon = defineTemplate({
   graph: graph({
     suggestions: hasCrossSells,
     days: 14,
-    coupon: { amount: '10', expiry_days: '14' },
+    coupon: { amount: 10, expiry_days: 14 },
     email: crossSellEmail([couponLines]),
   }),
 });
@@ -157,7 +157,7 @@ export const upsellAfter30Days = defineTemplate({
   graph: graph({
     suggestions: rule('order.has_upsells', 'is_true'),
     days: 30,
-    coupon: { amount: '15', expiry_days: '14' },
+    coupon: { amount: 15, expiry_days: 14 },
     email: email(
       __('Ready for an upgrade, {{ customer.first_name }}?', 'yaymatik'),
       __('Upgrade what you love', 'yaymatik'),

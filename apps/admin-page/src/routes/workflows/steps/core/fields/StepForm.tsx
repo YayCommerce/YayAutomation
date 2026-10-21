@@ -1,3 +1,4 @@
+import { useContext } from 'react';
 import { useForm, useStore } from '@tanstack/react-form';
 import type * as v from 'valibot';
 import { __ } from '@wordpress/i18n';
@@ -9,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import type { Config, StepFormProps } from '../types';
 import { isFieldVisible } from './catalogSchema';
 import { ConfigField } from './ConfigField';
-import { useMarkInvalid } from './feedback';
+import { FieldIssueContext, useMarkInvalid, useShowErrors } from './feedback';
 import { MultiSelect } from './MultiSelect';
 import { RichTextEditor } from './RichTextEditor';
 import { useValidateOnMount } from './useValidateOnMount';
@@ -43,6 +44,9 @@ export function StepForm({
   });
   useValidateOnMount(form);
   const markInvalid = useMarkInvalid();
+  const showErrors = useShowErrors();
+  // A rule only the server checks (e.g. a percentage over 100), after the last save.
+  const fieldIssue = useContext(FieldIssueContext);
   const values = useStore(form.store, (state) => state.values);
 
   return (
@@ -60,8 +64,8 @@ export function StepForm({
                   value={api.state.value}
                   onChange={api.handleChange}
                   onBlur={api.handleBlur}
-                  invalid={markInvalid(api.state.meta)}
-                  errors={api.state.meta.errors}
+                  invalid={markInvalid(api.state.meta) || (showErrors && fieldIssue?.field === field.key)}
+                  errors={[...api.state.meta.errors, fieldIssue?.field === field.key ? fieldIssue : undefined]}
                 />
               )}
             </form.Field>

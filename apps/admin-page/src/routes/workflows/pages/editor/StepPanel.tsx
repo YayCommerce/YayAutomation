@@ -1,10 +1,11 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { useStore } from '@tanstack/react-form';
-import type { StepId, WorkflowGraph } from '@yaymatik/types';
-import { ArrowLeft, ArrowRightLeft, X } from 'lucide-react';
+import type { StepId, WorkflowGraph, WorkflowIssue } from '@yaymatik/types';
+import { ArrowLeft, ArrowRightLeft, CircleAlert, X } from 'lucide-react';
 import { m } from 'motion/react';
 import { __, sprintf } from '@wordpress/i18n';
 
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,7 +26,7 @@ import { StepEyebrow } from '../../shared/ui/StepTile';
 import { steps as stepDefs, stepOf } from '../../steps';
 import { alwaysAvailable } from '../../steps/core/data';
 import { EmailToolsContext, type EmailTools } from '../../steps/core/fields/emailTools';
-import { FeedbackContext, type Feedback } from '../../steps/core/fields/feedback';
+import { FeedbackContext, FieldIssueContext, type Feedback } from '../../steps/core/fields/feedback';
 import { VariableScopeContext, type VariableScope } from '../../steps/core/fields/variableScope';
 import { plainSummary } from '../../steps/core/marks';
 import { StepTile } from '../../steps/core/StepTile';
@@ -73,6 +74,7 @@ export function StepPanel({
   nodeId,
   picking,
   feedback,
+  issue,
   closable,
   onPick,
   onSwap,
@@ -84,6 +86,11 @@ export function StepPanel({
   picking: boolean;
   /** How the form shows its errors (see `Feedback`). */
   feedback: Feedback;
+  /**
+   * This step's issue (the editor's or the server's). Shown, unless the form already shows it, under
+   * its field when the form draws that field, else at the top of the panel body.
+   */
+  issue?: WorkflowIssue;
   /** False for a new workflow's first trigger picker: a trigger must be chosen first. */
   closable: boolean;
   /** A step was chosen in the picker (the same one keeps its settings). */
@@ -224,6 +231,13 @@ export function StepPanel({
 
   const swapLabel = node.kind === 'trigger' ? __('Change trigger', 'yaymatik') : __('Change action', 'yaymatik');
 
+  // Shown while the form shows its errors. The form shows its own first error itself (under a field,
+  // or in a condition's rule); anything else goes under its field, or at the top.
+  const shown =
+    feedback !== 'none' && issue && issue.message !== stepDef.firstError(node.data.config) ? issue : undefined;
+  const underField = shown?.field && stepDef.drawsField(shown.field) ? shown : undefined;
+  const notice = underField ? undefined : shown;
+
   return (
     <EmailToolsContext.Provider value={emailTools}>
       {/* The card's tile and eyebrow, so the panel reads as the step it belongs to; then its actions. */}
@@ -257,16 +271,24 @@ export function StepPanel({
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto p-4">
+        {notice && (
+          <Alert destructive className="border-destructive/30 mb-4 border">
+            <CircleAlert aria-hidden />
+            <AlertDescription>{notice.message}</AlertDescription>
+          </Alert>
+        )}
         {stepDef.Form ? (
           <FeedbackContext.Provider value={feedback}>
-            <VariableScopeContext.Provider value={scope}>
-              {/* Keyed by step and step, so switching either starts a fresh form. */}
-              <stepDef.Form
-                key={`${node.id}:${stepDef.id}`}
-                config={node.data.config}
-                onChange={(config) => update((graph) => updateNodeConfig(graph, node.id, config))}
-              />
-            </VariableScopeContext.Provider>
+            <FieldIssueContext.Provider value={underField}>
+              <VariableScopeContext.Provider value={scope}>
+                {/* Keyed by step and step, so switching either starts a fresh form. */}
+                <stepDef.Form
+                  key={`${node.id}:${stepDef.id}`}
+                  config={node.data.config}
+                  onChange={(config) => update((graph) => updateNodeConfig(graph, node.id, config))}
+                />
+              </VariableScopeContext.Provider>
+            </FieldIssueContext.Provider>
           </FeedbackContext.Provider>
         ) : (
           <p className="text-muted-foreground text-sm">{__('No settings needed.', 'yaymatik')}</p>

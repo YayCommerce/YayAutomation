@@ -34,7 +34,7 @@ export function useIssueFeedback(issues: WorkflowIssue[], startInErrorMode: bool
 
   /** Steps broken by an edit elsewhere (a swapped step whose data they used): "Needs setup" at once. */
   const markReview = useCallback((nodeIds: string[]) => {
-    if (nodeIds.length) setVisited((prev) => new Set([...prev, ...nodeIds]));
+    setVisited((prev) => (nodeIds.every((id) => prev.has(id)) ? prev : new Set([...prev, ...nodeIds])));
   }, []);
 
   /** How one step's panel shows its errors. */

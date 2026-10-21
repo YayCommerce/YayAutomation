@@ -78,6 +78,7 @@ final class StepContractTest extends TestCase {
 
         preg_match_all( '/%([a-z_]+)%/', $step->summary(), $placeholders );
         $this->assertSame( [], array_diff( $placeholders[1], $keys ), 'summary placeholders are field keys' );
+        $this->assertDoesNotMatchRegularExpression( '/%\d+\$/', $step->summary(), 'no sprintf positions: the editor fills only %key%' );
     }
 
     /**

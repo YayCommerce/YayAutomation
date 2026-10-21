@@ -575,7 +575,7 @@
                 "label": "Generate coupon",
                 "description": "Create a single-use WooCommerce coupon to send in a later email.",
                 "icon": "ticket",
-                "summary": "%1$discount_type%, expires in %2$expiry_days% days",
+                "summary": "%discount_type%, %expiry_days%",
                 "onError": "stop",
                 "fields": [
                     {
@@ -610,14 +610,16 @@
                                 "fixed_cart"
                             ]
                         },
-                        "default": 10
+                        "default": 10,
+                        "min": 0.01
                     },
                     {
                         "key": "expiry_days",
                         "type": "number",
                         "label": "Expires after (days)",
                         "help": "The coupon ends at the end of that day, in your store’s timezone. Leave blank for no expiry.",
-                        "default": 30
+                        "default": 30,
+                        "min": 1
                     },
                     {
                         "key": "minimum_spend",
@@ -1963,6 +1965,8 @@
             "missingData": "%s data isn’t available at this step.",
             "unknownVariable": "%s isn’t an available variable.",
             "unknownFilter": "%1$s isn’t a filter. Available filters: %2$s.",
+            "stepGone": "%s comes from a step that isn’t in this workflow anymore. Add that step above this one, or remove the variable.",
+            "stepNotAbove": "%1$s needs the %2$s step above this one. Move it above, or remove the variable.",
             "malformedTag": "%s is written incorrectly. Use {{ variable }} or {{ variable | filter }}.",
             "fieldRequired": "This field is required.",
             "invalidEmail": "%s isn’t a valid email address.",

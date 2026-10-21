@@ -39,7 +39,7 @@ export interface StepSpec<TConfig extends Config> {
   normalize?: (config: Config) => TConfig;
   /**
    * Data items the step reads with this config, besides its merge tags (the workflow checks those
-   * through `tagPaths`). Mirrors the PHP step's `uses()`. Defaults to the step's `requires`.
+   * through `tags`). Mirrors the PHP step's `uses()`. Defaults to the step's `requires`.
    */
   uses?: (config: TConfig) => string[];
   /**
@@ -54,8 +54,8 @@ export interface StepSpec<TConfig extends Config> {
   icon?: LucideIcon;
   /** A custom form. Without one, a built step's form is drawn from its catalog fields (`StepForm`). */
   Form?: ComponentType<StepFormProps<TConfig>>;
-  /** Drawn under the form, e.g. Send email's unsubscribe note. */
-  Footer?: ComponentType;
+  /** Drawn under the form with its latest values, e.g. Send email's unsubscribe note. */
+  Footer?: ComponentType<{ config: TConfig }>;
   /** Drawn in the panel header under the title, e.g. Send email's Preview and Send test. */
   Actions?: ComponentType;
 }
@@ -80,10 +80,14 @@ export interface Step {
   comingSoon: boolean;
   defaults: () => Config;
   normalize: (config: Config) => Config;
-  /** The first validation message, or null when the config is valid. */
+  /** The first validation problem, with the field it's about when it has one; null when the config is valid. */
+  firstIssue: (config: Config) => { message: string; field?: string } | null;
+  /** `firstIssue()`'s message. */
   firstError: (config: Config) => string | null;
-  /** Paths of the well-formed merge tags in the fields that accept them (all text while pending). */
-  tagPaths: (config: Config) => string[];
+  /** The well-formed merge tags in the fields that accept them (all text while pending), each with its field. */
+  tags: (config: Config) => { field: string; path: string }[];
+  /** Whether the step's form draws this field, so an issue about it can show under it. */
+  drawsField: (key: string) => boolean;
   /** Data items the step reads besides its merge tags, `site` excluded. */
   uses: (config: Config) => string[];
   /** Card text, with `SummaryText` marks. */

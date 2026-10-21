@@ -273,17 +273,18 @@ final class ValidatorTest extends TestCase {
         $this->assertNull( self::issue_of( 'action-mv0pf42q0l81', [ 'note' => '{{ steps.email.to }}' ], [], 'action-mv0pf42q0l81' ), 'any step id' );
 
         $this->assertSame(
-            self::expect( 'missing_data', 'Send internal email data isn’t available at this step.', 'value' ),
+            self::expect( 'missing_data', '{{ steps.email.to }} needs the Send internal email step above this one. Move it above, or remove the variable.', 'value' ),
             self::issue_of( 'meta', [ 'meta' => '{{ steps.email.to }}' ] ),
             'the other branch'
         );
         $this->assertSame(
-            self::expect( 'missing_data', 'Add order note data isn’t available at this step.', 'subject' ),
+            self::expect( 'missing_data', '{{ steps.note.type }} needs the Add order note step above this one. Move it above, or remove the variable.', 'subject' ),
             self::issue_of( 'email', [ 'email' => '{{ steps.note.type }}' ] ),
             'a step below'
         );
         $this->assertSame( self::expect( 'invalid_config', '{{ steps.email.subject }} isn’t an available variable.', 'note' ), self::issue_of( 'note', [ 'note' => '{{ steps.email.subject }}' ] ), 'not an output' );
-        $this->assertSame( self::expect( 'invalid_config', '{{ steps.nope.to }} isn’t an available variable.', 'note' ), self::issue_of( 'note', [ 'note' => '{{ steps.nope.to }}' ] ) );
+        $this->assertSame( self::expect( 'invalid_config', '{{ steps.nope.to }} comes from a step that isn’t in this workflow anymore. Add that step above this one, or remove the variable.', 'note' ), self::issue_of( 'note', [ 'note' => '{{ steps.nope.to }}' ] ), 'a deleted step' );
+        $this->assertSame( self::expect( 'invalid_config', '{{ steps.email.to.x }} isn’t an available variable.', 'note' ), self::issue_of( 'note', [ 'note' => '{{ steps.email.to.x }}' ] ) );
     }
 
     public function test_step_ids_with_digits_and_hyphens_in_paths(): void {

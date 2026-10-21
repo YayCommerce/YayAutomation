@@ -114,10 +114,12 @@ class GenerateCoupon extends Action {
             Field::select( 'discount_type', __( 'Discount type', 'yaymatik' ), self::types() )->default( self::PERCENT ),
             Field::number( 'amount', __( 'Amount', 'yaymatik' ) )
                 ->default( 10 )
+                ->min( 0.01 )
                 ->help( __( 'A percentage from 1 to 100, or an amount in your store currency.', 'yaymatik' ) )
                 ->show_if( 'discount_type', [ self::PERCENT, self::FIXED_CART ] ),
             Field::number( 'expiry_days', __( 'Expires after (days)', 'yaymatik' ) )
                 ->default( 30 )
+                ->min( 1 )
                 ->help( __( 'The coupon ends at the end of that day, in your store’s timezone. Leave blank for no expiry.', 'yaymatik' ) ),
             Field::number( 'minimum_spend', __( 'Minimum spend', 'yaymatik' ) )
                 ->min( 0 )
@@ -133,8 +135,9 @@ class GenerateCoupon extends Action {
     }
 
     public function summary(): string {
-        /* translators: %discount_type%: discount type, %expiry_days%: number of days; keep the placeholders as they are. */
-        return __( '%1$discount_type%, expires in %2$expiry_days% days', 'yaymatik' );
+        // `%key%` placeholders the editor fills, not sprintf's `%d` / `%e`: phpcbf would number them.
+        /* translators: %discount_type%: the discount, e.g. "10% off"; %expiry_days%: e.g. "expires in 30 days" or "never expires"; keep the placeholders as they are. */
+        return __( '%discount_type%, %expiry_days%', 'yaymatik' ); // phpcs:ignore WordPress.WP.I18n.UnorderedPlaceholdersText
     }
 
     public function outputs(): array {
@@ -169,9 +172,11 @@ class GenerateCoupon extends Action {
     public function sanitize( $config ): array {
         $raw    = is_array( $config ) ? $config : [];
         $config = Field::sanitize_all( $this->fields(), $raw );
-        // Blank means none (no amount yet, no expiry, no minimum); only a missing value takes the default.
+        // Blank (null from the editor, '' from older configs) means none: no amount yet, no expiry, no
+        // minimum. Only a missing value takes the default.
         foreach ( [ 'amount', 'expiry_days', 'minimum_spend' ] as $key ) {
-            if ( isset( $raw[ $key ] ) && is_string( $raw[ $key ] ) && '' === trim( $raw[ $key ] ) ) {
+            $value = array_key_exists( $key, $raw ) ? $raw[ $key ] : 0;
+            if ( null === $value || ( is_string( $value ) && '' === trim( $value ) ) ) {
                 $config[ $key ] = null;
             }
         }

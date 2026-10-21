@@ -2,7 +2,7 @@ import type { WorkflowGraph } from '@yaymatik/types';
 import { __ } from '@wordpress/i18n';
 
 import { BRANCH_OFFSET, ROW_GAP } from '../../model/graph';
-import type { GenerateCouponConfig } from '../../steps/actions/generate-coupon/schema';
+import type { GenerateCouponConfig } from '../../steps/actions/generate-coupon';
 import type { SendEmailConfig } from '../../steps/actions/send-email/schema';
 import { defineTemplate } from '../core/defineTemplate';
 
@@ -55,9 +55,9 @@ function graph(coupon: Partial<GenerateCouponConfig>, offer: string): WorkflowGr
           block: 'generate_coupon',
           config: {
             discount_type: 'percent',
-            amount: '10',
-            expiry_days: '30',
-            minimum_spend: '',
+            amount: 10,
+            expiry_days: 30,
+            minimum_spend: null,
             individual_use: false,
             limit_to_customer: true,
             code_prefix: 'THANKS-',
@@ -91,7 +91,7 @@ export const firstOrderDiscount = defineTemplate({
   popularity: 0,
   createdAt: '2026-10-07',
   graph: graph(
-    { discount_type: 'percent', amount: '10' },
+    { discount_type: 'percent', amount: 10 },
     __('As a thank you, here is {{ steps.coupon.amount }} off your next order:', 'yaymatik'),
   ),
 });
@@ -107,7 +107,7 @@ export const firstOrderFreeShipping = defineTemplate({
   popularity: 0,
   createdAt: '2026-10-07',
   graph: graph(
-    { discount_type: 'free_shipping', amount: '' },
+    { discount_type: 'free_shipping', amount: null },
     __('As a thank you, your next order ships free:', 'yaymatik'),
   ),
 });

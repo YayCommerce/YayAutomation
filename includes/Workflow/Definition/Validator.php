@@ -368,27 +368,29 @@ final class Validator {
                 return self::issue( 'invalid_config', $errors[0], $field->key() );
             }
             foreach ( $template->paths( $text ) as $path ) {
-                $reach = self::reach( $path, $available, $by_id, $above );
-                if ( null === $reach ) {
-                    return self::issue( 'invalid_config', Messages::get( 'unknownVariable', '{{ ' . $path . ' }}' ), $field->key() );
+                $problem = self::reach( $path, $available, $by_id, $above );
+                if ( null === $problem ) {
+                    continue;
                 }
-                if ( true !== $reach && ! $missing ) {
-                    $missing = self::issue( 'missing_data', self::missing_message( $reach ), $field->key() );
+                if ( 'invalid_config' === $problem[0] ) {
+                    return self::issue( 'invalid_config', $problem[1], $field->key() );
                 }
+                $missing = $missing ?? self::issue( 'missing_data', $problem[1], $field->key() );
             }
         }
         return $missing;
     }
 
     /**
-     * Whether a step can read a path: true, null when nothing defines it, or the label of the data
-     * (an item, or the step whose output it is) that isn't available to it.
+     * Why a step can't read a path, or null when it can: [ 'invalid_config', message ] when nothing
+     * defines it (or the step it reads isn't in the workflow), [ 'missing_data', message ] when the
+     * data or the step it reads isn't above it.
      *
      * @param string     $path      Tag path, e.g. `order.customer.first_name`, `steps.email.to`.
      * @param array|null $available Data items available; null without a trigger (not reported then).
      * @param array[]    $by_id     Every node by id.
      * @param array      $above     Ids of the steps above => true.
-     * @return true|string|null
+     * @return array{0: string, 1: string}|null
      */
     private static function reach( string $path, ?array $available, array $by_id, array $above ) {
         $segments = explode( '.', $path );
@@ -396,20 +398,29 @@ final class Validator {
             array_shift( $segments );
         }
 
+        $tag     = '{{ ' . $path . ' }}';
+        $unknown = [ 'invalid_config', Messages::get( 'unknownVariable', $tag ) ];
+
         if ( 'steps' === $segments[0] ) {
-            $node = $by_id[ $segments[1] ?? '' ] ?? null;
-            $step = $node && $node['data']['block'] ? StepRegistry::get( $node['data']['block'] ) : null;
-            if ( ! $step || 3 !== count( $segments ) || ! isset( $step->outputs()[ $segments[2] ] ) ) {
-                return null;
+            if ( 3 !== count( $segments ) ) {
+                return $unknown;
             }
-            return isset( $above[ $node['id'] ] ) ? true : $step->label();
+            $node = $by_id[ $segments[1] ] ?? null;
+            if ( ! $node ) {
+                return [ 'invalid_config', Messages::get( 'stepGone', $tag ) ];
+            }
+            $step = $node['data']['block'] ? StepRegistry::get( $node['data']['block'] ) : null;
+            if ( ! $step || ! isset( $step->outputs()[ $segments[2] ] ) ) {
+                return $unknown;
+            }
+            return isset( $above[ $node['id'] ] ) ? null : [ 'missing_data', Messages::get( 'stepNotAbove', $tag, $step->label() ) ];
         }
 
         $item = DataRegistry::items()[ $segments[0] ] ?? null;
         if ( ! $item || ! self::has_field( $item, array_slice( $segments, 1 ) ) ) {
-            return null;
+            return $unknown;
         }
-        return null === $available || in_array( $item->id(), $available, true ) ? true : $item->label();
+        return null === $available || in_array( $item->id(), $available, true ) ? null : [ 'missing_data', self::missing_message( $item->label() ) ];
     }
 
     /**
