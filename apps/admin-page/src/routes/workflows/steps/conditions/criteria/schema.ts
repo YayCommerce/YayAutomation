@@ -5,7 +5,7 @@ import { messages } from '../../../model/messages';
 import { fieldByKey, needsValue, operatorLabels, operatorsFor, type DataField } from '../../core/data';
 
 /**
- * Mirrors includes/Workflow/Steps/Conditions/Criteria.php: criteria joined by AND (`all`) or OR (`any`).
+ * Mirrors includes/Workflow/Conditions/Criteria.php: criteria joined by AND (`all`) or OR (`any`).
  * `valueType: 'value'` compares with `value` as typed (cast by the field type); `'variable'` compares
  * with another field, whose key `value` holds.
  */

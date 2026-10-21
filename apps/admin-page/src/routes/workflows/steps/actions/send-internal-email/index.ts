@@ -6,7 +6,7 @@ const adminEmail = window.yayMatikMeta.wp.adminEmail;
 
 /**
  * Form, checks and the new step's sample subject and message come from
- * includes/Workflow/Steps/Actions/SendInternalEmail.php `fields()`.
+ * includes/Workflow/Actions/SendInternalEmail.php `fields()`.
  */
 export const sendInternalEmailStep = defineStep<{ recipients: string; subject: string; message: string }>({
   id: 'send_internal_email',

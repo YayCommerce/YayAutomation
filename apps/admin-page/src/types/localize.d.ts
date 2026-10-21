@@ -1,12 +1,12 @@
 import type { StepId, WorkflowNodeKind, WorkflowPlugin } from '@yaymatik/types';
 
-/** PHP `Workflow\Extend\Plugins::to_client()`. */
+/** PHP `Workflow\ModuleRegistry::to_client()`. */
 export interface PluginMeta {
   id: WorkflowPlugin;
   label: string;
   description: string;
   active: boolean;
-  /** Own SVG, cleaned with `wp_kses()`; draws in `currentColor`. */
+  /** URL of a one-colour SVG the plugin ships; drawn as a mask in the text colour. */
   logo: string;
 }
 
@@ -16,7 +16,7 @@ export interface OptionMeta {
   label: string;
 }
 
-/** PHP `Steps\Core\Field` widgets. `rules` is the Condition rules builder (core steps only). */
+/** PHP `Core\Steps\Field` widgets. `rules` is the Condition rules builder (core steps only). */
 export type FieldWidget =
   | 'text'
   | 'textarea'
@@ -79,11 +79,9 @@ export interface StepMeta {
   requires?: string[];
 }
 
-/** PHP `Definition\Catalog::step()`: a step PHP has built, with its full contract. */
+/** PHP `Core\Definition\Catalog::step()`: a step PHP has built, with its full contract. */
 export interface CatalogStepMeta extends StepMeta {
   plugin: WorkflowPlugin;
-  /** `Extend\Modules` id. */
-  module: string;
   label: string;
   description: string;
   /** A name from PHP `StepIcons::NAMES` (lucide). */
@@ -162,7 +160,7 @@ declare global {
         operatorLabels: Record<string, string>;
         /** Data items every workflow has, whatever the trigger. */
         always: string[];
-        /** PHP `Definition\Messages::all()`: messages both sides show, by key. Same as `model/messages.ts`. */
+        /** PHP `Core\Definition\Messages::all()`: messages both sides show, by key. Same as `model/messages.ts`. */
         messages: Record<string, string>;
         /** WooCommerce sender for steps not built in PHP yet, e.g. "Store <store@example.com>". */
         /** Who emails come from (WooCommerce's sender); `fromName` is plain text, may be blank. */

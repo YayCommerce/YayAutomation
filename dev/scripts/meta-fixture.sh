@@ -20,6 +20,10 @@ $meta = \YayMatik\Engine\BEPages\AdminPage::client_meta();
 $meta["plugin"]["version"]      = "0.0.0";
 $meta["wc"]["currencySymbol"]   = "$";
 $meta["plugin"]["pluginUrl"]  = "https://example.test/wp-content/plugins/yaymatik/";
+foreach ( $meta["automation"]["plugins"] as &$plugin ) {
+    $plugin["logo"] = str_replace( YAYMATIK_PLUGIN_URL, "https://example.test/wp-content/plugins/yaymatik/", $plugin["logo"] );
+}
+unset( $plugin );
 $meta["wp"]["restRoot"]       = "https://example.test/wp-json/";
 $meta["wp"]["restNonce"]      = "test-nonce";
 $meta["wp"]["siteUrl"]        = "https://example.test";

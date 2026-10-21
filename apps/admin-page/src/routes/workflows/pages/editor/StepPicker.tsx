@@ -56,7 +56,7 @@ export function StepPicker({
   const [query, setQuery] = useState('');
 
   const choices = Object.values(steps).filter(
-    (stepDef) => stepDef.kind === kind && stepDef.plugin && plugins[stepDef.plugin].active,
+    (stepDef) => stepDef.kind === kind && !!stepDef.plugin && !!plugins[stepDef.plugin]?.active,
   );
   const pluginIds = [...new Set(choices.map((stepDef) => stepDef.plugin!))];
   const missingData = (stepDef: Step) => stepDef.requires.find((item) => available && !available.includes(item));

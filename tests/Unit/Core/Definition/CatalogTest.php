@@ -30,6 +30,23 @@ final class CatalogTest extends TestCase {
         $this->assertSame( 'yaymatik', $steps['condition']['plugin'] );
     }
 
+    public function test_plugins_and_step_identity_match_the_app_fixture(): void {
+        $fixture = json_decode( (string) file_get_contents( dirname( __DIR__, 4 ) . '/apps/admin-page/src/test/fixtures/meta.json' ), true )['automation']; // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- reading a fixture in a test.
+        $catalog = Catalog::to_client();
+
+        $without_active = fn( array $plugins ) => array_map( fn( array $plugin ) => array_diff_key( $plugin, [ 'active' => true ] ), $plugins );
+        $this->assertSame( $without_active( $fixture['plugins'] ), $without_active( $catalog['plugins'] ) );
+        $identity       = fn( array $steps ) => array_map(
+            fn( array $step ) => [
+                'kind'   => $step['kind'],
+                'plugin' => $step['plugin'],
+                'keys'   => array_keys( $step ),
+            ],
+            $steps
+        );
+        $this->assertSame( $identity( $fixture['steps'] ), $identity( $catalog['steps'] ) );
+    }
+
     public function test_it_is_plain_json_in_camel_case(): void {
         $steps = $this->steps();
         $this->assertIsString( wp_json_encode( $steps ), 'no closures or objects' );
