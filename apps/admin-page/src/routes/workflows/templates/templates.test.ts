@@ -50,6 +50,9 @@ describe('templates', () => {
       expect(sendsCustomerEmail(graph)).toBe(true);
       const email = graph.nodes.find((node) => node.data.block === 'send_email')!;
       expect(email.data.config.message).toContain('<p>{{ steps.coupon.box }}</p>');
+      expect(email.data.config.subject).toBe('Thanks for your first order — a gift for your next one');
+      // A guest order may have no first name.
+      expect(email.data.config.message).toContain('<p>Hi {{ customer.first_name | default: "there" }},</p>');
       const coupon = graph.nodes.find((node) => node.data.block === 'generate_coupon')!;
       expect(coupon.data.config).toMatchObject({ code_prefix: 'YM', expiry_days: 30 });
     },

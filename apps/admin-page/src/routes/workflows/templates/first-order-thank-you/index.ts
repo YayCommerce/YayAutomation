@@ -14,10 +14,10 @@ import { emailMessage } from '../core/email';
 function graph(coupon: Partial<GenerateCouponConfig>, offer: string): WorkflowGraph {
   const email: SendEmailConfig = {
     to: '{{ customer.email }}',
-    subject: __('Thank you for your first order, {{ customer.first_name }}!', 'yaymatik'),
+    subject: __('Thanks for your first order — a gift for your next one', 'yaymatik'),
     heading: __('Thanks for shopping with us', 'yaymatik'),
     message: emailMessage([
-      __('Hi {{ customer.first_name }},', 'yaymatik'),
+      __('Hi {{ customer.first_name | default: "there" }},', 'yaymatik'),
       __('Thank you for your first order with {{ site.name }}. We hope you love it!', 'yaymatik'),
       offer,
       '{{ steps.coupon.box }}',
