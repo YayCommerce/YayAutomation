@@ -1,5 +1,5 @@
 <?php
-namespace YayMatik\Workflow\Steps\Core;
+namespace YayMatik\Workflow\Steps;
 
 use YayMatik\Workflow\Definition\Catalog;
 use YayMatik\Workflow\Definition\Messages;

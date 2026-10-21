@@ -2,6 +2,7 @@
 namespace YayMatik\Workflow\Data;
 
 use YayMatik\Workflow\Definition\Catalog;
+use YayMatik\Workflow\ModuleRegistry;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -23,24 +24,20 @@ final class DataRegistry {
     /** @return DataItem[] */
     public static function items(): array {
         if ( null === self::$items ) {
-            self::$items = [];
-            foreach ( [ new OrderData(), new CustomerData(), new SiteData() ] as $item ) {
-                self::$items[ $item->id() ] = $item;
-            }
+            self::$items = array_filter( self::entities(), fn( DataItem $item ) => $item->standalone() );
         }
         return self::$items;
     }
 
     /**
-     * Every entity type a Scope can read: the items, plus those reached only through a relation
-     * (`order.items` → order_item).
+     * Every entity type a Scope can read, from the modules: the items, plus those reached only
+     * through a relation (`order.items` → order_item).
      *
      * @return DataItem[]
      */
     public static function entities(): array {
         if ( null === self::$entities ) {
-            $item_data      = new OrderItemData();
-            self::$entities = self::items() + [ $item_data->id() => $item_data ];
+            self::$entities = ModuleRegistry::data( ModuleRegistry::modules() );
         }
         return self::$entities;
     }

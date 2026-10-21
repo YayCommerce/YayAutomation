@@ -5,9 +5,9 @@ use YayMatik\Workflow\Data\DataItem;
 use YayMatik\Workflow\Data\DataRegistry;
 use YayMatik\Workflow\Data\Template;
 use YayMatik\Workflow\Data\Type;
-use YayMatik\Workflow\Steps\Core\Field;
-use YayMatik\Workflow\Steps\Core\Step;
-use YayMatik\Workflow\Steps\Core\StepRegistry;
+use YayMatik\Workflow\Steps\Field;
+use YayMatik\Workflow\Steps\Step;
+use YayMatik\Workflow\Steps\StepRegistry;
 use YayMatik\Utils\Logger;
 
 defined( 'ABSPATH' ) || exit;

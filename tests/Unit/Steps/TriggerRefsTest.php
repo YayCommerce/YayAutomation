@@ -5,8 +5,8 @@ use PHPUnit\Framework\TestCase;
 use YayMatik\Tests\Support\FakeOrder;
 use YayMatik\Workflow\Data\Ref;
 use YayMatik\Workflow\Data\Scope;
-use YayMatik\Workflow\Steps\Triggers\OrderCreated;
-use YayMatik\Workflow\Steps\Triggers\OrderStatusChanged;
+use YayMatik\Workflow\Triggers\OrderCreated;
+use YayMatik\Workflow\Triggers\OrderStatusChanged;
 
 require_once dirname( __DIR__, 2 ) . '/Support/woocommerce-stubs.php';
 

@@ -8,11 +8,11 @@ use YayMatik\Workflow\Data\Scope;
 use YayMatik\Workflow\Definition\GraphSchema;
 use YayMatik\Workflow\Definition\Validator;
 use YayMatik\Workflow\Runtime\Executor;
-use YayMatik\Workflow\Steps\Actions\SendEmail;
-use YayMatik\Workflow\Steps\Actions\SendInternalEmail;
-use YayMatik\Workflow\Steps\Core\Step;
-use YayMatik\Workflow\Steps\Core\StepRegistry;
-use YayMatik\Workflow\Steps\Core\Trigger;
+use YayMatik\Workflow\Actions\SendEmail;
+use YayMatik\Workflow\Actions\SendInternalEmail;
+use YayMatik\Workflow\Steps\Step;
+use YayMatik\Workflow\Steps\StepRegistry;
+use YayMatik\Workflow\Steps\Trigger;
 
 defined( 'ABSPATH' ) || exit;
 

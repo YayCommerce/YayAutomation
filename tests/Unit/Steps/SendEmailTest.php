@@ -5,8 +5,8 @@ use PHPUnit\Framework\TestCase;
 use YayMatik\Tests\Support\FakeMailer;
 use YayMatik\Workflow\Data\Scope;
 use YayMatik\Workflow\Email\UnsubscribeLink;
-use YayMatik\Workflow\Steps\Actions\SendEmail;
-use YayMatik\Workflow\Steps\Core\StepResult;
+use YayMatik\Workflow\Actions\SendEmail;
+use YayMatik\Workflow\Steps\StepResult;
 
 require_once dirname( __DIR__, 2 ) . '/Support/woocommerce-stubs.php';
 require_once dirname( __DIR__, 2 ) . '/Support/fake-wc.php';

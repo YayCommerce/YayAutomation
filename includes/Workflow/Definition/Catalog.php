@@ -4,10 +4,10 @@ namespace YayMatik\Workflow\Definition;
 use YayMatik\Workflow\Data\DataRegistry;
 use YayMatik\Workflow\Data\Operators;
 use YayMatik\Workflow\Data\Type;
-use YayMatik\Workflow\Extend\Plugins;
-use YayMatik\Workflow\Steps\Core\Field;
-use YayMatik\Workflow\Steps\Core\Step;
-use YayMatik\Workflow\Steps\Core\StepRegistry;
+use YayMatik\Workflow\ModuleRegistry;
+use YayMatik\Workflow\Steps\Field;
+use YayMatik\Workflow\Steps\Step;
+use YayMatik\Workflow\Steps\StepRegistry;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -23,7 +23,7 @@ final class Catalog {
 
     public static function to_client(): array {
         return [
-            'plugins'        => Plugins::to_client(),
+            'plugins'        => ModuleRegistry::to_client(),
             'steps'          => self::steps( StepRegistry::all() ),
             'data'           => DataRegistry::to_client(),
             'operators'      => Operators::BY_TYPE,
@@ -39,9 +39,10 @@ final class Catalog {
      * @param Step[] $steps Keyed by id.
      */
     public static function steps( array $steps ): array {
-        $meta = [];
+        $plugins = ModuleRegistry::plugins( ModuleRegistry::modules() );
+        $meta    = [];
         foreach ( $steps as $id => $step ) {
-            $meta[ $id ] = self::step( $step );
+            $meta[ $id ] = self::step( $step, $plugins[ $id ] );
         }
         return $meta;
     }
@@ -50,12 +51,14 @@ final class Catalog {
      * One step: the keys the app has read since v0.1 (kind, plugin, category, requires, provides),
      * then the step contract.
      *
-     * @param Step $step Step.
+     * @param Step   $step
+     * @param string $plugin
      */
-    public static function step( Step $step ): array {
-        return [ 'kind' => $step->kind() ] + $step->client_meta() + [
-            'plugin'      => $step->plugin(),
-            'module'      => $step->module(),
+    public static function step( Step $step, string $plugin ): array {
+        return [
+            'kind'   => $step->kind(),
+            'plugin' => $plugin,
+        ] + $step->client_meta() + [
             'label'       => $step->label(),
             'description' => $step->description(),
             'icon'        => $step->icon(),

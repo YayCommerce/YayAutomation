@@ -1,5 +1,5 @@
 <?php
-namespace YayMatik\Workflow\Steps\Core;
+namespace YayMatik\Workflow\Steps;
 
 use YayMatik\Workflow\Data\Scope;
 use YayMatik\Workflow\Data\Type;

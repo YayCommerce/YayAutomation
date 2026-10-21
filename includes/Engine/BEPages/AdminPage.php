@@ -7,7 +7,7 @@ use YayMatik\Engine\Register\ScriptName;
 use YayMatik\Workflow\Coupon\FreeShipping;
 use YayMatik\Utils\SingletonTrait;
 use YayMatik\Workflow\Definition\Catalog;
-use YayMatik\Workflow\Steps\Actions\SendInternalEmail;
+use YayMatik\Workflow\Actions\SendInternalEmail;
 use YayMatik\YayMatik;
 
 defined( 'ABSPATH' ) || exit;

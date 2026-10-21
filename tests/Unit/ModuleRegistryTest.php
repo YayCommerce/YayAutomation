@@ -1,77 +1,126 @@
 <?php
-namespace YayMatik\Tests\Unit\Extend;
+namespace YayMatik\Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
-use YayMatik\Workflow\Extend\Plugins;
+use YayMatik\Pro\Workflow\Modules\WoocommerceProModule;
+use YayMatik\Pro\Workflow\Modules\YayMatikProModule;
+use YayMatik\Tests\Support\FakeCondition;
+use YayMatik\Tests\Support\FakeModule;
+use YayMatik\Workflow\Conditions\Criteria;
+use YayMatik\Workflow\Data\DataRegistry;
+use YayMatik\Workflow\Data\SiteData;
+use YayMatik\Workflow\ModuleRegistry;
+use YayMatik\Workflow\Modules\Module;
+use YayMatik\Workflow\Modules\WoocommerceModule;
+use YayMatik\Workflow\Modules\YayMatikModule;
+use YayMatik\Workflow\Steps\StepRegistry;
 
-/**
- * Plugin entries and logos. A logo uses only `LOGO_TAGS` (what `wp_kses()` keeps; the real call is
- * checked on the site) and draws in `currentColor`, with no color of its own.
- */
-final class PluginsTest extends TestCase {
+require_once dirname( __DIR__ ) . '/Support/woocommerce-stubs.php';
 
-    public function logos(): array {
-        return array_map( fn( string $svg ) => [ $svg ], Plugins::logos() );
-    }
+/** Which modules load, what they register, and their logos. */
+final class ModuleRegistryTest extends TestCase {
 
-    public function test_every_plugin_has_a_logo(): void {
-        $this->assertSame( [ Plugins::WOOCOMMERCE, Plugins::YAYMATIK ], array_keys( Plugins::logos() ) );
-    }
+    private const FREE = [ YayMatikModule::class, WoocommerceModule::class ];
 
-    /**
-     * @dataProvider logos
-     *
-     * @param string $svg Logo.
-     */
-    public function test_logo_uses_only_allowed_tags_and_attributes( string $svg ): void {
-        $doc = new \DOMDocument();
-        $this->assertTrue( $doc->loadXML( $svg ), 'well-formed' );
-        $nodes = ( new \DOMXPath( $doc ) )->query( '//*' );
-        $this->assertGreaterThan( 1, $nodes->length );
-        foreach ( $nodes as $node ) {
-            $tag = strtolower( $node->localName );
-            $this->assertArrayHasKey( $tag, Plugins::LOGO_TAGS );
-            foreach ( $node->attributes as $attr ) {
-                $this->assertArrayHasKey( strtolower( $attr->name ), Plugins::LOGO_TAGS[ $tag ], "$tag@{$attr->name}" );
-            }
+    private const STEPS = [
+        'order_created',
+        'order_status_changed',
+        'send_email',
+        'send_internal_email',
+        'change_order_status',
+        'add_order_note',
+        'update_order_meta',
+        'generate_coupon',
+        'condition',
+    ];
+
+    /** @var callable|null */
+    private $filter = null;
+
+    protected function tearDown(): void {
+        if ( $this->filter ) {
+            remove_filter( ModuleRegistry::HOOK, $this->filter );
         }
-        $this->assertSame( 'svg', $doc->documentElement->localName );
     }
 
-    /**
-     * @dataProvider logos
-     *
-     * @param string $svg Logo.
-     */
-    public function test_logo_has_no_color_of_its_own( string $svg ): void {
-        $this->assertDoesNotMatchRegularExpression( '/#[0-9a-f]{3,8}\b|rgba?\(|hsla?\(|style=|color=/i', $svg );
+    public function test_free_set_registers_todays_steps_and_data(): void {
+        $modules = ModuleRegistry::from( self::FREE );
 
-        $doc = new \DOMDocument();
-        $doc->loadXML( $svg );
-        foreach ( ( new \DOMXPath( $doc ) )->query( '//@fill | //@stroke' ) as $paint ) {
-            $this->assertContains( $paint->value, [ 'none', 'currentColor' ], "{$paint->name}=\"{$paint->value}\"" );
-        }
-        $this->assertSame( 'currentColor', $doc->documentElement->getAttribute( 'stroke' ) );
+        $this->assertSame( [ 'yaymatik', 'woocommerce' ], array_keys( $modules ) );
+        $this->assertEqualsCanonicalizing( self::STEPS, array_keys( ModuleRegistry::steps( $modules ) ) );
+        $this->assertSame( [ 'site', 'order', 'customer', 'order_item' ], array_keys( ModuleRegistry::data( $modules ) ) );
+        $plugins = ModuleRegistry::plugins( $modules );
+        $this->assertSame( 'yaymatik', $plugins['condition'] );
+        $this->assertSame(
+            [
+                'yaymatik'    => 1,
+                'woocommerce' => 8,
+            ],
+            array_count_values( $plugins )
+        );
     }
 
-    public function test_to_client_keeps_its_keys_and_adds_the_logo(): void {
-        $plugins = array_column( Plugins::to_client(), null, 'id' );
+    public function test_pro_set_loads_when_its_classes_exist_and_registers_the_same(): void {
+        $this->assertSame( [ YayMatikProModule::class, WoocommerceProModule::class ], ModuleRegistry::classes() );
 
-        foreach ( $plugins as $plugin ) {
+        $pro = ModuleRegistry::from( ModuleRegistry::classes() );
+        $this->assertSame( [ 'yaymatik', 'woocommerce' ], array_keys( $pro ) );
+        $this->assertSame( ModuleRegistry::plugins( ModuleRegistry::from( self::FREE ) ), ModuleRegistry::plugins( $pro ) );
+    }
+
+    public function test_the_registries_read_the_loaded_modules(): void {
+        $this->assertSame( ModuleRegistry::plugins( ModuleRegistry::modules() ), ModuleRegistry::plugins( ModuleRegistry::from( ModuleRegistry::classes() ) ) );
+        $this->assertEqualsCanonicalizing( self::STEPS, array_keys( StepRegistry::all() ) );
+        $this->assertSame( [ 'site', 'order', 'customer' ], array_keys( DataRegistry::items() ), 'order_item only through order.items' );
+        $this->assertArrayHasKey( 'order_item', DataRegistry::entities() );
+    }
+
+    public function test_a_filter_adds_a_module_whose_steps_name_it(): void {
+        $this->filter = fn( array $modules ) => array_merge( $modules, [ FakeModule::class ] );
+        add_filter( ModuleRegistry::HOOK, $this->filter );
+
+        $modules = ModuleRegistry::from( ModuleRegistry::classes() );
+
+        $this->assertSame( [ 'yaymatik', 'woocommerce', 'fake' ], array_keys( $modules ) );
+        $this->assertSame( 'fake', ModuleRegistry::plugins( $modules )['fake_condition'] );
+        $this->assertInstanceOf( FakeCondition::class, ModuleRegistry::steps( $modules )['fake_condition'] );
+    }
+
+    public function test_anything_but_a_module_subclass_is_ignored(): void {
+        $modules = ModuleRegistry::from( [ \stdClass::class, Module::class, 'No\\Such\\Module', 42, null, YayMatikModule::class ] );
+
+        $this->assertSame( [ 'yaymatik' ], array_keys( $modules ) );
+    }
+
+    public function test_a_taken_id_keeps_its_first_owner(): void {
+        $modules = ModuleRegistry::from( [ YayMatikModule::class, YayMatikProModule::class, FakeModule::class ] );
+        $this->assertInstanceOf( YayMatikModule::class, $modules['yaymatik'] );
+        $this->assertNotInstanceOf( YayMatikProModule::class, $modules['yaymatik'] );
+
+        $steps   = ModuleRegistry::steps( $modules );
+        $plugins = ModuleRegistry::plugins( $modules );
+        $this->assertInstanceOf( Criteria::class, $steps['condition'] );
+        $this->assertSame( 'yaymatik', $plugins['condition'], 'Criteria stays with the module that listed it first' );
+        $this->assertSame( 'fake', $plugins['fake_condition'], 'a condition listed under actions is left out, not registered twice' );
+        $this->assertInstanceOf( SiteData::class, ModuleRegistry::data( $modules )['site'] );
+        $this->assertCount( 1, ModuleRegistry::data( $modules ) );
+    }
+
+    public function test_to_client_keeps_its_keys(): void {
+        $plugins = array_column( ModuleRegistry::to_client(), null, 'id' );
+
+        $this->assertSame( [ 'yaymatik', 'woocommerce' ], array_keys( $plugins ) );
+        foreach ( $plugins as $id => $plugin ) {
             $this->assertSame( [ 'id', 'label', 'description', 'active', 'logo' ], array_keys( $plugin ) );
-            $this->assertSame( Plugins::logos()[ $plugin['id'] ], $plugin['logo'], 'cleaned logo is the source logo' );
+            $this->assertMatchesRegularExpression( '#^https?://.+\.svg$#', $plugin['logo'], $id );
         }
-        $this->assertTrue( $plugins[ Plugins::YAYMATIK ]['active'], 'always active' );
+        $this->assertTrue( $plugins['yaymatik']['active'], 'always active' );
     }
 
-    /**
-     * @dataProvider logos
-     *
-     * @param string $svg Logo.
-     */
-    public function test_clean_gives_viewbox_its_case_back( string $svg ): void {
-        $this->assertStringContainsString( ' viewBox="0 0 24 24"', $svg );
-        // What wp_kses() returns: attribute names lowercased.
-        $this->assertSame( $svg, Plugins::clean( str_replace( ' viewBox=', ' viewbox=', $svg ) ) );
+    public function test_each_logo_is_an_svg_file_the_plugin_ships(): void {
+        foreach ( ModuleRegistry::from( self::FREE ) as $id => $module ) {
+            $this->assertSame( YAYMATIK_PLUGIN_URL . "assets/logos/$id.svg", $module->logo() );
+            $this->assertFileExists( dirname( __DIR__, 2 ) . "/assets/logos/$id.svg" );
+        }
     }
 }

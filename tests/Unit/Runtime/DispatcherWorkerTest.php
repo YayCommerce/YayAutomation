@@ -15,8 +15,8 @@ use YayMatik\Workflow\Data\Scope;
 use YayMatik\Workflow\Runtime\ActionSchedulerQueue;
 use YayMatik\Workflow\Runtime\Dispatcher;
 use YayMatik\Workflow\Runtime\Worker;
-use YayMatik\Workflow\Steps\Core\StepResult;
-use YayMatik\Workflow\Steps\Triggers\OrderStatusChanged;
+use YayMatik\Workflow\Steps\StepResult;
+use YayMatik\Workflow\Triggers\OrderStatusChanged;
 
 require_once dirname( __DIR__, 2 ) . '/Support/woocommerce-stubs.php';
 

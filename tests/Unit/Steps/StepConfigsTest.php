@@ -2,14 +2,14 @@
 namespace YayMatik\Tests\Unit\Steps;
 
 use PHPUnit\Framework\TestCase;
-use YayMatik\Workflow\Steps\Actions\AddOrderNote;
-use YayMatik\Workflow\Steps\Actions\ChangeOrderStatus;
-use YayMatik\Workflow\Steps\Actions\SendInternalEmail;
-use YayMatik\Workflow\Steps\Actions\UpdateOrderMeta;
-use YayMatik\Workflow\Steps\Conditions\Criteria;
-use YayMatik\Workflow\Steps\Core\Step;
-use YayMatik\Workflow\Steps\Triggers\OrderCreated;
-use YayMatik\Workflow\Steps\Triggers\OrderStatusChanged;
+use YayMatik\Workflow\Actions\AddOrderNote;
+use YayMatik\Workflow\Actions\ChangeOrderStatus;
+use YayMatik\Workflow\Actions\SendInternalEmail;
+use YayMatik\Workflow\Actions\UpdateOrderMeta;
+use YayMatik\Workflow\Conditions\Criteria;
+use YayMatik\Workflow\Steps\Step;
+use YayMatik\Workflow\Triggers\OrderCreated;
+use YayMatik\Workflow\Triggers\OrderStatusChanged;
 
 require_once dirname( __DIR__, 2 ) . '/Support/woocommerce-stubs.php';
 

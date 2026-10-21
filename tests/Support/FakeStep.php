@@ -3,8 +3,8 @@ namespace YayMatik\Tests\Support;
 
 use YayMatik\Workflow\Data\Scope;
 use YayMatik\Workflow\Data\Type;
-use YayMatik\Workflow\Steps\Core\Action;
-use YayMatik\Workflow\Steps\Core\StepResult;
+use YayMatik\Workflow\Steps\Action;
+use YayMatik\Workflow\Steps\StepResult;
 
 /**
  * An action whose run() a test supplies. Declares one output, `to`. Config is kept as given;
@@ -46,14 +46,6 @@ final class FakeStep extends Action {
 
     public function description(): string {
         return '';
-    }
-
-    public function plugin(): string {
-        return 'yaymatik';
-    }
-
-    public function module(): string {
-        return 'core';
     }
 
     public function icon(): string {

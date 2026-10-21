@@ -1,12 +1,10 @@
 <?php
-namespace YayMatik\Workflow\Steps\Triggers;
+namespace YayMatik\Workflow\Triggers;
 
 use YayMatik\Workflow\Data\CustomerData;
 use YayMatik\Workflow\Data\OrderData;
 use YayMatik\Workflow\Data\Ref;
-use YayMatik\Workflow\Extend\Modules;
-use YayMatik\Workflow\Extend\Plugins;
-use YayMatik\Workflow\Steps\Core\Trigger;
+use YayMatik\Workflow\Steps\Trigger;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -15,14 +13,6 @@ abstract class OrderTrigger extends Trigger {
 
     /** Statuses of orders not placed yet: auto-drafts and block checkout drafts. */
     protected const DRAFT_STATUSES = [ 'auto-draft', 'new', 'checkout-draft' ];
-
-    public function plugin(): string {
-        return Plugins::WOOCOMMERCE;
-    }
-
-    public function module(): string {
-        return Modules::CORE;
-    }
 
     public function provides(): array {
         return [ OrderData::ID, CustomerData::ID ];

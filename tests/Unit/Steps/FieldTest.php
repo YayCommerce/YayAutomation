@@ -2,7 +2,7 @@
 namespace YayMatik\Tests\Unit\Steps;
 
 use PHPUnit\Framework\TestCase;
-use YayMatik\Workflow\Steps\Core\Field;
+use YayMatik\Workflow\Steps\Field;
 
 /** Step settings: each widget's sanitize (never fails) and validate, the modifiers, the catalog shape. */
 final class FieldTest extends TestCase {

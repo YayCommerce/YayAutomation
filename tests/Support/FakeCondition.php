@@ -2,7 +2,7 @@
 namespace YayMatik\Tests\Support;
 
 use YayMatik\Workflow\Data\Scope;
-use YayMatik\Workflow\Steps\Core\Condition;
+use YayMatik\Workflow\Steps\Condition;
 
 /** A condition that says yes when its config has `yes` true; `result` comes from the base class. Counts its runs. */
 final class FakeCondition extends Condition {
@@ -20,14 +20,6 @@ final class FakeCondition extends Condition {
 
     public function description(): string {
         return '';
-    }
-
-    public function plugin(): string {
-        return 'yaymatik';
-    }
-
-    public function module(): string {
-        return 'core';
     }
 
     public function icon(): string {

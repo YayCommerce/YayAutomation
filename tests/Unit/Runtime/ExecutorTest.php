@@ -12,8 +12,8 @@ use YayMatik\Workflow\Data\Ref;
 use YayMatik\Workflow\Data\RefResolver;
 use YayMatik\Workflow\Data\Scope;
 use YayMatik\Workflow\Runtime\Executor;
-use YayMatik\Workflow\Steps\Core\Step;
-use YayMatik\Workflow\Steps\Core\StepResult;
+use YayMatik\Workflow\Steps\Step;
+use YayMatik\Workflow\Steps\StepResult;
 
 /** The Executor over fakes: cursor, branches, error policy, waits, slices and safe resume. */
 final class ExecutorTest extends TestCase {
@@ -261,7 +261,7 @@ final class ExecutorTest extends TestCase {
     }
 
     public function test_skipped_condition_ends_its_path(): void {
-        $this->steps['condition'] = new class() extends \YayMatik\Workflow\Steps\Core\Condition {
+        $this->steps['condition'] = new class() extends \YayMatik\Workflow\Steps\Condition {
             public function id(): string {
                 return 'condition';
             }
@@ -269,12 +269,6 @@ final class ExecutorTest extends TestCase {
                 return '';
             }
             public function description(): string {
-                return '';
-            }
-            public function plugin(): string {
-                return '';
-            }
-            public function module(): string {
                 return '';
             }
             public function icon(): string {
@@ -659,7 +653,7 @@ final class ExecutorTest extends TestCase {
     }
 
     public function test_condition_that_only_implements_evaluate_follows_then_on_yes(): void {
-        $this->steps['minimal'] = new class() extends \YayMatik\Workflow\Steps\Core\Condition {
+        $this->steps['minimal'] = new class() extends \YayMatik\Workflow\Steps\Condition {
             public function id(): string {
                 return 'minimal';
             }
@@ -667,12 +661,6 @@ final class ExecutorTest extends TestCase {
                 return '';
             }
             public function description(): string {
-                return '';
-            }
-            public function plugin(): string {
-                return '';
-            }
-            public function module(): string {
                 return '';
             }
             public function icon(): string {

@@ -3,8 +3,8 @@ namespace YayMatik\Workflow\Runtime;
 
 use YayMatik\Utils\Logger;
 use YayMatik\Workflow\Data\Scope;
-use YayMatik\Workflow\Steps\Core\StepRegistry;
-use YayMatik\Workflow\Steps\Core\Trigger;
+use YayMatik\Workflow\Steps\StepRegistry;
+use YayMatik\Workflow\Steps\Trigger;
 
 defined( 'ABSPATH' ) || exit;
 

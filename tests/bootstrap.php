@@ -12,6 +12,7 @@ require_once __DIR__ . '/../dev/tools/phpunit/vendor/autoload.php';
 if ( ! defined( 'ABSPATH' ) ) {
     define( 'ABSPATH', __DIR__ . '/' );
 }
+define( 'YAYMATIK_PLUGIN_URL', 'https://example.test/wp-content/plugins/yaymatik/' );
 
 spl_autoload_register(
     static function ( string $class_name ): void {

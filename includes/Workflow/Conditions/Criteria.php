@@ -1,15 +1,13 @@
 <?php
-namespace YayMatik\Workflow\Steps\Conditions;
+namespace YayMatik\Workflow\Conditions;
 
 use YayMatik\Workflow\Data\DataItem;
 use YayMatik\Workflow\Data\DataRegistry;
 use YayMatik\Workflow\Data\Operators;
 use YayMatik\Workflow\Data\Scope;
 use YayMatik\Workflow\Definition\Messages;
-use YayMatik\Workflow\Extend\Modules;
-use YayMatik\Workflow\Extend\Plugins;
-use YayMatik\Workflow\Steps\Core\Condition;
-use YayMatik\Workflow\Steps\Core\Field;
+use YayMatik\Workflow\Steps\Condition;
+use YayMatik\Workflow\Steps\Field;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -38,14 +36,6 @@ class Criteria extends Condition {
 
     public function description(): string {
         return __( 'Take the Yes path when the rules match, otherwise the No path.', 'yaymatik' );
-    }
-
-    public function plugin(): string {
-        return Plugins::YAYMATIK;
-    }
-
-    public function module(): string {
-        return Modules::CORE;
     }
 
     public function icon(): string {

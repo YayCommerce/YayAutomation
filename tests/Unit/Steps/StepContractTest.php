@@ -3,20 +3,18 @@ namespace YayMatik\Tests\Unit\Steps;
 
 use PHPUnit\Framework\TestCase;
 use YayMatik\Workflow\Data\Type;
-use YayMatik\Workflow\Extend\Modules;
-use YayMatik\Workflow\Extend\Plugins;
-use YayMatik\Workflow\Steps\Actions\AddOrderNote;
-use YayMatik\Workflow\Steps\Actions\ChangeOrderStatus;
-use YayMatik\Workflow\Steps\Actions\GenerateCoupon;
-use YayMatik\Workflow\Steps\Actions\SendEmail;
-use YayMatik\Workflow\Steps\Actions\SendInternalEmail;
-use YayMatik\Workflow\Steps\Actions\UpdateOrderMeta;
-use YayMatik\Workflow\Steps\Conditions\Criteria;
-use YayMatik\Workflow\Steps\Core\Field;
-use YayMatik\Workflow\Steps\Core\Step;
-use YayMatik\Workflow\Steps\Core\StepIcons;
-use YayMatik\Workflow\Steps\Triggers\OrderCreated;
-use YayMatik\Workflow\Steps\Triggers\OrderStatusChanged;
+use YayMatik\Workflow\Actions\AddOrderNote;
+use YayMatik\Workflow\Actions\ChangeOrderStatus;
+use YayMatik\Workflow\Actions\GenerateCoupon;
+use YayMatik\Workflow\Actions\SendEmail;
+use YayMatik\Workflow\Actions\SendInternalEmail;
+use YayMatik\Workflow\Actions\UpdateOrderMeta;
+use YayMatik\Workflow\Conditions\Criteria;
+use YayMatik\Workflow\Steps\Field;
+use YayMatik\Workflow\Steps\Step;
+use YayMatik\Workflow\Steps\StepIcons;
+use YayMatik\Workflow\Triggers\OrderCreated;
+use YayMatik\Workflow\Triggers\OrderStatusChanged;
 
 require_once dirname( __DIR__, 2 ) . '/Support/woocommerce-stubs.php';
 
@@ -44,8 +42,6 @@ final class StepContractTest extends TestCase {
     public function test_declares_its_identity( Step $step ): void {
         $this->assertNotSame( '', $step->label() );
         $this->assertNotSame( '', $step->description() );
-        $this->assertContains( $step->plugin(), [ Plugins::WOOCOMMERCE, Plugins::YAYMATIK ] );
-        $this->assertSame( Modules::CORE, $step->module() );
         $this->assertContains( $step->on_error(), [ Step::ON_ERROR_STOP, Step::ON_ERROR_CONTINUE ] );
     }
 
@@ -118,9 +114,8 @@ final class StepContractTest extends TestCase {
         );
     }
 
-    public function test_condition_is_core_and_email_from_is_a_notice(): void {
+    public function test_email_from_is_a_notice(): void {
         $steps = self::steps();
-        $this->assertSame( Plugins::YAYMATIK, $steps['condition']->plugin() );
 
         $from = $steps['send_internal_email']->fields()[0];
         $this->assertSame( 'from', $from->key() );

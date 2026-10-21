@@ -1,5 +1,5 @@
 <?php
-namespace YayMatik\Workflow\Steps\Triggers;
+namespace YayMatik\Workflow\Triggers;
 
 defined( 'ABSPATH' ) || exit;
 

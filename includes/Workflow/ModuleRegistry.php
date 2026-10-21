@@ -1,56 +1,141 @@
 <?php
-namespace YayMatik\Workflow\Extend;
+namespace YayMatik\Workflow;
 
-use YayMatik\Workflow\Steps\Actions\AddOrderNote;
-use YayMatik\Workflow\Steps\Actions\ChangeOrderStatus;
-use YayMatik\Workflow\Steps\Actions\GenerateCoupon;
-use YayMatik\Workflow\Steps\Actions\SendEmail;
-use YayMatik\Workflow\Steps\Actions\SendInternalEmail;
-use YayMatik\Workflow\Steps\Actions\UpdateOrderMeta;
-use YayMatik\Workflow\Steps\Conditions\Criteria;
-use YayMatik\Workflow\Steps\Triggers\OrderCreated;
-use YayMatik\Workflow\Steps\Triggers\OrderStatusChanged;
+use YayMatik\Pro\Workflow\Modules\WoocommerceProModule;
+use YayMatik\Pro\Workflow\Modules\YayMatikProModule;
+use YayMatik\Workflow\Data\DataItem;
+use YayMatik\Workflow\Modules\Module;
+use YayMatik\Workflow\Modules\WoocommerceModule;
+use YayMatik\Workflow\Modules\YayMatikModule;
+use YayMatik\Workflow\Steps\Action;
+use YayMatik\Workflow\Steps\Condition;
+use YayMatik\Workflow\Steps\Step;
+use YayMatik\Workflow\Steps\Trigger;
 
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Modules that steps, templates and features belong to (decision P1). Each module's tier and
- * on/off switch live here, never in a step: moving a step between Lite and Pro, or keeping an
- * unfinished module out of a release, is a change to its entry.
- *
- * A module that is off is unknown everywhere: its steps are not in the registry, so the editor
- * doesn't offer them, the catalog doesn't list them, a save rejects them and nothing runs them.
+ * The modules, and the steps and data items they register. Another plugin adds a module class
+ * on `HOOK`. An id that is already taken (module, step or data item) keeps its first owner.
  */
-final class Modules {
+final class ModuleRegistry {
 
-    public const TIER_LITE = 'lite';
-    public const TIER_PRO  = 'pro';
+    public const HOOK = 'yaymatik_modules';
 
-    /** Workflow Core's own steps: the order triggers, Condition and the order / email / coupon actions. */
-    public const CORE = 'core';
+    /** @var Module[]|null */
+    private static $modules = null;
+
+    /** Module classes: the Pro ones when the Pro folder ships, then the filter's. */
+    public static function classes(): array {
+        $modules = class_exists( YayMatikProModule::class ) ? [ YayMatikProModule::class, WoocommerceProModule::class ] : [ YayMatikModule::class, WoocommerceModule::class ];
+        return (array) apply_filters( self::HOOK, $modules );
+    }
+
+    /** @return Module[] Keyed by id. */
+    public static function modules(): array {
+        if ( null === self::$modules ) {
+            self::$modules = self::from( self::classes() );
+        }
+        return self::$modules;
+    }
 
     /**
-     * Module id => [ 'tier' => TIER_*, 'on' => bool, 'steps' => step classes, in picker order ].
-     *
-     * @return array[]
+     * @param array $classes
+     * @return Module[] Keyed by id; anything that isn't a Module subclass is left out.
      */
-    public static function manifest(): array {
-        return [
-            self::CORE => [
-                'tier'  => self::TIER_LITE,
-                'on'    => true,
-                'steps' => [
-                    OrderCreated::class,
-                    OrderStatusChanged::class,
-                    Criteria::class,
-                    SendEmail::class,
-                    SendInternalEmail::class,
-                    ChangeOrderStatus::class,
-                    AddOrderNote::class,
-                    UpdateOrderMeta::class,
-                    GenerateCoupon::class,
+    public static function from( array $classes ): array {
+        $modules = [];
+        foreach ( $classes as $class ) {
+            if ( ! is_string( $class ) || ! is_subclass_of( $class, Module::class ) ) {
+                continue;
+            }
+            $module = new $class();
+            if ( ! isset( $modules[ $module->id() ] ) ) {
+                $modules[ $module->id() ] = $module;
+            }
+        }
+        return $modules;
+    }
+
+    /**
+     * @param Module[] $modules
+     * @return Step[] Keyed by id.
+     */
+    public static function steps( array $modules ): array {
+        return self::build( $modules )[0];
+    }
+
+    /**
+     * @param Module[] $modules
+     * @return string[] Module id by step id.
+     */
+    public static function plugins( array $modules ): array {
+        return self::build( $modules )[1];
+    }
+
+    /**
+     * @param Module[] $modules
+     * @return DataItem[] Keyed by id.
+     */
+    public static function data( array $modules ): array {
+        $items = [];
+        foreach ( $modules as $module ) {
+            foreach ( $module->data_items() as $class ) {
+                if ( ! is_subclass_of( $class, DataItem::class ) ) {
+                    continue;
+                }
+                $item = new $class();
+                if ( ! isset( $items[ $item->id() ] ) ) {
+                    $items[ $item->id() ] = $item;
+                }
+            }
+        }
+        return $items;
+    }
+
+    /** Plugin entries. Shape must match `PluginMeta` in apps/admin-page/src/types/localize.d.ts. */
+    public static function to_client(): array {
+        return array_values(
+            array_map(
+                fn( Module $module ) => [
+                    'id'          => $module->id(),
+                    'label'       => $module->label(),
+                    'description' => $module->description(),
+                    'active'      => $module->active(),
+                    'logo'        => esc_url_raw( $module->logo() ),
                 ],
-            ],
-        ];
+                self::modules()
+            )
+        );
+    }
+
+    /**
+     * Steps keyed by id and the module that registered each. A class listed under the wrong kind is left out.
+     *
+     * @param Module[] $modules
+     */
+    private static function build( array $modules ): array {
+        $steps   = [];
+        $plugins = [];
+        foreach ( $modules as $module ) {
+            $lists = [
+                Trigger::class   => $module->triggers(),
+                Condition::class => $module->conditions(),
+                Action::class    => $module->actions(),
+            ];
+            foreach ( $lists as $kind => $classes ) {
+                foreach ( $classes as $class ) {
+                    if ( ! is_subclass_of( $class, $kind ) ) {
+                        continue;
+                    }
+                    $step = new $class();
+                    if ( ! isset( $steps[ $step->id() ] ) ) {
+                        $steps[ $step->id() ]   = $step;
+                        $plugins[ $step->id() ] = $module->id();
+                    }
+                }
+            }
+        }
+        return [ $steps, $plugins ];
     }
 }

@@ -1,5 +1,5 @@
 <?php
-namespace YayMatik\Workflow\Steps\Core;
+namespace YayMatik\Workflow\Steps;
 
 use YayMatik\Workflow\Data\Scope;
 
@@ -36,12 +36,6 @@ abstract class Step {
 
     /** One sentence on what the step does, for the picker. */
     abstract public function description(): string;
-
-    /** Plugin that provides the step (see Workflow/Extend/Plugins). */
-    abstract public function plugin(): string;
-
-    /** Module the step belongs to (see Workflow/Extend/Modules). Tiers live there, never in the step. */
-    abstract public function module(): string;
 
     /** A name from `StepIcons::NAMES`. */
     abstract public function icon(): string;

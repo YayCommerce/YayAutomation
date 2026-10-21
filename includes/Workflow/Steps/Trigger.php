@@ -1,5 +1,5 @@
 <?php
-namespace YayMatik\Workflow\Steps\Core;
+namespace YayMatik\Workflow\Steps;
 
 use YayMatik\Workflow\Data\Scope;
 
@@ -81,7 +81,6 @@ abstract class Trigger extends Step {
 
     public function client_meta(): array {
         return [
-            'plugin'   => $this->plugin(),
             'provides' => $this->provides(),
         ];
     }

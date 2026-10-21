@@ -1,8 +1,8 @@
 <?php
-namespace YayMatik\Workflow\Steps\Triggers;
+namespace YayMatik\Workflow\Triggers;
 
 use YayMatik\Workflow\Data\OrderData;
-use YayMatik\Workflow\Steps\Core\Field;
+use YayMatik\Workflow\Steps\Field;
 
 defined( 'ABSPATH' ) || exit;
 

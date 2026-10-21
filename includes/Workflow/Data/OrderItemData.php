@@ -27,6 +27,10 @@ final class OrderItemData extends DataItem {
         return 'package';
     }
 
+    public function standalone(): bool {
+        return false;
+    }
+
     protected function define(): array {
         return [
             'name'     => [

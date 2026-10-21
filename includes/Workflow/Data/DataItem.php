@@ -45,6 +45,11 @@ abstract class DataItem {
     /** @return array[] Field definitions keyed by field key. */
     abstract protected function define(): array;
 
+    /** False for an entity reached only through a relation (`order.items`): no trigger supplies it. */
+    public function standalone(): bool {
+        return true;
+    }
+
     /**
      * Made-up values for previews when there's no real data (labelled "Sample data"): field key =>
      * value, or [ 'value' => typed, 'text' => plain, 'html' => safe HTML (optional) ] when it reads

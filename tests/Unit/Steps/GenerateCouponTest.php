@@ -6,8 +6,8 @@ use YayMatik\Tests\Support\FakeCouponWriter;
 use YayMatik\Workflow\Data\Scope;
 use YayMatik\Workflow\Data\Template;
 use YayMatik\Workflow\Runtime\Executor;
-use YayMatik\Workflow\Steps\Actions\GenerateCoupon;
-use YayMatik\Workflow\Steps\Core\StepResult;
+use YayMatik\Workflow\Actions\GenerateCoupon;
+use YayMatik\Workflow\Steps\StepResult;
 
 require_once dirname( __DIR__, 2 ) . '/Support/woocommerce-stubs.php';
 

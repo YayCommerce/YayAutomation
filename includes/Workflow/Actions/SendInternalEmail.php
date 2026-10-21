@@ -1,15 +1,13 @@
 <?php
-namespace YayMatik\Workflow\Steps\Actions;
+namespace YayMatik\Workflow\Actions;
 
 use YayMatik\Workflow\Data\Scope;
 use YayMatik\Workflow\Data\Type;
 use YayMatik\Workflow\Data\Values;
 use YayMatik\Workflow\Email\EmailBody;
-use YayMatik\Workflow\Extend\Modules;
-use YayMatik\Workflow\Extend\Plugins;
-use YayMatik\Workflow\Steps\Core\Action;
-use YayMatik\Workflow\Steps\Core\Field;
-use YayMatik\Workflow\Steps\Core\StepResult;
+use YayMatik\Workflow\Steps\Action;
+use YayMatik\Workflow\Steps\Field;
+use YayMatik\Workflow\Steps\StepResult;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -34,14 +32,6 @@ class SendInternalEmail extends Action {
 
     public function description(): string {
         return __( 'Email your store team, from your WooCommerce store email address.', 'yaymatik' );
-    }
-
-    public function plugin(): string {
-        return Plugins::WOOCOMMERCE;
-    }
-
-    public function module(): string {
-        return Modules::CORE;
     }
 
     public function icon(): string {

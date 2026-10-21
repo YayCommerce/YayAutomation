@@ -1,5 +1,5 @@
 <?php
-namespace YayMatik\Workflow\Steps\Core;
+namespace YayMatik\Workflow\Steps;
 
 use YayMatik\Workflow\Data\DataRegistry;
 use YayMatik\Workflow\Data\Scope;
@@ -41,7 +41,6 @@ abstract class Action extends Step {
 
     public function client_meta(): array {
         return [
-            'plugin'   => $this->plugin(),
             'category' => $this->category(),
             'requires' => $this->requires(),
         ];

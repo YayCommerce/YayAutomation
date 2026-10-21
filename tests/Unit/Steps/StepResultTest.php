@@ -2,7 +2,7 @@
 namespace YayMatik\Tests\Unit\Steps;
 
 use PHPUnit\Framework\TestCase;
-use YayMatik\Workflow\Steps\Core\StepResult;
+use YayMatik\Workflow\Steps\StepResult;
 
 /** What a step's run() returns. */
 final class StepResultTest extends TestCase {

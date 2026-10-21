@@ -6,10 +6,10 @@ use YayMatik\Workflow\Data\DataRegistry;
 use YayMatik\Workflow\Data\GoneEntity;
 use YayMatik\Workflow\Data\RefResolver;
 use YayMatik\Workflow\Data\Scope;
-use YayMatik\Workflow\Steps\Core\Condition;
-use YayMatik\Workflow\Steps\Core\Step;
-use YayMatik\Workflow\Steps\Core\StepRegistry;
-use YayMatik\Workflow\Steps\Core\StepResult;
+use YayMatik\Workflow\Steps\Condition;
+use YayMatik\Workflow\Steps\Step;
+use YayMatik\Workflow\Steps\StepRegistry;
+use YayMatik\Workflow\Steps\StepResult;
 use YayMatik\Workflow\Storage\RunStepStore;
 use YayMatik\Workflow\Storage\RunStore;
 
