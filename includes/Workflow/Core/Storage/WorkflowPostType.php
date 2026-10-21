@@ -5,7 +5,7 @@ use YayMatik\Utils\SingletonTrait;
 
 defined( 'ABSPATH' ) || exit;
 
-/** Private storage for workflows. Only reachable through our REST routes. */
+/** Private post type for workflows, reachable only through our REST routes. */
 class WorkflowPostType {
 
     use SingletonTrait;

@@ -9,20 +9,7 @@ use YayMatik\Workflow\Core\Storage\RunStore;
 
 defined( 'ABSPATH' ) || exit;
 
-/**
- * Runs a run's next slice when its Action Scheduler job fires. State lives in `runs` only, never in
- * Action Scheduler's tables: the job just says "run slice N of run X".
- *
- * - Takes the run with a row lock (`claim()`), so two jobs never run it at once. A waiting run is
- *   only taken once its wait is over; a job that comes early makes sure one comes at `wait_until`.
- * - Before the first step: workflow deleted or off → `cancelled`; an entity the trigger refers to
- *   is gone → `skipped`, with the reason.
- * - A job that died (fatal error, timeout) gets a recovery job, which may take the run from `running`;
- *   the Executor then fails the interrupted step instead of running it twice.
- * - While a run runs, it is `current()`: events it causes carry it as their parent.
- *
- * Never throws: errors go to the run or to `Logger`.
- */
+/** Runs a run's next slice when its job fires; never throws (errors go to the run or `Logger`). */
 final class Worker {
 
     /** @var RunRepository */
@@ -37,25 +24,25 @@ final class Worker {
     /** @var Workflows */
     private $workflows;
 
-    /** @var callable fn(): Clock, one per slice. */
+    /** @var callable fn(): Clock */
     private $clock;
 
-    /** @var callable|null fn( string $id ): ?Step, for the Executor. */
+    /** @var callable|null fn( string $id ): ?Step */
     private $steps;
 
-    /** @var callable fn(): RefResolver, one per slice. */
+    /** @var callable fn(): RefResolver */
     private $resolver;
 
-    /** @var array|null The run being run now. */
+    /** @var array|null */
     private $current = null;
 
     /**
-     * @param RunRepository $runs      Runs and step rows.
-     * @param GraphSource   $graphs    Pinned version graphs.
-     * @param Queue         $queue     Action Scheduler.
-     * @param Workflows     $workflows Workflow lookups.
+     * @param RunRepository $runs
+     * @param GraphSource   $graphs
+     * @param Queue         $queue
+     * @param Workflows     $workflows
      * @param callable|null $clock     New Clock per slice; null = SystemClock.
-     * @param callable|null $steps     Step by id; null = `StepRegistry::get()`.
+     * @param callable|null $steps     Null = `StepRegistry::get()`.
      * @param callable|null $resolver  New RefResolver per slice; null = the WooCommerce one.
      */
     public function __construct( RunRepository $runs, GraphSource $graphs, Queue $queue, Workflows $workflows, ?callable $clock = null, ?callable $steps = null, ?callable $resolver = null ) {
@@ -68,7 +55,6 @@ final class Worker {
         $this->resolver  = $resolver ?? fn() => new RefResolver();
     }
 
-    /** Hooks the run job, the recovery job and Action Scheduler's failure actions. */
     public function register(): void {
         add_action( ActionSchedulerQueue::HOOK, fn( $run_id ) => $this->run( (int) $run_id ), 10, 1 );
         add_action( ActionSchedulerQueue::RECOVER_HOOK, fn( $run_id ) => $this->run( (int) $run_id, true ), 10, 1 );
@@ -78,9 +64,9 @@ final class Worker {
     }
 
     /**
-     * Action Scheduler gave up on a job. If it was one of our run jobs, queue a recovery job.
+     * Action Scheduler gave up on a job (fatal error, timeout): a run job gets a recovery job.
      *
-     * @param int $action_id Action Scheduler action id.
+     * @param int $action_id
      */
     public function action_failed( $action_id ): void {
         try {
@@ -95,10 +81,10 @@ final class Worker {
     }
 
     /**
-     * Queues a recovery job for a dead run job. A dead recovery job isn't retried again.
+     * A dead recovery job isn't retried again.
      *
-     * @param string $hook Hook of the dead job.
-     * @param array  $args Its args.
+     * @param string $hook
+     * @param array  $args
      */
     public function recover_job( string $hook, array $args ): void {
         $run_id = (int) ( $args[0] ?? 0 );
@@ -113,8 +99,8 @@ final class Worker {
     /**
      * Runs the run's next slice, if this call gets it.
      *
-     * @param int  $run_id  Run id.
-     * @param bool $recover A recovery job: may take the run from `running` too.
+     * @param int  $run_id
+     * @param bool $recover May take the run from `running` too; the Executor then fails the interrupted step.
      * @return string|null The run's status afterwards; null when the run wasn't taken.
      */
     public function run( int $run_id, bool $recover = false ): ?string {
@@ -162,7 +148,7 @@ final class Worker {
     }
 
     /**
-     * The run being run now: its parent for events it causes. Null outside a run.
+     * The run being run now, the parent of events it causes.
      *
      * @return array|null `id`, `workflow_id`, `root_run_id`, `depth`.
      */
@@ -171,11 +157,9 @@ final class Worker {
     }
 
     /**
-     * A job that came before the run's wait is over can't take it. Make sure a job still comes at
-     * `wait_until` (the queue adds none when one is already pending), so a waiting run is never
-     * left without one.
+     * A job that came before the wait is over can't take the run, so make sure one comes at `wait_until`.
      *
-     * @param int $run_id Run id.
+     * @param int $run_id
      */
     private function keep_waiting( int $run_id ): void {
         $run = $this->runs->find_run( $run_id );
@@ -189,10 +173,10 @@ final class Worker {
     }
 
     /**
-     * Checks before the first step. Ends the run and returns its status when it shouldn't start.
+     * Ends the run and returns its status when it shouldn't start.
      *
-     * @param array       $run      Run row.
-     * @param RefResolver $resolver This slice's resolver; loads the trigger's entities once.
+     * @param array       $run
+     * @param RefResolver $resolver
      */
     private function start( array $run, RefResolver $resolver ): ?string {
         $workflow = $this->workflows->find( (int) $run['workflow_id'] );
@@ -216,9 +200,9 @@ final class Worker {
     }
 
     /**
-     * @param int    $id     Run id.
-     * @param string $status Finishing status.
-     * @param string $reason Why, kept in `error`.
+     * @param int    $id
+     * @param string $status
+     * @param string $reason
      */
     private function end( int $id, string $status, string $reason ): string {
         $this->runs->save_run(

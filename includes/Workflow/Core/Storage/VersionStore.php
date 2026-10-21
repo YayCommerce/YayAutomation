@@ -7,12 +7,7 @@ defined( 'ABSPATH' ) || exit;
 
 // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
-/**
- * Rows of the `yaymatik_versions` table: one snapshot of a workflow's graph per version, with
- * the last action taken on it. Which row is live or the draft is tracked by `WorkflowRepository`.
- * Dates are GMT. Runs pin a version, so a saved version never changes: `update()` is only for the
- * draft row, and for the live row of a workflow never turned on (it has no runs).
- */
+/** Rows of the `versions` table: one graph snapshot per version, dates in GMT. */
 final class VersionStore {
 
     public const ACTION_CREATED     = 'created';
@@ -27,10 +22,9 @@ final class VersionStore {
     }
 
     /**
-     * One version with its graph decoded, or null. The executor loads a run's pinned version this
-     * way, never the live graph.
+     * One version with its graph decoded, or null.
      *
-     * @param int $id Row id.
+     * @param int $id
      */
     public static function find( int $id ): ?array {
         global $wpdb;
@@ -53,23 +47,23 @@ final class VersionStore {
     }
 
     /**
-     * @param int         $workflow_id Workflow post id.
-     * @param string      $action      One of the ACTION_ constants.
-     * @param array       $graph       Graph snapshot.
-     * @param int|null    $user_id     Null → the current user.
-     * @param string|null $time        GMT `Y-m-d H:i:s`; null → now.
+     * A row by the current user, now.
+     *
+     * @param int    $workflow_id
+     * @param string $action One of the ACTION_ constants.
+     * @param array  $graph
      * @return int Row id; 0 when the insert failed (logged).
      */
-    public static function insert( int $workflow_id, string $action, array $graph, ?int $user_id = null, ?string $time = null ): int {
+    public static function insert( int $workflow_id, string $action, array $graph ): int {
         global $wpdb;
-        $time = $time ?? current_time( 'mysql', true );
+        $time = current_time( 'mysql', true );
         $ok   = $wpdb->insert(
             self::table(),
             [
                 'workflow_id' => $workflow_id,
                 'action'      => $action,
                 'graph'       => wp_json_encode( $graph ),
-                'user_id'     => $user_id ?? get_current_user_id(),
+                'user_id'     => get_current_user_id(),
                 'created_at'  => $time,
                 'updated_at'  => $time,
             ],
@@ -83,11 +77,11 @@ final class VersionStore {
     }
 
     /**
-     * Replaces a row's snapshot; the current user and now become its author and time.
+     * Replaces a row's snapshot, by the current user, now; only for a row no run pins.
      *
-     * @param int    $id     Row id.
+     * @param int    $id
      * @param string $action One of the ACTION_ constants.
-     * @param array  $graph  Graph snapshot.
+     * @param array  $graph
      */
     public static function update( int $id, string $action, array $graph ): void {
         self::write(
@@ -103,7 +97,7 @@ final class VersionStore {
     /**
      * Moves a row's time to now, nothing else.
      *
-     * @param int $id Row id.
+     * @param int $id
      */
     public static function touch( int $id ): void {
         self::write( $id, [] );
@@ -120,10 +114,10 @@ final class VersionStore {
     }
 
     /**
-     * Newest change first (a draft edited in place moves up). Returns up to PER_PAGE + 1 rows, so the caller can tell whether a next page exists.
+     * Newest change first, up to PER_PAGE + 1 rows so the caller can tell whether a next page exists.
      *
-     * @param int $workflow_id Workflow post id.
-     * @param int $page        1-based.
+     * @param int $workflow_id
+     * @param int $page 1-based.
      * @return array[] Rows with `graph` still JSON.
      */
     public static function page( int $workflow_id, int $page ): array {
@@ -142,9 +136,9 @@ final class VersionStore {
     }
 
     /**
-     * Each workflow's newest row time, ISO 8601. Workflows without rows are left out.
+     * Each workflow's newest row time, ISO 8601; workflows without rows are left out.
      *
-     * @param int[] $workflow_ids Workflow post ids.
+     * @param int[] $workflow_ids
      * @return array<int, string>
      */
     public static function last_updated( array $workflow_ids ): array {

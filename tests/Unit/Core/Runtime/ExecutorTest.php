@@ -50,7 +50,7 @@ final class ExecutorTest extends TestCase {
      * A graph from a trigger `t` down. Nodes: id => [ block, config ]. Edges: [ source, target, handle? ].
      *
      * @param array $nodes Steps under the trigger.
-     * @param array $edges Edges, the trigger's included.
+     * @param array $edges The trigger's included.
      */
     private function graph( array $nodes, array $edges ): void {
         $graph = [
@@ -89,7 +89,7 @@ final class ExecutorTest extends TestCase {
     /**
      * A claimed run.
      *
-     * @param array $scope Stored scope.
+     * @param array $scope
      */
     private function new_run( array $scope = [] ): int {
         $id = $this->runs->create_run(
@@ -106,7 +106,7 @@ final class ExecutorTest extends TestCase {
     /**
      * Claims and runs a slice, as the Worker does.
      *
-     * @param int $id Run id.
+     * @param int $id
      */
     private function slice( int $id ): string {
         $this->runs->claim_run( $id, [ 'queued', 'waiting', 'running' ] );
@@ -124,14 +124,14 @@ final class ExecutorTest extends TestCase {
     /**
      * Step id => status of the run's rows, in the order they ran.
      *
-     * @param int $id Run id.
+     * @param int $id
      */
     private function statuses( int $id ): array {
         return array_column( $this->runs->steps( $id ), 'status', 'step_id' );
     }
 
     /**
-     * @param int $id Run id.
+     * @param int $id
      */
     private function run_of( int $id ): array {
         return $this->runs->find_run( $id );

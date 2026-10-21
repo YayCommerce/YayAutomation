@@ -7,10 +7,7 @@ defined( 'ABSPATH' ) || exit;
 
 // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
-/**
- * Rows of the `runs` table. A run pins the workflow version it started on; the executor loads that
- * version, never the live graph. Dates are GMT; `position` and `scope` are stored as JSON.
- */
+/** Rows of the `runs` table; dates in GMT, `position` and `scope` as JSON. */
 final class RunStore {
 
     public const STATUS_QUEUED    = 'queued';
@@ -31,16 +28,16 @@ final class RunStore {
         self::STATUS_SKIPPED,
     ];
 
-    /** A run in one of these has ended; `finished_at` is set when it gets there. */
+    /** Ended: reaching one sets `finished_at`. */
     public const FINISHED = [ self::STATUS_COMPLETED, self::STATUS_FAILED, self::STATUS_CANCELLED, self::STATUS_SKIPPED ];
 
     public const PER_PAGE = 20;
 
     /**
-     * A queued run. A run with no parent is its own root.
+     * A queued run; one with no parent is its own root.
      *
-     * @param array $run `workflow_id`, `version_id`, `trigger_id`, `subject`, `scope` (array), and for
-     *                   a run started by another run `parent_run_id`, `root_run_id`, `depth`.
+     * @param array $run `workflow_id`, `version_id`, `trigger_id`, `subject`, `scope` (array), and when
+     *                   another run started it `parent_run_id`, `root_run_id`, `depth`.
      * @return int Run id; 0 when the insert failed (logged).
      */
     public static function create( array $run ): int {
@@ -75,7 +72,7 @@ final class RunStore {
     /**
      * A run with `position` and `scope` decoded, or null.
      *
-     * @param int $id Run id.
+     * @param int $id
      */
     public static function find( int $id ): ?array {
         global $wpdb;
@@ -86,10 +83,9 @@ final class RunStore {
     }
 
     /**
-     * Newest first. Returns up to `PER_PAGE` + 1 rows, so the caller can tell whether a next page
-     * exists. Without `scope`, which can be large.
+     * Newest first, without `scope` (it can be large), up to `PER_PAGE` + 1 rows so the caller can tell whether a next page exists.
      *
-     * @param array $args `workflow_id`, `status` (string or list), `page` (1-based). All optional.
+     * @param array $args Optional `workflow_id`, `status` (string or list), `page` (1-based).
      * @return array[]
      */
     public static function list( array $args = [] ): array {
@@ -120,12 +116,11 @@ final class RunStore {
     }
 
     /**
-     * Runs of a workflow started in the last `$seconds`, for the rate limits: `all`, and `chained`
-     * (depth > 0: started by another run, as every loop is). One query.
+     * Runs of a workflow started in the last `$seconds`.
      *
-     * @param int $workflow_id Workflow id.
-     * @param int $seconds     Window.
-     * @return int[] `all`, `chained`.
+     * @param int $workflow_id
+     * @param int $seconds
+     * @return int[] `all`, `chained` (depth > 0).
      */
     public static function recent_counts( int $workflow_id, int $seconds ): array {
         global $wpdb;
@@ -140,15 +135,9 @@ final class RunStore {
     }
 
     /**
-     * Takes a run for one worker: moves it to `running` only if it is still in one of `$from`.
-     * The single UPDATE is the row lock, so two workers never both get true. A `waiting` run is
-     * only taken once its `wait_until` has passed; `wait_until` stays, so the Executor can tell a
-     * woken wait from an interrupted one.
+     * Moves a run to `running` if it is still in one of `$from`; the single UPDATE is the row lock.
      *
-     * Taking a run from `running` (recovery) first hands it back as `queued`: an UPDATE that leaves
-     * a row as it was counts 0 rows in MySQL, so `running` → `running` would never succeed.
-     *
-     * @param int      $id   Run id.
+     * @param int      $id
      * @param string[] $from Statuses it may be taken from.
      */
     public static function claim( int $id, array $from = [ self::STATUS_QUEUED, self::STATUS_WAITING ] ): bool {
@@ -159,10 +148,13 @@ final class RunStore {
         }
         $table = self::table();
         if ( in_array( self::STATUS_RUNNING, $from, true ) ) {
+            // Back to `queued` first: an UPDATE that leaves a row as it was counts 0 rows in MySQL.
             // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
             $wpdb->query( $wpdb->prepare( "UPDATE {$table} SET status = %s WHERE id = %d AND status = %s", self::STATUS_QUEUED, $id, self::STATUS_RUNNING ) );
             $from = array_values( array_unique( array_merge( array_diff( $from, [ self::STATUS_RUNNING ] ), [ self::STATUS_QUEUED ] ) ) );
         }
+        // A waiting run only once its wait is over; `wait_until` stays, so the Executor can tell a woken
+        // wait from an interrupted one.
         $in   = implode( ',', array_fill( 0, count( $from ), '%s' ) );
         $done = $wpdb->query(
             // phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- placeholders are built to match the array.
@@ -176,11 +168,10 @@ final class RunStore {
     }
 
     /**
-     * Saves where a run is. Only the given keys change: `position` and `scope` (arrays), `status`,
-     * `wait_until` (GMT `Y-m-d H:i:s` or null), `error`. A finishing status sets `finished_at`.
+     * Saves only the given fields; a finishing status sets `finished_at`.
      *
-     * @param int   $id     Run id.
-     * @param array $fields Keys above.
+     * @param int   $id
+     * @param array $fields `position`, `scope` (arrays), `status`, `wait_until` (GMT `Y-m-d H:i:s` or null), `error`.
      */
     public static function save( int $id, array $fields ): bool {
         global $wpdb;
@@ -219,7 +210,7 @@ final class RunStore {
     }
 
     /**
-     * @param array $row Row as read.
+     * @param array $row
      */
     private static function decode( array $row ): array {
         foreach ( [ 'id', 'workflow_id', 'version_id', 'parent_run_id', 'root_run_id', 'depth' ] as $key ) {

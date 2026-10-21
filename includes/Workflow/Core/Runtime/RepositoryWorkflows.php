@@ -17,9 +17,6 @@ final class RepositoryWorkflows implements Workflows {
     }
 
     public function live_version_id( int $id ): int {
-        if ( ! WorkflowRepository::has_versions( $id ) ) {
-            WorkflowRepository::seed_versions( $id );
-        }
         return WorkflowRepository::live_version_id( $id );
     }
 

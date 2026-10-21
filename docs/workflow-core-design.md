@@ -49,7 +49,7 @@ Paths are after F0 (move and rename); the behavior described is v0.1's. Files ma
 | `Core/Data/` | `DataItem`, `DataRegistry`, `Type`, `Operators`, `Ref`, `RefResolver`, `Scope`, `Template`, `Filters` |
 | `Core/Definition/` | Graph schema, `Validator`, `Catalog` (steps, fields, outputs, data types → admin app and AI) |
 | `Core/Runtime/` | `Dispatcher`, `Executor`, `Worker`, `Runtime`; planned: `Scheduler`, `Cancellation`, `Retention` |
-| `Core/Storage/` | Tables, upgrades, `WorkflowRepository`, `VersionStore`, `RunStore`, `ClaimStore` |
+| `Core/Storage/` | Tables, upgrades, `WorkflowRepository`, `VersionStore`, `RunStore` |
 | `Core/Email/`, `Core/Coupon/` | Email rendering and unsubscribe; coupon writing |
 | `AI/` | Provider interface and AI features (v2.0) |
 
@@ -67,7 +67,6 @@ Table names below omit the prefix: each is `{prefix}yaymatik_<name>`, e.g. `wp_y
 | `workflow_versions` | id, workflow_id, action, graph, user_id, created_at. A saved version never changes; only the draft row is edited in place |
 | `runs` | id, workflow_id, version_id, trigger_id, subject, status, position, scope, wait_until, error, parent_run_id, root_run_id, depth, started_at, finished_at |
 | `run_steps` | id, run_id, step_id, iteration, status, input, output, error, attempt, started_at, finished_at |
-| `trigger_claims` | workflow_id, subject, claimed_at · unique (workflow_id, subject) |
 
 - A run pins the version it started on.
 - Why tables, not CPT: an indexed lookup on every event instead of a `meta_query`, no JSON slashing, atomic writes, simple cleanup.

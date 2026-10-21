@@ -6,25 +6,19 @@ use YayMatik\Workflow\Core\Email\UnsubscribeLink;
 
 defined( 'ABSPATH' ) || exit;
 
-/**
- * The plugin's tables, `{prefix}yaymatik_<name>`, and the one installer for all of them.
- * Dates are GMT. JSON columns hold `wp_json_encode()` output.
- */
+/** The plugin's tables, `{prefix}yaymatik_<name>`, and their installer. Dates are GMT. */
 final class Schema {
 
     // Bump when a table below changes; dbDelta() then upgrades the tables on the next load.
     private const DB_VERSION        = '3';
     private const DB_VERSION_OPTION = 'yaymatik_db_version';
 
-    public const VERSIONS       = 'versions';
-    public const RUNS           = 'runs';
-    public const RUN_STEPS      = 'run_steps';
-    public const TRIGGER_CLAIMS = 'trigger_claims';
-    public const UNSUBSCRIBES   = 'unsubscribes';
+    public const VERSIONS     = 'versions';
+    public const RUNS         = 'runs';
+    public const RUN_STEPS    = 'run_steps';
+    public const UNSUBSCRIBES = 'unsubscribes';
 
     /**
-     * Full table name.
-     *
      * @param string $name One of the table constants.
      */
     public static function table( string $name ): string {
@@ -32,7 +26,7 @@ final class Schema {
         return $wpdb->prefix . 'yaymatik_' . $name;
     }
 
-    /** Creates or upgrades the tables. Runs on every load, so it also covers plugin updates. */
+    /** Creates or upgrades the tables; runs on every load, so plugin updates are covered. */
     public static function maybe_install(): void {
         if ( self::DB_VERSION === get_option( self::DB_VERSION_OPTION ) ) {
             return;
@@ -43,7 +37,7 @@ final class Schema {
         $charset = $wpdb->get_charset_collate();
         dbDelta( array_map( fn( string $columns ) => $columns . " {$charset};", self::tables() ) );
         // Without every table, keep the old version so the next load tries again.
-        foreach ( [ self::VERSIONS, self::RUNS, self::RUN_STEPS, self::TRIGGER_CLAIMS, self::UNSUBSCRIBES ] as $name ) {
+        foreach ( [ self::VERSIONS, self::RUNS, self::RUN_STEPS, self::UNSUBSCRIBES ] as $name ) {
             $table = self::table( $name );
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- install check, runs once per DB version.
             if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $table ) ) ) !== $table ) {
@@ -55,14 +49,13 @@ final class Schema {
     }
 
     /**
-     * `CREATE TABLE` statements without the charset. dbDelta() needs two spaces after PRIMARY KEY.
+     * `CREATE TABLE` statements without the charset. dbDelta() needs two spaces after PRIMARY KEY;
      * `trigger` and `cursor` are MySQL reserved words, hence `trigger_id` and `position`.
      */
     private static function tables(): array {
         $versions = self::table( self::VERSIONS );
         $runs     = self::table( self::RUNS );
         $steps    = self::table( self::RUN_STEPS );
-        $claims   = self::table( self::TRIGGER_CLAIMS );
         $unsubs   = self::table( self::UNSUBSCRIBES );
         return [
             // A saved version never changes; only the draft row is edited in place.
@@ -100,7 +93,6 @@ final class Schema {
                 KEY root_run_id (root_run_id),
                 KEY wait_until (wait_until)
             )",
-            // One per step run; `iteration` counts loop passes.
             "CREATE TABLE {$steps} (
                 id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
                 run_id bigint(20) unsigned NOT NULL,
@@ -115,13 +107,6 @@ final class Schema {
                 finished_at datetime NULL,
                 PRIMARY KEY  (id),
                 KEY run_id (run_id)
-            )",
-            // Once-per-subject triggers: a row means this workflow already ran for this subject.
-            "CREATE TABLE {$claims} (
-                workflow_id bigint(20) unsigned NOT NULL,
-                subject varchar(100) NOT NULL,
-                claimed_at datetime NOT NULL,
-                PRIMARY KEY  (workflow_id,subject)
             )",
             // Addresses that get no customer emails, lowercased. 190 chars keeps the key within utf8mb4 index limits.
             "CREATE TABLE {$unsubs} (

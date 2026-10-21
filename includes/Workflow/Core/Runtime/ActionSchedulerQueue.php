@@ -3,17 +3,13 @@ namespace YayMatik\Workflow\Core\Runtime;
 
 defined( 'ABSPATH' ) || exit;
 
-/**
- * `Queue` over Action Scheduler (bundled with WooCommerce). One job per run at a time: a run that
- * already has a pending job gets no second one, and a recovery job is only added when none is
- * pending or in progress (two could otherwise both take the run back from `running`).
- */
+/** `Queue` over Action Scheduler (bundled with WooCommerce): one job per run at a time. */
 final class ActionSchedulerQueue implements Queue {
 
-    /** Action Scheduler hook; args `[ run_id ]`. */
+    /** Args `[ run_id ]`. */
     public const HOOK = 'yaymatik_run';
 
-    /** Recovery job for a run whose job died; args `[ run_id ]`. */
+    /** Args `[ run_id ]`. */
     public const RECOVER_HOOK = 'yaymatik_recover_run';
 
     public const GROUP = 'yaymatik';
@@ -56,6 +52,7 @@ final class ActionSchedulerQueue implements Queue {
             return false;
         }
         try {
+            // Pending or in progress counts: two recovery jobs could both take the run from `running`.
             if ( as_has_scheduled_action( self::RECOVER_HOOK, [ $run_id ], self::GROUP ) ) {
                 return true;
             }

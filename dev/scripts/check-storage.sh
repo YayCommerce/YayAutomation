@@ -1,12 +1,12 @@
 #!/bin/bash
-# Check the run storage on the local site (wp-cli): runs, claims, versions. Removes its test rows.
+# Check the run storage on the local site (wp-cli): runs, versions. Removes its test rows.
 cd "$(dirname "$0")/../.." || exit 1
 [[ -f yaymatik.php ]] || { echo "Not the plugin root: $(pwd)"; exit 1; }
 command -v wp >/dev/null || { echo "Missing: wp-cli"; exit 1; }
 
 # Test rows use a workflow id no real workflow has.
 wp ${WP_PATH:+--path="$WP_PATH"} eval '
-use YayMatik\Workflow\Core\Storage\{RunStore as R, ClaimStore as C, VersionStore as V};
+use YayMatik\Workflow\Core\Storage\{RunStore as R, VersionStore as V};
 use YayMatik\Workflow\Core\Data\{Scope, Ref};
 global $wpdb;
 $W     = 999999;
@@ -17,7 +17,6 @@ $ok    = function ( $pass, $what ) use ( &$fails ) {
 };
 $cleanup = function () use ( $wpdb, $W ) {
     $wpdb->delete( R::table(), [ "workflow_id" => $W ] );
-    $wpdb->delete( C::table(), [ "workflow_id" => $W ] );
 };
 $cleanup();
 // Runs even when a check throws or PHP dies, so no test rows are left behind.
@@ -57,13 +56,6 @@ $list = R::list( [ "workflow_id" => $W ] );
 $ok( count( $list ) === 2 && $list[0]["id"] === $child && ! array_key_exists( "scope", $list[0] ), "list newest first, without scope" );
 $ok( count( R::list( [ "workflow_id" => $W, "status" => "completed" ] ) ) === 1, "list by status" );
 $ok( count( R::list( [ "workflow_id" => $W, "status" => [ "queued", "nope" ] ] ) ) === 1, "unknown status filter ignored" );
-$ok( C::claim( $W, "order:12" ) === true, "first claim" );
-$ok( C::claim( $W, "order:12" ) === false, "repeat claim refused" );
-$ok( C::claim( $W, "order:12", 3600 ) === false, "inside window refused" );
-$wpdb->update( C::table(), [ "claimed_at" => gmdate( "Y-m-d H:i:s", time() - 7200 ) ], [ "workflow_id" => $W ] );
-$ok( C::claim( $W, "order:12", 3600 ) === true, "after window claimed again" );
-$ok( C::claim( $W, "order:12", 3600 ) === false, "and refused right after" );
-$ok( C::claim( $W, "order:13" ) === true, "other subject independent" );
 $vid = (int) $wpdb->get_var( "SELECT id FROM " . V::table() . " ORDER BY id DESC LIMIT 1" );
 $v   = V::find( $vid );
 $ok( ! $vid || ( $v && $v["id"] === $vid && is_array( $v["graph"] ) ), "VersionStore::find decodes the graph" );

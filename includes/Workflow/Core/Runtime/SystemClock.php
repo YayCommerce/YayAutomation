@@ -29,7 +29,7 @@ final class SystemClock implements Clock {
     /**
      * `128M` → bytes; -1 (no limit) → 0.
      *
-     * @param string $value php.ini size.
+     * @param string $value
      */
     private static function bytes( string $value ): int {
         $value  = trim( $value );

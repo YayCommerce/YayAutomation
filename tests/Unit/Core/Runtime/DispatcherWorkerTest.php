@@ -101,7 +101,7 @@ final class DispatcherWorkerTest extends TestCase {
     /**
      * An active "Order status changed → act" workflow; its live version is `10 + id`.
      *
-     * @param int    $id    Workflow id.
+     * @param int    $id
      * @param string $block Step under the trigger.
      */
     private function add_workflow( int $id, string $block = 'act' ): void {
@@ -152,7 +152,7 @@ final class DispatcherWorkerTest extends TestCase {
     /**
      * A queued run of workflow 1, as the Dispatcher makes it.
      *
-     * @param array $trigger Stored trigger section.
+     * @param array $trigger
      */
     private function queued_run( array $trigger ): int {
         return $this->runs->create_run(
