@@ -7,20 +7,10 @@ use YayMatik\Workflow\Core\Steps\StepRegistry;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * A workflow graph's shape: what a save accepts, and its one normalized form. Issues that only
- * block Activate (missing settings, unlinked steps) are the Validator's, not this class's.
- *
- * Shape: `{ schemaVersion, nodes, edges }`. Nodes are trigger / condition / action steps with ids;
- * the graph is a tree from the one trigger: one parent per step, one child per handle, a
- * condition's edges always name their branch (`then` / `otherwise`), branches never merge.
- *
- * `schemaVersion`: graphs saved before it existed have none and read as 1. `prepare()` always puts
- * it first, so an old stored graph and the same graph saved today compare equal. Stored graphs and
- * versions are never rewritten to add it.
+ * What a save accepts, `{ schemaVersion, nodes, edges }`, and its one normalized form; Activate checks are the Validator's.
  */
 final class GraphSchema {
 
-    /** The graph shape this code writes. */
     public const VERSION = 1;
 
     private const BRANCHES = [ 'then', 'otherwise' ];
@@ -28,11 +18,10 @@ final class GraphSchema {
     private const KINDS = [ Step::KIND_TRIGGER, Step::KIND_CONDITION, Step::KIND_ACTION ];
 
     /**
-     * The normalized graph: fixed key order and types, configs sanitized by their steps, unknown
-     * keys dropped. A 400 WP_Error for a malformed one.
+     * The normalized graph: fixed key order and types, configs sanitized, unknown keys dropped.
      *
-     * @param mixed $graph Raw { schemaVersion?, nodes, edges }.
-     * @return array|\WP_Error
+     * @param mixed $graph
+     * @return array|\WP_Error 400 for a malformed graph.
      */
     public static function prepare( $graph ) {
         if ( ! is_array( $graph ) || ! is_array( $graph['nodes'] ?? null ) || ! is_array( $graph['edges'] ?? null ) ) {
@@ -154,17 +143,17 @@ final class GraphSchema {
     }
 
     /**
-     * True when both are the same graph. Both go through `prepare()` (fixed key order and types,
-     * `schemaVersion` filled in), so strict === holds: unlike loose ==, '500' and '5e2' or '' and
-     * null stay different, and a stored graph without `schemaVersion` equals itself saved today.
+     * True when both are the same graph.
      *
-     * @param array|null $a Graph, or null for none.
-     * @param array|null $b Graph, or null for none.
+     * @param array|null $a Null = none.
+     * @param array|null $b Null = none.
      */
     public static function same( ?array $a, ?array $b ): bool {
         if ( null === $a || null === $b ) {
             return $a === $b;
         }
+        // After `prepare()` strict === holds: unlike ==, '500' and '5e2' or '' and null stay different. A missing
+        // `schemaVersion` is filled in, so a graph with and without it compares equal.
         $a = self::prepare( $a );
         $b = self::prepare( $b );
         return ! is_wp_error( $a ) && ! is_wp_error( $b ) && $a === $b;
@@ -173,9 +162,11 @@ final class GraphSchema {
     /**
      * The graph's shape version: missing reads as 1. Null when set but not a whole number ≥ 1.
      *
-     * @param array $graph Graph.
+     * @param array $graph
      */
     public static function version( array $graph ): ?int {
+        // A missing `schemaVersion` reads as 1: the app never sends it. `prepare()` always puts it first, so a graph
+        // with and without it compares equal.
         if ( ! array_key_exists( 'schemaVersion', $graph ) ) {
             return 1;
         }
@@ -186,15 +177,15 @@ final class GraphSchema {
     /**
      * Step and edge ids: letters, digits, `_` and `-`.
      *
-     * @param string $id Id.
+     * @param string $id
      */
     public static function is_valid_id( string $id ): bool {
         return (bool) preg_match( '/^[A-Za-z0-9_-]{1,200}$/', $id );
     }
 
     /**
-     * @param string      $message What's wrong.
-     * @param string|null $node_id Step it is about.
+     * @param string      $message
+     * @param string|null $node_id
      */
     private static function error( string $message, ?string $node_id = null ): \WP_Error {
         $data = [ 'status' => 400 ];

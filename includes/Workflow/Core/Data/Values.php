@@ -4,24 +4,22 @@ namespace YayMatik\Workflow\Core\Data;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Where a template reads its data. The run's `Scope` implements it; tests and previews can pass
- * plain values instead.
+ * Where a template reads its data.
  */
 interface Values {
 
     /**
-     * Typed value at a path (number, string, bool, list, …), or null when it's missing.
+     * Typed value at a path, or null when missing.
      *
-     * @param string $path E.g. `order.total`, `steps.coupon.code`.
+     * @param string $path
      * @return mixed
      */
     public function get( string $path );
 
     /**
-     * How the value reads in a message: safe HTML when `$html`, plain text otherwise (a price with
-     * its currency, an option's label, …). Empty when the value is missing.
+     * How the value reads in a message; empty when missing.
      *
-     * @param string $path E.g. `order.total`.
+     * @param string $path
      * @param bool   $html Safe HTML instead of plain text.
      */
     public function text( string $path, bool $html ): string;

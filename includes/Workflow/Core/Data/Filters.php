@@ -4,59 +4,49 @@ namespace YayMatik\Workflow\Core\Data;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Template filters, by name: `{{ order.created_date | date: "F j" }}`. Each filter declares the
- * value types it takes, so the validator can flag `{{ order.total | upper }}` before it runs.
- * A filter never fails: input it can't use comes back unchanged.
+ * Template filters by name. A filter never fails: input it can't use comes back unchanged.
  */
 final class Filters {
 
-    public const TYPE_ANY = 'any';
-
-    /** @var array[] name => [ 'input' => string[], 'apply' => callable( mixed $value, array $args ): mixed ] */
+    /** @var callable[] name => fn( mixed $value, array $args ): mixed */
     private $filters = [];
 
-    /** @var callable fn( int $timestamp, string $format ): string. Empty format = the site's date format. */
+    /** @var callable fn( int $timestamp, string $format ): string; empty format = the site's */
     private $format_date;
 
-    /** @var callable fn( float $amount, string $currency ): string. Plain text. Empty currency = the store's. */
+    /** @var callable fn( float $amount, string $currency ): string, plain text; empty currency = the store's */
     private $format_money;
 
-    /** @var \DateTimeZone|null Where date strings without an offset are read; null = the site's. */
+    /** @var \DateTimeZone|null */
     private $timezone;
 
     /**
-     * @param callable|null      $format_date  Date formatter; null uses WordPress.
-     * @param callable|null      $format_money Money formatter; null uses WooCommerce.
-     * @param \DateTimeZone|null $timezone     Timezone for date strings without an offset; null = the site's.
+     * @param callable|null      $format_date  Null = WordPress.
+     * @param callable|null      $format_money Null = WooCommerce.
+     * @param \DateTimeZone|null $timezone     For date strings without an offset; null = the site's.
      */
     public function __construct( ?callable $format_date = null, ?callable $format_money = null, ?\DateTimeZone $timezone = null ) {
         $this->format_date  = $format_date ?? [ self::class, 'wp_date' ];
         $this->format_money = $format_money ?? [ self::class, 'wc_money' ];
         $this->timezone     = $timezone;
 
-        $this->add( 'default', [ self::TYPE_ANY ], fn( $value, array $args ) => self::is_empty( $value ) ? ( $args[0] ?? '' ) : $value );
-        $this->add( 'upper', [ 'string' ], fn( $value ) => is_string( $value ) ? mb_strtoupper( $value ) : $value );
-        $this->add( 'lower', [ 'string' ], fn( $value ) => is_string( $value ) ? mb_strtolower( $value ) : $value );
-        $this->add( 'join', [ 'list' ], fn( $value, array $args ) => is_array( $value ) ? self::join( $value, (string) ( $args[0] ?? ', ' ) ) : $value );
-        $this->add( 'date', [ 'date', 'datetime' ], [ $this, 'date' ] );
-        $this->add( 'money', [ 'number', 'money' ], [ $this, 'money' ] );
+        $this->add( 'default', fn( $value, array $args ) => self::is_empty( $value ) ? ( $args[0] ?? '' ) : $value );
+        $this->add( 'upper', fn( $value ) => is_string( $value ) ? mb_strtoupper( $value ) : $value );
+        $this->add( 'lower', fn( $value ) => is_string( $value ) ? mb_strtolower( $value ) : $value );
+        $this->add( 'join', fn( $value, array $args ) => is_array( $value ) ? self::join( $value, (string) ( $args[0] ?? ', ' ) ) : $value );
+        $this->add( 'date', [ $this, 'date' ] );
+        $this->add( 'money', [ $this, 'money' ] );
     }
 
     /**
-     * Registers a filter. Yay plugins may add their own later.
-     *
-     * @param string   $name  Filter name used in templates.
-     * @param string[] $input Value types it takes (`any`, `string`, `number`, `money`, `date`, `datetime`, `list`, …).
+     * @param string   $name
      * @param callable $apply fn( mixed $value, array $args ): mixed.
      */
-    public function add( string $name, array $input, callable $apply ): void {
-        $this->filters[ $name ] = [
-            'input' => $input,
-            'apply' => $apply,
-        ];
+    public function add( string $name, callable $apply ): void {
+        $this->filters[ $name ] = $apply;
     }
 
-    /** Registered filter names, in registration order. */
+    /** In registration order. */
     public function names(): array {
         return array_keys( $this->filters );
     }
@@ -66,31 +56,21 @@ final class Filters {
     }
 
     /**
-     * Value types a filter takes, or null for an unknown filter.
+     * Runs a filter; an unknown one returns the value unchanged.
      *
-     * @param string $name Filter name.
-     */
-    public function input( string $name ): ?array {
-        return $this->filters[ $name ]['input'] ?? null;
-    }
-
-    /**
-     * Runs a filter. An unknown filter returns the value unchanged.
-     *
-     * @param string $name  Filter name.
-     * @param mixed  $value Input value.
-     * @param array  $args  Arguments from the template.
+     * @param string $name
+     * @param mixed  $value
+     * @param array  $args
      * @return mixed
      */
     public function apply( string $name, $value, array $args ) {
-        return $this->has( $name ) ? ( $this->filters[ $name ]['apply'] )( $value, $args ) : $value;
+        return $this->has( $name ) ? ( $this->filters[ $name ] )( $value, $args ) : $value;
     }
 
     /**
-     * `date: "format"`. Takes a timestamp, a date string or a DateTimeInterface. A string without an
-     * offset (`Y-m-d`, `Y-m-d H:i:s`) is read in the site's timezone, so a date keeps its day.
+     * `date: "format"`. Takes a timestamp, a date string or a DateTimeInterface.
      *
-     * @param mixed $value Date.
+     * @param mixed $value
      * @param array $args  [ format ].
      * @return mixed
      */
@@ -100,9 +80,9 @@ final class Filters {
     }
 
     /**
-     * `money`. Takes a number, or a money value `[ 'amount' => …, 'currency' => … ]`.
+     * `money`. Takes a number, or `[ 'amount' => …, 'currency' => … ]`.
      *
-     * @param mixed $value Amount.
+     * @param mixed $value
      * @return mixed
      */
     public function money( $value ) {
@@ -115,15 +95,15 @@ final class Filters {
     /**
      * Nothing to show: null, blank text or an empty list.
      *
-     * @param mixed $value Value.
+     * @param mixed $value
      */
     public static function is_empty( $value ): bool {
         return null === $value || [] === $value || ( is_string( $value ) && '' === trim( $value ) );
     }
 
     /**
-     * @param array  $items     Values.
-     * @param string $separator Between items.
+     * @param array  $items
+     * @param string $separator
      */
     private static function join( array $items, string $separator ): string {
         $items = array_filter( $items, fn( $item ) => is_scalar( $item ) && '' !== (string) $item );
@@ -131,10 +111,9 @@ final class Filters {
     }
 
     /**
-     * Unix time of a date. Timestamps are taken as they are; strings without an offset are read in
-     * the site's timezone (a string with its own offset keeps it).
+     * Unix time of a date.
      *
-     * @param mixed $value Timestamp, date string or DateTimeInterface.
+     * @param mixed $value
      */
     private function timestamp( $value ): ?int {
         if ( $value instanceof \DateTimeInterface ) {
@@ -146,6 +125,7 @@ final class Filters {
         if ( ! is_string( $value ) || '' === trim( $value ) ) {
             return null;
         }
+        // Without an offset (`Y-m-d`, `Y-m-d H:i:s`) it's read in the site's timezone, so a date keeps its day.
         try {
             return ( new \DateTimeImmutable( $value, $this->timezone ?? wp_timezone() ) )->getTimestamp();
         } catch ( \Exception $e ) {
@@ -154,16 +134,16 @@ final class Filters {
     }
 
     /**
-     * @param int    $timestamp Unix time.
-     * @param string $format    PHP date format; empty = the site's.
+     * @param int    $timestamp
+     * @param string $format    Empty = the site's.
      */
     private static function wp_date( int $timestamp, string $format ): string {
         return (string) wp_date( '' !== $format ? $format : (string) get_option( 'date_format' ), $timestamp );
     }
 
     /**
-     * @param float  $amount   Amount.
-     * @param string $currency ISO code; empty = the store's.
+     * @param float  $amount
+     * @param string $currency Empty = the store's.
      */
     private static function wc_money( float $amount, string $currency ): string {
         if ( ! function_exists( 'wc_price' ) ) {

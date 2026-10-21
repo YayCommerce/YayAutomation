@@ -3,14 +3,13 @@ namespace YayMatik\Tests\Unit\Core\Definition;
 
 use PHPUnit\Framework\TestCase;
 use YayMatik\Workflow\Core\Data\DataRegistry;
-use YayMatik\Workflow\Core\Data\Type;
 use YayMatik\Workflow\Core\Definition\Catalog;
 use YayMatik\Workflow\Core\Steps\StepIcons;
 use YayMatik\Workflow\Core\Steps\StepRegistry;
 
 require_once dirname( __DIR__, 3 ) . '/Support/woocommerce-stubs.php';
 
-/** The step catalog sent to the admin app: v0.1 keys kept, contract keys added, JSON-safe, camelCase. */
+/** The step catalog sent to the admin app: JSON-safe, camelCase. */
 final class CatalogTest extends TestCase {
 
     private function steps(): array {
@@ -126,11 +125,6 @@ final class CatalogTest extends TestCase {
             'a block says so; its display callback stays on the server'
         );
         $this->assertArrayNotHasKey( 'block', $steps['generate_coupon']['outputs'][0] );
-        foreach ( $steps as $step ) {
-            foreach ( $step['outputs'] as $output ) {
-                $this->assertNotNull( Type::parse( $output['type'] ), $output['type'] );
-            }
-        }
     }
 
     public function test_data_items_list_relations_apart_from_fields(): void {

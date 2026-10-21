@@ -4,8 +4,7 @@ namespace YayMatik\Workflow\Core\Data;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Comparison operators per field type, with their labels. The admin app reads both from the catalog.
- * Text comparisons ignore case.
+ * Comparison operators per field type, with their labels; text comparisons ignore case.
  */
 final class Operators {
 
@@ -18,9 +17,9 @@ final class Operators {
     ];
 
     /**
-     * How each operator reads in a condition's rules and card summary ("Order total is greater than 500").
+     * How each operator reads in a rule ("Order total is greater than 500").
      *
-     * @return array<string, string> Label by operator id, one per operator in `BY_TYPE`.
+     * @return array<string, string> Operator id => label.
      */
     public static function labels(): array {
         return [
@@ -57,10 +56,10 @@ final class Operators {
     }
 
     /**
-     * @param string $type     Field type.
+     * @param string $type
      * @param string $operator Supported by the type.
-     * @param mixed  $actual   Field value: float for numbers, `Y-m-d` for dates, bool for booleans, string otherwise.
-     * @param mixed  $expected Value from the rule as typed, or another field's value.
+     * @param mixed  $actual   Float for numbers, `Y-m-d` for dates, bool for booleans, string otherwise.
+     * @param mixed  $expected The rule's value, or another field's value.
      */
     public static function compare( string $type, string $operator, $actual, $expected ): bool {
         if ( DataItem::TYPE_NUMBER === $type ) {
@@ -108,7 +107,7 @@ final class Operators {
     /**
      * Stored flags come as bools, `1` / `0` or `yes` / `no`.
      *
-     * @param mixed $value Field value.
+     * @param mixed $value
      */
     private static function is_true( $value ): bool {
         return is_bool( $value ) ? $value : is_scalar( $value ) && in_array( strtolower( trim( (string) $value ) ), [ '1', 'yes', 'true', 'on' ], true );

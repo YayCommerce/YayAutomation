@@ -87,9 +87,9 @@ Table names below omit the prefix: each is `{prefix}yaymatik_<name>`, e.g. `wp_y
 
 ## §4 Data layer · C6, C7
 
-- **Types:** string, number, boolean, date, datetime, money, enum, entity\<T\>, list\<T\>, object.
+- **Types:** string, number, boolean, date, money, enum, entity\<T\>, list\<T\>.
 - **Entity types** with relations: order (`customer`, `items`), order_item (`product`), customer, product, coupon, cart, site.
-- **Scope** paths: `trigger.*` (with `order` / `customer` shortcuts), `steps.<id>.*`, `loop.item` / `loop.index`, `vars.*`, `workflow.*`, `run.*`, `site.*`.
+- **Scope** paths: `trigger.*` (with `order` / `customer` shortcuts), `steps.<id>.*`, `loop.item` / `loop.index`, `run.*`, `site.*`.
 - **Refs, loaded lazily.** Entities are stored as `{type: 'order', id: 12}` and loaded on demand, cached per slice. Facts only true at trigger time (status from / to, cart contents, event payload) are snapshotted. Data is fresh after a long Wait, and rows stay small.
 - **Gone entity.** If an order or customer was deleted, the step is skipped and run history says why.
 - **Available variables per step.** Each step declares outputs. The Validator walks the steps above each step to list what it can use. "Insert variable" and the template checks use the same list.

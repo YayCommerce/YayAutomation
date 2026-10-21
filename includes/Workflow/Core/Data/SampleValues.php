@@ -4,20 +4,18 @@ namespace YayMatik\Workflow\Core\Data;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Made-up values for previews when the store has no real data yet: the data items' `sample()`,
- * followed through relations (`order.customer.first_name`). Everything else (`steps.*`, `site.*`)
- * reads from a Scope, so step outputs and their display texts work as in a run.
+ * Preview values from the data items' `sample()`, through relations; other paths read from a Scope.
  */
 final class SampleValues implements Values {
 
     /** @var Scope */
     private $scope;
 
-    /** @var DataItem[] Items the trigger supplies, by id. */
+    /** @var DataItem[] */
     private $items;
 
     /**
-     * @param Scope      $scope Step outputs and the site.
+     * @param Scope      $scope
      * @param DataItem[] $items Items the trigger supplies, by id.
      */
     public function __construct( Scope $scope, array $items ) {
@@ -44,7 +42,7 @@ final class SampleValues implements Values {
     /**
      * `[ 'value', 'text', 'html' ]` for a path into the trigger's items; null when it isn't one.
      *
-     * @param string $path E.g. `order.total`, `trigger.order.customer.email`.
+     * @param string $path
      */
     private function sample( string $path ): ?array {
         $segments = explode( '.', $path );

@@ -7,10 +7,7 @@ use YayMatik\Workflow\Core\Definition\Validator;
 
 require_once dirname( __DIR__, 3 ) . '/Support/woocommerce-stubs.php';
 
-/**
- * Characterization of graph shape checks on save (v0.1 `prepare_graph()`, now `GraphSchema`): each
- * malformed graph keeps its 400 and exact message; a valid graph keeps its normalized form.
- */
+/** Graph shape checks on save: each malformed graph's 400 and message; a valid graph's normalized form. */
 final class GraphShapeTest extends TestCase {
 
     private const BAD_GRAPH = 'Invalid workflow graph.';
@@ -178,7 +175,7 @@ final class GraphShapeTest extends TestCase {
 
         $prepared = Validator::prepare_changes( [ 'graph' => $graph ] )['graph'];
 
-        // schemaVersion is the one addition to the v0.1 shape: always first.
+        // schemaVersion always first.
         $this->assertSame( [ 'schemaVersion', 'nodes', 'edges' ], array_keys( $prepared ) );
         $this->assertSame( 1, $prepared['schemaVersion'] );
         $this->assertSame( [ 'id', 'kind', 'position', 'data' ], array_keys( $prepared['nodes'][0] ) );

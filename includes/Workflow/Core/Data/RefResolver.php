@@ -8,28 +8,25 @@ use YayMatik\Workflow\DataItems\OrderItemData;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Loads the entity a ref points at, on demand, and keeps it for the rest of the slice: a new
- * resolver per slice means data is read fresh after a wait. Loaders are per entity type.
+ * Loads the entity a ref points at, once per resolver; a new resolver per slice reads fresh data after a wait.
  */
 final class RefResolver {
 
-    /** @var callable[] Entity type id => fn( string $id ): ?object. */
+    /** @var callable[] Entity type id => fn( string $id ): ?object */
     private $loaders;
 
-    /** @var array Ref key => loaded object. */
+    /** @var array */
     private $loaded = [];
 
     /**
-     * @param callable[]|null $loaders Entity type id => loader; null = the WooCommerce loaders.
+     * @param callable[]|null $loaders Null = the WooCommerce loaders.
      */
     public function __construct( ?array $loaders = null ) {
         $this->loaders = $loaders ?? self::default_loaders();
     }
 
     /**
-     * The entity, loaded once per resolver.
-     *
-     * @param Ref $ref Entity to load.
+     * @param Ref $ref
      * @return object
      * @throws GoneEntity When it no longer exists or its type has no loader.
      */
@@ -43,16 +40,6 @@ final class RefResolver {
             throw new GoneEntity( $ref );
         }
         return $this->loaded[ $key ];
-    }
-
-    /**
-     * Hands over an object already loaded, e.g. the order a hook passed in.
-     *
-     * @param Ref    $ref    Entity it is.
-     * @param object $entity The loaded object.
-     */
-    public function prime( Ref $ref, $entity ): void {
-        $this->loaded[ $ref->key() ] = $entity;
     }
 
     /** @return callable[] */
@@ -78,7 +65,7 @@ final class RefResolver {
     }
 
     /**
-     * @param string $id Order id.
+     * @param string $id
      */
     private static function order( string $id ) {
         $order = function_exists( 'wc_get_order' ) ? wc_get_order( (int) $id ) : false;
