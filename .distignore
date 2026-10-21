@@ -27,6 +27,7 @@ README.md
 /vendor/yaycommerce
 scoper.inc.php
 
+/includes/Pro
 /apps
 /packages
 /release
