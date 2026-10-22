@@ -15,15 +15,13 @@ import { messages } from '../routes/workflows/model/messages';
 import { steps } from '../routes/workflows/steps';
 import { fieldByPath, needsValue, operatorLabels } from '../routes/workflows/steps/core/data';
 import { stepIcons } from '../routes/workflows/steps/core/icons';
-import { automationMeta, isPendingStep } from '../routes/workflows/steps/core/pending';
 import { templatePaths } from '../routes/workflows/steps/core/template';
-import { isComingSoon, templates } from '../routes/workflows/templates';
+import { templates } from '../routes/workflows/templates';
 
 const php = window.yayMatikMeta.automation;
 const phpStepIds = Object.keys(php.steps) as StepId[];
 const tsStepIds = Object.keys(steps) as StepId[];
 const phpDataKeys = new Set(php.data.flatMap((item) => item.fields.map((field) => field.key)));
-const knownDataKeys = new Set(automationMeta.data.flatMap((item) => item.fields.map((field) => field.key)));
 const phpOperators = new Set(Object.values(php.operators).flat());
 
 /** Every TS `DataFieldType`; the `satisfies` keeps it in step with the type. */
@@ -47,9 +45,9 @@ const strings = (value: unknown): string[] =>
   typeof value === 'string' ? [value] : value && typeof value === 'object' ? Object.values(value).flatMap(strings) : [];
 
 describe('PHP ↔ TS parity', () => {
-  it('every TS step is in the PHP catalog or listed as pending', () => {
+  it('every TS step is in the PHP catalog', () => {
     expect(phpStepIds).toHaveLength(10);
-    expect(tsStepIds.filter((id) => !php.steps[id] && !isPendingStep(id))).toEqual([]);
+    expect(tsStepIds.filter((id) => !php.steps[id])).toEqual([]);
   });
 
   it('every PHP step has a TS step of the same kind', () => {
@@ -87,8 +85,8 @@ describe('PHP ↔ TS parity', () => {
       const svg = readFileSync(resolve(__dirname, `../../../../assets/logos/${plugin.id}.svg`), 'utf8');
       expect(svg, plugin.id).toMatch(/^<svg [^>]*viewBox="0 0 24 24"[^>]*stroke="currentColor"/);
     }
-    for (const meta of Object.values(automationMeta.steps)) {
-      if (meta.plugin) expect(workflowPlugins).toHaveProperty(meta.plugin);
+    for (const meta of Object.values(php.steps)) {
+      if (meta?.plugin) expect(workflowPlugins).toHaveProperty(meta.plugin);
     }
   });
 
@@ -96,7 +94,7 @@ describe('PHP ↔ TS parity', () => {
     for (const item of php.data) {
       for (const field of item.fields) {
         expect(dataFieldTypes, field.key).toHaveProperty(field.type);
-        expect(isTypeName(field.valueType ?? ''), `${field.key}: ${field.valueType}`).toBe(true);
+        expect(isTypeName(field.valueType), `${field.key}: ${field.valueType}`).toBe(true);
       }
     }
   });
@@ -144,14 +142,12 @@ describe('PHP ↔ TS parity', () => {
   });
 
   describe.each(templates.map((template) => [template.id, template] as const))('template %s', (_id, template) => {
-    const comingSoon = isComingSoon(template.graph);
-    // A template that can be installed today uses only what PHP has; one coming soon may use pending entries.
-    const dataKeys = comingSoon ? knownDataKeys : phpDataKeys;
+    const dataKeys = phpDataKeys;
 
     it('uses only step ids in the catalog', () => {
       for (const { data } of template.graph.nodes) {
         if (!data.block) continue;
-        expect(Boolean(php.steps[data.block]) || (comingSoon && isPendingStep(data.block)), data.block).toBe(true);
+        expect(Boolean(php.steps[data.block]), data.block).toBe(true);
       }
     });
 

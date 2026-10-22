@@ -14,6 +14,7 @@ defined( 'ABSPATH' ) || exit;
  * - `display`     fn( $object, bool $html ): string; default the value (an enum's option label)
  * - `options`     fn(): array value => label, enum only
  * - `conditional` bool, default true; false = display only
+ * - `block`       bool, default false; a ready-made email block (HTML display), inserted on its own line
  */
 abstract class DataItem {
 
@@ -61,6 +62,7 @@ abstract class DataItem {
                 $this->fields[ $key ] = $field + [
                     'options'     => null,
                     'conditional' => true,
+                    'block'       => false,
                     'display'     => null,
                     'value_type'  => Type::from_condition_type( $field['type'] ),
                 ];

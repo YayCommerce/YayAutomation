@@ -13,7 +13,7 @@ final class CustomerData extends DataItem {
 
     public const ID = 'customer';
 
-    /** Order statuses that count as paid for `is_first_order`. */
+    /** Order statuses that count as paid for `is_first_order` and `paid_order_count`. */
     public const PAID_STATUSES = [ 'processing', 'completed' ];
 
     /** @var callable fn( array $query ): int[] */
@@ -54,43 +54,48 @@ final class CustomerData extends DataItem {
 
     protected function define(): array {
         return [
-            'email'           => [
+            'email'            => [
                 'label' => __( 'Customer email', 'yaymatik' ),
                 'type'  => self::TYPE_STRING,
                 'value' => fn( $customer ) => $customer->get_billing_email(),
             ],
-            'first_name'      => [
+            'first_name'       => [
                 'label' => __( 'Customer first name', 'yaymatik' ),
                 'type'  => self::TYPE_STRING,
                 'value' => fn( $customer ) => $customer->get_billing_first_name(),
             ],
-            'last_name'       => [
+            'last_name'        => [
                 'label' => __( 'Customer last name', 'yaymatik' ),
                 'type'  => self::TYPE_STRING,
                 'value' => fn( $customer ) => $customer->get_billing_last_name(),
             ],
-            'full_name'       => [
+            'full_name'        => [
                 'label' => __( 'Customer full name', 'yaymatik' ),
                 'type'  => self::TYPE_STRING,
                 'value' => fn( $customer ) => trim( $customer->get_billing_first_name() . ' ' . $customer->get_billing_last_name() ),
             ],
-            'phone'           => [
+            'phone'            => [
                 'label' => __( 'Customer phone', 'yaymatik' ),
                 'type'  => self::TYPE_STRING,
                 'value' => fn( $customer ) => $customer->get_billing_phone(),
             ],
-            'billing_country' => [
+            'billing_country'  => [
                 'label'   => __( 'Billing country', 'yaymatik' ),
                 'type'    => self::TYPE_ENUM,
                 'value'   => fn( $customer ) => $customer->get_billing_country(),
                 'options' => [ self::class, 'countries' ],
             ],
-            'is_first_order'  => [
+            'is_first_order'   => [
                 'label' => __( 'Customer’s first order', 'yaymatik' ),
                 'type'  => self::TYPE_BOOLEAN,
                 'value' => fn( $customer ) => $this->is_first_order( $customer ),
             ],
-            'unsubscribed'    => [
+            'paid_order_count' => [
+                'label' => __( 'Customer paid order count', 'yaymatik' ),
+                'type'  => self::TYPE_NUMBER,
+                'value' => fn( $customer ) => (float) count( $this->paid_ids( $customer, -1 ) ),
+            ],
+            'unsubscribed'     => [
                 'label' => __( 'Customer unsubscribed', 'yaymatik' ),
                 'type'  => self::TYPE_BOOLEAN,
                 'value' => fn( $customer ) => (bool) ( $this->unsubscribed )( (string) $customer->get_billing_email() ),
@@ -101,17 +106,18 @@ final class CustomerData extends DataItem {
     /** @return array Field key => value, or [ 'value', 'text' ] when it reads differently. */
     public function sample(): array {
         return [
-            'email'           => 'jane.doe@example.com',
-            'first_name'      => 'Jane',
-            'last_name'       => 'Doe',
-            'full_name'       => 'Jane Doe',
-            'phone'           => '555-0100',
-            'billing_country' => [
+            'email'            => 'jane.doe@example.com',
+            'first_name'       => 'Jane',
+            'last_name'        => 'Doe',
+            'full_name'        => 'Jane Doe',
+            'phone'            => '555-0100',
+            'billing_country'  => [
                 'value' => 'US',
                 'text'  => self::countries()['US'] ?? 'United States (US)',
             ],
-            'is_first_order'  => true,
-            'unsubscribed'    => false,
+            'is_first_order'   => true,
+            'paid_order_count' => 1.0,
+            'unsubscribed'     => false,
         ];
     }
 
@@ -121,31 +127,56 @@ final class CustomerData extends DataItem {
      * @param \WC_Order|\WC_Customer $customer
      */
     private function is_first_order( $customer ): bool {
-        $is_order = $customer instanceof \WC_Order;
-        $order_id = $is_order ? (int) $customer->get_id() : 0;
-        $user_id  = (int) ( $is_order ? $customer->get_customer_id() : $customer->get_id() );
-        $email    = strtolower( trim( (string) $customer->get_billing_email() ) );
-
-        // By account and by billing email, so a guest order with the same email counts too.
-        $ids = [];
-        if ( $user_id > 0 ) {
-            $ids = array_merge( $ids, ( $this->paid_orders )( [ 'customer_id' => $user_id ] ) );
-        }
-        if ( '' !== $email ) {
-            $ids = array_merge( $ids, ( $this->paid_orders )( [ 'billing_email' => $email ] ) );
-        }
-        $ids = array_values( array_unique( array_map( 'intval', $ids ) ) );
-        if ( ! $is_order ) {
+        // 2 are enough to tell whether there's one besides this order.
+        $ids = $this->paid_ids( $customer, 2 );
+        if ( ! $customer instanceof \WC_Order ) {
             // A customer trigger: exactly one paid order.
             return 1 === count( $ids );
         }
-        return ! array_diff( $ids, [ $order_id ] );
+        return ! array_diff( $ids, [ (int) $customer->get_id() ] );
     }
 
     /**
-     * Up to 2 paid order ids: enough to tell whether there's one besides this order.
+     * The customer's paid order ids, by account and by billing email, so a guest order with the same email counts too.
      *
-     * @param array $query `customer_id` or `billing_email`.
+     * @param \WC_Order|\WC_Customer $customer
+     * @param int                    $limit    Per lookup; -1 = all.
+     * @return int[]
+     */
+    private function paid_ids( $customer, int $limit ): array {
+        $is_order = $customer instanceof \WC_Order;
+        $user_id  = (int) ( $is_order ? $customer->get_customer_id() : $customer->get_id() );
+        $email    = strtolower( trim( (string) $customer->get_billing_email() ) );
+        $ids      = [];
+        if ( $user_id > 0 ) {
+            $ids = array_merge(
+                $ids,
+                ( $this->paid_orders )(
+                    [
+                        'customer_id' => $user_id,
+                        'limit'       => $limit,
+                    ]
+                )
+            );
+        }
+        if ( '' !== $email ) {
+            $ids = array_merge(
+                $ids,
+                ( $this->paid_orders )(
+                    [
+                        'billing_email' => $email,
+                        'limit'         => $limit,
+                    ]
+                )
+            );
+        }
+        return array_values( array_unique( array_map( 'intval', $ids ) ) );
+    }
+
+    /**
+     * Paid order ids.
+     *
+     * @param array $query `customer_id` or `billing_email`, and `limit`.
      * @return int[]
      */
     public static function find_paid_orders( array $query ): array {
@@ -156,7 +187,6 @@ final class CustomerData extends DataItem {
             $query + [
                 'type'   => 'shop_order',
                 'status' => self::PAID_STATUSES,
-                'limit'  => 2,
                 'return' => 'ids',
             ]
         );

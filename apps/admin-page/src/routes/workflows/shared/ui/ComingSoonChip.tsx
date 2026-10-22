@@ -1,7 +1,8 @@
-import { cn } from '@/lib/utils';
-import { comingSoonLabel } from '../../steps/core/pending';
+import { __ } from '@wordpress/i18n';
 
-/** "Coming soon" as a small muted chip: on template cards, picker rows and the describe box. */
+import { cn } from '@/lib/utils';
+
+/** "Coming soon" as a small muted chip, on the describe box. */
 export function ComingSoonChip({ className }: { className?: string }) {
   return (
     <span
@@ -10,7 +11,7 @@ export function ComingSoonChip({ className }: { className?: string }) {
         className,
       )}
     >
-      {comingSoonLabel}
+      {__('Coming soon', 'yaymatik')}
     </span>
   );
 }

@@ -7,7 +7,6 @@ import { defaultsFromFields, schemaFromFields } from './fields/catalogSchema';
 import { StepForm } from './fields/StepForm';
 import { stepIcons } from './icons';
 import { MARKED } from './marks';
-import { automationMeta, isPendingStep } from './pending';
 import { renderSummary } from './summary';
 import { templatePaths } from './template';
 import type { Config, Step, StepFormProps, StepSpec } from './types';
@@ -36,45 +35,35 @@ export function SummaryText({ text }: { text: string }) {
 }
 
 /**
- * A step for the registry. A step PHP has built needs only `id` and `kind`: its schema, defaults
- * and form come from its catalog fields (`StepForm`), unless it passes its own `Form`.
+ * A step for the registry; it needs only `id` and `kind`: its schema, defaults and form come from
+ * its PHP catalog fields (`StepForm`), unless it passes its own.
  */
 export function defineStep<TConfig extends Config>({
   schema: ownSchema,
   defaults: ownDefaults,
   normalize: ownNormalize,
   uses,
-  summary,
   summaryValues,
-  icon,
-  label = '',
-  description = '',
   Form,
   Footer,
   ...spec
 }: StepSpec<TConfig>): Step {
-  const meta = automationMeta.steps[spec.id];
-  const requires = meta.requires ?? [];
-  // PHP's catalog entry once the step is built: its wording, icon and summary win over the stub's.
-  const catalog = isPendingStep(spec.id) ? undefined : (meta as CatalogStepMeta);
-  const fields = catalog?.fields ?? [];
+  const catalog: CatalogStepMeta | undefined = window.yayMatikMeta.automation.steps[spec.id];
+  if (!catalog) throw new Error(`Step "${spec.id}" isn't in PHP's catalog.`);
+  const requires = catalog.requires ?? [];
+  const fields = catalog.fields;
 
-  if (!catalog && (!ownSchema || !ownDefaults)) {
-    throw new Error(`Step "${spec.id}" isn't in PHP's catalog yet, so it needs its own schema and defaults.`);
-  }
-  const schema = ownSchema ?? (schemaFromFields(fields, catalog!.label) as v.GenericSchema<TConfig>);
+  const schema = ownSchema ?? (schemaFromFields(fields, catalog.label) as v.GenericSchema<TConfig>);
   const fieldDefaults = defaultsFromFields(fields) as TConfig;
   const defaults = ownDefaults ?? (() => structuredClone(fieldDefaults));
-  // A built step keeps only its fields' keys, like PHP `Field::sanitize_all()`.
-  const keep = (config: Config) =>
-    catalog ? Object.fromEntries(Object.entries(config).filter(([key]) => key in fieldDefaults)) : config;
+  // Only its fields' keys, like PHP `Field::sanitize_all()`.
+  const keep = (config: Config) => Object.fromEntries(Object.entries(config).filter(([key]) => key in fieldDefaults));
   const normalize = ownNormalize ?? ((config: Config) => ({ ...defaults(), ...keep(config) }) as TConfig);
 
-  // Fields that accept merge tags; a pending step has no catalog yet, so all its text.
-  const variableFields = catalog?.fields.filter((field) => field.variables).map((field) => field.key);
+  const variableFields = fields.filter((field) => field.variables).map((field) => field.key);
   const tags = (config: Config) =>
     Object.entries(config).flatMap(([field, value]) =>
-      typeof value === 'string' && (!variableFields || variableFields.includes(field))
+      typeof value === 'string' && variableFields.includes(field)
         ? [...new Set(templatePaths(value))].map((path) => ({ field, path }))
         : [],
     );
@@ -115,15 +104,14 @@ export function defineStep<TConfig extends Config>({
 
   return {
     ...spec,
-    label: catalog?.label ?? label,
-    description: catalog?.description ?? description,
-    icon: (catalog && stepIcons[catalog.icon]) ?? icon,
-    plugin: meta.plugin,
-    provides: meta.provides ?? [],
+    label: catalog.label,
+    description: catalog.description,
+    icon: stepIcons[catalog.icon],
+    plugin: catalog.plugin,
+    provides: catalog.provides ?? [],
     requires,
-    outputs: catalog?.outputs ?? [],
-    category: meta.category,
-    comingSoon: isPendingStep(spec.id),
+    outputs: catalog.outputs,
+    category: catalog.category,
     defaults,
     normalize,
     firstIssue,
@@ -136,10 +124,7 @@ export function defineStep<TConfig extends Config>({
       const items = uses ? uses(normalize(config)) : requires;
       return [...new Set(items)].filter((item) => !alwaysAvailable.includes(item));
     },
-    summary: (config) =>
-      catalog
-        ? renderSummary(catalog.summary, catalog.fields, normalize(config), summaryValues)
-        : (summary?.(normalize(config)) ?? ''),
+    summary: (config) => renderSummary(catalog.summary, fields, normalize(config), summaryValues),
     Form: hasForm ? StepConfigForm : undefined,
   };
 }

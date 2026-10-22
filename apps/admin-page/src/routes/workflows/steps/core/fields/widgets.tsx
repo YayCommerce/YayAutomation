@@ -7,9 +7,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { tagError } from '../data';
 import { ConfigField } from './ConfigField';
 import { InsertVariable } from './InsertVariable';
-import { useVariableScope } from './variableScope';
 
-/** Field widgets shared by `StepForm` and the custom forms of steps not built in PHP yet. */
+/** Field widgets shared by `StepForm` and custom step forms. */
 
 export type FieldErrors = ({ message?: string } | undefined)[];
 
@@ -19,8 +18,7 @@ export type FieldErrors = ({ message?: string } | undefined)[];
  */
 export function useTagIssue(variables: boolean, value: string) {
   const [left, setLeft] = useState(false);
-  const { comingSoonStep } = useVariableScope();
-  const tagIssue = variables && left ? tagError([value], { allowPending: comingSoonStep }) : null;
+  const tagIssue = variables && left ? tagError([value]) : null;
   return { tagIssue, setLeft };
 }
 

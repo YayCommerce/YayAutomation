@@ -855,6 +855,36 @@
                         "type": "string",
                         "valueType": "list<entity<order_item>>",
                         "conditional": false
+                    },
+                    {
+                        "key": "order.has_cross_sells",
+                        "label": "Order has cross-sell products",
+                        "type": "boolean",
+                        "valueType": "boolean",
+                        "conditional": true
+                    },
+                    {
+                        "key": "order.has_upsells",
+                        "label": "Order has upsell products",
+                        "type": "boolean",
+                        "valueType": "boolean",
+                        "conditional": true
+                    },
+                    {
+                        "key": "order.cross_sell_products",
+                        "label": "Cross-sell products",
+                        "type": "string",
+                        "valueType": "string",
+                        "conditional": false,
+                        "block": true
+                    },
+                    {
+                        "key": "order.upsell_products",
+                        "label": "Upsell products",
+                        "type": "string",
+                        "valueType": "string",
+                        "conditional": false,
+                        "block": true
                     }
                 ],
                 "relations": [
@@ -1920,6 +1950,13 @@
                         "label": "Customer’s first order",
                         "type": "boolean",
                         "valueType": "boolean",
+                        "conditional": true
+                    },
+                    {
+                        "key": "customer.paid_order_count",
+                        "label": "Customer paid order count",
+                        "type": "number",
+                        "valueType": "number",
                         "conditional": true
                     },
                     {

@@ -106,7 +106,7 @@ We chose these 8 because they cover what merchants install an automation plugin 
 - **Warnings before Activate:** a step uses a coupon with no Generate coupon above it; a cart trigger while cart tracking is off. *(M1, M8)*
 
 **States:**
-- Preview with no recent order or cart uses made-up sample data, labelled "Sample data".
+- Preview with no recent order or cart uses made-up sample data, labelled "Sample data"; a product grid then shows the store's 4 newest products.
 - Send test that fails shows the error and does not change the workflow.
 
 **Done when:** every step of the 18 templates can be built from scratch in the editor, and Preview matches the email that arrives.

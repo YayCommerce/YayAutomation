@@ -21,18 +21,12 @@ export interface VariableScope {
   trigger: (Omit<ScopeStep, 'summary'> & { provides: string[] }) | null;
   /** The steps above, by node id: their outputs are grouped under them. */
   steps: Record<string, ScopeStep>;
-  /**
-   * The open step is still coming soon: it may use fields PHP doesn't have yet. A built step may not
-   * (PHP rejects them on Activate), so they're listed but can't be inserted.
-   */
-  comingSoonStep: boolean;
 }
 
 export const VariableScopeContext = createContext<VariableScope>({
   variables: availableVariables({ nodes: [], edges: [] }, ''),
   trigger: null,
   steps: {},
-  comingSoonStep: false,
 });
 
 export const useVariableScope = () => useContext(VariableScopeContext);

@@ -15,11 +15,9 @@ import {
 } from '@/components/ui/breadcrumb';
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { ComingSoonChip } from '../../shared/ui/ComingSoonChip';
 import { PluginIcon, plugins } from '../../shared/ui/PluginIcon';
 import { steps, type Step } from '../../steps';
 import { itemLabel } from '../../steps/core/data';
-import { comingSoonLabel } from '../../steps/core/pending';
 import { StepTile } from '../../steps/core/StepTile';
 
 type PickableKind = 'trigger' | 'action';
@@ -75,14 +73,12 @@ export function StepPicker({
           step={stepDef}
           showPlugin={!plugin}
           disabledReason={
-            stepDef.comingSoon
-              ? comingSoonLabel
-              : missing &&
-                /* translators: %s: data item, e.g. "Order" */
-                sprintf(
-                  __('Requires %s data. Choose a trigger or add a step above that provides it.', 'yaymatik'),
-                  itemLabel(missing),
-                )
+            missing &&
+            /* translators: %s: data item, e.g. "Order" */
+            sprintf(
+              __('Requires %s data. Choose a trigger or add a step above that provides it.', 'yaymatik'),
+              itemLabel(missing),
+            )
           }
           onPick={() => onPick(stepDef.id)}
         />
@@ -204,7 +200,6 @@ function StepRow({
           {stepDef.label}
           {/* Searching every plugin: say whose step it is. */}
           {showPlugin && <span className="text-muted-foreground font-normal">{plugins[stepDef.plugin!].label}</span>}
-          {stepDef.comingSoon && <ComingSoonChip />}
         </span>
         <span className="text-muted-foreground block truncate text-xs" title={stepDef.description}>
           {stepDef.description}

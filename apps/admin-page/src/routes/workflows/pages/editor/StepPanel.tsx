@@ -135,10 +135,6 @@ export function StepPanel({
     },
     sameSteps,
   );
-  const comingSoonStep = useStore(form.store, (state) => {
-    const open = state.values.graph.nodes.find((n) => n.id === nodeId);
-    return !!(open && stepOf(open.data)?.comingSoon);
-  });
   const scope = useMemo<VariableScope>(() => {
     const trigger = triggerStep && {
       label: triggerStep.label,
@@ -146,8 +142,8 @@ export function StepPanel({
       icon: triggerStep.icon,
       provides: triggerStep.provides,
     };
-    return { variables, trigger: trigger ?? null, steps, comingSoonStep };
-  }, [steps, triggerStep, variables, comingSoonStep]);
+    return { variables, trigger: trigger ?? null, steps };
+  }, [steps, triggerStep, variables]);
   // Posted when clicked: the step's config and the graph as they are now, saved or not.
   const config = node?.data.config;
   const emailTools = useMemo<EmailTools>(() => {

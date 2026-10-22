@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { structureErrors } from '../model/structure';
 import { validateWorkflow } from '../model/validation';
 import { emailMessage } from './core/email';
-import { findTemplate, isComingSoon, sendsCustomerEmail, templates, versionsOf, workflowRank } from './index';
+import { findTemplate, sendsCustomerEmail, templates, versionsOf, workflowRank } from './index';
 
 describe('templates', () => {
   it('has templates with unique ids', () => {
@@ -15,10 +15,7 @@ describe('templates', () => {
     '%s saves and can be activated as is',
     (_id, template) => {
       expect(structureErrors(template.graph)).toEqual([]);
-      // Coming soon: uses steps or variables PHP doesn't have yet, so Activate would reject it.
-      if (!isComingSoon(template.graph)) {
-        expect(validateWorkflow({ name: template.name, graph: template.graph })).toEqual([]);
-      }
+      expect(validateWorkflow({ name: template.name, graph: template.graph })).toEqual([]);
     },
   );
 
@@ -43,10 +40,9 @@ describe('templates', () => {
   });
 
   it.each(['first-order-thank-you-discount', 'first-order-thank-you-free-shipping'])(
-    '%s can be used and emails the coupon box on its own paragraph',
+    '%s emails the coupon box on its own paragraph',
     (id) => {
       const { graph } = findTemplate(id)!;
-      expect(isComingSoon(graph)).toBe(false);
       expect(sendsCustomerEmail(graph)).toBe(true);
       const email = graph.nodes.find((node) => node.data.block === 'send_email')!;
       expect(email.data.config.message).toContain('<p>{{ steps.coupon.box }}</p>');

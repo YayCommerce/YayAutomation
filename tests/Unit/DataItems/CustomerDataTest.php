@@ -6,7 +6,7 @@ use YayMatik\Workflow\DataItems\CustomerData;
 
 require_once dirname( __DIR__, 2 ) . '/Support/woocommerce-stubs.php';
 
-/** `customer.is_first_order` and `customer.unsubscribed`, with the order lookups faked. */
+/** `customer.is_first_order`, `paid_order_count` and `unsubscribed`, with the order lookups faked. */
 final class CustomerDataTest extends TestCase {
 
     /** @var array[] Queries the lookup got. */
@@ -24,7 +24,7 @@ final class CustomerDataTest extends TestCase {
             function ( array $query ) use ( $by_user, $by_email ) {
                 $this->queries[] = $query;
                 $ids             = isset( $query['customer_id'] ) ? ( $by_user[ $query['customer_id'] ] ?? [] ) : ( $by_email[ $query['billing_email'] ] ?? [] );
-                return array_slice( $ids, 0, 2 );
+                return -1 === $query['limit'] ? $ids : array_slice( $ids, 0, $query['limit'] );
             },
             fn( string $email ) => in_array( strtolower( $email ), $unsubscribed, true )
         );
@@ -48,7 +48,16 @@ final class CustomerDataTest extends TestCase {
         $item = $this->item( [], [ 'ann@x.com' => [ 10 ] ] );
 
         $this->assertTrue( $this->first( $item, $this->order( 10, 0, 'Ann@X.com ' ) ) );
-        $this->assertSame( [ [ 'billing_email' => 'ann@x.com' ] ], $this->queries, 'a guest is found by email only, lowercased' );
+        $this->assertSame(
+            [
+                [
+                    'billing_email' => 'ann@x.com',
+                    'limit'         => 2,
+                ],
+            ],
+            $this->queries,
+            'a guest is found by email only, lowercased'
+        );
     }
 
     public function test_a_guest_with_an_earlier_paid_order(): void {
@@ -61,7 +70,7 @@ final class CustomerDataTest extends TestCase {
         $item = $this->item( [ 5 => [ 10 ] ], [ 'ann@x.com' => [ 10 ] ] );
 
         $this->assertTrue( $this->first( $item, $this->order( 10, 5, 'ann@x.com' ) ), 'the same order from both lookups counts once' );
-        $this->assertSame( [ [ 'customer_id' => 5 ], [ 'billing_email' => 'ann@x.com' ] ], $this->queries );
+        $this->assertSame( [ 5, 'ann@x.com' ], array_map( fn( array $query ) => $query['customer_id'] ?? $query['billing_email'], $this->queries ) );
     }
 
     public function test_a_registered_customer_whose_earlier_guest_order_used_the_same_email(): void {
@@ -98,6 +107,15 @@ final class CustomerDataTest extends TestCase {
 
         $this->assertTrue( $this->first( $item, $this->order( 10, 0, '' ) ), 'nothing to find, so no other paid order' );
         $this->assertSame( [], $this->queries );
+    }
+
+    public function test_paid_order_count_counts_every_paid_order_by_account_and_email_once(): void {
+        $item  = $this->item( [ 5 => [ 10, 4, 3 ] ], [ 'ann@x.com' => [ 10, 3, 2 ] ] );
+        $count = $item->fields()['paid_order_count']['value'];
+
+        $this->assertSame( 4.0, $count( $this->order( 10, 5, 'ann@x.com' ) ) );
+        $this->assertSame( [ -1, -1 ], array_column( $this->queries, 'limit' ), 'no limit, unlike is_first_order' );
+        $this->assertSame( 0.0, $count( $this->order( 11, 0, '' ) ) );
     }
 
     public function test_unsubscribed_reads_the_billing_email(): void {

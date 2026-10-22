@@ -91,6 +91,9 @@ final class DataRegistry {
                 if ( $field['options'] ) {
                     $client['options'] = Catalog::options( ( $field['options'] )() );
                 }
+                if ( $field['block'] ) {
+                    $client['block'] = true;
+                }
                 $fields[] = $client;
             }
             $items[] = [
