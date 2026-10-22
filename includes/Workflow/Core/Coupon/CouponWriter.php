@@ -4,20 +4,19 @@ namespace YayMatik\Workflow\Core\Coupon;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Where Generate coupon reads and writes WooCommerce coupons. `WcCouponWriter` on a site; a fake in
- * PHPUnit.
+ * Where Generate coupon reads and writes WooCommerce coupons.
  */
 interface CouponWriter {
 
     /**
-     * Whether a coupon with this code already exists (any status).
+     * Whether a coupon with this code exists, any status.
      *
-     * @param string $code Coupon code.
+     * @param string $code
      */
     public function exists( string $code ): bool;
 
     /**
-     * Creates and saves a coupon.
+     * Creates a coupon, always single use, once per customer.
      *
      * @param array $coupon [
      *     'code'           => string,
@@ -31,8 +30,8 @@ interface CouponWriter {
      *     'run_id'         => int Run that made it, 0 = none (a preview never makes one),
      *     'node_id'        => string Graph node of the step that made it,
      *     'description'    => string,
-     * ]. Always single use, once per customer.
-     * @return int The coupon id; 0 when it couldn't be saved.
+     * ].
+     * @return int 0 when it couldn't be saved.
      */
     public function create( array $coupon ): int;
 }

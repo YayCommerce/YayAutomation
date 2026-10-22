@@ -51,7 +51,7 @@ final class StepContractTest extends TestCase {
      * @param Step $step Step.
      */
     public function test_icon_is_a_name_from_core_list( Step $step ): void {
-        $this->assertTrue( StepIcons::exists( $step->icon() ), $step->icon() . ' is not in StepIcons::NAMES' );
+        $this->assertContains( $step->icon(), StepIcons::NAMES, $step->icon() . ' is not in StepIcons::NAMES' );
         $this->assertMatchesRegularExpression( '/^[a-z0-9]+(-[a-z0-9]+)*$/', $step->icon(), 'a name, never SVG or a URL' );
     }
 
@@ -60,7 +60,6 @@ final class StepContractTest extends TestCase {
         foreach ( StepIcons::NAMES as $name ) {
             $this->assertMatchesRegularExpression( '/^[a-z0-9]+(-[a-z0-9]+)*$/', $name );
         }
-        $this->assertFalse( StepIcons::exists( '<svg/>' ) );
     }
 
     /**

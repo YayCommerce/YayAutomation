@@ -14,22 +14,11 @@ use YayMatik\Workflow\Core\Storage\UnsubscribeStore;
 
 defined( 'ABSPATH' ) || exit;
 
-/**
- * Email to a customer, sent like WooCommerce's own customer emails: from the WooCommerce sender,
- * in the WooCommerce email template with its styles inlined, with an unsubscribe link in the body's
- * footer and one-click unsubscribe headers.
- *
- * Config: [ 'to' => one address or variable, 'subject' => text, 'heading' => text (blank = the
- * subject), 'message' => HTML ]. All accept merge tags; subject and heading are plain text.
- *
- * The final To address (after variables are filled in) decides: not an email → the step fails;
- * unsubscribed → the step is skipped, and the run goes on.
- */
+/** Email to a customer in the WooCommerce email template, with an unsubscribe link. */
 class SendEmail extends Action {
 
     public const ID = 'send_email';
 
-    /** Run history reason when the address is unsubscribed. */
     public const SKIPPED_UNSUBSCRIBED = 'unsubscribed';
 
     /** @var UnsubscribeLink|null Null = from the stored secret, when first needed. */
@@ -39,8 +28,8 @@ class SendEmail extends Action {
     private $unsubscribed;
 
     /**
-     * @param UnsubscribeLink|null $links        Unsubscribe links; null = with the stored secret.
-     * @param callable|null        $unsubscribed Unsubscribe lookup; null = `UnsubscribeStore::has()`.
+     * @param UnsubscribeLink|null $links        Null = with the stored secret.
+     * @param callable|null        $unsubscribed fn( string $email ): bool; null = `UnsubscribeStore::has()`.
      */
     public function __construct( ?UnsubscribeLink $links = null, ?callable $unsubscribed = null ) {
         $this->links        = $links;
@@ -109,7 +98,7 @@ class SendEmail extends Action {
     }
 
     /**
-     * @param array $config Output of `sanitize()`.
+     * @param array $config
      * @return true|\WP_Error
      */
     public function validate( array $config ) {
@@ -126,13 +115,13 @@ class SendEmail extends Action {
     /**
      * Outputs the address it was sent to; never the subject or body.
      *
-     * @param Scope $scope  Run scope.
-     * @param array $config Sanitized, valid config.
+     * @param Scope $scope
+     * @param array $config
      */
     public function run( Scope $scope, array $config ): StepResult {
         $to = self::recipient( $config, $scope );
         if ( '' === $to ) {
-            return StepResult::failed( new \WP_Error( 'yaymatik_no_email', __( 'No valid email address.', 'yaymatik' ) ) );
+            return StepResult::failed( __( 'No valid email address.', 'yaymatik' ) );
         }
         if ( ( $this->unsubscribed )( $to ) ) {
             return StepResult::skipped( self::SKIPPED_UNSUBSCRIBED );
@@ -140,7 +129,7 @@ class SendEmail extends Action {
 
         $email = $this->compose( $config, $scope, $this->links()->url( $to ) );
         if ( ! WC()->mailer()->send( $to, $email['subject'], $email['body'], $email['headers'] ) ) {
-            return StepResult::failed( new \WP_Error( 'yaymatik_mail_failed', __( 'Couldn’t send the email.', 'yaymatik' ) ) );
+            return StepResult::failed( __( 'Couldn’t send the email.', 'yaymatik' ) );
         }
         return StepResult::ok( [ 'to' => $to ] );
     }
@@ -148,12 +137,10 @@ class SendEmail extends Action {
     /**
      * The email as it goes out: subject, wrapped body with the unsubscribe link, headers.
      *
-     * @param array       $config      Sanitized config.
-     * @param Values      $values      Run scope, or sample values in a preview.
-     * @param string|null $unsubscribe The address's unsubscribe link; null = a link that goes nowhere
-     *                                 (`#`, same look) and no List-Unsubscribe headers, for previews
-     *                                 and test emails, which must never carry a real token.
-     * @return array [ 'subject' => string, 'heading' => string, 'body' => HTML, 'headers' => string ].
+     * @param array       $config
+     * @param Values      $values
+     * @param string|null $unsubscribe Null = a link to `#` and no List-Unsubscribe headers.
+     * @return array [ 'subject' => string, 'heading' => string, 'body' => HTML, 'headers' => string ]
      */
     public function compose( array $config, Values $values, ?string $unsubscribe ): array {
         $subject = self::plain_line( $config['subject'], $values );
@@ -173,8 +160,8 @@ class SendEmail extends Action {
     /**
      * The To address a config gives, normalized; empty when it isn't one email.
      *
-     * @param array  $config Sanitized config.
-     * @param Values $values Where the data comes from.
+     * @param array  $config
+     * @param Values $values
      */
     public static function recipient( array $config, Values $values ): string {
         return UnsubscribeLink::normalize( Field::single_line( self::render( $config['to'], $values ) ) );
@@ -183,7 +170,7 @@ class SendEmail extends Action {
     /**
      * Headers for one-click unsubscribe (RFC 8058), after WooCommerce's HTML content type.
      *
-     * @param string $url Unsubscribe link.
+     * @param string $url
      */
     public static function headers( string $url ): string {
         $headers = "Content-Type: text/html\r\n";
@@ -197,7 +184,7 @@ class SendEmail extends Action {
     /**
      * The unsubscribe link under the message, inside the WooCommerce wrapper.
      *
-     * @param string $url Unsubscribe link.
+     * @param string $url
      */
     private static function footer( string $url ): string {
         if ( '' === $url ) {
@@ -208,16 +195,15 @@ class SendEmail extends Action {
     }
 
     /**
-     * A subject or heading as plain text on one line: HTML tags typed in the text removed, then merge
-     * tags filled in. Only real tags (`<b>`, `</p>`, `<br/>`) go; a lone `<` stays, as in "Save <30%
-     * today". Values are data and are never stripped.
+     * A subject or heading as plain text on one line: typed HTML tags removed, then merge tags filled in.
      *
-     * @param string $text  Stored text.
-     * @param Values $scope Where the data comes from.
+     * @param string $text
+     * @param Values $scope
      */
     public static function plain_line( string $text, Values $scope ): string {
         $template = new Template();
         $stripped = '';
+        // Only real tags go; a lone `<` stays ("Save <30% today"). Values are data and are never stripped.
         foreach ( $template->parse( $text ) as $token ) {
             $stripped .= 'text' === $token['type']
                 ? html_entity_decode( (string) preg_replace( '#</?[a-z][a-z0-9-]*(?:\s[^<>]*)?/?>#i', '', $token['text'] ), ENT_QUOTES, 'UTF-8' )

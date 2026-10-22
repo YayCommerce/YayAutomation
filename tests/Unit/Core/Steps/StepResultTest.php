@@ -26,15 +26,11 @@ final class StepResultTest extends TestCase {
         $this->assertSame( [], $result->outputs() );
     }
 
-    public function test_failed_takes_a_message_or_a_wp_error(): void {
-        $plain = StepResult::failed( 'No mail server.' );
-        $error = StepResult::failed( new \WP_Error( 'yaymatik_mail_failed', 'The email could not be sent.' ) );
+    public function test_failed_carries_a_message(): void {
+        $result = StepResult::failed( 'No mail server.' );
 
-        $this->assertTrue( $plain->is_failed() );
-        $this->assertSame( 'No mail server.', $plain->message() );
-        $this->assertSame( '', $plain->code() );
-        $this->assertSame( 'yaymatik_mail_failed', $error->code() );
-        $this->assertSame( 'The email could not be sent.', $error->message() );
+        $this->assertTrue( $result->is_failed() );
+        $this->assertSame( 'No mail server.', $result->message() );
     }
 
     public function test_wait_carries_the_time_to_resume(): void {

@@ -169,8 +169,8 @@ final class GraphShapeTest extends TestCase {
         $graph['nodes'][0]['extra']          = 'dropped';
         $graph['edges'][0]['animated']       = true;
         $graph['nodes'][2]['data']['config'] = [
-            'type' => 'customer',
             'note' => " Hi\r\nthere ",
+            'type' => 'customer',
         ];
 
         $prepared = Validator::prepare_changes( [ 'graph' => $graph ] )['graph'];
@@ -188,8 +188,8 @@ final class GraphShapeTest extends TestCase {
         );
         $this->assertSame(
             [
-                'note' => "Hi\nthere",
                 'type' => 'customer',
+                'note' => "Hi\nthere",
             ],
             $prepared['nodes'][2]['data']['config']
         );

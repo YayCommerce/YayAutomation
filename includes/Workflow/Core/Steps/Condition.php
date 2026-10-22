@@ -13,10 +13,7 @@ abstract class Condition extends Step {
         return self::KIND_CONDITION;
     }
 
-    /**
-     * `result` (yes / no) picks the branch; declared here, so every condition's result survives the
-     * Executor, which keeps declared outputs only.
-     */
+    /** Declared here so the result survives the Executor, which keeps declared outputs only. */
     public function outputs(): array {
         return [
             'result' => [
@@ -33,16 +30,14 @@ abstract class Condition extends Step {
     /**
      * Whether the config's rules match.
      *
-     * @param Scope $scope  Run scope.
-     * @param array $config Sanitized, valid config.
+     * @param Scope $scope
+     * @param array $config
      */
     abstract public function evaluate( Scope $scope, array $config ): bool;
 
     /**
-     * `ok( [ 'result' => 'yes'|'no' ] )`.
-     *
-     * @param Scope $scope  Run scope.
-     * @param array $config Sanitized, valid config.
+     * @param Scope $scope
+     * @param array $config
      */
     public function run( Scope $scope, array $config ): StepResult {
         return StepResult::ok( [ 'result' => $this->evaluate( $scope, $config ) ? 'yes' : 'no' ] );

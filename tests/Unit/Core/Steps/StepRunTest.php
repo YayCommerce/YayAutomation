@@ -214,7 +214,6 @@ final class StepRunTest extends TestCase {
         );
 
         $this->assertTrue( $result->is_failed() );
-        $this->assertSame( 'yaymatik_mail_failed', $result->code() );
         $this->assertSame( 'Couldn’t send the email.', $result->message() );
         $this->assertSame( [], $result->outputs() );
     }

@@ -5,7 +5,7 @@ use PHPUnit\Framework\TestCase;
 use YayMatik\Tests\Support\FakeValues;
 use YayMatik\Workflow\Core\Email\EmailBody;
 
-/** A stored message as the email body: HTML as written, or plain text saved before the rich editor. */
+/** A stored message as the email body: HTML as written, or plain text, what the editor saves for a message without tags. */
 final class EmailBodyTest extends TestCase {
 
     private const ITEMS = '<table class="td"><tr><td>Mug</td></tr></table>';

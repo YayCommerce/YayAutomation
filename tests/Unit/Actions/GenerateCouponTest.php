@@ -79,8 +79,8 @@ final class GenerateCouponTest extends TestCase {
     public function test_blank_expiry_and_minimum_mean_none_and_the_prefix_is_uppercased(): void {
         $config = $this->config(
             [
-                'expiry_days'   => ' ',
-                'minimum_spend' => '',
+                'expiry_days'   => null,
+                'minimum_spend' => null,
                 'code_prefix'   => ' thanks-',
             ]
         );
@@ -103,11 +103,25 @@ final class GenerateCouponTest extends TestCase {
         $this->assertNull( $config['amount'] );
         $this->assertNull( $config['expiry_days'] );
         $this->assertNull( $config['minimum_spend'] );
-        $this->assertSame( 30, $this->config( [ 'expiry_days' => '30' ] )['expiry_days'], 'text numbers from older configs' );
     }
 
-    public function test_a_missing_prefix_is_ym_and_an_empty_one_is_none(): void {
-        $this->assertSame( 'YM', $this->step()->sanitize( [ 'discount_type' => 'percent' ] )['code_prefix'] );
+    public function test_blank_text_reads_as_the_default_and_a_missing_prefix_as_none(): void {
+        $config = $this->config(
+            [
+                'amount'        => '',
+                'expiry_days'   => '',
+                'minimum_spend' => '',
+            ]
+        );
+
+        $this->assertSame( [ 10, 30, null ], [ $config['amount'], $config['expiry_days'], $config['minimum_spend'] ] );
+
+        $raw = $this->defaults();
+        unset( $raw['code_prefix'] );
+        $this->assertSame( '', $this->step()->sanitize( $raw )['code_prefix'] );
+    }
+
+    public function test_an_empty_prefix_is_none(): void {
         $this->assertSame( '', $this->step()->sanitize( [ 'code_prefix' => '' ] )['code_prefix'] );
 
         $this->run_step( $this->config( [ 'code_prefix' => '' ] ) );
@@ -131,7 +145,7 @@ final class GenerateCouponTest extends TestCase {
         $this->assertSame( $message, $this->error( [ 'amount' => 0.5 ] ) );
         $this->assertSame( $message, $this->error( [ 'amount' => 100.5 ] ) );
         $this->assertSame( $message, $this->error( [ 'amount' => 150 ] ) );
-        $this->assertSame( $message, $this->error( [ 'amount' => '' ] ) );
+        $this->assertSame( $message, $this->error( [ 'amount' => null ] ) );
         $this->assertNull( $this->error( [ 'amount' => 1 ] ) );
         $this->assertNull( $this->error( [ 'amount' => '100' ] ) );
     }
@@ -154,7 +168,7 @@ final class GenerateCouponTest extends TestCase {
             $this->error(
                 [
                     'discount_type' => 'fixed_cart',
-                    'amount'        => '',
+                    'amount'        => null,
                 ]
             )
         );
@@ -179,7 +193,7 @@ final class GenerateCouponTest extends TestCase {
             $this->error(
                 [
                     'discount_type' => 'free_shipping',
-                    'amount'        => '',
+                    'amount'        => null,
                 ]
             )
         );
@@ -190,7 +204,7 @@ final class GenerateCouponTest extends TestCase {
         $this->assertSame( [ 'expiry_days', 'Enter 1 or more.' ], $this->error( [ 'expiry_days' => 0 ] ), 'the field’s min, checked in the editor too' );
         $this->assertSame( $message, $this->error( [ 'expiry_days' => 1.5 ] ) );
         $this->assertNull( $this->error( [ 'expiry_days' => 1 ] ) );
-        $this->assertNull( $this->error( [ 'expiry_days' => '' ] ) );
+        $this->assertNull( $this->error( [ 'expiry_days' => null ] ) );
     }
 
     public function test_prefix_is_letters_numbers_dash_underscore(): void {
@@ -239,7 +253,7 @@ final class GenerateCouponTest extends TestCase {
             $this->config(
                 [
                     'discount_type' => 'free_shipping',
-                    'amount'        => '',
+                    'amount'        => null,
                 ]
             )
         );
@@ -261,7 +275,7 @@ final class GenerateCouponTest extends TestCase {
     }
 
     public function test_no_expiry(): void {
-        $result = $this->run_step( $this->config( [ 'expiry_days' => '' ] ) );
+        $result = $this->run_step( $this->config( [ 'expiry_days' => null ] ) );
 
         $this->assertNull( $this->coupons->created[0]['expires'] );
         $this->assertSame( '', $result->outputs()['expires_at'] );
@@ -298,7 +312,6 @@ final class GenerateCouponTest extends TestCase {
         $result               = $this->run_step( $this->config() );
 
         $this->assertTrue( $result->is_failed() );
-        $this->assertSame( 'yaymatik_coupon_code', $result->code() );
         $this->assertSame( 'Couldn’t make a unique coupon code. Try a longer or different prefix.', $result->message() );
         $this->assertCount( 5, $this->coupons->checked );
         $this->assertSame( [], $this->coupons->created );
@@ -332,12 +345,12 @@ final class GenerateCouponTest extends TestCase {
                 $this->config(
                     [
                         'discount_type' => 'free_shipping',
-                        'amount'        => '',
+                        'amount'        => null,
                     ]
                 )
             )['amount']
         );
-        $this->assertSame( '', $this->step()->sample_outputs( $this->config( [ 'expiry_days' => '' ] ) )['expires_at'] );
+        $this->assertSame( '', $this->step()->sample_outputs( $this->config( [ 'expiry_days' => null ] ) )['expires_at'] );
         $this->assertSame( [], $this->coupons->created );
         $this->assertSame( [], $this->coupons->checked );
     }

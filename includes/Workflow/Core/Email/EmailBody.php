@@ -7,15 +7,14 @@ use YayMatik\Workflow\Core\Data\Values;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * An email message from an `html` field, filled in: the HTML body that goes inside the WooCommerce
- * email wrapper. Paragraphs come from `wpautop()`; values are escaped by `Template::render_html()`.
+ * An `html` field's message, filled in: the body that goes inside the WooCommerce email wrapper.
  */
 final class EmailBody {
 
     /**
-     * @param string        $message  Stored message: HTML, or plain text saved before the field was rich.
-     * @param Values        $values   Where the data comes from.
-     * @param Template|null $template Renderer; null = a new one.
+     * @param string        $message  HTML, or plain text: what the editor saves for a message without tags.
+     * @param Values        $values
+     * @param Template|null $template Null = a new one.
      */
     public static function render( string $message, Values $values, ?Template $template = null ): string {
         $template = $template ?? new Template();
@@ -28,8 +27,8 @@ final class EmailBody {
     /**
      * Whether the text around the tags holds any HTML tag.
      *
-     * @param string   $message  Stored message.
-     * @param Template $template Parser.
+     * @param string   $message
+     * @param Template $template
      */
     private static function has_markup( string $message, Template $template ): bool {
         foreach ( $template->parse( $message ) as $token ) {
@@ -43,8 +42,8 @@ final class EmailBody {
     /**
      * Plain text as HTML: the text escaped, the tags left for the renderer.
      *
-     * @param string   $message  Plain text with merge tags.
-     * @param Template $template Parser.
+     * @param string   $message
+     * @param Template $template
      */
     private static function text_to_html( string $message, Template $template ): string {
         $html = '';

@@ -6,10 +6,7 @@ use YayMatik\Workflow\Core\Data\Type;
 
 defined( 'ABSPATH' ) || exit;
 
-/**
- * One line of an order, reached through `order.items`. Context object: \WC_Order_Item_Product.
- * Not offered in "Insert variable": it isn't something a trigger supplies.
- */
+/** One line of an order (\WC_Order_Item_Product), reached through `order.items`; no trigger supplies it. */
 final class OrderItemData extends DataItem {
 
     public const ID = 'order_item';

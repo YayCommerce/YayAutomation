@@ -17,32 +17,23 @@ use YayMatik\Workflow\Core\Steps\Trigger;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Preview and Send test for an email step in the editor, from its unsaved config. Only renders:
- * no step runs, so no coupon, order note or meta, no run row and no scheduled job.
- *
- * - Data: the store's latest paid order when the trigger supplies orders (`order` is its number);
- *   otherwise made-up values (`sample` is true, for the "Sample data" badge).
- * - Steps above give made-up outputs (`Step::sample_outputs()`; Generate coupon → YMSAMPLE).
- * - The unsubscribe link goes nowhere (`#`, same look) and there are no List-Unsubscribe headers:
- *   neither may carry a real customer's token. A test email goes to the admin, unsubscribed or not.
+ * Preview and Send test for an email step, from its unsaved config; renders only, no step runs.
  */
 final class EmailPreview {
 
-    /** Test emails' subject prefix. */
     public const TEST_PREFIX = '[Test] ';
 
-    /** Paid order statuses a preview reads its data from. */
     private const ORDER_STATUSES = [ 'processing', 'completed' ];
 
     /**
      * The email as the recipient would see it.
      *
-     * @param mixed    $graph    Graph with the step, as the editor has it (unsaved is fine).
-     * @param string   $node_id  The email step's node.
-     * @param mixed    $config   Its config, as the editor has it.
-     * @param int|null $order_id Order to read; null = the latest paid one, 0 = made-up data.
+     * @param mixed    $graph
+     * @param string   $node_id
+     * @param mixed    $config
+     * @param int|null $order_id Null = the latest paid order, 0 = made-up data.
      * @return array|\WP_Error [ 'subject', 'heading', 'html' (wrapped, styles inlined), 'to', 'sample',
-     *                         'order' (the order's number; null with made-up data) ].
+     *                         'order' (the order's number; null with made-up data) ]
      */
     public static function render( $graph, string $node_id, $config, ?int $order_id = null ) {
         $email = self::compose( $graph, $node_id, $config, $order_id );
@@ -60,14 +51,14 @@ final class EmailPreview {
     }
 
     /**
-     * Sends the email to an admin, subject prefixed "[Test]".
+     * Sends the email to an admin, unsubscribed or not.
      *
-     * @param mixed    $graph    Graph with the step.
-     * @param string   $node_id  The email step's node.
-     * @param mixed    $config   Its config.
-     * @param string   $to       The admin's address.
+     * @param mixed    $graph
+     * @param string   $node_id
+     * @param mixed    $config
+     * @param string   $to
      * @param int|null $order_id As in `render()`.
-     * @return array|\WP_Error [ 'sentTo', 'subject', 'sample' ].
+     * @return array|\WP_Error [ 'sentTo', 'subject', 'sample' ]
      */
     public static function send_test( $graph, string $node_id, $config, string $to, ?int $order_id = null ) {
         if ( ! is_email( $to ) ) {
@@ -89,10 +80,10 @@ final class EmailPreview {
     }
 
     /**
-     * @param mixed    $graph    Graph.
-     * @param string   $node_id  Node.
-     * @param mixed    $config   Raw config.
-     * @param int|null $order_id Order.
+     * @param mixed    $graph
+     * @param string   $node_id
+     * @param mixed    $config
+     * @param int|null $order_id
      * @return array|\WP_Error Compose output + `to`, `sample`, `order`.
      */
     private static function compose( $graph, string $node_id, $config, ?int $order_id ) {
@@ -133,6 +124,7 @@ final class EmailPreview {
         $config                          = $step->sanitize( $node['data']['config'] );
         list( $values, $sample, $order ) = self::values( $graph, $nodes, $node_id, $order_id );
         if ( $step instanceof SendEmail ) {
+            // No unsubscribe link (`#`) or List-Unsubscribe header: neither may carry a real customer's token.
             $email       = $step->compose( $config, $values, null );
             $email['to'] = SendEmail::recipient( $config, $values );
         } else {
@@ -147,11 +139,11 @@ final class EmailPreview {
     /**
      * The values a preview reads, and whether they're made up.
      *
-     * @param array    $graph    Prepared graph.
-     * @param array[]  $nodes    Nodes by id.
-     * @param string   $node_id  The email step.
-     * @param int|null $order_id Order to read; null = latest paid; 0 = made-up.
-     * @return array [ Values, bool $sample, string|null $order_number ].
+     * @param array    $graph
+     * @param array[]  $nodes   By id.
+     * @param string   $node_id
+     * @param int|null $order_id
+     * @return array [ Values, bool $sample, string|null $order_number ]
      */
     private static function values( array $graph, array $nodes, string $node_id, ?int $order_id ): array {
         $trigger = null;
@@ -204,9 +196,9 @@ final class EmailPreview {
     /**
      * The graph with the node's config replaced by the editor's.
      *
-     * @param array  $graph   Raw graph.
-     * @param string $node_id Node.
-     * @param mixed  $config  Raw config.
+     * @param array  $graph
+     * @param string $node_id
+     * @param mixed  $config
      */
     private static function with_config( array $graph, string $node_id, $config ): array {
         foreach ( is_array( $graph['nodes'] ?? null ) ? $graph['nodes'] : [] as $i => $node ) {
@@ -220,7 +212,7 @@ final class EmailPreview {
     /**
      * WooCommerce's email styles inlined, as the mailer does when it sends.
      *
-     * @param string $html Wrapped email.
+     * @param string $html
      */
     private static function inline_styles( string $html ): string {
         return class_exists( 'WC_Email' ) ? ( new \WC_Email() )->style_inline( $html ) : $html;

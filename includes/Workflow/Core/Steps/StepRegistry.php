@@ -5,10 +5,10 @@ use YayMatik\Workflow\ModuleRegistry;
 
 defined( 'ABSPATH' ) || exit;
 
-/** Every step Workflow Core knows, by id: what the modules register (see `ModuleRegistry`). */
+/** Every step the modules register, by id. */
 final class StepRegistry {
 
-    /** @var Step[]|null Keyed by step id. */
+    /** @var Step[]|null By step id. */
     private static $steps = null;
 
     /** @return Step[] */

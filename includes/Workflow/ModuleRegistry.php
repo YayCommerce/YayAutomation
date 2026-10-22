@@ -25,7 +25,7 @@ final class ModuleRegistry {
     /** @var Module[]|null */
     private static $modules = null;
 
-    /** @var array|null `build()` of `modules()`. */
+    /** @var array|null */
     private static $built = null;
 
     /** Module classes: the Pro ones when the Pro folder ships, then the filter's. */

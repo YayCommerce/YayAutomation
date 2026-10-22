@@ -4,9 +4,7 @@ namespace YayMatik\Workflow\Core\Steps;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * The step icons the admin app can draw: lucide icon names. A step's `icon()` returns one of them,
- * never SVG or a URL. A step that needs another icon gets it added here (and to the admin app's
- * icon map), not shipped by its plugin.
+ * The step icons the admin app can draw: lucide names, never SVG or a URL.
  */
 final class StepIcons {
 
@@ -63,11 +61,4 @@ final class StepIcons {
         // Other.
         'zap',
     ];
-
-    /**
-     * @param string $name Icon name.
-     */
-    public static function exists( string $name ): bool {
-        return in_array( $name, self::NAMES, true );
-    }
 }

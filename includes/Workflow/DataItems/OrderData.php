@@ -7,7 +7,7 @@ use YayMatik\Workflow\Core\Data\Type;
 
 defined( 'ABSPATH' ) || exit;
 
-/** A WooCommerce order. Context object: \WC_Order. Relations: `customer`, `items`. */
+/** A WooCommerce order (\WC_Order). */
 final class OrderData extends DataItem {
 
     public const ID = 'order';
@@ -28,9 +28,7 @@ final class OrderData extends DataItem {
         return 'shopping-bag';
     }
 
-    /**
-     * Registered order statuses as slug (no `wc-` prefix) => label. Empty without WooCommerce.
-     */
+    /** Slug (no `wc-` prefix) => label; empty without WooCommerce. */
     public static function statuses(): array {
         if ( ! function_exists( 'wc_get_order_statuses' ) ) {
             return [];
@@ -45,7 +43,7 @@ final class OrderData extends DataItem {
     /**
      * Status slug as the engine stores it: sanitized, without the `wc-` prefix.
      *
-     * @param string $status Raw status, with or without the prefix.
+     * @param string $status With or without the prefix.
      */
     public static function status_slug( string $status ): string {
         $status = sanitize_key( $status );
@@ -147,8 +145,8 @@ final class OrderData extends DataItem {
     /**
      * The order's items with totals, like WooCommerce's own order emails: a table in HTML, lines in text.
      *
-     * @param \WC_Order $order Order.
-     * @param bool      $html  HTML table instead of plain text.
+     * @param \WC_Order $order
+     * @param bool      $html
      */
     public static function items( \WC_Order $order, bool $html ): string {
         $rows = wc_get_email_order_items(
@@ -173,7 +171,7 @@ final class OrderData extends DataItem {
     /**
      * The items table of WooCommerce's order emails.
      *
-     * @param string  $rows   Item rows, safe HTML.
+     * @param string  $rows   Safe HTML.
      * @param array[] $totals [ [ 'label' => HTML, 'value' => HTML ], … ].
      */
     private static function items_table( string $rows, array $totals ): string {
@@ -191,11 +189,7 @@ final class OrderData extends DataItem {
         return trim( (string) preg_replace( '/\s*\n\s*/', ' ', $table ) );
     }
 
-    /**
-     * Made-up order for previews when the store has no paid order yet (labelled "Sample data").
-     *
-     * @return array Field key => value, or [ 'value', 'text', 'html'? ] when it reads differently.
-     */
+    /** @return array Field key => value, or [ 'value', 'text', 'html'? ] when it reads differently. */
     public function sample(): array {
         $price = fn( float $amount ) => [
             'value' => $amount,
@@ -256,9 +250,9 @@ final class OrderData extends DataItem {
     /**
      * An amount in the order's currency: HTML from wc_price(), or the same as plain text.
      *
-     * @param \WC_Order $order  Order.
-     * @param float     $amount Amount.
-     * @param bool      $html   HTML instead of plain text.
+     * @param \WC_Order $order
+     * @param float     $amount
+     * @param bool      $html
      */
     public static function price( \WC_Order $order, float $amount, bool $html ): string {
         $price = wc_price( $amount, [ 'currency' => $order->get_currency() ] );
