@@ -37,6 +37,10 @@ final class DbRunRepository implements RunRepository {
         return RunStepStore::finish( $id, $status, $output, $error );
     }
 
+    public function close_steps( int $run_id, string $status, string $error ): bool {
+        return RunStepStore::close_open( $run_id, $status, $error );
+    }
+
     public function steps( int $run_id ): array {
         return RunStepStore::for_run( $run_id );
     }

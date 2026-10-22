@@ -168,6 +168,51 @@ final class RunStore {
     }
 
     /**
+     * Ids of a workflow's waiting runs.
+     *
+     * @param int $workflow_id
+     * @return int[]
+     */
+    public static function waiting_ids( int $workflow_id ): array {
+        global $wpdb;
+        $table = self::table();
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        $ids = $wpdb->get_col( $wpdb->prepare( "SELECT id FROM {$table} WHERE workflow_id = %d AND status = %s", $workflow_id, self::STATUS_WAITING ) );
+        return array_map( 'intval', (array) $ids );
+    }
+
+    /**
+     * Ends these runs as cancelled if still waiting, in one UPDATE, so a run its job took meanwhile is left alone.
+     *
+     * @param int[]  $ids
+     * @param string $reason
+     * @return int How many runs were cancelled.
+     */
+    public static function cancel_waiting( array $ids, string $reason ): int {
+        global $wpdb;
+        if ( ! $ids ) {
+            return 0;
+        }
+        $table = self::table();
+        $in    = implode( ',', array_map( 'intval', $ids ) );
+        $done  = $wpdb->query(
+            $wpdb->prepare(
+                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $in is a list of ints.
+                "UPDATE {$table} SET status = %s, error = %s, wait_until = NULL, finished_at = %s WHERE id IN ({$in}) AND status = %s",
+                self::STATUS_CANCELLED,
+                $reason,
+                current_time( 'mysql', true ),
+                self::STATUS_WAITING
+            )
+        );
+        if ( false === $done ) {
+            Logger::error( 'Could not cancel waiting runs: ' . $wpdb->last_error, [ 'run_ids' => $ids ] );
+            return 0;
+        }
+        return (int) $done;
+    }
+
+    /**
      * Saves only the given fields; a finishing status sets `finished_at`.
      *
      * @param int   $id

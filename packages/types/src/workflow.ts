@@ -194,7 +194,7 @@ export interface Run {
   finishedAt: string | null;
 }
 
-export type RunStepStatus = 'running' | 'completed' | 'skipped' | 'failed' | 'waiting';
+export type RunStepStatus = 'running' | 'completed' | 'skipped' | 'failed' | 'waiting' | 'cancelled';
 
 export interface RunStep {
   id: string;

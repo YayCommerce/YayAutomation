@@ -45,6 +45,22 @@ final class WorkflowRepository {
     }
 
     /**
+     * From the table, not the object cache: a run's slice must see a Deactivate from another request.
+     *
+     * @param int $id
+     * @throws \RuntimeException When the query fails, so a database error never reads as "turned off".
+     */
+    public static function is_active( int $id ): bool {
+        global $wpdb;
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        $status = $wpdb->get_var( $wpdb->prepare( "SELECT meta_value FROM {$wpdb->postmeta} WHERE post_id = %d AND meta_key = %s LIMIT 1", $id, self::META_STATUS ) );
+        if ( null === $status && '' !== $wpdb->last_error ) {
+            throw new \RuntimeException( 'Could not read the workflow status: ' . $wpdb->last_error );
+        }
+        return 'active' === $status;
+    }
+
+    /**
      * Version row holding the live graph, which a new run pins; 0 when none was saved.
      *
      * @param int $id

@@ -31,6 +31,10 @@ class FakeWorkflows implements Workflows {
         return $this->workflows[ $id ] ?? null;
     }
 
+    public function is_active( int $id ): bool {
+        return 'active' === ( $this->workflows[ $id ]['status'] ?? '' );
+    }
+
     public function live_version_id( int $id ): int {
         return $this->versions[ $id ] ?? 0;
     }

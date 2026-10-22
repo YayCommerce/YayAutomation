@@ -8,6 +8,7 @@ use YayMatik\Tests\Support\FakeGraphSource;
 use YayMatik\Tests\Support\FakeQueue;
 use YayMatik\Tests\Support\FakeRunRepository;
 use YayMatik\Tests\Support\FakeStep;
+use YayMatik\Tests\Support\FakeWorkflows;
 use YayMatik\Workflow\Core\Data\Ref;
 use YayMatik\Workflow\Core\Data\RefResolver;
 use YayMatik\Workflow\Core\Data\Scope;
@@ -32,15 +33,24 @@ final class ExecutorTest extends TestCase {
     /** @var FakeClock */
     private $clock;
 
+    /** @var FakeWorkflows Workflow 9, active. */
+    private $workflows;
+
     /** @var Step[] Step type id => step. */
     private $steps = [];
 
     protected function setUp(): void {
-        $this->runs   = new FakeRunRepository();
-        $this->graphs = new FakeGraphSource();
-        $this->queue  = new FakeQueue();
-        $this->clock  = new FakeClock();
-        $this->steps  = [
+        $this->runs                    = new FakeRunRepository();
+        $this->graphs                  = new FakeGraphSource();
+        $this->queue                   = new FakeQueue();
+        $this->clock                   = new FakeClock();
+        $this->workflows               = new FakeWorkflows();
+        $this->workflows->workflows[9] = [
+            'id'     => '9',
+            'status' => 'active',
+            'graph'  => [],
+        ];
+        $this->steps                   = [
             'act'       => new FakeStep( 'act' ),
             'condition' => new FakeCondition(),
         ];
@@ -114,6 +124,7 @@ final class ExecutorTest extends TestCase {
             $this->runs,
             $this->graphs,
             $this->queue,
+            $this->workflows,
             $this->clock,
             fn( string $block ) => $this->steps[ $block ] ?? null,
             fn() => new RefResolver( [] )
@@ -411,6 +422,74 @@ final class ExecutorTest extends TestCase {
             $this->statuses( $id )
         );
         $this->assertSame( 1, $this->steps['wait']->runs );
+    }
+
+    public function test_turning_the_workflow_off_stops_the_run_before_its_next_step(): void {
+        $this->steps['off'] = new FakeStep(
+            'off',
+            function () {
+                $this->workflows->workflows[9]['status'] = 'inactive';
+                return StepResult::ok( [] );
+            }
+        );
+        $this->graph(
+            [
+                'a' => [ 'off', [] ],
+                'b' => [ 'act', [] ],
+            ],
+            [ [ 't', 'a' ], [ 'a', 'b' ] ]
+        );
+        $id = $this->new_run();
+
+        $this->assertSame( 'cancelled', $this->slice( $id ) );
+        $run = $this->run_of( $id );
+        $this->assertSame( 'The workflow was turned off.', $run['error'] );
+        $this->assertSame( [ 'queue' => [ 'b' ] ], $run['position'] );
+        $this->assertNotNull( $run['finished_at'] );
+        $this->assertSame( [ 'a' => 'completed' ], $this->statuses( $id ) );
+        $this->assertSame( 0, $this->steps['act']->runs );
+    }
+
+    public function test_a_wait_that_ends_after_turning_off_cancels_the_run_and_closes_the_wait(): void {
+        $until               = $this->clock->now + 3600;
+        $this->steps['wait'] = new FakeStep( 'wait', fn() => StepResult::wait( $until ) );
+        $this->graph(
+            [
+                'w' => [ 'wait', [] ],
+                'b' => [ 'act', [] ],
+            ],
+            [ [ 't', 'w' ], [ 'w', 'b' ] ]
+        );
+        $id = $this->new_run();
+        $this->assertSame( 'waiting', $this->slice( $id ) );
+
+        $this->workflows->workflows[9]['status'] = 'inactive';
+        $this->runs->now                         = '2026-10-12 11:00:00';
+        $this->clock->now                        = $until;
+        $this->assertSame( 'cancelled', $this->slice( $id ) );
+        $this->assertNull( $this->run_of( $id )['wait_until'] );
+        $row = $this->runs->steps( $id )[0];
+        $this->assertSame( 'cancelled', $row['status'] );
+        $this->assertSame( 'The workflow was turned off.', $row['error'] );
+        $this->assertNotNull( $row['finished_at'] );
+        $this->assertSame( 0, $this->steps['act']->runs );
+    }
+
+    public function test_turned_off_while_the_wait_step_ran_cancels_instead_of_waiting(): void {
+        $this->steps['wait'] = new FakeStep(
+            'wait',
+            function () {
+                $this->workflows->workflows[9]['status'] = 'inactive';
+                return StepResult::wait( $this->clock->now + 3600 );
+            }
+        );
+        $this->graph( [ 'w' => [ 'wait', [] ] ], [ [ 't', 'w' ] ] );
+        $id = $this->new_run();
+
+        $this->assertSame( 'cancelled', $this->slice( $id ) );
+        $this->assertNull( $this->run_of( $id )['wait_until'] );
+        $this->assertSame( [ 'w' => 'cancelled' ], $this->statuses( $id ) );
+        $this->assertSame( [], $this->queue->jobs );
     }
 
     public function test_wait_without_a_queue_fails_the_run(): void {

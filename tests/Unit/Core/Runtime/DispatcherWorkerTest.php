@@ -353,7 +353,7 @@ final class DispatcherWorkerTest extends TestCase {
         $this->assertSame( [], $this->runs->steps( $id ) );
     }
 
-    public function test_start_checks_only_run_before_the_first_slice(): void {
+    public function test_turning_off_stops_a_run_already_going_before_its_next_step(): void {
         $this->graphs->graphs[11]['nodes'][] = [
             'id'   => 'b',
             'kind' => 'action',
@@ -371,9 +371,41 @@ final class DispatcherWorkerTest extends TestCase {
         $this->runs->save_run( $id, [ 'position' => [ 'queue' => [ 'b' ] ] ] );
         $this->workflows->workflows[1]['status'] = 'inactive';
 
-        // Turning a workflow off doesn't stop a run already going.
-        $this->assertSame( 'completed', $this->worker->run( $id ) );
-        $this->assertSame( [ 'b' ], array_column( $this->runs->steps( $id ), 'step_id' ) );
+        $this->assertSame( 'cancelled', $this->worker->run( $id ) );
+        $this->assertSame( 'The workflow was turned off.', $this->runs->runs[ $id ]['error'] );
+        $this->assertSame( [], $this->runs->steps( $id ) );
+    }
+
+    public function test_cancelling_before_the_first_step_closes_a_first_step_left_running(): void {
+        $id = $this->queued_run( [] );
+        $this->runs->claim_run( $id, [ 'queued' ] );
+        $this->runs->start_step( $id, 'a', [] );
+        $this->workflows->workflows[1]['status'] = 'inactive';
+
+        $this->assertSame( 'cancelled', $this->worker->run( $id, true ) );
+        $row = $this->runs->steps( $id )[0];
+        $this->assertSame( 'cancelled', $row['status'] );
+        $this->assertSame( 'The workflow was deactivated before this run started.', $row['error'] );
+        $this->assertNotNull( $row['finished_at'] );
+    }
+
+    public function test_a_cancelled_runs_job_does_nothing(): void {
+        $id = $this->queued_run( [] );
+        $this->runs->save_run(
+            $id,
+            [
+                'status'   => 'cancelled',
+                'position' => [ 'queue' => [ 'a' ] ],
+            ]
+        );
+        $saves = $this->runs->saves;
+
+        $this->assertNull( $this->worker->run( $id ) );
+        $this->assertNull( $this->worker->run( $id, true ) );
+        $this->assertSame( 'cancelled', $this->runs->runs[ $id ]['status'] );
+        $this->assertSame( $saves, $this->runs->saves );
+        $this->assertSame( [], $this->queue->jobs );
+        $this->assertSame( 0, $this->steps['act']->runs );
     }
 
     public function test_recovery_takes_a_run_left_running_and_fails_the_interrupted_step(): void {

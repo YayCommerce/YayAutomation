@@ -44,6 +44,13 @@ interface RunRepository {
     public function finish_step( int $id, string $status, array $output = [], ?string $error = null ): bool;
 
     /**
+     * @param int    $run_id
+     * @param string $status The run's end status.
+     * @param string $error
+     */
+    public function close_steps( int $run_id, string $status, string $error ): bool;
+
+    /**
      * @param int $run_id
      * @return array[] In the order they ran.
      */

@@ -119,6 +119,15 @@ class FakeRunRepository implements RunRepository {
         return true;
     }
 
+    public function close_steps( int $run_id, string $status, string $error ): bool {
+        foreach ( $this->steps as $id => $row ) {
+            if ( $row['run_id'] === $run_id && in_array( $row['status'], RunStepStore::OPEN, true ) ) {
+                $this->finish_step( $id, $status, $row['output'], $error );
+            }
+        }
+        return true;
+    }
+
     public function steps( int $run_id ): array {
         return array_values( array_filter( $this->steps, fn( array $row ) => $row['run_id'] === $run_id ) );
     }

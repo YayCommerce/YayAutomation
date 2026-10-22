@@ -127,7 +127,7 @@ final class Worker {
             }
 
             $this->current = $run;
-            $executor      = new Executor( $this->runs, $this->graphs, $this->queue, ( $this->clock )(), $this->steps, fn() => $resolver );
+            $executor      = new Executor( $this->runs, $this->graphs, $this->queue, $this->workflows, ( $this->clock )(), $this->steps, fn() => $resolver );
             return $executor->run( $run );
         } catch ( \Throwable $e ) {
             Logger::error( "Run {$run_id} failed: " . $e->getMessage(), [ 'run_id' => $run_id ] );
@@ -179,9 +179,9 @@ final class Worker {
      * @param RefResolver $resolver
      */
     private function start( array $run, RefResolver $resolver ): ?string {
-        $workflow = $this->workflows->find( (int) $run['workflow_id'] );
-        if ( ! $workflow || 'active' !== ( $workflow['status'] ?? '' ) ) {
-            $reason = $workflow
+        $workflow_id = (int) $run['workflow_id'];
+        if ( ! $this->workflows->is_active( $workflow_id ) ) {
+            $reason = $this->workflows->find( $workflow_id )
                 ? __( 'The workflow was deactivated before this run started.', 'yaymatik' )
                 : __( 'The workflow was deleted before this run started.', 'yaymatik' );
             return $this->end( (int) $run['id'], RunStore::STATUS_CANCELLED, $reason );
@@ -199,6 +199,13 @@ final class Worker {
         return null;
     }
 
+    /**
+     * A first step interrupted by a crash is still `running`: its row ends with the run.
+     *
+     * @param int    $id
+     * @param string $status
+     * @param string $reason
+     */
     private function end( int $id, string $status, string $reason ): string {
         $this->runs->save_run(
             $id,
@@ -207,6 +214,7 @@ final class Worker {
                 'error'  => $reason,
             ]
         );
+        $this->runs->close_steps( $id, $status, $reason );
         return $status;
     }
 }
