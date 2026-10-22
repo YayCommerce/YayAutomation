@@ -1,6 +1,7 @@
 <?php
 namespace YayMatik\Workflow\Modules;
 
+use YayMatik\Workflow\Actions\Wait;
 use YayMatik\Workflow\Conditions\Criteria;
 use YayMatik\Workflow\DataItems\SiteData;
 
@@ -29,6 +30,10 @@ class YayMatikModule extends Module {
 
     public function conditions(): array {
         return [ Criteria::class ];
+    }
+
+    public function actions(): array {
+        return [ Wait::class ];
     }
 
     public function data_items(): array {

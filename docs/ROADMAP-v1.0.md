@@ -96,7 +96,7 @@ We chose these 8 because they cover what merchants install an automation plugin 
   - Checkout / Cart abandoned: no settings, a note on when a cart counts as abandoned (set in Settings), and a warning with a link while cart tracking is off. Each panel explains that a cart never starts both: "Carts that reached checkout start Checkout abandoned instead, never this trigger." / "Only carts that reached checkout with an email. They never start Cart abandoned."
   - Customer account created: no settings.
   - Customer inactive: number of days (default 90), with "Checked once a day".
-- **Wait:** a number and a unit (hours, days, and minutes as a proposal); the card reads e.g. "Wait 1 hour" with a clock icon. *(M2)*
+- **Wait:** a number and a unit (minutes, hours, days, weeks), up to a year; the card reads e.g. "Wait 1 hour" with a clock icon. *(M2)*
 - **Generate coupon:** discount type, amount, expires after N days, minimum spend, individual use, limited to the customer's email, code prefix. The card reads e.g. "10 % off, expires in 7 days". Later emails can include the coupon code. *(M1)*
 - **Send email:** To (the customer's email by default; editable, proposal), Subject, Heading, Message, each with "Insert variable". Note under the form: "An unsubscribe link is added automatically". *(M1)*
   - **Preview** shows the email as the customer sees it, with sample data from a recent order or cart.
@@ -319,7 +319,7 @@ Each has a proposed answer, used until confirmed.
 | 1 | Template names, timings and coupon values | As in [Template details](#template-details-proposals) |
 | 2 | Cart tracking on or off after install | Off; the store owner turns it on in Settings |
 | 3 | Can the customer email go to any address? | Yes, editable; defaults to the customer's email |
-| 4 | Can Wait be set in minutes? | Yes (also useful for testing); hours and days too |
+| 4 | Can Wait be set in minutes? | Yes (also useful for testing); hours, days and weeks too |
 | 5 | Runs / Last run columns and status filter on the list page in v1.0? | Yes, in M2 |
 | 6 | "Most popular" sort before we track installs | Fixed order based on expected demand |
 | 7 | Which release checklist items go into v1.0? | None until picked |

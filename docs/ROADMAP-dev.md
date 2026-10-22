@@ -140,7 +140,7 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 ## M2 — Wait + run history · L · risk 3
 
 **Backend**
-- **M2.1 Wait step** — number + unit (minutes, hours, days); the run moves to waiting and resumes through Action Scheduler.
+- **M2.1 Wait step** — number + unit (minutes, hours, days, weeks), a whole number up to a year; the run moves to waiting and resumes through Action Scheduler.
 - **M2.2 Cancel on Deactivate / Update** *(§3)* — cancel waiting runs, return the count.
 - **M2.3 Runs REST** — status filter, paging, step results.
 - **M2.4 List stats** — runs in the last 30 days, last run.

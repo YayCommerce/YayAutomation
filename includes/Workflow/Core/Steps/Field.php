@@ -521,9 +521,13 @@ final class Field {
         if ( null === $value && is_array( $this->default ) ) {
             $value = self::number_or_null( $this->default['value'] ?? null );
         }
+        if ( ! in_array( $unit, $units, true ) ) {
+            $fallback = is_array( $this->default ) ? (string) ( $this->default['unit'] ?? '' ) : '';
+            $unit     = in_array( $fallback, $units, true ) ? $fallback : (string) ( $units[0] ?? '' );
+        }
         return [
             'value' => $value,
-            'unit'  => in_array( $unit, $units, true ) ? $unit : (string) ( $units[0] ?? '' ),
+            'unit'  => $unit,
         ];
     }
 

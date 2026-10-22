@@ -48,7 +48,7 @@ const strings = (value: unknown): string[] =>
 
 describe('PHP ↔ TS parity', () => {
   it('every TS step is in the PHP catalog or listed as pending', () => {
-    expect(phpStepIds).toHaveLength(9);
+    expect(phpStepIds).toHaveLength(10);
     expect(tsStepIds.filter((id) => !php.steps[id] && !isPendingStep(id))).toEqual([]);
   });
 

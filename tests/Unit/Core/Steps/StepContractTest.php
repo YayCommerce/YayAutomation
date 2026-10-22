@@ -9,6 +9,7 @@ use YayMatik\Workflow\Actions\GenerateCoupon;
 use YayMatik\Workflow\Actions\SendEmail;
 use YayMatik\Workflow\Actions\SendInternalEmail;
 use YayMatik\Workflow\Actions\UpdateOrderMeta;
+use YayMatik\Workflow\Actions\Wait;
 use YayMatik\Workflow\Conditions\Criteria;
 use YayMatik\Workflow\Core\Steps\Field;
 use YayMatik\Workflow\Core\Steps\Step;
@@ -18,13 +19,13 @@ use YayMatik\Workflow\Triggers\OrderStatusChanged;
 
 require_once dirname( __DIR__, 3 ) . '/Support/woocommerce-stubs.php';
 
-/** The declarative step contract, for each of the 7 core steps. */
+/** The declarative step contract, for each core step. */
 final class StepContractTest extends TestCase {
 
     /** @return Step[] Keyed by id. */
     private static function steps(): array {
         $steps = [];
-        foreach ( [ new OrderCreated(), new OrderStatusChanged(), new Criteria(), new SendEmail(), new SendInternalEmail(), new ChangeOrderStatus(), new AddOrderNote(), new UpdateOrderMeta(), new GenerateCoupon() ] as $step ) {
+        foreach ( [ new OrderCreated(), new OrderStatusChanged(), new Criteria(), new SendEmail(), new SendInternalEmail(), new ChangeOrderStatus(), new AddOrderNote(), new UpdateOrderMeta(), new GenerateCoupon(), new Wait() ] as $step ) {
             $steps[ $step->id() ] = $step;
         }
         return $steps;
@@ -104,6 +105,7 @@ final class StepContractTest extends TestCase {
                 'add_order_note'       => [ 'type' ],
                 'update_order_meta'    => [ 'key' ],
                 'generate_coupon'      => [ 'code', 'amount', 'expires_at', 'box' ],
+                'wait'                 => [],
             ],
             $outputs
         );
@@ -171,6 +173,12 @@ final class StepContractTest extends TestCase {
             'change_order_status'  => [],
             'add_order_note'       => [ 'note' => '' ],
             'update_order_meta'    => [ 'key' => '' ],
+            'wait'                 => [
+                'delay' => [
+                    'value' => 0,
+                    'unit'  => 'days',
+                ],
+            ],
         ];
         if ( ! isset( $bad[ $step->id() ] ) ) {
             $this->assertTrue( $step->validate( $step->sanitize( [] ) ) );

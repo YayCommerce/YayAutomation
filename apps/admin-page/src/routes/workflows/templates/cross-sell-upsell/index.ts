@@ -49,7 +49,7 @@ function graph({
   const nodes: WorkflowNode[] = [
     step('trigger', 0, 0, 'trigger', 'order_status_changed', { from: [], to: ['completed'], only_checkout: false }),
     step('condition', 0, 1, 'condition', 'condition', { match: 'all', rules: [...audience, suggestions] }),
-    step('wait', 1, 2, 'action', 'wait', { amount: String(days), unit: 'days' } satisfies WaitConfig),
+    step('wait', 1, 2, 'action', 'wait', { delay: { value: days, unit: 'days' } } satisfies WaitConfig),
     step('still-valid', 1, 3, 'condition', 'condition', {
       match: 'all',
       rules: [rule('order.status', 'is', 'completed'), suggestions, rule('customer.unsubscribed', 'is_false')],

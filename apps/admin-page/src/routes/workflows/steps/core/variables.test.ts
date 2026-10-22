@@ -94,11 +94,4 @@ describe('canInsert', () => {
     expect(canInsert(built, steps.add_order_note.comingSoon)).toBe(true);
     expect(canInsert(comingSoon, steps.add_order_note.comingSoon)).toBe(false);
   });
-
-  it('lets a coming-soon step insert coming-soon fields too', () => {
-    for (const id of ['wait'] as const) {
-      expect(steps[id].comingSoon).toBe(true);
-      expect(canInsert(comingSoon, steps[id].comingSoon)).toBe(true);
-    }
-  });
 });

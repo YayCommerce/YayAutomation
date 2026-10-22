@@ -12,7 +12,7 @@
 | Folder | Holds |
 |---|---|
 | `ModuleRegistry.php`, `Modules/` | The modules and what they register (§8); planned: connectors |
-| `Triggers/`, `Conditions/`, `Actions/` | One class per step; planned: control steps (Wait, For each, Switch, Call workflow, Set variable, Stop) |
+| `Triggers/`, `Conditions/`, `Actions/` | One class per step; Wait (an action, YayMatik module); planned: control steps (For each, Switch, Call workflow, Set variable, Stop) |
 | `DataItems/` | Data items (order, customer, site, order_item) |
 | `Core/Steps/` | The step contract (`Step`, `Trigger`, `Condition`, `Action`, `Field`, `StepResult`, `StepIcons`, `StepRegistry`) |
 | `Core/Data/` | `DataItem`, `DataRegistry`, `Type`, `Operators`, `Ref`, `RefResolver`, `Scope`, `Template`, `Filters` |

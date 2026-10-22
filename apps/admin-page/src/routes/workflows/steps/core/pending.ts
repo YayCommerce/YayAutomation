@@ -13,9 +13,7 @@ import type { DataItemMeta, StepMeta } from '@/types/localize';
  * meta and fields below, and action `provides` in `Validator` (`availableData()`).
  */
 
-const steps: Partial<Record<StepId, StepMeta>> = {
-  wait: { kind: 'action', plugin: 'yaymatik', category: 'flow', requires: [] },
-};
+const steps: Partial<Record<StepId, StepMeta>> = {};
 
 const data: DataItemMeta[] = [
   {

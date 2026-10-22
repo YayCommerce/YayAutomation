@@ -184,6 +184,19 @@ final class FieldTest extends TestCase {
             'unknown unit → first unit'
         );
         $this->assertSame(
+            [
+                'value' => 1,
+                'unit'  => 'days',
+            ],
+            $field->default(
+                [
+                    'value' => 1,
+                    'unit'  => 'days',
+                ]
+            )->sanitize( [ 'unit' => 'years' ] ),
+            'unknown unit → the default unit'
+        );
+        $this->assertSame(
             'Enter 1 or more.',
             $field->validate(
                 [
