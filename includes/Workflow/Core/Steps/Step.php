@@ -113,10 +113,6 @@ abstract class Step {
         return $error ? $this->invalid( $error['message'], $error['field'] ) : null;
     }
 
-    /**
-     * @param string $message
-     * @param string $field
-     */
     protected function invalid( string $message, string $field = '' ): \WP_Error {
         return new \WP_Error( 'yaymatik_invalid_config', $message, '' === $field ? '' : [ 'field' => $field ] );
     }

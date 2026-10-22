@@ -38,18 +38,12 @@ final class StepResult {
         return $result;
     }
 
-    /**
-     * @param string $reason
-     */
     public static function skipped( string $reason ): self {
         $result          = new self( self::SKIPPED );
         $result->message = $reason;
         return $result;
     }
 
-    /**
-     * @param string $message
-     */
     public static function failed( string $message ): self {
         $result          = new self( self::FAILED );
         $result->message = $message;

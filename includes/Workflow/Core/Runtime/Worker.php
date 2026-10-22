@@ -199,11 +199,6 @@ final class Worker {
         return null;
     }
 
-    /**
-     * @param int    $id
-     * @param string $status
-     * @param string $reason
-     */
     private function end( int $id, string $status, string $reason ): string {
         $this->runs->save_run(
             $id,

@@ -188,10 +188,6 @@ class GenerateCoupon extends Action {
         return true;
     }
 
-    /**
-     * @param Scope $scope
-     * @param array $config
-     */
     public function run( Scope $scope, array $config ): StepResult {
         $email = '';
         if ( $config['limit_to_customer'] ) {
@@ -354,10 +350,6 @@ class GenerateCoupon extends Action {
         return false === $time ? '' : date_i18n( (string) get_option( 'date_format', 'F j, Y' ), $time );
     }
 
-    /**
-     * @param string $text
-     * @param bool   $html
-     */
     private static function text( string $text, bool $html ): string {
         return $html ? esc_html( $text ) : $text;
     }

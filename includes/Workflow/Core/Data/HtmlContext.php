@@ -208,9 +208,6 @@ final class HtmlContext {
         $this->url = null;
     }
 
-    /**
-     * @param string $text
-     */
     private static function unmark( string $text ): string {
         return str_replace( [ self::OPEN, self::CLOSE ], '', $text );
     }

@@ -35,10 +35,6 @@ abstract class Condition extends Step {
      */
     abstract public function evaluate( Scope $scope, array $config ): bool;
 
-    /**
-     * @param Scope $scope
-     * @param array $config
-     */
     public function run( Scope $scope, array $config ): StepResult {
         return StepResult::ok( [ 'result' => $this->evaluate( $scope, $config ) ? 'yes' : 'no' ] );
     }

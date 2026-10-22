@@ -183,10 +183,6 @@ final class GraphSchema {
         return (bool) preg_match( '/^[A-Za-z0-9_-]{1,200}$/', $id );
     }
 
-    /**
-     * @param string      $message
-     * @param string|null $node_id
-     */
     private static function error( string $message, ?string $node_id = null ): \WP_Error {
         $data = [ 'status' => 400 ];
         if ( null !== $node_id ) {

@@ -166,11 +166,6 @@ final class Dispatcher {
         );
     }
 
-    /**
-     * @param Trigger    $trigger
-     * @param array      $args
-     * @param array|null $parent_run
-     */
     private function dispatch( Trigger $trigger, array $args, ?array $parent_run ): void {
         try {
             // Cheapest check first: most events have no workflow, so skip claiming (a write) and loading.
@@ -235,9 +230,6 @@ final class Dispatcher {
         return false;
     }
 
-    /**
-     * @param array $workflow
-     */
     private static function trigger_node( array $workflow ): ?array {
         foreach ( $workflow['graph']['nodes'] ?? [] as $node ) {
             if ( 'trigger' === ( $node['kind'] ?? '' ) ) {

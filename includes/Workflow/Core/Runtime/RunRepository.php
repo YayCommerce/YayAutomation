@@ -12,9 +12,6 @@ interface RunRepository {
      */
     public function create_run( array $run ): int;
 
-    /**
-     * @param int $id
-     */
     public function find_run( int $id ): ?array;
 
     /**
@@ -44,12 +41,6 @@ interface RunRepository {
      */
     public function start_step( int $run_id, string $step_id, array $input ): int;
 
-    /**
-     * @param int         $id
-     * @param string      $status
-     * @param array       $output
-     * @param string|null $error
-     */
     public function finish_step( int $id, string $status, array $output = [], ?string $error = null ): bool;
 
     /**

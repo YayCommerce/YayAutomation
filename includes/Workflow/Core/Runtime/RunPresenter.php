@@ -36,9 +36,6 @@ final class RunPresenter {
         return self::run( $run ) + [ 'steps' => array_map( [ self::class, 'step' ], $steps ) ];
     }
 
-    /**
-     * @param array $step
-     */
     public static function step( array $step ): array {
         return [
             'id'         => (string) $step['id'],

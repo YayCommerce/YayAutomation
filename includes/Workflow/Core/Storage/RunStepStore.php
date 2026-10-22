@@ -98,9 +98,6 @@ final class RunStepStore {
         return Schema::table( Schema::RUN_STEPS );
     }
 
-    /**
-     * @param array $row
-     */
     private static function decode( array $row ): array {
         foreach ( [ 'id', 'run_id', 'iteration', 'attempt' ] as $key ) {
             $row[ $key ] = (int) $row[ $key ];

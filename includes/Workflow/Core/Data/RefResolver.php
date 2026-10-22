@@ -64,9 +64,6 @@ final class RefResolver {
         ];
     }
 
-    /**
-     * @param string $id
-     */
     private static function order( string $id ) {
         $order = function_exists( 'wc_get_order' ) ? wc_get_order( (int) $id ) : false;
         return $order instanceof \WC_Order ? $order : null;

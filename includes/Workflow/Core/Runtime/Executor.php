@@ -330,12 +330,6 @@ final class Executor {
         return RunStore::STATUS_FAILED;
     }
 
-    /**
-     * @param string      $status
-     * @param array       $output
-     * @param string|null $error
-     * @param int         $until
-     */
     private static function result( string $status, array $output, ?string $error = null, int $until = 0 ): array {
         return [
             'status' => $status,
@@ -346,9 +340,6 @@ final class Executor {
         ];
     }
 
-    /**
-     * @param array $output
-     */
     private static function branch( array $output ): string {
         return 'yes' === ( $output['result'] ?? '' ) ? 'then' : 'otherwise';
     }

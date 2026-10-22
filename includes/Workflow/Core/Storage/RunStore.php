@@ -209,9 +209,6 @@ final class RunStore {
         return Schema::table( Schema::RUNS );
     }
 
-    /**
-     * @param array $row
-     */
     private static function decode( array $row ): array {
         foreach ( [ 'id', 'workflow_id', 'version_id', 'parent_run_id', 'root_run_id', 'depth' ] as $key ) {
             $row[ $key ] = (int) $row[ $key ];

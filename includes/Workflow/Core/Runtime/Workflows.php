@@ -12,9 +12,6 @@ interface Workflows {
      */
     public function active_for_trigger( string $trigger_id ): array;
 
-    /**
-     * @param int $id
-     */
     public function find( int $id ): ?array;
 
     /**
@@ -24,8 +21,5 @@ interface Workflows {
      */
     public function live_version_id( int $id ): int;
 
-    /**
-     * @param int $id
-     */
     public function deactivate( int $id ): void;
 }

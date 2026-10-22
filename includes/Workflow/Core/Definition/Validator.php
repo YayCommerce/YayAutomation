@@ -445,18 +445,10 @@ final class Validator {
         return $above;
     }
 
-    /**
-     * @param string $label
-     */
     private static function missing_message( string $label ): string {
         return Messages::get( 'missingData', $label );
     }
 
-    /**
-     * @param string      $code
-     * @param string      $message
-     * @param string|null $field
-     */
     private static function issue( string $code, string $message, ?string $field ): array {
         $issue = [
             'code'    => $code,
@@ -496,9 +488,6 @@ final class Validator {
         return $seen;
     }
 
-    /**
-     * @param string $message
-     */
     private static function error( string $message ): \WP_Error {
         return new \WP_Error( 'yaymatik_invalid_workflow', $message, [ 'status' => 400 ] );
     }

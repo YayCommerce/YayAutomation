@@ -537,9 +537,6 @@ final class Field {
         return ! $known || ! array_diff( array_map( 'strval', $values ), $known );
     }
 
-    /**
-     * @param string $step
-     */
     private function required_text( string $step ): string {
         return '' === $this->required_message
             ? Messages::get( 'fieldRequired' )

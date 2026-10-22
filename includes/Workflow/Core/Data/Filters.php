@@ -101,10 +101,6 @@ final class Filters {
         return null === $value || [] === $value || ( is_string( $value ) && '' === trim( $value ) );
     }
 
-    /**
-     * @param array  $items
-     * @param string $separator
-     */
     private static function join( array $items, string $separator ): string {
         $items = array_filter( $items, fn( $item ) => is_scalar( $item ) && '' !== (string) $item );
         return implode( $separator, array_map( 'strval', $items ) );

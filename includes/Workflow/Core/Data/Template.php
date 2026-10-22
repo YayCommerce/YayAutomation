@@ -263,9 +263,6 @@ final class Template {
         return $pieces;
     }
 
-    /**
-     * @param string $raw
-     */
     private static function malformed( string $raw ): string {
         return Messages::get( 'malformedTag', $raw );
     }

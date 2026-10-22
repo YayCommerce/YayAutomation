@@ -97,9 +97,6 @@ final class WorkflowRepository {
         ];
     }
 
-    /**
-     * @param string $step_id
-     */
     public static function active_for_trigger( string $step_id ): array {
         $posts = get_posts(
             [
