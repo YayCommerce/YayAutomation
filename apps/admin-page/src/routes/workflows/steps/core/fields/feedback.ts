@@ -11,7 +11,7 @@ export type Feedback = 'none' | 'review' | 'error';
 
 export const FeedbackContext = createContext<Feedback>('error');
 
-export const useFeedback = () => useContext(FeedbackContext);
+const useFeedback = () => useContext(FeedbackContext);
 
 /** Whether the open form shows its errors. */
 export const useShowErrors = () => useFeedback() !== 'none';

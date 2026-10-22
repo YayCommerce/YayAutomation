@@ -11,8 +11,8 @@ final class Logger {
     /**
      * Never throws: callers use it inside catch blocks that must not fail.
      *
-     * @param string $message Log line.
-     * @param array  $context Extra data, e.g. workflow and order ids.
+     * @param string $message
+     * @param array  $context
      */
     public static function error( string $message, array $context = [] ) {
         try {

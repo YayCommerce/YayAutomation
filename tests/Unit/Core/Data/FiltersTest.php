@@ -4,27 +4,16 @@ namespace YayMatik\Tests\Unit\Core\Data;
 use PHPUnit\Framework\TestCase;
 use YayMatik\Workflow\Core\Data\Filters;
 
-/** The filter registry: input types, extension, and inputs the date filter accepts. */
+/** The filter registry: the built-in filters and added ones. */
 final class FiltersTest extends TestCase {
 
-    public function test_the_six_filters_declare_their_input_types(): void {
-        $filters = new Filters( fn() => '', fn() => '' );
-        $this->assertSame( [ 'any' ], $filters->input( 'default' ) );
-        $this->assertSame( [ 'string' ], $filters->input( 'upper' ) );
-        $this->assertSame( [ 'string' ], $filters->input( 'lower' ) );
-        $this->assertSame( [ 'list' ], $filters->input( 'join' ) );
-        $this->assertSame( [ 'date', 'datetime' ], $filters->input( 'date' ) );
-        $this->assertSame( [ 'number', 'money' ], $filters->input( 'money' ) );
-        $this->assertNull( $filters->input( 'raw' ) );
-    }
-
-    public function test_there_is_no_raw_filter(): void {
-        $this->assertFalse( ( new Filters() )->has( 'raw' ) );
+    public function test_the_six_filters(): void {
+        $this->assertSame( [ 'default', 'upper', 'lower', 'join', 'date', 'money' ], ( new Filters() )->names() );
     }
 
     public function test_added_filters_run(): void {
         $filters = new Filters( fn() => '', fn() => '' );
-        $filters->add( 'twice', [ 'string' ], fn( $value ) => $value . $value );
+        $filters->add( 'twice', fn( $value ) => $value . $value );
         $this->assertSame( 'abab', $filters->apply( 'twice', 'ab', [] ) );
         $this->assertSame( 'ab', $filters->apply( 'missing', 'ab', [] ) );
     }

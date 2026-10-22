@@ -1,9 +1,4 @@
 <?php
-/**
- * Plugin adapter for YayMatik Pro. Not registered yet — see YayMatik::register_admin_menu().
- *
- * @package yaycommerce/yaymatik
- */
 
 namespace YayMatik;
 
@@ -11,11 +6,8 @@ use YayMatik\Engine\BEPages\AdminPage;
 
 defined( 'ABSPATH' ) || exit;
 
-/**
- * YayMatik Adapter (Pro)
- */
+/** Plugin adapter for YayMatik Pro (not registered). */
 class YayMatikProLicenseAdapter implements \YayMatikScoped\YayCommerce\AdminShell\License\Contracts\LicenseConfigAdapter {
-    // --- Menu methods ---
     public function get_menu_title(): string {
         return 'YayMatik'; }
     public function get_page_title(): string {
@@ -37,7 +29,6 @@ class YayMatikProLicenseAdapter implements \YayMatikScoped\YayCommerce\AdminShel
     public function get_pro_url(): string {
         return ''; }
 
-    // --- License methods ---
     public function get_plugin_slug(): string {
         return 'yaymatik-pro'; }
     public function get_plugin_name(): string {
@@ -47,15 +38,13 @@ class YayMatikProLicenseAdapter implements \YayMatikScoped\YayCommerce\AdminShel
     public function get_plugin_file(): string {
         return YAYMATIK_FILE; }
     public function get_item_id(): int {
-        return 1; } // TODO: EDD setup
+        return 1; }
     public function get_store_url(): string {
         return 'https://yaycommerce.com/'; }
     public function get_store_link(): string {
         return 'https://yaycommerce.com/yaymatik/'; }
 
-    /**
-     * Check if this plugin has an active, non-expired license.
-     */
+    /** An active, non-expired license. */
     public static function is_licensed(): bool {
         $info = get_option( 'yaymatik-pro_license_info', [] );
         $key  = get_option( 'yaymatik-pro_license_key', '' );

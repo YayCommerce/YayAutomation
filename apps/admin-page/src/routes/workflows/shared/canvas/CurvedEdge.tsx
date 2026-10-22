@@ -8,7 +8,7 @@ const LEAD = 14;
  * down into the next card. Cards in one column get a plain vertical line. Dashes, animation, arrow
  * and label come from the edge's props as usual.
  */
-export function CurvedEdge({
+function CurvedEdge({
   id,
   sourceX,
   sourceY,

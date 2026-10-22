@@ -6,10 +6,9 @@ defined( 'ABSPATH' ) || exit;
 /** WooCommerce coupons (`WC_Coupon`). */
 final class WcCouponWriter implements CouponWriter {
 
-    /** Meta on every coupon a workflow made, for finding or cleaning them up later. */
+    /** Meta on every coupon a workflow made. */
     public const META = '_yaymatik_generated';
 
-    /** Which run and step made it: for erasing a customer's data, cleanup and support. */
     public const META_RUN  = '_yaymatik_run_id';
     public const META_NODE = '_yaymatik_node_id';
 

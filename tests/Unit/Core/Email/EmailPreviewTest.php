@@ -8,12 +8,7 @@ use YayMatik\Workflow\Core\Email\EmailPreview;
 require_once dirname( __DIR__, 3 ) . '/Support/woocommerce-stubs.php';
 require_once dirname( __DIR__, 3 ) . '/Support/fake-wc.php';
 
-/**
- * Preview and Send test build one email: what the mailer gets from Send test is what Preview shows,
- * apart from the "[Test]" subject. WooCommerce inlines its styles in the mailer's `send()` and
- * Preview with the same `WC_Email::style_inline()`; that part needs WooCommerce, so check-orders
- * compares the two through real `wp_mail()` too.
- */
+/** Preview and Send test build one email: the mailer gets what Preview shows, apart from the "[Test]" subject. */
 final class EmailPreviewTest extends TestCase {
 
     protected function setUp(): void {
@@ -52,6 +47,7 @@ final class EmailPreviewTest extends TestCase {
         'message' => 'Tom & Jerry',
     ];
 
+    // Both inline styles with `WC_Email::style_inline()`, which needs WooCommerce: check-orders compares them through real `wp_mail()`.
     public function test_preview_shows_the_email_send_test_sends(): void {
         $preview = EmailPreview::render( $this->graph(), 'm', self::CONFIG, 0 );
         $sent    = EmailPreview::send_test( $this->graph(), 'm', self::CONFIG, 'you@example.test', 0 );

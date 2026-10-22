@@ -63,17 +63,8 @@ function describe(group: VariableGroup, { trigger, steps }: VariableScope) {
 
 /**
  * "Insert variable": a modal beside the step panel, level with the element being edited (the
- * nearest `data-spotlight` around `children`), which stays bright while the rest dims. First the
- * data the step can read (from the trigger, then every workflow's) and the steps above with
- * outputs, each with how many variables it has; then that group's variables, related items' under
- * their name, each with its merge-tag key. Searching lists matching variables (in the open group,
- * or all).
- *
- * `blocks`: the steps' ready-made email blocks (a coupon box) are offered in a "Blocks" group, for
- * rich text; elsewhere they're left out. `onSelect` says whether the pick is one.
- *
- * `conditionalOnly` / `filter`: for condition rules, which compare data fields only (no step
- * outputs, no related items' fields).
+ * nearest `data-spotlight` around `children`). `conditionalOnly` / `filter` are for condition rules,
+ * which compare data fields only (no step outputs, no related items' fields).
  */
 export function VariablePicker({
   conditionalOnly = false,

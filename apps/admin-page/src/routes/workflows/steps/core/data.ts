@@ -5,11 +5,7 @@ import { messages } from '../../model/messages';
 import { automationMeta, isPendingField } from './pending';
 import { templateErrors, templatePaths } from './template';
 
-/**
- * Data items and their fields, from PHP `DataRegistry` (labels, types and options live there).
- * Fields are both condition variables and merge tags (`{{ order.total }}`, through relations
- * `{{ order.customer.first_name }}`).
- */
+/** Data items and their fields, from PHP `DataRegistry`. */
 
 export type DataField = DataItemMeta['fields'][number];
 

@@ -4,41 +4,10 @@
 
 "Workflow Core" is the code that stores, checks and runs workflows. It is not called "engine": in this repo `includes/Engine/` means WP/WC glue. This doc holds the decisions and the interfaces; the reasons behind them are in [workflow-core-decisions.md](workflow-core-decisions.md). The roadmap refers to sections here as `design §N`.
 
-## §0 Current state (v0.1)
-
-Paths are after F0 (move and rename); the behavior described is v0.1's. Files marked *(removed in F1)* no longer exist.
-
-| Area | Today | File |
-|---|---|---|
-| Storage | CPT `yaymatik_wf` + post meta (status, trigger id, live graph JSON, draft graph JSON). Versions in table `yaymatik_versions` | `includes/Workflow/Storage/WorkflowRepository.php`, `VersionStore.php` |
-| Graph | React Flow shape (nodes with positions, edges). Tree: one parent per step, one child per handle. Kinds: trigger, condition (`then` / `otherwise`), action | `includes/Workflow/Definition/WorkflowValidator.php` *(removed in F1)* |
-| Trigger → queue | Triggers hook WP actions → `collect()` while the request runs → `flush()` at shutdown → `meta_query` for active workflows → `claim()` → `matches()` → one Action Scheduler async job per workflow | `includes/Workflow/Runtime/Runner.php` *(removed in F1)* |
-| Execution | One job walks the whole graph at once. It reads the live graph at run time, not the version live when the event happened | `Runner::run()` *(removed in F1)* |
-| Run state | None. Errors go to the WooCommerce log. No runs, step results or outputs are stored | `includes/Utils/Logger.php` |
-| Context | Item id => live PHP object (`WC_Order`), rebuilt from event args. Can't be saved mid-run | `Workflow/Steps/Triggers/OrderTrigger.php` |
-| Data | Fields typed number / string / enum / date. 3 items: order, customer, site. Merge tags have 2 parts (`{{ order.total }}`). No booleans, lists, relations or step outputs | `includes/Workflow/Data/` |
-| Actions | `run()` returns `true` or `WP_Error`, no output | `Workflow/Steps/Core/Action.php` |
-| Loop guard | In-memory chain of workflow ids per subject, passed in job args | `Runner::collect()` *(removed in F1)* |
-| Extending | Hard-coded lists in `StepRegistry`, `DataRegistry`, `Plugins`. No hooks | `Workflow/Steps/Core/StepRegistry.php` |
-| Validation | Written twice: PHP `validate()` must match each step's TS `schema.ts` by hand *(F1: from `fields()`)* | `Workflow/Steps/Core/Step.php` |
-
-**Keep:** batching at shutdown, `claim()` for once-per-subject triggers, the sanitize / validate split, versions, `uses()` / `provides()` checks, "never throw into the host request", Action Scheduler.
-
-**Blocks the roadmap:**
-1. No stored run: no Wait, run history, retry, cancel or AI debugging.
-2. One job runs the whole graph: it can't pause, resume or process a loop in parts.
-3. The context can't be saved mid-run.
-4. Steps have no outputs: Generate coupon → coupon code in an email is impossible.
-5. No lists, relations or booleans: For each, `order.items` and yes/no conditions don't fit.
-6. Event triggers only: no schedule, interval, query, manual or call-by-workflow.
-7. Closed registries: Yay plugins can't add steps.
-8. Two validators kept in sync by hand: doesn't scale to plugin steps, and the AI can't read them.
-
 ## §1 Naming and layout · C1, C2
 
 - `includes/Engine/` keeps only WP/WC glue: `BEPages/`, `API/`, `Register/`. REST controllers call Workflow Core and hold no workflow logic.
 - Workflow Core moves to `includes/Workflow/`, namespace `YayMatik\Workflow\`. The top level holds what modules register; `Core/` holds the shared code every module uses. `includes/Engine/` = WordPress glue (REST, admin pages, scripts). A folder is named for the plural of the base class it holds; namespaces follow folders.
-- "Blocks" becomes **"Steps"**, in PHP and TS (`apps/admin-page/src/routes/workflows/blocks/` → `steps/`). This avoids a clash with Gutenberg blocks and matches the UI wording.
 
 | Folder | Holds |
 |---|---|
@@ -49,7 +18,7 @@ Paths are after F0 (move and rename); the behavior described is v0.1's. Files ma
 | `Core/Data/` | `DataItem`, `DataRegistry`, `Type`, `Operators`, `Ref`, `RefResolver`, `Scope`, `Template`, `Filters` |
 | `Core/Definition/` | Graph schema, `Validator`, `Catalog` (steps, fields, outputs, data types → admin app and AI) |
 | `Core/Runtime/` | `Dispatcher`, `Executor`, `Worker`, `Runtime`; planned: `Scheduler`, `Cancellation`, `Retention` |
-| `Core/Storage/` | Tables, upgrades, `WorkflowRepository`, `VersionStore`, `RunStore`, `ClaimStore` |
+| `Core/Storage/` | Tables, upgrades, `WorkflowRepository`, `VersionStore`, `RunStore` |
 | `Core/Email/`, `Core/Coupon/` | Email rendering and unsubscribe; coupon writing |
 | `AI/` | Provider interface and AI features (v2.0) |
 
@@ -67,7 +36,6 @@ Table names below omit the prefix: each is `{prefix}yaymatik_<name>`, e.g. `wp_y
 | `workflow_versions` | id, workflow_id, action, graph, user_id, created_at. A saved version never changes; only the draft row is edited in place |
 | `runs` | id, workflow_id, version_id, trigger_id, subject, status, position, scope, wait_until, error, parent_run_id, root_run_id, depth, started_at, finished_at |
 | `run_steps` | id, run_id, step_id, iteration, status, input, output, error, attempt, started_at, finished_at |
-| `trigger_claims` | workflow_id, subject, claimed_at · unique (workflow_id, subject) |
 
 - A run pins the version it started on.
 - Why tables, not CPT: an indexed lookup on every event instead of a `meta_query`, no JSON slashing, atomic writes, simple cleanup.
@@ -88,9 +56,9 @@ Table names below omit the prefix: each is `{prefix}yaymatik_<name>`, e.g. `wp_y
 
 ## §4 Data layer · C6, C7
 
-- **Types:** string, number, boolean, date, datetime, money, enum, entity\<T\>, list\<T\>, object.
+- **Types:** string, number, boolean, date, money, enum, entity\<T\>, list\<T\>.
 - **Entity types** with relations: order (`customer`, `items`), order_item (`product`), customer, product, coupon, cart, site.
-- **Scope** paths: `trigger.*` (with `order` / `customer` shortcuts), `steps.<id>.*`, `loop.item` / `loop.index`, `vars.*`, `workflow.*`, `run.*`, `site.*`.
+- **Scope** paths: `trigger.*` (with `order` / `customer` shortcuts), `steps.<id>.*`, `loop.item` / `loop.index`, `run.*`, `site.*`.
 - **Refs, loaded lazily.** Entities are stored as `{type: 'order', id: 12}` and loaded on demand, cached per slice. Facts only true at trigger time (status from / to, cart contents, event payload) are snapshotted. Data is fresh after a long Wait, and rows stay small.
 - **Gone entity.** If an order or customer was deleted, the step is skipped and run history says why.
 - **Available variables per step.** Each step declares outputs. The Validator walks the steps above each step to list what it can use. "Insert variable" and the template checks use the same list.
@@ -116,8 +84,8 @@ Step:   id() label() plugin() module()
 - **Forms.**
   - No custom form → the generic `StepForm` draws one from the fields. A simple step from a Yay plugin needs PHP only.
   - Core step with a complex form (Condition rules) → `defineStep( { id, Form } )`, imported directly. No global call, fully typed.
-  - Plugin step with a custom form → `window.yayMatik.registerStepPanel( id, Panel )`. Internal until §10.
-  - Both put the form in the same registry. Props: `{ config, onChange, errors }`.
+  - Plugin step with a custom form → planned, through the public extension API (§10 P4).
+  - A custom `Form` gets `{ config, onChange }` (`StepFormProps`).
   - Beside any form, `defineStep` takes `Footer` (under the form, with its latest config, e.g. Send email's unsubscribe note) and `Actions` (panel header, e.g. Send email's Preview / Send test). Send email and Generate coupon use the generic form plus these.
 - **Icons (L5).** A step's `icon()` is a name from a fixed list in core (lucide icons, about 40), never an SVG. The editor draws it in the step's tile, tinted by kind (trigger, condition, action), on the canvas, in the picker, the panel header, template cards and the preview. A missing icon is added to core's list, not shipped by the plugin.
 - The `rules` field type is ours: its checks are written in PHP (`Criteria`) and TS. Plugins never write validation in JS.
@@ -128,13 +96,13 @@ Step:   id() label() plugin() module()
 Our own small template module. **No Liquid or other template library, now or later.**
 
 - **Tier 1 (v1.0):** `{{ path | filter: arg }}`, e.g. `{{ order.customer.first_name | default: "there" }}`.
-  - Filter registry: `default`, `date`, `money`, `upper`, `lower`, `join`. Each filter declares its input type. Yay plugins may add filters later.
+  - Filter registry: `default`, `date`, `money`, `upper`, `lower`, `join`. A filter never fails: input it can't use comes back unchanged. Yay plugins may add filters later.
   - The editor checks paths and filters against the step's available variables (§4).
   - A missing value prints empty; the step never fails for it.
   - Output is escaped in HTML. No `raw` filter for users.
   - **One renderer, in PHP.** TS only parses, for checks and autocomplete. Preview and Send test call the server.
   - Today's `{{ item.field }}` tags keep working.
-  - **HTML messages** (`html` fields): the stored HTML stays as written; each value is escaped for where it lands: `esc_html` in text, `esc_url` over a whole `href` / `src` (a value after the start of the URL is `rawurlencode`d first), `esc_attr` in other attributes, dropped inside a tag. A block value alone in a paragraph replaces it. Then `wpautop`. A message with no HTML tags (saved before the field was rich) is read as plain text. `Template::render_html()`, `Email\EmailBody`.
+  - **HTML messages** (`html` fields): the stored HTML stays as written; each value is escaped for where it lands: `esc_html` in text, `esc_url` over a whole `href` / `src` (a value after the start of the URL is `rawurlencode`d first), `esc_attr` in other attributes, dropped inside a tag. A block value alone in a paragraph replaces it. Then `wpautop`. Plain text is what the editor saves for a message without tags (`"Hi\n\nTom &amp; Jerry"`): it's read as plain text. `Template::render_html()`, `Email\EmailBody`.
   - Subjects and headings are plain text on one line: typed HTML tags removed, values never stripped.
 - **Tier 2 (on demand):** lists come from server-rendered email blocks (product grid, cart items, coupon box; the coupon box exists). Conditional text comes from a "Show if" setting on a block, using the Condition rules builder.
 - **Escape valve (only if users ask):** `{% if path %}…{% else %}…{% endif %}`, truthy check only.
@@ -180,7 +148,7 @@ Settings → Health check finds problems and proposes a fix the site owner can a
 | ID | Topic | Decision |
 |---|---|---|
 | P3 | Waiting runs on Update | Always cancel in v1.0. Revisit after v1.0 |
-| P4 | Public extension API | Last: after Pro connectors and Yay integrations are stable. Until then the registry, step contract and `registerStepPanel` are internal |
+| P4 | Public extension API | Last: after Pro connectors and Yay integrations are stable. Until then the registry and step contract are internal, and plugin steps have no custom forms |
 | P5 | AI provider | Not decided. v1.0 only keeps a provider interface open |
 
 ## §11 Decision log

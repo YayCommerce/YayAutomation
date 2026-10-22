@@ -7,9 +7,9 @@ defined( 'ABSPATH' ) || exit;
 interface GraphSource {
 
     /**
-     * The version's graph, or null when the version is gone.
+     * Null when the version is gone.
      *
-     * @param int $version_id Version id.
+     * @param int $version_id
      */
     public function graph( int $version_id ): ?array;
 }

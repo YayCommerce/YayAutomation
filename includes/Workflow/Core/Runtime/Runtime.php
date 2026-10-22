@@ -36,7 +36,7 @@ final class Runtime {
         add_action( 'init', [ self::$dispatcher, 'register' ], 0 );
     }
 
-    /** Null before `boot()` (e.g. without WooCommerce). */
+    /** Null before `boot()`, e.g. without WooCommerce. */
     public static function dispatcher(): ?Dispatcher {
         return self::$dispatcher;
     }

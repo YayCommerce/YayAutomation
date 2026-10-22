@@ -6,19 +6,7 @@ use YayMatik\Workflow\Core\Definition\Messages;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Merge tags in step text: `{{ path | filter: arg, arg }}`, e.g.
- * `{{ order.customer.first_name | default: "there" }}`. Our own small syntax, no template library.
- *
- * - Path: a data item and its fields, dot-separated (`order.total`, `steps.<step id>.code`).
- * - A tag without filters prints the value's display text (a price with its currency, an option's
- *   label); filters work on the typed value.
- * - A missing value prints empty. HTML output is escaped, except the safe HTML a value's display
- *   text already is. The one exception that leaves: `GoneEntity`, when an entity on a path was
- *   deleted; the executor skips the step for it.
- * - A malformed tag stays as written; `errors()` reports it, and unknown filters, for the validator.
- *
- * This is the only renderer: the admin app only parses (`steps/core/template.ts`: checks and
- * autocomplete), and previews render here.
+ * Merge tags in step text, `{{ path | filter: arg, arg }}`; the one renderer (the admin app only parses).
  */
 final class Template {
 
@@ -34,7 +22,7 @@ final class Template {
     private $filters;
 
     /**
-     * @param Filters|null $filters Filter registry; null = the default six.
+     * @param Filters|null $filters Null = the default six.
      */
     public function __construct( ?Filters $filters = null ) {
         $this->filters = $filters ?? new Filters();
@@ -44,7 +32,7 @@ final class Template {
      * Text and tags, in order. A tag: `[ 'type' => 'tag', 'raw', 'path', 'filters' => [ [ 'name', 'args' ] ], 'error' ]`,
      * where `error` is null for a well-formed tag. Text: `[ 'type' => 'text', 'text' ]`.
      *
-     * @param string $text Template text.
+     * @param string $text
      */
     public function parse( string $text ): array {
         $parts = preg_split( self::TAG, $text, -1, PREG_SPLIT_DELIM_CAPTURE );
@@ -68,7 +56,7 @@ final class Template {
     /**
      * Paths of the well-formed tags, in order, without duplicates.
      *
-     * @param string $text Template text.
+     * @param string $text
      */
     public function paths( string $text ): array {
         $paths = [];
@@ -81,9 +69,9 @@ final class Template {
     }
 
     /**
-     * Problems in the text: malformed tags and unknown filters. One message each.
+     * Malformed tags and unknown filters, one message each.
      *
-     * @param string $text Template text.
+     * @param string $text
      */
     public function errors( string $text ): array {
         $errors = [];
@@ -105,11 +93,12 @@ final class Template {
     }
 
     /**
-     * Fills in the tags.
+     * Fills in the tags. A missing value prints empty; a malformed tag stays as written.
      *
-     * @param string $text   Template text.
-     * @param Values $values Where the data comes from.
-     * @param bool   $html   Safe HTML instead of plain text: the text around the tags is escaped too.
+     * @param string $text
+     * @param Values $values
+     * @param bool   $html   Safe HTML: the text around the tags is escaped too.
+     * @throws GoneEntity When an entity on a path was deleted.
      */
     public function render( string $text, Values $values, bool $html = false ): string {
         $out = '';
@@ -126,21 +115,16 @@ final class Template {
     }
 
     /**
-     * Fills in the tags of HTML that is already safe (cleaned by `wp_kses_post()` when saved). The
-     * HTML stays as written; each value is escaped for where it lands:
+     * Fills in the tags of HTML already cleaned by `wp_kses_post()`; each value is escaped for where it lands:
      *
-     * - in text: `esc_html()`. A display text that is HTML already (`order.items`, a coupon box)
-     *   goes in as it is: its display callback escapes its own values. Alone in a paragraph, a value
-     *   that starts with a block element (table, div, …) replaces the paragraph.
-     * - in `href` / `src`: a value that starts the URL goes in as it is, one further in through
-     *   `rawurlencode()`; then the whole attribute value, once filled in, through `esc_url()`.
-     * - in any other attribute: `esc_attr()`.
-     * - inside a tag but outside any attribute value (`<a {{ x }}>`): dropped.
+     * - text: `esc_html()`; HTML display text (a coupon box) as it is. A block value alone in a paragraph replaces it.
+     * - `href` / `src`: a value starting the URL as it is, one further in `rawurlencode()`d; then `esc_url()` on the whole.
+     * - other attributes: `esc_attr()`.
+     * - inside a tag, outside any attribute value: dropped.
+     * - a malformed tag: as written, escaped like the text around it.
      *
-     * A malformed tag stays as written, escaped like the text around it.
-     *
-     * @param string $html   Safe HTML with merge tags.
-     * @param Values $values Where the data comes from.
+     * @param string $html
+     * @param Values $values
      */
     public function render_html( string $html, Values $values ): string {
         $context = new HtmlContext();
@@ -162,13 +146,14 @@ final class Template {
     }
 
     /**
-     * A well-formed tag's text: its display text, or the filtered value.
+     * A well-formed tag's text.
      *
-     * @param array  $token  Tag token from `parse()`.
-     * @param Values $values Where the data comes from.
-     * @param bool   $html   Safe HTML instead of plain text.
+     * @param array  $token
+     * @param Values $values
+     * @param bool   $html
      */
     private function tag_text( array $token, Values $values, bool $html ): string {
+        // Without filters, the display text (a price with its currency); filters work on the typed value.
         if ( ! $token['filters'] ) {
             return $values->text( $token['path'], $html );
         }
@@ -181,7 +166,7 @@ final class Template {
     }
 
     /**
-     * @param string $body What's between `{{` and `}}`.
+     * @param string $body Between `{{` and `}}`.
      */
     private static function parse_tag( string $body ): array {
         $tag = [
@@ -220,7 +205,7 @@ final class Template {
     /**
      * `"text", 'text', 3, 1.5` → values. Null when an argument isn't a quoted string or a number.
      *
-     * @param string $text Arguments after `name:`.
+     * @param string $text After `name:`.
      */
     private static function parse_args( string $text ): ?array {
         $pieces = self::split_outside_quotes( $text, ',' );
@@ -244,8 +229,8 @@ final class Template {
     /**
      * Splits on a one-character separator outside quotes. Null when a quote isn't closed.
      *
-     * @param string $text      Text.
-     * @param string $separator One character.
+     * @param string $text
+     * @param string $separator
      */
     private static function split_outside_quotes( string $text, string $separator ): ?array {
         $pieces  = [];
@@ -278,9 +263,6 @@ final class Template {
         return $pieces;
     }
 
-    /**
-     * @param string $raw The tag as written.
-     */
     private static function malformed( string $raw ): string {
         return Messages::get( 'malformedTag', $raw );
     }
@@ -288,7 +270,7 @@ final class Template {
     /**
      * A value as text: lists joined with commas, yes/no for booleans, nothing for other values.
      *
-     * @param mixed $value Value.
+     * @param mixed $value
      */
     public static function to_text( $value ): string {
         if ( null === $value ) {

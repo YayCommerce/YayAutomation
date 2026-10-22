@@ -64,7 +64,7 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 **Backend**
 - ✅ **F1.0 PHPUnit** *([plan-infra](plan-infra.md))* — plain unit tests, no WordPress loaded (`dev/tools/phpunit`); CI step. First tests: template parser, Validator v2, Scope.
 - ✅ **F1.1 Storage** *(§2)*
-  - `runs`, `run_steps`, `trigger_claims` tables with upgrades.
+  - `runs`, `run_steps` tables with upgrades.
   - Saved versions never change; runs pin their version.
 - ✅ **F1.2 Data layer v2** *(§4)*
   - Types incl. boolean, money, list, entity.
@@ -181,7 +181,7 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 ## M8 — Abandoned cart + checkout · L · risk 2
 
 **Backend**
-- **M8.1 Scheduler + query triggers** *(§3)* — batches and `trigger_claims`. Shared by M6 and the v1.1 Interval trigger.
+- **M8.1 Scheduler + query triggers** *(§3)* — batches, plus the `trigger_claims` table (workflow_id, subject, claimed_at; unique per workflow and subject) and its store. Shared by M6 and the v1.1 Interval trigger.
 - **M8.2 Cart entity type** *(§4)*.
 - **M8.3 Triggers** — Cart abandoned, Checkout abandoned; a cart never starts both.
 - **M8.4 Exit condition** — stop the run when an order is placed for the cart or customer.

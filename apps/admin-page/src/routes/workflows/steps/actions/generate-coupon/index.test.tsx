@@ -27,11 +27,12 @@ describe('Generate coupon config', () => {
     expect(step.firstError({ ...saved, minimum_spend: 25.5, expiry_days: null })).toBeNull();
   });
 
-  it('reads configs saved with numbers as text, blank as none', () => {
-    const old = { ...saved, amount: '10', expiry_days: ' 30 ', minimum_spend: '' };
-    expect(step.normalize(old)).toEqual(saved);
-    expect(step.firstError(old)).toBeNull();
-    expect(step.normalize({ ...saved, minimum_spend: '12.5' })).toMatchObject({ minimum_spend: 12.5 });
+  it('reads null as none and anything else that is not a number as the default', () => {
+    expect(step.normalize({ ...saved, amount: null, expiry_days: null })).toMatchObject({
+      amount: null,
+      expiry_days: null,
+    });
+    expect(step.normalize({ ...saved, amount: '', expiry_days: '', minimum_spend: '' })).toEqual(saved);
   });
 
   it('checks the field ranges PHP sends while editing', () => {
@@ -58,8 +59,7 @@ describe('Generate coupon card', () => {
     expect(summary({ expiry_days: 1 })).toBe('10% off, expires in 1 day');
   });
 
-  it('reads old text numbers and shows "Not set" for a missing amount', () => {
-    expect(summary({ amount: '15', expiry_days: '' })).toBe('15% off, never expires');
+  it('shows "Not set" for a missing amount', () => {
     expect(summary({ amount: null })).toBe('Not set, expires in 30 days');
   });
 });

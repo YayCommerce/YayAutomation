@@ -4,8 +4,7 @@ namespace YayMatik\Workflow\Core\Data;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * A ref whose entity no longer exists, e.g. the order was deleted during a wait. The step that
- * reads it is skipped, and run history says why.
+ * A ref whose entity no longer exists; the step that reads it is skipped.
  */
 final class GoneEntity extends \RuntimeException {
 

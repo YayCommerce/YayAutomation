@@ -53,7 +53,7 @@ function ruleError({ field: key, operator, value, valueType }: Rule): string | n
 }
 
 /** No criteria has a variable yet. */
-export const criteriaRequired = messages.rulesRequired;
+const criteriaRequired = messages.rulesRequired;
 
 /**
  * The error of each criteria, in order (null when fine). With no variable chosen anywhere, the

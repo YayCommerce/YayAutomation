@@ -6,9 +6,7 @@ use YayMatik\Workflow\Core\Data\Scope;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * The step that starts a workflow. A trigger hooks its own events (`listen()`) and reports each one
- * with JSON-safe args; the Dispatcher matches workflows with `context()` and stores `refs()` as the
- * run's trigger data.
+ * The step that starts a workflow: it hooks its own events and reports each one.
  */
 abstract class Trigger extends Step {
 
@@ -20,50 +18,48 @@ abstract class Trigger extends Step {
     abstract public function provides(): array;
 
     /**
-     * Hooks the events. Calls `$emit( $args )` once per event.
+     * Hooks the events; calls `$emit( $args )` once per event.
      *
      * @param callable $emit fn( array $args ): void. Args must survive JSON (they go through Action Scheduler).
      */
     abstract public function listen( callable $emit ): void;
 
     /**
-     * Run context for an event, or null when its subject is gone (e.g. the order was deleted).
+     * Run context for an event, or null when its subject is gone.
      *
-     * @param array $args Event args from `listen()`.
+     * @param array $args
      */
     abstract public function context( array $args ): ?array;
 
     /**
-     * What a run stores for the event, its `trigger` scope section: Refs to the entities plus facts
-     * only true at trigger time (e.g. status from / to). Never whole objects. Null when the subject is gone.
+     * The run's `trigger` scope section, or null when the subject is gone.
      *
-     * @param array $args Event args from `listen()`.
-     * @return array|null Key => Ref or plain value.
+     * @param array $args
+     * @return array|null Key => Ref or plain value (a fact only true at trigger time); never whole objects.
      */
     abstract public function refs( array $args ): ?array;
 
     /**
-     * What the event is about, e.g. `order:12`. Stored on the run, for history and logs.
+     * What the event is about, e.g. `order:12`.
      *
-     * @param array $args Event args from `listen()`.
+     * @param array $args
      */
     abstract public function subject( array $args ): string;
 
     /**
      * Whether a workflow with this config runs for the event.
      *
-     * @param array $context Run context from `context()`.
-     * @param array $config  Sanitized, valid config.
+     * @param array $context
+     * @param array $config
      */
     public function matches( array $context, array $config ): bool {
         return true;
     }
 
     /**
-     * Last check before the event's workflows are queued, once per event. Lets a trigger fire only
-     * once per subject across requests.
+     * Last check before the event's workflows are queued, once per event.
      *
-     * @param array $args Event args from `listen()`.
+     * @param array $args
      */
     public function claim( array $args ): bool {
         return true;
@@ -72,8 +68,8 @@ abstract class Trigger extends Step {
     /**
      * Nothing to do: what the trigger supplies is already in the Scope.
      *
-     * @param Scope $scope  Run scope.
-     * @param array $config Sanitized, valid config.
+     * @param Scope $scope
+     * @param array $config
      */
     public function run( Scope $scope, array $config ): StepResult { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- the contract every step shares.
         return StepResult::ok();

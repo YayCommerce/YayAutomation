@@ -13,8 +13,8 @@ final class FakeEntity extends DataItem {
     private $definitions;
 
     /**
-     * @param string  $entity_id   Entity type id.
-     * @param array[] $definitions Field definitions, as `DataItem::define()` returns them.
+     * @param string  $entity_id
+     * @param array[] $definitions As `DataItem::define()` returns them.
      */
     public function __construct( string $entity_id, array $definitions ) {
         $this->entity_id   = $entity_id;

@@ -65,9 +65,9 @@ final class StepRunTest extends TestCase {
     /**
      * Runs a step with a raw config, as the Executor would: sanitized and valid.
      *
-     * @param Step       $step  Step.
-     * @param array      $raw   Raw config.
-     * @param Scope|null $scope Scope; null = the order's.
+     * @param Step       $step
+     * @param array      $raw
+     * @param Scope|null $scope null = the order's.
      */
     private function run_step( Step $step, array $raw, ?Scope $scope = null ): StepResult {
         $config = $step->sanitize( $raw );
@@ -78,8 +78,8 @@ final class StepRunTest extends TestCase {
     /**
      * Ok, with output keys exactly as `outputs()` declares.
      *
-     * @param Step       $step   Step.
-     * @param StepResult $result Result.
+     * @param Step       $step
+     * @param StepResult $result
      */
     private function assert_ok_outputs( Step $step, StepResult $result ): void {
         $this->assertTrue( $result->is_ok(), $result->message() );
@@ -214,7 +214,6 @@ final class StepRunTest extends TestCase {
         );
 
         $this->assertTrue( $result->is_failed() );
-        $this->assertSame( 'yaymatik_mail_failed', $result->code() );
         $this->assertSame( 'Couldn’t send the email.', $result->message() );
         $this->assertSame( [], $result->outputs() );
     }

@@ -115,7 +115,7 @@ class UglyApi implements AbstractApi {
   }
 }
 
-export function createApi(base: string): AbstractApi {
+function createApi(base: string): AbstractApi {
   const baseUrl = new URL(`${window.yayMatikMeta.wp.restRoot}${base}`);
   const restRoute = baseUrl.searchParams.get('rest_route');
 
@@ -126,7 +126,4 @@ export function createApi(base: string): AbstractApi {
   }
 }
 
-export const yayMatikApi = createApi(window.yayMatikMeta.wp.restBase);
-export const wordpressApi = createApi('wp/v2');
-
-export const api = yayMatikApi;
+export const api = createApi(window.yayMatikMeta.wp.restBase);

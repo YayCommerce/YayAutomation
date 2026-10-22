@@ -263,7 +263,7 @@ Today errors only go to the WooCommerce log, which merchants never open.
 **For devs.**
 - Render only in PHP. TS parses for errors and autocomplete.
 - Preview and Send test call the server.
-- New filters go in the filter registry with an input type.
+- New filters go in the filter registry as `Filters::add( $name, $apply )`. A filter never fails: input it can't use comes back unchanged.
 
 ## L4. Foundation before M1
 

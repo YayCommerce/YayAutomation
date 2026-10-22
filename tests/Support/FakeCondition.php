@@ -4,7 +4,7 @@ namespace YayMatik\Tests\Support;
 use YayMatik\Workflow\Core\Data\Scope;
 use YayMatik\Workflow\Core\Steps\Condition;
 
-/** A condition that says yes when its config has `yes` true; `result` comes from the base class. Counts its runs. */
+/** A condition that says yes when its config has `yes` true; `result` comes from the base class. */
 final class FakeCondition extends Condition {
 
     /** @var int */
@@ -34,9 +34,7 @@ final class FakeCondition extends Condition {
         return '';
     }
 
-    /**
-     * @param mixed $config Raw config.
-     */
+    /** @param mixed $config */
     public function sanitize( $config ): array {
         return is_array( $config ) ? $config : [];
     }

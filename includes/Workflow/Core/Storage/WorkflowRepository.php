@@ -6,28 +6,17 @@ use YayMatik\Workflow\Core\Steps\StepRegistry;
 
 defined( 'ABSPATH' ) || exit;
 
-/**
- * Workflow storage over the private post type. Returned arrays match the TS `Workflow` type.
- * Input must already be prepared by `Validator`.
- *
- * - `_yaymatik_graph` is the live graph: the only one the runner reads.
- * - `_yaymatik_draft_graph` holds unapplied edits of a workflow that has ever been turned on
- *   (active or not). It's kept across turning on and off.
- * - `post_modified` moves with the live graph, status and name only; draft saves write meta alone,
- *   so they don't touch it.
- * - Every graph change is also kept as a version (`VersionStore`). `_yaymatik_live_version`
- *   and `_yaymatik_draft_version` point at the rows holding the live graph and the draft.
- *   "Last updated" (`lastVersionAt`) is the newest row's time.
- */
+/** Workflows over the private post type, input prepared by `Validator`; arrays match the TS `Workflow` type. */
 final class WorkflowRepository {
 
+    // GRAPH is the live graph, the only one the runner reads. DRAFT_GRAPH holds unapplied edits of a
+    // workflow that has ever been turned on, kept across turning on and off. ACTIVATED_AT is the last
+    // turn-on; it also tells "Inactive" (turned off) from "Draft" (never on).
     private const META_STATUS        = '_yaymatik_status';
     private const META_GRAPH         = '_yaymatik_graph';
     private const META_TRIGGER       = '_yaymatik_trigger';
     private const META_DRAFT_GRAPH   = '_yaymatik_draft_graph';
     private const META_DRAFT_UPDATED = '_yaymatik_draft_updated';
-    // When the workflow was last turned on. Set on every activate; deactivate only adds it when missing,
-    // so it also tells "Inactive" (turned off) from "Draft" (never on).
     private const META_ACTIVATED_AT  = '_yaymatik_activated_at';
     private const META_LIVE_VERSION  = '_yaymatik_live_version';
     private const META_DRAFT_VERSION = '_yaymatik_draft_version';
@@ -56,36 +45,18 @@ final class WorkflowRepository {
     }
 
     /**
-     * False for a workflow saved before versions existed, until `seed_versions()` (or any write) runs.
+     * Version row holding the live graph, which a new run pins; 0 when none was saved.
      *
-     * @param int $id Post id.
-     */
-    public static function has_versions( int $id ): bool {
-        return (bool) self::live_version_id( $id );
-    }
-
-    /**
-     * Version row holding the live graph, which a new run pins; 0 for a workflow saved before versions existed.
-     *
-     * @param int $id Post id.
+     * @param int $id
      */
     public static function live_version_id( int $id ): int {
         return (int) get_post_meta( $id, self::META_LIVE_VERSION, true );
     }
 
     /**
-     * Seeds the versions of a workflow saved before versions existed; no-op otherwise.
-     *
-     * @param int $id Post id of an existing workflow.
-     */
-    public static function seed_versions( int $id ): void {
-        self::ensure_versions( $id );
-    }
-
-    /**
      * One page of versions, newest first, shaped like the TS `WorkflowVersion`.
      *
-     * @param int $id   Post id of an existing workflow.
+     * @param int $id
      * @param int $page 1-based.
      * @return array{items: array[], hasMore: bool}
      */
@@ -126,11 +97,6 @@ final class WorkflowRepository {
         ];
     }
 
-    /**
-     * Active workflows whose trigger is the given step.
-     *
-     * @param string $step_id Trigger step id.
-     */
     public static function active_for_trigger( string $step_id ): array {
         $posts = get_posts(
             [
@@ -157,8 +123,8 @@ final class WorkflowRepository {
     /**
      * New inactive workflow.
      *
-     * @param string $name  Prepared name.
-     * @param array  $graph Prepared graph.
+     * @param string $name
+     * @param array  $graph
      * @return array|\WP_Error
      */
     public static function create( string $name, array $graph ) {
@@ -181,22 +147,21 @@ final class WorkflowRepository {
     }
 
     /**
-     * Changes the live workflow: name and/or graph. One post update, done first, so a failure
-     * leaves nothing half-written. A new graph replaces the live version's snapshot in place: only
-     * workflows never turned on edit the live graph directly.
+     * Changes the live name and/or graph (null keeps it).
      *
-     * @param int         $id    Post id of an existing workflow.
-     * @param string|null $name  Prepared name, or null to keep it.
-     * @param array|null  $graph Prepared graph, or null to keep it.
+     * @param int         $id
+     * @param string|null $name
+     * @param array|null  $graph
      * @return true|\WP_Error
      */
     public static function update_live( int $id, ?string $name, ?array $graph ) {
+        // The post update goes first, so a failure leaves nothing half-written.
         $result = self::touch( $id, null === $name ? [] : [ 'post_title' => wp_slash( $name ) ] );
         if ( is_wp_error( $result ) ) {
             return $result;
         }
         if ( null !== $graph ) {
-            self::ensure_versions( $id );
+            // Only a workflow never turned on edits its live graph: no run pins that version, so it's updated in place.
             self::write_graph( $id, $graph );
             VersionStore::update( self::live_version_id( $id ), VersionStore::ACTION_EDITED, $graph );
         }
@@ -204,14 +169,12 @@ final class WorkflowRepository {
     }
 
     /**
-     * Sets or (null) clears the draft. Meta only: the live workflow and `post_modified` are untouched.
-     * The draft has one version row, updated in place on every save and deleted when cleared.
+     * Sets or (null) clears the draft. Meta only, so `post_modified` stays; its one version row is updated in place.
      *
-     * @param int        $id    Post id of an existing workflow.
-     * @param array|null $graph Prepared graph, or null to clear.
+     * @param int        $id
+     * @param array|null $graph
      */
     public static function save_draft( int $id, ?array $graph ): void {
-        self::ensure_versions( $id );
         $version = self::draft_version( $id );
         if ( null === $graph ) {
             if ( $version ) {
@@ -230,7 +193,7 @@ final class WorkflowRepository {
     }
 
     /**
-     * @param int $id Post id of an existing workflow.
+     * @param int $id
      * @return true|\WP_Error
      */
     public static function activate( int $id ) {
@@ -245,9 +208,9 @@ final class WorkflowRepository {
     }
 
     /**
-     * Turns off. The draft, if any, is kept.
+     * Turns off; the draft is kept.
      *
-     * @param int $id Post id of an existing workflow.
+     * @param int $id
      * @return true|\WP_Error
      */
     public static function deactivate( int $id ) {
@@ -255,18 +218,16 @@ final class WorkflowRepository {
         if ( is_wp_error( $result ) ) {
             return $result;
         }
-        // Workflows turned on before this meta existed get it here, so they turn "Inactive", not "Draft".
-        self::mark_activated( $id );
         update_post_meta( $id, self::META_STATUS, 'inactive' );
         self::record_live( $id, VersionStore::ACTION_DEACTIVATED );
         return true;
     }
 
     /**
-     * Draft → live graph; the draft is cleared. Its version row becomes the live one.
+     * Draft → live graph; its version row becomes the live one.
      *
-     * @param int   $id    Post id of an existing workflow.
-     * @param array $draft The workflow's draft.
+     * @param int   $id
+     * @param array $draft
      * @return true|\WP_Error
      */
     public static function apply_draft( int $id, array $draft ) {
@@ -274,7 +235,6 @@ final class WorkflowRepository {
         if ( is_wp_error( $result ) ) {
             return $result;
         }
-        self::ensure_versions( $id );
         self::write_graph( $id, $draft );
         $version = self::draft_version( $id );
         if ( $version ) {
@@ -288,7 +248,7 @@ final class WorkflowRepository {
     /**
      * Permanent delete, no trash. False when the workflow doesn't exist.
      *
-     * @param int $id Post id.
+     * @param int $id
      */
     public static function delete( int $id ): bool {
         if ( ! self::get_post( $id ) || ! wp_delete_post( $id, true ) ) {
@@ -301,39 +261,12 @@ final class WorkflowRepository {
     /**
      * New version row holding the live graph, which becomes the live version.
      *
-     * @param int    $id     Post id of an existing workflow.
+     * @param int    $id
      * @param string $action VersionStore::ACTION_ACTIVATED or ACTION_DEACTIVATED.
      */
     private static function record_live( int $id, string $action ): void {
-        self::ensure_versions( $id );
         $graph = self::decode_graph( (string) get_post_meta( $id, self::META_GRAPH, true ) );
         update_post_meta( $id, self::META_LIVE_VERSION, VersionStore::insert( $id, $action, $graph ) );
-    }
-
-    /**
-     * Workflows saved before versions existed have none: seed a "created" row from the post (author,
-     * date, live graph), plus a row for the draft if there is one. Call before recording anything.
-     *
-     * @param int $id Post id of an existing workflow.
-     */
-    private static function ensure_versions( int $id ): void {
-        if ( self::live_version_id( $id ) ) {
-            return;
-        }
-        $post = self::get_post( $id );
-        if ( ! $post ) {
-            return;
-        }
-        $author = (int) $post->post_author;
-        $graph  = self::decode_graph( (string) get_post_meta( $id, self::META_GRAPH, true ) );
-        update_post_meta( $id, self::META_LIVE_VERSION, VersionStore::insert( $id, VersionStore::ACTION_CREATED, $graph, $author, $post->post_date_gmt ) );
-
-        $draft = (string) get_post_meta( $id, self::META_DRAFT_GRAPH, true );
-        if ( $draft ) {
-            $updated = (string) get_post_meta( $id, self::META_DRAFT_UPDATED, true );
-            $time    = $updated ? gmdate( 'Y-m-d H:i:s', (int) strtotime( $updated ) ) : null;
-            update_post_meta( $id, self::META_DRAFT_VERSION, VersionStore::insert( $id, VersionStore::ACTION_EDITED, self::decode_graph( $draft ), $author, $time ) );
-        }
     }
 
     private static function draft_version( int $id ): int {
@@ -344,12 +277,6 @@ final class WorkflowRepository {
         delete_post_meta( $id, self::META_DRAFT_GRAPH );
         delete_post_meta( $id, self::META_DRAFT_UPDATED );
         delete_post_meta( $id, self::META_DRAFT_VERSION );
-    }
-
-    private static function mark_activated( int $id ): void {
-        if ( ! get_post_meta( $id, self::META_ACTIVATED_AT, true ) ) {
-            update_post_meta( $id, self::META_ACTIVATED_AT, gmdate( 'c' ) );
-        }
     }
 
     private static function write_graph( int $id, array $graph ): void {
@@ -367,7 +294,7 @@ final class WorkflowRepository {
     /**
      * Updates the post, which also moves `post_modified` to now.
      *
-     * @param int   $id     Post id.
+     * @param int   $id
      * @param array $fields Extra post fields, slashed.
      * @return true|\WP_Error
      */
@@ -382,8 +309,8 @@ final class WorkflowRepository {
     }
 
     /**
-     * @param \WP_Post    $post         Workflow post.
-     * @param bool        $with_draft   False skips reading the draft (`draft` is then always null).
+     * @param \WP_Post    $post
+     * @param bool        $with_draft   False skips reading the draft (`draft` is then null).
      * @param string|null $last_version Newest version time (ISO 8601); null → `updatedAt`.
      */
     private static function to_array( \WP_Post $post, bool $with_draft = true, ?string $last_version = null ): array {
@@ -403,9 +330,7 @@ final class WorkflowRepository {
             'updatedAt'      => $updated_at,
             'draftUpdatedAt' => $draft_updated ? $draft_updated : null,
             'lastVersionAt'  => $last_version ?? $updated_at,
-            // Active without the meta: turned on before the meta existed; still counts.
-            'everActivated'  => $active || (bool) $activated_at,
-            // Null while inactive, and for a workflow turned on before the meta existed.
+            'everActivated'  => (bool) $activated_at,
             'activatedAt'    => $active && $activated_at ? (string) $activated_at : null,
         ];
     }
@@ -418,8 +343,8 @@ final class WorkflowRepository {
                 'edges' => [],
             ];
         }
-        // Re-sanitizing brings configs saved in an older shape up to date, so the editor and the
-        // runner only ever see the current one.
+        // Stored configs go through their step's sanitize() on read, so the editor and the runner get
+        // the shape today's step defines.
         foreach ( $graph['nodes'] as &$node ) {
             $step = StepRegistry::get( (string) ( $node['data']['block'] ?? '' ) );
             if ( $step ) {

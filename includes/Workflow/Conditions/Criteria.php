@@ -12,10 +12,7 @@ use YayMatik\Workflow\Core\Steps\Field;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * The one condition step: a list of criteria joined by AND (`all`) or OR (`any`).
- * Config: [ 'match' => 'all'|'any', 'rules' => [ [ 'field' => 'order.total', 'operator' => 'greater_or_equal', 'value' => '500', 'valueType' => 'value' ], … ] ].
- * `valueType` 'value': `value` is stored as typed and cast by the field type when compared. 'variable':
- * `value` is another field's key, compared with that field's value (same type; numbers, text, dates).
+ * The one condition step. Rule: [ 'field', 'operator', 'value', 'valueType' => 'value'|'variable' (`value` is another field's key) ].
  */
 class Criteria extends Condition {
 
@@ -63,7 +60,7 @@ class Criteria extends Condition {
     /**
      * Each rule is cleaned by the type of the variable it compares, so it keeps its own sanitize.
      *
-     * @param mixed $config Raw config from the request.
+     * @param mixed $config
      */
     public function sanitize( $config ): array {
         $config = is_array( $config ) ? $config : [];
@@ -132,7 +129,7 @@ class Criteria extends Condition {
     /**
      * Why one criteria can't run, or null. Same messages and order as the TS step schema.
      *
-     * @param array $rule Sanitized criteria.
+     * @param array $rule
      */
     private function rule_error( array $rule ): ?string {
         $field = DataRegistry::field( $rule['field'] );
@@ -178,7 +175,7 @@ class Criteria extends Condition {
     /**
      * A field key as stored: `item.field`, lowercase letters and underscores.
      *
-     * @param string $key Raw key.
+     * @param string $key
      */
     private static function field_key( string $key ): string {
         return (string) preg_replace( '/[^a-z_.]/', '', $key );

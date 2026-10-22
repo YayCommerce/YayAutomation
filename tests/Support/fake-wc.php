@@ -1,7 +1,6 @@
 <?php
 /**
- * `WC()` for tests that send email. Countries and payment gateways are empty, as when WooCommerce
- * is missing, so other tests see the same option lists either way.
+ * `WC()` for tests that send email. Countries and gateways are empty, as without WooCommerce, so every test sees the same option lists.
  *
  * @package YayMatik
  */

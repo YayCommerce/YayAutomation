@@ -11,13 +11,7 @@ use YayMatik\Workflow\Core\Steps\StepResult;
 
 defined( 'ABSPATH' ) || exit;
 
-/**
- * Email to the store team, sent like WooCommerce's own "New order" email: from the WooCommerce
- * sender, wrapped in the WooCommerce email template.
- * Config: [ 'recipients' => comma-separated emails, blank = site admin email, 'subject' => string, 'message' => HTML ].
- * Subject and message accept merge tags. The subject is also the email heading. A new step starts
- * with a sample subject and message. Unsubscribes don't apply: it goes to the store team.
- */
+/** Email to the store team in the WooCommerce email template; unsubscribes don't apply. */
 class SendInternalEmail extends Action {
 
     public const ID = 'send_internal_email';
@@ -46,7 +40,6 @@ class SendInternalEmail extends Action {
         return [];
     }
 
-    /** The read-only From line is the WooCommerce sender, e.g. "Store <store@example.com>". */
     public function fields(): array {
         return [
             Field::notice( 'from', __( 'From', 'yaymatik' ), self::from_line() ),
@@ -83,8 +76,8 @@ class SendInternalEmail extends Action {
     /**
      * Outputs the addresses it was sent to; never the subject or body.
      *
-     * @param Scope $scope  Run scope.
-     * @param array $config Sanitized, valid config.
+     * @param Scope $scope
+     * @param array $config
      */
     public function run( Scope $scope, array $config ): StepResult {
         $recipients = Field::split_emails( $config['recipients'] );
@@ -94,7 +87,7 @@ class SendInternalEmail extends Action {
 
         $email = $this->compose( $config, $scope );
         if ( ! WC()->mailer()->send( $recipients, $email['subject'], $email['body'] ) ) {
-            return StepResult::failed( new \WP_Error( 'yaymatik_mail_failed', __( 'Couldn’t send the email.', 'yaymatik' ) ) );
+            return StepResult::failed( __( 'Couldn’t send the email.', 'yaymatik' ) );
         }
         return StepResult::ok( [ 'to' => $recipients ] );
     }
@@ -102,9 +95,9 @@ class SendInternalEmail extends Action {
     /**
      * The email as it goes out. The subject is also the heading.
      *
-     * @param array  $config Sanitized config.
-     * @param Values $values Run scope, or sample values in a preview.
-     * @return array [ 'subject' => string, 'heading' => string, 'body' => HTML in the WooCommerce wrapper ].
+     * @param array  $config
+     * @param Values $values
+     * @return array [ 'subject' => string, 'heading' => string, 'body' => HTML in the WooCommerce wrapper ]
      */
     public function compose( array $config, Values $values ): array {
         // Merged values may contain line breaks; a subject must stay one line.
@@ -123,10 +116,7 @@ class SendInternalEmail extends Action {
             . '<p>{{ order.items }}</p>';
     }
 
-    /**
-     * WooCommerce sender, for the From line of email steps the admin draws itself.
-     * Shape must match `automation.email` in apps/admin-page/src/types/localize.d.ts.
-     */
+    /** WooCommerce sender; shape must match `automation.email` in apps/admin-page/src/types/localize.d.ts. */
     public static function sender(): array {
         return [
             'fromLine'    => self::from_line(),

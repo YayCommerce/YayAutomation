@@ -13,24 +13,14 @@ use YayMatik\Utils\Logger;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Turns REST input into storable workflow parts, and finds a workflow's issues. Saves only reject
- * malformed input (graph shape: `GraphSchema`); issues from `errors()` are allowed there and only
- * block turning a workflow on or applying a draft.
- *
- * What a step can use: the trigger's data, the outputs of the steps above it (`steps.<id>.<key>`;
- * both branches of a condition see its outputs) and the always-available items. Merge tags in a
- * step's text fields are checked against that, deep paths (`order.customer.first_name`) through
- * the data catalog.
- *
- * `errors()` mirrors `validateWorkflow()` in apps/admin-page/src/routes/workflows/model/validation.ts.
+ * Turns REST input into storable workflow parts, and finds the issues that block Activate and applying a draft.
  */
 final class Validator {
 
     /**
-     * New workflow from the POST body. Always created inactive, whatever `status` says. Without a
-     * graph it's a blank "New workflow": one trigger step, not chosen yet.
+     * New workflow from the POST body; `status` is ignored, it's created inactive.
      *
-     * @param mixed $input Decoded JSON body: { name?, graph? }.
+     * @param mixed $input { name?, graph? }.
      * @return array|\WP_Error [ 'name' => string, 'graph' => array ]
      */
     public static function prepare_new( $input ) {
@@ -46,10 +36,9 @@ final class Validator {
     }
 
     /**
-     * Fields present in a PUT body. Absent keys stay absent; `status` is ignored (it changes only
-     * through activate / deactivate). A name that sanitizes to empty is rejected.
+     * Fields present in a PUT body; `status` is ignored (it changes only through activate / deactivate).
      *
-     * @param mixed $input Decoded JSON body: { name?, graph? }.
+     * @param mixed $input { name?, graph? }.
      * @return array|\WP_Error [ 'name'? => string, 'graph'? => array ]
      */
     public static function prepare_changes( $input ) {
@@ -83,9 +72,9 @@ final class Validator {
     }
 
     /**
-     * 400 listing everything `errors()` found, for turning on (`activate`) or applying a draft (`apply`).
+     * 400 listing everything `errors()` found.
      *
-     * @param array[] $errors From `errors()`.
+     * @param array[] $errors
      * @param string  $action `activate` or `apply`.
      */
     public static function issues_error( array $errors, string $action ): \WP_Error {
@@ -108,16 +97,16 @@ final class Validator {
     /**
      * Empty is allowed here; `errors()` reports it as name_required.
      *
-     * @param mixed $name Raw name.
+     * @param mixed $name
      */
     private static function prepare_name( $name ): string {
         return sanitize_text_field( is_scalar( $name ) ? (string) $name : '' );
     }
 
     /**
-     * Issues of a stored workflow's live graph and of its draft (null without one), for REST responses.
+     * Issues of a stored workflow's live graph and of its draft.
      *
-     * @param array $workflow Stored workflow: name, graph, draft.
+     * @param array $workflow name, graph, draft.
      * @return array [ 'live' => issue[], 'draft' => issue[]|null ]
      */
     public static function issues( array $workflow ): array {
@@ -139,11 +128,9 @@ final class Validator {
     }
 
     /**
-     * `issues()` for reading workflows (the list, opening one): never throws, so a workflow that
-     * can't be checked doesn't break the list and can still be opened and fixed. It gets no issues
-     * and the error is logged; Activate and apply still run the full check.
+     * `issues()` that never throws, so a workflow that can't be checked can still be listed, opened and fixed.
      *
-     * @param array $workflow Stored workflow: id, name, graph, draft.
+     * @param array $workflow id, name, graph, draft.
      * @return array [ 'live' => issue[], 'draft' => issue[] ]
      */
     public static function list_issues( array $workflow ): array {
@@ -159,16 +146,13 @@ final class Validator {
     }
 
     /**
-     * Problems that block turning a workflow on or applying a draft. Codes match the TS `validateWorkflow()`:
-     * name_required, no_trigger (trigger not chosen), no_action (both workflow-level), unlinked (one issue,
-     * `nodeIds` = every step not reached from the trigger), and per step: no_block (action not chosen),
-     * invalid_config (settings, unknown merge tag or filter), missing_data (uses data the trigger
-     * doesn't provide, or a step that isn't above it). A step's issue names its `field` when it has one.
+     * Problems that block turning a workflow on or applying a draft.
      *
-     * @param array $workflow Well-formed workflow (graph from `GraphSchema::prepare()`).
+     * @param array $workflow Graph from `GraphSchema::prepare()`.
      * @return array[] [ [ 'code' => string, 'message' => string, 'field'? => string, 'nodeId'? => string, 'nodeIds'? => string[] ], … ]
      */
     public static function errors( array $workflow ): array {
+        // Mirrors `validateWorkflow()` in apps/admin-page/src/routes/workflows/model/validation.ts.
         $errors       = [];
         $nodes        = $workflow['graph']['nodes'];
         $trigger_step = self::trigger_step( $nodes );
@@ -217,15 +201,11 @@ final class Validator {
     }
 
     /**
-     * Variables one step can use, in the order "Insert variable" lists them: the trigger's data
-     * items and the always-available ones, each item's fields then its relations to one entity
-     * (`order.customer.first_name`; the relation itself has no text), then the outputs of the steps
-     * above it, top to bottom (`steps.<id>.<key>`). Without a trigger only the always-available
-     * items. Cases in tests/fixtures/variables.json, shared with the TS `availableVariables()`.
+     * Variables one step can use, in the order "Insert variable" lists them; mirrors the TS `availableVariables()`.
      *
-     * @param array  $graph   Well-formed graph (from `GraphSchema::prepare()`).
-     * @param string $node_id The step.
-     * @return array[] [ [ 'key' => string, 'label' => string, 'type' => string ], … ], `type` as data fields' `valueType`.
+     * @param array  $graph From `GraphSchema::prepare()`.
+     * @param string $node_id
+     * @return array[] [ [ 'key' => string, 'label' => string, 'type' => string ], … ]
      */
     public static function variables( array $graph, string $node_id ): array {
         $trigger_step = self::trigger_step( $graph['nodes'] );
@@ -259,12 +239,11 @@ final class Validator {
     }
 
     /**
-     * Fields of an entity under a path prefix: its own fields first, then those of each relation to
-     * one entity (the catalog sends them apart, as `fields` and `relations`). A relation back to a
-     * type already on the path isn't followed.
+     * Fields of an entity under a path prefix: its own first, then each relation's. A relation back to a type
+     * already on the path isn't followed.
      *
-     * @param DataItem $entity Entity type.
-     * @param string   $prefix Path so far, e.g. `order` or `order.customer`.
+     * @param DataItem $entity
+     * @param string   $prefix Path so far, e.g. `order.customer`.
      * @param array    $seen   Entity type ids on the path => true.
      */
     private static function entity_variables( DataItem $entity, string $prefix, array $seen ): array {
@@ -292,7 +271,7 @@ final class Validator {
     /**
      * The chosen trigger step, or null.
      *
-     * @param array[] $nodes Well-formed nodes.
+     * @param array[] $nodes
      */
     private static function trigger_step( array $nodes ): ?Step {
         foreach ( $nodes as $node ) {
@@ -304,13 +283,12 @@ final class Validator {
     }
 
     /**
-     * The one issue of a step, or null: its settings first (`validate()`), then its merge tags, then
-     * data it needs. A trigger with no step chosen is no_trigger, reported above.
+     * The one issue of a step, or null: its settings first, then its merge tags, then data it needs.
      *
-     * @param array      $node      Well-formed node.
-     * @param array|null $available Data items the trigger supplies plus the always ones; null without a trigger.
-     * @param array[]    $by_id     Every node by id.
-     * @param array      $above     Ids of the steps above this one => true.
+     * @param array      $node
+     * @param array|null $available Data item ids; null without a trigger.
+     * @param array[]    $by_id
+     * @param array      $above     Step ids => true.
      */
     private static function step_error( array $node, ?array $available, array $by_id, array $above ): ?array {
         $step = $node['data']['block'] ? StepRegistry::get( $node['data']['block'] ) : null;
@@ -343,15 +321,13 @@ final class Validator {
     }
 
     /**
-     * First problem with the merge tags in a step's text fields, or null. Malformed tags, unknown
-     * filters and unknown paths come first (invalid_config), then paths to data this step can't
-     * reach (missing_data).
+     * First problem with the merge tags in a step's text fields, or null; any invalid_config before missing_data.
      *
-     * @param Step       $step      Step.
-     * @param array      $config    Sanitized config.
-     * @param array|null $available Data items available; null without a trigger.
-     * @param array[]    $by_id     Every node by id.
-     * @param array      $above     Ids of the steps above => true.
+     * @param Step       $step
+     * @param array      $config
+     * @param array|null $available Data item ids; null without a trigger.
+     * @param array[]    $by_id
+     * @param array      $above     Step ids => true.
      */
     private static function tag_error( Step $step, array $config, ?array $available, array $by_id, array $above ): ?array {
         static $template = null;
@@ -382,14 +358,13 @@ final class Validator {
     }
 
     /**
-     * Why a step can't read a path, or null when it can: [ 'invalid_config', message ] when nothing
-     * defines it (or the step it reads isn't in the workflow), [ 'missing_data', message ] when the
-     * data or the step it reads isn't above it.
+     * Why a step can't read a path, or null when it can: invalid_config when nothing defines it, missing_data
+     * when the data or step isn't above it.
      *
-     * @param string     $path      Tag path, e.g. `order.customer.first_name`, `steps.email.to`.
-     * @param array|null $available Data items available; null without a trigger (not reported then).
-     * @param array[]    $by_id     Every node by id.
-     * @param array      $above     Ids of the steps above => true.
+     * @param string     $path
+     * @param array|null $available Data item ids; null without a trigger (not reported then).
+     * @param array[]    $by_id
+     * @param array      $above     Step ids => true.
      * @return array{0: string, 1: string}|null
      */
     private static function reach( string $path, ?array $available, array $by_id, array $above ) {
@@ -424,10 +399,10 @@ final class Validator {
     }
 
     /**
-     * Whether a field path exists on an entity, following relations: `customer.first_name` on order.
+     * Whether a field path exists on an entity, following relations.
      *
-     * @param DataItem $entity   Entity type.
-     * @param string[] $segments Field keys.
+     * @param DataItem $entity
+     * @param string[] $segments
      */
     private static function has_field( DataItem $entity, array $segments ): bool {
         $field = $segments ? ( $entity->fields()[ $segments[0] ] ?? null ) : null;
@@ -446,8 +421,8 @@ final class Validator {
     /**
      * Ids of the steps above a step, from the trigger down.
      *
-     * @param array  $graph   Well-formed graph.
-     * @param string $node_id The step.
+     * @param array  $graph
+     * @param string $node_id
      * @return string[]
      */
     public static function steps_above( array $graph, string $node_id ): array {
@@ -456,10 +431,10 @@ final class Validator {
     }
 
     /**
-     * Ids of the steps above a step => true: its parent, the parent's parent, up to the trigger.
+     * Ids of the steps above a step => true, walking up to the trigger.
      *
-     * @param string $id      Step id.
-     * @param array  $parents Target id => source id (one parent per step).
+     * @param string $id
+     * @param array  $parents Target id => source id.
      */
     private static function ancestors( string $id, array $parents ): array {
         $above = [];
@@ -470,18 +445,10 @@ final class Validator {
         return $above;
     }
 
-    /**
-     * @param string $label Data item or step label.
-     */
     private static function missing_message( string $label ): string {
         return Messages::get( 'missingData', $label );
     }
 
-    /**
-     * @param string      $code    Issue code.
-     * @param string      $message Message.
-     * @param string|null $field   Field key it is about.
-     */
     private static function issue( string $code, string $message, ?string $field ): array {
         $issue = [
             'code'    => $code,
@@ -494,9 +461,9 @@ final class Validator {
     }
 
     /**
-     * Node ids reachable from the trigger by following edges.
+     * Node ids reachable from the trigger.
      *
-     * @param array $graph Well-formed graph.
+     * @param array $graph
      */
     private static function reachable( array $graph ): array {
         $queue = [];
@@ -521,9 +488,6 @@ final class Validator {
         return $seen;
     }
 
-    /**
-     * @param string $message What's wrong with the request body.
-     */
     private static function error( string $message ): \WP_Error {
         return new \WP_Error( 'yaymatik_invalid_workflow', $message, [ 'status' => 400 ] );
     }

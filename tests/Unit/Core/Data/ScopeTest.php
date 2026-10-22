@@ -132,9 +132,6 @@ final class ScopeTest extends TestCase {
         );
     }
 
-    /**
-     * @param array $data Scope data.
-     */
     private function scope( array $data ): Scope {
         return new Scope( $data, $this->resolver(), $this->entities() );
     }
@@ -142,17 +139,13 @@ final class ScopeTest extends TestCase {
     private function run_scope(): Scope {
         return $this->scope(
             [
-                'trigger'  => [
+                'trigger' => [
                     'order'       => new Ref( 'order', 12 ),
                     'customer'    => new Ref( 'customer', 'order:12' ),
                     'status_from' => 'pending',
                     'status_to'   => 'processing',
                 ],
-                'workflow' => [
-                    'id'   => 3,
-                    'name' => 'Thank you',
-                ],
-                'run'      => [ 'id' => 77 ],
+                'run'     => [ 'id' => 77 ],
             ]
         );
     }
@@ -187,10 +180,7 @@ final class ScopeTest extends TestCase {
     public function test_other_sections(): void {
         $scope = $this->run_scope();
         $scope->set_step_outputs( 'action-k2x9', [ 'code' => 'THANKS10' ] );
-        $scope->set_var( 'tier', 'gold' );
         $this->assertSame( 'THANKS10', $scope->get( 'steps.action-k2x9.code' ) );
-        $this->assertSame( 'gold', $scope->get( 'vars.tier' ) );
-        $this->assertSame( 'Thank you', $scope->get( 'workflow.name' ) );
         $this->assertSame( '77', $scope->text( 'run.id', false ) );
         $this->assertSame( 'Yay Shop', $scope->get( 'site.name' ) );
     }
@@ -288,12 +278,10 @@ final class ScopeTest extends TestCase {
         $stored = [
             'trigger' => [ 'order' => $marker ],
             'steps'   => [ 'webhook' => [ 'payload' => $marker ] ],
-            'vars'    => [ 'v' => $marker ],
         ];
         $scope  = Scope::from_array( $stored, $this->resolver(), $this->entities() );
         $this->assertSame( 99.5, $scope->get( 'order.total' ) );
         $this->assertNull( $scope->get( 'steps.webhook.payload.total' ) );
-        $this->assertNull( $scope->get( 'vars.v.total' ) );
         $this->assertSame( $marker, $scope->get( 'steps.webhook.payload' ) );
     }
 
@@ -321,6 +309,26 @@ final class ScopeTest extends TestCase {
         $this->assertSame( 0, $calls );
         $this->assertSame( 'value', $scope->get( 'counted.shown' ) );
         $this->assertSame( 1, $calls );
+    }
+
+    public function test_a_field_shows_its_display_text_when_its_value_is_empty(): void {
+        $entities = $this->entities() + [
+            'paid' => new FakeEntity(
+                'paid',
+                [
+                    'method' => [
+                        'label'   => 'Method',
+                        'type'    => DataItem::TYPE_STRING,
+                        'value'   => fn() => null,
+                        'display' => fn() => 'Cash',
+                    ],
+                ]
+            ),
+        ];
+        $resolver = new RefResolver( [ 'paid' => fn() => (object) [] ] );
+        $scope    = new Scope( [ 'trigger' => [ 'paid' => new Ref( 'paid', 1 ) ] ], $resolver, $entities );
+        $this->assertNull( $scope->get( 'paid.method' ) );
+        $this->assertSame( 'Cash', $scope->text( 'paid.method', false ) );
     }
 
     public function test_template_reads_through_scope(): void {

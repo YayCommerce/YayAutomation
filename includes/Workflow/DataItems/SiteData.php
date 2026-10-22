@@ -5,7 +5,7 @@ use YayMatik\Workflow\Core\Data\DataItem;
 
 defined( 'ABSPATH' ) || exit;
 
-/** The WordPress site. Always available, whatever the trigger; it has no context object. */
+/** The WordPress site; always available, with no context object. */
 final class SiteData extends DataItem {
 
     public const ID = 'site';

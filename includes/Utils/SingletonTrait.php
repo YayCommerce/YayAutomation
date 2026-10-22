@@ -15,10 +15,8 @@ trait SingletonTrait {
         return $class::$instance;
     }
 
-    /** Singletons should not be cloneable. */
     protected function __clone() { }
 
-    /** Singletons should not be restorable from strings. */
     public function __wakeup() {
         throw new \Exception( 'Cannot unserialize a singleton.' );
     }

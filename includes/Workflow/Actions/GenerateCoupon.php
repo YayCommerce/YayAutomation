@@ -12,17 +12,7 @@ use YayMatik\Workflow\Core\Steps\StepResult;
 
 defined( 'ABSPATH' ) || exit;
 
-/**
- * A single-use WooCommerce coupon for later steps: `{{ steps.<id>.code }}`, `amount`, `expires_at`,
- * and `box` (a ready-made block for emails).
- *
- * Config: [ 'discount_type' => 'percent'|'fixed_cart'|'free_shipping', 'amount' => number|null
- * (unused for free shipping), 'expiry_days' => int|null (null = never), 'minimum_spend' =>
- * number|null, 'individual_use' => bool, 'limit_to_customer' => bool, 'code_prefix' => A–Z 0–9 - _ ].
- *
- * The code is the prefix and 8 random characters. A coupon expires at the end of its last day in the
- * store's timezone. The Executor never runs a step twice, so a run makes at most one coupon per step.
- */
+/** A single-use WooCommerce coupon for later steps. */
 class GenerateCoupon extends Action {
 
     public const ID = 'generate_coupon';
@@ -36,7 +26,6 @@ class GenerateCoupon extends Action {
 
     private const CODE_LENGTH = 8;
 
-    /** Tries before giving up on a unique code. */
     private const CODE_TRIES = 5;
 
     private const PREFIX_MAX = 20;
@@ -56,9 +45,9 @@ class GenerateCoupon extends Action {
     private $timezone;
 
     /**
-     * @param CouponWriter|null  $coupons  Coupon storage; null = WooCommerce.
-     * @param callable|null      $now      Clock; null = `time()`.
-     * @param \DateTimeZone|null $timezone Store timezone; null = `wp_timezone()`.
+     * @param CouponWriter|null  $coupons  Null = WooCommerce.
+     * @param callable|null      $now      fn(): int; null = `time()`.
+     * @param \DateTimeZone|null $timezone Null = `wp_timezone()`.
      */
     public function __construct( ?CouponWriter $coupons = null, ?callable $now = null, ?\DateTimeZone $timezone = null ) {
         $this->coupons  = $coupons ?? new WcCouponWriter();
@@ -93,7 +82,7 @@ class GenerateCoupon extends Action {
     /**
      * The customer's email, when the coupon is limited to it.
      *
-     * @param array $config Sanitized config.
+     * @param array $config
      */
     public function uses( array $config ): array {
         return ! empty( $config['limit_to_customer'] ) ? [ CustomerData::ID ] : [];
@@ -155,28 +144,24 @@ class GenerateCoupon extends Action {
     }
 
     /**
-     * Numbers kept as typed; the prefix trimmed and uppercased.
-     *
-     * @param mixed $config Raw config from the request.
+     * @param mixed $config
      */
     public function sanitize( $config ): array {
         $raw    = is_array( $config ) ? $config : [];
         $config = Field::sanitize_all( $this->fields(), $raw );
-        // Blank (null from the editor, '' from older configs) means none: no amount yet, no expiry, no
-        // minimum. Only a missing value takes the default.
+        // Null (blank in the editor) means none: no amount yet, no expiry, no minimum. `Field::number()`
+        // turns null into the default, so explicit nulls are put back here.
         foreach ( [ 'amount', 'expiry_days', 'minimum_spend' ] as $key ) {
-            $value = array_key_exists( $key, $raw ) ? $raw[ $key ] : 0;
-            if ( null === $value || ( is_string( $value ) && '' === trim( $value ) ) ) {
+            if ( array_key_exists( $key, $raw ) && null === $raw[ $key ] ) {
                 $config[ $key ] = null;
             }
         }
-        // A config saved without the key gets the default; an empty prefix stays empty.
-        $config['code_prefix'] = strtoupper( array_key_exists( 'code_prefix', $raw ) ? $config['code_prefix'] : self::DEFAULT_PREFIX );
+        $config['code_prefix'] = strtoupper( $config['code_prefix'] );
         return $config;
     }
 
     /**
-     * @param array $config Output of `sanitize()`.
+     * @param array $config
      * @return true|\WP_Error
      */
     public function validate( array $config ) {
@@ -203,22 +188,18 @@ class GenerateCoupon extends Action {
         return true;
     }
 
-    /**
-     * @param Scope $scope  Run scope.
-     * @param array $config Sanitized, valid config.
-     */
     public function run( Scope $scope, array $config ): StepResult {
         $email = '';
         if ( $config['limit_to_customer'] ) {
             $email = strtolower( trim( (string) $scope->get( CustomerData::ID . '.email' ) ) );
             if ( '' === $email ) {
-                return StepResult::failed( new \WP_Error( 'yaymatik_coupon_no_email', __( 'The customer has no email address to limit the coupon to.', 'yaymatik' ) ) );
+                return StepResult::failed( __( 'The customer has no email address to limit the coupon to.', 'yaymatik' ) );
             }
         }
 
         $code = $this->unique_code( $config['code_prefix'] );
         if ( null === $code ) {
-            return StepResult::failed( new \WP_Error( 'yaymatik_coupon_code', __( 'Couldn’t make a unique coupon code. Try a longer or different prefix.', 'yaymatik' ) ) );
+            return StepResult::failed( __( 'Couldn’t make a unique coupon code. Try a longer or different prefix.', 'yaymatik' ) );
         }
 
         $type    = $config['discount_type'];
@@ -244,7 +225,7 @@ class GenerateCoupon extends Action {
             ]
         );
         if ( ! $id ) {
-            return StepResult::failed( new \WP_Error( 'yaymatik_coupon_save', __( 'Couldn’t save the coupon.', 'yaymatik' ) ) );
+            return StepResult::failed( __( 'Couldn’t save the coupon.', 'yaymatik' ) );
         }
 
         return StepResult::ok(
@@ -257,10 +238,9 @@ class GenerateCoupon extends Action {
     }
 
     /**
-     * What a preview shows for this step's coupon: the sample code, the configured discount and expiry.
-     * No coupon is made.
+     * The sample code with the configured discount and expiry; no coupon is made.
      *
-     * @param array $config Sanitized config.
+     * @param array $config
      */
     public function sample_outputs( array $config ): array {
         $type    = (string) $config['discount_type'];
@@ -273,11 +253,10 @@ class GenerateCoupon extends Action {
     }
 
     /**
-     * Ready-made coupon block for emails: the discount, the code and the expiry. Empty when there's
-     * no coupon (the step didn't run or was skipped), so the email leaves it out. Escapes its own values.
+     * Ready-made coupon block for emails, its values escaped; empty when the step made no coupon.
      *
-     * @param array $outputs The step's outputs.
-     * @param bool  $html    HTML instead of plain text.
+     * @param array $outputs
+     * @param bool  $html
      */
     public static function box( array $outputs, bool $html ): string {
         $code = (string) ( $outputs['code'] ?? '' );
@@ -310,9 +289,9 @@ class GenerateCoupon extends Action {
     }
 
     /**
-     * The code: the prefix and random characters, not used by any coupon yet. Null after a few tries.
+     * A code no coupon uses yet, or null after a few tries.
      *
-     * @param string $prefix Sanitized prefix.
+     * @param string $prefix
      */
     private function unique_code( string $prefix ): ?string {
         $last = strlen( self::CODE_CHARS ) - 1;
@@ -331,7 +310,7 @@ class GenerateCoupon extends Action {
     /**
      * End of the day `$days` from today, in the store's timezone.
      *
-     * @param int $days Whole days, 1 or more.
+     * @param int $days
      */
     private function expiry( int $days ): \DateTimeImmutable {
         $timezone = $this->timezone ?? wp_timezone();
@@ -344,8 +323,8 @@ class GenerateCoupon extends Action {
     /**
      * "10%", "$5.00" or "Free shipping", as plain text.
      *
-     * @param string $type   Discount type.
-     * @param float  $amount Amount.
+     * @param string $type
+     * @param float  $amount
      */
     private static function amount_text( string $type, float $amount ): string {
         if ( self::FREE_SHIPPING === $type ) {
@@ -371,10 +350,6 @@ class GenerateCoupon extends Action {
         return false === $time ? '' : date_i18n( (string) get_option( 'date_format', 'F j, Y' ), $time );
     }
 
-    /**
-     * @param string $text Plain text.
-     * @param bool   $html Escape for HTML.
-     */
     private static function text( string $text, bool $html ): string {
         return $html ? esc_html( $text ) : $text;
     }

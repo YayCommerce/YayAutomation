@@ -4,20 +4,16 @@ namespace YayMatik\Workflow\Core\Data;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * One kind of data a trigger can supply (order, customer, …) and the fields read from it.
- * Fields are both condition variables and `{{ item.field }}` merge tags.
+ * One kind of data a trigger can supply (order, customer, …); its fields are condition variables and merge tags.
  *
- * Field definition (see `define()`):
+ * Field definition (`define()`):
  * - `label`       string
- * - `type`        one of the TYPE_* constants; picks the condition operators
- * - `value_type`  Type — the full type (money, entity<customer>, list<…>); defaults to `type`'s.
- *                 An `entity` or `list<entity>` field holds Refs: a relation, read through a Scope.
- * - `value`       fn( $object ): mixed — typed value for conditions (float, `Y-m-d`, slug, bool or
- *                 string), or Ref(s) for a relation
- * - `display`     fn( $object, bool $html ): string — merge tag text; defaults to the value (an enum's
- *                 option label). With `$html` it returns safe HTML, otherwise plain text.
- * - `options`     fn(): array value => label, enum fields only
- * - `conditional` false hides it from conditions (display-only fields); default true
+ * - `type`        TYPE_*: picks the condition operators
+ * - `value_type`  Type, default from `type`; `entity` or `list<entity>` holds Refs (a relation)
+ * - `value`       fn( $object ): mixed: float, `Y-m-d`, slug, bool, string, or Ref(s)
+ * - `display`     fn( $object, bool $html ): string; default the value (an enum's option label)
+ * - `options`     fn(): array value => label, enum only
+ * - `conditional` bool, default true; false = display only
  */
 abstract class DataItem {
 
@@ -51,9 +47,7 @@ abstract class DataItem {
     }
 
     /**
-     * Made-up values for previews when there's no real data (labelled "Sample data"): field key =>
-     * value, or [ 'value' => typed, 'text' => plain, 'html' => safe HTML (optional) ] when it reads
-     * differently. Relations aren't listed: their item's own sample is used. Empty = none.
+     * Preview values: field key => value, or [ 'value', 'text', 'html'? ] when it reads differently. Relations use their item's own.
      */
     public function sample(): array {
         return [];
@@ -68,7 +62,7 @@ abstract class DataItem {
                     'options'     => null,
                     'conditional' => true,
                     'display'     => null,
-                    'value_type'  => Type::from_legacy( $field['type'] ),
+                    'value_type'  => Type::from_condition_type( $field['type'] ),
                 ];
             }
         }
@@ -76,11 +70,11 @@ abstract class DataItem {
     }
 
     /**
-     * Plain or HTML text of a field.
+     * Plain or safe HTML text of a field.
      *
-     * @param array $field       From `fields()`.
-     * @param mixed $item_object The item's object from the run context.
-     * @param bool  $html        Return escaped HTML instead of plain text.
+     * @param array $field From `fields()`.
+     * @param mixed $item_object
+     * @param bool  $html
      */
     public static function display( array $field, $item_object, bool $html ): string {
         if ( $field['display'] ) {

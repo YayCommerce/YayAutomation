@@ -6,12 +6,8 @@ import { FreeShippingWarning } from './FreeShippingWarning';
 
 const { currencySymbol } = window.yayMatikMeta.wc;
 
-/**
- * A WooCommerce coupon for later steps (`{{ steps.<id>.code }}`). Blank (null) `expiry_days` =
- * never expires, null `minimum_spend` = none; `amount` is unused for free shipping.
- * Form and checks come from includes/Workflow/Actions/GenerateCoupon.php `fields()`.
- */
-export type DiscountType = 'percent' | 'fixed_cart' | 'free_shipping';
+type DiscountType = 'percent' | 'fixed_cart' | 'free_shipping';
+/** Null `expiry_days` = never expires, null `minimum_spend` = none; `amount` is unused for free shipping. */
 export type GenerateCouponConfig = {
   discount_type: DiscountType;
   amount: number | null;
@@ -22,16 +18,8 @@ export type GenerateCouponConfig = {
   code_prefix: string;
 };
 
-/**
- * A stored number as PHP `GenerateCoupon::sanitize()` reads it: configs saved before the fields
- * came from PHP keep numbers as text ("30"), and blank text means none.
- */
 function toNumber(raw: unknown, fallback: number | null): number | null {
-  if (raw === null || typeof raw === 'number') return raw;
-  if (typeof raw !== 'string') return fallback;
-  const text = raw.trim();
-  if (text === '') return null;
-  return /^(\d+\.?\d*|\.\d+)$/.test(text) ? Number(text) : fallback;
+  return typeof raw === 'number' || raw === null ? raw : fallback;
 }
 
 /** "10% off", "$5 off", "Free shipping". */
@@ -53,7 +41,7 @@ function expiry({ expiry_days: days }: GenerateCouponConfig) {
 export const generateCouponStep = defineStep<GenerateCouponConfig>({
   id: 'generate_coupon',
   kind: 'action',
-  // Mirrors the PHP step's own `sanitize()`, numbers as above.
+  // Mirrors the PHP step's own `sanitize()`.
   normalize: (config: Config) => {
     const fallback = generateCouponStep.defaults() as GenerateCouponConfig;
     const text = (key: 'discount_type' | 'code_prefix') =>

@@ -5,7 +5,7 @@ use PHPUnit\Framework\TestCase;
 use YayMatik\Tests\Support\FakeValues;
 use YayMatik\Workflow\Core\Email\EmailBody;
 
-/** A stored message as the email body: HTML as written, or plain text saved before the rich editor. */
+/** A stored message as the email body: HTML as written, or plain text, what the editor saves for a message without tags. */
 final class EmailBodyTest extends TestCase {
 
     private const ITEMS = '<table class="td"><tr><td>Mug</td></tr></table>';
@@ -35,7 +35,7 @@ final class EmailBodyTest extends TestCase {
         );
     }
 
-    public function test_old_plain_text_is_escaped_then_split_into_paragraphs(): void {
+    public function test_plain_text_is_escaped_then_split_into_paragraphs(): void {
         $this->assertSame(
             "<p>Order 1012 from &lt;Ann &lt;b&gt;&gt; &amp; co<br />\nThanks</p>\n" . self::ITEMS . "\n",
             $this->render( "Order {{ order.number }} from <{{ customer.first_name }}> & co\nThanks\n\n{{ order.items }}" )
@@ -43,7 +43,7 @@ final class EmailBodyTest extends TestCase {
     }
 
     public function test_plain_text_entities_are_not_encoded_twice(): void {
-        // `wp_kses_post()` turns a lone `<` into `&lt;` when the old text is saved again.
+        // `wp_kses_post()` turns a lone `<` into `&lt;` when the text is saved again.
         $this->assertSame( "<p>Total &lt; 500</p>\n", $this->render( 'Total &lt; 500' ) );
     }
 

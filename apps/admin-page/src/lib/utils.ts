@@ -1,1 +1,1 @@
-export { cn, getWpTimezone } from '@yaymatik/utils';
+export { cn } from '@yaymatik/utils';

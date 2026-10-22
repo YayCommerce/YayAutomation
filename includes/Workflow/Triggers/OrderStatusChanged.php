@@ -6,10 +6,7 @@ use YayMatik\Workflow\Core\Steps\Field;
 
 defined( 'ABSPATH' ) || exit;
 
-/**
- * Config: [ 'from' => status[], 'to' => status[], 'only_checkout' => bool ]. Empty `from` / `to`
- * means any status. Statuses are slugs without the `wc-` prefix. Event args add `from` and `to`.
- */
+/** Fires when an order moves to another status; empty `from` / `to` means any. */
 class OrderStatusChanged extends OrderTrigger {
 
     public const ID = 'order_status_changed';
@@ -52,7 +49,7 @@ class OrderStatusChanged extends OrderTrigger {
     /**
      * Statuses are stored without the `wc-` prefix, so it keeps its own sanitize.
      *
-     * @param mixed $config Raw config from the request.
+     * @param mixed $config
      */
     public function sanitize( $config ): array {
         $config = is_array( $config ) ? $config : [];
@@ -107,16 +104,14 @@ class OrderStatusChanged extends OrderTrigger {
     /**
      * Placed by a shopper at checkout, not created in the admin, over REST or by an import.
      *
-     * @param \WC_Order $order Order.
+     * @param \WC_Order $order
      */
     private static function from_checkout( \WC_Order $order ): bool {
         return in_array( $order->get_created_via(), [ 'checkout', 'store-api' ], true ) || (bool) $order->get_cart_hash();
     }
 
     /**
-     * Status list from raw input.
-     *
-     * @param mixed $raw Array of statuses.
+     * @param mixed $raw
      */
     private static function status_list( $raw ): array {
         $list = [];

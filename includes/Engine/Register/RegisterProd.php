@@ -3,11 +3,10 @@ namespace YayMatik\Engine\Register;
 
 use YayMatik\Utils\SingletonTrait;
 
-/** Register in Production Mode */
+/** Loads the built admin app. */
 class RegisterProd {
     use SingletonTrait;
 
-    /** Hooks Initialization */
     protected function __construct() {
         add_action( 'init', [ $this, 'register_all_scripts' ] );
     }

@@ -7,17 +7,14 @@ use YayMatik\Workflow\Core\Definition\Validator;
 
 require_once dirname( __DIR__, 3 ) . '/Support/woocommerce-stubs.php';
 
-/**
- * Workflow issues (`errors()`): codes, messages and the step they point at. The first group pins
- * v0.1 output exactly, so the move to the Validator keeps it.
- */
+/** Workflow issues (`errors()`): codes, messages and the step they point at. */
 final class ValidatorTest extends TestCase {
 
     /**
-     * @param string      $id     Node id.
-     * @param string      $kind   Kind.
+     * @param string      $id
+     * @param string      $kind
      * @param string|null $block  Step id.
-     * @param array       $config Config.
+     * @param array       $config
      */
     private static function node( string $id, string $kind, ?string $block, array $config = [] ): array {
         return [
@@ -35,8 +32,8 @@ final class ValidatorTest extends TestCase {
     }
 
     /**
-     * @param string      $source Source node.
-     * @param string      $target Target node.
+     * @param string      $source
+     * @param string      $target
      * @param string|null $handle Branch.
      */
     private static function edge( string $source, string $target, ?string $handle = null ): array {
@@ -54,9 +51,9 @@ final class ValidatorTest extends TestCase {
     /**
      * Issues of a workflow, its graph prepared as a save would.
      *
-     * @param array  $nodes Nodes.
-     * @param array  $edges Edges.
-     * @param string $name  Name.
+     * @param array  $nodes
+     * @param array  $edges
+     * @param string $name
      */
     private static function issues( array $nodes, array $edges, string $name = 'Alert' ): array {
         $graph = GraphSchema::prepare(
@@ -239,11 +236,6 @@ final class ValidatorTest extends TestCase {
         return null;
     }
 
-    /**
-     * @param string $code    Code.
-     * @param string $message Message.
-     * @param string $field   Field.
-     */
     private static function expect( string $code, string $message, string $field ): array {
         return [
             'code'    => $code,
@@ -296,7 +288,7 @@ final class ValidatorTest extends TestCase {
         $this->assertNull( self::issue_of( 'note', [ 'note' => '{{ order.total | money }} {{ customer.first_name | default: "there" }}' ] ) );
         $this->assertSame( self::expect( 'invalid_config', 'shout isn’t a filter. Available filters: default, upper, lower, join, date, money.', 'note' ), self::issue_of( 'note', [ 'note' => '{{ order.number | shout }}' ] ) );
         $this->assertSame( self::expect( 'invalid_config', '{{ order. }} is written incorrectly. Use {{ variable }} or {{ variable | filter }}.', 'note' ), self::issue_of( 'note', [ 'note' => '{{ order. }}' ] ) );
-        $this->assertSame( self::expect( 'invalid_config', '{{ order }} is written incorrectly. Use {{ variable }} or {{ variable | filter }}.', 'note' ), self::issue_of( 'note', [ 'note' => '{{ order }}' ] ), 'v0.1 printed it as written' );
+        $this->assertSame( self::expect( 'invalid_config', '{{ order }} is written incorrectly. Use {{ variable }} or {{ variable | filter }}.', 'note' ), self::issue_of( 'note', [ 'note' => '{{ order }}' ] ) );
     }
 
     public function test_condition_rules_stay_on_data_fields(): void {
@@ -354,7 +346,7 @@ final class ValidatorTest extends TestCase {
 
     public function test_the_filter_list_comes_from_the_registry(): void {
         $filters = new \YayMatik\Workflow\Core\Data\Filters();
-        $filters->add( 'shout', [ 'string' ], 'strtoupper' );
+        $filters->add( 'shout', 'strtoupper' );
         $errors = ( new \YayMatik\Workflow\Core\Data\Template( $filters ) )->errors( '{{ order.number | nope }}' );
 
         $this->assertSame( [ 'nope isn’t a filter. Available filters: default, upper, lower, join, date, money, shout.' ], $errors );

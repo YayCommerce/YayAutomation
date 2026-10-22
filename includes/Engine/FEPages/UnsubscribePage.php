@@ -7,14 +7,7 @@ use YayMatik\Workflow\Core\Storage\UnsubscribeStore;
 
 defined( 'ABSPATH' ) || exit;
 
-/**
- * Where a customer email's unsubscribe link lands: a small page of its own, not wrapped in the
- * theme, so it looks the same on block and classic themes.
- *
- * - GET shows an "Unsubscribe" button: mail scanners open links, and must not unsubscribe anyone.
- * - POST unsubscribes: the button, and mail apps' one-click (`List-Unsubscribe-Post`, RFC 8058).
- *   The signed link is the proof, so there's no nonce (the customer isn't logged in).
- */
+/** The unsubscribe link's page, outside the theme so it looks the same on block and classic themes. */
 class UnsubscribePage {
 
     use SingletonTrait;
@@ -29,7 +22,7 @@ class UnsubscribePage {
     }
 
     public function maybe_handle(): void {
-        // phpcs:disable WordPress.Security.NonceVerification.Recommended -- the signed link is the proof (see class doc).
+        // phpcs:disable WordPress.Security.NonceVerification.Recommended -- the signed link is the proof; the customer isn't logged in.
         if ( ! isset( $_GET[ UnsubscribeLink::ARG_EMAIL ] ) ) {
             return;
         }
@@ -40,6 +33,8 @@ class UnsubscribePage {
         $email = UnsubscribeLink::from_options()->verify( $encoded, $token );
         $post  = isset( $_SERVER['REQUEST_METHOD'] ) && 'POST' === strtoupper( sanitize_text_field( wp_unslash( $_SERVER['REQUEST_METHOD'] ) ) );
 
+        // GET only shows the button: mail scanners open links and must not unsubscribe anyone.
+        // POST is the button, or a mail app's one-click (`List-Unsubscribe-Post`, RFC 8058).
         if ( null === $email ) {
             $state = self::STATE_INVALID;
         } elseif ( $post ) {
@@ -118,7 +113,7 @@ class UnsubscribePage {
     /**
      * Heading and text of each state.
      *
-     * @param string $store Store name, plain text.
+     * @param string $store Plain text.
      */
     private static function texts( string $store ): array {
         return [

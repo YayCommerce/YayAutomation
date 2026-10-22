@@ -10,7 +10,7 @@ use YayMatik\Workflow\Core\Steps\StepResult;
 
 defined( 'ABSPATH' ) || exit;
 
-/** Config: [ 'status' => slug without the `wc-` prefix ]. */
+/** Moves the order to another status. */
 class ChangeOrderStatus extends Action {
 
     public const ID = 'change_order_status';
@@ -71,7 +71,7 @@ class ChangeOrderStatus extends Action {
     /**
      * Statuses are stored without the `wc-` prefix, so it keeps its own sanitize.
      *
-     * @param mixed $config Raw config from the request.
+     * @param mixed $config
      */
     public function sanitize( $config ): array {
         $config = is_array( $config ) ? $config : [];
@@ -82,8 +82,8 @@ class ChangeOrderStatus extends Action {
     /**
      * Setting the status the order already has changes nothing.
      *
-     * @param Scope $scope  Run scope.
-     * @param array $config Sanitized, valid config.
+     * @param Scope $scope
+     * @param array $config
      */
     public function run( Scope $scope, array $config ): StepResult {
         $order = $scope->entity( OrderData::ID );

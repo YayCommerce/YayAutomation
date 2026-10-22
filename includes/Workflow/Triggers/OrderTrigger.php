@@ -25,7 +25,7 @@ abstract class OrderTrigger extends Trigger {
     /**
      * The order is also the customer: its billing details work for guests too.
      *
-     * @param array $args Event args, with `order_id`.
+     * @param array $args
      */
     public function context( array $args ): ?array {
         $order = self::order( $args['order_id'] ?? 0 );
@@ -38,7 +38,7 @@ abstract class OrderTrigger extends Trigger {
     /**
      * The customer is the order's billing details (`order:<id>`), so guests work too.
      *
-     * @param array $args Event args, with `order_id`.
+     * @param array $args
      */
     public function refs( array $args ): ?array {
         $order = self::order( $args['order_id'] ?? 0 );
@@ -55,7 +55,7 @@ abstract class OrderTrigger extends Trigger {
     /**
      * A real order (not a refund or subscription), or null.
      *
-     * @param mixed $order_id Order id.
+     * @param mixed $order_id
      */
     protected static function order( $order_id ): ?\WC_Order {
         $order = wc_get_order( absint( $order_id ) );

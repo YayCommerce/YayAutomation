@@ -1,9 +1,7 @@
 <?php
 namespace YayMatik\Engine\Register;
 
-/**
- * Script Name Constants
- */
+/** Asset handles. */
 class ScriptName {
 
     public const STYLE_ADMIN = 'yaymatik/style/admin';

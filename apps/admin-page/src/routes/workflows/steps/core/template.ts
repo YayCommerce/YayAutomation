@@ -41,9 +41,9 @@ const unescape = (text: string) =>
   );
 
 /** PHP `Filters::names()`, in registration order. */
-export const FILTERS = ['default', 'upper', 'lower', 'join', 'date', 'money'];
+const FILTERS = ['default', 'upper', 'lower', 'join', 'date', 'money'];
 
-export interface TemplateFilter {
+interface TemplateFilter {
   name: string;
   args: (string | number)[];
 }

@@ -106,8 +106,8 @@ final class RunStepStoreTest extends TestCase {
     /**
      * A stored row as `$wpdb` returns it: every column a string, JSON as text.
      *
-     * @param string      $step_id Step id.
-     * @param string|null $output  Output JSON.
+     * @param string      $step_id
+     * @param string|null $output  JSON.
      */
     private static function db_row( string $step_id, ?string $output ): array {
         return [

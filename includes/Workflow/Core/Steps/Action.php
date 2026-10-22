@@ -9,8 +9,7 @@ use YayMatik\Workflow\Core\Data\Values;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * A step that does something, e.g. sends an email. `run()` returns `ok( outputs )`, `failed( error )`,
- * or `skipped( reason )` when there is nothing to act on.
+ * A step that does something, e.g. sends an email.
  */
 abstract class Action extends Step {
 
@@ -22,17 +21,16 @@ abstract class Action extends Step {
         return self::KIND_ACTION;
     }
 
-    /** Section within the plugin in the picker: one of the CATEGORY_* constants. */
+    /** Picker section: a CATEGORY_* constant. */
     abstract public function category(): string;
 
     /** Data items the action needs whatever its config, e.g. `order` to change an order's status. */
     abstract public function requires(): array;
 
     /**
-     * The data items in `requires()`. Data read through merge tags is checked by the Validator
-     * (`tag_error()`), which also covers `trigger.` paths and step outputs.
+     * The data items in `requires()`; the Validator checks what merge tags read.
      *
-     * @param array $config Step config.
+     * @param array $config
      */
     public function uses( array $config ): array {
         $items = array_intersect( $this->requires(), array_keys( DataRegistry::items() ) );
@@ -47,11 +45,11 @@ abstract class Action extends Step {
     }
 
     /**
-     * Text with its merge tags filled in. A missing value prints empty.
+     * Text with its merge tags filled in; a missing value prints empty.
      *
-     * @param string $text  Text with merge tags.
-     * @param Values $scope Run scope, or sample values in a preview.
-     * @param bool   $html  Safe HTML: the text around the tags is escaped too.
+     * @param string $text
+     * @param Values $scope
+     * @param bool   $html Safe HTML: the text around the tags is escaped too.
      */
     protected static function render( string $text, Values $scope, bool $html = false ): string {
         static $template = null;

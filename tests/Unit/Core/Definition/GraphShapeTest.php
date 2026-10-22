@@ -7,10 +7,7 @@ use YayMatik\Workflow\Core\Definition\Validator;
 
 require_once dirname( __DIR__, 3 ) . '/Support/woocommerce-stubs.php';
 
-/**
- * Characterization of graph shape checks on save (v0.1 `prepare_graph()`, now `GraphSchema`): each
- * malformed graph keeps its 400 and exact message; a valid graph keeps its normalized form.
- */
+/** Graph shape checks on save: each malformed graph's 400 and message; a valid graph's normalized form. */
 final class GraphShapeTest extends TestCase {
 
     private const BAD_GRAPH = 'Invalid workflow graph.';
@@ -20,10 +17,10 @@ final class GraphShapeTest extends TestCase {
     private const BAD_EDGE  = 'Invalid connection between steps.';
 
     /**
-     * @param string      $id    Node id.
-     * @param string      $kind  Kind.
-     * @param string|null $block Step id.
-     * @param array       $config Config.
+     * @param string      $id
+     * @param string      $kind
+     * @param string|null $block  Step id.
+     * @param array       $config
      */
     private static function node( string $id, string $kind, ?string $block, array $config = [] ): array {
         return [
@@ -41,9 +38,9 @@ final class GraphShapeTest extends TestCase {
     }
 
     /**
-     * @param string      $id     Edge id.
-     * @param string      $source Source node.
-     * @param string      $target Target node.
+     * @param string      $id
+     * @param string      $source
+     * @param string      $target
      * @param string|null $handle Branch.
      */
     private static function edge( string $id, string $source, string $target, ?string $handle = null ): array {
@@ -79,7 +76,7 @@ final class GraphShapeTest extends TestCase {
      * The valid graph with one value replaced.
      *
      * @param array $path  Keys down to the value, e.g. [ 'nodes', 3, 'id' ].
-     * @param mixed $value New value.
+     * @param mixed $value
      */
     private static function with( array $path, $value ): array {
         $graph = self::valid();
@@ -146,7 +143,7 @@ final class GraphShapeTest extends TestCase {
     /**
      * @dataProvider malformed
      *
-     * @param mixed       $graph   Raw graph.
+     * @param mixed       $graph
      * @param string      $message Exact message.
      * @param string|null $node_id Node the error names.
      */
@@ -172,13 +169,13 @@ final class GraphShapeTest extends TestCase {
         $graph['nodes'][0]['extra']          = 'dropped';
         $graph['edges'][0]['animated']       = true;
         $graph['nodes'][2]['data']['config'] = [
-            'type' => 'customer',
             'note' => " Hi\r\nthere ",
+            'type' => 'customer',
         ];
 
         $prepared = Validator::prepare_changes( [ 'graph' => $graph ] )['graph'];
 
-        // schemaVersion is the one addition to the v0.1 shape: always first.
+        // schemaVersion always first.
         $this->assertSame( [ 'schemaVersion', 'nodes', 'edges' ], array_keys( $prepared ) );
         $this->assertSame( 1, $prepared['schemaVersion'] );
         $this->assertSame( [ 'id', 'kind', 'position', 'data' ], array_keys( $prepared['nodes'][0] ) );
@@ -191,8 +188,8 @@ final class GraphShapeTest extends TestCase {
         );
         $this->assertSame(
             [
-                'note' => "Hi\nthere",
                 'type' => 'customer',
+                'note' => "Hi\nthere",
             ],
             $prepared['nodes'][2]['data']['config']
         );

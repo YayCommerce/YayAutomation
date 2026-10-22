@@ -3,10 +3,7 @@ namespace YayMatik\Workflow\Triggers;
 
 defined( 'ABSPATH' ) || exit;
 
-/**
- * Fires once per order when it's placed: at checkout (before payment is confirmed), in the admin or
- * through the REST API. Draft orders don't count until they leave the draft status. No config.
- */
+/** Fires once per order when it's placed, before payment is confirmed; drafts count once they leave draft. */
 class OrderCreated extends OrderTrigger {
 
     public const ID = 'order_created';
@@ -66,7 +63,7 @@ class OrderCreated extends OrderTrigger {
     /**
      * Runs at the end of the request, once the order is fully saved.
      *
-     * @param array $args Event args, with `order_id`.
+     * @param array $args
      */
     public function claim( array $args ): bool {
         $order = self::order( $args['order_id'] ?? 0 );

@@ -12,12 +12,9 @@ use YayMatik\Workflow\Core\Steps\StepRegistry;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * What Workflow Core knows, for the admin app (`yayMatikMeta.automation`): plugins, steps
- * with their fields and outputs, data items with their types, operators with their labels. PHP is the one source;
- * the app's parity test (apps/admin-page/src/test/parity.test.ts) checks the TS side against it.
+ * What Workflow Core knows, for the admin app (`yayMatikMeta.automation`).
  *
- * Shape must match apps/admin-page/src/types/localize.d.ts: keys in camelCase, option lists as
- * `{ value, label }` in order. Keys are only ever added. A change here → `./run.sh meta-fixture`.
+ * Shape must match apps/admin-page/src/types/localize.d.ts; after a change, `./run.sh meta-fixture`.
  */
 final class Catalog {
 
@@ -36,7 +33,7 @@ final class Catalog {
     /**
      * Entries by step id.
      *
-     * @param Step[] $steps Keyed by id.
+     * @param Step[] $steps By id.
      */
     public static function steps( array $steps ): array {
         $plugins = ModuleRegistry::plugins( ModuleRegistry::modules() );
@@ -48,8 +45,7 @@ final class Catalog {
     }
 
     /**
-     * One step: the keys the app has read since v0.1 (kind, plugin, category, requires, provides),
-     * then the step contract.
+     * A step's catalog entry.
      *
      * @param Step   $step
      * @param string $plugin
@@ -70,8 +66,7 @@ final class Catalog {
     }
 
     /**
-     * Declared outputs as a list: key, label, type in the same text form as data fields'
-     * `valueType` (e.g. `enum`, `list<string>`), and options for enums.
+     * Declared outputs as a list.
      *
      * @param array $outputs Step `outputs()`.
      */
@@ -101,7 +96,7 @@ final class Catalog {
     /**
      * A value => label map as a list, so JSON keeps the order.
      *
-     * @param array $options Value => label.
+     * @param array $options
      */
     public static function options( array $options ): array {
         $list = [];

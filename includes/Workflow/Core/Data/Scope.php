@@ -6,29 +6,19 @@ use YayMatik\Workflow\DataItems\SiteData;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Everything a run's steps can read, by path. Steps read data only through it, never by keeping
- * objects, so a run reads fresh data after a wait.
- *
- * - `trigger.*`: what the trigger supplied. Entities are Refs (`trigger.order`), loaded when read;
- *   facts only true at trigger time (status from / to, event payload) are kept as plain values.
- *   Anything the trigger supplied can be read without `trigger.`: `order.total` is `trigger.order.total`.
- * - `steps.<step id>.*`: outputs of the steps that ran. `vars.*`, `workflow.*`, `run.*`: plain values.
- * - `site.*`: always there.
- *
- * Plain values work wherever Refs do, so sample data (previews, Send test) is the same shape.
- * Stored in `runs.scope` as JSON: `to_array()` / `from_array()`.
+ * What a run's steps read, by path: `trigger.*` (Refs or plain values), `steps.<id>.*`, `run.*`, `site.*`.
  */
 final class Scope implements Values {
 
-    public const SECTIONS = [ 'trigger', 'steps', 'vars', 'workflow', 'run' ];
+    public const SECTIONS = [ 'trigger', 'steps', 'run' ];
 
-    /** @var array[] Section => values. */
+    /** @var array[] */
     private $data = [];
 
     /** @var RefResolver */
     private $resolver;
 
-    /** @var DataItem[] Keyed by entity type id. */
+    /** @var DataItem[] By entity type id. */
     private $entities;
 
     /** @var callable|null fn( string $step_id, string $key, array $outputs, bool $html ): ?string */
@@ -36,8 +26,8 @@ final class Scope implements Values {
 
     /**
      * @param array            $data     Section => values; values may hold Refs.
-     * @param RefResolver|null $resolver Loads Refs; null = a new one (one per slice).
-     * @param DataItem[]|null  $entities Entity types by id; null = `DataRegistry::entities()`.
+     * @param RefResolver|null $resolver Null = a new one (one per slice).
+     * @param DataItem[]|null  $entities Null = `DataRegistry::entities()`.
      */
     public function __construct( array $data = [], ?RefResolver $resolver = null, ?array $entities = null ) {
         foreach ( self::SECTIONS as $section ) {
@@ -50,13 +40,13 @@ final class Scope implements Values {
     /**
      * A scope stored by `to_array()`.
      *
-     * @param array            $stored   Decoded JSON.
-     * @param RefResolver|null $resolver Loads Refs.
-     * @param DataItem[]|null  $entities Entity types by id.
+     * @param array            $stored
+     * @param RefResolver|null $resolver
+     * @param DataItem[]|null  $entities
      */
     public static function from_array( array $stored, ?RefResolver $resolver = null, ?array $entities = null ): self {
-        // Only the trigger holds refs. Elsewhere a value shaped like one stays plain data, so stored
-        // input (a step output, a variable) can never point the run at another entity.
+        // Only the trigger holds refs. Elsewhere a value shaped like one stays plain data, so a stored
+        // step output can never point the run at another entity.
         if ( isset( $stored['trigger'] ) ) {
             $stored['trigger'] = self::decode( $stored['trigger'] );
         }
@@ -71,30 +61,27 @@ final class Scope implements Values {
     /**
      * What a step gave later steps.
      *
-     * @param string $step_id Step id.
-     * @param array  $outputs Output key => value.
+     * @param string $step_id
+     * @param array  $outputs
      */
     public function set_step_outputs( string $step_id, array $outputs ): void {
         $this->data['steps'][ $step_id ] = $outputs;
     }
 
     /**
-     * How step outputs with a display text of their own read (a formatted date, a coupon box): built
-     * from the step's other outputs when read, never stored. Set by whoever knows the graph.
+     * Display text of step outputs that have their own (a coupon box), built when read, never stored.
      *
-     * @param callable $display fn( string $step_id, string $key, array $outputs, bool $html ): ?string —
-     *                          null when the output has no display text of its own.
+     * @param callable $display fn( string $step_id, string $key, array $outputs, bool $html ): ?string; null = none of its own.
      */
     public function set_output_display( callable $display ): void {
         $this->output_display = $display;
     }
 
     /**
-     * The run and the step running now, as `run.id` and `run.step`, for steps that record where
-     * something came from (e.g. the coupon they make).
+     * The run and the step running now, as `run.id` and `run.step`.
      *
-     * @param int    $run_id  Run id.
-     * @param string $step_id Graph node id.
+     * @param int    $run_id
+     * @param string $step_id
      */
     public function set_current_step( int $run_id, string $step_id ): void {
         $this->data['run']['id']   = $run_id;
@@ -102,17 +89,9 @@ final class Scope implements Values {
     }
 
     /**
-     * @param string $name  Variable name.
-     * @param mixed  $value Value.
-     */
-    public function set_var( string $name, $value ): void {
-        $this->data['vars'][ $name ] = $value;
-    }
-
-    /**
      * Typed value at a path: a field's value, a Ref for a relation, a plain value. Null when missing.
      *
-     * @param string $path E.g. `order.customer.first_name`.
+     * @param string $path
      * @return mixed
      * @throws GoneEntity When an entity on the path no longer exists.
      */
@@ -125,10 +104,9 @@ final class Scope implements Values {
     }
 
     /**
-     * The loaded entity a path points to, e.g. `order` → the order object. For steps that act on it.
-     * Null when the path holds no entity.
+     * The loaded entity a path points to, or null.
      *
-     * @param string $path E.g. `order` (shortcut of `trigger.order`).
+     * @param string $path
      * @return object|null
      * @throws GoneEntity When the entity no longer exists.
      */
@@ -138,9 +116,9 @@ final class Scope implements Values {
     }
 
     /**
-     * A field's display text (a price with its currency, an option's label); a plain value as text.
+     * A field's display text; a plain value as text.
      *
-     * @param string $path E.g. `order.total`.
+     * @param string $path
      * @param bool   $html Safe HTML instead of plain text.
      * @throws GoneEntity When an entity on the path no longer exists.
      */
@@ -161,11 +139,10 @@ final class Scope implements Values {
     }
 
     /**
-     * A step output's own display text (`steps.<id>.<key>`), or null when it has none. A step that
-     * didn't run has no outputs, so its display text isn't asked for and reads empty.
+     * A step output's own display text (`steps.<id>.<key>`), or null when it has none.
      *
-     * @param string $path Dot path.
-     * @param bool   $html Safe HTML instead of plain text.
+     * @param string $path
+     * @param bool   $html
      */
     private function output_text( string $path, bool $html ): ?string {
         $segments = explode( '.', $path );
@@ -173,6 +150,7 @@ final class Scope implements Values {
             return null;
         }
         $outputs = $this->data['steps'][ $segments[1] ] ?? null;
+        // A step that didn't run has no outputs, so its display text reads empty.
         if ( ! is_array( $outputs ) ) {
             return null;
         }
@@ -181,15 +159,14 @@ final class Scope implements Values {
     }
 
     /**
-     * Walks a path. Null when missing. When the last segment is an entity field: that field and
-     * the object to read it from, not yet read (text() may only need its display). Otherwise the
-     * plain value.
+     * Walks a path; null when missing. An entity field comes back unread, with its object: text() may need only its display.
      *
-     * @param string $path Dot path.
+     * @param string $path
      */
     private function resolve( string $path ): ?array {
         $segments = explode( '.', $path );
         $root     = $segments[0];
+        // Anything the trigger supplied reads without `trigger.`: `order.total` is `trigger.order.total`.
         if ( SiteData::ID !== $root && ! in_array( $root, self::SECTIONS, true ) && array_key_exists( $root, $this->data['trigger'] ) ) {
             array_unshift( $segments, 'trigger' );
         }
@@ -250,7 +227,7 @@ final class Scope implements Values {
     }
 
     /**
-     * @param mixed $value Value that may hold Refs.
+     * @param mixed $value
      * @return mixed
      */
     private static function encode( $value ) {
@@ -261,7 +238,7 @@ final class Scope implements Values {
     }
 
     /**
-     * @param mixed $value Decoded JSON.
+     * @param mixed $value
      * @return mixed
      */
     private static function decode( $value ) {

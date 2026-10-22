@@ -3,36 +3,23 @@ namespace YayMatik\Workflow\Core\Runtime;
 
 defined( 'ABSPATH' ) || exit;
 
-/** The workflow operations the Dispatcher and Worker use. An interface so tests can use a fake. */
+/** The workflow operations of the Dispatcher and Worker, over `WorkflowRepository`. */
 interface Workflows {
 
     /**
-     * Active workflows whose trigger is the given step, shaped like `WorkflowRepository::find()`.
-     *
-     * @param string $trigger_id Trigger step id.
+     * @param string $trigger_id
      * @return array[]
      */
     public function active_for_trigger( string $trigger_id ): array;
 
-    /**
-     * A workflow, or null.
-     *
-     * @param int $id Workflow id.
-     */
     public function find( int $id ): ?array;
 
     /**
-     * The live version id, seeding versions first for a workflow saved before they existed. 0 when
-     * there is still none.
+     * 0 when the workflow has no saved version.
      *
-     * @param int $id Workflow id.
+     * @param int $id
      */
     public function live_version_id( int $id ): int;
 
-    /**
-     * Turns a workflow off.
-     *
-     * @param int $id Workflow id.
-     */
     public function deactivate( int $id ): void;
 }

@@ -7,17 +7,7 @@ use YayMatik\Workflow\Core\Definition\Messages;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * One setting of a step: its widget, rules and help. A step's `fields()` is the one source of its
- * settings: the admin app builds its form and checks from them (design §5).
- *
- * Kept small on purpose: a form that needs more than these widgets gets a custom panel, not a new
- * widget. `rules` (Condition rules builder) is for core steps only.
- *
- *     Field::text( 'key', __( 'Field name', 'yaymatik' ) )->required( __( '%s needs a field name.', 'yaymatik' ) )
- *     Field::select( 'type', __( 'Note type', 'yaymatik' ), $options )->default( 'private' )
- *
- * `sanitize()` never fails; `validate()` checks only the field's own rules. Template paths and
- * filters are checked by the workflow Validator, which knows the variables each step can use.
+ * One setting of a step: its widget, rules and help.
  */
 final class Field {
 
@@ -36,7 +26,7 @@ final class Field {
     /** @var string */
     private $key;
 
-    /** @var string One of the widget constants. */
+    /** @var string A widget constant. */
     private $type;
 
     /** @var string */
@@ -57,13 +47,13 @@ final class Field {
     /** @var string */
     private $help = '';
 
-    /** @var array|null [ 'field' => key, 'value' => value or list of values ]. */
+    /** @var array|null [ 'field' => key, 'value' => value or list of values ] */
     private $show_if = null;
 
     /** @var mixed Value used when the input is missing or not usable. */
     private $default = null;
 
-    /** @var array|callable|null Value => label; a callable is read when needed (e.g. order statuses). */
+    /** @var array|callable|null Value => label; a callable is read when needed. */
     private $options = null;
 
     /** @var int|float|null */
@@ -84,8 +74,8 @@ final class Field {
     /**
      * One line of text.
      *
-     * @param string $key   Config key.
-     * @param string $label Label in the form.
+     * @param string $key
+     * @param string $label
      */
     public static function text( string $key, string $label ): self {
         return ( new self( self::TEXT, $key, $label ) )->default( '' );
@@ -94,19 +84,18 @@ final class Field {
     /**
      * Several lines of text.
      *
-     * @param string $key   Config key.
-     * @param string $label Label in the form.
+     * @param string $key
+     * @param string $label
      */
     public static function textarea( string $key, string $label ): self {
         return ( new self( self::TEXTAREA, $key, $label ) )->default( '' );
     }
 
     /**
-     * Formatted text (the rich editor), stored as HTML cleaned by `wp_kses_post()`. Text without
-     * HTML tags (saved before the field was rich) still works: it's read as plain text.
+     * Rich editor text, stored as HTML cleaned by `wp_kses_post()`.
      *
-     * @param string $key   Config key.
-     * @param string $label Label in the form.
+     * @param string $key
+     * @param string $label
      */
     public static function html( string $key, string $label ): self {
         return ( new self( self::HTML, $key, $label ) )->default( '' );
@@ -115,8 +104,8 @@ final class Field {
     /**
      * Email addresses, comma separated.
      *
-     * @param string $key   Config key.
-     * @param string $label Label in the form.
+     * @param string $key
+     * @param string $label
      */
     public static function emails( string $key, string $label ): self {
         return ( new self( self::EMAILS, $key, $label ) )->default( '' );
@@ -125,8 +114,8 @@ final class Field {
     /**
      * One of a list. An empty list (e.g. no WooCommerce) accepts any value.
      *
-     * @param string         $key   Config key.
-     * @param string         $label Label in the form.
+     * @param string         $key
+     * @param string         $label
      * @param array|callable $options Value => label, or a callable that returns them.
      */
     public static function select( string $key, string $label, $options ): self {
@@ -138,8 +127,8 @@ final class Field {
     /**
      * Any number of a list.
      *
-     * @param string         $key   Config key.
-     * @param string         $label Label in the form.
+     * @param string         $key
+     * @param string         $label
      * @param array|callable $options Value => label, or a callable that returns them.
      */
     public static function multiselect( string $key, string $label, $options ): self {
@@ -151,8 +140,8 @@ final class Field {
     /**
      * On or off.
      *
-     * @param string $key   Config key.
-     * @param string $label Label in the form.
+     * @param string $key
+     * @param string $label
      */
     public static function toggle( string $key, string $label ): self {
         return ( new self( self::TOGGLE, $key, $label ) )->default( false );
@@ -161,18 +150,18 @@ final class Field {
     /**
      * A number; blank is null.
      *
-     * @param string $key   Config key.
-     * @param string $label Label in the form.
+     * @param string $key
+     * @param string $label
      */
     public static function number( string $key, string $label ): self {
         return new self( self::NUMBER, $key, $label );
     }
 
     /**
-     * A number and its unit, e.g. 3 days. Stored as [ 'value' => number|null, 'unit' => unit ].
+     * A number and its unit, stored as [ 'value' => number|null, 'unit' => unit ].
      *
-     * @param string         $key   Config key.
-     * @param string         $label Label in the form.
+     * @param string         $key
+     * @param string         $label
      * @param array|callable $units Unit => label; the first one is the default.
      */
     public static function number_unit( string $key, string $label, $units ): self {
@@ -184,9 +173,9 @@ final class Field {
     /**
      * Read-only text in the form, e.g. who an email is sent from. Holds no value.
      *
-     * @param string $key   Config key.
-     * @param string $label Label in the form.
-     * @param string $text  Text shown.
+     * @param string $key
+     * @param string $label
+     * @param string $text
      */
     public static function notice( string $key, string $label, string $text ): self {
         $field       = new self( self::NOTICE, $key, $label );
@@ -195,21 +184,19 @@ final class Field {
     }
 
     /**
-     * Condition rules builder, core steps only: a list of rules. Its step cleans and checks each
-     * rule itself (`Criteria`); the field only makes sure the value is a list.
+     * Condition rules builder, core steps only; its step cleans and checks each rule.
      *
-     * @param string $key   Config key.
-     * @param string $label Label in the form.
+     * @param string $key
+     * @param string $label
      */
     public static function rules( string $key, string $label ): self {
         return ( new self( self::RULES, $key, $label ) )->default( [] );
     }
 
     /**
-     * Must not be blank. One message per field, naming the step: `%s needs a note.`, filled with
-     * the step's label, so a renamed step never leaves a stale name in it.
+     * Must not be blank.
      *
-     * @param string $message Message with `%s` for the step's label; '' = a generic one.
+     * @param string $message `%s` is the step's label, filled when shown so a renamed step never leaves a stale name; '' = a generic one.
      */
     public function required( string $message = '' ): self {
         $this->required         = true;
@@ -236,8 +223,8 @@ final class Field {
     /**
      * Show the field only when another field has a value. A hidden field is never checked.
      *
-     * @param string $field Other field's key.
-     * @param mixed  $value Value, or a list of values, that shows this field.
+     * @param string $field
+     * @param mixed  $value Value, or a list of values.
      */
     public function show_if( string $field, $value ): self {
         $this->show_if = [
@@ -248,7 +235,7 @@ final class Field {
     }
 
     /**
-     * @param mixed $value Value used when the input is missing or not usable.
+     * @param mixed $value
      */
     public function default( $value ): self {
         $this->default = $value;
@@ -256,7 +243,7 @@ final class Field {
     }
 
     /**
-     * @param int|float $min Smallest number allowed.
+     * @param int|float $min
      */
     public function min( $min ): self {
         $this->min = $min;
@@ -264,7 +251,7 @@ final class Field {
     }
 
     /**
-     * @param int|float $max Largest number allowed.
+     * @param int|float $max
      */
     public function max( $max ): self {
         $this->max = $max;
@@ -293,16 +280,16 @@ final class Field {
         return self::NOTICE !== $this->type;
     }
 
-    /** Value => label; [] when the field has no list or the list is empty. */
+    /** Value => label; [] when there is no list. */
     public function options(): array {
         $options = is_callable( $this->options ) ? ( $this->options )() : $this->options;
         return is_array( $options ) ? $options : [];
     }
 
     /**
-     * Coerces raw input into the stored shape. Never fails: unusable input becomes the default.
+     * Raw input as the stored shape. Never fails: unusable input becomes the default.
      *
-     * @param mixed $raw Raw value from the request.
+     * @param mixed $raw
      * @return mixed
      */
     public function sanitize( $raw ) {
@@ -314,6 +301,7 @@ final class Field {
                 $text = str_replace( "\r\n", "\n", self::scalar_text( $raw ) );
                 return $this->variables ? self::plain_text( $text ) : sanitize_textarea_field( $text );
             case self::HTML:
+                // Plain text is what the editor saves for a message without tags (`"Hi\n\nTom &amp; Jerry"`): it's read as plain text.
                 return wp_kses_post( self::plain_text( self::scalar_text( $raw ) ) );
             case self::EMAILS:
                 return sanitize_text_field( self::scalar_text( $raw ) );
@@ -334,11 +322,11 @@ final class Field {
     }
 
     /**
-     * Why a sanitized value can't be used, or null when it can. Checks only this field's rules.
+     * Why a sanitized value can't be used by this field's own rules, or null.
      *
-     * @param mixed  $value Output of `sanitize()`.
+     * @param mixed  $value
      * @param array  $config The whole sanitized config, for `show_if`.
-     * @param string $step   Label of the step the field belongs to, for the required message.
+     * @param string $step
      */
     public function validate( $value, array $config = [], string $step = '' ): ?string {
         if ( ! $this->has_value() || ! $this->visible( $config ) ) {
@@ -370,7 +358,7 @@ final class Field {
     /**
      * Whether the field shows for this config (`show_if`).
      *
-     * @param array $config Sanitized config.
+     * @param array $config
      */
     public function visible( array $config ): bool {
         if ( ! $this->show_if ) {
@@ -380,7 +368,7 @@ final class Field {
         return in_array( $config[ $this->show_if['field'] ] ?? null, $wanted, true );
     }
 
-    /** Shape for the admin app (`yayMatikMeta.automation`): only keys that are set. */
+    /** Shape for the admin app: only keys that are set. */
     public function to_array(): array {
         $data = [
             'key'   => $this->key,
@@ -428,10 +416,10 @@ final class Field {
     }
 
     /**
-     * Config from raw input: each field with a value, sanitized. Keys not in the fields are dropped.
+     * Each field's sanitized value; keys not in the fields are dropped.
      *
-     * @param Field[] $fields Step fields.
-     * @param mixed   $raw    Raw config from the request.
+     * @param Field[] $fields
+     * @param mixed   $raw
      */
     public static function sanitize_all( array $fields, $raw ): array {
         $raw    = is_array( $raw ) ? $raw : [];
@@ -447,10 +435,10 @@ final class Field {
     /**
      * First field whose value can't be used, in field order, or null.
      *
-     * @param Field[] $fields Step fields.
-     * @param array   $config Output of `sanitize_all()`.
-     * @param string  $step   The step's label, for required messages.
-     * @return array|null [ 'field' => key, 'message' => text ].
+     * @param Field[] $fields
+     * @param array   $config
+     * @param string  $step
+     * @return array|null [ 'field' => key, 'message' => text ]
      */
     public static function first_error( array $fields, array $config, string $step = '' ): ?array {
         foreach ( $fields as $field ) {
@@ -469,7 +457,7 @@ final class Field {
      * Cleans text that may hold merge tags. Not sanitize_text(area)_field(): those treat
      * `<{{ customer.email }}>` as a tag and strip it. Output is escaped where it's used.
      *
-     * @param string $text Raw text.
+     * @param string $text
      */
     public static function plain_text( string $text ): string {
         $text = str_replace( "\r\n", "\n", wp_check_invalid_utf8( $text ) );
@@ -478,9 +466,9 @@ final class Field {
     }
 
     /**
-     * `plain_text()` on one line: line breaks and tabs become spaces (e.g. so a subject can't inject mail headers).
+     * `plain_text()` on one line, so a subject can't inject mail headers.
      *
-     * @param string $text Raw text.
+     * @param string $text
      */
     public static function single_line( string $text ): string {
         return trim( (string) preg_replace( '/[\r\n\t]+/', ' ', self::plain_text( $text ) ) );
@@ -489,14 +477,14 @@ final class Field {
     /**
      * Comma-separated emails as a list, blanks dropped.
      *
-     * @param string $emails Text from an `emails` field.
+     * @param string $emails
      */
     public static function split_emails( string $emails ): array {
         return array_values( array_filter( array_map( 'trim', explode( ',', $emails ) ) ) );
     }
 
     /**
-     * @param mixed $raw Raw value.
+     * @param mixed $raw
      */
     private function sanitize_choice( $raw ): string {
         $value = self::scalar_text( $raw );
@@ -509,7 +497,7 @@ final class Field {
     }
 
     /**
-     * @param mixed $raw Raw value.
+     * @param mixed $raw
      */
     private function sanitize_choices( $raw ): array {
         $values = [];
@@ -523,7 +511,7 @@ final class Field {
     }
 
     /**
-     * @param mixed $raw Raw value.
+     * @param mixed $raw
      */
     private function sanitize_number_unit( $raw ): array {
         $raw   = is_array( $raw ) ? $raw : [];
@@ -540,20 +528,15 @@ final class Field {
     }
 
     /**
-     * Whether all values are in the list. An empty list accepts anything (nothing to check against).
+     * Whether all values are in the list; an empty list accepts anything.
      *
-     * @param array $values Values.
+     * @param array $values
      */
     private function known( array $values ): bool {
         $known = array_map( 'strval', array_keys( $this->options() ) );
         return ! $known || ! array_diff( array_map( 'strval', $values ), $known );
     }
 
-    /**
-     * The required message, with the step's label filled in.
-     *
-     * @param string $step Step label.
-     */
     private function required_text( string $step ): string {
         return '' === $this->required_message
             ? Messages::get( 'fieldRequired' )
@@ -561,8 +544,8 @@ final class Field {
     }
 
     /**
-     * @param int|float|null $number Number.
-     * @param string         $step   Step label, for the required message.
+     * @param int|float|null $number
+     * @param string         $step
      */
     private function range_error( $number, string $step ): ?string {
         if ( null === $number ) {
@@ -578,7 +561,7 @@ final class Field {
     }
 
     /**
-     * @param mixed $value Sanitized value.
+     * @param mixed $value
      */
     private function is_blank( $value ): bool {
         if ( self::NUMBER_UNIT === $this->type ) {
@@ -600,7 +583,7 @@ final class Field {
     }
 
     /**
-     * @param mixed $raw Raw value.
+     * @param mixed $raw
      * @return int|float|null
      */
     private static function number_or_null( $raw ) {
@@ -611,7 +594,7 @@ final class Field {
     }
 
     /**
-     * @param mixed $raw Raw value.
+     * @param mixed $raw
      */
     private static function scalar_text( $raw ): string {
         return is_scalar( $raw ) && ! is_bool( $raw ) ? (string) $raw : '';

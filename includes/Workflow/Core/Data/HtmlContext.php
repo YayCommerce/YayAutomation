@@ -4,9 +4,7 @@ namespace YayMatik\Workflow\Core\Data;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Builds `Template::render_html()` output: follows where it is in the HTML (text, a tag, an
- * attribute value, a comment) so each value is escaped for where it lands. Reads HTML as
- * `wp_kses_post()` and the rich editor write it: attribute values in quotes, no script or style.
+ * Builds `Template::render_html()` output, tracking where in the HTML each value lands; reads HTML as `wp_kses_post()` writes it.
  */
 final class HtmlContext {
 
@@ -54,7 +52,7 @@ final class HtmlContext {
     /**
      * Template text between tags: already safe HTML, kept as it is.
      *
-     * @param string $text HTML.
+     * @param string $text
      */
     public function literal( string $text ): void {
         $text   = self::unmark( $text );
@@ -210,9 +208,6 @@ final class HtmlContext {
         $this->url = null;
     }
 
-    /**
-     * @param string $text Text.
-     */
     private static function unmark( string $text ): string {
         return str_replace( [ self::OPEN, self::CLOSE ], '', $text );
     }

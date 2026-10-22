@@ -5,7 +5,7 @@ use PHPUnit\Framework\TestCase;
 use YayMatik\Workflow\Core\Data\DataItem;
 use YayMatik\Workflow\Core\Data\Operators;
 
-/** Condition operators per field type, with the new boolean ones. */
+/** Condition operators per field type. */
 final class OperatorsTest extends TestCase {
 
     public function test_boolean_operators_take_no_value(): void {

@@ -7,12 +7,7 @@ defined( 'ABSPATH' ) || exit;
 
 // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
-/**
- * Rows of the `run_steps` table: one per step a run ran. A row is written as `running` before the
- * step runs and finished with its result, so a row still `running` after a crash shows the step was
- * interrupted. `input` is the step's config with merge tags unrendered; `output` its declared
- * outputs. Dates are GMT; `input` and `output` are stored as JSON.
- */
+/** Rows of the `run_steps` table, one per step a run ran; dates in GMT, `input` and `output` as JSON. */
 final class RunStepStore {
 
     public const STATUS_RUNNING   = 'running';
@@ -30,11 +25,11 @@ final class RunStepStore {
     ];
 
     /**
-     * A row for a step about to run.
+     * A `running` row, written before the step runs, so one still `running` after a crash shows it was interrupted.
      *
-     * @param int    $run_id  Run id.
-     * @param string $step_id Step (node) id in the pinned graph.
-     * @param array  $input   Step config, merge tags unrendered.
+     * @param int    $run_id
+     * @param string $step_id Node id in the pinned graph.
+     * @param array  $input   Config, merge tags unrendered.
      * @return int Row id; 0 when the insert failed (logged).
      */
     public static function start( int $run_id, string $step_id, array $input ): int {
@@ -58,12 +53,12 @@ final class RunStepStore {
     }
 
     /**
-     * Stores a step's result. `waiting` leaves `finished_at` empty; the step finishes when the run resumes.
+     * `waiting` leaves `finished_at` empty: the step finishes when the run resumes.
      *
-     * @param int         $id     Row id.
+     * @param int         $id
      * @param string      $status One of `STATUSES`.
-     * @param array       $output Declared outputs.
-     * @param string|null $error  Reason for `skipped` / `failed`.
+     * @param array       $output
+     * @param string|null $error
      */
     public static function finish( int $id, string $status, array $output = [], ?string $error = null ): bool {
         global $wpdb;
@@ -88,7 +83,7 @@ final class RunStepStore {
     /**
      * A run's steps in the order they ran, `input` and `output` decoded.
      *
-     * @param int $run_id Run id.
+     * @param int $run_id
      * @return array[]
      */
     public static function for_run( int $run_id ): array {
@@ -103,9 +98,6 @@ final class RunStepStore {
         return Schema::table( Schema::RUN_STEPS );
     }
 
-    /**
-     * @param array $row Row as read.
-     */
     private static function decode( array $row ): array {
         foreach ( [ 'id', 'run_id', 'iteration', 'attempt' ] as $key ) {
             $row[ $key ] = (int) $row[ $key ];

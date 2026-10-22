@@ -8,23 +8,11 @@ use YayMatik\Workflow\Core\Steps\Trigger;
 
 defined( 'ABSPATH' ) || exit;
 
-/**
- * Starts runs for trigger events:
- * 1. Triggers report events while a request runs (`collect()`); the same event twice counts once.
- *    An event raised while the Worker runs a run carries that run as its parent.
- * 2. At shutdown (`flush()`), per event: active workflows for the trigger (cheapest check first),
- *    `claim()`, then per workflow `validate()` + `matches()` on its live trigger node.
- * 3. Per match a `runs` row (queued, pinned to the live version, trigger refs as its scope, causation)
- *    and one Action Scheduler job. Without Action Scheduler the run goes inline.
- *
- * Loop safety: no run when the workflow is already in the parent chain or the chain is deeper than
- * `MAX_DEPTH`. Rate limits, per workflow within `RATE_WINDOW` seconds, turn the workflow off:
- * `LOOP_LIMIT` runs started by other runs (a loop always has a parent), or `CEILING` runs in all.
- * Plain events never trip the loop limit: a bulk edit of hundreds of orders is fine.
- * Never throws into the host request: failures are logged.
- */
+/** Collects trigger events during a request and starts their runs at shutdown; never throws into the host request. */
 final class Dispatcher {
 
+    // Within RATE_WINDOW seconds, LOOP_LIMIT counts runs started by other runs: a loop always has a
+    // parent, so a bulk edit of hundreds of orders (plain events) never trips it.
     public const MAX_DEPTH   = 5;
     public const RATE_WINDOW = 60;
     public const LOOP_LIMIT  = 100;
@@ -39,24 +27,24 @@ final class Dispatcher {
     /** @var Workflows */
     private $workflows;
 
-    /** @var callable fn( int $run_id ): void, runs a run now when there is no queue. */
+    /** @var callable fn( int $run_id ): void */
     private $run_inline;
 
-    /** @var callable fn(): ?array, the run being run now (see `Worker::current()`). */
+    /** @var callable fn(): ?array, see `Worker::current()`. */
     private $current;
 
-    /** @var array[] Events of this request: key => [ trigger, args, parent run or null ]. */
+    /** @var array[] Key => [ trigger, args, parent run or null ]. */
     private $events = [];
 
-    /** @var true[] Workflow ids turned off by the rate limit in this request. */
+    /** @var true[] Workflow ids the rate limit turned off in this request. */
     private $paused = [];
 
     /**
-     * @param RunRepository $runs       Runs.
-     * @param Queue         $queue      Action Scheduler.
-     * @param Workflows     $workflows  Workflow lookups.
-     * @param callable      $run_inline Runs a run now, without a queue.
-     * @param callable      $current    The run being run now, or null.
+     * @param RunRepository $runs
+     * @param Queue         $queue
+     * @param Workflows     $workflows
+     * @param callable      $run_inline Runs a run now, when there is no queue.
+     * @param callable      $current
      */
     public function __construct( RunRepository $runs, Queue $queue, Workflows $workflows, callable $run_inline, callable $current ) {
         $this->runs       = $runs;
@@ -79,10 +67,10 @@ final class Dispatcher {
     }
 
     /**
-     * Remembers an event until the end of the request, with the run that caused it.
+     * Remembers an event until the end of the request; the same event twice counts once.
      *
-     * @param Trigger $trigger Reporting trigger.
-     * @param array   $args    Event args.
+     * @param Trigger $trigger
+     * @param array   $args
      */
     public function collect( Trigger $trigger, array $args ): void {
         try {
@@ -101,10 +89,7 @@ final class Dispatcher {
         }
     }
 
-    /**
-     * Starts the runs for the collected events. Events raised by runs that went inline are handled
-     * in the same call.
-     */
+    /** Starts the collected events' runs, including events raised by runs that went inline. */
     public function flush(): void {
         while ( $this->events ) {
             $events       = $this->events;
@@ -116,15 +101,14 @@ final class Dispatcher {
     }
 
     /**
-     * Creates a queued run of one workflow for an event, after the loop and rate checks. Doesn't
-     * claim, match or queue: `flush()` does that; dev scripts call this to run a workflow directly.
+     * A queued run after the loop and rate checks, without claim, match or queue (dev scripts call it).
      *
-     * @param array      $workflow Active workflow (see `Workflows::find()`).
-     * @param Trigger    $trigger  Event's trigger.
-     * @param array      $args     Event args.
-     * @param array|null $parent_run Run that caused the event.
-     * @param array|null $refs       `$trigger->refs( $args )` when already known (one load per event).
-     * @return int Run id; 0 when no run was started (logged).
+     * @param array      $workflow
+     * @param Trigger    $trigger
+     * @param array      $args
+     * @param array|null $parent_run
+     * @param array|null $refs       `$trigger->refs( $args )` when already loaded.
+     * @return int Run id; 0 when no run was started.
      */
     public function start_run( array $workflow, Trigger $trigger, array $args, ?array $parent_run = null, ?array $refs = null ): int {
         $workflow_id = (int) $workflow['id'];
@@ -182,13 +166,6 @@ final class Dispatcher {
         );
     }
 
-    /**
-     * Matches one event against the active workflows and starts their runs. Never throws.
-     *
-     * @param Trigger    $trigger Event's trigger.
-     * @param array      $args    Event args.
-     * @param array|null $parent_run  Run that caused the event.
-     */
     private function dispatch( Trigger $trigger, array $args, ?array $parent_run ): void {
         try {
             // Cheapest check first: most events have no workflow, so skip claiming (a write) and loading.
@@ -219,9 +196,9 @@ final class Dispatcher {
     }
 
     /**
-     * One job for the run. Without Action Scheduler it runs now; if queueing fails, it stays queued.
+     * Without a queue the run goes now; if queueing fails, it stays queued.
      *
-     * @param int $run_id Run id.
+     * @param int $run_id
      */
     private function queue_run( int $run_id ): void {
         if ( ! $this->queue->available() ) {
@@ -236,7 +213,7 @@ final class Dispatcher {
     /**
      * Whether the workflow already ran in the chain of runs that led here.
      *
-     * @param int $workflow_id Workflow to start.
+     * @param int $workflow_id
      * @param int $run_id      Parent run.
      */
     private function in_chain( int $workflow_id, int $run_id ): bool {
@@ -253,9 +230,6 @@ final class Dispatcher {
         return false;
     }
 
-    /**
-     * @param array $workflow Workflow with its live graph.
-     */
     private static function trigger_node( array $workflow ): ?array {
         foreach ( $workflow['graph']['nodes'] ?? [] as $node ) {
             if ( 'trigger' === ( $node['kind'] ?? '' ) ) {

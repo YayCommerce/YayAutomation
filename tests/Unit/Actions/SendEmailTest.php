@@ -152,7 +152,6 @@ final class SendEmailTest extends TestCase {
 
             $this->assertTrue( $result->is_failed(), $email );
             $this->assertSame( 'No valid email address.', $result->message() );
-            $this->assertSame( 'yaymatik_no_email', $result->code() );
         }
         $this->assertSame( [], FakeMailer::$current->sent );
     }

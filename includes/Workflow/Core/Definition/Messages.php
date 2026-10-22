@@ -4,16 +4,12 @@ namespace YayMatik\Workflow\Core\Definition;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Messages the admin app shows too: workflow issues, merge-tag checks and the settings checks
- * written in both PHP and TS. Sent through the catalog (`automation.messages`); the app's parity
- * test fails when its copy (apps/admin-page/src/routes/workflows/model/messages.ts) differs.
+ * Messages the admin app shows too, placeholders unfilled.
  *
- * Placeholders stay in: callers fill them with `sprintf()`. A required field's message lives on the
- * field (`Field::required( $message )`), filled with its step's label.
+ * The app's parity test fails when its copy (apps/admin-page/src/routes/workflows/model/messages.ts) differs.
  */
 final class Messages {
 
-    /** Key => message with its placeholders. */
     public static function all(): array {
         return [
             // Workflow-level.
@@ -64,8 +60,8 @@ final class Messages {
     /**
      * One message, with its placeholders filled in.
      *
-     * @param string $key     Key in `all()`.
-     * @param mixed  ...$args Values for its placeholders.
+     * @param string $key
+     * @param mixed  ...$args
      */
     public static function get( string $key, ...$args ): string {
         $message = self::all()[ $key ] ?? $key;

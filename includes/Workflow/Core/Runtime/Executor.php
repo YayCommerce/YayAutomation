@@ -15,23 +15,7 @@ use YayMatik\Workflow\Core\Storage\RunStore;
 
 defined( 'ABSPATH' ) || exit;
 
-/**
- * Runs one slice of a claimed run (status `running`) over the graph of the version it pinned.
- *
- * - Cursor: `position` = `{ "queue": [ pending step ids ] }`. The graph is a tree, so no visited set.
- *   After each step: one save of position + scope.
- * - Each step gets a `run_steps` row, written `running` before the step runs; `input` is the config
- *   with merge tags unrendered, `output` the declared outputs only.
- * - Resume: a step whose row is already finished is never run again; its stored result is applied.
- *   A row still `running` was interrupted: it fails ("Interrupted.") and its error policy applies.
- * - Flow: an action that ran or skipped → its children; a condition → `then` / `otherwise` by its
- *   result, or nothing when skipped. Failed + stop → the run fails; failed + continue → like skipped.
- * - Wait → the run waits, and a job wakes it at that time; the step completes on resume. A waiting
- *   row with no saved `wait_until` (crash before the run was saved) fails as interrupted.
- * - A slice stops after `SLICE_SECONDS` or `MEMORY_SHARE` of the memory limit and queues the next one.
- *
- * Nothing in PHP variables survives across steps: outputs go into the Scope, which is saved.
- */
+/** Runs one slice of a claimed run over its pinned version's graph, saving position and scope after each step. */
 final class Executor {
 
     public const SLICE_SECONDS = 20;
@@ -64,12 +48,12 @@ final class Executor {
     private $resolver;
 
     /**
-     * @param RunRepository $runs     Runs and step rows.
-     * @param GraphSource   $graphs   Pinned version graphs.
-     * @param Queue         $queue    Wakes the run for its next slice or after a wait.
-     * @param Clock         $clock    This slice's time and memory.
-     * @param callable|null $steps    Step by id; null = `StepRegistry::get()`.
-     * @param callable|null $resolver New RefResolver for the slice; null = the WooCommerce one.
+     * @param RunRepository $runs
+     * @param GraphSource   $graphs
+     * @param Queue         $queue
+     * @param Clock         $clock
+     * @param callable|null $steps    Null = `StepRegistry::get()`.
+     * @param callable|null $resolver Null = the WooCommerce one.
      */
     public function __construct( RunRepository $runs, GraphSource $graphs, Queue $queue, Clock $clock, ?callable $steps = null, ?callable $resolver = null ) {
         $this->runs     = $runs;
@@ -83,7 +67,7 @@ final class Executor {
     /**
      * Runs steps until the run ends, waits, or the slice is used up. Never throws.
      *
-     * @param array $run Run row, already claimed (status `running`).
+     * @param array $run Claimed (`running`).
      * @return string The run's status afterwards.
      */
     public function run( array $run ): string {
@@ -106,7 +90,7 @@ final class Executor {
     /**
      * Step outputs' own display texts (`outputs()` `display`), for `Scope::set_output_display()`.
      *
-     * @param array[]  $nodes Graph nodes by id.
+     * @param array[]  $nodes By id.
      * @param callable $steps fn( string $id ): ?Step.
      */
     public static function output_display( array $nodes, callable $steps ): callable {
@@ -128,6 +112,7 @@ final class Executor {
         $edges = is_array( $graph['edges'] ?? null ) ? $graph['edges'] : [];
         $scope = Scope::from_array( is_array( $run['scope'] ?? null ) ? $run['scope'] : [], ( $this->resolver )() );
         $scope->set_output_display( self::output_display( $nodes, $this->steps ) );
+        // The cursor is the pending step ids; the graph is a tree, so no visited set.
         $queue = is_array( $run['position']['queue'] ?? null )
             ? array_values( array_map( 'strval', $run['position']['queue'] ) )
             : self::children( $edges, self::trigger_id( $graph['nodes'] ) );
@@ -192,21 +177,22 @@ final class Executor {
     }
 
     /**
-     * The step's result as `status`, `output`, `error`, `until`: from its stored row when it already
-     * ran, otherwise by running it now (row written before and after).
+     * The step's `status`, `output`, `error`, `until`, from its stored row or by running it.
      *
-     * @param array      $run     Run row (`id`, `wait_until`).
-     * @param string     $step_id Step id.
-     * @param array|null $node    Graph node, null when missing.
-     * @param Step|null  $step    Its step, null when unknown or not runnable.
-     * @param array|null $row     Its stored row from an earlier slice.
-     * @param Scope      $scope   Run scope.
+     * @param array      $run
+     * @param string     $step_id
+     * @param array|null $node
+     * @param Step|null  $step    Null when unknown or not runnable.
+     * @param array|null $row     From an earlier slice.
+     * @param Scope      $scope
      */
     private function outcome( array $run, string $step_id, ?array $node, ?Step $step, ?array $row, Scope $scope ): array {
         $run_id = (int) $run['id'];
+        // A step with a row already ran: its stored result applies, so a finished step never runs twice.
         if ( $row ) {
             switch ( $row['status'] ) {
                 case RunStepStore::STATUS_RUNNING:
+                    // Still running from an earlier slice: it was interrupted, and its error policy applies.
                     $error = __( 'Interrupted.', 'yaymatik' );
                     $this->runs->finish_step( (int) $row['id'], RunStepStore::STATUS_FAILED, [], $error );
                     return self::result( RunStepStore::STATUS_FAILED, [], $error );
@@ -257,13 +243,12 @@ final class Executor {
     }
 
     /**
-     * Runs a step. Never throws: an unknown or invalid step fails, a deleted entity skips it, any
-     * other error fails it.
+     * Never throws: an unknown or invalid step fails, a deleted entity skips it, any other error fails it.
      *
-     * @param array|null $node   Graph node.
-     * @param Step|null  $step   Step, null when unknown.
-     * @param array      $config Sanitized config.
-     * @param Scope      $scope  Run scope.
+     * @param array|null $node
+     * @param Step|null  $step
+     * @param array      $config
+     * @param Scope      $scope
      */
     private static function run_step( ?array $node, ?Step $step, array $config, Scope $scope ): StepResult {
         if ( ! $step ) {
@@ -285,9 +270,9 @@ final class Executor {
     }
 
     /**
-     * "Order no longer exists." for a deleted entity.
+     * "Order no longer exists."
      *
-     * @param GoneEntity $gone What couldn't be loaded.
+     * @param GoneEntity $gone
      */
     public static function gone_message( GoneEntity $gone ): string {
         $entity = DataRegistry::entities()[ $gone->ref()->type() ] ?? null;
@@ -296,13 +281,12 @@ final class Executor {
     }
 
     /**
-     * Pauses the run at the waiting step (still first in the queue) and wakes it at the step's
-     * `until`. Without a queue nothing could wake it, so the step and the run fail.
+     * Pauses the run until the step's `until`. Without a queue nothing could wake it, so it fails.
      *
-     * @param int      $id      Run id.
-     * @param string[] $queue   Cursor, the waiting step first.
-     * @param Scope    $scope   Run scope.
-     * @param array    $outcome The step's outcome, with `until` and its `row` id.
+     * @param int      $id
+     * @param string[] $queue   The waiting step first.
+     * @param Scope    $scope
+     * @param array    $outcome
      */
     private function wait( int $id, array $queue, Scope $scope, array $outcome ): string {
         $until = (int) $outcome['until'];
@@ -327,12 +311,10 @@ final class Executor {
     }
 
     /**
-     * Ends the run as failed; later steps don't run.
-     *
-     * @param int           $id    Run id.
-     * @param string[]|null $queue Cursor, the failed step first; null keeps the stored one.
-     * @param Scope|null    $scope Run scope; null keeps the stored one.
-     * @param string        $error Why.
+     * @param int           $id
+     * @param string[]|null $queue Null keeps the stored one.
+     * @param Scope|null    $scope Null keeps the stored one.
+     * @param string        $error
      */
     private function fail( int $id, ?array $queue, ?Scope $scope, string $error ): string {
         $fields = [
@@ -348,12 +330,6 @@ final class Executor {
         return RunStore::STATUS_FAILED;
     }
 
-    /**
-     * @param string      $status Step status.
-     * @param array       $output Declared outputs.
-     * @param string|null $error  Reason.
-     * @param int         $until  Unix time, when waiting.
-     */
     private static function result( string $status, array $output, ?string $error = null, int $until = 0 ): array {
         return [
             'status' => $status,
@@ -364,17 +340,12 @@ final class Executor {
         ];
     }
 
-    /**
-     * A condition's branch handle from its outputs.
-     *
-     * @param array $output Condition outputs.
-     */
     private static function branch( array $output ): string {
         return 'yes' === ( $output['result'] ?? '' ) ? 'then' : 'otherwise';
     }
 
     /**
-     * @param array[] $nodes Graph nodes.
+     * @param array[] $nodes
      */
     private static function trigger_id( array $nodes ): string {
         foreach ( $nodes as $node ) {
@@ -386,11 +357,9 @@ final class Executor {
     }
 
     /**
-     * Step ids under a step, on one branch handle (null = no handle).
-     *
-     * @param array[]     $edges  Graph edges.
-     * @param string      $source Parent step id.
-     * @param string|null $branch Handle.
+     * @param array[]     $edges
+     * @param string      $source
+     * @param string|null $branch Null = no handle.
      * @return string[]
      */
     private static function children( array $edges, string $source, ?string $branch = null ): array {

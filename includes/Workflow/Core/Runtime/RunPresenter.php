@@ -3,15 +3,11 @@ namespace YayMatik\Workflow\Core\Runtime;
 
 defined( 'ABSPATH' ) || exit;
 
-/**
- * Runs and step rows as the REST API returns them, matching the TS `Run` / `RunStep` / `RunDetail`
- * types: camelCase keys, ids as strings (like workflows and versions), dates as ISO 8601 in UTC.
- * Never the scope or the cursor (`position`): those are the executor's.
- */
+/** Runs and step rows shaped like the TS `Run` / `RunStep` / `RunDetail`, without scope or cursor. */
 final class RunPresenter {
 
     /**
-     * @param array $run Row from `RunStore::find()` / `list()`.
+     * @param array $run
      */
     public static function run( array $run ): array {
         return [
@@ -33,18 +29,13 @@ final class RunPresenter {
     }
 
     /**
-     * A run with its steps in the order they ran.
-     *
-     * @param array   $run   Row from `RunStore::find()`.
-     * @param array[] $steps Rows from `RunStepStore::for_run()`.
+     * @param array   $run
+     * @param array[] $steps
      */
     public static function detail( array $run, array $steps ): array {
         return self::run( $run ) + [ 'steps' => array_map( [ self::class, 'step' ], $steps ) ];
     }
 
-    /**
-     * @param array $step Row from `RunStepStore::for_run()`.
-     */
     public static function step( array $step ): array {
         return [
             'id'         => (string) $step['id'],
@@ -64,7 +55,7 @@ final class RunPresenter {
     /**
      * Stored GMT `Y-m-d H:i:s` → `2026-10-12T08:03:04+00:00`; empty → null.
      *
-     * @param string|null $gmt Stored date.
+     * @param string|null $gmt
      */
     public static function iso( ?string $gmt ): ?string {
         if ( null === $gmt || '' === $gmt || 0 === strpos( $gmt, '0000-00-00' ) ) {

@@ -7,25 +7,24 @@ use YayMatik\Workflow\Core\Storage\UnsubscribeStore;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * The person behind the event. Context object: anything with WooCommerce billing getters — the
- * \WC_Order for order triggers (works for guests too), a \WC_Customer for customer triggers.
+ * The person behind the event: anything with WooCommerce billing getters (a \WC_Order, so guests work too).
  */
 final class CustomerData extends DataItem {
 
     public const ID = 'customer';
 
-    /** Order statuses that count as paid for `is_first_order`: a paid order besides this one means it isn't. */
+    /** Order statuses that count as paid for `is_first_order`. */
     public const PAID_STATUSES = [ 'processing', 'completed' ];
 
-    /** @var callable fn( array $query ): int[] — paid order ids for `customer_id` or `billing_email`, up to 2. */
+    /** @var callable fn( array $query ): int[] */
     private $paid_orders;
 
     /** @var callable fn( string $email ): bool */
     private $unsubscribed;
 
     /**
-     * @param callable|null $paid_orders  Paid order lookup; null = WooCommerce's.
-     * @param callable|null $unsubscribed Unsubscribe lookup; null = `UnsubscribeStore::has()`.
+     * @param callable|null $paid_orders  fn( array $query ): int[]; null = `find_paid_orders()`.
+     * @param callable|null $unsubscribed fn( string $email ): bool; null = `UnsubscribeStore::has()`.
      */
     public function __construct( ?callable $paid_orders = null, ?callable $unsubscribed = null ) {
         $this->paid_orders  = $paid_orders ?? [ self::class, 'find_paid_orders' ];
@@ -48,7 +47,7 @@ final class CustomerData extends DataItem {
         return 'user';
     }
 
-    /** Countries as code => name. Empty without WooCommerce. */
+    /** Code => name; empty without WooCommerce. */
     public static function countries(): array {
         return function_exists( 'WC' ) ? WC()->countries->get_countries() : [];
     }
@@ -99,11 +98,7 @@ final class CustomerData extends DataItem {
         ];
     }
 
-    /**
-     * Made-up customer for previews when the store has no paid order yet (labelled "Sample data").
-     *
-     * @return array Field key => value, or [ 'value', 'text' ] when it reads differently.
-     */
+    /** @return array Field key => value, or [ 'value', 'text' ] when it reads differently. */
     public function sample(): array {
         return [
             'email'           => 'jane.doe@example.com',
@@ -121,12 +116,9 @@ final class CustomerData extends DataItem {
     }
 
     /**
-     * Whether the customer has no paid order (processing or completed) besides this one, whatever
-     * this order's status. Orders are found by account and by billing email, so a guest order with
-     * the same email counts too. Refunded, cancelled, failed and unpaid orders don't count. Without
-     * an order (a customer trigger): whether they have exactly one paid order.
+     * Whether the customer has no paid order besides this one, whatever this order's status.
      *
-     * @param \WC_Order|\WC_Customer $customer Context object.
+     * @param \WC_Order|\WC_Customer $customer
      */
     private function is_first_order( $customer ): bool {
         $is_order = $customer instanceof \WC_Order;
@@ -134,6 +126,7 @@ final class CustomerData extends DataItem {
         $user_id  = (int) ( $is_order ? $customer->get_customer_id() : $customer->get_id() );
         $email    = strtolower( trim( (string) $customer->get_billing_email() ) );
 
+        // By account and by billing email, so a guest order with the same email counts too.
         $ids = [];
         if ( $user_id > 0 ) {
             $ids = array_merge( $ids, ( $this->paid_orders )( [ 'customer_id' => $user_id ] ) );
@@ -143,6 +136,7 @@ final class CustomerData extends DataItem {
         }
         $ids = array_values( array_unique( array_map( 'intval', $ids ) ) );
         if ( ! $is_order ) {
+            // A customer trigger: exactly one paid order.
             return 1 === count( $ids );
         }
         return ! array_diff( $ids, [ $order_id ] );

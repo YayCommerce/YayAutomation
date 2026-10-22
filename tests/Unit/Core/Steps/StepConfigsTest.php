@@ -13,12 +13,7 @@ use YayMatik\Workflow\Triggers\OrderStatusChanged;
 
 require_once dirname( __DIR__, 3 ) . '/Support/woocommerce-stubs.php';
 
-/**
- * Characterization of the 7 steps' configs: what each one stores and what it accepts or rejects,
- * with the exact message. Written against v0.1 steps; the step contract must keep it passing.
- * Unknown merge tags pass here: the Validator reports them, with the same message
- * (see ValidatorTest).
- */
+/** The 7 steps' configs: what each one stores and what it accepts or rejects, with the exact message. */
 final class StepConfigsTest extends TestCase {
 
     private const OK = true;
@@ -39,10 +34,10 @@ final class StepConfigsTest extends TestCase {
     }
 
     /**
-     * @param string $id     Criteria field key.
-     * @param string $op     Operator.
-     * @param string $value  Value.
-     * @param string $type   valueType.
+     * @param string $id    Criteria field key.
+     * @param string $op
+     * @param string $value
+     * @param string $type  valueType.
      */
     private static function rule( string $id, string $op, string $value = '', string $type = 'value' ): array {
         return [
@@ -54,7 +49,7 @@ final class StepConfigsTest extends TestCase {
     }
 
     /**
-     * @param array  $rules Rules.
+     * @param array  $rules
      * @param string $join  all|any.
      */
     private static function criteria( array $rules, string $join = 'all' ): array {
@@ -177,6 +172,7 @@ final class StepConfigsTest extends TestCase {
                 '{{ customer.email }} isn’t a valid email address.',
             ],
             'email: no message'            => [ 'send_internal_email', [ 'subject' => 's' ], null, 'Send internal email needs a message.' ],
+            // Unknown merge tags pass here: the Validator reports them (see ValidatorTest).
             'email: unknown tag subject'   => [
                 'send_internal_email',
                 [
@@ -229,8 +225,8 @@ final class StepConfigsTest extends TestCase {
                 'add_order_note',
                 null,
                 [
-                    'note' => '',
                     'type' => 'private',
+                    'note' => '',
                 ],
                 'Add order note needs a note.',
             ],
@@ -241,8 +237,8 @@ final class StepConfigsTest extends TestCase {
                     'type' => 'public',
                 ],
                 [
-                    'note' => "Hi\n<{{ order.number }}>",
                     'type' => 'private',
+                    'note' => "Hi\n<{{ order.number }}>",
                 ],
                 self::OK,
             ],
@@ -253,8 +249,8 @@ final class StepConfigsTest extends TestCase {
                     'type' => 'customer',
                 ],
                 [
-                    'note' => 'Thanks',
                     'type' => 'customer',
+                    'note' => 'Thanks',
                 ],
                 self::OK,
             ],
@@ -298,8 +294,8 @@ final class StepConfigsTest extends TestCase {
     /**
      * @dataProvider configs
      *
-     * @param string      $id       Step id.
-     * @param mixed       $raw      Raw config.
+     * @param string      $id
+     * @param mixed       $raw
      * @param array|null  $stored   Expected sanitized config, or null to skip.
      * @param true|string $expected True, or the exact error message.
      */

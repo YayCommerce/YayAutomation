@@ -162,9 +162,9 @@ class RestAPI {
     }
 
     /**
-     * The email an email step would send, rendered with a recent order or sample data. Renders only.
+     * The email a step would send, rendered with a recent order or sample data.
      *
-     * @param \WP_REST_Request $request Request.
+     * @param \WP_REST_Request $request
      */
     public function preview_email( \WP_REST_Request $request ) {
         $input = $this->email_input( $request );
@@ -174,7 +174,7 @@ class RestAPI {
     /**
      * Sends that email to the logged-in user, subject prefixed "[Test]".
      *
-     * @param \WP_REST_Request $request Request.
+     * @param \WP_REST_Request $request
      */
     public function send_test_email( \WP_REST_Request $request ) {
         $input = $this->email_input( $request );
@@ -188,7 +188,7 @@ class RestAPI {
     /**
      * [ graph, nodeId, config ] from a preview / send-test request.
      *
-     * @param \WP_REST_Request $request Request.
+     * @param \WP_REST_Request $request
      * @return array|\WP_Error
      */
     private function email_input( \WP_REST_Request $request ) {
@@ -214,10 +214,7 @@ class RestAPI {
         );
     }
 
-    /**
-     * Every workflow, each with its issues (the list offers Activate only without them). One that
-     * can't be checked gets none rather than failing the list (`Validator::list_issues()`).
-     */
+    /** Every workflow with its issues. */
     public function list_workflows() {
         return rest_ensure_response(
             array_map(
@@ -228,11 +225,9 @@ class RestAPI {
     }
 
     /**
-     * One workflow, with the issues of its live graph and draft. One that can't be checked still
-     * opens (no issues, error logged; `Validator::list_issues()`), so it can be fixed in the editor.
-     * Activate and apply keep the full check.
+     * One workflow with the issues of its live graph and draft.
      *
-     * @param \WP_REST_Request $request Request.
+     * @param \WP_REST_Request $request
      */
     public function get_workflow( \WP_REST_Request $request ) {
         $workflow = WorkflowRepository::find( (int) $request['id'] );
@@ -242,7 +237,7 @@ class RestAPI {
     /**
      * Always inactive; issues are allowed.
      *
-     * @param \WP_REST_Request $request Request.
+     * @param \WP_REST_Request $request
      */
     public function create_workflow( \WP_REST_Request $request ) {
         $workflow = Validator::prepare_new( $request->get_json_params() );
@@ -257,12 +252,9 @@ class RestAPI {
     }
 
     /**
-     * `{ name?, graph? }`, issues allowed. The name applies at once. The graph replaces the live one
-     * while the workflow has never been turned on; after that it goes into the draft, active or not
-     * (cleared again if it matches the live graph).
-     * No-op changes aren't written, so they don't move "Last updated" or the draft time.
+     * `{ name?, graph? }`, issues allowed.
      *
-     * @param \WP_REST_Request $request Request.
+     * @param \WP_REST_Request $request
      */
     public function update_workflow( \WP_REST_Request $request ) {
         $changes = Validator::prepare_changes( $request->get_json_params() );
@@ -273,6 +265,7 @@ class RestAPI {
         $updated = $this->with_workflow(
             (int) $request['id'],
             function ( int $id, array $current ) use ( $changes ) {
+                // No-op changes aren't written, so they don't move "Last updated" or the draft time.
                 $name       = isset( $changes['name'] ) && $changes['name'] !== $current['name'] ? $changes['name'] : null;
                 $live_graph = null;
                 if ( isset( $changes['graph'] ) ) {
@@ -297,11 +290,9 @@ class RestAPI {
     }
 
     /**
-     * Turning on needs a workflow without issues, and a draft (if any) without issues too: a broken
-     * draft shouldn't sit behind a running workflow. The saved graph is what runs; the draft is kept.
-     * Already active → returned as is.
+     * Turns the saved graph on when it and the draft have no issues; the draft is kept.
      *
-     * @param \WP_REST_Request $request Request.
+     * @param \WP_REST_Request $request
      */
     public function activate_workflow( \WP_REST_Request $request ) {
         return self::with_issues(
@@ -312,6 +303,7 @@ class RestAPI {
                         return true;
                     }
                     $errors = Validator::errors( $current );
+                    // A broken draft shouldn't sit behind a running workflow.
                     if ( ! $errors && null !== $current['draft'] ) {
                         $errors = Validator::errors(
                             [
@@ -327,10 +319,9 @@ class RestAPI {
     }
 
     /**
-     * Always allowed, even with issues. The draft, if any, stays a draft. Already inactive → returned
-     * as is.
+     * Always allowed, even with issues; the draft stays.
      *
-     * @param \WP_REST_Request $request Request.
+     * @param \WP_REST_Request $request
      */
     public function deactivate_workflow( \WP_REST_Request $request ) {
         return self::with_issues(
@@ -347,10 +338,9 @@ class RestAPI {
     }
 
     /**
-     * The draft replaces the live (or saved, when inactive) graph if it has no issues; the status
-     * doesn't change. No draft → 409.
+     * The draft replaces the saved graph when it has no issues; the status doesn't change.
      *
-     * @param \WP_REST_Request $request Request.
+     * @param \WP_REST_Request $request
      */
     public function apply_workflow( \WP_REST_Request $request ) {
         return self::with_issues(
@@ -375,7 +365,7 @@ class RestAPI {
     /**
      * Drops unapplied changes; the live graph is untouched.
      *
-     * @param \WP_REST_Request $request Request.
+     * @param \WP_REST_Request $request
      */
     public function discard_draft( \WP_REST_Request $request ) {
         return self::with_issues(
@@ -390,27 +380,14 @@ class RestAPI {
     }
 
     /**
-     * One page of versions, newest first: `{ items, hasMore }`. A workflow saved before versions
-     * existed gets its rows seeded first, under the lock; later reads don't wait for saves.
+     * One page of versions, newest first: `{ items, hasMore }`.
      *
-     * @param \WP_REST_Request $request Request.
+     * @param \WP_REST_Request $request
      */
     public function list_versions( \WP_REST_Request $request ) {
         $id = (int) $request['id'];
         if ( ! WorkflowRepository::find( $id ) ) {
             return $this->not_found();
-        }
-        if ( ! WorkflowRepository::has_versions( $id ) ) {
-            $seeded = $this->with_workflow(
-                $id,
-                function ( int $id ) {
-                    WorkflowRepository::seed_versions( $id );
-                    return true;
-                }
-            );
-            if ( is_wp_error( $seeded ) ) {
-                return $seeded;
-            }
         }
         return rest_ensure_response( WorkflowRepository::versions( $id, (int) $request['page'] ) );
     }
@@ -418,7 +395,7 @@ class RestAPI {
     /**
      * A workflow's newest runs (`RunPresenter::run()`).
      *
-     * @param \WP_REST_Request $request Request.
+     * @param \WP_REST_Request $request
      */
     public function list_runs( \WP_REST_Request $request ) {
         $id = (int) $request['id'];
@@ -437,7 +414,7 @@ class RestAPI {
     /**
      * One run with its step rows (`RunPresenter::detail()`).
      *
-     * @param \WP_REST_Request $request Request.
+     * @param \WP_REST_Request $request
      */
     public function get_run( \WP_REST_Request $request ) {
         $run = RunStore::find( (int) $request['id'] );
@@ -448,17 +425,16 @@ class RestAPI {
     }
 
     /**
-     * Runs `$change( $id, $current )` while holding a per-workflow lock, then returns the workflow
-     * as stored. Draft saves, apply and deactivate read then write the draft; without the lock an
-     * autosave landing mid-apply could be wiped, or a draft cleared by apply could reappear.
+     * Runs `$change( $id, $current )` under a per-workflow lock, then returns the workflow as stored.
      *
-     * @param int      $id     Workflow id.
-     * @param callable $change Returns true on success, a WP_Error, or a WP_REST_Response to send as is
-     *                         (e.g. after a delete, when there's no workflow left to return).
+     * @param int      $id
+     * @param callable $change Returns true, a WP_Error, or a WP_REST_Response to send as is.
      * @return array|\WP_Error|\WP_REST_Response
      */
     private function with_workflow( int $id, callable $change ) {
         global $wpdb;
+        // Draft saves, apply and deactivate read then write the draft: without the lock an autosave
+        // landing mid-apply could be wiped, or a draft cleared by apply could reappear.
         $lock = 'yaymatik_workflow_' . $id;
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         if ( '1' !== (string) $wpdb->get_var( $wpdb->prepare( 'SELECT GET_LOCK( %s, 10 )', $lock ) ) ) {
@@ -482,15 +458,15 @@ class RestAPI {
     }
 
     /**
-     * Permanent delete. An active workflow must be deactivated first (409), so a running automation
-     * can't disappear by accident.
+     * Permanent delete of an inactive workflow.
      *
-     * @param \WP_REST_Request $request Request.
+     * @param \WP_REST_Request $request
      */
     public function delete_workflow( \WP_REST_Request $request ) {
         return $this->with_workflow(
             (int) $request['id'],
             function ( int $id, array $current ) {
+                // A running automation can't disappear by accident.
                 if ( 'active' === $current['status'] ) {
                     return new \WP_Error(
                         'yaymatik_delete_active',
@@ -508,10 +484,9 @@ class RestAPI {
     }
 
     /**
-     * A workflow response plus `issues: { live, draft }`, found by Workflow Core. Every response that
-     * returns a workflow has them; anything else (an error) passes through.
+     * Adds `issues: { live, draft }` to a workflow; anything else passes through.
      *
-     * @param array|\WP_Error|\WP_REST_Response $workflow Stored workflow, or the response instead of one.
+     * @param array|\WP_Error|\WP_REST_Response $workflow
      * @return array|\WP_Error|\WP_REST_Response
      */
     private static function with_issues( $workflow ) {

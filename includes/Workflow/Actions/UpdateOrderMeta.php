@@ -10,7 +10,7 @@ use YayMatik\Workflow\Core\Steps\StepResult;
 
 defined( 'ABSPATH' ) || exit;
 
-/** Config: [ 'key' => meta key, 'value' => string with merge tags ]. An empty value is stored as is. */
+/** Sets an order meta value; an empty value is stored as is. */
 class UpdateOrderMeta extends Action {
 
     public const ID = 'update_order_meta';

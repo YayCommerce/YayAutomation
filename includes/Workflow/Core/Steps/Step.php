@@ -6,14 +6,7 @@ use YayMatik\Workflow\Core\Data\Scope;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * One workflow step type. PHP is the one source of a step's settings (`fields()`); the admin app
- * gets them through the catalog and draws the form and checks from them. Checks a field can't
- * express go in `validate()` and need a matching custom form in the step's folder in
- * apps/admin-page/src/routes/workflows/steps/ (e.g. Conditions/Criteria ↔ conditions/criteria/).
- *
- * Config life: `sanitize()` on every save (never fails) → `validate()` before Activate →
- * `run( Scope, config )`. A step reads data only through the Scope and returns a StepResult;
- * its outputs are exactly what `outputs()` declares.
+ * One workflow step type; PHP `fields()` is the one source of its settings.
  */
 abstract class Step {
 
@@ -40,22 +33,16 @@ abstract class Step {
     /** A name from `StepIcons::NAMES`. */
     abstract public function icon(): string;
 
-    /**
-     * The step's settings, in form order.
-     *
-     * @return Field[]
-     */
+    /** @return Field[] In form order. */
     abstract public function fields(): array;
 
-    /**
-     * Card text with `%field key%` placeholders, e.g. "Change the order status to %status%".
-     */
+    /** Card text with `%field key%` placeholders, e.g. "Change the order status to %status%". */
     abstract public function summary(): string;
 
     /**
      * What later steps can read at `steps.<id>.<key>`.
      *
-     * @return array Key => [ 'label' => string, 'type' => Data\Type, 'options' => value => label (enums, optional) ].
+     * @return array Key => [ 'label' => string, 'type' => Data\Type, 'options'? => value => label ].
      */
     public function outputs(): array {
         return [];
@@ -64,7 +51,7 @@ abstract class Step {
     /**
      * Does the step's work and says how it went.
      *
-     * @param Scope $scope  What the run can read; entities load on demand.
+     * @param Scope $scope
      * @param array $config Sanitized, valid config.
      */
     abstract public function run( Scope $scope, array $config ): StepResult;
@@ -75,20 +62,18 @@ abstract class Step {
     }
 
     /**
-     * Coerces raw input into the stored config shape. Never fails; `validate()` decides if it's usable.
-     * By default each field sanitizes its own value.
+     * Raw input as the stored config shape. Never fails; `validate()` decides if it's usable.
      *
-     * @param mixed $config Raw config from the request.
+     * @param mixed $config
      */
     public function sanitize( $config ): array {
         return Field::sanitize_all( $this->fields(), $config );
     }
 
     /**
-     * Whether a sanitized config is complete enough to run. Required before a workflow can be active.
-     * By default the fields' own rules; a step adds the checks fields can't express.
+     * Whether a sanitized config can run; a step adds the checks fields can't express.
      *
-     * @param array $config Output of `sanitize()`.
+     * @param array $config
      * @return true|\WP_Error Error data holds the `field` it is about, when there is one.
      */
     public function validate( array $config ) {
@@ -96,26 +81,24 @@ abstract class Step {
     }
 
     /**
-     * Data items (see Workflow/Data) this step reads with the given config. The trigger must supply
-     * them; otherwise the workflow gets a `missing_data` issue.
+     * Data items this step reads with the config; the trigger must supply them.
      *
-     * @param array $config Output of `sanitize()`.
+     * @param array $config
      */
     public function uses( array $config ): array {
         return [];
     }
 
     /**
-     * Made-up outputs for a preview of a later step (an email that shows a coupon code): the step
-     * itself never runs there. Empty = its outputs read empty in previews.
+     * Made-up outputs for previews of later steps; empty = they read empty.
      *
-     * @param array $config Output of `sanitize()`.
+     * @param array $config
      */
     public function sample_outputs( array $config ): array {
         return [];
     }
 
-    /** Extra facts for the admin app, merged into this step's catalog entry (`Definition\Catalog`). */
+    /** Extra facts merged into this step's catalog entry. */
     public function client_meta(): array {
         return [];
     }
@@ -123,17 +106,13 @@ abstract class Step {
     /**
      * The fields' first broken rule as an error, or null.
      *
-     * @param array $config Sanitized config.
+     * @param array $config
      */
     protected function field_error( array $config ): ?\WP_Error {
         $error = Field::first_error( $this->fields(), $config, $this->label() );
         return $error ? $this->invalid( $error['message'], $error['field'] ) : null;
     }
 
-    /**
-     * @param string $message What's wrong.
-     * @param string $field   Field key it is about, if any.
-     */
     protected function invalid( string $message, string $field = '' ): \WP_Error {
         return new \WP_Error( 'yaymatik_invalid_config', $message, '' === $field ? '' : [ 'field' => $field ] );
     }
@@ -141,7 +120,7 @@ abstract class Step {
     /**
      * Raw input as trimmed text; '' for arrays and objects.
      *
-     * @param mixed $value Raw input.
+     * @param mixed $value
      */
     protected static function scalar( $value ): string {
         return is_scalar( $value ) ? trim( (string) $value ) : '';

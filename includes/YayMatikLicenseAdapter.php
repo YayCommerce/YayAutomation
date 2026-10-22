@@ -1,9 +1,4 @@
 <?php
-/**
- * Plugin adapter for YayMatik (Lite).
- *
- * @package yaycommerce/yaymatik
- */
 
 namespace YayMatik;
 
@@ -11,9 +6,7 @@ use YayMatik\Engine\BEPages\AdminPage;
 
 defined( 'ABSPATH' ) || exit;
 
-/**
- * YayMatik Adapter (Lite) — submenu under YayCommerce.
- */
+/** Plugin adapter for YayMatik (Lite): the submenu under YayCommerce. */
 class YayMatikLicenseAdapter implements \YayMatikScoped\YayCommerce\AdminShell\Contracts\PluginMenuAdapter {
     public function get_menu_title(): string {
         return 'YayMatik'; }

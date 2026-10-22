@@ -4,11 +4,7 @@ namespace YayMatik\Workflow\Core\Steps;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * What a step's `run()` returns:
- * - `ok( outputs )`: done; later steps can read the outputs at `steps.<id>.*`.
- * - `skipped( reason )`: nothing to do, e.g. the order was deleted. Not an error.
- * - `failed( error )`: the step's error policy decides if the run stops or goes on.
- * - `wait( until )`: the run pauses until a time, then resumes at the next step.
+ * What a step's `run()` returns: ok, skipped (not an error), failed or wait.
  */
 final class StepResult {
 
@@ -26,9 +22,6 @@ final class StepResult {
     /** @var string Why it was skipped or failed. */
     private $message = '';
 
-    /** @var string Error code when failed. */
-    private $code = '';
-
     /** @var int Unix time to resume at, when waiting. */
     private $until = 0;
 
@@ -37,7 +30,7 @@ final class StepResult {
     }
 
     /**
-     * @param array $outputs Output key => value, as the step's `outputs()` declares them.
+     * @param array $outputs As the step's `outputs()` declares them.
      */
     public static function ok( array $outputs = [] ): self {
         $result          = new self( self::OK );
@@ -45,31 +38,20 @@ final class StepResult {
         return $result;
     }
 
-    /**
-     * @param string $reason Why there was nothing to do, for run history.
-     */
     public static function skipped( string $reason ): self {
         $result          = new self( self::SKIPPED );
         $result->message = $reason;
         return $result;
     }
 
-    /**
-     * @param string|\WP_Error $error What went wrong.
-     */
-    public static function failed( $error ): self {
-        $result = new self( self::FAILED );
-        if ( $error instanceof \WP_Error ) {
-            $result->code    = (string) $error->get_error_code();
-            $result->message = $error->get_error_message();
-        } else {
-            $result->message = (string) $error;
-        }
+    public static function failed( string $message ): self {
+        $result          = new self( self::FAILED );
+        $result->message = $message;
         return $result;
     }
 
     /**
-     * @param int $until Unix timestamp (GMT) to resume at, e.g. `time() + DAY_IN_SECONDS`.
+     * @param int $until Unix time to resume at.
      */
     public static function wait( int $until ): self {
         $result        = new self( self::WAIT );
@@ -104,11 +86,6 @@ final class StepResult {
     /** Why the step was skipped or failed; '' otherwise. */
     public function message(): string {
         return $this->message;
-    }
-
-    /** Error code of a failed step built from a WP_Error; '' otherwise. */
-    public function code(): string {
-        return $this->code;
     }
 
     /** Unix time to resume at; 0 unless waiting. */

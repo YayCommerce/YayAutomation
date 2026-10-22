@@ -10,10 +10,7 @@ use YayMatik\Workflow\Core\Steps\StepResult;
 
 defined( 'ABSPATH' ) || exit;
 
-/**
- * Config: [ 'note' => string with merge tags, 'type' => 'private'|'customer' ].
- * A customer note is also emailed to the customer by WooCommerce.
- */
+/** Adds a note to the order; WooCommerce emails a customer note to the customer. */
 class AddOrderNote extends Action {
 
     public const ID = 'add_order_note';
@@ -64,19 +61,6 @@ class AddOrderNote extends Action {
                 'type'    => Type::enum(),
                 'options' => self::types(),
             ],
-        ];
-    }
-
-    /**
-     * Stored keys keep their v0.1 order (note, type), whatever the form order.
-     *
-     * @param mixed $config Raw config from the request.
-     */
-    public function sanitize( $config ): array {
-        $config = Field::sanitize_all( $this->fields(), $config );
-        return [
-            'note' => $config['note'],
-            'type' => $config['type'],
         ];
     }
 
