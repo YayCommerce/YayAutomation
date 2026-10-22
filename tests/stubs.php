@@ -26,9 +26,9 @@ if ( ! function_exists( 'remove_filter' ) ) {
 }
 
 if ( ! function_exists( 'apply_filters' ) ) {
-    function apply_filters( $hook_name, $value ) {
+    function apply_filters( $hook_name, $value, ...$args ) {
         foreach ( $GLOBALS['yaymatik_test_filters'][ $hook_name ] ?? [] as $callback ) {
-            $value = $callback( $value );
+            $value = $callback( $value, ...$args );
         }
         return $value;
     }

@@ -157,11 +157,11 @@ final class EmailPreview {
             }
         }
 
-        $provides = $trigger ? $trigger->provides() : [];
+        $provides = $trigger ? $trigger->resolved_provides() : [];
         $refs     = null;
         if ( in_array( OrderData::ID, $provides, true ) ) {
             $order_id = $order_id ?? self::latest_paid_order();
-            $refs     = $order_id ? $trigger->refs( [ 'order_id' => $order_id ] ) : null;
+            $refs     = $order_id ? $trigger->resolved_refs( [ 'order_id' => $order_id ] ) : null;
         }
 
         $scope = new Scope(
