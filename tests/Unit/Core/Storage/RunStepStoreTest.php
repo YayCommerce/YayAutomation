@@ -273,4 +273,66 @@ final class RunStepStoreTest extends TestCase {
         $this->assertFalse( RunStepStore::close_open( 7, RunStepStore::STATUS_WAITING, 'Off.' ) );
         $this->assertCount( 1, $this->db->calls );
     }
+
+    public function test_list_and_count_share_the_filter_and_list_pages_by_per_page(): void {
+        $this->db->result = [];
+        RunStore::list(
+            [
+                'workflow_id' => 9,
+                'status'      => [ 'waiting', 'nope', 'failed' ],
+                'page'        => 2,
+            ]
+        );
+        $this->assertStringEndsWith( "FROM wp_yaymatik_runs WHERE workflow_id = 9 AND status IN ('waiting','failed') ORDER BY id DESC LIMIT 20 OFFSET 20", $this->db->last_sql() );
+
+        $this->db->result = '42';
+        $this->assertSame(
+            42,
+            RunStore::count(
+                [
+                    'workflow_id' => 9,
+                    'status'      => [ 'waiting', 'failed' ],
+                ]
+            )
+        );
+        $this->assertSame( "SELECT COUNT(*) FROM wp_yaymatik_runs WHERE workflow_id = 9 AND status IN ('waiting','failed')", $this->db->last_sql() );
+    }
+
+    public function test_stats_and_step_counts_are_one_grouped_query_each(): void {
+        $this->assertSame( [], RunStore::stats( [] ) );
+        $this->assertSame( [], RunStepStore::counts( [] ) );
+        $this->assertCount( 0, $this->db->calls );
+
+        $this->db->result = [
+            [
+                'workflow_id' => '9',
+                'recent'      => '3',
+                'last_run'    => '2026-10-12 08:03:04',
+                'waiting'     => '1',
+            ],
+        ];
+        $this->assertSame(
+            [
+                9 => [
+                    'recent'   => 3,
+                    'last_run' => '2026-10-12 08:03:04',
+                    'waiting'  => 1,
+                ],
+            ],
+            RunStore::stats( [ '9', 12 ] )
+        );
+        $this->assertMatchesRegularExpression(
+            "/^SELECT workflow_id, SUM\\(started_at >= '[0-9: -]+'\\) AS recent, MAX\\(started_at\\) AS last_run, SUM\\(status = 'waiting'\\) AS waiting FROM wp_yaymatik_runs WHERE workflow_id IN \\(9,12\\) GROUP BY workflow_id$/",
+            $this->db->last_sql()
+        );
+
+        $this->db->result = [
+            [
+                'run_id' => '4',
+                'steps'  => '2',
+            ],
+        ];
+        $this->assertSame( [ 4 => 2 ], RunStepStore::counts( [ 4, 5 ] ) );
+        $this->assertSame( 'SELECT run_id, COUNT(*) AS steps FROM wp_yaymatik_run_steps WHERE run_id IN (4,5) GROUP BY run_id', $this->db->last_sql() );
+    }
 }

@@ -83,13 +83,82 @@ final class RunStore {
     }
 
     /**
-     * Newest first, without `scope` (it can be large), up to `PER_PAGE` + 1 rows so the caller can tell whether a next page exists.
+     * One page, newest first, without `scope` (it can be large).
      *
      * @param array $args Optional `workflow_id`, `status` (string or list), `page` (1-based).
      * @return array[]
      */
     public static function list( array $args = [] ): array {
         global $wpdb;
+        list( $filter, $params ) = self::filter( $args );
+        $params[]                = self::PER_PAGE;
+        $params[]                = ( max( 1, (int) ( $args['page'] ?? 1 ) ) - 1 ) * self::PER_PAGE;
+
+        $table   = self::table();
+        $columns = 'id, workflow_id, version_id, trigger_id, subject, status, position, wait_until, error, parent_run_id, root_run_id, depth, started_at, finished_at';
+        $rows    = $wpdb->get_results(
+            // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- placeholders are built to match the array.
+            $wpdb->prepare( "SELECT {$columns} FROM {$table} {$filter} ORDER BY id DESC LIMIT %d OFFSET %d", $params ),
+            ARRAY_A
+        );
+        return array_map( [ self::class, 'decode' ], (array) $rows );
+    }
+
+    /**
+     * How many runs `list()` pages through.
+     *
+     * @param array $args Optional `workflow_id`, `status` (string or list).
+     */
+    public static function count( array $args = [] ): int {
+        global $wpdb;
+        list( $filter, $params ) = self::filter( $args );
+        $table                   = self::table();
+        $sql                     = "SELECT COUNT(*) FROM {$table} {$filter}";
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- placeholders are built to match the array; no filter, no placeholders.
+        return (int) $wpdb->get_var( $params ? $wpdb->prepare( $sql, $params ) : $sql );
+    }
+
+    /**
+     * Per workflow, in one grouped query: runs started in the last 30 days, the newest start, waiting runs.
+     *
+     * @param int[] $workflow_ids
+     * @return array[] Workflow id => `recent`, `last_run` (GMT), `waiting`; workflows without runs are left out.
+     */
+    public static function stats( array $workflow_ids ): array {
+        global $wpdb;
+        $ids = array_filter( array_map( 'intval', $workflow_ids ) );
+        if ( ! $ids ) {
+            return [];
+        }
+        $table = self::table();
+        $in    = implode( ',', $ids );
+        $rows  = $wpdb->get_results(
+            $wpdb->prepare(
+                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $in is a list of ints.
+                "SELECT workflow_id, SUM(started_at >= %s) AS recent, MAX(started_at) AS last_run, SUM(status = %s) AS waiting FROM {$table} WHERE workflow_id IN ({$in}) GROUP BY workflow_id",
+                gmdate( 'Y-m-d H:i:s', time() - 30 * 86400 ),
+                self::STATUS_WAITING
+            ),
+            ARRAY_A
+        );
+        $stats = [];
+        foreach ( (array) $rows as $row ) {
+            $stats[ (int) $row['workflow_id'] ] = [
+                'recent'   => (int) $row['recent'],
+                'last_run' => $row['last_run'],
+                'waiting'  => (int) $row['waiting'],
+            ];
+        }
+        return $stats;
+    }
+
+    /**
+     * `WHERE …` and its params for `list()` and `count()`.
+     *
+     * @param array $args
+     * @return array [ string $sql, array $params ]
+     */
+    private static function filter( array $args ): array {
         $where  = [];
         $params = [];
         if ( ! empty( $args['workflow_id'] ) ) {
@@ -101,18 +170,7 @@ final class RunStore {
             $where[] = 'status IN (' . implode( ',', array_fill( 0, count( $statuses ), '%s' ) ) . ')';
             $params  = array_merge( $params, $statuses );
         }
-        $params[] = self::PER_PAGE + 1;
-        $params[] = ( max( 1, (int) ( $args['page'] ?? 1 ) ) - 1 ) * self::PER_PAGE;
-
-        $table   = self::table();
-        $columns = 'id, workflow_id, version_id, trigger_id, subject, status, position, wait_until, error, parent_run_id, root_run_id, depth, started_at, finished_at';
-        $filter  = $where ? 'WHERE ' . implode( ' AND ', $where ) : '';
-        $rows    = $wpdb->get_results(
-            // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- placeholders are built to match the array.
-            $wpdb->prepare( "SELECT {$columns} FROM {$table} {$filter} ORDER BY id DESC LIMIT %d OFFSET %d", $params ),
-            ARRAY_A
-        );
-        return array_map( [ self::class, 'decode' ], $rows );
+        return [ $where ? 'WHERE ' . implode( ' AND ', $where ) : '', $params ];
     }
 
     /**

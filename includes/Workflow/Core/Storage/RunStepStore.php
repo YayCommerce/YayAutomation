@@ -155,6 +155,25 @@ final class RunStepStore {
         return array_map( [ self::class, 'decode' ], (array) $rows );
     }
 
+    /**
+     * How many steps each run ran, in one grouped query.
+     *
+     * @param int[] $run_ids
+     * @return int[] Run id => count; runs without steps are left out.
+     */
+    public static function counts( array $run_ids ): array {
+        global $wpdb;
+        $ids = array_filter( array_map( 'intval', $run_ids ) );
+        if ( ! $ids ) {
+            return [];
+        }
+        $table = self::table();
+        $in    = implode( ',', $ids );
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $in is a list of ints.
+        $rows = $wpdb->get_results( "SELECT run_id, COUNT(*) AS steps FROM {$table} WHERE run_id IN ({$in}) GROUP BY run_id", ARRAY_A );
+        return array_map( 'intval', array_column( (array) $rows, 'steps', 'run_id' ) );
+    }
+
     public static function table(): string {
         return Schema::table( Schema::RUN_STEPS );
     }

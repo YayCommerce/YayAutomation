@@ -73,6 +73,13 @@ export interface Workflow {
   lastVersionAt: string;
   /** What blocks Activate / Update, found by the server: the live graph's, and the draft's (null without one). */
   issues: { live: WorkflowIssue[]; draft: WorkflowIssue[] | null };
+  /** Runs started in the last 30 days, any status. */
+  runs30d: number;
+  /** ISO date the newest run started; null when it never ran. */
+  lastRunAt: string | null;
+  waitingRuns: number;
+  /** Deactivate and Update only: how many waiting runs they cancelled. */
+  cancelledRuns?: number;
 }
 
 export type WorkflowVersionAction = 'created' | 'edited' | 'activated' | 'deactivated';
@@ -213,7 +220,26 @@ export interface RunStep {
   finishedAt: string | null;
 }
 
+/** A row of `GET /workflows/{id}/runs`. */
+export interface RunListItem extends Run {
+  /** E.g. "Order #1012". */
+  subjectLabel: string;
+  /** Admin URL of the order; null once it's gone. */
+  subjectUrl: string | null;
+  stepsRun: number;
+}
+
+/** A page of `GET /workflows/{id}/runs?status=a,b&page=n`, newest first. */
+export interface WorkflowRunsPage {
+  items: RunListItem[];
+  /** All runs matching the filter, across pages. */
+  total: number;
+}
+
 /** `GET /runs/{id}`. */
 export interface RunDetail extends Run {
-  steps: RunStep[];
+  steps: (RunStep & {
+    /** Step type id from the pinned version's graph; null when the node isn't there. */
+    stepType: StepId | null;
+  })[];
 }
