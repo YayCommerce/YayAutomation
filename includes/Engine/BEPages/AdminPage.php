@@ -12,7 +12,7 @@ use YayMatik\YayMatik;
 
 defined( 'ABSPATH' ) || exit;
 
-/** Admin Page — mounts the React app */
+/** Mounts the React admin app. */
 class AdminPage {
 
     use SingletonTrait;
@@ -81,7 +81,6 @@ class AdminPage {
                 'timezoneString' => get_option( 'timezone_string' ),
                 'gmtOffset'      => (float) get_option( 'gmt_offset', 0 ),
                 'adminEmail'     => get_option( 'admin_email' ),
-                // Where Send test emails go (`RestAPI::send_test_email()`).
                 'userEmail'      => wp_get_current_user()->user_email,
             ],
             'wc'         => [
@@ -94,12 +93,7 @@ class AdminPage {
             ],
             'automation' => Catalog::to_client() + [ 'email' => SendInternalEmail::sender() ],
             'docs'       => [
-                /**
-                 * Link under the empty "Workflow runs" section on a workflow's page.
-                 *
-                 * @param string $url Docs URL.
-                 */
-                'workflowRuns' => esc_url_raw( apply_filters( 'yaymatik_workflow_runs_docs_url', 'https://docs.yaycommerce.com/' ) ),
+                'workflowRuns' => 'https://docs.yaycommerce.com/',
             ],
         ];
     }

@@ -6,9 +6,7 @@ use YayMatik\Utils\SingletonTrait;
 
 defined( 'ABSPATH' ) || exit;
 
-/**
- * I18n Logic
- */
+/** Loads the plugin's translations. */
 class I18n {
 
     use SingletonTrait;

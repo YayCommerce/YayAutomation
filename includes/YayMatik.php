@@ -3,9 +3,7 @@ namespace YayMatik;
 
 use YayMatik\Utils\SingletonTrait;
 
-/**
- * YayMatik Plugin Entry Point
- */
+/** Boots the plugin. */
 final class YayMatik {
     use SingletonTrait;
 
@@ -19,11 +17,6 @@ final class YayMatik {
         if ( class_exists( 'WooCommerce' ) ) {
             \YayMatik\Workflow\Core\Runtime\Runtime::boot();
         }
-
-        // TODO: EDD setup
-        // if ( ! YayMatikProLicenseAdapter::is_licensed() ) {
-        // return;
-        // }
 
         $this->register_admin_menu();
         // Orders are only read through WC_Order, so HPOS (custom order tables) is safe.
@@ -40,7 +33,6 @@ final class YayMatik {
         \YayMatikScoped\YayCommerce\AdminShell\AdminShell::boot();
         \YayMatikScoped\YayCommerce\AdminShell\AdminShell::register_plugin(
             new YayMatikLicenseAdapter()
-            // Pro adds YayMatikProLicenseAdapter here.
         );
     }
 

@@ -3,14 +3,10 @@ namespace YayMatik\Engine\Register;
 
 use YayMatik\Utils\SingletonTrait;
 
-/**
- * Register in Development Mode
- * Will get deleted in production
- */
+/** Loads the admin app from the Vite dev server; not shipped. */
 class RegisterDev {
     use SingletonTrait;
 
-    /** Hooks Initialization */
     protected function __construct() {
         add_action( 'admin_footer', [ $this, 'render_dev_refresh' ], 5 );
 

@@ -167,7 +167,6 @@ declare global {
         email: { fromLine: string; fromName: string; fromAddress: string };
       };
       docs: {
-        /** Filter `yaymatik_workflow_runs_docs_url`. */
         workflowRuns: string;
       };
     };
