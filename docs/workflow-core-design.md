@@ -4,41 +4,10 @@
 
 "Workflow Core" is the code that stores, checks and runs workflows. It is not called "engine": in this repo `includes/Engine/` means WP/WC glue. This doc holds the decisions and the interfaces; the reasons behind them are in [workflow-core-decisions.md](workflow-core-decisions.md). The roadmap refers to sections here as `design §N`.
 
-## §0 Current state (v0.1)
-
-Paths are after F0 (move and rename); the behavior described is v0.1's. Files marked *(removed in F1)* no longer exist.
-
-| Area | Today | File |
-|---|---|---|
-| Storage | CPT `yaymatik_wf` + post meta (status, trigger id, live graph JSON, draft graph JSON). Versions in table `yaymatik_versions` | `includes/Workflow/Storage/WorkflowRepository.php`, `VersionStore.php` |
-| Graph | React Flow shape (nodes with positions, edges). Tree: one parent per step, one child per handle. Kinds: trigger, condition (`then` / `otherwise`), action | `includes/Workflow/Definition/WorkflowValidator.php` *(removed in F1)* |
-| Trigger → queue | Triggers hook WP actions → `collect()` while the request runs → `flush()` at shutdown → `meta_query` for active workflows → `claim()` → `matches()` → one Action Scheduler async job per workflow | `includes/Workflow/Runtime/Runner.php` *(removed in F1)* |
-| Execution | One job walks the whole graph at once. It reads the live graph at run time, not the version live when the event happened | `Runner::run()` *(removed in F1)* |
-| Run state | None. Errors go to the WooCommerce log. No runs, step results or outputs are stored | `includes/Utils/Logger.php` |
-| Context | Item id => live PHP object (`WC_Order`), rebuilt from event args. Can't be saved mid-run | `Workflow/Steps/Triggers/OrderTrigger.php` |
-| Data | Fields typed number / string / enum / date. 3 items: order, customer, site. Merge tags have 2 parts (`{{ order.total }}`). No booleans, lists, relations or step outputs | `includes/Workflow/Data/` |
-| Actions | `run()` returns `true` or `WP_Error`, no output | `Workflow/Steps/Core/Action.php` |
-| Loop guard | In-memory chain of workflow ids per subject, passed in job args | `Runner::collect()` *(removed in F1)* |
-| Extending | Hard-coded lists in `StepRegistry`, `DataRegistry`, `Plugins`. No hooks | `Workflow/Steps/Core/StepRegistry.php` |
-| Validation | Written twice: PHP `validate()` must match each step's TS `schema.ts` by hand *(F1: from `fields()`)* | `Workflow/Steps/Core/Step.php` |
-
-**Keep:** batching at shutdown, `claim()` for once-per-subject triggers, the sanitize / validate split, versions, `uses()` / `provides()` checks, "never throw into the host request", Action Scheduler.
-
-**Blocks the roadmap:**
-1. No stored run: no Wait, run history, retry, cancel or AI debugging.
-2. One job runs the whole graph: it can't pause, resume or process a loop in parts.
-3. The context can't be saved mid-run.
-4. Steps have no outputs: Generate coupon → coupon code in an email is impossible.
-5. No lists, relations or booleans: For each, `order.items` and yes/no conditions don't fit.
-6. Event triggers only: no schedule, interval, query, manual or call-by-workflow.
-7. Closed registries: Yay plugins can't add steps.
-8. Two validators kept in sync by hand: doesn't scale to plugin steps, and the AI can't read them.
-
 ## §1 Naming and layout · C1, C2
 
 - `includes/Engine/` keeps only WP/WC glue: `BEPages/`, `API/`, `Register/`. REST controllers call Workflow Core and hold no workflow logic.
 - Workflow Core moves to `includes/Workflow/`, namespace `YayMatik\Workflow\`. The top level holds what modules register; `Core/` holds the shared code every module uses. `includes/Engine/` = WordPress glue (REST, admin pages, scripts). A folder is named for the plural of the base class it holds; namespaces follow folders.
-- "Blocks" becomes **"Steps"**, in PHP and TS (`apps/admin-page/src/routes/workflows/blocks/` → `steps/`). This avoids a clash with Gutenberg blocks and matches the UI wording.
 
 | Folder | Holds |
 |---|---|
@@ -127,13 +96,13 @@ Step:   id() label() plugin() module()
 Our own small template module. **No Liquid or other template library, now or later.**
 
 - **Tier 1 (v1.0):** `{{ path | filter: arg }}`, e.g. `{{ order.customer.first_name | default: "there" }}`.
-  - Filter registry: `default`, `date`, `money`, `upper`, `lower`, `join`. Each filter declares its input type. Yay plugins may add filters later.
+  - Filter registry: `default`, `date`, `money`, `upper`, `lower`, `join`. A filter never fails: input it can't use comes back unchanged. Yay plugins may add filters later.
   - The editor checks paths and filters against the step's available variables (§4).
   - A missing value prints empty; the step never fails for it.
   - Output is escaped in HTML. No `raw` filter for users.
   - **One renderer, in PHP.** TS only parses, for checks and autocomplete. Preview and Send test call the server.
   - Today's `{{ item.field }}` tags keep working.
-  - **HTML messages** (`html` fields): the stored HTML stays as written; each value is escaped for where it lands: `esc_html` in text, `esc_url` over a whole `href` / `src` (a value after the start of the URL is `rawurlencode`d first), `esc_attr` in other attributes, dropped inside a tag. A block value alone in a paragraph replaces it. Then `wpautop`. A message with no HTML tags (saved before the field was rich) is read as plain text. `Template::render_html()`, `Email\EmailBody`.
+  - **HTML messages** (`html` fields): the stored HTML stays as written; each value is escaped for where it lands: `esc_html` in text, `esc_url` over a whole `href` / `src` (a value after the start of the URL is `rawurlencode`d first), `esc_attr` in other attributes, dropped inside a tag. A block value alone in a paragraph replaces it. Then `wpautop`. Plain text is what the editor saves for a message without tags (`"Hi\n\nTom &amp; Jerry"`): it's read as plain text. `Template::render_html()`, `Email\EmailBody`.
   - Subjects and headings are plain text on one line: typed HTML tags removed, values never stripped.
 - **Tier 2 (on demand):** lists come from server-rendered email blocks (product grid, cart items, coupon box; the coupon box exists). Conditional text comes from a "Show if" setting on a block, using the Condition rules builder.
 - **Escape valve (only if users ask):** `{% if path %}…{% else %}…{% endif %}`, truthy check only.
