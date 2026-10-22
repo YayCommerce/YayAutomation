@@ -1,6 +1,4 @@
-/**
- * Workflow document shape. Library-agnostic: the canvas maps it to ReactFlow nodes/edges.
- */
+/** Workflow document shape. The canvas maps it to ReactFlow nodes and edges. */
 
 export type WorkflowNodeKind = 'trigger' | 'condition' | 'action';
 
@@ -26,9 +24,9 @@ export type StepId =
 
 /** `type` (not `interface`) so it satisfies ReactFlow's `Record<string, unknown>` data constraint. */
 export type WorkflowNodeData = {
-  /** Null on a trigger or action step whose block isn't chosen yet. */
+  /** Null on a trigger or action whose step isn't chosen yet. */
   block: StepId | null;
-  /** Block-specific settings. Validated by the block's schema; may be incomplete while inactive. */
+  /** Step settings; may be incomplete while inactive. */
   config: Record<string, unknown>;
 };
 
@@ -79,7 +77,6 @@ export interface Workflow {
 
 export type WorkflowVersionAction = 'created' | 'edited' | 'activated' | 'deactivated';
 
-/** One entry of a workflow's version history. */
 export interface WorkflowVersion {
   id: string;
   /** Last thing done to this version. */
@@ -199,7 +196,6 @@ export interface Run {
 
 export type RunStepStatus = 'running' | 'completed' | 'skipped' | 'failed' | 'waiting';
 
-/** One step a run ran. */
 export interface RunStep {
   id: string;
   runId: string;

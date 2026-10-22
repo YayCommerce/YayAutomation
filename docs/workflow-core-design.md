@@ -115,8 +115,8 @@ Step:   id() label() plugin() module()
 - **Forms.**
   - No custom form → the generic `StepForm` draws one from the fields. A simple step from a Yay plugin needs PHP only.
   - Core step with a complex form (Condition rules) → `defineStep( { id, Form } )`, imported directly. No global call, fully typed.
-  - Plugin step with a custom form → `window.yayMatik.registerStepPanel( id, Panel )`. Internal until §10.
-  - Both put the form in the same registry. Props: `{ config, onChange, errors }`.
+  - Plugin step with a custom form → planned, through the public extension API (§10 P4).
+  - A custom `Form` gets `{ config, onChange }` (`StepFormProps`).
   - Beside any form, `defineStep` takes `Footer` (under the form, with its latest config, e.g. Send email's unsubscribe note) and `Actions` (panel header, e.g. Send email's Preview / Send test). Send email and Generate coupon use the generic form plus these.
 - **Icons (L5).** A step's `icon()` is a name from a fixed list in core (lucide icons, about 40), never an SVG. The editor draws it in the step's tile, tinted by kind (trigger, condition, action), on the canvas, in the picker, the panel header, template cards and the preview. A missing icon is added to core's list, not shipped by the plugin.
 - The `rules` field type is ours: its checks are written in PHP (`Criteria`) and TS. Plugins never write validation in JS.
@@ -179,7 +179,7 @@ Settings → Health check finds problems and proposes a fix the site owner can a
 | ID | Topic | Decision |
 |---|---|---|
 | P3 | Waiting runs on Update | Always cancel in v1.0. Revisit after v1.0 |
-| P4 | Public extension API | Last: after Pro connectors and Yay integrations are stable. Until then the registry, step contract and `registerStepPanel` are internal |
+| P4 | Public extension API | Last: after Pro connectors and Yay integrations are stable. Until then the registry and step contract are internal, and plugin steps have no custom forms |
 | P5 | AI provider | Not decided. v1.0 only keeps a provider interface open |
 
 ## §11 Decision log

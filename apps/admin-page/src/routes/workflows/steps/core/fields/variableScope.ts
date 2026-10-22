@@ -5,7 +5,7 @@ import type { LucideIcon } from 'lucide-react';
 import { availableVariables, type Variable } from '../variables';
 
 /** A step as "Insert variable" shows it: on a tile like its card. */
-export interface ScopeStep {
+interface ScopeStep {
   label: string;
   kind: WorkflowNodeKind;
   icon?: LucideIcon;

@@ -1,10 +1,8 @@
 import { isBlankHtml } from './catalogSchema';
 
 /**
- * The WordPress classic editor (TinyMCE + Quicktags) on a textarea, outside React: `mountClassicEditor`
- * adds a textarea to `host` and turns it into an editor with Visual / Code tabs, `destroy()` removes
- * both. The scripts come from PHP `wp_enqueue_editor()`; without TinyMCE (e.g. the user turned the
- * visual editor off) it's the Code tab alone, without the scripts a plain textarea.
+ * The WordPress classic editor (TinyMCE + Quicktags) on a textarea, outside React. Without TinyMCE
+ * (the user turned the visual editor off) it's the Code tab alone, without the scripts a plain textarea.
  *
  * Stored HTML is what WordPress saves from the editor (paragraphs as blank lines, `wpautop` puts them
  * back). Loading HTML into TinyMCE and saving it again can change its spelling, so `onEdit` only

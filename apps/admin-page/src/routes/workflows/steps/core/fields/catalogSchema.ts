@@ -63,7 +63,7 @@ const known = (field: StepFieldMeta, values: unknown[]) =>
  * Why one field's value can't be used, or null. Mirrors PHP `Field::validate()`, same messages.
  * `stepLabel` fills the required message's `%s`.
  */
-export function fieldError(field: StepFieldMeta, config: Config, stepLabel: string): string | null {
+function fieldError(field: StepFieldMeta, config: Config, stepLabel: string): string | null {
   if (field.type === 'notice' || !isFieldVisible(field, config)) return null;
   const value = config[field.key];
   if (isBlank(field, value)) {

@@ -10,7 +10,7 @@ import type { Config } from './types';
 export type SummaryValues<TConfig> = Partial<Record<Extract<keyof TConfig, string>, (config: TConfig) => string>>;
 
 /** "A", "A or B", "A, B or C". */
-export function orList(values: string[]) {
+function orList(values: string[]) {
   if (values.length < 2) return values.join('');
   /* translators: 1: comma-separated list, 2: the last item */
   return sprintf(__('%1$s or %2$s', 'yaymatik'), values.slice(0, -1).join(', '), values[values.length - 1]);

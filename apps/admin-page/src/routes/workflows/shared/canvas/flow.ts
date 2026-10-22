@@ -99,10 +99,8 @@ function isPending(data: WorkflowNodeData) {
 }
 
 /**
- * Curved lines (`CurvedEdge`) ending in an open arrow (`EdgeArrowDefs`): the last
- * stretch always runs straight down into the card, so the arrow lines up with it. In the editor they're dashed,
- * and a line into a step that isn't set up yet runs (ReactFlow's `animated` dashes) until it is;
- * read-only canvases (overview, template preview) draw them solid.
+ * The last stretch always runs straight down into the card, so the arrow lines up with it. In the
+ * editor lines are dashed, and a line into a step that isn't set up yet runs until it is.
  */
 export function toFlowEdges(graph: WorkflowGraph, { editing = false } = {}): Edge[] {
   const pending = new Set(graph.nodes.filter((node) => isPending(node.data)).map((node) => node.id));

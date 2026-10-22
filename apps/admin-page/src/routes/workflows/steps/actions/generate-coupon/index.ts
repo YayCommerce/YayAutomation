@@ -6,12 +6,8 @@ import { FreeShippingWarning } from './FreeShippingWarning';
 
 const { currencySymbol } = window.yayMatikMeta.wc;
 
-/**
- * A WooCommerce coupon for later steps (`{{ steps.<id>.code }}`). Blank (null) `expiry_days` =
- * never expires, null `minimum_spend` = none; `amount` is unused for free shipping.
- * Form and checks come from includes/Workflow/Actions/GenerateCoupon.php `fields()`.
- */
-export type DiscountType = 'percent' | 'fixed_cart' | 'free_shipping';
+type DiscountType = 'percent' | 'fixed_cart' | 'free_shipping';
+/** Null `expiry_days` = never expires, null `minimum_spend` = none; `amount` is unused for free shipping. */
 export type GenerateCouponConfig = {
   discount_type: DiscountType;
   amount: number | null;

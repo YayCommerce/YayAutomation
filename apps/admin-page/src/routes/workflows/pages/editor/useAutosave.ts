@@ -15,10 +15,8 @@ const DELAY_MS = 800;
 export type AutosaveStatus = 'saved' | 'pending' | 'saving' | 'error';
 
 /**
- * Saves the form's graph shortly after each change, one request at a time. The server decides where
- * the graph goes (the draft once the workflow has ever been activated, the workflow itself before).
- * `server`: the issues the server found in the last graph sent, starting with `initialIssues` for
- * the graph the form opened with.
+ * Saves the form's graph shortly after each change, one request at a time. `server`: the issues
+ * found in the last graph sent, starting with `initialIssues`.
  */
 export function useAutosave(form: WorkflowForm, workflowId: string, initialIssues: WorkflowIssue[] = []) {
   // `mutateAsync` is stable across renders (the mutation object isn't), so the callbacks below are too.

@@ -1,6 +1,4 @@
-import { dateI18n, getDate, getSettings } from '@wordpress/date';
-
-export { getWpTimezone } from '@yaymatik/utils';
+import { dateI18n, getSettings } from '@wordpress/date';
 
 export function formatDate(date: Date | string | undefined, format?: string) {
   const { formats } = getSettings();
@@ -15,14 +13,4 @@ export function formatTime(date: Date | string | undefined, format?: string) {
 export function formatDateTime(date: Date | string | undefined, format?: string) {
   const { formats } = getSettings();
   return dateI18n(format ?? formats.datetime, date);
-}
-
-/** parse date string to js date with wp timezone */
-export function parseWpDate(date: string | undefined) {
-  return getDate(date);
-}
-
-/** get current date in js date with wp timezone */
-export function getWpNow() {
-  return getDate();
 }

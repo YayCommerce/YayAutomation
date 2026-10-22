@@ -1,4 +1,4 @@
-import { createElement, useState, type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import * as v from 'valibot';
 
 import type { CatalogStepMeta } from '@/types/localize';
@@ -7,7 +7,6 @@ import { defaultsFromFields, schemaFromFields } from './fields/catalogSchema';
 import { StepForm } from './fields/StepForm';
 import { stepIcons } from './icons';
 import { MARKED } from './marks';
-import { stepPanel } from './panels';
 import { automationMeta, isPendingStep } from './pending';
 import { renderSummary } from './summary';
 import { templatePaths } from './template';
@@ -100,12 +99,8 @@ export function defineStep<TConfig extends Config>({
       setCurrent(next as TConfig);
       onChange(next);
     };
-    // A registered panel is the same component on every render, so React keeps its state.
-    const panel = stepPanel(spec.id);
     const form = Form ? (
       <Form config={initial} onChange={change as (config: TConfig) => void} />
-    ) : panel ? (
-      createElement(panel, { config: initial, onChange: change })
     ) : (
       <StepForm fields={fields} schema={schema as v.GenericSchema<Config>} config={initial} onChange={change} />
     );
@@ -136,9 +131,7 @@ export function defineStep<TConfig extends Config>({
     tags: (config) => tags(normalize(config)),
     // An issue about one of these shows under it; a custom form draws its own fields.
     drawsField: (key) =>
-      !Form &&
-      !stepPanel(spec.id) &&
-      fields.some((field) => field.key === key && !['notice', 'rules', 'number_unit'].includes(field.type)),
+      !Form && fields.some((field) => field.key === key && !['notice', 'rules', 'number_unit'].includes(field.type)),
     uses: (config) => {
       const items = uses ? uses(normalize(config)) : requires;
       return [...new Set(items)].filter((item) => !alwaysAvailable.includes(item));

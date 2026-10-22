@@ -17,7 +17,7 @@ export const shortDay = (date: string) =>
   formatDate(date, formatDate(date, 'Y') === formatDate(undefined, 'Y') ? 'M j' : 'M j, Y');
 
 /** "Oct 2 at 3:39 PM": the year only when it isn't this year; the time in the site's time format. */
-export function formatVersionDate(date: string) {
+function formatVersionDate(date: string) {
   const day = shortDay(date);
   /* translators: 1: date, 2: time */
   return sprintf(__('%1$s at %2$s', 'yaymatik'), day, formatTime(date));
@@ -35,7 +35,7 @@ const actionLabels: Record<WorkflowVersionAction, (user: string) => string> = {
 };
 
 /**
- * Versions of a workflow, newest first, with prev/next paging. Rows are read-only for now. `page`
+ * Versions of a workflow, newest first, with prev/next paging. Rows are read-only. `page`
  * (1-based) is the caller's, so it survives switching tabs.
  */
 export function VersionHistory({

@@ -32,7 +32,6 @@ export type FieldWidget =
 
 /** PHP `Field::to_array()`: one setting of a step. Optional keys are sent only when set. */
 export interface StepFieldMeta {
-  /** Config key. */
   key: string;
   type: FieldWidget;
   label: string;
@@ -47,7 +46,7 @@ export interface StepFieldMeta {
   showIf?: { field: string; value: unknown };
   /** select, multiselect; units for number_unit. */
   options?: OptionMeta[];
-  /** The stored value when nothing is set. Absent on notice. */
+  /** Absent on notice. */
   default?: unknown;
   min?: number;
   max?: number;
@@ -89,7 +88,7 @@ export interface CatalogStepMeta extends StepMeta {
   /** Card text with `%field key%` placeholders. */
   summary: string;
   onError: 'stop' | 'continue';
-  /** Settings, in form order. */
+  /** In form order. */
   fields: StepFieldMeta[];
   outputs: StepOutputMeta[];
 }
@@ -102,7 +101,7 @@ export interface DataItemMeta {
   label: string;
   /** One line for the "Insert variable" list. */
   description: string;
-  /** Its tile in the "Insert variable" list: a step icon name. Sent by PHP; absent on items the app defines itself. */
+  /** A step icon name for its "Insert variable" tile. Absent on items the app defines itself. */
   icon?: string;
   fields: {
     /** Full key, e.g. `order.total`. */
@@ -110,14 +109,13 @@ export interface DataItemMeta {
     label: string;
     /** Condition type: picks the operators. */
     type: DataFieldType;
-    /** Full value type, e.g. `money`, `list<entity<order_item>>`. Always sent by PHP; absent on fields the app defines itself. */
+    /** e.g. `money`, `list<entity<order_item>>`. Absent on fields the app defines itself. */
     valueType?: string;
     /** False: merge tag only, not offered in conditions. */
     conditional: boolean;
-    /** Enum fields. */
     options?: { value: string; label: string }[];
   }[];
-  /** Links to one other item (`order.customer` → `customer`): its fields read as `order.customer.first_name`. Sent by PHP; absent on items the app defines itself. */
+  /** Links to one other item: `order.customer` → `order.customer.first_name`. Absent on items the app defines itself. */
   relations?: { key: string; label: string; item: string }[];
 }
 
@@ -143,10 +141,7 @@ declare global {
       wc: {
         active: boolean;
         currencySymbol: string;
-        /**
-         * What free shipping coupons need to work: a Free shipping method that takes a coupon alone,
-         * one that also needs a minimum order amount, or '' when none takes a coupon.
-         */
+        /** What a Free shipping method needs to accept a coupon; '' when none accepts one. */
         freeShippingCoupon: 'coupon' | 'coupon_and_minimum' | '';
       };
       automation: {
@@ -160,10 +155,9 @@ declare global {
         operatorLabels: Record<string, string>;
         /** Data items every workflow has, whatever the trigger. */
         always: string[];
-        /** PHP `Core\Definition\Messages::all()`: messages both sides show, by key. Same as `model/messages.ts`. */
+        /** PHP `Core\Definition\Messages::all()`. Same as `model/messages.ts`. */
         messages: Record<string, string>;
-        /** WooCommerce sender for steps not built in PHP yet, e.g. "Store <store@example.com>". */
-        /** Who emails come from (WooCommerce's sender); `fromName` is plain text, may be blank. */
+        /** WooCommerce's sender. `fromName` is plain text, may be blank. */
         email: { fromLine: string; fromName: string; fromAddress: string };
       };
       docs: {

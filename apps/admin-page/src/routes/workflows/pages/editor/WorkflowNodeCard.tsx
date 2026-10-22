@@ -41,7 +41,7 @@ const onHover = (slideFrom: 'left' | 'top') =>
  * controls below. `nodeTypes` maps each kind here. Clicking the card opens its panel (the canvas's
  * `onNodeClick`), so the controls stop propagation.
  */
-export function WorkflowNodeCard({ id, type, data, selected }: NodeProps<FlowNode>) {
+function WorkflowNodeCard({ id, type, data, selected }: NodeProps<FlowNode>) {
   const { openNodeId, openPanel, issueModes, requestDelete } = useEditorContext();
   // Steps hang off a chosen trigger (its data decides what they can use) or a chosen action.
   const canAdd = type === 'condition' || !!data.block;

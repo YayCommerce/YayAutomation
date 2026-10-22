@@ -90,10 +90,7 @@ export function issueText(issue: WorkflowIssue, ...graphs: (WorkflowGraph | null
   return sprintf(__('%1$s: %2$s', 'yaymatik'), label, issue.message);
 }
 
-/**
- * `activateIssues()` as text, each step named from the graph its issue came from (`issueText()`),
- * each line once.
- */
+/** `activateIssues()` as text, each line once. */
 export function activateIssueTexts(workflow: Pick<Workflow, 'status' | 'issues' | 'graph' | 'draft'>): string[] {
   if (workflow.status === 'active') return [];
   return [
@@ -115,7 +112,7 @@ export const stepsNeedingSetup = (issues: WorkflowIssue[]) =>
 /**
  * Data items each step can read: what the trigger supplies, what the actions above it add (e.g. a
  * coupon), and the always-available ones. Steps not linked to the trigger get the trigger's data.
- * Null until a trigger is chosen. Only coming-soon actions provide data items so far (see `pending.ts`).
+ * Null until a trigger is chosen.
  */
 export function availableData(graph: WorkflowGraph): ((nodeId: string) => string[]) | null {
   const trigger = graph.nodes.find((node) => node.kind === 'trigger');
