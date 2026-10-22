@@ -132,9 +132,6 @@ final class ScopeTest extends TestCase {
         );
     }
 
-    /**
-     * @param array $data Scope data.
-     */
     private function scope( array $data ): Scope {
         return new Scope( $data, $this->resolver(), $this->entities() );
     }

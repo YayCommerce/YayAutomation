@@ -5,10 +5,7 @@ if ( ! defined( 'ARRAY_A' ) ) {
     define( 'ARRAY_A', 'ARRAY_A' );
 }
 
-/**
- * `$wpdb` stand-in that records what a store sends and returns canned results, to check SQL shape.
- * It doesn't run SQL; the real tables are checked end to end with wp-cli.
- */
+/** `$wpdb` that records what a store sends and returns canned results; it runs no SQL (check-runs tests the real tables). */
 final class FakeWpdb {
 
     /** @var string */

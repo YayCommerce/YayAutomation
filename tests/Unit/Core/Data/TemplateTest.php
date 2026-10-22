@@ -6,7 +6,7 @@ use YayMatik\Tests\Support\FakeValues;
 use YayMatik\Workflow\Core\Data\Filters;
 use YayMatik\Workflow\Core\Data\Template;
 
-/** Merge tags `{{ path | filter: arg }}`: old tags, paths, filters, escaping, malformed tags. */
+/** Merge tags `{{ path | filter: arg }}`: paths, filters, escaping, malformed tags. */
 final class TemplateTest extends TestCase {
 
     /** @var Template */
@@ -45,7 +45,7 @@ final class TemplateTest extends TestCase {
         $this->assertSame( $paths, $this->template->paths( $text ) );
     }
 
-    public function test_old_tags_render_their_display_text(): void {
+    public function test_tags_render_their_display_text(): void {
         $values = new FakeValues(
             [ 'order.number' => '12' ],
             [
@@ -102,7 +102,7 @@ final class TemplateTest extends TestCase {
         );
     }
 
-    public function test_paths_of_old_tags_in_order_without_duplicates(): void {
+    public function test_paths_of_tags_in_order_without_duplicates(): void {
         $text = 'Order {{ order.number }} for {{customer.email}} ({{ order.number }}), {{ order }} {{ Order.Total }}';
         $this->assertSame( [ 'order.number', 'customer.email' ], $this->template->paths( $text ) );
     }

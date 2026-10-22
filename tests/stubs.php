@@ -1,7 +1,6 @@
 <?php
 /**
- * Minimal stand-ins for the WordPress functions the unit-tested classes call. Each one behaves
- * like WordPress for the inputs the tests use; add a stub only when a test needs it.
+ * WordPress functions the tested classes call, like WordPress for the inputs the tests use.
  *
  * @package YayMatik
  */
@@ -121,7 +120,6 @@ if ( ! function_exists( 'wp_check_invalid_utf8' ) ) {
 }
 
 if ( ! function_exists( 'sanitize_text_field' ) ) {
-    // Like WordPress: tags stripped, line breaks and tabs removed, spaces collapsed, trimmed.
     function sanitize_text_field( $text ) {
         $text = strip_tags( wp_check_invalid_utf8( $text ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.strip_tags_strip_tags -- this is a WordPress stand-in.
         return trim( (string) preg_replace( '/[\r\n\t ]+/', ' ', $text ) );
@@ -129,7 +127,6 @@ if ( ! function_exists( 'sanitize_text_field' ) ) {
 }
 
 if ( ! function_exists( 'sanitize_textarea_field' ) ) {
-    // Like WordPress: tags stripped, line breaks kept, trimmed.
     function sanitize_textarea_field( $text ) {
         return trim( strip_tags( wp_check_invalid_utf8( $text ) ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.strip_tags_strip_tags -- this is a WordPress stand-in.
     }
@@ -157,9 +154,9 @@ if ( ! class_exists( 'WP_Error' ) ) {
         private $data;
 
         /**
-         * @param string|int $code    Error code.
-         * @param string     $message Error message.
-         * @param mixed      $data    Error data.
+         * @param string|int $code
+         * @param string     $message
+         * @param mixed      $data
          */
         public function __construct( $code = '', $message = '', $data = '' ) {
             $this->code    = $code;
@@ -246,7 +243,6 @@ if ( ! function_exists( 'date_i18n' ) ) {
 }
 
 if ( ! function_exists( 'esc_url_raw' ) ) {
-    // Like WordPress: `esc_url()` without turning `&` into an entity, for headers and redirects.
     function esc_url_raw( $url ) {
         return str_replace( [ '&#038;', '&#039;' ], [ '&', "'" ], esc_url( $url ) );
     }

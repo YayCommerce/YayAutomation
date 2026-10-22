@@ -37,7 +37,7 @@ final class StepContractTest extends TestCase {
     /**
      * @dataProvider steps_provider
      *
-     * @param Step $step Step.
+     * @param Step $step
      */
     public function test_declares_its_identity( Step $step ): void {
         $this->assertNotSame( '', $step->label() );
@@ -48,7 +48,7 @@ final class StepContractTest extends TestCase {
     /**
      * @dataProvider steps_provider
      *
-     * @param Step $step Step.
+     * @param Step $step
      */
     public function test_icon_is_a_name_from_core_list( Step $step ): void {
         $this->assertContains( $step->icon(), StepIcons::NAMES, $step->icon() . ' is not in StepIcons::NAMES' );
@@ -65,7 +65,7 @@ final class StepContractTest extends TestCase {
     /**
      * @dataProvider steps_provider
      *
-     * @param Step $step Step.
+     * @param Step $step
      */
     public function test_fields_have_unique_keys_and_summary_names_only_them( Step $step ): void {
         $keys = array_map( fn( Field $field ) => $field->key(), $step->fields() );
@@ -79,7 +79,7 @@ final class StepContractTest extends TestCase {
     /**
      * @dataProvider steps_provider
      *
-     * @param Step $step Step.
+     * @param Step $step
      */
     public function test_outputs_are_typed( Step $step ): void {
         $this->assertIsArray( $step->outputs() );
@@ -132,7 +132,7 @@ final class StepContractTest extends TestCase {
     /**
      * @dataProvider steps_provider
      *
-     * @param Step $step Step.
+     * @param Step $step
      */
     public function test_sanitize_never_fails_and_is_stable( Step $step ): void {
         $junk = [ null, true, 3, 'text', [], [ 'x' ] ];
@@ -152,7 +152,7 @@ final class StepContractTest extends TestCase {
     /**
      * @dataProvider steps_provider
      *
-     * @param Step $step Step.
+     * @param Step $step
      */
     public function test_errors_name_a_field_of_the_step( Step $step ): void {
         $keys = array_map( fn( Field $field ) => $field->key(), $step->fields() );

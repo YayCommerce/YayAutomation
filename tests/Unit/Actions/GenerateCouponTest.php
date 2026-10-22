@@ -31,7 +31,7 @@ final class GenerateCouponTest extends TestCase {
     /**
      * Sanitized config: the step's defaults with these values.
      *
-     * @param array $values Raw values.
+     * @param array $values
      */
     private function config( array $values = [] ): array {
         return $this->step()->sanitize( $values + $this->defaults() );
@@ -53,7 +53,7 @@ final class GenerateCouponTest extends TestCase {
     /**
      * The validation error's field and message, or null when valid.
      *
-     * @param array $values Raw values.
+     * @param array $values
      */
     private function error( array $values ): ?array {
         $result = $this->step()->validate( $this->config( $values ) );

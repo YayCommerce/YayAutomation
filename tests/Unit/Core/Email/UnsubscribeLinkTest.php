@@ -17,7 +17,7 @@ final class UnsubscribeLinkTest extends TestCase {
     /**
      * The query args of a link.
      *
-     * @param string $url Link.
+     * @param string $url
      */
     private function args( string $url ): array {
         parse_str( (string) wp_parse_url( $url, PHP_URL_QUERY ), $args );

@@ -11,10 +11,10 @@ require_once dirname( __DIR__, 3 ) . '/Support/woocommerce-stubs.php';
 final class ValidatorTest extends TestCase {
 
     /**
-     * @param string      $id     Node id.
-     * @param string      $kind   Kind.
+     * @param string      $id
+     * @param string      $kind
      * @param string|null $block  Step id.
-     * @param array       $config Config.
+     * @param array       $config
      */
     private static function node( string $id, string $kind, ?string $block, array $config = [] ): array {
         return [
@@ -32,8 +32,8 @@ final class ValidatorTest extends TestCase {
     }
 
     /**
-     * @param string      $source Source node.
-     * @param string      $target Target node.
+     * @param string      $source
+     * @param string      $target
      * @param string|null $handle Branch.
      */
     private static function edge( string $source, string $target, ?string $handle = null ): array {
@@ -51,9 +51,9 @@ final class ValidatorTest extends TestCase {
     /**
      * Issues of a workflow, its graph prepared as a save would.
      *
-     * @param array  $nodes Nodes.
-     * @param array  $edges Edges.
-     * @param string $name  Name.
+     * @param array  $nodes
+     * @param array  $edges
+     * @param string $name
      */
     private static function issues( array $nodes, array $edges, string $name = 'Alert' ): array {
         $graph = GraphSchema::prepare(
@@ -236,11 +236,6 @@ final class ValidatorTest extends TestCase {
         return null;
     }
 
-    /**
-     * @param string $code    Code.
-     * @param string $message Message.
-     * @param string $field   Field.
-     */
     private static function expect( string $code, string $message, string $field ): array {
         return [
             'code'    => $code,

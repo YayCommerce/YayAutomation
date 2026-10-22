@@ -4,7 +4,7 @@ namespace YayMatik\Tests\Unit\Core\Data;
 use PHPUnit\Framework\TestCase;
 use YayMatik\Workflow\Core\Data\Filters;
 
-/** The filter registry: extension, and inputs each filter accepts. */
+/** The filter registry: the built-in filters and added ones. */
 final class FiltersTest extends TestCase {
 
     public function test_the_six_filters(): void {

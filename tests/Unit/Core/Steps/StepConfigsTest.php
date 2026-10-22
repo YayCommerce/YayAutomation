@@ -34,10 +34,10 @@ final class StepConfigsTest extends TestCase {
     }
 
     /**
-     * @param string $id     Criteria field key.
-     * @param string $op     Operator.
-     * @param string $value  Value.
-     * @param string $type   valueType.
+     * @param string $id    Criteria field key.
+     * @param string $op
+     * @param string $value
+     * @param string $type  valueType.
      */
     private static function rule( string $id, string $op, string $value = '', string $type = 'value' ): array {
         return [
@@ -49,7 +49,7 @@ final class StepConfigsTest extends TestCase {
     }
 
     /**
-     * @param array  $rules Rules.
+     * @param array  $rules
      * @param string $join  all|any.
      */
     private static function criteria( array $rules, string $join = 'all' ): array {
@@ -294,8 +294,8 @@ final class StepConfigsTest extends TestCase {
     /**
      * @dataProvider configs
      *
-     * @param string      $id       Step id.
-     * @param mixed       $raw      Raw config.
+     * @param string      $id
+     * @param mixed       $raw
      * @param array|null  $stored   Expected sanitized config, or null to skip.
      * @param true|string $expected True, or the exact error message.
      */

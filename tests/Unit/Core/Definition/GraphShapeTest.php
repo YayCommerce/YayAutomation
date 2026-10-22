@@ -17,10 +17,10 @@ final class GraphShapeTest extends TestCase {
     private const BAD_EDGE  = 'Invalid connection between steps.';
 
     /**
-     * @param string      $id    Node id.
-     * @param string      $kind  Kind.
-     * @param string|null $block Step id.
-     * @param array       $config Config.
+     * @param string      $id
+     * @param string      $kind
+     * @param string|null $block  Step id.
+     * @param array       $config
      */
     private static function node( string $id, string $kind, ?string $block, array $config = [] ): array {
         return [
@@ -38,9 +38,9 @@ final class GraphShapeTest extends TestCase {
     }
 
     /**
-     * @param string      $id     Edge id.
-     * @param string      $source Source node.
-     * @param string      $target Target node.
+     * @param string      $id
+     * @param string      $source
+     * @param string      $target
      * @param string|null $handle Branch.
      */
     private static function edge( string $id, string $source, string $target, ?string $handle = null ): array {
@@ -76,7 +76,7 @@ final class GraphShapeTest extends TestCase {
      * The valid graph with one value replaced.
      *
      * @param array $path  Keys down to the value, e.g. [ 'nodes', 3, 'id' ].
-     * @param mixed $value New value.
+     * @param mixed $value
      */
     private static function with( array $path, $value ): array {
         $graph = self::valid();
@@ -143,7 +143,7 @@ final class GraphShapeTest extends TestCase {
     /**
      * @dataProvider malformed
      *
-     * @param mixed       $graph   Raw graph.
+     * @param mixed       $graph
      * @param string      $message Exact message.
      * @param string|null $node_id Node the error names.
      */

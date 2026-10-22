@@ -6,11 +6,7 @@ use YayMatik\Workflow\Core\Data\Type;
 use YayMatik\Workflow\Core\Steps\Action;
 use YayMatik\Workflow\Core\Steps\StepResult;
 
-/**
- * An action whose run() a test supplies. Declares one output, `to`. Config is kept as given;
- * `[ 'invalid' => true ]` fails validate(), `[ 'sanitize_throws' => true ]` makes sanitize() throw.
- * Counts its runs.
- */
+/** An action whose run() a test supplies. */
 final class FakeStep extends Action {
 
     /** @var string */
@@ -25,11 +21,6 @@ final class FakeStep extends Action {
     /** @var int */
     public $runs = 0;
 
-    /**
-     * @param string        $id       Step type id.
-     * @param callable|null $runner   What run() does.
-     * @param string        $on_error Error policy.
-     */
     public function __construct( string $id, ?callable $runner = null, string $on_error = self::ON_ERROR_STOP ) {
         $this->id       = $id;
         $this->runner   = $runner;
@@ -81,9 +72,7 @@ final class FakeStep extends Action {
         return $this->on_error;
     }
 
-    /**
-     * @param mixed $config Raw config.
-     */
+    /** @param mixed $config */
     public function sanitize( $config ): array {
         if ( ! empty( $config['sanitize_throws'] ) ) {
             throw new \RuntimeException( 'Bad stored config.' );

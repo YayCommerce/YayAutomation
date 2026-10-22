@@ -1,10 +1,7 @@
 <?php
 /**
- * PHPUnit bootstrap: plain unit tests, WordPress is not loaded.
- *
- * Classes load straight from includes/ (PSR-4), so the plugin's own composer install isn't needed
- * (CI can't reach the private admin-shell package). Code that needs real WordPress or WooCommerce
- * is checked end to end with wp-cli instead.
+ * PHPUnit bootstrap, without WordPress. Classes load straight from includes/ (PSR-4): CI can't reach
+ * the private admin-shell package the plugin's own composer install needs.
  */
 
 require_once __DIR__ . '/../dev/tools/phpunit/vendor/autoload.php';
@@ -16,7 +13,6 @@ define( 'YAYMATIK_PLUGIN_URL', 'https://example.test/wp-content/plugins/yaymatik
 
 spl_autoload_register(
     static function ( string $class_name ): void {
-        // Test helpers first (YayMatik\Tests\ → tests/), then the plugin (YayMatik\ → includes/).
         $roots = [
             'YayMatik\\Tests\\' => __DIR__ . '/',
             'YayMatik\\'        => __DIR__ . '/../includes/',

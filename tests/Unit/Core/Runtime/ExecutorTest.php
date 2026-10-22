@@ -130,9 +130,6 @@ final class ExecutorTest extends TestCase {
         return array_column( $this->runs->steps( $id ), 'status', 'step_id' );
     }
 
-    /**
-     * @param int $id
-     */
     private function run_of( int $id ): array {
         return $this->runs->find_run( $id );
     }
