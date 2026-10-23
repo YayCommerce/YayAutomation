@@ -89,11 +89,15 @@ function WorkflowOverview({ workflow }: { workflow: Workflow }) {
   // The open run is in the URL (`?run=<id>`), so a reload or a shared link opens it again.
   const [searchParams, setSearchParams] = useSearchParams();
   const runId = searchParams.get('run');
+  // Replaced, not pushed, on open and close alike: Back leaves the overview instead of stepping through runs.
   const openRun = (id: string) =>
-    setSearchParams((params) => {
-      params.set('run', id);
-      return params;
-    });
+    setSearchParams(
+      (params) => {
+        params.set('run', id);
+        return params;
+      },
+      { replace: true },
+    );
   const closeRun = useCallback(
     () =>
       setSearchParams(
