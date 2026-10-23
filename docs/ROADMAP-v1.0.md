@@ -26,10 +26,10 @@ We chose these 8 because they cover what merchants install an automation plugin 
 
 ### Workflow list
 
-**Today:** a table of workflows (name, status, trigger, runs, last run, last updated) with a status filter, a "⋯" row menu, bulk actions and an empty state. Runs and Last run show "—" until run history exists.
+**Today:** a table of workflows (name, status, trigger, runs, last run, last updated) with a status filter, a "⋯" row menu, bulk actions and an empty state. Last run shows how that run ended, linked to its detail.
 
 **v1.0 adds:**
-- Two columns: runs in the last 30 days, and when the workflow last ran. Shown with "—" since identity phase 1; filled in M2.
+- Two columns: runs in the last 30 days, and when the workflow last ran (e.g. "2 hours ago"), with how that run ended under it ("Failed" in red), linked to that run. Shown with "—" since identity phase 1; filled in M2.
 - Status filter: All · Active · Inactive · Draft. ✅ identity phase 1
 - Row actions in a "⋯" menu: Edit, Rename, Activate / Deactivate, Delete. Edits not yet live show a "Draft changes" badge; a Draft or Inactive workflow that can't be activated yet shows "Needs setup". ✅ identity phase 1 *([identity](plan-identity.md))*
 
@@ -115,7 +115,7 @@ We chose these 8 because they cover what merchants install an automation plugin 
 
 ### Workflow overview
 
-**Today:** a summary row (status, trigger; runs and last run show "—"), the workflow diagram with Draft changes and Version history tabs, and an empty "Workflow runs" section.
+**Today:** a summary row (status, trigger, runs in the last 30 days, last run), the workflow diagram with Draft changes and Version history tabs, and an empty "Workflow runs" section.
 
 **v1.0 adds:**
 - **Summary row** (✅ identity phase 1; run cells filled in M2) *([identity](plan-identity.md))*: status (e.g. "Active since Oct 2"), trigger, runs in the last 30 days, last run.

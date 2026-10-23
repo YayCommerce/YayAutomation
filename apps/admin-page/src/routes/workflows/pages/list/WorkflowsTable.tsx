@@ -14,6 +14,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { activateIssues } from '../../model/validation';
+import { LastRun } from '../../shared/ui/RunStatus';
 import { WarningBadge } from '../../shared/ui/WarningBadge';
 import { appBadge, workflowState, WorkflowStatusBadge, type WorkflowState } from '../../shared/ui/WorkflowStatusBadge';
 import { plainSummary, stepOf } from '../../steps';
@@ -38,7 +39,7 @@ function TriggerCell({ workflow }: { workflow: Workflow }) {
   );
 }
 
-/** Shown in the run columns. */
+/** Shown in the run columns of a workflow that never ran. */
 const noRuns = <span className="text-muted-foreground">—</span>;
 
 function TableHeadRow({ select }: { select: ReactNode }) {
@@ -198,8 +199,10 @@ export function WorkflowsTable({ workflows }: { workflows: Workflow[] }) {
                   <TableCell>
                     <TriggerCell workflow={workflow} />
                   </TableCell>
-                  <TableCell className="text-right tabular-nums">{noRuns}</TableCell>
-                  <TableCell>{noRuns}</TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {workflow.lastRunAt ? workflow.runs30d : noRuns}
+                  </TableCell>
+                  <TableCell>{workflow.lastRunAt ? <LastRun workflow={workflow} /> : noRuns}</TableCell>
                   <TableCell className="text-muted-foreground">{formatDateTime(workflow.lastVersionAt)}</TableCell>
                   <TableCell>
                     <WorkflowRowMenu

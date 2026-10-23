@@ -15,6 +15,7 @@ import { ReadOnlyCanvas } from '../../shared/canvas/ReadOnlyCanvas';
 import { WorkflowAppIcon } from '../../shared/layout/EditorLayout';
 import type { EditorNavState } from '../../shared/nav/editor.nav';
 import { ErrorAlert } from '../../shared/ui/ErrorAlert';
+import { LastRun } from '../../shared/ui/RunStatus';
 import { workflowState, WorkflowStatusBadge } from '../../shared/ui/WorkflowStatusBadge';
 import { plainSummary, stepOf, SummaryText } from '../../steps';
 import { StepTile } from '../../steps/core/StepTile';
@@ -233,7 +234,7 @@ function SummaryCell({ label, children }: { label: string; children: ReactNode }
   );
 }
 
-/** Status, trigger, runs in the last 30 days, last run. The run cells show "—". */
+/** Status, trigger, runs in the last 30 days, last run. The run cells show "—" until it first runs. */
 function SummaryRow({ workflow }: { workflow: Workflow }) {
   const state = workflowState(workflow);
   const status =
@@ -271,8 +272,10 @@ function SummaryRow({ workflow }: { workflow: Workflow }) {
           none
         )}
       </SummaryCell>
-      <SummaryCell label={__('Runs (30 days)', 'yaymatik')}>{none}</SummaryCell>
-      <SummaryCell label={__('Last run', 'yaymatik')}>{none}</SummaryCell>
+      <SummaryCell label={__('Runs (30 days)', 'yaymatik')}>{workflow.lastRunAt ? workflow.runs30d : none}</SummaryCell>
+      <SummaryCell label={__('Last run', 'yaymatik')}>
+        {workflow.lastRunAt ? <LastRun workflow={workflow} className="min-w-0" /> : none}
+      </SummaryCell>
     </div>
   );
 }
