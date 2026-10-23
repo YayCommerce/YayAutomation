@@ -202,6 +202,7 @@ function WorkflowOverview({ workflow }: { workflow: Workflow }) {
         onConfirm={() => void deactivate().finally(() => setDeactivateOpen(false))}
         pending={pending}
         name={workflow.name}
+        waitingRuns={workflow.waitingRuns}
       />
     </OverviewLayout>
   );

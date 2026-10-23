@@ -147,8 +147,19 @@ const workflowActions = {
 };
 
 /** Activate, deactivate, update (`apply`) or discard the draft. Activate and update reject with `ApiError.issues`. */
-export const useWorkflowActionMutation = (action: keyof typeof workflowActions, callbacks?: MutationCallbacks) =>
-  useWorkflowMutation(({ id }: { id: string }) => workflowActions[action](id), callbacks);
+export function useWorkflowActionMutation(action: keyof typeof workflowActions, callbacks?: MutationCallbacks) {
+  const queryClient = useQueryClient();
+  return useWorkflowMutation(({ id }: { id: string }) => workflowActions[action](id), {
+    ...callbacks,
+    onSaved: (saved) => {
+      // Deactivate and Update cancel waiting runs.
+      if (action === 'deactivate' || action === 'apply') {
+        void queryClient.invalidateQueries({ queryKey: workflowKeys.runs(saved.id) });
+      }
+      callbacks?.onSaved?.(saved);
+    },
+  });
+}
 
 export function useDeleteWorkflowMutation() {
   const queryClient = useQueryClient();

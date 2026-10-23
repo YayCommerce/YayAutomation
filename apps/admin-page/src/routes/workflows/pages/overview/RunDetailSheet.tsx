@@ -25,9 +25,7 @@ export function RunDetailSheet({
   onClose: () => void;
 }) {
   const { data: run, error } = useRunQuery(workflowId, runId);
-  const notFound =
-    !!runId &&
-    (run ? run.workflowId !== workflowId : error instanceof ApiError && error.status === 404);
+  const notFound = !!runId && (run ? run.workflowId !== workflowId : error instanceof ApiError && error.status === 404);
 
   useEffect(() => {
     if (!notFound) return;

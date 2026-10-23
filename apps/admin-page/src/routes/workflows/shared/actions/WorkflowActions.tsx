@@ -294,12 +294,49 @@ export function ActivateDialog({ name, hasDraft, ...props }: ConfirmProps & { na
   );
 }
 
-export function UpdateDialog(props: ConfirmProps) {
+/** For a success toast: "2 waiting runs were cancelled."; undefined for none. */
+export const cancelledRunsText = (count = 0) =>
+  count > 0
+    ? sprintf(
+        /* translators: %d: number of runs */
+        _n('%d waiting run was cancelled.', '%d waiting runs were cancelled.', count, 'yaymatik'),
+        count,
+      )
+    : undefined;
+
+/**
+ * The waiting runs a confirm dialog warns about. Held while its action runs and while it closes: the
+ * saved workflow lands in the cache first, with none waiting.
+ */
+function useHeldCount(count: number, hold: boolean) {
+  const [held, setHeld] = useState(count);
+  if (!hold && held !== count) setHeld(count);
+  return hold ? held : count;
+}
+
+export function UpdateDialog({ waitingRuns, ...props }: ConfirmProps & { waitingRuns: number }) {
+  const count = useHeldCount(waitingRuns, props.pending || !props.open);
   return (
     <ConfirmDialog
       {...props}
       title={__('Update this workflow?', 'yaymatik')}
-      description={__('It’s active, so your draft changes take effect right away.', 'yaymatik')}
+      description={
+        count > 0
+          ? sprintf(
+              /* translators: %d: number of runs */
+              _n(
+                'It’s active, so your draft changes take effect right away. %d waiting run will be cancelled. Runs under way finish on the version they started on.',
+                'It’s active, so your draft changes take effect right away. %d waiting runs will be cancelled. Runs under way finish on the version they started on.',
+                count,
+                'yaymatik',
+              ),
+              count,
+            )
+          : __(
+              'It’s active, so your draft changes take effect right away. Runs under way finish on the version they started on.',
+              'yaymatik',
+            )
+      }
       confirmLabel={__('Update', 'yaymatik')}
     />
   );
@@ -317,12 +354,46 @@ export function DiscardChangesDialog(props: ConfirmProps) {
   );
 }
 
-/** One workflow (`name`), or `count` of them from the list's bulk actions. */
+/** "New events won't start it. …", then how many waiting runs it cancels (across all of them for `several`). */
+function deactivateText(several: boolean, count: number) {
+  if (count === 0) {
+    return several
+      ? __(
+          'New events won’t start them. Runs under way stop before their next step. You can activate them again at any time.',
+          'yaymatik',
+        )
+      : __(
+          'New events won’t start it. Runs under way stop before their next step. You can activate it again at any time.',
+          'yaymatik',
+        );
+  }
+  return sprintf(
+    several
+      ? /* translators: %d: number of runs */
+        _n(
+          'New events won’t start them. Runs under way stop before their next step. You can activate them again at any time. %d waiting run will be cancelled.',
+          'New events won’t start them. Runs under way stop before their next step. You can activate them again at any time. %d waiting runs will be cancelled.',
+          count,
+          'yaymatik',
+        )
+      : /* translators: %d: number of runs */
+        _n(
+          'New events won’t start it. Runs under way stop before their next step. You can activate it again at any time. %d waiting run will be cancelled.',
+          'New events won’t start it. Runs under way stop before their next step. You can activate it again at any time. %d waiting runs will be cancelled.',
+          count,
+          'yaymatik',
+        ),
+    count,
+  );
+}
+
+/** One workflow (`name`), or `count` of them from the list's bulk actions; `waitingRuns` across all of them. */
 export function DeactivateDialog(
-  props: ConfirmProps & ({ name: string; count?: never } | { count: number; name?: never }),
+  props: ConfirmProps & { waitingRuns: number } & ({ name: string; count?: never } | { count: number; name?: never }),
 ) {
-  const { name, count, ...confirm } = props;
+  const { name, count, waitingRuns, ...confirm } = props;
   const several = count !== undefined && count > 1;
+  const waiting = useHeldCount(waitingRuns, confirm.pending || !confirm.open);
   return (
     <ConfirmDialog
       {...confirm}
@@ -339,17 +410,7 @@ export function DeactivateDialog(
               count,
             )
       }
-      description={
-        several
-          ? __(
-              'New events won’t start them. Runs already under way will finish. You can activate them again at any time.',
-              'yaymatik',
-            )
-          : __(
-              'New events won’t start it. Runs already under way will finish. You can activate it again at any time.',
-              'yaymatik',
-            )
-      }
+      description={deactivateText(several, waiting)}
       confirmLabel={__('Deactivate', 'yaymatik')}
     />
   );

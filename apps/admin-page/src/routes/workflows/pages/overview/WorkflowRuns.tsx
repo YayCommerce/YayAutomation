@@ -17,7 +17,6 @@ import { tabBarClass, tabClass } from '../../shared/ui/tabs';
 // Stands in for the link while splitting the sentence, so translations may use `%s` or `%1$s`.
 const LINK_SLOT = '\u0000';
 
-/** Skipped runs show under All only. */
 const filters: { value: string; label: string; statuses: RunStatus[] }[] = [
   { value: 'all', label: __('All', 'yaymatik'), statuses: [] },
   { value: 'running', label: __('Running', 'yaymatik'), statuses: ['queued', 'running'] },
@@ -25,6 +24,7 @@ const filters: { value: string; label: string; statuses: RunStatus[] }[] = [
   { value: 'completed', label: __('Completed', 'yaymatik'), statuses: ['completed'] },
   { value: 'failed', label: __('Failed', 'yaymatik'), statuses: ['failed'] },
   { value: 'cancelled', label: __('Cancelled', 'yaymatik'), statuses: ['cancelled'] },
+  { value: 'skipped', label: __('Skipped', 'yaymatik'), statuses: ['skipped'] },
 ];
 
 const COLUMNS = 4;

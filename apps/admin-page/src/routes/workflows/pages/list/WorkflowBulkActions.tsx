@@ -10,7 +10,12 @@ import { Separator } from '@/components/ui/separator';
 import { toast } from '@/components/ui/sonner';
 import { ApiError, errorMessage, getWorkflow } from '../../api/workflow.api';
 import { useDeleteWorkflowMutation, useWorkflowActionMutation, workflowKeys } from '../../api/workflow.query';
-import { ConfirmDialog, DeactivateDialog, DeleteBlockedContent } from '../../shared/actions/WorkflowActions';
+import {
+  cancelledRunsText,
+  ConfirmDialog,
+  DeactivateDialog,
+  DeleteBlockedContent,
+} from '../../shared/actions/WorkflowActions';
 
 type Dialog = 'deactivate' | 'delete' | 'deleteBlocked';
 
@@ -56,8 +61,15 @@ export function WorkflowBulkActions({
     setPending(false);
     setDialog(null);
     if (done) {
-      /* translators: %d: number of workflows */
-      toast.success(sprintf(_n('%d workflow deactivated', '%d workflows deactivated', done, 'yaymatik'), done));
+      const cancelled = results.reduce(
+        (sum, result) => sum + (result.status === 'fulfilled' ? (result.value.cancelledRuns ?? 0) : 0),
+        0,
+      );
+      toast.success(
+        /* translators: %d: number of workflows */
+        sprintf(_n('%d workflow deactivated', '%d workflows deactivated', done, 'yaymatik'), done),
+        { description: cancelledRunsText(cancelled) },
+      );
     }
     if (failed.length) {
       const reason = results.find((result) => result.status === 'rejected')?.reason;
@@ -159,6 +171,7 @@ export function WorkflowBulkActions({
         onConfirm={() => void deactivateAll()}
         pending={pending}
         count={targets.length}
+        waitingRuns={targets.reduce((sum, workflow) => sum + workflow.waitingRuns, 0)}
       />
       <ConfirmDialog
         open={dialog === 'delete'}
