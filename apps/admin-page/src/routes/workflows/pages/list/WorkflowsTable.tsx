@@ -15,6 +15,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { activateIssues } from '../../model/validation';
 import { LastRun } from '../../shared/ui/RunStatus';
+import { tabBarClass, tabClass } from '../../shared/ui/tabs';
 import { WarningBadge } from '../../shared/ui/WarningBadge';
 import { appBadge, workflowState, WorkflowStatusBadge, type WorkflowState } from '../../shared/ui/WorkflowStatusBadge';
 import { plainSummary, stepOf } from '../../steps';
@@ -58,15 +59,6 @@ function TableHeadRow({ select }: { select: ReactNode }) {
     </TableRow>
   );
 }
-
-/** A small segmented tab bar: the kit's `Segmented`, made compact. */
-const tabBarClass = 'mb-3 h-auto gap-0.5 rounded-lg p-[3px]';
-const tabClass = cn(
-  'h-auto rounded-md border-0 px-2.5 py-0.75 text-[13px] font-normal data-[shape=square]:rounded-md',
-  'text-muted-foreground-600 dark:text-muted-foreground-600 hover:text-foreground hover:bg-transparent',
-  'data-[state=on]:bg-card dark:data-[state=on]:bg-card data-[state=on]:text-card-foreground dark:data-[state=on]:text-card-foreground',
-  'data-[state=on]:font-medium data-[state=on]:shadow-[0_1px_2px_#0000001a]',
-);
 
 /**
  * The workflows list: All / Active / Inactive / Draft tabs, selectable rows, 10 per page, and bulk actions
@@ -127,7 +119,7 @@ export function WorkflowsTable({ workflows }: { workflows: Workflow[] }) {
             clearSelection();
           }}
           shape="square"
-          className={tabBarClass}
+          className={cn(tabBarClass, 'mb-3')}
         >
           <SegmentedItem value="all" className={tabClass}>
             {__('All', 'yaymatik')}

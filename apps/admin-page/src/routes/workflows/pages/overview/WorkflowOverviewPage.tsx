@@ -4,6 +4,7 @@ import { ChevronLeft, CircleAlert, Pencil } from 'lucide-react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { __, _n, sprintf } from '@wordpress/i18n';
 
+import { shortDay } from '@/lib/helpers/date.helper';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -19,7 +20,7 @@ import { LastRun } from '../../shared/ui/RunStatus';
 import { workflowState, WorkflowStatusBadge } from '../../shared/ui/WorkflowStatusBadge';
 import { plainSummary, stepOf, SummaryText } from '../../steps';
 import { StepTile } from '../../steps/core/StepTile';
-import { shortDay, VersionHistory } from './VersionHistory';
+import { VersionHistory } from './VersionHistory';
 import { WorkflowRuns } from './WorkflowRuns';
 
 export default function WorkflowOverviewPage() {
@@ -158,8 +159,7 @@ function WorkflowOverview({ workflow }: { workflow: Workflow }) {
             <VersionHistory workflow={workflow} page={historyPage} onPageChange={setHistoryPage} />
           </TabsContent>
         </Tabs>
-        {/* Run logging doesn't exist yet, so there are never runs to list. */}
-        <WorkflowRuns runs={[]} />
+        <WorkflowRuns key={workflow.id} workflowId={workflow.id} />
       </div>
 
       <ActivateDialog

@@ -1,9 +1,11 @@
 import type {
   EmailPreview,
   EmailTestResult,
+  RunStatus,
   Workflow,
   WorkflowGraph,
   WorkflowIssue,
+  WorkflowRunsPage,
   WorkflowVersionsPage,
 } from '@yaymatik/types';
 import { HTTPError, type Options, type ResponsePromise } from 'ky';
@@ -97,6 +99,12 @@ export const deleteWorkflow = (id: string) => request<{ deleted: boolean }>(api.
 /** Version history, newest first, 10 per page. `page` is 1-based. */
 export const listVersions = (id: string, page: number) =>
   request<WorkflowVersionsPage>(api.get(`workflows/${id}/versions`, { searchParams: { page } }));
+
+/** One page of a workflow's runs, newest first. `page` is 1-based; no `statuses` = all. */
+export const listRuns = (id: string, page: number, statuses: RunStatus[]) =>
+  request<WorkflowRunsPage>(
+    api.get(`workflows/${id}/runs`, { searchParams: { page, ...(statuses.length && { status: statuses.join(',') }) } }),
+  );
 
 /** An email step's unsaved config and the graph it sits in, as the editor has them. */
 export interface EmailStepInput {

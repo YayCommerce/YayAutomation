@@ -1,13 +1,15 @@
-import type { RunStatus, Workflow } from '@yaymatik/types';
+import type { Run, RunStatus, Workflow } from '@yaymatik/types';
 import { Link } from 'react-router';
 import { humanTimeDiff } from '@wordpress/date';
-import { __ } from '@wordpress/i18n';
+import { __, sprintf } from '@wordpress/i18n';
 
-import { formatDateTime } from '@/lib/helpers/date.helper';
+import { formatDateTime, shortDayTime } from '@/lib/helpers/date.helper';
 import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
+import { appBadge } from './WorkflowStatusBadge';
 
 /** A queued run shows as Running: to the store owner it has started. */
-export const runStatusLabels: Record<RunStatus, string> = {
+const runStatusLabels: Record<RunStatus, string> = {
   queued: __('Running', 'yaymatik'),
   running: __('Running', 'yaymatik'),
   waiting: __('Waiting', 'yaymatik'),
@@ -16,6 +18,34 @@ export const runStatusLabels: Record<RunStatus, string> = {
   cancelled: __('Cancelled', 'yaymatik'),
   skipped: __('Skipped', 'yaymatik'),
 };
+
+/** "Waiting until Oct 9 at 3:00 PM" for a waiting run; otherwise its status label. */
+export const runStatusText = (run: Pick<Run, 'status' | 'waitUntil'>) =>
+  run.status === 'waiting' && run.waitUntil
+    ? sprintf(
+        /* translators: %s: date and time, e.g. "Oct 9 at 3:00 PM" */
+        __('Waiting until %s', 'yaymatik'),
+        shortDayTime(run.waitUntil),
+      )
+    : runStatusLabels[run.status];
+
+const tones: Record<RunStatus, string> = {
+  queued: 'bg-primary/14 text-link',
+  running: 'bg-primary/14 text-link',
+  waiting: 'bg-warning-soft text-warning-soft-foreground',
+  completed: 'bg-success/15 text-success-soft-foreground',
+  failed: 'bg-destructive/10 text-destructive',
+  cancelled: 'bg-muted text-muted-foreground-600',
+  skipped: 'bg-muted text-muted-foreground-600',
+};
+
+export function RunStatusBadge({ run }: { run: Pick<Run, 'status' | 'waitUntil'> }) {
+  return (
+    <Badge variant="secondary" className={cn(appBadge, tones[run.status])}>
+      {runStatusText(run)}
+    </Badge>
+  );
+}
 
 /** Overview of one run: the workflow's page with the run's detail open. */
 const runPath = (workflowId: string, runId: string) => `/workflows/${workflowId}?run=${runId}`;

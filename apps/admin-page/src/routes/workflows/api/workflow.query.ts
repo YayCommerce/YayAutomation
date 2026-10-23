@@ -1,5 +1,5 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { Workflow } from '@yaymatik/types';
+import type { RunStatus, Workflow } from '@yaymatik/types';
 
 import {
   activateWorkflow,
@@ -10,6 +10,7 @@ import {
   deleteWorkflow,
   discardDraft,
   getWorkflow,
+  listRuns,
   listVersions,
   listWorkflows,
   updateWorkflow,
@@ -21,6 +22,8 @@ export const workflowKeys = {
   detail: (id: string) => [...workflowKeys.all, 'detail', id] as const,
   versions: (id: string) => [...workflowKeys.all, 'versions', id] as const,
   versionsPage: (id: string, page: number) => [...workflowKeys.versions(id), page] as const,
+  runs: (id: string) => [...workflowKeys.all, 'runs', id] as const,
+  runsPage: (id: string, page: number, statuses: RunStatus[]) => [...workflowKeys.runs(id), statuses, page] as const,
 };
 
 export function useWorkflowsQuery() {
@@ -51,6 +54,22 @@ export function useWorkflowVersionsQuery(id: string, page: number) {
     queryKey: workflowKeys.versionsPage(id, page),
     queryFn: () => listVersions(id, page),
     placeholderData: keepPreviousData,
+  });
+}
+
+/**
+ * One page of a workflow's runs. Keeps showing the previous page while the next one loads, but not
+ * the previous filter's rows under a new filter.
+ */
+export function useWorkflowRunsQuery(id: string, page: number, statuses: RunStatus[]) {
+  const filterKey = workflowKeys.runsPage(id, page, statuses).slice(0, -1);
+  return useQuery({
+    queryKey: workflowKeys.runsPage(id, page, statuses),
+    queryFn: () => listRuns(id, page, statuses),
+    placeholderData: (previous, previousQuery) =>
+      previousQuery && JSON.stringify(previousQuery.queryKey.slice(0, -1)) === JSON.stringify(filterKey)
+        ? previous
+        : undefined,
   });
 }
 
