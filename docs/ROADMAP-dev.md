@@ -22,8 +22,8 @@ Changes from the ROADMAP-v1.0 order:
 |---|---|---|---|---|---|
 | F0 | Move and rename | S | 1 | — | ✅ Done |
 | F1 | Workflow Core foundation | L | 3 | F0 | ✅ Done |
-| M1 | Customer emails + coupons | L | 3 | F1 | ⏳ Merge pending |
-| M2 | Wait + run history | L | 3 | F1 | ⏳ Backend done, merge pending; UI next |
+| M1 | Customer emails + coupons | L | 3 | F1 | ✅ Done |
+| M2 | Wait + run history | L | 3 | F1 | In progress: backend ✅, UI next |
 | F2 | Workflows table | M | 3 | F1 | — |
 | M7 | Cart tracking + Settings + Health check | L | 3 | F1 | — |
 | M8 | Abandoned cart + checkout | L | 2 | M1, M2, M7 | — |
@@ -107,7 +107,7 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 
 ## M1 — Customer emails + coupons · L · risk 3
 
-**Status:** ⏳ Done, merge pending. Backend merged (PR #19, A1–A5); UI + templates on `jack/feature/m1b-emails-coupons-ui` (B1 `0050eaa`, B2 `a051e06`, B3 `275e6c6`, B4 `3a81ab3`).
+**Status:** ✅ Done. Backend (PR #19, A1–A5) and UI + templates (PR B) merged into `develop`.
 
 **Backend**
 - ✅ **M1.1 Send email** — WooCommerce email look; To defaults to the customer; subject, heading, message; unsubscribe link added automatically.
@@ -118,14 +118,14 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 - ✅ **M1.6 Email block: coupon box.** Inserted from the "Blocks" group of Insert variable (UI in B2).
 
 **UI**
-- ⏳ **M1.7 Send email panel** — generic form with a rich editor for the message (WordPress classic editor, Visual / Code), "Insert variable" incl. Blocks, Preview dialog, Send test, unsubscribe note. Not a custom form: `defineStep` `Footer` / `Actions`.
-- ⏳ **M1.8 Generate coupon** — generic form; card reads e.g. "10% off, expires in 30 days". Free shipping with no shipping method that takes a coupon (or only ones that also need a minimum) shows a notice in the panel; it never blocks Activate.
-- ⏳ **M1.9 Condition** — Is true / Is false for yes/no fields, no value needed.
-- ⏳ **M1.10 Warning before Activate** — a step uses a coupon tag with no Generate coupon above it (or that step was removed): a step issue on the tag, which blocks Activate. Rules only PHP checks (e.g. a percentage over 100) show under their field after a save and block Activate too. The free shipping notice (M1.8) is not an issue: a store without a coupon free shipping method can still activate.
+- ✅ **M1.7 Send email panel** — generic form with a rich editor for the message (WordPress classic editor, Visual / Code), "Insert variable" incl. Blocks, Preview dialog, Send test, unsubscribe note. Not a custom form: `defineStep` `Footer` / `Actions`.
+- ✅ **M1.8 Generate coupon** — generic form; card reads e.g. "10% off, expires in 30 days". Free shipping with no shipping method that takes a coupon (or only ones that also need a minimum) shows a notice in the panel; it never blocks Activate.
+- ✅ **M1.9 Condition** — Is true / Is false for yes/no fields, no value needed.
+- ✅ **M1.10 Warning before Activate** — a step uses a coupon tag with no Generate coupon above it (or that step was removed): a step issue on the tag, which blocks Activate. Rules only PHP checks (e.g. a percentage over 100) show under their field after a save and block Activate too. The free shipping notice (M1.8) is not an issue: a store without a coupon free shipping method can still activate.
 - ✅ **M1.11 Template Library** — category filters (already in `develop`); "Most popular" in a fixed order until installs are tracked.
-- ⏳ **M1.12 Template preview** — Other versions and Steps; "Before you start" when the free shipping coupon needs a shipping method.
+- ✅ **M1.12 Template preview** — Other versions and Steps; "Before you start" when the free shipping coupon needs a shipping method.
 
-**Templates:** ⏳ First-order thank-you ×2 (10% off; free shipping), on `customer.is_first_order` with the coupon box.
+**Templates:** ✅ First-order thank-you ×2 (10% off; free shipping), on `customer.is_first_order` with the coupon box.
 
 **Moved or open**
 - Cross-sell / upsell templates: coupon paths updated; unlocked in M2 PR A.
@@ -139,14 +139,14 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 
 ## M2 — Wait + run history · L · risk 3
 
-**Status:** ⏳ Backend done, merge pending, on `jack/feature/m2a-wait-runs` (PR A: CP1 `d7a86a6`, CP2 `0887712`, CP3 `ca7ec2f`, CP4 `8c243aa`, CP5). UI (M2.6–M2.10) is PR B.
+**Status:** In progress. Backend merged (PR #26, `22bf12a`); UI (M2.6–M2.10) is PR B.
 
 **Backend**
-- ⏳ **M2.1 Wait step** — number + unit (minutes, hours, days, weeks), a whole number up to a year; the run moves to waiting and resumes through Action Scheduler.
-- ⏳ **M2.2 Cancel on Deactivate / Update** *(§3)* — cancel waiting runs, return the count; the rate-limit pause cancels them too, and a run stops before its next step once its workflow is off.
-- ⏳ **M2.3 Runs REST** — status filter, paging, total, subject label and link, steps run; run detail names each step type.
-- ⏳ **M2.4 List stats** — runs in the last 30 days, last run, waiting runs, on every workflow response.
-- ⏳ **M2.5 Email block: product grid** — cross-sell / upsell sources; `order.has_cross_sells` / `has_upsells`, `customer.paid_order_count`.
+- ✅ **M2.1 Wait step** — number + unit (minutes, hours, days, weeks), a whole number up to a year; the run moves to waiting and resumes through Action Scheduler.
+- ✅ **M2.2 Cancel on Deactivate / Update** *(§3)* — cancel waiting runs, return the count; the rate-limit pause cancels them too, and a run stops before its next step once its workflow is off.
+- ✅ **M2.3 Runs REST** — status filter, paging, total, subject label and link, steps run; run detail names each step type.
+- ✅ **M2.4 List stats** — runs in the last 30 days, last run, waiting runs, on every workflow response.
+- ✅ **M2.5 Email block: product grid** — cross-sell / upsell sources; `order.has_cross_sells` / `has_upsells`, `customer.paid_order_count`.
 
 **UI**
 - **M2.6 Wait** — form and card ("Wait 1 hour", clock icon).
