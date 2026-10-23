@@ -35,38 +35,33 @@ final class RunPresenter {
      * @param int   $steps_run
      */
     public static function item( array $run, int $steps_run ): array {
-        $subject = self::subject( (string) $run['subject'] );
-        return self::run( $run ) + [
-            'subjectLabel' => $subject['label'],
-            'subjectUrl'   => $subject['url'],
-            'stepsRun'     => $steps_run,
-        ];
+        return self::run( $run ) + self::subject( (string) $run['subject'] ) + [ 'stepsRun' => $steps_run ];
     }
 
     /**
      * What a run is about, for people: "Order #1012" and its admin URL (null once the order is gone).
      *
      * @param string $subject E.g. `order:12`.
-     * @return array `label`, `url`.
+     * @return array `subjectLabel`, `subjectUrl`.
      */
     private static function subject( string $subject ): array {
         list( $type, $id ) = array_pad( explode( ':', $subject, 2 ), 2, '' );
         if ( 'order' !== $type || (int) $id <= 0 ) {
             return [
-                'label' => $subject,
-                'url'   => null,
+                'subjectLabel' => $subject,
+                'subjectUrl'   => null,
             ];
         }
         $order = function_exists( 'wc_get_order' ) ? wc_get_order( (int) $id ) : false;
         return [
             /* translators: %s: order number */
-            'label' => sprintf( __( 'Order #%s', 'yaymatik' ), $order ? $order->get_order_number() : (int) $id ),
-            'url'   => $order ? $order->get_edit_order_url() : null,
+            'subjectLabel' => sprintf( __( 'Order #%s', 'yaymatik' ), $order ? $order->get_order_number() : (int) $id ),
+            'subjectUrl'   => $order ? $order->get_edit_order_url() : null,
         ];
     }
 
     /**
-     * A run with its step rows; each names its step type from the pinned graph (null when the node is gone).
+     * A run with its subject and step rows; each names its step type from the pinned graph (null when the node is gone).
      *
      * @param array      $run
      * @param array[]    $steps
@@ -80,7 +75,7 @@ final class RunPresenter {
                 $types[ (string) ( $node['id'] ?? '' ) ] = $block;
             }
         }
-        return self::run( $run ) + [
+        return self::run( $run ) + self::subject( (string) $run['subject'] ) + [
             'steps' => array_map(
                 fn( array $step ) => self::step( $step ) + [ 'stepType' => $types[ (string) $step['step_id'] ] ?? null ],
                 $steps

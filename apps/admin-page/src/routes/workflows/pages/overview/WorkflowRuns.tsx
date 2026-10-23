@@ -30,7 +30,7 @@ const filters: { value: string; label: string; statuses: RunStatus[] }[] = [
 const COLUMNS = 4;
 
 /** The "Workflow runs" section below the tabs: a status filter and one page of runs, newest first. */
-export function WorkflowRuns({ workflowId }: { workflowId: string }) {
+export function WorkflowRuns({ workflowId, onOpen }: { workflowId: string; onOpen: (runId: string) => void }) {
   const [filter, setFilter] = useState(filters[0]);
   const [page, setPage] = useState(1);
   const { data, error, isPending, isPlaceholderData } = useWorkflowRunsQuery(workflowId, page, filter.statuses);
@@ -101,7 +101,7 @@ export function WorkflowRuns({ workflowId }: { workflowId: string }) {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  data.items.map((run) => <RunRow key={run.id} run={run} />)
+                  data.items.map((run) => <RunRow key={run.id} run={run} onOpen={() => onOpen(run.id)} />)
                 )}
               </TableBody>
             </Table>
@@ -125,10 +125,20 @@ export function WorkflowRuns({ workflowId }: { workflowId: string }) {
   );
 }
 
-function RunRow({ run }: { run: RunListItem }) {
+/** The whole row opens the run's detail; the start time is its button for the keyboard, the subject links to the order. */
+function RunRow({ run, onOpen }: { run: RunListItem; onOpen: () => void }) {
   return (
-    <TableRow>
-      <TableCell className="whitespace-nowrap">{run.startedAt && shortDayTime(run.startedAt)}</TableCell>
+    <TableRow
+      className="cursor-pointer"
+      onClick={(event) => {
+        if (!(event.target as HTMLElement).closest('a, button')) onOpen();
+      }}
+    >
+      <TableCell className="whitespace-nowrap">
+        <button type="button" className="hover:underline" onClick={onOpen}>
+          {run.startedAt && shortDayTime(run.startedAt)}
+        </button>
+      </TableCell>
       <TableCell>
         {run.subjectUrl ? (
           <a href={run.subjectUrl} className="text-link hover:underline">

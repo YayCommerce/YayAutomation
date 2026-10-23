@@ -224,12 +224,16 @@ export interface RunStep {
   finishedAt: string | null;
 }
 
-/** A row of `GET /workflows/{id}/runs`. */
-export interface RunListItem extends Run {
+/** What a run is about, for people. */
+export interface RunSubject {
   /** E.g. "Order #1012". */
   subjectLabel: string;
   /** Admin URL of the order; null once it's gone. */
   subjectUrl: string | null;
+}
+
+/** A row of `GET /workflows/{id}/runs`. */
+export interface RunListItem extends Run, RunSubject {
   stepsRun: number;
 }
 
@@ -242,7 +246,7 @@ export interface WorkflowRunsPage {
 }
 
 /** `GET /runs/{id}`. */
-export interface RunDetail extends Run {
+export interface RunDetail extends Run, RunSubject {
   steps: (RunStep & {
     /** Step type id from the pinned version's graph; null when the node isn't there. */
     stepType: StepId | null;

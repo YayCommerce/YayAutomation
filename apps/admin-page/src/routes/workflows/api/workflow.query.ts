@@ -9,6 +9,7 @@ import {
   deactivateWorkflow,
   deleteWorkflow,
   discardDraft,
+  getRun,
   getWorkflow,
   listRuns,
   listVersions,
@@ -24,7 +25,12 @@ export const workflowKeys = {
   versionsPage: (id: string, page: number) => [...workflowKeys.versions(id), page] as const,
   runs: (id: string) => [...workflowKeys.all, 'runs', id] as const,
   runsPage: (id: string, page: number, statuses: RunStatus[]) => [...workflowKeys.runs(id), statuses, page] as const,
+  run: (workflowId: string, runId: string) => [...workflowKeys.runs(workflowId), 'detail', runId] as const,
 };
+
+// Something missing stays missing, so don't delay the message; retry anything else (blips, timeouts).
+const retryUnlessNotFound = (failureCount: number, error: Error) =>
+  !(error instanceof ApiError && error.status === 404) && failureCount < 2;
 
 export function useWorkflowsQuery() {
   return useQuery({
@@ -43,8 +49,7 @@ export function useWorkflowQuery(id: string) {
     // Opened from the list: the row already holds this workflow, so render it right away.
     initialData: () => queryClient.getQueryData<Workflow[]>(workflowKeys.list())?.find((w) => w.id === id),
     initialDataUpdatedAt: () => queryClient.getQueryState(workflowKeys.list())?.dataUpdatedAt,
-    // A missing workflow stays missing, so don't delay the message; retry anything else (blips, timeouts).
-    retry: (failureCount, error) => !(error instanceof ApiError && error.status === 404) && failureCount < 2,
+    retry: retryUnlessNotFound,
   });
 }
 
@@ -70,6 +75,16 @@ export function useWorkflowRunsQuery(id: string, page: number, statuses: RunStat
       previousQuery && JSON.stringify(previousQuery.queryKey.slice(0, -1)) === JSON.stringify(filterKey)
         ? previous
         : undefined,
+  });
+}
+
+/** One run of the workflow, with its steps; none while `runId` is null. Under the workflow's runs key, so they refresh together. */
+export function useRunQuery(workflowId: string, runId: string | null) {
+  return useQuery({
+    queryKey: workflowKeys.run(workflowId, runId ?? ''),
+    queryFn: () => getRun(runId ?? ''),
+    enabled: runId !== null,
+    retry: retryUnlessNotFound,
   });
 }
 

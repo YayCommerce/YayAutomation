@@ -1,7 +1,7 @@
-import { useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useMemo, useState, type ReactNode } from 'react';
 import type { Workflow, WorkflowIssue } from '@yaymatik/types';
 import { ChevronLeft, CircleAlert, Pencil } from 'lucide-react';
-import { Link, useNavigate, useParams } from 'react-router';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 import { __, _n, sprintf } from '@wordpress/i18n';
 
 import { shortDay } from '@/lib/helpers/date.helper';
@@ -20,6 +20,7 @@ import { LastRun } from '../../shared/ui/RunStatus';
 import { workflowState, WorkflowStatusBadge } from '../../shared/ui/WorkflowStatusBadge';
 import { plainSummary, stepOf, SummaryText } from '../../steps';
 import { StepTile } from '../../steps/core/StepTile';
+import { RunDetailSheet } from './RunDetailSheet';
 import { VersionHistory } from './VersionHistory';
 import { WorkflowRuns } from './WorkflowRuns';
 
@@ -85,6 +86,25 @@ function WorkflowOverview({ workflow }: { workflow: Workflow }) {
   ];
   const [tab, setTab] = useState(tabs[0].value);
   const [historyPage, setHistoryPage] = useState(1);
+  // The open run is in the URL (`?run=<id>`), so a reload or a shared link opens it again.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const runId = searchParams.get('run');
+  const openRun = (id: string) =>
+    setSearchParams((params) => {
+      params.set('run', id);
+      return params;
+    });
+  const closeRun = useCallback(
+    () =>
+      setSearchParams(
+        (params) => {
+          params.delete('run');
+          return params;
+        },
+        { replace: true },
+      ),
+    [setSearchParams],
+  );
   // A tab can disappear (draft applied or discarded elsewhere); fall back to the first.
   const currentTab = tab === HISTORY_TAB || tabs.some((t) => t.value === tab) ? tab : tabs[0].value;
 
@@ -159,8 +179,9 @@ function WorkflowOverview({ workflow }: { workflow: Workflow }) {
             <VersionHistory workflow={workflow} page={historyPage} onPageChange={setHistoryPage} />
           </TabsContent>
         </Tabs>
-        <WorkflowRuns key={workflow.id} workflowId={workflow.id} />
+        <WorkflowRuns key={workflow.id} workflowId={workflow.id} onOpen={openRun} />
       </div>
+      <RunDetailSheet workflowId={workflow.id} runId={runId} onClose={closeRun} />
 
       <ActivateDialog
         open={activateOpen}

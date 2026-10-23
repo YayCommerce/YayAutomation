@@ -1,6 +1,7 @@
 import type {
   EmailPreview,
   EmailTestResult,
+  RunDetail,
   RunStatus,
   Workflow,
   WorkflowGraph,
@@ -105,6 +106,12 @@ export const listRuns = (id: string, page: number, statuses: RunStatus[]) =>
   request<WorkflowRunsPage>(
     api.get(`workflows/${id}/runs`, { searchParams: { page, ...(statuses.length && { status: statuses.join(',') }) } }),
   );
+
+/** Run ids are row ids; a non-numeric one can't exist (e.g. a mistyped `?run=` link). */
+export const getRun = (id: string) =>
+  /^\d+$/.test(id)
+    ? request<RunDetail>(api.get(`runs/${id}`))
+    : Promise.reject(new ApiError(__('Run not found.', 'yaymatik'), 404));
 
 /** An email step's unsaved config and the graph it sits in, as the editor has them. */
 export interface EmailStepInput {

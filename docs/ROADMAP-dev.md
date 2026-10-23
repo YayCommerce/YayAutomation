@@ -151,7 +151,7 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 **UI**
 - **M2.6 Wait** — form and card ("Wait 1 hour", clock icon).
 - **M2.7 Overview: runs table** — started, subject, status, steps run; loading and empty states.
-- **M2.8 Run detail** — each step with result and time; links to the order or customer.
+- **M2.8 Run detail** — each step with result and time; links to the order (customer links with M4).
 - **M2.9 Deactivate / Update dialog** — says how many waiting runs will be cancelled.
 - **M2.10 Workflow list** — Runs and Last run columns, status filter.
 

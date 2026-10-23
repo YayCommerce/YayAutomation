@@ -93,7 +93,7 @@ final class RunPresenterTest extends TestCase {
         $this->assertNull( $cart['subjectUrl'] );
     }
 
-    public function test_detail_adds_steps_in_the_rest_shape_with_their_step_type(): void {
+    public function test_detail_adds_the_subject_and_steps_in_the_rest_shape_with_their_step_type(): void {
         $row                  = self::run_row();
         $row['parent_run_id'] = 7;
         $gone                 = [ 'step_id' => 'removed' ] + self::step_row();
@@ -113,6 +113,8 @@ final class RunPresenterTest extends TestCase {
         $detail               = RunPresenter::detail( $row, [ self::step_row(), $gone, $unset ], $graph );
 
         $this->assertSame( '7', $detail['parentRunId'] );
+        $this->assertSame( 'Order #1693', $detail['subjectLabel'] );
+        $this->assertNull( $detail['subjectUrl'] );
         $this->assertArrayNotHasKey( 'position', $detail );
         $this->assertArrayNotHasKey( 'scope', $detail );
         $step = $detail['steps'][0];
