@@ -71,7 +71,7 @@ final class RunPresenterTest extends TestCase {
         $this->assertNull( RunPresenter::iso( '0000-00-00 00:00:00' ) );
     }
 
-    public function test_subject_reads_the_real_order_number_and_null_url_once_the_order_is_gone(): void {
+    public function test_item_reads_the_real_order_number_and_null_url_once_the_order_is_gone(): void {
         $order                  = new FakeOrder(
             [
                 'id'           => 1693,
@@ -79,25 +79,18 @@ final class RunPresenterTest extends TestCase {
             ]
         );
         FakeOrder::$found[1693] = $order;
-        $found                  = RunPresenter::subject( 'order:1693' );
+        $found                  = RunPresenter::item( self::run_row(), 0 );
         unset( FakeOrder::$found[1693] );
-        $this->assertSame( 'Order #WC-77', $found['label'] );
-        $this->assertSame( $order->get_edit_order_url(), $found['url'] );
+        $this->assertSame( 'Order #WC-77', $found['subjectLabel'] );
+        $this->assertSame( $order->get_edit_order_url(), $found['subjectUrl'] );
 
-        $this->assertSame(
-            [
-                'label' => 'Order #1693',
-                'url'   => null,
-            ],
-            RunPresenter::subject( 'order:1693' )
-        );
-        $this->assertSame(
-            [
-                'label' => 'cart:5',
-                'url'   => null,
-            ],
-            RunPresenter::subject( 'cart:5' )
-        );
+        $gone = RunPresenter::item( self::run_row(), 0 );
+        $this->assertSame( 'Order #1693', $gone['subjectLabel'] );
+        $this->assertNull( $gone['subjectUrl'] );
+
+        $cart = RunPresenter::item( [ 'subject' => 'cart:5' ] + self::run_row(), 0 );
+        $this->assertSame( 'cart:5', $cart['subjectLabel'] );
+        $this->assertNull( $cart['subjectUrl'] );
     }
 
     public function test_detail_adds_steps_in_the_rest_shape_with_their_step_type(): void {

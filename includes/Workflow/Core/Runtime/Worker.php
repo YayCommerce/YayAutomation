@@ -182,7 +182,7 @@ final class Worker {
         $workflow_id = (int) $run['workflow_id'];
         if ( ! $this->workflows->is_active( $workflow_id ) ) {
             $reason = $this->workflows->find( $workflow_id )
-                ? __( 'The workflow was deactivated before this run started.', 'yaymatik' )
+                ? Cancellation::turned_off()
                 : __( 'The workflow was deleted before this run started.', 'yaymatik' );
             return $this->end( (int) $run['id'], RunStore::STATUS_CANCELLED, $reason );
         }

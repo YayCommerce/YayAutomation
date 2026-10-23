@@ -15,9 +15,6 @@ final class ProductGrid {
     /** @var \WC_Product[]|null The store's newest products, for previews. */
     private static $newest = null;
 
-    /** @var \WC_Product[][] By "order id:kind": conditions, text and HTML of one block read the same list. */
-    private static $suggested = [];
-
     /**
      * Cross-sells or upsells of the order's products (a variation counts as its parent), minus what the order has.
      *
@@ -26,19 +23,6 @@ final class ProductGrid {
      * @return \WC_Product[] Published, visible, in stock; at most MAX.
      */
     public static function for_order( \WC_Order $order, string $kind ): array {
-        $key = $order->get_id() . ':' . $kind;
-        if ( ! isset( self::$suggested[ $key ] ) ) {
-            self::$suggested[ $key ] = self::suggest( $order, $kind );
-        }
-        return self::$suggested[ $key ];
-    }
-
-    /**
-     * @param \WC_Order $order
-     * @param string    $kind
-     * @return \WC_Product[]
-     */
-    private static function suggest( \WC_Order $order, string $kind ): array {
         $in_order  = [];
         $suggested = [];
         foreach ( $order->get_items() as $item ) {

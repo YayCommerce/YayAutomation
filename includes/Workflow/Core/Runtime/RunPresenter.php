@@ -49,7 +49,7 @@ final class RunPresenter {
      * @param string $subject E.g. `order:12`.
      * @return array `label`, `url`.
      */
-    public static function subject( string $subject ): array {
+    private static function subject( string $subject ): array {
         list( $type, $id ) = array_pad( explode( ':', $subject, 2 ), 2, '' );
         if ( 'order' !== $type || (int) $id <= 0 ) {
             return [
