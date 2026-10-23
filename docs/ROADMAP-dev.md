@@ -23,7 +23,7 @@ Changes from the ROADMAP-v1.0 order:
 | F0 | Move and rename | S | 1 | — | ✅ Done |
 | F1 | Workflow Core foundation | L | 3 | F0 | ✅ Done |
 | M1 | Customer emails + coupons | L | 3 | F1 | ⏳ Merge pending |
-| M2 | Wait + run history | L | 3 | F1 | — |
+| M2 | Wait + run history | L | 3 | F1 | ⏳ Backend done, merge pending; UI next |
 | F2 | Workflows table | M | 3 | F1 | — |
 | M7 | Cart tracking + Settings + Health check | L | 3 | F1 | — |
 | M8 | Abandoned cart + checkout | L | 2 | M1, M2, M7 | — |
@@ -128,7 +128,7 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 **Templates:** ⏳ First-order thank-you ×2 (10% off; free shipping), on `customer.is_first_order` with the coupon box.
 
 **Moved or open**
-- Cross-sell / upsell templates: coupon paths updated, still locked until Wait (M2).
+- Cross-sell / upsell templates: coupon paths updated; unlocked in M2 PR A.
 - Unsubscribe page text in Settings → M7.6; privacy exporter / eraser for unsubscribes → M7.4; product grid → M2.5.
 - Not planned yet: admin list of unsubscribes, multiple To addresses, dark mode inside the editor's iframe (stays light).
 
@@ -139,12 +139,14 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 
 ## M2 — Wait + run history · L · risk 3
 
+**Status:** ⏳ Backend done, merge pending, on `jack/feature/m2a-wait-runs` (PR A: CP1 `d7a86a6`, CP2 `0887712`, CP3 `ca7ec2f`, CP4 `8c243aa`, CP5). UI (M2.6–M2.10) is PR B.
+
 **Backend**
-- **M2.1 Wait step** — number + unit (minutes, hours, days); the run moves to waiting and resumes through Action Scheduler.
-- **M2.2 Cancel on Deactivate / Update** *(§3)* — cancel waiting runs, return the count.
-- **M2.3 Runs REST** — status filter, paging, step results.
-- **M2.4 List stats** — runs in the last 30 days, last run.
-- **M2.5 Email block: product grid** — cross-sell / upsell sources.
+- ⏳ **M2.1 Wait step** — number + unit (minutes, hours, days, weeks), a whole number up to a year; the run moves to waiting and resumes through Action Scheduler.
+- ⏳ **M2.2 Cancel on Deactivate / Update** *(§3)* — cancel waiting runs, return the count; the rate-limit pause cancels them too, and a run stops before its next step once its workflow is off.
+- ⏳ **M2.3 Runs REST** — status filter, paging, total, subject label and link, steps run; run detail names each step type.
+- ⏳ **M2.4 List stats** — runs in the last 30 days, last run, waiting runs, on every workflow response.
+- ⏳ **M2.5 Email block: product grid** — cross-sell / upsell sources; `order.has_cross_sells` / `has_upsells`, `customer.paid_order_count`.
 
 **UI**
 - **M2.6 Wait** — form and card ("Wait 1 hour", clock icon).
@@ -153,7 +155,7 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 - **M2.9 Deactivate / Update dialog** — says how many waiting runs will be cancelled.
 - **M2.10 Workflow list** — Runs and Last run columns, status filter.
 
-**Templates:** Cross-sell / upsell ×4.
+**Templates:** ⏳ Cross-sell / upsell ×4, installable since PR A.
 
 ## F2 — Workflows table · M (3–5 days)
 

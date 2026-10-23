@@ -15,6 +15,7 @@ final class RunStepStore {
     public const STATUS_SKIPPED   = 'skipped';
     public const STATUS_FAILED    = 'failed';
     public const STATUS_WAITING   = 'waiting';
+    public const STATUS_CANCELLED = 'cancelled';
 
     public const STATUSES = [
         self::STATUS_RUNNING,
@@ -22,7 +23,11 @@ final class RunStepStore {
         self::STATUS_SKIPPED,
         self::STATUS_FAILED,
         self::STATUS_WAITING,
+        self::STATUS_CANCELLED,
     ];
+
+    /** Not finished yet. */
+    public const OPEN = [ self::STATUS_RUNNING, self::STATUS_WAITING ];
 
     /**
      * A `running` row, written before the step runs, so one still `running` after a crash shows it was interrupted.
@@ -70,7 +75,7 @@ final class RunStepStore {
             'output' => wp_json_encode( $output ),
             'error'  => $error,
         ];
-        if ( ! in_array( $status, [ self::STATUS_RUNNING, self::STATUS_WAITING ], true ) ) {
+        if ( ! in_array( $status, self::OPEN, true ) ) {
             $row['finished_at'] = current_time( 'mysql', true );
         }
         if ( false === $wpdb->update( self::table(), $row, [ 'id' => $id ] ) ) {
@@ -78,6 +83,62 @@ final class RunStepStore {
             return false;
         }
         return true;
+    }
+
+    /**
+     * Ends a run's unfinished rows (running, waiting) with the run's own end status and reason.
+     *
+     * @param int    $run_id
+     * @param string $status One of `STATUSES`, not an open one.
+     * @param string $error
+     */
+    public static function close_open( int $run_id, string $status, string $error ): bool {
+        global $wpdb;
+        if ( ! in_array( $status, array_diff( self::STATUSES, self::OPEN ), true ) ) {
+            return false;
+        }
+        $table = self::table();
+        $open  = implode( ',', array_fill( 0, count( self::OPEN ), '%s' ) );
+        $done  = $wpdb->query(
+            // phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- placeholders are built to match the array.
+            $wpdb->prepare(
+                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
+                "UPDATE {$table} SET status = %s, error = %s, finished_at = %s WHERE run_id = %d AND status IN ({$open})",
+                array_merge( [ $status, $error, current_time( 'mysql', true ), $run_id ], self::OPEN )
+            )
+        );
+        if ( false === $done ) {
+            Logger::error( 'Could not close a run\'s steps: ' . $wpdb->last_error, [ 'run_id' => $run_id ] );
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * The waiting rows of these runs → cancelled, for those `RunStore::cancel_waiting()` cancelled.
+     *
+     * @param int[]  $run_ids
+     * @param string $reason
+     */
+    public static function cancel_waiting( array $run_ids, string $reason ): void {
+        global $wpdb;
+        $table = self::table();
+        $runs  = RunStore::table();
+        $in    = implode( ',', array_map( 'intval', $run_ids ) );
+        $done  = $wpdb->query(
+            $wpdb->prepare(
+                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $in is a list of ints.
+                "UPDATE {$table} s INNER JOIN {$runs} r ON r.id = s.run_id SET s.status = %s, s.error = %s, s.finished_at = %s WHERE s.run_id IN ({$in}) AND r.status = %s AND s.status = %s",
+                self::STATUS_CANCELLED,
+                $reason,
+                current_time( 'mysql', true ),
+                RunStore::STATUS_CANCELLED,
+                self::STATUS_WAITING
+            )
+        );
+        if ( false === $done ) {
+            Logger::error( 'Could not cancel waiting steps: ' . $wpdb->last_error, [ 'run_ids' => $run_ids ] );
+        }
     }
 
     /**
@@ -92,6 +153,25 @@ final class RunStepStore {
         // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
         $rows = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$table} WHERE run_id = %d ORDER BY id ASC", $run_id ), ARRAY_A );
         return array_map( [ self::class, 'decode' ], (array) $rows );
+    }
+
+    /**
+     * How many steps each run ran, in one grouped query.
+     *
+     * @param int[] $run_ids
+     * @return int[] Run id => count; runs without steps are left out.
+     */
+    public static function counts( array $run_ids ): array {
+        global $wpdb;
+        $ids = array_filter( array_map( 'intval', $run_ids ) );
+        if ( ! $ids ) {
+            return [];
+        }
+        $table = self::table();
+        $in    = implode( ',', $ids );
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $in is a list of ints.
+        $rows = $wpdb->get_results( "SELECT run_id, COUNT(*) AS steps FROM {$table} WHERE run_id IN ({$in}) GROUP BY run_id", ARRAY_A );
+        return array_map( 'intval', array_column( (array) $rows, 'steps', 'run_id' ) );
     }
 
     public static function table(): string {

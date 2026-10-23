@@ -15,6 +15,13 @@ interface Workflows {
     public function find( int $id ): ?array;
 
     /**
+     * Read fresh each time, never from a cache.
+     *
+     * @param int $id
+     */
+    public function is_active( int $id ): bool;
+
+    /**
      * 0 when the workflow has no saved version.
      *
      * @param int $id

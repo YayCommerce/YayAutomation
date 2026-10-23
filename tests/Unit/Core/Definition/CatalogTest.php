@@ -145,6 +145,20 @@ final class CatalogTest extends TestCase {
         $this->assertContains( 'order.items', array_column( $order['fields'], 'key' ) );
     }
 
+    public function test_only_block_data_fields_say_so_and_they_are_not_conditional(): void {
+        $fields = [];
+        foreach ( DataRegistry::to_client() as $item ) {
+            $fields += array_column( $item['fields'], null, 'key' );
+        }
+        $blocks = array_keys( array_filter( $fields, fn( array $field ) => ! empty( $field['block'] ) ) );
+
+        $this->assertSame( [ 'order.cross_sell_products', 'order.upsell_products' ], $blocks );
+        $this->assertFalse( $fields['order.cross_sell_products']['conditional'] );
+        $this->assertSame( 'boolean', $fields['order.has_cross_sells']['type'] );
+        $this->assertTrue( $fields['order.has_cross_sells']['conditional'] );
+        $this->assertSame( 'number', $fields['customer.paid_order_count']['type'] );
+    }
+
     public function test_data_items_name_a_step_icon(): void {
         foreach ( DataRegistry::to_client() as $item ) {
             $this->assertContains( $item['icon'], StepIcons::NAMES, $item['id'] );

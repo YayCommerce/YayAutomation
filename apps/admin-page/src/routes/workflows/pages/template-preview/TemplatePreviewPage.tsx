@@ -13,8 +13,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
-import { Button, LoadingButton } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { LoadingButton } from '@/components/ui/button';
 import { stepsInOrder } from '../../model/graph';
 import { kindMeta } from '../../shared/canvas/NodeCardView';
 import { ReadOnlyCanvas } from '../../shared/canvas/ReadOnlyCanvas';
@@ -24,9 +23,8 @@ import { PluginIcon, plugins } from '../../shared/ui/PluginIcon';
 import { stepOf, SummaryText } from '../../steps';
 import { generateCouponStep, type GenerateCouponConfig } from '../../steps/actions/generate-coupon';
 import { FreeShippingWarning, needsShippingSetup } from '../../steps/actions/generate-coupon/FreeShippingWarning';
-import { comingSoonLabel } from '../../steps/core/pending';
 import { StepTile } from '../../steps/core/StepTile';
-import { categoryLabels, findTemplate, isComingSoon, pluginsOf, sendsCustomerEmail, versionsOf } from '../../templates';
+import { categoryLabels, findTemplate, pluginsOf, sendsCustomerEmail, versionsOf } from '../../templates';
 import { installFirst, useCreateDraft } from './useCreateDraft';
 
 /** Names of the plugins a template uses that aren't installed. */
@@ -78,28 +76,14 @@ export default function TemplatePreviewPage() {
         </Breadcrumb>
       }
       actions={
-        isComingSoon(template.graph) ? (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              {/* Disabled buttons swallow pointer events, so a wrapper carries the tooltip. */}
-              <span tabIndex={0}>
-                <Button size="sm" disabled>
-                  {useLabel}
-                </Button>
-              </span>
-            </TooltipTrigger>
-            <TooltipContent>{comingSoonLabel}</TooltipContent>
-          </Tooltip>
-        ) : (
-          <LoadingButton
-            size="sm"
-            loading={isCreating}
-            disabled={isCreating}
-            onClick={() => createDraft(template.name, template.graph, missingPlugins(template))}
-          >
-            {useLabel}
-          </LoadingButton>
-        )
+        <LoadingButton
+          size="sm"
+          loading={isCreating}
+          disabled={isCreating}
+          onClick={() => createDraft(template.name, template.graph, missingPlugins(template))}
+        >
+          {useLabel}
+        </LoadingButton>
       }
     >
       {/* Narrow screens: the panel goes under the canvas. */}

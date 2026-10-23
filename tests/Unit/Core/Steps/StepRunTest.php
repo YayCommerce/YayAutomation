@@ -12,6 +12,7 @@ use YayMatik\Workflow\Actions\AddOrderNote;
 use YayMatik\Workflow\Actions\ChangeOrderStatus;
 use YayMatik\Workflow\Actions\SendInternalEmail;
 use YayMatik\Workflow\Actions\UpdateOrderMeta;
+use YayMatik\Workflow\Actions\Wait;
 use YayMatik\Workflow\Conditions\Criteria;
 use YayMatik\Workflow\Core\Steps\Step;
 use YayMatik\Workflow\Core\Steps\StepResult;
@@ -84,6 +85,30 @@ final class StepRunTest extends TestCase {
     private function assert_ok_outputs( Step $step, StepResult $result ): void {
         $this->assertTrue( $result->is_ok(), $result->message() );
         $this->assertSame( array_keys( $step->outputs() ), array_keys( $result->outputs() ) );
+    }
+
+    public function test_wait_resumes_after_the_delay_in_fixed_seconds(): void {
+        foreach ( [
+            'minutes' => 60,
+            'hours'   => 3600,
+            'days'    => 86400,
+            'weeks'   => 604800,
+        ] as $unit => $seconds ) {
+            $before = time();
+            $result = $this->run_step(
+                new Wait(),
+                [
+                    'delay' => [
+                        'value' => 2,
+                        'unit'  => $unit,
+                    ],
+                ]
+            );
+            $this->assertTrue( $result->is_wait(), $unit );
+            $this->assertGreaterThanOrEqual( $before + 2 * $seconds, $result->until(), $unit );
+            $this->assertLessThanOrEqual( time() + 2 * $seconds, $result->until(), $unit );
+            $this->assertSame( [], $result->outputs(), $unit );
+        }
     }
 
     public function test_triggers_have_nothing_to_do(): void {

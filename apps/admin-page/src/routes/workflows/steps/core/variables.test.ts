@@ -3,8 +3,7 @@ import { resolve } from 'node:path';
 import type { StepId, WorkflowGraph } from '@yaymatik/types';
 import { describe, expect, it } from 'vitest';
 
-import { steps } from '..';
-import { availableVariables, canInsert, groupVariables } from './variables';
+import { availableVariables, groupVariables } from './variables';
 
 /** Shared with PHP `ValidatorTest::test_variables_a_step_can_use`. */
 const { cases } = JSON.parse(
@@ -13,28 +12,24 @@ const { cases } = JSON.parse(
 
 describe('availableVariables', () => {
   it.each(cases.map((c) => [c.name, c] as const))('%s', (_name, { graph, nodeId, keys }) => {
-    const variables = availableVariables(graph, nodeId).filter((variable) => !variable.comingSoon);
-    expect(variables.map((variable) => variable.key)).toEqual(keys);
+    expect(availableVariables(graph, nodeId).map((variable) => variable.key)).toEqual(keys);
   });
 
-  it('carries label and type, and lists fields PHP lacks as coming soon', () => {
+  it('carries label and type', () => {
     const { graph } = cases.find((c) => c.nodeId === 'status')!;
     const variables = availableVariables(graph, 'status');
     expect(variables).toContainEqual({
       key: 'order.total',
       label: 'Order total',
       type: 'money',
-      comingSoon: false,
       block: false,
     });
     expect(variables).toContainEqual({
       key: 'steps.c.result',
       label: 'Result',
       type: 'enum',
-      comingSoon: false,
       block: false,
     });
-    expect(variables.find((variable) => variable.key === 'order.has_upsells')?.comingSoon).toBe(true);
   });
 
   it('flags block outputs, e.g. the coupon box of a Generate coupon above', () => {
@@ -80,25 +75,5 @@ describe('groupVariables', () => {
     });
     // Data first, steps after.
     expect(groups.findIndex((g) => g.source === 'step')).toBeGreaterThan(groups.findIndex((g) => g.id === 'site'));
-  });
-});
-
-describe('canInsert', () => {
-  const { graph } = cases.find((c) => c.nodeId === 'status')!;
-  const variables = availableVariables(graph, 'status');
-  const comingSoon = variables.find((variable) => variable.comingSoon)!;
-  const built = variables.find((variable) => !variable.comingSoon)!;
-
-  it('lets a built step insert built fields only: PHP rejects coming-soon ones on Activate', () => {
-    expect(steps.add_order_note.comingSoon).toBe(false);
-    expect(canInsert(built, steps.add_order_note.comingSoon)).toBe(true);
-    expect(canInsert(comingSoon, steps.add_order_note.comingSoon)).toBe(false);
-  });
-
-  it('lets a coming-soon step insert coming-soon fields too', () => {
-    for (const id of ['wait'] as const) {
-      expect(steps[id].comingSoon).toBe(true);
-      expect(canInsert(comingSoon, steps[id].comingSoon)).toBe(true);
-    }
   });
 });

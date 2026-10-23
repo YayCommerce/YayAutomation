@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useForm } from '@tanstack/react-form';
 import { __ } from '@wordpress/i18n';
 
@@ -8,12 +9,13 @@ import { ConfigField } from '../../core/fields/ConfigField';
 import { useMarkInvalid } from '../../core/fields/feedback';
 import { useValidateOnMount } from '../../core/fields/useValidateOnMount';
 import type { StepFormProps } from '../../core/types';
-import { schema, type WaitConfig, type WaitUnit } from './schema';
+import { schema, toNumber, type WaitConfig, type WaitUnit } from './schema';
 
 const unitLabels: Record<WaitUnit, string> = {
   minutes: __('Minutes', 'yaymatik'),
   hours: __('Hours', 'yaymatik'),
   days: __('Days', 'yaymatik'),
+  weeks: __('Weeks', 'yaymatik'),
 };
 
 export function WaitForm({ config, onChange }: StepFormProps<WaitConfig>) {
@@ -24,43 +26,47 @@ export function WaitForm({ config, onChange }: StepFormProps<WaitConfig>) {
   });
   useValidateOnMount(form);
   const markInvalid = useMarkInvalid();
+  // As typed, so "1." or "abc" stays in the box while the stored value is a number or null.
+  const [text, setText] = useState(config.delay.value === null ? '' : String(config.delay.value));
 
   return (
     <FieldGroup>
-      <form.Field name="amount">
-        {(amount) => (
+      <form.Field name="delay">
+        {(delay) => (
           <ConfigField
             label={__('Wait for', 'yaymatik')}
-            htmlFor="step-wait-amount"
+            htmlFor="step-wait-delay"
             description={__('Then the workflow continues with the next step.', 'yaymatik')}
-            errors={amount.state.meta.errors}
+            errors={delay.state.meta.errors}
           >
             <div className="flex gap-2">
               <Input
-                id="step-wait-amount"
+                id="step-wait-delay"
                 inputMode="numeric"
                 className="w-28"
-                value={amount.state.value}
-                onChange={(event) => amount.handleChange(event.target.value)}
-                onBlur={amount.handleBlur}
-                aria-invalid={markInvalid(amount.state.meta)}
+                value={text}
+                onChange={(event) => {
+                  setText(event.target.value);
+                  delay.handleChange({ ...delay.state.value, value: toNumber(event.target.value) });
+                }}
+                onBlur={delay.handleBlur}
+                aria-invalid={markInvalid(delay.state.meta)}
               />
-              <form.Field name="unit">
-                {(unit) => (
-                  <Select value={unit.state.value} onValueChange={(value) => unit.handleChange(value as WaitUnit)}>
-                    <SelectTrigger className="flex-1" aria-label={__('Unit', 'yaymatik')}>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(unitLabels).map(([value, label]) => (
-                        <SelectItem key={value} value={value}>
-                          {label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              </form.Field>
+              <Select
+                value={delay.state.value.unit}
+                onValueChange={(unit) => delay.handleChange({ ...delay.state.value, unit: unit as WaitUnit })}
+              >
+                <SelectTrigger className="flex-1" aria-label={__('Unit', 'yaymatik')}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(unitLabels).map(([value, label]) => (
+                    <SelectItem key={value} value={value}>
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </ConfigField>
         )}

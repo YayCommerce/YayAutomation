@@ -4,6 +4,7 @@ namespace YayMatik\Workflow\DataItems;
 use YayMatik\Workflow\Core\Data\DataItem;
 use YayMatik\Workflow\Core\Data\Ref;
 use YayMatik\Workflow\Core\Data\Type;
+use YayMatik\Workflow\Core\Email\ProductGrid;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -52,56 +53,56 @@ final class OrderData extends DataItem {
 
     protected function define(): array {
         return [
-            'number'          => [
+            'number'              => [
                 'label' => __( 'Order number', 'yaymatik' ),
                 'type'  => self::TYPE_STRING,
                 'value' => fn( \WC_Order $order ) => (string) $order->get_order_number(),
             ],
-            'total'           => [
+            'total'               => [
                 'label'      => __( 'Order total', 'yaymatik' ),
                 'type'       => self::TYPE_NUMBER,
                 'value_type' => Type::money(),
                 'value'      => fn( \WC_Order $order ) => (float) $order->get_total(),
                 'display'    => fn( \WC_Order $order, bool $html ) => self::price( $order, (float) $order->get_total(), $html ),
             ],
-            'subtotal'        => [
+            'subtotal'            => [
                 'label'      => __( 'Order subtotal', 'yaymatik' ),
                 'type'       => self::TYPE_NUMBER,
                 'value_type' => Type::money(),
                 'value'      => fn( \WC_Order $order ) => (float) $order->get_subtotal(),
                 'display'    => fn( \WC_Order $order, bool $html ) => self::price( $order, (float) $order->get_subtotal(), $html ),
             ],
-            'status'          => [
+            'status'              => [
                 'label'   => __( 'Order status', 'yaymatik' ),
                 'type'    => self::TYPE_ENUM,
                 'value'   => fn( \WC_Order $order ) => $order->get_status(),
                 'options' => [ self::class, 'statuses' ],
             ],
-            'payment_method'  => [
+            'payment_method'      => [
                 'label'   => __( 'Payment method', 'yaymatik' ),
                 'type'    => self::TYPE_ENUM,
                 'value'   => fn( \WC_Order $order ) => $order->get_payment_method(),
                 'display' => fn( \WC_Order $order, bool $html ) => self::text( $order->get_payment_method_title(), $html ),
                 'options' => [ self::class, 'payment_methods' ],
             ],
-            'shipping_method' => [
+            'shipping_method'     => [
                 'label' => __( 'Shipping method', 'yaymatik' ),
                 'type'  => self::TYPE_STRING,
                 'value' => fn( \WC_Order $order ) => $order->get_shipping_method(),
             ],
-            'item_count'      => [
+            'item_count'          => [
                 'label' => __( 'Item count', 'yaymatik' ),
                 'type'  => self::TYPE_NUMBER,
                 'value' => fn( \WC_Order $order ) => (float) $order->get_item_count(),
             ],
-            'created_date'    => [
+            'created_date'        => [
                 'label'   => __( 'Order date', 'yaymatik' ),
                 'type'    => self::TYPE_DATE,
                 // WC_DateTime is in the site's timezone, so this is the date the store sees.
                 'value'   => fn( \WC_Order $order ) => $order->get_date_created() ? $order->get_date_created()->date( 'Y-m-d' ) : '',
                 'display' => fn( \WC_Order $order, bool $html ) => self::text( wc_format_datetime( $order->get_date_created() ), $html ),
             ],
-            'customer'        => [
+            'customer'            => [
                 'label'       => __( 'Customer', 'yaymatik' ),
                 'type'        => self::TYPE_STRING,
                 'value_type'  => Type::entity( CustomerData::ID ),
@@ -109,13 +110,13 @@ final class OrderData extends DataItem {
                 'value'       => fn( \WC_Order $order ) => new Ref( CustomerData::ID, 'order:' . $order->get_id() ),
                 'conditional' => false,
             ],
-            'admin_url'       => [
+            'admin_url'           => [
                 'label'       => __( 'Order admin URL', 'yaymatik' ),
                 'type'        => self::TYPE_STRING,
                 'value'       => fn( \WC_Order $order ) => $order->get_edit_order_url(),
                 'conditional' => false,
             ],
-            'items'           => [
+            'items'               => [
                 'label'       => __( 'Order items', 'yaymatik' ),
                 'type'        => self::TYPE_STRING,
                 'value_type'  => Type::list_of( Type::entity( OrderItemData::ID ) ),
@@ -125,6 +126,35 @@ final class OrderData extends DataItem {
                 'display'     => [ self::class, 'items' ],
                 'conditional' => false,
             ],
+            'has_cross_sells'     => [
+                'label' => __( 'Order has cross-sell products', 'yaymatik' ),
+                'type'  => self::TYPE_BOOLEAN,
+                'value' => fn( \WC_Order $order ) => (bool) ProductGrid::for_order( $order, ProductGrid::CROSS_SELLS ),
+            ],
+            'has_upsells'         => [
+                'label' => __( 'Order has upsell products', 'yaymatik' ),
+                'type'  => self::TYPE_BOOLEAN,
+                'value' => fn( \WC_Order $order ) => (bool) ProductGrid::for_order( $order, ProductGrid::UPSELLS ),
+            ],
+            'cross_sell_products' => self::grid_field( __( 'Cross-sell products', 'yaymatik' ), ProductGrid::CROSS_SELLS ),
+            'upsell_products'     => self::grid_field( __( 'Upsell products', 'yaymatik' ), ProductGrid::UPSELLS ),
+        ];
+    }
+
+    /**
+     * A product grid email block.
+     *
+     * @param string $label
+     * @param string $kind  `ProductGrid` CROSS_SELLS or UPSELLS.
+     */
+    private static function grid_field( string $label, string $kind ): array {
+        return [
+            'label'       => $label,
+            'type'        => self::TYPE_STRING,
+            'value'       => fn( \WC_Order $order ) => ProductGrid::render( ProductGrid::for_order( $order, $kind ), false ),
+            'display'     => fn( \WC_Order $order, bool $html ) => ProductGrid::render( ProductGrid::for_order( $order, $kind ), $html ),
+            'conditional' => false,
+            'block'       => true,
         ];
     }
 
@@ -244,7 +274,23 @@ final class OrderData extends DataItem {
                 'text'  => implode( "\n", $text ),
                 'html'  => self::items_table( $rows, $totals ),
             ],
-        ];
+            'has_cross_sells' => (bool) ProductGrid::newest(),
+            'has_upsells'     => (bool) ProductGrid::newest(),
+        ] + array_fill_keys( [ 'cross_sell_products', 'upsell_products' ], self::sample_grid() );
+    }
+
+    /** The store's newest products as a grid: what a suggestion block looks like; built once per request. */
+    private static function sample_grid(): array {
+        static $grid = null;
+        if ( null === $grid ) {
+            $text = ProductGrid::render( ProductGrid::newest(), false );
+            $grid = [
+                'value' => $text,
+                'text'  => $text,
+                'html'  => ProductGrid::render( ProductGrid::newest(), true ),
+            ];
+        }
+        return $grid;
     }
 
     /**

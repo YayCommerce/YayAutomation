@@ -16,11 +16,17 @@ final class RepositoryWorkflows implements Workflows {
         return WorkflowRepository::find( $id );
     }
 
+    public function is_active( int $id ): bool {
+        return WorkflowRepository::is_active( $id );
+    }
+
     public function live_version_id( int $id ): int {
         return WorkflowRepository::live_version_id( $id );
     }
 
     public function deactivate( int $id ): void {
-        WorkflowRepository::deactivate( $id );
+        if ( true === WorkflowRepository::deactivate( $id ) ) {
+            Cancellation::waiting( $id, Cancellation::turned_off() );
+        }
     }
 }

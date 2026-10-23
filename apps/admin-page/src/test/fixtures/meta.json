@@ -89,6 +89,48 @@
                     }
                 ]
             },
+            "wait": {
+                "kind": "action",
+                "plugin": "yaymatik",
+                "category": "flow",
+                "requires": [],
+                "label": "Wait",
+                "description": "Pause the workflow for a while before the next step.",
+                "icon": "clock",
+                "summary": "Wait %delay%",
+                "onError": "stop",
+                "fields": [
+                    {
+                        "key": "delay",
+                        "type": "number_unit",
+                        "label": "Wait for",
+                        "help": "Then the workflow continues with the next step.",
+                        "options": [
+                            {
+                                "value": "minutes",
+                                "label": "Minutes"
+                            },
+                            {
+                                "value": "hours",
+                                "label": "Hours"
+                            },
+                            {
+                                "value": "days",
+                                "label": "Days"
+                            },
+                            {
+                                "value": "weeks",
+                                "label": "Weeks"
+                            }
+                        ],
+                        "default": {
+                            "value": 1,
+                            "unit": "days"
+                        }
+                    }
+                ],
+                "outputs": []
+            },
             "order_created": {
                 "kind": "trigger",
                 "plugin": "woocommerce",
@@ -813,6 +855,36 @@
                         "type": "string",
                         "valueType": "list<entity<order_item>>",
                         "conditional": false
+                    },
+                    {
+                        "key": "order.has_cross_sells",
+                        "label": "Order has cross-sell products",
+                        "type": "boolean",
+                        "valueType": "boolean",
+                        "conditional": true
+                    },
+                    {
+                        "key": "order.has_upsells",
+                        "label": "Order has upsell products",
+                        "type": "boolean",
+                        "valueType": "boolean",
+                        "conditional": true
+                    },
+                    {
+                        "key": "order.cross_sell_products",
+                        "label": "Cross-sell products",
+                        "type": "string",
+                        "valueType": "string",
+                        "conditional": false,
+                        "block": true
+                    },
+                    {
+                        "key": "order.upsell_products",
+                        "label": "Upsell products",
+                        "type": "string",
+                        "valueType": "string",
+                        "conditional": false,
+                        "block": true
                     }
                 ],
                 "relations": [
@@ -1878,6 +1950,13 @@
                         "label": "Customer’s first order",
                         "type": "boolean",
                         "valueType": "boolean",
+                        "conditional": true
+                    },
+                    {
+                        "key": "customer.paid_order_count",
+                        "label": "Customer paid order count",
+                        "type": "number",
+                        "valueType": "number",
                         "conditional": true
                     },
                     {

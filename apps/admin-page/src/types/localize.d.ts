@@ -65,7 +65,7 @@ export interface StepOutputMeta {
   block?: boolean;
 }
 
-/** What the admin knows about each step: PHP's catalog entry (`CatalogStepMeta`) or a pending stub. */
+/** A step's kind and data needs; `CatalogStepMeta` adds the rest of its contract. */
 export interface StepMeta {
   kind: WorkflowNodeKind;
   /** Triggers and actions. */
@@ -101,22 +101,24 @@ export interface DataItemMeta {
   label: string;
   /** One line for the "Insert variable" list. */
   description: string;
-  /** A step icon name for its "Insert variable" tile. Absent on items the app defines itself. */
-  icon?: string;
+  /** A step icon name for its "Insert variable" tile. */
+  icon: string;
   fields: {
     /** Full key, e.g. `order.total`. */
     key: string;
     label: string;
     /** Condition type: picks the operators. */
     type: DataFieldType;
-    /** e.g. `money`, `list<entity<order_item>>`. Absent on fields the app defines itself. */
-    valueType?: string;
+    /** e.g. `money`, `list<entity<order_item>>`. */
+    valueType: string;
     /** False: merge tag only, not offered in conditions. */
     conditional: boolean;
     options?: { value: string; label: string }[];
+    /** A ready-made email block (e.g. a product grid), rendered on the server; inserted on its own line. */
+    block?: boolean;
   }[];
-  /** Links to one other item: `order.customer` → `order.customer.first_name`. Absent on items the app defines itself. */
-  relations?: { key: string; label: string; item: string }[];
+  /** Links to one other item: `order.customer` → `order.customer.first_name`. */
+  relations: { key: string; label: string; item: string }[];
 }
 
 declare global {
@@ -146,7 +148,7 @@ declare global {
       };
       automation: {
         plugins: PluginMeta[];
-        /** Steps PHP has built; the admin may list more (see `steps/core/pending.ts`). */
+        /** By step id; another plugin's ids too. */
         steps: Partial<Record<StepId, CatalogStepMeta>>;
         data: DataItemMeta[];
         /** Operator ids per field type. */

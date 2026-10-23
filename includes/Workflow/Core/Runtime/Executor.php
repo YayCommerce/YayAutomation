@@ -38,6 +38,9 @@ final class Executor {
     /** @var Queue */
     private $queue;
 
+    /** @var Workflows */
+    private $workflows;
+
     /** @var Clock */
     private $clock;
 
@@ -51,17 +54,19 @@ final class Executor {
      * @param RunRepository $runs
      * @param GraphSource   $graphs
      * @param Queue         $queue
+     * @param Workflows     $workflows
      * @param Clock         $clock
-     * @param callable|null $steps    Null = `StepRegistry::get()`.
-     * @param callable|null $resolver Null = the WooCommerce one.
+     * @param callable|null $steps     Null = `StepRegistry::get()`.
+     * @param callable|null $resolver  Null = the WooCommerce one.
      */
-    public function __construct( RunRepository $runs, GraphSource $graphs, Queue $queue, Clock $clock, ?callable $steps = null, ?callable $resolver = null ) {
-        $this->runs     = $runs;
-        $this->graphs   = $graphs;
-        $this->queue    = $queue;
-        $this->clock    = $clock;
-        $this->steps    = $steps ?? [ StepRegistry::class, 'get' ];
-        $this->resolver = $resolver ?? fn() => new RefResolver();
+    public function __construct( RunRepository $runs, GraphSource $graphs, Queue $queue, Workflows $workflows, Clock $clock, ?callable $steps = null, ?callable $resolver = null ) {
+        $this->runs      = $runs;
+        $this->graphs    = $graphs;
+        $this->queue     = $queue;
+        $this->workflows = $workflows;
+        $this->clock     = $clock;
+        $this->steps     = $steps ?? [ StepRegistry::class, 'get' ];
+        $this->resolver  = $resolver ?? fn() => new RefResolver();
     }
 
     /**
@@ -124,6 +129,9 @@ final class Executor {
         $can_slice = $this->queue->available();
 
         while ( $queue ) {
+            if ( ! $this->workflows->is_active( (int) $run['workflow_id'] ) ) {
+                return $this->cancel( $id, $queue, $scope );
+            }
             $step_id = $queue[0];
             $node    = $nodes[ $step_id ] ?? null;
             $step    = $node ? ( $this->steps )( (string) ( $node['data']['block'] ?? '' ) ) : null;
@@ -131,7 +139,7 @@ final class Executor {
             $outcome = $this->outcome( $run, $step_id, $node, $step, $rows[ $step_id ] ?? null, $scope );
 
             if ( RunStepStore::STATUS_WAITING === $outcome['status'] ) {
-                return $this->wait( $id, $queue, $scope, $outcome );
+                return $this->wait( $id, (int) $run['workflow_id'], $queue, $scope, $outcome );
             }
             if ( RunStepStore::STATUS_FAILED === $outcome['status'] && ( ! $step || Step::ON_ERROR_CONTINUE !== $step->on_error() ) ) {
                 return $this->fail( $id, $queue, $scope, (string) $outcome['error'] );
@@ -284,11 +292,12 @@ final class Executor {
      * Pauses the run until the step's `until`. Without a queue nothing could wake it, so it fails.
      *
      * @param int      $id
-     * @param string[] $queue   The waiting step first.
+     * @param int      $workflow_id
+     * @param string[] $queue       The waiting step first.
      * @param Scope    $scope
      * @param array    $outcome
      */
-    private function wait( int $id, array $queue, Scope $scope, array $outcome ): string {
+    private function wait( int $id, int $workflow_id, array $queue, Scope $scope, array $outcome ): string {
         $until = (int) $outcome['until'];
         if ( ! $this->queue->available() ) {
             $error = __( 'This run can\'t wait: Action Scheduler is not available.', 'yaymatik' );
@@ -304,6 +313,10 @@ final class Executor {
                 'scope'      => $scope->to_array(),
             ]
         );
+        // Turned off while the step ran: Cancellation only finds runs already saved as waiting.
+        if ( ! $this->workflows->is_active( $workflow_id ) ) {
+            return $this->cancel( $id, $queue, $scope );
+        }
         if ( ! $this->queue->enqueue( $id, $until ) ) {
             Logger::error( "Run {$id}: could not queue the end of its wait.", [ 'run_id' => $id ] );
         }
@@ -328,6 +341,29 @@ final class Executor {
         }
         $this->runs->save_run( $id, $fields );
         return RunStore::STATUS_FAILED;
+    }
+
+    /**
+     * Stops the run before its next step: the workflow was turned off.
+     *
+     * @param int      $id
+     * @param string[] $queue
+     * @param Scope    $scope
+     */
+    private function cancel( int $id, array $queue, Scope $scope ): string {
+        $reason = Cancellation::turned_off();
+        $this->runs->save_run(
+            $id,
+            [
+                'status'     => RunStore::STATUS_CANCELLED,
+                'error'      => $reason,
+                'wait_until' => null,
+                'position'   => [ 'queue' => $queue ],
+                'scope'      => $scope->to_array(),
+            ]
+        );
+        $this->runs->close_steps( $id, RunStepStore::STATUS_CANCELLED, $reason );
+        return RunStore::STATUS_CANCELLED;
     }
 
     private static function result( string $status, array $output, ?string $error = null, int $until = 0 ): array {

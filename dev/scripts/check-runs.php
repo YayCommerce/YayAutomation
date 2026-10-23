@@ -1,7 +1,8 @@
 <?php
 /**
  * E2E for runs, through real WooCommerce events: the Dispatcher queues runs, each run's job is then
- * run right away by the Worker (its Action Scheduler job is removed). Prints PASS / FAIL lines.
+ * run right away by the Worker (its Action Scheduler job is removed); a Wait's job is run by Action
+ * Scheduler's runner. Prints PASS / FAIL lines.
  * Cleans up its order, workflows, runs (by root run, so child runs too) and jobs. Run through
  * check-runs.sh.
  *
@@ -13,6 +14,7 @@
 require_once __DIR__ . '/check-run.php';
 
 use YayMatik\Workflow\Core\Runtime\ActionSchedulerQueue;
+use YayMatik\Workflow\Core\Runtime\RepositoryWorkflows;
 use YayMatik\Workflow\Core\Runtime\Runtime;
 use YayMatik\Workflow\Core\Steps\StepRegistry;
 use YayMatik\Workflow\Core\Storage\RunStepStore;
@@ -311,6 +313,134 @@ try {
     $ok( 1 === $count( ActionSchedulerQueue::HOOK ) && 1 === $count( ActionSchedulerQueue::RECOVER_HOOK ), 'queue: one pending run job and one recovery job per run' );
     as_unschedule_all_actions( ActionSchedulerQueue::HOOK, [ $ghost ], ActionSchedulerQueue::GROUP );
     as_unschedule_all_actions( ActionSchedulerQueue::RECOVER_HOOK, [ $ghost ], ActionSchedulerQueue::GROUP );
+
+    // 9. Wait 1 minute → note: the run waits, then its own Action Scheduler job resumes it.
+    $wait_graph = fn( string $note ) => $graph(
+        'order_status_changed',
+        [ 'to' => [ 'cancelled' ] ],
+        [
+            [
+                'wait',
+                'wait',
+                [
+                    'delay' => [
+                        'value' => 1,
+                        'unit'  => 'minutes',
+                    ],
+                ],
+            ],
+            [ 'note', 'add_order_note', [ 'note' => $note ] ],
+        ]
+    );
+    $wait_wf    = $create( 'wait', $wait_graph( 'Check-runs: after the wait' ) );
+    $job_of     = function ( int $run_id ) {
+        $ids = as_get_scheduled_actions(
+            [
+                'hook'   => ActionSchedulerQueue::HOOK,
+                'args'   => [ $run_id ],
+                'group'  => ActionSchedulerQueue::GROUP,
+                'status' => 'pending',
+            ],
+            'ids'
+        );
+        return $ids ? (int) reset( $ids ) : 0;
+    };
+    /** A run of the wait workflow, left waiting by its first slice. */
+    $waiting_run = function () use ( $order, $dispatch, $run_job, &$wait_wf ) {
+        $order = wc_get_order( $order->get_id() );
+        $order->update_status( 'pending' );
+        $order->update_status( 'cancelled' );
+        $runs = $dispatch( $wait_wf );
+        return $runs ? $run_job( $runs[0] ) : null;
+    };
+    $run         = $waiting_run();
+    $until       = $run && $run['wait_until'] ? strtotime( $run['wait_until'] . ' UTC' ) : 0;
+    $job         = $run ? $job_of( (int) $run['id'] ) : 0;
+    $ok( $run && 'waiting' === $run['status'] && abs( $until - ( time() + 60 ) ) <= 5, 'wait: run waits about 1 minute' );
+    $ok( $job && abs( ActionScheduler::store()->fetch_action( (string) $job )->get_schedule()->get_date()->getTimestamp() - $until ) <= 1, 'wait: its job is scheduled at wait_until' );
+    // The minute "passes": the real job is run by Action Scheduler's runner.
+    RunStore::save( (int) $run['id'], [ 'wait_until' => gmdate( 'Y-m-d H:i:s', time() - 1 ) ] );
+    ActionScheduler::runner()->process_action( $job );
+    $run   = RunStore::find( (int) $run['id'] );
+    $steps = array_column( RunStepStore::for_run( (int) $run['id'] ), 'status', 'step_id' );
+    $ok(
+        'completed' === $run['status'] && [
+            'wait' => 'completed',
+            'note' => 'completed',
+        ] === $steps,
+        'wait: the job resumed the run; wait and note completed'
+    );
+    $ok( in_array( 'Check-runs: after the wait', $notes( wc_get_order( $order->get_id() ) ), true ), 'wait: the step after it ran' );
+
+    // Runs REST and stats, on the runs so far.
+    $request = new WP_REST_Request( 'GET', "/yaymatik/v1/workflows/{$wait_wf}/runs" );
+    $request->set_query_params( [ 'status' => 'completed' ] );
+    $page   = rest_do_request( $request )->get_data();
+    $item   = $page['items'][0] ?? [];
+    $detail = $item ? $call( 'GET', 'runs/' . $item['id'] ) : [];
+    $ok( 1 === ( $page['total'] ?? 0 ) && 'Order #' . $order->get_order_number() === ( $item['subjectLabel'] ?? '' ) && $order->get_edit_order_url() === ( $item['subjectUrl'] ?? '' ) && 2 === ( $item['stepsRun'] ?? 0 ), 'runs REST: filter, total, subject label and URL, steps run' );
+    $ok( [ 'wait', 'add_order_note' ] === array_column( $detail['steps'] ?? [], 'stepType' ), 'runs REST: run detail names each step type' );
+    $wf = $call( 'GET', "workflows/{$wait_wf}" );
+    $ok( 1 === $wf['runs30d'] && null !== $wf['lastRunAt'] && 0 === $wf['waitingRuns'], 'runs REST: workflow stats' );
+
+    // 10. Deactivate cancels waiting runs and says how many; their leftover job does nothing.
+    $run    = $waiting_run();
+    $job    = $run ? $job_of( (int) $run['id'] ) : 0;
+    $listed = $call( 'GET', 'workflows' );
+    $ok( 1 === ( array_column( $listed, 'waitingRuns', 'id' )[ (string) $wait_wf ] ?? 0 ), 'deactivate: the list counts the waiting run' );
+    $off   = $call( 'POST', "workflows/{$wait_wf}/deactivate" );
+    $after = RunStore::find( (int) $run['id'] );
+    $step  = RunStepStore::for_run( (int) $run['id'] )[0] ?? [];
+    $ok( 1 === ( $off['cancelledRuns'] ?? null ) && 0 === $off['waitingRuns'], 'deactivate: cancelledRuns 1, none waiting' );
+    $ok( 'cancelled' === $after['status'] && 'The workflow was turned off.' === $after['error'] && null === $after['wait_until'] && null !== $after['finished_at'], 'deactivate: run cancelled with the reason, no wait_until' );
+    $ok( 'cancelled' === ( $step['status'] ?? '' ) && null !== $step['finished_at'], 'deactivate: its waiting step row cancelled' );
+    $before = $notes( wc_get_order( $order->get_id() ) );
+    if ( $job ) {
+        ActionScheduler::runner()->process_action( $job );
+    }
+    $ok( $job && 'cancelled' === RunStore::find( (int) $run['id'] )['status'] && $notes( wc_get_order( $order->get_id() ) ) === $before, 'deactivate: the leftover job does nothing' );
+
+    // 11. Apply cancels waiting runs too.
+    $call( 'POST', "workflows/{$wait_wf}/activate" );
+    $run = $waiting_run();
+    $call( 'PUT', "workflows/{$wait_wf}", [ 'graph' => $wait_graph( 'Check-runs: v2' ) ] );
+    $applied = $call( 'POST', "workflows/{$wait_wf}/apply" );
+    $after   = RunStore::find( (int) $run['id'] );
+    $ok( 1 === ( $applied['cancelledRuns'] ?? null ) && 'cancelled' === $after['status'] && 'The workflow was updated.' === $after['error'], 'apply: waiting run cancelled, cancelledRuns 1' );
+
+    // 12. The rate-limit pause cancels waiting runs.
+    $run = $waiting_run();
+    ( new RepositoryWorkflows() )->deactivate( $wait_wf );
+    $ok( 'cancelled' === RunStore::find( (int) $run['id'] )['status'], 'pause: waiting run cancelled' );
+
+    // 13. Turned off mid-run: the step running finishes, the next one never starts.
+    $two_wf   = $create(
+        'two notes',
+        $graph(
+            'order_status_changed',
+            [ 'to' => [ 'cancelled' ] ],
+            [
+                [ 'one', 'add_order_note', [ 'note' => 'Check-runs: one' ] ],
+                [ 'two', 'add_order_note', [ 'note' => 'Check-runs: two' ] ],
+            ]
+        )
+    );
+    $turn_off = function ( $note_id ) use ( $two_wf ) {
+        if ( false !== strpos( (string) get_comment_text( $note_id ), 'Check-runs: one' ) ) {
+            YayMatik\Workflow\Core\Storage\WorkflowRepository::deactivate( $two_wf );
+        }
+    };
+    add_action( 'woocommerce_order_note_added', $turn_off );
+    $order = wc_get_order( $order->get_id() );
+    $order->update_status( 'pending' );
+    $order->update_status( 'cancelled' );
+    $runs = $dispatch( $two_wf );
+    $run  = $runs ? $run_job( $runs[0] ) : null;
+    remove_action( 'woocommerce_order_note_added', $turn_off );
+    $all = $notes( wc_get_order( $order->get_id() ) );
+    $ok( $run && 'cancelled' === $run['status'] && 'The workflow was turned off.' === $run['error'], 'mid-run: run cancelled when turned off' );
+    $ok( in_array( 'Check-runs: one', $all, true ) && ! in_array( 'Check-runs: two', $all, true ), 'mid-run: the next step never ran' );
+    $ok( $run && [ 'one' => 'completed' ] === array_column( RunStepStore::for_run( (int) $run['id'] ), 'status', 'step_id' ), 'mid-run: only the first step has a row' );
 } catch ( Throwable $e ) {
     $ok( false, 'unexpected error: ' . $e->getMessage() );
 } finally {

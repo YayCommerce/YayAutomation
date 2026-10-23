@@ -20,8 +20,11 @@ final class FakeWpdb {
     /** @var array[] [ method, ...args ] per call. */
     public $calls = [];
 
-    /** @var mixed What the next get_results / get_row / get_var / query returns. */
+    /** @var mixed What a get_results / get_row / get_var / get_col / query returns. */
     public $result = null;
+
+    /** @var array What the next reads return, in order, before `$result`. */
+    public $results = [];
 
     public function prepare( $query, ...$args ) {
         $args = isset( $args[0] ) && is_array( $args[0] ) ? $args[0] : $args;
@@ -63,6 +66,10 @@ final class FakeWpdb {
         return $this->read( 'get_var', $sql );
     }
 
+    public function get_col( $sql ) {
+        return $this->read( 'get_col', $sql );
+    }
+
     /** The SQL of the last read call. */
     public function last_sql(): string {
         for ( $i = count( $this->calls ) - 1; $i >= 0; $i-- ) {
@@ -75,6 +82,6 @@ final class FakeWpdb {
 
     private function read( string $method, string $sql ) {
         $this->calls[] = [ $method, $sql ];
-        return $this->result;
+        return $this->results ? array_shift( $this->results ) : $this->result;
     }
 }

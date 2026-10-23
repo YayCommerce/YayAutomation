@@ -12,12 +12,12 @@
 | Folder | Holds |
 |---|---|
 | `ModuleRegistry.php`, `Modules/` | The modules and what they register (§8); planned: connectors |
-| `Triggers/`, `Conditions/`, `Actions/` | One class per step; planned: control steps (Wait, For each, Switch, Call workflow, Set variable, Stop) |
+| `Triggers/`, `Conditions/`, `Actions/` | One class per step; Wait (an action, YayMatik module); planned: control steps (For each, Switch, Call workflow, Set variable, Stop) |
 | `DataItems/` | Data items (order, customer, site, order_item) |
 | `Core/Steps/` | The step contract (`Step`, `Trigger`, `Condition`, `Action`, `Field`, `StepResult`, `StepIcons`, `StepRegistry`) |
 | `Core/Data/` | `DataItem`, `DataRegistry`, `Type`, `Operators`, `Ref`, `RefResolver`, `Scope`, `Template`, `Filters` |
 | `Core/Definition/` | Graph schema, `Validator`, `Catalog` (steps, fields, outputs, data types → admin app and AI) |
-| `Core/Runtime/` | `Dispatcher`, `Executor`, `Worker`, `Runtime`; planned: `Scheduler`, `Cancellation`, `Retention` |
+| `Core/Runtime/` | `Dispatcher`, `Executor`, `Worker`, `Runtime`, `Cancellation`; planned: `Scheduler`, `Retention` |
 | `Core/Storage/` | Tables, upgrades, `WorkflowRepository`, `VersionStore`, `RunStore` |
 | `Core/Email/`, `Core/Coupon/` | Email rendering and unsubscribe; coupon writing |
 | `AI/` | Provider interface and AI features (v2.0) |
@@ -51,7 +51,8 @@ Table names below omit the prefix: each is `{prefix}yaymatik_<name>`, e.g. `wp_y
 - **Errors.** Each step has a policy: stop the run (default) or continue. Retries come in v1.1.
 - **Loop safety.** `parent_run_id`, `root_run_id`, `depth` replace the in-memory chain. A workflow never starts again inside its own chain; max depth 5; a max loop size. Rate limits per workflow, per 60 s, pause (turn off) a runaway workflow: 100 runs started by other runs (a loop always has a parent), or 1000 runs in all. Runs from plain events only count toward the 1000, so a bulk edit of hundreds of orders never pauses a workflow.
 - **Scheduled and query triggers.** A schedule fans out to one run per matching subject, in batches. `trigger_claims` stops duplicates ("once per customer per 90 days"). This generalises the `_yaymatik_order_created` order meta in `OrderCreated::claim()`.
-- **Cancel.** Deactivate and Update cancel waiting runs (v1.0 rule). The API returns the count for the UI.
+- **Cancel.** Deactivate, Update (Apply) and the rate-limit pause cancel waiting runs (v1.0 rule) in one place, `Cancellation::waiting()`, under the workflow lock for the REST calls: it selects the waiting runs, cancels those still waiting in one UPDATE, then marks their waiting step rows `cancelled`. Deactivate and Apply return the count (`cancelledRuns`). The runs' Action Scheduler jobs stay; when one fires it can't take the run and does nothing. Apply leaves queued and running runs on their pinned version.
+- **Stop right away.** Before each step, and after saving a wait, the Executor reads the workflow's status fresh (not from the object cache); once it is off, the run ends `cancelled` ("The workflow was turned off."). A run that ends this way, or before its first step, closes its open step rows (`running`, `waiting`).
 - **Known limit.** Action Scheduler fails a job still running after its timeout (~5 min). If a step is still running then, a recovery job can take the run while the old worker is alive. Slices stay far below that (~20 s), so only a single very slow step can hit it.
 
 ## §4 Data layer · C6, C7
@@ -104,7 +105,7 @@ Our own small template module. **No Liquid or other template library, now or lat
   - Today's `{{ item.field }}` tags keep working.
   - **HTML messages** (`html` fields): the stored HTML stays as written; each value is escaped for where it lands: `esc_html` in text, `esc_url` over a whole `href` / `src` (a value after the start of the URL is `rawurlencode`d first), `esc_attr` in other attributes, dropped inside a tag. A block value alone in a paragraph replaces it. Then `wpautop`. Plain text is what the editor saves for a message without tags (`"Hi\n\nTom &amp; Jerry"`): it's read as plain text. `Template::render_html()`, `Email\EmailBody`.
   - Subjects and headings are plain text on one line: typed HTML tags removed, values never stripped.
-- **Tier 2 (on demand):** lists come from server-rendered email blocks (product grid, cart items, coupon box; the coupon box exists). Conditional text comes from a "Show if" setting on a block, using the Condition rules builder.
+- **Tier 2 (on demand):** lists come from server-rendered email blocks (product grid, cart items, coupon box; the coupon box and product grid exist). A product grid is a data field marked `block` (`order.cross_sell_products`, `order.upsell_products`, `Email\ProductGrid`): up to 4 published, visible, in-stock suggestions not already in the order, 2 per row; none → empty, so the block is left out. With sample data it shows the store's 4 newest products. Conditional text comes from a "Show if" setting on a block, using the Condition rules builder.
 - **Escape valve (only if users ask):** `{% if path %}…{% else %}…{% endif %}`, truthy check only.
 
 **Customer emails** (Send email):

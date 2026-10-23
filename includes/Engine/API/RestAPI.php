@@ -7,7 +7,9 @@ use YayMatik\Workflow\Core\Definition\GraphSchema;
 use YayMatik\Workflow\Core\Email\EmailPreview;
 use YayMatik\Workflow\Core\Definition\Messages;
 use YayMatik\Workflow\Core\Definition\Validator;
+use YayMatik\Workflow\Core\Runtime\Cancellation;
 use YayMatik\Workflow\Core\Runtime\RunPresenter;
+use YayMatik\Workflow\Core\Runtime\VersionGraphSource;
 use YayMatik\Workflow\Core\Storage\RunStepStore;
 use YayMatik\Workflow\Core\Storage\RunStore;
 use YayMatik\Workflow\Core\Storage\WorkflowRepository;
@@ -121,6 +123,19 @@ class RestAPI {
                 'methods'             => \WP_REST_Server::READABLE,
                 'callback'            => [ $this, 'list_runs' ],
                 'permission_callback' => [ $this, 'can_manage' ],
+                'args'                => [
+                    // Comma-separated, e.g. `waiting,failed`; empty = all.
+                    'status' => [
+                        'type'              => 'string',
+                        'default'           => '',
+                        'validate_callback' => fn( $value ) => ! array_diff( self::statuses( (string) $value ), RunStore::STATUSES ),
+                    ],
+                    'page'   => [
+                        'type'    => 'integer',
+                        'minimum' => 1,
+                        'default' => 1,
+                    ],
+                ],
             ]
         );
 
@@ -214,24 +229,26 @@ class RestAPI {
         );
     }
 
-    /** Every workflow with its issues. */
+    /** Every workflow with its issues and run stats. */
     public function list_workflows() {
+        $workflows = WorkflowRepository::all();
+        $stats     = RunStore::stats( array_column( $workflows, 'id' ) );
         return rest_ensure_response(
             array_map(
-                fn( array $workflow ) => $workflow + [ 'issues' => Validator::list_issues( $workflow ) ],
-                WorkflowRepository::all()
+                fn( array $workflow ) => $workflow + [ 'issues' => Validator::list_issues( $workflow ) ] + RunPresenter::stats( $stats[ (int) $workflow['id'] ] ?? null ),
+                $workflows
             )
         );
     }
 
     /**
-     * One workflow with the issues of its live graph and draft.
+     * One workflow with the issues of its live graph and draft, and its run stats.
      *
      * @param \WP_REST_Request $request
      */
     public function get_workflow( \WP_REST_Request $request ) {
         $workflow = WorkflowRepository::find( (int) $request['id'] );
-        return $workflow ? $workflow + [ 'issues' => Validator::list_issues( $workflow ) ] : $this->not_found();
+        return $workflow ? $workflow + [ 'issues' => Validator::list_issues( $workflow ) ] + self::stats( $workflow ) : $this->not_found();
     }
 
     /**
@@ -319,47 +336,58 @@ class RestAPI {
     }
 
     /**
-     * Always allowed, even with issues; the draft stays.
+     * Always allowed, even with issues; the draft stays. Waiting runs are cancelled (`cancelledRuns`).
      *
      * @param \WP_REST_Request $request
      */
     public function deactivate_workflow( \WP_REST_Request $request ) {
-        return self::with_issues(
-            $this->with_workflow(
-                (int) $request['id'],
-                function ( int $id, array $current ) {
-                    if ( 'active' !== $current['status'] ) {
-                        return true;
-                    }
-                    return WorkflowRepository::deactivate( $id );
+        $cancelled = 0;
+        $workflow  = $this->with_workflow(
+            (int) $request['id'],
+            function ( int $id, array $current ) use ( &$cancelled ) {
+                if ( 'active' !== $current['status'] ) {
+                    return true;
                 }
-            )
+                $done = WorkflowRepository::deactivate( $id );
+                if ( true === $done ) {
+                    $cancelled = Cancellation::waiting( $id, Cancellation::turned_off() );
+                }
+                return $done;
+            }
         );
+        return self::with_cancelled( self::with_issues( $workflow ), $cancelled );
     }
 
     /**
-     * The draft replaces the saved graph when it has no issues; the status doesn't change.
+     * The draft replaces the saved graph when it has no issues; waiting runs are cancelled (`cancelledRuns`).
      *
      * @param \WP_REST_Request $request
      */
     public function apply_workflow( \WP_REST_Request $request ) {
-        return self::with_issues(
-            $this->with_workflow(
-                (int) $request['id'],
-                function ( int $id, array $current ) {
-                    if ( null === $current['draft'] ) {
-                        return new \WP_Error( 'yaymatik_no_draft', __( 'There are no draft changes to update.', 'yaymatik' ), [ 'status' => 409 ] );
-                    }
-                    $errors = Validator::errors(
-                        [
-                            'name'  => $current['name'],
-                            'graph' => $current['draft'],
-                        ]
-                    );
-                    return $errors ? Validator::issues_error( $errors, 'apply' ) : WorkflowRepository::apply_draft( $id, $current['draft'] );
+        $cancelled = 0;
+        $workflow  = $this->with_workflow(
+            (int) $request['id'],
+            function ( int $id, array $current ) use ( &$cancelled ) {
+                if ( null === $current['draft'] ) {
+                    return new \WP_Error( 'yaymatik_no_draft', __( 'There are no draft changes to update.', 'yaymatik' ), [ 'status' => 409 ] );
                 }
-            )
+                $errors = Validator::errors(
+                    [
+                        'name'  => $current['name'],
+                        'graph' => $current['draft'],
+                    ]
+                );
+                if ( $errors ) {
+                    return Validator::issues_error( $errors, 'apply' );
+                }
+                $done = WorkflowRepository::apply_draft( $id, $current['draft'] );
+                if ( true === $done ) {
+                    $cancelled = Cancellation::waiting( $id, Cancellation::updated() );
+                }
+                return $done;
+            }
         );
+        return self::with_cancelled( self::with_issues( $workflow ), $cancelled );
     }
 
     /**
@@ -393,7 +421,7 @@ class RestAPI {
     }
 
     /**
-     * A workflow's newest runs (`RunPresenter::run()`).
+     * One page of a workflow's runs, newest first: `{ items, total }` (`RunPresenter::item()`).
      *
      * @param \WP_REST_Request $request
      */
@@ -402,13 +430,28 @@ class RestAPI {
         if ( ! WorkflowRepository::find( $id ) ) {
             return $this->not_found();
         }
-        $rows = RunStore::list( [ 'workflow_id' => $id ] );
+        $filter = [
+            'workflow_id' => $id,
+            'status'      => self::statuses( (string) $request['status'] ),
+        ];
+        $rows   = RunStore::list( $filter + [ 'page' => (int) $request['page'] ] );
+        $steps  = RunStepStore::counts( array_column( $rows, 'id' ) );
         return rest_ensure_response(
             [
-                'items'   => array_map( [ RunPresenter::class, 'run' ], array_slice( $rows, 0, RunStore::PER_PAGE ) ),
-                'hasMore' => count( $rows ) > RunStore::PER_PAGE,
+                'items' => array_map( fn( array $run ) => RunPresenter::item( $run, $steps[ $run['id'] ] ?? 0 ), $rows ),
+                'total' => RunStore::count( $filter ),
             ]
         );
+    }
+
+    /**
+     * `waiting, failed` → [ 'waiting', 'failed' ]; '' → [].
+     *
+     * @param string $statuses
+     * @return string[]
+     */
+    private static function statuses( string $statuses ): array {
+        return array_values( array_filter( array_map( 'trim', explode( ',', $statuses ) ), 'strlen' ) );
     }
 
     /**
@@ -421,7 +464,8 @@ class RestAPI {
         if ( ! $run ) {
             return new \WP_Error( 'yaymatik_not_found', __( 'Run not found.', 'yaymatik' ), [ 'status' => 404 ] );
         }
-        return rest_ensure_response( RunPresenter::detail( $run, RunStepStore::for_run( (int) $run['id'] ) ) );
+        $graph = ( new VersionGraphSource() )->graph( (int) $run['version_id'] );
+        return rest_ensure_response( RunPresenter::detail( $run, RunStepStore::for_run( (int) $run['id'] ), $graph ) );
     }
 
     /**
@@ -484,13 +528,34 @@ class RestAPI {
     }
 
     /**
-     * Adds `issues: { live, draft }` to a workflow; anything else passes through.
+     * Adds `issues: { live, draft }` and the run stats to a workflow; anything else passes through.
      *
      * @param array|\WP_Error|\WP_REST_Response $workflow
      * @return array|\WP_Error|\WP_REST_Response
      */
     private static function with_issues( $workflow ) {
-        return is_array( $workflow ) ? $workflow + [ 'issues' => Validator::issues( $workflow ) ] : $workflow;
+        return is_array( $workflow ) ? $workflow + [ 'issues' => Validator::issues( $workflow ) ] + self::stats( $workflow ) : $workflow;
+    }
+
+    /**
+     * Every workflow response carries them, so a saved response can replace the cached workflow.
+     *
+     * @param array $workflow
+     */
+    private static function stats( array $workflow ): array {
+        $id = (int) $workflow['id'];
+        return RunPresenter::stats( RunStore::stats( [ $id ] )[ $id ] ?? null );
+    }
+
+    /**
+     * Adds `cancelledRuns` to a workflow; anything else passes through.
+     *
+     * @param array|\WP_Error|\WP_REST_Response $workflow
+     * @param int                               $cancelled
+     * @return array|\WP_Error|\WP_REST_Response
+     */
+    private static function with_cancelled( $workflow, int $cancelled ) {
+        return is_array( $workflow ) ? $workflow + [ 'cancelledRuns' => $cancelled ] : $workflow;
     }
 
     private function not_found(): \WP_Error {

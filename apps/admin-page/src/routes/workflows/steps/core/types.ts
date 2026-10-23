@@ -18,11 +18,7 @@ export interface StepFormProps<TConfig> {
 export interface StepSpec<TConfig extends Config> {
   id: StepId;
   kind: WorkflowNodeKind;
-  /** Pending steps only. */
-  label?: string;
-  /** Pending steps only. */
-  description?: string;
-  /** Pending steps only: the one source of a valid config. */
+  /** For rules the catalog fields can't express (the PHP step's own `validate()`). */
   schema?: v.GenericSchema<TConfig>;
   /** A built step passes these only for sample text PHP doesn't keep. */
   defaults?: () => TConfig;
@@ -30,12 +26,8 @@ export interface StepSpec<TConfig extends Config> {
   normalize?: (config: Config) => TConfig;
   /** Data items the step reads besides its merge tags. Mirrors the PHP step's `uses()`. */
   uses?: (config: TConfig) => string[];
-  /** Pending steps only. Gets incomplete config too, so show placeholders for gaps. */
-  summary?: (config: TConfig) => string;
   /** Catalog summary placeholders a field can't write on its own (e.g. a condition's `%rules%`). */
   summaryValues?: SummaryValues<TConfig>;
-  /** Pending steps only. */
-  icon?: LucideIcon;
   /** A custom form, for what catalog fields can't draw. */
   Form?: ComponentType<StepFormProps<TConfig>>;
   /** Drawn under the form with its latest values. */
@@ -58,13 +50,11 @@ export interface Step {
   /** What later steps can read at `steps.<id>.<key>`. */
   outputs: StepOutputMeta[];
   category?: StepMeta['category'];
-  /** Shown but can't be picked (see `pending.ts`). */
-  comingSoon: boolean;
   defaults: () => Config;
   normalize: (config: Config) => Config;
   firstIssue: (config: Config) => { message: string; field?: string } | null;
   firstError: (config: Config) => string | null;
-  /** Well-formed merge tags in the fields that accept them (all text while pending). */
+  /** Well-formed merge tags in the fields that accept them. */
   tags: (config: Config) => { field: string; path: string }[];
   /** Whether the step's form draws this field, so an issue about it can show under it. */
   drawsField: (key: string) => boolean;

@@ -11,11 +11,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { stepsInOrder } from '../../../model/graph';
 import type { LibraryNavState } from '../../../shared/nav/library.nav';
-import { ComingSoonChip } from '../../../shared/ui/ComingSoonChip';
 import { PluginIcon, plugins } from '../../../shared/ui/PluginIcon';
 import { stepOf } from '../../../steps';
 import { StepTile } from '../../../steps/core/StepTile';
-import { categoryLabels, isComingSoon, pluginsOf, templates, workflowRank } from '../../../templates';
+import { categoryLabels, pluginsOf, templates, workflowRank } from '../../../templates';
 import { usesAnyOf } from './filter';
 import { countLabel, FilterChip, LibrarySidebar } from './LibraryFilters';
 import { SearchInput } from './SearchInput';
@@ -61,7 +60,7 @@ const cardData = new Map(
     const linked = steps.map(
       (node, i) => i > 0 && t.graph.edges.some((edge) => edge.source === steps[i - 1].id && edge.target === node.id),
     );
-    return [t.id, { steps, linked, plugins: pluginsOf(t.graph), comingSoon: isComingSoon(t.graph) }] as const;
+    return [t.id, { steps, linked, plugins: pluginsOf(t.graph) }] as const;
   }),
 );
 
@@ -319,7 +318,7 @@ function CardTip({ label, className, children }: { label?: string; className?: s
 }
 
 function TemplateCard({ template }: { template: WorkflowTemplate }) {
-  const { plugins: used, comingSoon } = cardData.get(template.id)!;
+  const { plugins: used } = cardData.get(template.id)!;
   return (
     <Link
       to={`/workflows/templates/${template.id}`}
@@ -335,7 +334,6 @@ function TemplateCard({ template }: { template: WorkflowTemplate }) {
         <p className="text-muted-foreground line-clamp-2 text-[13px]">{template.description}</p>
         <div className="mt-auto flex items-center justify-between gap-2 pt-3">
           <PluginStack ids={used} />
-          {comingSoon && <ComingSoonChip />}
         </div>
       </div>
     </Link>

@@ -30,7 +30,7 @@ ROADMAP-dev F0.3 checks F0 with `pnpm build` and phpcs. Without a clean phpcs an
 2. **Vitest for TS.**
    - `vitest` in `apps/admin-page`, `test` script there, root `pnpm test` = `pnpm -r test`.
    - First tests pin today's behavior: `model/` (graph, validation), every template in the registry validates, `packages/utils`.
-   - Setup file stubs `window.yayMatikMeta` with a fixture: step and data modules read it on import (`steps/core/pending.ts`).
+   - Setup file stubs `window.yayMatikMeta` with a fixture: step and data modules read it on import (e.g. `steps/core/data.ts`).
 3. **Claude Stop hook: `.claude/hooks/stop-check.sh`** for the whole team (taken from the closed `jack/chore/claude-token-optimization` branch).
    - Checks only what changed: `pnpm build` when `apps/`, `packages/` or package files change; `php -l` on changed PHP files.
    - Skips a change set that already passed (hash in `.git/`). Prints only on failure.

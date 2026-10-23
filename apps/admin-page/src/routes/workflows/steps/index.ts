@@ -1,3 +1,5 @@
+import type { StepId } from '@yaymatik/types';
+
 import { addOrderNoteStep } from './actions/add-order-note';
 import { changeOrderStatusStep } from './actions/change-order-status';
 import { generateCouponStep } from './actions/generate-coupon';
@@ -7,7 +9,6 @@ import { updateOrderMetaStep } from './actions/update-order-meta';
 import { waitStep } from './actions/wait';
 import { criteriaStep } from './conditions/criteria';
 import { defineStep } from './core/defineStep';
-import { automationMeta } from './core/pending';
 import { createRegistry } from './core/registry';
 import { orderCreatedStep } from './triggers/order-created';
 import { orderStatusChangedStep } from './triggers/order-status-changed';
@@ -30,9 +31,9 @@ const coreSteps = [
 
 /** Another plugin's triggers and actions: PHP only, so their form and checks come from their catalog fields. */
 const coreIds = new Set<string>(coreSteps.map((stepDef) => stepDef.id));
-const moduleSteps = Object.entries(automationMeta.steps)
-  .filter(([id, meta]) => !coreIds.has(id) && (meta.kind === 'trigger' || meta.kind === 'action'))
-  .map(([id, meta]) => defineStep({ id, kind: meta.kind }));
+const moduleSteps = Object.entries(window.yayMatikMeta.automation.steps)
+  .filter(([id, meta]) => !coreIds.has(id) && (meta?.kind === 'trigger' || meta?.kind === 'action'))
+  .map(([id, meta]) => defineStep({ id: id as StepId, kind: meta!.kind }));
 
 /**
  * Every step the editor knows. To add a core one: create its folder under triggers/, conditions/ or

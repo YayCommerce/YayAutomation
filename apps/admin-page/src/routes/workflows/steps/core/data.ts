@@ -2,14 +2,13 @@ import { sprintf } from '@wordpress/i18n';
 
 import type { DataFieldType, DataItemMeta } from '@/types/localize';
 import { messages } from '../../model/messages';
-import { automationMeta, isPendingField } from './pending';
 import { templateErrors, templatePaths } from './template';
 
 /** Data items and their fields, from PHP `DataRegistry`. */
 
 export type DataField = DataItemMeta['fields'][number];
 
-const meta = automationMeta;
+const meta = window.yayMatikMeta.automation;
 
 export const dataItems = meta.data;
 
@@ -57,7 +56,7 @@ function resolvePath(path: string) {
   for (const [i, segment] of rest.entries()) {
     if (!item) return undefined;
     const key = `${item.id}.${segment}`;
-    const relation = item.relations?.find((r) => r.key === key);
+    const relation = item.relations.find((r) => r.key === key);
     if (i === rest.length - 1) {
       const field = fieldByKey(key);
       return field ? { field } : relation && { relation };
@@ -79,18 +78,16 @@ export const pathLabel = (path: string): string | undefined => {
 /**
  * The first problem with the merge tags in these texts, or null: a malformed tag or unknown filter,
  * then a path nothing defines. Per text, like PHP `Validator::tag_error()`; whether the step can reach
- * the data is the workflow's check (`missing_data`). `allowPending`: for a step still coming soon,
- * fields PHP doesn't have yet are fine.
+ * the data is the workflow's check (`missing_data`).
  */
-export function tagError(texts: string[], { allowPending = false } = {}) {
+export function tagError(texts: string[]) {
   for (const text of texts) {
     const error = templateErrors(text)[0];
     if (error) return error;
     const unknown = templatePaths(text).find((path) => {
       const segments = pathSegments(path);
       if (isStepPath(segments)) return segments.length !== 3;
-      const found = resolvePath(path);
-      return !found || (!allowPending && !!found.field && isPendingField(found.field.key));
+      return !resolvePath(path);
     });
     if (unknown) return sprintf(messages.unknownVariable, variableTag(unknown));
   }

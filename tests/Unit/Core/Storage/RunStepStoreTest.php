@@ -7,8 +7,10 @@ use YayMatik\Tests\Support\FakeCondition;
 use YayMatik\Tests\Support\FakeGraphSource;
 use YayMatik\Tests\Support\FakeQueue;
 use YayMatik\Tests\Support\FakeStep;
+use YayMatik\Tests\Support\FakeWorkflows;
 use YayMatik\Tests\Support\FakeWpdb;
 use YayMatik\Workflow\Core\Data\RefResolver;
+use YayMatik\Workflow\Core\Runtime\Cancellation;
 use YayMatik\Workflow\Core\Runtime\DbRunRepository;
 use YayMatik\Workflow\Core\Runtime\Executor;
 use YayMatik\Workflow\Core\Storage\RunStepStore;
@@ -142,11 +144,11 @@ final class RunStepStoreTest extends TestCase {
 
     public function test_resumed_condition_row_from_the_table_follows_its_stored_branch(): void {
         // Every read returns the condition's finished row: a crash came after it, before the cursor save.
-        $this->db->result  = [ self::db_row( 'c', '{"result":"yes"}' ) ];
-        $condition         = new FakeCondition();
-        $then              = new FakeStep( 'act' );
-        $graphs            = new FakeGraphSource();
-        $graphs->graphs[3] = [
+        $this->db->result        = [ self::db_row( 'c', '{"result":"yes"}' ) ];
+        $condition               = new FakeCondition();
+        $then                    = new FakeStep( 'act' );
+        $graphs                  = new FakeGraphSource();
+        $graphs->graphs[3]       = [
             'nodes' => [
                 [
                     'id'   => 't',
@@ -186,18 +188,21 @@ final class RunStepStoreTest extends TestCase {
                 ],
             ],
         ];
-        $steps             = [
+        $steps                   = [
             'fake_condition' => $condition,
             'act'            => $then,
         ];
-        $executor          = new Executor( new DbRunRepository(), $graphs, new FakeQueue(), new FakeClock(), fn( string $id ) => $steps[ $id ] ?? null, fn() => new RefResolver( [] ) );
+        $workflows               = new FakeWorkflows();
+        $workflows->workflows[9] = [ 'status' => 'active' ];
+        $executor                = new Executor( new DbRunRepository(), $graphs, new FakeQueue(), $workflows, new FakeClock(), fn( string $id ) => $steps[ $id ] ?? null, fn() => new RefResolver( [] ) );
 
         $status = $executor->run(
             [
-                'id'         => 7,
-                'version_id' => 3,
-                'position'   => null,
-                'scope'      => [],
+                'id'          => 7,
+                'workflow_id' => 9,
+                'version_id'  => 3,
+                'position'    => null,
+                'scope'       => [],
             ]
         );
 
@@ -227,5 +232,107 @@ final class RunStepStoreTest extends TestCase {
         $this->assertTrue( RunStore::claim( 7, [ 'queued', 'waiting', 'running' ] ) );
         $this->assertSame( "UPDATE wp_yaymatik_runs SET status = 'queued' WHERE id = 7 AND status = 'running'", $this->db->calls[0][1] );
         $this->assertStringContainsString( "status IN ('queued','waiting')", $this->db->calls[1][1] );
+    }
+
+    public function test_cancel_waiting_ends_only_runs_still_waiting_in_one_update(): void {
+        $this->assertSame( 0, RunStore::cancel_waiting( [], 'Off.' ) );
+        $this->assertCount( 0, $this->db->calls );
+
+        $this->db->result = 2;
+        $this->assertSame( 2, RunStore::cancel_waiting( [ 4, 5 ], 'Off.' ) );
+        $this->assertMatchesRegularExpression(
+            "/^UPDATE wp_yaymatik_runs SET status = 'cancelled', error = 'Off.', wait_until = NULL, finished_at = '[0-9: -]+' WHERE id IN \\(4,5\\) AND status = 'waiting'$/",
+            $this->db->last_sql()
+        );
+    }
+
+    public function test_cancellation_cancels_the_waiting_runs_then_their_waiting_rows(): void {
+        $this->db->results = [ [] ];
+        $this->assertSame( 0, Cancellation::waiting( 9, 'Off.' ) );
+        $this->assertSame( "SELECT id FROM wp_yaymatik_runs WHERE workflow_id = 9 AND status = 'waiting'", $this->db->last_sql() );
+        $this->assertCount( 1, $this->db->calls );
+
+        $this->db->calls   = [];
+        $this->db->results = [ [ '4', '5' ], 1, 1 ];
+        $this->assertSame( 1, Cancellation::waiting( 9, 'Off.' ) );
+        $this->assertCount( 3, $this->db->calls );
+        $this->assertMatchesRegularExpression(
+            "/^UPDATE wp_yaymatik_run_steps s INNER JOIN wp_yaymatik_runs r ON r.id = s.run_id SET s.status = 'cancelled', s.error = 'Off.', s.finished_at = '[0-9: -]+' WHERE s.run_id IN \\(4,5\\) AND r.status = 'cancelled' AND s.status = 'waiting'$/",
+            $this->db->last_sql()
+        );
+    }
+
+    public function test_close_open_ends_running_and_waiting_rows_with_a_finished_status(): void {
+        $this->db->result = 1;
+
+        $this->assertTrue( RunStepStore::close_open( 7, RunStepStore::STATUS_CANCELLED, 'Off.' ) );
+        $this->assertMatchesRegularExpression(
+            "/^UPDATE wp_yaymatik_run_steps SET status = 'cancelled', error = 'Off.', finished_at = '[0-9: -]+' WHERE run_id = 7 AND status IN \('running','waiting'\)$/",
+            $this->db->last_sql()
+        );
+        $this->assertFalse( RunStepStore::close_open( 7, RunStepStore::STATUS_WAITING, 'Off.' ) );
+        $this->assertCount( 1, $this->db->calls );
+    }
+
+    public function test_list_and_count_share_the_filter_and_list_pages_by_per_page(): void {
+        $this->db->result = [];
+        RunStore::list(
+            [
+                'workflow_id' => 9,
+                'status'      => [ 'waiting', 'nope', 'failed' ],
+                'page'        => 2,
+            ]
+        );
+        $this->assertStringEndsWith( "FROM wp_yaymatik_runs WHERE workflow_id = 9 AND status IN ('waiting','failed') ORDER BY id DESC LIMIT 20 OFFSET 20", $this->db->last_sql() );
+
+        $this->db->result = '42';
+        $this->assertSame(
+            42,
+            RunStore::count(
+                [
+                    'workflow_id' => 9,
+                    'status'      => [ 'waiting', 'failed' ],
+                ]
+            )
+        );
+        $this->assertSame( "SELECT COUNT(*) FROM wp_yaymatik_runs WHERE workflow_id = 9 AND status IN ('waiting','failed')", $this->db->last_sql() );
+    }
+
+    public function test_stats_and_step_counts_are_one_grouped_query_each(): void {
+        $this->assertSame( [], RunStore::stats( [] ) );
+        $this->assertSame( [], RunStepStore::counts( [] ) );
+        $this->assertCount( 0, $this->db->calls );
+
+        $this->db->result = [
+            [
+                'workflow_id' => '9',
+                'recent'      => '3',
+                'last_run'    => '2026-10-12 08:03:04',
+                'waiting'     => '1',
+            ],
+        ];
+        $this->assertSame(
+            [
+                9 => [
+                    'recent'   => 3,
+                    'last_run' => '2026-10-12 08:03:04',
+                    'waiting'  => 1,
+                ],
+            ],
+            RunStore::stats( [ '9', 12 ] )
+        );
+        $this->assertMatchesRegularExpression(
+            "/^SELECT workflow_id, SUM\\(started_at >= '[0-9: -]+'\\) AS recent, MAX\\(started_at\\) AS last_run, SUM\\(status = 'waiting'\\) AS waiting FROM wp_yaymatik_runs WHERE workflow_id IN \\(9,12\\) GROUP BY workflow_id$/",
+            $this->db->last_sql()
+        );
+
+        $this->db->result = [
+            [
+                'run_id' => '4',
+                'steps'  => '2',
+            ],
+        ];
+        $this->assertSame( [ 4 => 2 ], RunStepStore::counts( [ 4, 5 ] ) );
+        $this->assertSame( 'SELECT run_id, COUNT(*) AS steps FROM wp_yaymatik_run_steps WHERE run_id IN (4,5) GROUP BY run_id', $this->db->last_sql() );
     }
 }

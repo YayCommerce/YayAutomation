@@ -2,13 +2,11 @@ import type { WorkflowPlugin } from '@yaymatik/types';
 
 import type { PluginMeta } from '@/types/localize';
 import { cn } from '@/lib/utils';
-import { automationMeta } from '../../steps/core/pending';
 
 /** Plugin facts from PHP (`Workflow\ModuleRegistry`), by id. */
-export const plugins = Object.fromEntries(automationMeta.plugins.map((plugin) => [plugin.id, plugin])) as Record<
-  WorkflowPlugin,
-  PluginMeta
->;
+export const plugins = Object.fromEntries(
+  window.yayMatikMeta.automation.plugins.map((plugin) => [plugin.id, plugin]),
+) as Record<WorkflowPlugin, PluginMeta>;
 
 /** Core's own tints; another plugin's logo sits on a neutral tile. */
 const tones: Partial<Record<WorkflowPlugin, string>> = {

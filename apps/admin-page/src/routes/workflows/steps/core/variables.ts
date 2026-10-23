@@ -2,7 +2,6 @@ import type { StepId, WorkflowGraph } from '@yaymatik/types';
 
 import type { DataItemMeta } from '@/types/localize';
 import { alwaysAvailable, dataItems, pathLabel } from './data';
-import { automationMeta, isPendingField } from './pending';
 
 /** One merge tag a step can insert. */
 export interface Variable {
@@ -11,8 +10,6 @@ export interface Variable {
   label: string;
   /** As a data field's `valueType`, e.g. `money`, `list<string>`. */
   type: string;
-  /** Its PHP side isn't built yet: listed, but can't be picked. */
-  comingSoon: boolean;
   /** A ready-made email block (e.g. a coupon box): inserted on its own line, in rich text only. */
   block: boolean;
 }
@@ -22,7 +19,7 @@ export interface Variable {
  * the always-available ones, each item's fields then those of its relations (`order.customer.first_name`),
  * then the outputs of the steps above it, top to bottom (`steps.<id>.<key>`). Without a trigger only
  * the always-available items. Mirrors PHP `Validator::variables()`; shared cases in
- * tests/fixtures/variables.json. Items added by coming-soon actions above (e.g. a coupon) are listed too.
+ * tests/fixtures/variables.json.
  */
 export function availableVariables(graph: WorkflowGraph, nodeId: string): Variable[] {
   const block = (id: string) => graph.nodes.find((node) => node.id === id)?.data.block ?? null;
@@ -32,7 +29,7 @@ export function availableVariables(graph: WorkflowGraph, nodeId: string): Variab
 
   const items = [
     ...new Set([
-      ...(triggerBlock ? (automationMeta.steps[triggerBlock]?.provides ?? []) : []),
+      ...(triggerBlock ? (window.yayMatikMeta.automation.steps[triggerBlock]?.provides ?? []) : []),
       ...alwaysAvailable,
       ...(triggerBlock ? above.flatMap((id) => providedByAction(block(id))) : []),
     ]),
@@ -44,14 +41,12 @@ export function availableVariables(graph: WorkflowGraph, nodeId: string): Variab
 
   for (const id of above) {
     const stepId = block(id);
-    // Only PHP's catalog has outputs; a pending step has none yet.
     const outputs = stepId ? (window.yayMatikMeta.automation.steps[stepId]?.outputs ?? []) : [];
     for (const output of outputs) {
       list.push({
         key: `steps.${id}.${output.key}`,
         label: output.label,
         type: output.type,
-        comingSoon: false,
         block: !!output.block,
       });
     }
@@ -59,20 +54,21 @@ export function availableVariables(graph: WorkflowGraph, nodeId: string): Variab
   return list;
 }
 
-/** Data items an action adds for the steps below it; only coming-soon actions do so far. */
+/** Data items an action adds for the steps below it. */
 const providedByAction = (stepId: StepId | null) =>
-  stepId && automationMeta.steps[stepId]?.kind === 'action' ? (automationMeta.steps[stepId].provides ?? []) : [];
+  stepId && window.yayMatikMeta.automation.steps[stepId]?.kind === 'action'
+    ? (window.yayMatikMeta.automation.steps[stepId].provides ?? [])
+    : [];
 
 /** An item's fields under a path prefix, then its relations' (a relation back to an item on the path isn't followed). */
 function itemVariables(item: DataItemMeta, prefix: string, seen: Set<string>): Variable[] {
   const own = item.fields.map((field) => ({
     key: `${prefix}.${field.key.slice(item.id.length + 1)}`,
     label: field.label,
-    type: field.valueType ?? field.type,
-    comingSoon: isPendingField(field.key),
+    type: field.valueType,
     block: false,
   }));
-  const related = (item.relations ?? []).flatMap((relation) => {
+  const related = item.relations.flatMap((relation) => {
     const target = dataItems.find((i) => i.id === relation.item);
     if (!target || seen.has(target.id)) return [];
     const key = `${prefix}.${relation.key.slice(item.id.length + 1)}`;
@@ -92,9 +88,6 @@ export function ancestors(graph: WorkflowGraph, nodeId: string): string[] {
   }
   return above;
 }
-
-/** Whether "Insert variable" lets a step insert it: a coming-soon field only into a step that's coming soon too. */
-export const canInsert = (variable: Variable, comingSoonStep: boolean) => !variable.comingSoon || comingSoonStep;
 
 /**
  * One row of the first "Insert variable" level: a data item, a step above and its outputs, or the

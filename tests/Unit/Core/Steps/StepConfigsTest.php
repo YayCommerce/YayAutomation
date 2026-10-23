@@ -6,6 +6,7 @@ use YayMatik\Workflow\Actions\AddOrderNote;
 use YayMatik\Workflow\Actions\ChangeOrderStatus;
 use YayMatik\Workflow\Actions\SendInternalEmail;
 use YayMatik\Workflow\Actions\UpdateOrderMeta;
+use YayMatik\Workflow\Actions\Wait;
 use YayMatik\Workflow\Conditions\Criteria;
 use YayMatik\Workflow\Core\Steps\Step;
 use YayMatik\Workflow\Triggers\OrderCreated;
@@ -13,7 +14,7 @@ use YayMatik\Workflow\Triggers\OrderStatusChanged;
 
 require_once dirname( __DIR__, 3 ) . '/Support/woocommerce-stubs.php';
 
-/** The 7 steps' configs: what each one stores and what it accepts or rejects, with the exact message. */
+/** The steps' configs: what each one stores and what it accepts or rejects, with the exact message. */
 final class StepConfigsTest extends TestCase {
 
     private const OK = true;
@@ -29,6 +30,7 @@ final class StepConfigsTest extends TestCase {
             ChangeOrderStatus::ID  => ChangeOrderStatus::class,
             AddOrderNote::ID       => AddOrderNote::class,
             UpdateOrderMeta::ID    => UpdateOrderMeta::class,
+            Wait::ID               => Wait::class,
         ];
         return new $classes[ $id ]();
     }
@@ -287,6 +289,26 @@ final class StepConfigsTest extends TestCase {
                 ],
                 null,
                 self::OK,
+            ],
+            'wait: default'                => [ 'wait', null, self::delay( 1, 'days' ), self::OK ],
+            'wait: unknown unit'           => [ 'wait', self::delay( 3, 'years' ), self::delay( 3, 'days' ), self::OK ],
+            'wait: blank value'            => [ 'wait', self::delay( '', 'hours' ), self::delay( 1, 'hours' ), self::OK ],
+            'wait: a year of weeks'        => [ 'wait', self::delay( 52, 'weeks' ), null, self::OK ],
+            'wait: zero'                   => [ 'wait', self::delay( 0, 'days' ), null, 'Enter a whole number, 1 or more.' ],
+            'wait: fraction'               => [ 'wait', self::delay( 1.5, 'days' ), null, 'Enter a whole number, 1 or more.' ],
+            'wait: over a year'            => [ 'wait', self::delay( 8761, 'hours' ), null, 'Wait at most a year.' ],
+        ];
+    }
+
+    /**
+     * @param mixed  $value
+     * @param string $unit
+     */
+    private static function delay( $value, string $unit ): array {
+        return [
+            'delay' => [
+                'value' => $value,
+                'unit'  => $unit,
             ],
         ];
     }

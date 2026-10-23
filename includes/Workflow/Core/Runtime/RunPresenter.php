@@ -3,13 +3,13 @@ namespace YayMatik\Workflow\Core\Runtime;
 
 defined( 'ABSPATH' ) || exit;
 
-/** Runs and step rows shaped like the TS `Run` / `RunStep` / `RunDetail`, without scope or cursor. */
+/** Runs, step rows and run stats shaped like the TS types, without scope or cursor. */
 final class RunPresenter {
 
     /**
      * @param array $run
      */
-    public static function run( array $run ): array {
+    private static function run( array $run ): array {
         return [
             'id'          => (string) $run['id'],
             'workflowId'  => (string) $run['workflow_id'],
@@ -29,14 +29,79 @@ final class RunPresenter {
     }
 
     /**
-     * @param array   $run
-     * @param array[] $steps
+     * A row of a workflow's runs list.
+     *
+     * @param array $run
+     * @param int   $steps_run
      */
-    public static function detail( array $run, array $steps ): array {
-        return self::run( $run ) + [ 'steps' => array_map( [ self::class, 'step' ], $steps ) ];
+    public static function item( array $run, int $steps_run ): array {
+        $subject = self::subject( (string) $run['subject'] );
+        return self::run( $run ) + [
+            'subjectLabel' => $subject['label'],
+            'subjectUrl'   => $subject['url'],
+            'stepsRun'     => $steps_run,
+        ];
     }
 
-    public static function step( array $step ): array {
+    /**
+     * What a run is about, for people: "Order #1012" and its admin URL (null once the order is gone).
+     *
+     * @param string $subject E.g. `order:12`.
+     * @return array `label`, `url`.
+     */
+    private static function subject( string $subject ): array {
+        list( $type, $id ) = array_pad( explode( ':', $subject, 2 ), 2, '' );
+        if ( 'order' !== $type || (int) $id <= 0 ) {
+            return [
+                'label' => $subject,
+                'url'   => null,
+            ];
+        }
+        $order = function_exists( 'wc_get_order' ) ? wc_get_order( (int) $id ) : false;
+        return [
+            /* translators: %s: order number */
+            'label' => sprintf( __( 'Order #%s', 'yaymatik' ), $order ? $order->get_order_number() : (int) $id ),
+            'url'   => $order ? $order->get_edit_order_url() : null,
+        ];
+    }
+
+    /**
+     * A run with its step rows; each names its step type from the pinned graph (null when the node is gone).
+     *
+     * @param array      $run
+     * @param array[]    $steps
+     * @param array|null $graph
+     */
+    public static function detail( array $run, array $steps, ?array $graph ): array {
+        $types = [];
+        foreach ( (array) ( $graph['nodes'] ?? [] ) as $node ) {
+            $block = $node['data']['block'] ?? null;
+            if ( is_string( $block ) && '' !== $block ) {
+                $types[ (string) ( $node['id'] ?? '' ) ] = $block;
+            }
+        }
+        return self::run( $run ) + [
+            'steps' => array_map(
+                fn( array $step ) => self::step( $step ) + [ 'stepType' => $types[ (string) $step['step_id'] ] ?? null ],
+                $steps
+            ),
+        ];
+    }
+
+    /**
+     * A workflow's run stats, zero when it never ran.
+     *
+     * @param array|null $stats From `RunStore::stats()`.
+     */
+    public static function stats( ?array $stats ): array {
+        return [
+            'runs30d'     => (int) ( $stats['recent'] ?? 0 ),
+            'lastRunAt'   => self::iso( $stats['last_run'] ?? null ),
+            'waitingRuns' => (int) ( $stats['waiting'] ?? 0 ),
+        ];
+    }
+
+    private static function step( array $step ): array {
         return [
             'id'         => (string) $step['id'],
             'runId'      => (string) $step['run_id'],

@@ -4,14 +4,12 @@ import { Blocks, ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import { __, sprintf } from '@wordpress/i18n';
 
 import { cn } from '@/lib/utils';
-import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
 import { alwaysAvailable, dataItems, fieldByKey, type DataField } from '../data';
 import { stepIcons } from '../icons';
-import { comingSoonLabel } from '../pending';
 import { StepTile } from '../StepTile';
-import { canInsert, groupVariables, type Variable, type VariableGroup } from '../variables';
+import { groupVariables, type Variable, type VariableGroup } from '../variables';
 import { useVariableScope, type VariableScope } from './variableScope';
 
 const MODAL_WIDTH = 440;
@@ -222,9 +220,7 @@ export function VariablePicker({
       g.sections.flatMap((s) => s.variables.filter((v) => matches(v, query))),
     );
     list = found.length ? (
-      found.map((variable) => (
-        <VariableRow key={variable.key} variable={variable} comingSoonStep={scope.comingSoonStep} onPick={pick} />
-      ))
+      found.map((variable) => <VariableRow key={variable.key} variable={variable} onPick={pick} />)
     ) : (
       <Empty>{__('No variable found.', 'yaymatik')}</Empty>
     );
@@ -233,7 +229,7 @@ export function VariablePicker({
       <div key={section.path} className="flex flex-col">
         {section.label && <SectionHeading>{section.label}</SectionHeading>}
         {section.variables.map((variable) => (
-          <VariableRow key={variable.key} variable={variable} comingSoonStep={scope.comingSoonStep} onPick={pick} />
+          <VariableRow key={variable.key} variable={variable} onPick={pick} />
         ))}
       </div>
     ));
@@ -358,27 +354,12 @@ function GroupRow({
   );
 }
 
-/** A variable: its name, then its merge-tag key. One whose PHP side isn't built yet can't be picked, unless the step is coming soon too. */
-function VariableRow({
-  variable,
-  comingSoonStep,
-  onPick,
-}: {
-  variable: Variable;
-  comingSoonStep: boolean;
-  onPick: (variable: Variable) => void;
-}) {
-  const off = !canInsert(variable, comingSoonStep);
+/** A variable: its name, then its merge-tag key. */
+function VariableRow({ variable, onPick }: { variable: Variable; onPick: (variable: Variable) => void }) {
   return (
-    <button
-      type="button"
-      onClick={() => onPick(variable)}
-      disabled={off}
-      className={cn(rowClass, off ? 'cursor-not-allowed opacity-50' : 'hover:bg-accent cursor-pointer')}
-    >
+    <button type="button" onClick={() => onPick(variable)} className={cn(rowClass, 'hover:bg-accent cursor-pointer')}>
       <span className="flex min-w-0 flex-1 items-center gap-2 text-sm font-medium">
         <span className="truncate">{variable.label}</span>
-        {variable.comingSoon && <Badge variant="dimmed">{comingSoonLabel}</Badge>}
       </span>
       <code className="bg-muted text-muted-foreground max-w-[55%] truncate rounded-[5px] px-1.5 py-px font-mono text-[11.5px]">
         {variable.key}
