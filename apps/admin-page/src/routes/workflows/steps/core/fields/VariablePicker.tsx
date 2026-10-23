@@ -6,7 +6,7 @@ import { __, sprintf } from '@wordpress/i18n';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
-import { alwaysAvailable, dataItems, fieldByKey, type DataField } from '../data';
+import { alwaysAvailable, dataItems, fieldByKey, itemLabel, type DataField } from '../data';
 import { stepIcons } from '../icons';
 import { StepTile } from '../StepTile';
 import { groupVariables, type Variable, type VariableGroup } from '../variables';
@@ -34,8 +34,9 @@ function describe(group: VariableGroup, { trigger, steps }: VariableScope) {
   if (group.source === 'blocks') {
     return {
       label: __('Blocks', 'yaymatik'),
-      description: __('Ready-made parts of the email, e.g. a coupon box', 'yaymatik'),
-      tile: <StepTile kind="action" icon={Blocks} />,
+      description: __('Ready-made parts of the email, e.g. a product grid or a coupon box', 'yaymatik'),
+      // Neutral: blocks come from the trigger's data and from steps above.
+      tile: <StepTile kind="neutral" icon={Blocks} />,
     };
   }
   if (group.source === 'step') {
@@ -83,9 +84,9 @@ export function VariablePicker({
   types?: string;
   /** Open as soon as it mounts (a criteria just added). */
   autoOpen?: boolean;
-  /** Offer block outputs (rich text fields). */
+  /** Offer blocks: block data fields and block outputs (rich text fields). */
   blocks?: boolean;
-  /** `block`: a block output, to go on its own line. */
+  /** `block`: a block, to go on its own line. */
   onSelect: (key: string, block: boolean) => void;
   /** Closed without a pick. */
   onDismiss?: () => void;
@@ -113,10 +114,10 @@ export function VariablePicker({
   };
   // Built only while open: a criteria box holds several closed pickers.
   const offered = open ? scope.variables.filter(accepts) : [];
-  // One section per step, named by its card summary: two coupons tell apart.
+  // One section per data item (its label) and per step (its card summary: two coupons tell apart).
   const blockSections = groupVariables(offered.filter((variable) => variable.block)).map((g) => ({
     path: g.id,
-    label: scope.steps[g.id]?.summary || scope.steps[g.id]?.label || g.id,
+    label: g.source === 'data' ? itemLabel(g.id) : scope.steps[g.id]?.summary || scope.steps[g.id]?.label || g.id,
     variables: g.sections.flatMap((section) => section.variables),
   }));
   const blockGroup: VariableGroup | null = blockSections.length
@@ -240,10 +241,10 @@ export function VariablePicker({
     list = (
       <>
         {dataGroups.map(row)}
-        {(blockGroup || stepGroups.length > 0) && (
+        {blockGroup && row(blockGroup)}
+        {stepGroups.length > 0 && (
           <>
             <SectionHeading>{__('From earlier steps', 'yaymatik')}</SectionHeading>
-            {blockGroup && row(blockGroup)}
             {stepGroups.map(row)}
           </>
         )}

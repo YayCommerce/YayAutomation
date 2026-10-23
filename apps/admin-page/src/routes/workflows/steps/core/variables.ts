@@ -66,7 +66,7 @@ function itemVariables(item: DataItemMeta, prefix: string, seen: Set<string>): V
     key: `${prefix}.${field.key.slice(item.id.length + 1)}`,
     label: field.label,
     type: field.valueType,
-    block: false,
+    block: !!field.block,
   }));
   const related = item.relations.flatMap((relation) => {
     const target = dataItems.find((i) => i.id === relation.item);

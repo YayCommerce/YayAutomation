@@ -51,7 +51,7 @@ export function InsertVariable({ inputRef, value, onChange }: InsertVariableProp
 
 /**
  * The "Insert variable" link and its picker, for a control that inserts the tag itself. `blocks`:
- * also offers block outputs (rich text), `onInsert` gets `block` true for one.
+ * also offers blocks (block data fields and outputs; rich text), `onInsert` gets `block` true for one.
  */
 export function InsertVariableLink({
   blocks = false,
