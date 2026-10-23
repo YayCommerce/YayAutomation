@@ -93,7 +93,7 @@ final class RunPresenterTest extends TestCase {
         $this->assertNull( $cart['subjectUrl'] );
     }
 
-    public function test_detail_adds_steps_in_the_rest_shape_with_their_step_type(): void {
+    public function test_detail_adds_the_subject_and_steps_in_the_rest_shape_with_their_step_type(): void {
         $row                  = self::run_row();
         $row['parent_run_id'] = 7;
         $gone                 = [ 'step_id' => 'removed' ] + self::step_row();
@@ -113,6 +113,8 @@ final class RunPresenterTest extends TestCase {
         $detail               = RunPresenter::detail( $row, [ self::step_row(), $gone, $unset ], $graph );
 
         $this->assertSame( '7', $detail['parentRunId'] );
+        $this->assertSame( 'Order #1693', $detail['subjectLabel'] );
+        $this->assertNull( $detail['subjectUrl'] );
         $this->assertArrayNotHasKey( 'position', $detail );
         $this->assertArrayNotHasKey( 'scope', $detail );
         $step = $detail['steps'][0];
@@ -135,23 +137,32 @@ final class RunPresenterTest extends TestCase {
     public function test_stats_are_zero_for_a_workflow_that_never_ran(): void {
         $this->assertSame(
             [
-                'runs30d'     => 0,
-                'lastRunAt'   => null,
-                'waitingRuns' => 0,
+                'runs30d'       => 0,
+                'lastRunAt'     => null,
+                'lastRunStatus' => null,
+                'lastRunId'     => null,
+                'waitingRuns'   => 0,
             ],
             RunPresenter::stats( null )
         );
+    }
+
+    public function test_stats_name_the_newest_run_and_how_it_ended(): void {
         $this->assertSame(
             [
-                'runs30d'     => 4,
-                'lastRunAt'   => '2026-10-12T08:03:04+00:00',
-                'waitingRuns' => 1,
+                'runs30d'       => 4,
+                'lastRunAt'     => '2026-10-12T08:03:04+00:00',
+                'lastRunStatus' => 'failed',
+                'lastRunId'     => '31',
+                'waitingRuns'   => 1,
             ],
             RunPresenter::stats(
                 [
-                    'recent'   => 4,
-                    'last_run' => '2026-10-12 08:03:04',
-                    'waiting'  => 1,
+                    'recent'      => 4,
+                    'waiting'     => 1,
+                    'last_id'     => 31,
+                    'last_run'    => '2026-10-12 08:03:04',
+                    'last_status' => 'failed',
                 ]
             )
         );

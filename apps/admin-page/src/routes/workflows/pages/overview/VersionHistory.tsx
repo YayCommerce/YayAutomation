@@ -3,7 +3,7 @@ import type { Workflow, WorkflowVersion, WorkflowVersionAction } from '@yaymatik
 import { ChevronLeft, ChevronRight, TriangleAlert } from 'lucide-react';
 import { __, sprintf } from '@wordpress/i18n';
 
-import { formatDate, formatTime } from '@/lib/helpers/date.helper';
+import { shortDayTime } from '@/lib/helpers/date.helper';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -11,17 +11,6 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { useWorkflowVersionsQuery } from '../../api/workflow.query';
 import { validateWorkflow } from '../../model/validation';
 import { WorkflowStatusBadge } from '../../shared/ui/WorkflowStatusBadge';
-
-/** "Oct 2": the year only when it isn't this year. */
-export const shortDay = (date: string) =>
-  formatDate(date, formatDate(date, 'Y') === formatDate(undefined, 'Y') ? 'M j' : 'M j, Y');
-
-/** "Oct 2 at 3:39 PM": the year only when it isn't this year; the time in the site's time format. */
-function formatVersionDate(date: string) {
-  const day = shortDay(date);
-  /* translators: 1: date, 2: time */
-  return sprintf(__('%1$s at %2$s', 'yaymatik'), day, formatTime(date));
-}
 
 const actionLabels: Record<WorkflowVersionAction, (user: string) => string> = {
   /* translators: %s: user display name */
@@ -127,7 +116,7 @@ function VersionRow({ version }: { version: WorkflowVersion }) {
     <TableRow>
       <TableCell>
         <span className="inline-flex items-center gap-2">
-          {formatVersionDate(version.createdAt)}
+          {shortDayTime(version.createdAt)}
           {hasIssues && (
             <Tooltip>
               <TooltipTrigger asChild>

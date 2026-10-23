@@ -12,6 +12,12 @@ final class ProductGrid {
     /** At most this many products, 2 per row. */
     public const MAX = 4;
 
+    /** Each image sits in a square this many pixels wide. */
+    private const IMAGE_BOX = 160;
+
+    /** Longer names are cut, with "…". */
+    private const NAME_MAX = 60;
+
     /** @var \WC_Product[]|null The store's newest products, for previews. */
     private static $newest = null;
 
@@ -78,7 +84,7 @@ final class ProductGrid {
     }
 
     /**
-     * An email-safe table, 2 per row (image, name, price, link); in text one line each, "Name — price — URL". None → ''.
+     * An email-safe table, 2 per row, an odd last one centered; in text one line each, "Name — price — URL". None → ''.
      *
      * @param \WC_Product[] $products
      * @param bool          $html
@@ -96,30 +102,80 @@ final class ProductGrid {
         }
 
         $rows = '';
-        foreach ( array_chunk( $products, 2 ) as $pair ) {
-            $cells = array_map( [ self::class, 'cell' ], $pair );
-            if ( 1 === count( $cells ) ) {
-                $cells[] = '<td style="width:50%;padding:8px;"></td>';
+        foreach ( array_chunk( $products, 2 ) as $i => $pair ) {
+            $top = $i ? 16 : 0;
+            if ( 1 === count( $pair ) ) {
+                $rows .= '<tr><td colspan="2" style="padding:' . $top . 'px 0 0;vertical-align:top;">'
+                    . '<table role="presentation" width="50%" align="center" cellspacing="0" cellpadding="0" border="0" style="width:50%;margin:0 auto;"><tr><td style="padding:0 8px;vertical-align:top;text-align:center;">'
+                    . self::cell( $pair[0] ) . '</td></tr></table></td></tr>';
+                continue;
             }
-            $rows .= '<tr>' . implode( '', $cells ) . '</tr>';
+            $cells = '';
+            foreach ( [ "{$top}px 8px 0 0", "{$top}px 0 0 8px" ] as $side => $padding ) {
+                $cells .= '<td width="50%" style="width:50%;padding:' . $padding . ';vertical-align:top;text-align:center;">' . self::cell( $pair[ $side ] ) . '</td>';
+            }
+            $rows .= '<tr>' . $cells . '</tr>';
         }
-        // One line: the email body goes through wpautop(), which would put <br> between table rows.
-        return '<table cellspacing="0" cellpadding="0" border="0" style="width:100%;"><tbody>' . $rows . '</tbody></table>';
+        // One line: the email body goes through wpautop(), which would put <br> between table rows. Same
+        // width and margin as the coupon box.
+        return '<table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width:100%;margin:0 0 16px;">' . $rows . '</table>';
     }
 
     /**
+     * Image in a fixed square, name (shortened), price.
+     *
      * @param \WC_Product $product
      */
     private static function cell( \WC_Product $product ): string {
         $url   = esc_url( $product->get_permalink() );
-        $name  = esc_html( $product->get_name() );
-        $image = $product->get_image_id() ? wp_get_attachment_image_url( $product->get_image_id(), 'woocommerce_thumbnail' ) : '';
-        $image = $image ? $image : wc_placeholder_img_src( 'woocommerce_thumbnail' );
-        return '<td style="width:50%;padding:8px;vertical-align:top;text-align:center;">'
-            . '<a href="' . $url . '"><img src="' . esc_url( $image ) . '" alt="' . esc_attr( $product->get_name() ) . '" width="200" style="display:block;width:100%;max-width:200px;height:auto;margin:0 auto 8px;border:0;"></a>'
-            . '<a href="' . $url . '" style="font-weight:bold;text-decoration:none;">' . $name . '</a>'
-            . '<div>' . wp_kses_post( $product->get_price_html() ) . '</div>'
-            . '</td>';
+        $image = $product->get_image_id() ? wp_get_attachment_image_src( $product->get_image_id(), 'woocommerce_thumbnail' ) : false;
+        if ( $image ) {
+            list( $src, $width, $height ) = $image;
+        } else {
+            $size   = wc_get_image_size( 'woocommerce_thumbnail' );
+            $src    = wc_placeholder_img_src( 'woocommerce_thumbnail' );
+            $width  = $size['width'];
+            $height = $size['height'];
+        }
+        $size = self::fit( (int) $width, (int) $height );
+        $box  = self::IMAGE_BOX;
+        // A size it doesn't know is left to the image (height auto), not forced square.
+        $dimensions = $size ? 'width="' . $size[0] . '" height="' . $size[1] . '"' : 'width="' . $box . '"';
+        // The square and the image shrink with a narrow column (phones); the attributes are the desktop size.
+        // Inline padding and margins throughout: WooCommerce inlines its email CSS (`td td` padding,
+        // `img` margin-right, `p` margins) into anything that doesn't set its own.
+        return '<table role="presentation" align="center" cellspacing="0" cellpadding="0" border="0" style="width:100%;max-width:' . $box . 'px;margin:0 auto;"><tr>'
+            . '<td height="' . $box . '" align="center" valign="middle" style="height:' . $box . 'px;padding:0;background-color:#f4f4f5;text-align:center;vertical-align:middle;">'
+            . '<a href="' . $url . '"><img src="' . esc_url( $src ) . '" alt="' . esc_attr( $product->get_name() ) . '" ' . $dimensions . ' style="display:inline-block;max-width:100%;height:auto;margin:0;border:0;vertical-align:middle;"></a>'
+            . '</td></tr></table>'
+            . '<p style="margin:8px 0 2px;font-size:14px;line-height:20px;"><a href="' . $url . '" style="font-weight:bold;text-decoration:none;">' . esc_html( self::short_name( $product->get_name() ) ) . '</a></p>'
+            . '<p style="margin:0;font-size:14px;line-height:20px;color:#767676;">' . wp_kses_post( $product->get_price_html() ) . '</p>';
+    }
+
+    /**
+     * An image's size scaled down to fit the square, ratio kept; never scaled up.
+     *
+     * @param int $width
+     * @param int $height
+     * @return int[]|null [ width, height ]; null when the size isn't known.
+     */
+    private static function fit( int $width, int $height ): ?array {
+        if ( $width <= 0 || $height <= 0 ) {
+            return null;
+        }
+        $scale = min( 1, self::IMAGE_BOX / max( $width, $height ) );
+        return [ max( 1, (int) round( $width * $scale ) ), max( 1, (int) round( $height * $scale ) ) ];
+    }
+
+    /**
+     * About two lines at 14px in a half-width cell.
+     *
+     * @param string $name
+     */
+    private static function short_name( string $name ): string {
+        // Cut the text, not its entities (`&amp;`): saved names can hold them.
+        $name = html_entity_decode( $name, ENT_QUOTES, 'UTF-8' );
+        return mb_strlen( $name ) > self::NAME_MAX ? rtrim( mb_substr( $name, 0, self::NAME_MAX - 1 ) ) . '…' : $name;
     }
 
     private static function plain( string $html ): string {

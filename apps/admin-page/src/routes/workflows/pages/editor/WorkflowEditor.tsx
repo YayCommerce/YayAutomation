@@ -34,6 +34,7 @@ import {
 import { useActivateWorkflow } from '../../shared/actions/useActivateWorkflow';
 import {
   ActivateDialog,
+  cancelledRunsText,
   DeactivateDialog,
   DeleteStepDialog,
   DiscardChangesDialog,
@@ -196,9 +197,9 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
     busyWhile(async () => {
       if (!(await saveFirst())) return;
       try {
-        await apply.mutateAsync({ id: workflow.id });
+        const updated = await apply.mutateAsync({ id: workflow.id });
         setErrorMode(false);
-        toast.success(__('Workflow updated', 'yaymatik'));
+        toast.success(__('Workflow updated', 'yaymatik'), { description: cancelledRunsText(updated.cancelledRuns) });
       } catch (error) {
         if (error instanceof ApiError && error.code === 'yaymatik_no_draft') {
           // The edits ended up matching the live workflow, so the server dropped the draft. Refetch so
@@ -358,6 +359,7 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
           onOpenChange={(open) => !open && setConfirm(null)}
           onConfirm={runUpdate}
           pending={busy}
+          waitingRuns={workflow.waitingRuns}
         />
         <DiscardChangesDialog
           open={confirm === 'discard'}
@@ -378,6 +380,7 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
           onConfirm={runDeactivate}
           pending={busy}
           name={workflow.name}
+          waitingRuns={workflow.waitingRuns}
         />
 
         {renaming && <RenameWorkflowDialog workflow={workflow} onClose={() => setRenaming(false)} />}

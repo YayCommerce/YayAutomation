@@ -32,7 +32,7 @@ describe('availableVariables', () => {
     });
   });
 
-  it('flags block outputs, e.g. the coupon box of a Generate coupon above', () => {
+  it('flags block data fields and block outputs, e.g. the product grids and the coupon box of a Generate coupon above', () => {
     const node = (id: string, kind: 'trigger' | 'action', block: StepId) => ({
       id,
       kind,
@@ -51,8 +51,13 @@ describe('availableVariables', () => {
       ],
     };
     const variables = availableVariables(graph, 'm');
-    expect(variables.filter((variable) => variable.block).map((variable) => variable.key)).toEqual(['steps.c.box']);
+    expect(variables.filter((variable) => variable.block).map((variable) => variable.key)).toEqual([
+      'order.cross_sell_products',
+      'order.upsell_products',
+      'steps.c.box',
+    ]);
     expect(variables.find((variable) => variable.key === 'steps.c.code')?.block).toBe(false);
+    expect(variables.find((variable) => variable.key === 'order.has_cross_sells')?.block).toBe(false);
   });
 });
 

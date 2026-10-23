@@ -421,7 +421,7 @@ class RestAPI {
     }
 
     /**
-     * One page of a workflow's runs, newest first: `{ items, total }` (`RunPresenter::item()`).
+     * One page of a workflow's runs, newest first: `{ items, total, perPage }` (`RunPresenter::item()`).
      *
      * @param \WP_REST_Request $request
      */
@@ -438,8 +438,9 @@ class RestAPI {
         $steps  = RunStepStore::counts( array_column( $rows, 'id' ) );
         return rest_ensure_response(
             [
-                'items' => array_map( fn( array $run ) => RunPresenter::item( $run, $steps[ $run['id'] ] ?? 0 ), $rows ),
-                'total' => RunStore::count( $filter ),
+                'items'   => array_map( fn( array $run ) => RunPresenter::item( $run, $steps[ $run['id'] ] ?? 0 ), $rows ),
+                'total'   => RunStore::count( $filter ),
+                'perPage' => RunStore::PER_PAGE,
             ]
         );
     }

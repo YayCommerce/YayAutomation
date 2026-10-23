@@ -131,7 +131,7 @@ final class SendEmailTest extends TestCase {
         $result             = $this->run_step( $this->config() );
 
         $this->assertTrue( $result->is_skipped() );
-        $this->assertSame( 'unsubscribed', $result->message() );
+        $this->assertSame( 'The customer unsubscribed from these emails.', $result->message() );
         $this->assertSame( [], FakeMailer::$current->sent );
     }
 

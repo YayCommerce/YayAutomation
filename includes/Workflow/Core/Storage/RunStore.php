@@ -119,10 +119,11 @@ final class RunStore {
     }
 
     /**
-     * Per workflow, in one grouped query: runs started in the last 30 days, the newest start, waiting runs.
+     * Per workflow, in one query: runs started in the last 30 days, waiting runs, and the newest run by id.
      *
      * @param int[] $workflow_ids
-     * @return array[] Workflow id => `recent`, `last_run` (GMT), `waiting`; workflows without runs are left out.
+     * @return array[] Workflow id => `recent`, `waiting`, `last_id`, `last_run` (GMT), `last_status`; workflows
+     *                 without runs are left out.
      */
     public static function stats( array $workflow_ids ): array {
         global $wpdb;
@@ -135,7 +136,7 @@ final class RunStore {
         $rows  = $wpdb->get_results(
             $wpdb->prepare(
                 // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $in is a list of ints.
-                "SELECT workflow_id, SUM(started_at >= %s) AS recent, MAX(started_at) AS last_run, SUM(status = %s) AS waiting FROM {$table} WHERE workflow_id IN ({$in}) GROUP BY workflow_id",
+                "SELECT s.workflow_id, s.recent, s.waiting, s.last_id, r.started_at AS last_run, r.status AS last_status FROM (SELECT workflow_id, SUM(started_at >= %s) AS recent, SUM(status = %s) AS waiting, MAX(id) AS last_id FROM {$table} WHERE workflow_id IN ({$in}) GROUP BY workflow_id) s INNER JOIN {$table} r ON r.id = s.last_id",
                 gmdate( 'Y-m-d H:i:s', time() - 30 * 86400 ),
                 self::STATUS_WAITING
             ),
@@ -144,9 +145,11 @@ final class RunStore {
         $stats = [];
         foreach ( (array) $rows as $row ) {
             $stats[ (int) $row['workflow_id'] ] = [
-                'recent'   => (int) $row['recent'],
-                'last_run' => $row['last_run'],
-                'waiting'  => (int) $row['waiting'],
+                'recent'      => (int) $row['recent'],
+                'waiting'     => (int) $row['waiting'],
+                'last_id'     => (int) $row['last_id'],
+                'last_run'    => $row['last_run'],
+                'last_status' => (string) $row['last_status'],
             ];
         }
         return $stats;

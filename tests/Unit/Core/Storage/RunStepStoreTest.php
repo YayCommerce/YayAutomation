@@ -307,22 +307,26 @@ final class RunStepStoreTest extends TestCase {
             [
                 'workflow_id' => '9',
                 'recent'      => '3',
-                'last_run'    => '2026-10-12 08:03:04',
                 'waiting'     => '1',
+                'last_id'     => '31',
+                'last_run'    => '2026-10-12 08:03:04',
+                'last_status' => 'completed',
             ],
         ];
         $this->assertSame(
             [
                 9 => [
-                    'recent'   => 3,
-                    'last_run' => '2026-10-12 08:03:04',
-                    'waiting'  => 1,
+                    'recent'      => 3,
+                    'waiting'     => 1,
+                    'last_id'     => 31,
+                    'last_run'    => '2026-10-12 08:03:04',
+                    'last_status' => 'completed',
                 ],
             ],
             RunStore::stats( [ '9', 12 ] )
         );
         $this->assertMatchesRegularExpression(
-            "/^SELECT workflow_id, SUM\\(started_at >= '[0-9: -]+'\\) AS recent, MAX\\(started_at\\) AS last_run, SUM\\(status = 'waiting'\\) AS waiting FROM wp_yaymatik_runs WHERE workflow_id IN \\(9,12\\) GROUP BY workflow_id$/",
+            "/^SELECT s.workflow_id, s.recent, s.waiting, s.last_id, r.started_at AS last_run, r.status AS last_status FROM \\(SELECT workflow_id, SUM\\(started_at >= '[0-9: -]+'\\) AS recent, SUM\\(status = 'waiting'\\) AS waiting, MAX\\(id\\) AS last_id FROM wp_yaymatik_runs WHERE workflow_id IN \\(9,12\\) GROUP BY workflow_id\\) s INNER JOIN wp_yaymatik_runs r ON r.id = s.last_id$/",
             $this->db->last_sql()
         );
 

@@ -1,9 +1,10 @@
-import { useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useMemo, useState, type ReactNode } from 'react';
 import type { Workflow, WorkflowIssue } from '@yaymatik/types';
 import { ChevronLeft, CircleAlert, Pencil } from 'lucide-react';
-import { Link, useNavigate, useParams } from 'react-router';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 import { __, _n, sprintf } from '@wordpress/i18n';
 
+import { shortDay } from '@/lib/helpers/date.helper';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -15,10 +16,12 @@ import { ReadOnlyCanvas } from '../../shared/canvas/ReadOnlyCanvas';
 import { WorkflowAppIcon } from '../../shared/layout/EditorLayout';
 import type { EditorNavState } from '../../shared/nav/editor.nav';
 import { ErrorAlert } from '../../shared/ui/ErrorAlert';
+import { LastRun } from '../../shared/ui/RunStatus';
 import { workflowState, WorkflowStatusBadge } from '../../shared/ui/WorkflowStatusBadge';
 import { plainSummary, stepOf, SummaryText } from '../../steps';
 import { StepTile } from '../../steps/core/StepTile';
-import { shortDay, VersionHistory } from './VersionHistory';
+import { RunDetailSheet } from './RunDetailSheet';
+import { VersionHistory } from './VersionHistory';
 import { WorkflowRuns } from './WorkflowRuns';
 
 export default function WorkflowOverviewPage() {
@@ -83,6 +86,29 @@ function WorkflowOverview({ workflow }: { workflow: Workflow }) {
   ];
   const [tab, setTab] = useState(tabs[0].value);
   const [historyPage, setHistoryPage] = useState(1);
+  // The open run is in the URL (`?run=<id>`), so a reload or a shared link opens it again.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const runId = searchParams.get('run');
+  // Replaced, not pushed, on open and close alike: Back leaves the overview instead of stepping through runs.
+  const openRun = (id: string) =>
+    setSearchParams(
+      (params) => {
+        params.set('run', id);
+        return params;
+      },
+      { replace: true },
+    );
+  const closeRun = useCallback(
+    () =>
+      setSearchParams(
+        (params) => {
+          params.delete('run');
+          return params;
+        },
+        { replace: true },
+      ),
+    [setSearchParams],
+  );
   // A tab can disappear (draft applied or discarded elsewhere); fall back to the first.
   const currentTab = tab === HISTORY_TAB || tabs.some((t) => t.value === tab) ? tab : tabs[0].value;
 
@@ -157,9 +183,9 @@ function WorkflowOverview({ workflow }: { workflow: Workflow }) {
             <VersionHistory workflow={workflow} page={historyPage} onPageChange={setHistoryPage} />
           </TabsContent>
         </Tabs>
-        {/* Run logging doesn't exist yet, so there are never runs to list. */}
-        <WorkflowRuns runs={[]} />
+        <WorkflowRuns key={workflow.id} workflowId={workflow.id} onOpen={openRun} />
       </div>
+      <RunDetailSheet workflowId={workflow.id} runId={runId} onClose={closeRun} />
 
       <ActivateDialog
         open={activateOpen}
@@ -180,6 +206,7 @@ function WorkflowOverview({ workflow }: { workflow: Workflow }) {
         onConfirm={() => void deactivate().finally(() => setDeactivateOpen(false))}
         pending={pending}
         name={workflow.name}
+        waitingRuns={workflow.waitingRuns}
       />
     </OverviewLayout>
   );
@@ -233,7 +260,7 @@ function SummaryCell({ label, children }: { label: string; children: ReactNode }
   );
 }
 
-/** Status, trigger, runs in the last 30 days, last run. The run cells show "—". */
+/** Status, trigger, runs in the last 30 days, last run. The run cells show "—" until it first runs. */
 function SummaryRow({ workflow }: { workflow: Workflow }) {
   const state = workflowState(workflow);
   const status =
@@ -271,8 +298,10 @@ function SummaryRow({ workflow }: { workflow: Workflow }) {
           none
         )}
       </SummaryCell>
-      <SummaryCell label={__('Runs (30 days)', 'yaymatik')}>{none}</SummaryCell>
-      <SummaryCell label={__('Last run', 'yaymatik')}>{none}</SummaryCell>
+      <SummaryCell label={__('Runs (30 days)', 'yaymatik')}>{workflow.lastRunAt ? workflow.runs30d : none}</SummaryCell>
+      <SummaryCell label={__('Last run', 'yaymatik')}>
+        {workflow.lastRunAt ? <LastRun workflow={workflow} className="min-w-0" /> : none}
+      </SummaryCell>
     </div>
   );
 }

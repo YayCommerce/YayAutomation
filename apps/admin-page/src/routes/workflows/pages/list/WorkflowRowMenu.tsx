@@ -139,6 +139,7 @@ function RowDialogs({
         onConfirm={() => void deactivate().finally(onClose)}
         pending={pending}
         name={workflow.name}
+        waitingRuns={workflow.waitingRuns}
       />
       <DeleteWorkflowDialog workflow={action === 'delete' ? workflow : null} onClose={onClose} />
     </>

@@ -6,6 +6,7 @@ import { toast } from '@/components/ui/sonner';
 import { ApiError, errorMessage } from '../../api/workflow.api';
 import { useWorkflowActionMutation } from '../../api/workflow.query';
 import type { EditorNavState } from '../nav/editor.nav';
+import { cancelledRunsText } from './WorkflowActions';
 
 export interface ActivateOptions {
   /** Runs first; false stops (e.g. the editor's save failed and it said so). */
@@ -53,8 +54,10 @@ export function useActivateWorkflow(workflow: Workflow) {
   const deactivate = async ({ before, onSuccess }: Omit<ActivateOptions, 'onIssues'> = {}) => {
     if (before && !(await before())) return;
     try {
-      await deactivateMutation.mutateAsync({ id: workflow.id });
-      toast.success(__('Workflow deactivated', 'yaymatik'));
+      const deactivated = await deactivateMutation.mutateAsync({ id: workflow.id });
+      toast.success(__('Workflow deactivated', 'yaymatik'), {
+        description: cancelledRunsText(deactivated.cancelledRuns),
+      });
       onSuccess?.();
     } catch (error) {
       toast.error(errorMessage(error));

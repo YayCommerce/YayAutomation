@@ -1,5 +1,5 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { Workflow } from '@yaymatik/types';
+import type { RunStatus, Workflow } from '@yaymatik/types';
 
 import {
   activateWorkflow,
@@ -9,7 +9,9 @@ import {
   deactivateWorkflow,
   deleteWorkflow,
   discardDraft,
+  getRun,
   getWorkflow,
+  listRuns,
   listVersions,
   listWorkflows,
   updateWorkflow,
@@ -21,7 +23,14 @@ export const workflowKeys = {
   detail: (id: string) => [...workflowKeys.all, 'detail', id] as const,
   versions: (id: string) => [...workflowKeys.all, 'versions', id] as const,
   versionsPage: (id: string, page: number) => [...workflowKeys.versions(id), page] as const,
+  runs: (id: string) => [...workflowKeys.all, 'runs', id] as const,
+  runsPage: (id: string, page: number, statuses: RunStatus[]) => [...workflowKeys.runs(id), statuses, page] as const,
+  run: (workflowId: string, runId: string) => [...workflowKeys.runs(workflowId), 'detail', runId] as const,
 };
+
+// Something missing stays missing, so don't delay the message; retry anything else (blips, timeouts).
+const retryUnlessNotFound = (failureCount: number, error: Error) =>
+  !(error instanceof ApiError && error.status === 404) && failureCount < 2;
 
 export function useWorkflowsQuery() {
   return useQuery({
@@ -40,8 +49,7 @@ export function useWorkflowQuery(id: string) {
     // Opened from the list: the row already holds this workflow, so render it right away.
     initialData: () => queryClient.getQueryData<Workflow[]>(workflowKeys.list())?.find((w) => w.id === id),
     initialDataUpdatedAt: () => queryClient.getQueryState(workflowKeys.list())?.dataUpdatedAt,
-    // A missing workflow stays missing, so don't delay the message; retry anything else (blips, timeouts).
-    retry: (failureCount, error) => !(error instanceof ApiError && error.status === 404) && failureCount < 2,
+    retry: retryUnlessNotFound,
   });
 }
 
@@ -51,6 +59,32 @@ export function useWorkflowVersionsQuery(id: string, page: number) {
     queryKey: workflowKeys.versionsPage(id, page),
     queryFn: () => listVersions(id, page),
     placeholderData: keepPreviousData,
+  });
+}
+
+/**
+ * One page of a workflow's runs. Keeps showing the previous page while the next one loads, but not
+ * the previous filter's rows under a new filter.
+ */
+export function useWorkflowRunsQuery(id: string, page: number, statuses: RunStatus[]) {
+  const filterKey = workflowKeys.runsPage(id, page, statuses).slice(0, -1);
+  return useQuery({
+    queryKey: workflowKeys.runsPage(id, page, statuses),
+    queryFn: () => listRuns(id, page, statuses),
+    placeholderData: (previous, previousQuery) =>
+      previousQuery && JSON.stringify(previousQuery.queryKey.slice(0, -1)) === JSON.stringify(filterKey)
+        ? previous
+        : undefined,
+  });
+}
+
+/** One run of the workflow, with its steps; none while `runId` is null. Under the workflow's runs key, so they refresh together. */
+export function useRunQuery(workflowId: string, runId: string | null) {
+  return useQuery({
+    queryKey: workflowKeys.run(workflowId, runId ?? ''),
+    queryFn: () => getRun(runId ?? ''),
+    enabled: runId !== null,
+    retry: retryUnlessNotFound,
   });
 }
 
@@ -113,8 +147,19 @@ const workflowActions = {
 };
 
 /** Activate, deactivate, update (`apply`) or discard the draft. Activate and update reject with `ApiError.issues`. */
-export const useWorkflowActionMutation = (action: keyof typeof workflowActions, callbacks?: MutationCallbacks) =>
-  useWorkflowMutation(({ id }: { id: string }) => workflowActions[action](id), callbacks);
+export function useWorkflowActionMutation(action: keyof typeof workflowActions, callbacks?: MutationCallbacks) {
+  const queryClient = useQueryClient();
+  return useWorkflowMutation(({ id }: { id: string }) => workflowActions[action](id), {
+    ...callbacks,
+    onSaved: (saved) => {
+      // Deactivate and Update cancel waiting runs.
+      if (action === 'deactivate' || action === 'apply') {
+        void queryClient.invalidateQueries({ queryKey: workflowKeys.runs(saved.id) });
+      }
+      callbacks?.onSaved?.(saved);
+    },
+  });
+}
 
 export function useDeleteWorkflowMutation() {
   const queryClient = useQueryClient();

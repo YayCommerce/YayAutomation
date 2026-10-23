@@ -1,9 +1,12 @@
 import type {
   EmailPreview,
   EmailTestResult,
+  RunDetail,
+  RunStatus,
   Workflow,
   WorkflowGraph,
   WorkflowIssue,
+  WorkflowRunsPage,
   WorkflowVersionsPage,
 } from '@yaymatik/types';
 import { HTTPError, type Options, type ResponsePromise } from 'ky';
@@ -97,6 +100,18 @@ export const deleteWorkflow = (id: string) => request<{ deleted: boolean }>(api.
 /** Version history, newest first, 10 per page. `page` is 1-based. */
 export const listVersions = (id: string, page: number) =>
   request<WorkflowVersionsPage>(api.get(`workflows/${id}/versions`, { searchParams: { page } }));
+
+/** One page of a workflow's runs, newest first. `page` is 1-based; no `statuses` = all. */
+export const listRuns = (id: string, page: number, statuses: RunStatus[]) =>
+  request<WorkflowRunsPage>(
+    api.get(`workflows/${id}/runs`, { searchParams: { page, ...(statuses.length && { status: statuses.join(',') }) } }),
+  );
+
+/** Run ids are row ids; a non-numeric one can't exist (e.g. a mistyped `?run=` link). */
+export const getRun = (id: string) =>
+  /^\d+$/.test(id)
+    ? request<RunDetail>(api.get(`runs/${id}`))
+    : Promise.reject(new ApiError(__('Run not found.', 'yaymatik'), 404));
 
 /** An email step's unsaved config and the graph it sits in, as the editor has them. */
 export interface EmailStepInput {
