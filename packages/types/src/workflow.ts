@@ -77,6 +77,10 @@ export interface Workflow {
   runs30d: number;
   /** ISO date the newest run started; null when it never ran. */
   lastRunAt: string | null;
+  /** How the newest run stands or ended; null when it never ran. */
+  lastRunStatus: RunStatus | null;
+  /** Null when it never ran. */
+  lastRunId: string | null;
   waitingRuns: number;
   /** Deactivate and Update only: how many waiting runs they cancelled. */
   cancelledRuns?: number;
@@ -234,6 +238,7 @@ export interface WorkflowRunsPage {
   items: RunListItem[];
   /** All runs matching the filter, across pages. */
   total: number;
+  perPage: number;
 }
 
 /** `GET /runs/{id}`. */

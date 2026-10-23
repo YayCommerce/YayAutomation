@@ -9,9 +9,9 @@ defined( 'ABSPATH' ) || exit;
 /** Cancels a workflow's waiting runs when it is turned off or updated. */
 final class Cancellation {
 
-    /** Why a run stopped: its workflow was turned off. */
+    /** Why a run stopped: its workflow was deactivated. */
     public static function turned_off(): string {
-        return __( 'The workflow was turned off.', 'yaymatik' );
+        return __( 'The workflow was deactivated.', 'yaymatik' );
     }
 
     /** Why a waiting run stopped: its workflow was updated. */

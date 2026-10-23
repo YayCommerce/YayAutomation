@@ -95,9 +95,11 @@ final class RunPresenter {
      */
     public static function stats( ?array $stats ): array {
         return [
-            'runs30d'     => (int) ( $stats['recent'] ?? 0 ),
-            'lastRunAt'   => self::iso( $stats['last_run'] ?? null ),
-            'waitingRuns' => (int) ( $stats['waiting'] ?? 0 ),
+            'runs30d'       => (int) ( $stats['recent'] ?? 0 ),
+            'lastRunAt'     => self::iso( $stats['last_run'] ?? null ),
+            'lastRunStatus' => $stats['last_status'] ?? null,
+            'lastRunId'     => $stats ? (string) $stats['last_id'] : null,
+            'waitingRuns'   => (int) ( $stats['waiting'] ?? 0 ),
         ];
     }
 

@@ -336,7 +336,7 @@ final class DispatcherWorkerTest extends TestCase {
         $this->workflows->workflows[1]['status'] = 'inactive';
 
         $this->assertSame( 'cancelled', $this->worker->run( $id ) );
-        $this->assertSame( 'The workflow was turned off.', $this->runs->runs[ $id ]['error'] );
+        $this->assertSame( 'The workflow was deactivated.', $this->runs->runs[ $id ]['error'] );
 
         $id = $this->queued_run( [] );
         unset( $this->workflows->workflows[1] );
@@ -372,7 +372,7 @@ final class DispatcherWorkerTest extends TestCase {
         $this->workflows->workflows[1]['status'] = 'inactive';
 
         $this->assertSame( 'cancelled', $this->worker->run( $id ) );
-        $this->assertSame( 'The workflow was turned off.', $this->runs->runs[ $id ]['error'] );
+        $this->assertSame( 'The workflow was deactivated.', $this->runs->runs[ $id ]['error'] );
         $this->assertSame( [], $this->runs->steps( $id ) );
     }
 
@@ -385,7 +385,7 @@ final class DispatcherWorkerTest extends TestCase {
         $this->assertSame( 'cancelled', $this->worker->run( $id, true ) );
         $row = $this->runs->steps( $id )[0];
         $this->assertSame( 'cancelled', $row['status'] );
-        $this->assertSame( 'The workflow was turned off.', $row['error'] );
+        $this->assertSame( 'The workflow was deactivated.', $row['error'] );
         $this->assertNotNull( $row['finished_at'] );
     }
 

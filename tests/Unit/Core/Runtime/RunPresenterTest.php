@@ -135,23 +135,32 @@ final class RunPresenterTest extends TestCase {
     public function test_stats_are_zero_for_a_workflow_that_never_ran(): void {
         $this->assertSame(
             [
-                'runs30d'     => 0,
-                'lastRunAt'   => null,
-                'waitingRuns' => 0,
+                'runs30d'       => 0,
+                'lastRunAt'     => null,
+                'lastRunStatus' => null,
+                'lastRunId'     => null,
+                'waitingRuns'   => 0,
             ],
             RunPresenter::stats( null )
         );
+    }
+
+    public function test_stats_name_the_newest_run_and_how_it_ended(): void {
         $this->assertSame(
             [
-                'runs30d'     => 4,
-                'lastRunAt'   => '2026-10-12T08:03:04+00:00',
-                'waitingRuns' => 1,
+                'runs30d'       => 4,
+                'lastRunAt'     => '2026-10-12T08:03:04+00:00',
+                'lastRunStatus' => 'failed',
+                'lastRunId'     => '31',
+                'waitingRuns'   => 1,
             ],
             RunPresenter::stats(
                 [
-                    'recent'   => 4,
-                    'last_run' => '2026-10-12 08:03:04',
-                    'waiting'  => 1,
+                    'recent'      => 4,
+                    'waiting'     => 1,
+                    'last_id'     => 31,
+                    'last_run'    => '2026-10-12 08:03:04',
+                    'last_status' => 'failed',
                 ]
             )
         );

@@ -443,7 +443,7 @@ final class ExecutorTest extends TestCase {
 
         $this->assertSame( 'cancelled', $this->slice( $id ) );
         $run = $this->run_of( $id );
-        $this->assertSame( 'The workflow was turned off.', $run['error'] );
+        $this->assertSame( 'The workflow was deactivated.', $run['error'] );
         $this->assertSame( [ 'queue' => [ 'b' ] ], $run['position'] );
         $this->assertNotNull( $run['finished_at'] );
         $this->assertSame( [ 'a' => 'completed' ], $this->statuses( $id ) );
@@ -470,7 +470,7 @@ final class ExecutorTest extends TestCase {
         $this->assertNull( $this->run_of( $id )['wait_until'] );
         $row = $this->runs->steps( $id )[0];
         $this->assertSame( 'cancelled', $row['status'] );
-        $this->assertSame( 'The workflow was turned off.', $row['error'] );
+        $this->assertSame( 'The workflow was deactivated.', $row['error'] );
         $this->assertNotNull( $row['finished_at'] );
         $this->assertSame( 0, $this->steps['act']->runs );
     }
