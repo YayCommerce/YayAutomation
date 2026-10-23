@@ -57,8 +57,18 @@ abstract class DataItem {
     /** @return array[] Field definitions keyed by field key, with defaults filled in. */
     public function fields(): array {
         if ( null === $this->fields ) {
+            /**
+             * Filters one data item's raw field definitions before defaults are applied.
+             *
+             * The dynamic portion is the data item id, for example
+             * `yaymatik_data_item_site_fields`.
+             *
+             * @param array[]  $definitions Field definitions keyed by field key.
+             * @param DataItem $item        The data item being built.
+             */
+            $definitions  = (array) apply_filters( "yaymatik_data_item_{$this->id()}_fields", $this->define(), $this );
             $this->fields = [];
-            foreach ( $this->define() as $key => $field ) {
+            foreach ( $definitions as $key => $field ) {
                 $this->fields[ $key ] = $field + [
                     'options'     => null,
                     'conditional' => true,

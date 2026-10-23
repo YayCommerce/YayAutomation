@@ -107,7 +107,7 @@ final class Dispatcher {
      * @param Trigger    $trigger
      * @param array      $args
      * @param array|null $parent_run
-     * @param array|null $refs       `$trigger->refs( $args )` when already loaded.
+     * @param array|null $refs       `$trigger->resolved_refs( $args )` when already loaded.
      * @return int Run id; 0 when no run was started.
      */
     public function start_run( array $workflow, Trigger $trigger, array $args, ?array $parent_run = null, ?array $refs = null ): int {
@@ -146,7 +146,7 @@ final class Dispatcher {
             Logger::error( "Workflow {$workflow_id} not started: it has no saved version.", $context );
             return 0;
         }
-        $refs = $refs ?? $trigger->refs( $args );
+        $refs = $refs ?? $trigger->resolved_refs( $args );
         if ( null === $refs ) {
             return 0;
         }
@@ -174,7 +174,7 @@ final class Dispatcher {
                 return;
             }
             $context = $trigger->context( $args );
-            $refs    = $context ? $trigger->refs( $args ) : null;
+            $refs    = $context ? $trigger->resolved_refs( $args ) : null;
             if ( ! $context || null === $refs ) {
                 return;
             }

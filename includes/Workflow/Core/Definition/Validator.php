@@ -188,7 +188,7 @@ final class Validator {
         }
 
         // Data items the steps can read. Unknown until a trigger is chosen; no_trigger covers that case.
-        $available = $trigger_step ? array_merge( $trigger_step->provides(), DataRegistry::ALWAYS ) : null;
+        $available = $trigger_step ? array_merge( $trigger_step->resolved_provides(), DataRegistry::ALWAYS ) : null;
         $by_id     = array_column( $nodes, null, 'id' );
         $parents   = array_column( $workflow['graph']['edges'], 'source', 'target' );
         foreach ( $nodes as $node ) {
@@ -209,7 +209,7 @@ final class Validator {
      */
     public static function variables( array $graph, string $node_id ): array {
         $trigger_step = self::trigger_step( $graph['nodes'] );
-        $items        = array_unique( array_merge( $trigger_step ? $trigger_step->provides() : [], DataRegistry::ALWAYS ) );
+        $items        = array_unique( array_merge( $trigger_step ? $trigger_step->resolved_provides() : [], DataRegistry::ALWAYS ) );
 
         $list = [];
         foreach ( $items as $id ) {

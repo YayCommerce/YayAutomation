@@ -5,6 +5,7 @@ use PHPUnit\Framework\TestCase;
 use YayMatik\Tests\Support\FakeOrder;
 use YayMatik\Workflow\Core\Data\Ref;
 use YayMatik\Workflow\Core\Data\Scope;
+use YayMatik\Workflow\Core\Steps\Trigger;
 use YayMatik\Workflow\Triggers\OrderCreated;
 use YayMatik\Workflow\Triggers\OrderStatusChanged;
 
@@ -12,6 +13,12 @@ require_once dirname( __DIR__, 2 ) . '/Support/woocommerce-stubs.php';
 
 /** What a run stores for a trigger event: refs and trigger-time facts, never the order itself. */
 final class TriggerRefsTest extends TestCase {
+
+    /** @var callable|null */
+    private $provides_filter = null;
+
+    /** @var callable|null */
+    private $refs_filter = null;
 
     protected function setUp(): void {
         FakeOrder::$found = [
@@ -32,6 +39,12 @@ final class TriggerRefsTest extends TestCase {
 
     protected function tearDown(): void {
         FakeOrder::$found = [];
+        if ( $this->provides_filter ) {
+            remove_filter( 'yaymatik_trigger_provides', $this->provides_filter );
+        }
+        if ( $this->refs_filter ) {
+            remove_filter( 'yaymatik_trigger_refs', $this->refs_filter );
+        }
     }
 
     public function test_order_created_refs_the_order_and_its_billing_customer(): void {
@@ -91,5 +104,45 @@ final class TriggerRefsTest extends TestCase {
             ],
             $stored['trigger']
         );
+    }
+
+    public function test_integrations_can_extend_trigger_data_without_replacing_the_trigger(): void {
+        $this->provides_filter = function ( array $items, Trigger $trigger ): array {
+            if ( OrderCreated::ID === $trigger->id() ) {
+                $items[] = 'integration_data';
+            }
+            return $items;
+        };
+        $this->refs_filter     = function ( array $refs, Trigger $trigger, array $args ): array {
+            if ( OrderCreated::ID === $trigger->id() ) {
+                $refs['integration_data'] = [ 'order_id' => $args['order_id'] ];
+            }
+            return $refs;
+        };
+        add_filter( 'yaymatik_trigger_provides', $this->provides_filter );
+        add_filter( 'yaymatik_trigger_refs', $this->refs_filter );
+
+        $trigger = new OrderCreated();
+
+        $this->assertSame( [ 'order', 'customer', 'integration_data' ], $trigger->resolved_provides() );
+        $this->assertSame( [ 'order_id' => 12 ], $trigger->resolved_refs( [ 'order_id' => 12 ] )['integration_data'] );
+        $this->assertNull( $trigger->resolved_refs( [ 'order_id' => 99 ] ), 'a filter cannot revive a missing subject' );
+    }
+
+    public function test_multiple_integrations_compose_on_the_same_trigger(): void {
+        $first  = fn( array $items ): array => array_merge( $items, [ 'first_integration' ] );
+        $second = fn( array $items ): array => array_merge( $items, [ 'second_integration' ] );
+        add_filter( 'yaymatik_trigger_provides', $first );
+        add_filter( 'yaymatik_trigger_provides', $second );
+
+        try {
+            $this->assertSame(
+                [ 'order', 'customer', 'first_integration', 'second_integration' ],
+                ( new OrderCreated() )->resolved_provides()
+            );
+        } finally {
+            remove_filter( 'yaymatik_trigger_provides', $first );
+            remove_filter( 'yaymatik_trigger_provides', $second );
+        }
     }
 }
