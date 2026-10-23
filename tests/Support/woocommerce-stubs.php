@@ -47,6 +47,52 @@ if ( ! class_exists( 'WC_Order' ) ) {
     }
 }//end if
 
+if ( ! class_exists( 'WC_Product' ) ) {
+    /** A product from an array of getter values. */
+    class WC_Product {
+
+        /** @var array */
+        public $data;
+
+        public function __construct( array $data ) {
+            $this->data = $data;
+        }
+
+        public function __call( $name, $args ) {
+            $key = substr( $name, 4 );
+            return array_key_exists( $key, $this->data ) ? $this->data[ $key ] : '';
+        }
+    }
+}
+
+if ( ! function_exists( 'wp_get_attachment_image_src' ) ) {
+    /**
+     * Images by attachment id, as `[ url, width, height ]`: `$GLOBALS['yaymatik_test_images']`.
+     *
+     * @param int    $attachment_id
+     * @param string $size
+     */
+    function wp_get_attachment_image_src( $attachment_id, $size = 'thumbnail' ) {
+        return $GLOBALS['yaymatik_test_images'][ $attachment_id ] ?? false;
+    }
+}
+
+if ( ! function_exists( 'wc_get_image_size' ) ) {
+    function wc_get_image_size( $image_size ) {
+        return [
+            'width'  => 300,
+            'height' => 300,
+            'crop'   => 1,
+        ];
+    }
+}
+
+if ( ! function_exists( 'wc_placeholder_img_src' ) ) {
+    function wc_placeholder_img_src( $size = 'woocommerce_thumbnail' ) {
+        return 'https://shop.test/placeholder.png';
+    }
+}
+
 if ( ! class_exists( 'WC_DateTime' ) ) {
     /** A date with WooCommerce's `date()` getter. */
     class WC_DateTime extends DateTime {
