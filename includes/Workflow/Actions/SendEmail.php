@@ -19,8 +19,6 @@ class SendEmail extends Action {
 
     public const ID = 'send_email';
 
-    public const SKIPPED_UNSUBSCRIBED = 'unsubscribed';
-
     /** @var UnsubscribeLink|null Null = from the stored secret, when first needed. */
     private $links;
 
@@ -124,7 +122,7 @@ class SendEmail extends Action {
             return StepResult::failed( __( 'No valid email address.', 'yaymatik' ) );
         }
         if ( ( $this->unsubscribed )( $to ) ) {
-            return StepResult::skipped( self::SKIPPED_UNSUBSCRIBED );
+            return StepResult::skipped( __( 'The customer unsubscribed from these emails.', 'yaymatik' ) );
         }
 
         $email = $this->compose( $config, $scope, $this->links()->url( $to ) );

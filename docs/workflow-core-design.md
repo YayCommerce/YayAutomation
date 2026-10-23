@@ -110,7 +110,7 @@ Our own small template module. **No Liquid or other template library, now or lat
 
 **Customer emails** (Send email):
 - WooCommerce sender and email template, styles inlined by WooCommerce's mailer. One To address; the final address (after variables) decides.
-- Every customer email has an "Unsubscribe" link under the message and `List-Unsubscribe` / `List-Unsubscribe-Post` (one-click) headers. The link carries base64url(email) and an HMAC of it (own secret, no expiry). Unsubscribes are per address, for all YayMatik customer emails; the step is skipped (`unsubscribed`) and the run goes on. Staff email ignores them.
+- Every customer email has an "Unsubscribe" link under the message and `List-Unsubscribe` / `List-Unsubscribe-Post` (one-click) headers. The link carries base64url(email) and an HMAC of it (own secret, no expiry). Unsubscribes are per address, for all YayMatik customer emails; the step is skipped ("The customer unsubscribed from these emails." in run history) and the run goes on. Staff email ignores them.
 - **Preview / Send test** render only, from the editor's unsaved step and graph: the latest paid order (its number shown), or made-up data (`DataItem::sample()`, flagged for the "Sample data" badge); steps above give sample outputs. The unsubscribe link goes nowhere (`#`) and there are no List-Unsubscribe headers. A test goes to the logged-in admin, subject prefixed `[Test]`. A step with issues is refused (400 with `issues`), listed in the panel.
 
 ## §7 Graph · P7
