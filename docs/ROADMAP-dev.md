@@ -23,7 +23,7 @@ Changes from the ROADMAP-v1.0 order:
 | F0 | Move and rename | S | 1 | — | ✅ Done |
 | F1 | Workflow Core foundation | L | 3 | F0 | ✅ Done |
 | M1 | Customer emails + coupons | L | 3 | F1 | ✅ Done |
-| M2 | Wait + run history | L | 3 | F1 | In progress: backend ✅, UI next |
+| M2 | Wait + run history | L | 3 | F1 | ⏳ Merge pending |
 | F2 | Workflows table | M | 3 | F1 | — |
 | M7 | Cart tracking + Settings + Health check | L | 3 | F1 | — |
 | M8 | Abandoned cart + checkout | L | 2 | M1, M2, M7 | — |
@@ -139,7 +139,7 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 
 ## M2 — Wait + run history · L · risk 3
 
-**Status:** In progress. Backend merged (PR #26, `22bf12a`); UI (M2.6–M2.10) is PR B.
+**Status:** ⏳ Done, merge pending. Backend merged (PR #26, `22bf12a`); UI (M2.6–M2.10) on `jack/feature/m2b-runs-ui` (PR B).
 
 **Backend**
 - ✅ **M2.1 Wait step** — number + unit (minutes, hours, days, weeks), a whole number up to a year; the run moves to waiting and resumes through Action Scheduler.
@@ -149,13 +149,21 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 - ✅ **M2.5 Email block: product grid** — cross-sell / upsell sources; `order.has_cross_sells` / `has_upsells`, `customer.paid_order_count`.
 
 **UI**
-- **M2.6 Wait** — form and card ("Wait 1 hour", clock icon).
-- **M2.7 Overview: runs table** — started, subject, status, steps run; loading and empty states.
-- **M2.8 Run detail** — each step with result and time; links to the order (customer links with M4).
-- **M2.9 Deactivate / Update dialog** — says how many waiting runs will be cancelled.
-- **M2.10 Workflow list** — Runs and Last run columns, status filter.
+- ⏳ **M2.6 Wait** — form and card ("Wait 1 hour", clock icon).
+- ⏳ **M2.7 Overview: runs table** — started, subject, status, steps run; loading and empty states.
+- ⏳ **M2.8 Run detail** — each step with result and time; links to the order (customer links with M4).
+- ⏳ **M2.9 Deactivate / Update dialog** — says how many waiting runs will be cancelled.
+- ⏳ **M2.10 Workflow list** — Runs and Last run columns, status filter.
 
-**Templates:** ⏳ Cross-sell / upsell ×4, installable since PR A.
+**Templates:** ⏳ Cross-sell / upsell ×4, installable since PR A, checked end to end in PR B (wait, email with product grid, cancel on Deactivate).
+
+**Follow-ups**
+- Kit Pagination (`components/ui/pagination.tsx`) has hard-coded English ("Page X of Y", "Go to") → M9.2.
+- Preview picks the newest paid order even with no cross-sells / upsells, so the grid is left out with no hint; option: a note in the Preview dialog.
+- Product grid: the square's grey and the price colour are fixed, not the store's email colours; Outlook desktop ignores max-width (the square fills the column).
+- A workflow runs again when the same order is completed again (duplicate email / coupon); consider a once-per-order guard.
+- A run that ends at a Condition's No path shows Completed; consider a short outcome in the runs table (e.g. "Stopped at Condition (No)").
+- Insert variable shows the customer twice (the Customer group and the Customer section inside Order); from F1.12.
 
 ## F2 — Workflows table · M (3–5 days)
 
