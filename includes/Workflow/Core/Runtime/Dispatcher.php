@@ -3,6 +3,7 @@ namespace YayMatik\Workflow\Core\Runtime;
 
 use YayMatik\Utils\Logger;
 use YayMatik\Workflow\Core\Data\Scope;
+use YayMatik\Workflow\Core\Definition\GraphSchema;
 use YayMatik\Workflow\Core\Steps\StepRegistry;
 use YayMatik\Workflow\Core\Steps\Trigger;
 
@@ -179,7 +180,7 @@ final class Dispatcher {
                 return;
             }
             foreach ( $workflows as $workflow ) {
-                $node = self::trigger_node( $workflow );
+                $node = GraphSchema::trigger( $workflow['graph']['nodes'] ?? [] );
                 if ( ! $node || $node['data']['block'] !== $trigger->id()
                     || true !== $trigger->validate( $node['data']['config'] )
                     || ! $trigger->matches( $context, $node['data']['config'] ) ) {
@@ -228,14 +229,5 @@ final class Dispatcher {
             $run_id = (int) $run['parent_run_id'];
         }
         return false;
-    }
-
-    private static function trigger_node( array $workflow ): ?array {
-        foreach ( $workflow['graph']['nodes'] ?? [] as $node ) {
-            if ( 'trigger' === ( $node['kind'] ?? '' ) ) {
-                return $node;
-            }
-        }
-        return null;
     }
 }

@@ -143,7 +143,7 @@ final class GraphSchema {
     }
 
     /**
-     * True when both are the same graph.
+     * True when both have the same logic; where the steps sit on the canvas doesn't count.
      *
      * @param array|null $a Null = none.
      * @param array|null $b Null = none.
@@ -156,7 +156,85 @@ final class GraphSchema {
         // `schemaVersion` is filled in, so a graph with and without it compares equal.
         $a = self::prepare( $a );
         $b = self::prepare( $b );
-        return ! is_wp_error( $a ) && ! is_wp_error( $b ) && $a === $b;
+        return ! is_wp_error( $a ) && ! is_wp_error( $b ) && self::logic( $a ) === self::logic( $b );
+    }
+
+    /**
+     * The graph without step positions: what a version stores as `graph`.
+     *
+     * @param array $graph From `prepare()`.
+     */
+    public static function logic( array $graph ): array {
+        $graph['nodes'] = array_map(
+            function ( array $node ) {
+                unset( $node['position'] );
+                return $node;
+            },
+            $graph['nodes']
+        );
+        return $graph;
+    }
+
+    /**
+     * Step positions by step id: what a version stores as `layout`.
+     *
+     * @param array $graph From `prepare()`.
+     * @return array<string, array{x: float, y: float}>
+     */
+    public static function layout( array $graph ): array {
+        return array_column( $graph['nodes'], 'position', 'id' );
+    }
+
+    /**
+     * The logic with its step positions put back; a step missing from `$layout` sits at 0,0.
+     *
+     * @param array $logic
+     * @param array $layout
+     */
+    public static function with_layout( array $logic, array $layout ): array {
+        foreach ( $logic['nodes'] as &$node ) {
+            $position         = $layout[ $node['id'] ?? '' ] ?? null;
+            $node['position'] = [
+                'x' => is_numeric( $position['x'] ?? null ) ? (float) $position['x'] : 0.0,
+                'y' => is_numeric( $position['y'] ?? null ) ? (float) $position['y'] : 0.0,
+            ];
+        }
+        unset( $node );
+        return $logic;
+    }
+
+    /**
+     * The trigger step, or null.
+     *
+     * @param array[] $nodes
+     */
+    public static function trigger( array $nodes ): ?array {
+        foreach ( $nodes as $node ) {
+            if ( Step::KIND_TRIGGER === ( $node['kind'] ?? '' ) ) {
+                return $node;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Each step's parent step id, by step id.
+     *
+     * @param array[] $edges
+     * @return array<string, string>
+     */
+    public static function parents( array $edges ): array {
+        return array_column( $edges, 'source', 'target' );
+    }
+
+    /**
+     * Steps by id.
+     *
+     * @param array[] $nodes
+     * @return array<string, array>
+     */
+    public static function by_id( array $nodes ): array {
+        return array_column( $nodes, null, 'id' );
     }
 
     /**

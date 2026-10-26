@@ -65,7 +65,7 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 - ✅ **F1.0 PHPUnit** *([plan-infra](plan-infra.md))* — plain unit tests, no WordPress loaded (`dev/tools/phpunit`); CI step. First tests: template parser, Validator v2, Scope.
 - ✅ **F1.1 Storage** *(§2)*
   - `runs`, `run_steps` tables with upgrades.
-  - Saved versions never change; runs pin their version.
+  - A version's logic never changes (its layout may); runs pin their version.
 - ✅ **F1.2 Data layer v2** *(§4)*
   - Types incl. boolean, money, list, entity.
   - Entity types order, customer, site with relations (`order.customer`, `order.items`).

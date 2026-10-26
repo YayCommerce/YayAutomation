@@ -141,11 +141,11 @@ Today errors only go to the WooCommerce log, which merchants never open.
 
 ## C8. Runs pin a version
 
-**Decision.** A run keeps the version it started with. Saved versions never change.
+**Decision.** A run keeps the version it started with. A version's logic never changes; its layout may.
 
 **Why.** Today a queued job reads whatever graph is live when it runs. With Waits, a 3-email series could start on version 1 and finish on version 3 with different steps. Pinning makes every run follow one known graph, and run detail can show it.
 
-**Cost.** Versions are only ever added, never edited. Only the draft row is edited in place.
+**Cost.** Versions are only ever added, and their logic is never edited, except the draft row's, which is edited in place. Moving a card rewrites a row's layout and nothing else.
 
 **For devs.** Never load "the live graph" inside the executor. Load `runs.version_id`.
 

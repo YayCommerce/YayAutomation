@@ -10,6 +10,7 @@ import {
   moveNode,
   removeNode,
   ROW_GAP,
+  sameLogic,
   setNodeStep,
   stepsInOrder,
   updateNodeConfig,
@@ -109,5 +110,28 @@ describe('stepsInOrder', () => {
     graph.edges = graph.edges.filter((edge) => edge.target !== 'x');
     graph.edges.reverse();
     expect(ids(graph)).toEqual(['trigger', 'condition', 'email', 'no', 'x']);
+  });
+});
+
+describe('sameLogic', () => {
+  it('ignores where the cards sit', () => {
+    const moved = moveNode(base(), 'email', { x: 999, y: 999 });
+    expect(sameLogic(base(), moved)).toBe(true);
+  });
+
+  it('ignores the order of config keys', () => {
+    const graph = base();
+    const reordered = structuredClone(graph);
+    const node = reordered.nodes.find((n) => Object.keys(n.data.config).length > 1)!;
+    node.data.config = Object.fromEntries(Object.entries(node.data.config).reverse());
+    expect(sameLogic(graph, reordered)).toBe(true);
+  });
+
+  it('sees a changed setting, step or link', () => {
+    const graph = base();
+    const email = graph.nodes.find((node) => node.id === 'email')!;
+    expect(sameLogic(graph, updateNodeConfig(graph, 'email', { ...email.data.config, subject: 'Other' }))).toBe(false);
+    expect(sameLogic(graph, addNode(graph, 'email', 'action', undefined, 'next'))).toBe(false);
+    expect(sameLogic(graph, { ...graph, edges: graph.edges.slice(1) })).toBe(false);
   });
 });

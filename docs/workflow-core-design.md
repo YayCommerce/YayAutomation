@@ -33,7 +33,7 @@ Table names below omit the prefix: each is `{prefix}yaymatik_<name>`, e.g. `wp_y
 | Table | Columns (main) |
 |---|---|
 | `workflows` | id, name, status, trigger_id, live_version_id, draft_version_id, activated_at, created_at, updated_at · index (status, trigger_id) |
-| `workflow_versions` | id, workflow_id, action, graph, user_id, created_at, updated_at. A saved version never changes; only the draft row is edited in place |
+| `workflow_versions` | id, workflow_id, action, graph (logic), layout (step positions), user_id, created_at, updated_at. A version's logic never changes; its layout may. Only the draft row's logic is edited in place |
 | `runs` | id, workflow_id, version_id, trigger_id, subject, status, position, scope, wait_until, error, parent_run_id, root_run_id, depth, started_at, finished_at |
 | `run_steps` | id, run_id, step_id, iteration, status, input, output, error, attempt, started_at, finished_at |
 
@@ -117,7 +117,7 @@ Our own small template module. **No Liquid or other template library, now or lat
 
 - One parent per step. Condition branches `then` / `otherwise`; Switch has N handles; For each has `body` and `done`.
 - **Branches never merge.** Shared steps go in a separate workflow started by Call workflow.
-- Stored JSON gets `schemaVersion`, with logic kept apart from layout (positions).
+- A version's `graph` holds the logic (`schemaVersion`, steps without positions, links); its `layout` holds step positions by step id. REST and the editor get one graph with `position` on each step. Logic alone decides drafts and versions: moving a card rewrites only the layout of the row being edited (`WorkflowStore::save_layout()`), and Activate / Deactivate copy the layout to the new version.
 
 ## §8 Modules and the Yay ecosystem · P1, P2
 
@@ -166,7 +166,7 @@ All confirmed 2026-10-07, except L5 (2026-10-08). Reasons, rejected options and 
 | C5 | Runs execute in slices with a row lock | §3 |
 | C6 | Scope stores refs, loaded lazily, plus trigger-time snapshots | §4 |
 | C7 | Step outputs, scopes, typed data with relations | §4 |
-| C8 | Runs pin a version; saved versions never change | §2 |
+| C8 | Runs pin a version; a version's logic never changes (its layout may) | §2 |
 | C9 | Stored causation replaces the in-memory loop guard | §3 |
 | C10 | Custom tables replace the CPT before v1.0; dev data reset, no migration | §2 |
 | C11 | Scheduled / query triggers fan out per subject with `trigger_claims` | §3 |

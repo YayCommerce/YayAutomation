@@ -286,18 +286,25 @@ class RestAPI {
                 $name       = isset( $changes['name'] ) && $changes['name'] !== $current['name'] ? $changes['name'] : null;
                 $live_graph = null;
                 if ( isset( $changes['graph'] ) ) {
-                    $same_as_live = GraphSchema::same( $changes['graph'], $current['graph'] );
-                    // Once turned on, the saved content only changes through Apply: edits go to the draft.
-                    if ( $current['everActivated'] ) {
-                        $draft = $same_as_live ? null : $changes['graph'];
-                        if ( ! GraphSchema::same( $draft, $current['draft'] ) ) {
-                            $saved = WorkflowStore::save_draft( $id, $draft );
-                            if ( is_wp_error( $saved ) ) {
-                                return $saved;
-                            }
+                    $graph   = $changes['graph'];
+                    $editing = $current['draft'] ?? $current['graph'];
+                    $saved   = true;
+                    // Moving steps isn't an edit: it makes no draft and no version.
+                    if ( GraphSchema::same( $graph, $editing ) ) {
+                        if ( GraphSchema::layout( $graph ) !== GraphSchema::layout( $editing ) ) {
+                            $saved = WorkflowStore::save_layout( $id, $graph );
                         }
-                    } elseif ( ! $same_as_live ) {
-                        $live_graph = $changes['graph'];
+                    } elseif ( $current['everActivated'] ) {
+                        // Once turned on, the saved content only changes through Apply: edits go to the draft.
+                        // A draft edited back to the live logic is cleared, and its positions go to the live graph.
+                        $saved = GraphSchema::same( $graph, $current['graph'] )
+                            ? WorkflowStore::revert_draft( $id, $graph )
+                            : WorkflowStore::save_draft( $id, $graph );
+                    } else {
+                        $live_graph = $graph;
+                    }
+                    if ( is_wp_error( $saved ) ) {
+                        return $saved;
                     }
                 }
                 if ( null !== $name || null !== $live_graph ) {

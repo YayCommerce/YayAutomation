@@ -235,6 +235,73 @@ final class GraphShapeTest extends TestCase {
         $this->assertFalse( GraphSchema::same( self::valid(), null ) );
     }
 
+    public function test_same_graph_ignores_positions(): void {
+        $moved = self::with(
+            [ 'nodes', 2, 'position' ],
+            [
+                'x' => 120,
+                'y' => 340,
+            ]
+        );
+
+        $this->assertTrue( GraphSchema::same( self::valid(), $moved ) );
+    }
+
+    public function test_logic_and_layout_round_trip(): void {
+        $graph = GraphSchema::prepare(
+            self::with(
+                [ 'nodes', 2, 'position' ],
+                [
+                    'x' => 120,
+                    'y' => 340.5,
+                ]
+            )
+        );
+        $logic  = GraphSchema::logic( $graph );
+        $layout = GraphSchema::layout( $graph );
+
+        $this->assertArrayNotHasKey( 'position', $logic['nodes'][0] );
+        $this->assertSame( $graph['edges'], $logic['edges'] );
+        $this->assertSame(
+            [
+                'x' => 120.0,
+                'y' => 340.5,
+            ],
+            $layout['a']
+        );
+        $this->assertSame( $graph, GraphSchema::prepare( GraphSchema::with_layout( $logic, $layout ) ) );
+        $this->assertSame( $layout, GraphSchema::layout( GraphSchema::with_layout( $logic, json_decode( wp_json_encode( $layout ), true ) ) ) );
+    }
+
+    public function test_a_step_missing_from_the_layout_sits_at_0_0(): void {
+        $logic = GraphSchema::logic( GraphSchema::prepare( self::valid() ) );
+
+        $this->assertSame(
+            [
+                'x' => 0.0,
+                'y' => 0.0,
+            ],
+            GraphSchema::with_layout( $logic, [] )['nodes'][1]['position']
+        );
+    }
+
+    public function test_graph_helpers(): void {
+        $graph = self::valid();
+
+        $this->assertSame( 't', GraphSchema::trigger( $graph['nodes'] )['id'] );
+        $this->assertNull( GraphSchema::trigger( array_slice( $graph['nodes'], 1 ) ) );
+        $this->assertSame(
+            [
+                'c' => 't',
+                'a' => 'c',
+                'b' => 'c',
+            ],
+            GraphSchema::parents( $graph['edges'] )
+        );
+        $this->assertSame( [ 't', 'c', 'a', 'b' ], array_keys( GraphSchema::by_id( $graph['nodes'] ) ) );
+        $this->assertSame( 'add_order_note', GraphSchema::by_id( $graph['nodes'] )['a']['data']['block'] );
+    }
+
     public function test_new_workflow_without_graph_is_one_unchosen_trigger(): void {
         $new = Validator::prepare_new( [] );
 

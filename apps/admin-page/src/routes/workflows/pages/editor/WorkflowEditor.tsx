@@ -22,7 +22,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/sonner';
 import { ApiError, errorMessage } from '../../api/workflow.api';
 import { useWorkflowActionMutation, workflowKeys } from '../../api/workflow.query';
-import { removeNode, setNodeStep } from '../../model/graph';
+import { removeNode, sameLogic, setNodeStep } from '../../model/graph';
 import {
   createIssuesSelector,
   editedIssues,
@@ -75,8 +75,13 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
   const isActive = workflow.status === 'active';
   // Once activated, edits go into a draft (active or not), and they're draft changes as soon as
   // they're made, not only once saved. (If they end up matching the saved content, the server clears
-  // the draft and Update reports 409.) Never activated: edits change the workflow itself.
-  const hasDraft = workflow.everActivated && (workflow.draft !== null || autosave.status !== 'saved');
+  // the draft and Update reports 409.) Moving a card isn't an edit. Never activated: edits change the
+  // workflow itself.
+  const editedLogic = useStore(
+    form.store,
+    (state) => workflow.everActivated && workflow.draft === null && !sameLogic(state.values.graph, workflow.graph),
+  );
+  const hasDraft = workflow.everActivated && (workflow.draft !== null || (autosave.status !== 'saved' && editedLogic));
 
   // Reused across drag frames and compared by content, so the header re-renders only when issues change.
   // Plus what only the server checks, from the last save, until the step changes again.

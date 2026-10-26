@@ -1,11 +1,13 @@
 <?php
 namespace YayMatik\Workflow\Core\Storage;
 
+use YayMatik\Workflow\Core\Definition\GraphSchema;
+
 defined( 'ABSPATH' ) || exit;
 
 // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
-/** Rows of the `workflow_versions` table: one graph snapshot per version, dates in GMT. Writes return false on failure. */
+/** Rows of the `workflow_versions` table: one snapshot per version, logic in `graph` and step positions in `layout`, dates in GMT. Writes return false on failure. */
 final class VersionStore {
 
     public const ACTION_CREATED     = 'created';
@@ -20,7 +22,7 @@ final class VersionStore {
     }
 
     /**
-     * One version with its graph decoded, or null.
+     * One version with its logic (`graph`) and `layout` decoded, or null.
      *
      * @param int $id
      */
@@ -32,12 +34,14 @@ final class VersionStore {
         if ( ! $row ) {
             return null;
         }
-        $graph = json_decode( $row['graph'], true );
+        $graph  = json_decode( $row['graph'], true );
+        $layout = json_decode( (string) $row['layout'], true );
         return [
             'id'          => (int) $row['id'],
             'workflow_id' => (int) $row['workflow_id'],
             'action'      => $row['action'],
             'graph'       => is_array( $graph ) ? $graph : [],
+            'layout'      => is_array( $layout ) ? $layout : [],
             'user_id'     => (int) $row['user_id'],
             'created_at'  => $row['created_at'],
             'updated_at'  => $row['updated_at'],
@@ -49,7 +53,7 @@ final class VersionStore {
      *
      * @param int    $workflow_id
      * @param string $action One of the ACTION_ constants.
-     * @param array  $graph
+     * @param array  $graph From `GraphSchema::prepare()`.
      * @return int Row id; 0 when the insert failed.
      */
     public static function insert( int $workflow_id, string $action, array $graph ): int {
@@ -60,12 +64,13 @@ final class VersionStore {
             [
                 'workflow_id' => $workflow_id,
                 'action'      => $action,
-                'graph'       => wp_json_encode( $graph ),
+                'graph'       => wp_json_encode( GraphSchema::logic( $graph ) ),
+                'layout'      => wp_json_encode( GraphSchema::layout( $graph ) ),
                 'user_id'     => get_current_user_id(),
                 'created_at'  => $time,
                 'updated_at'  => $time,
             ],
-            [ '%d', '%s', '%s', '%d', '%s', '%s' ]
+            [ '%d', '%s', '%s', '%s', '%d', '%s', '%s' ]
         );
         return $ok ? (int) $wpdb->insert_id : 0;
     }
@@ -75,17 +80,29 @@ final class VersionStore {
      *
      * @param int    $id
      * @param string $action One of the ACTION_ constants.
-     * @param array  $graph
+     * @param array  $graph From `GraphSchema::prepare()`.
      */
     public static function update( int $id, string $action, array $graph ): bool {
         return self::write(
             $id,
             [
                 'action'  => $action,
-                'graph'   => wp_json_encode( $graph ),
+                'graph'   => wp_json_encode( GraphSchema::logic( $graph ) ),
+                'layout'  => wp_json_encode( GraphSchema::layout( $graph ) ),
                 'user_id' => get_current_user_id(),
             ]
         );
+    }
+
+    /**
+     * Replaces a row's step positions only; its time stays, as moving a step isn't an edit. Any row, even one runs pin.
+     *
+     * @param int   $id
+     * @param array $layout From `GraphSchema::layout()`.
+     */
+    public static function set_layout( int $id, array $layout ): bool {
+        global $wpdb;
+        return false !== $wpdb->update( self::table(), [ 'layout' => wp_json_encode( $layout ) ], [ 'id' => $id ] );
     }
 
     /**
@@ -112,7 +129,7 @@ final class VersionStore {
      *
      * @param int $workflow_id
      * @param int $page 1-based.
-     * @return array[] Rows with `graph` still JSON.
+     * @return array[] Rows with `graph` and `layout` still JSON.
      */
     public static function page( int $workflow_id, int $page ): array {
         global $wpdb;
@@ -120,7 +137,7 @@ final class VersionStore {
         return $wpdb->get_results(
             $wpdb->prepare(
                 // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-                "SELECT id, action, graph, user_id, updated_at FROM {$table} WHERE workflow_id = %d ORDER BY updated_at DESC, id DESC LIMIT %d OFFSET %d",
+                "SELECT id, action, graph, layout, user_id, updated_at FROM {$table} WHERE workflow_id = %d ORDER BY updated_at DESC, id DESC LIMIT %d OFFSET %d",
                 $workflow_id,
                 self::PER_PAGE + 1,
                 ( max( 1, $page ) - 1 ) * self::PER_PAGE

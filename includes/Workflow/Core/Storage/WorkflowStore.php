@@ -2,7 +2,7 @@
 namespace YayMatik\Workflow\Core\Storage;
 
 use YayMatik\Utils\Logger;
-use YayMatik\Workflow\Core\Steps\Step;
+use YayMatik\Workflow\Core\Definition\GraphSchema;
 use YayMatik\Workflow\Core\Steps\StepRegistry;
 
 defined( 'ABSPATH' ) || exit;
@@ -83,7 +83,7 @@ final class WorkflowStore {
                     // Null when the user has since been deleted.
                     'user'      => $user ? $user->display_name : null,
                     'createdAt' => VersionStore::to_iso( $row['updated_at'] ),
-                    'graph'     => self::decode_graph( (string) $row['graph'] ),
+                    'graph'     => self::decode_graph( (string) $row['graph'], $row['layout'] ),
                     'status'    => $status,
                 ];
             },
@@ -187,6 +187,36 @@ final class WorkflowStore {
                 $version = VersionStore::insert( $id, VersionStore::ACTION_EDITED, $graph );
                 return $version && self::write( $id, [ 'draft_version_id' => $version ] );
             }
+        );
+    }
+
+    /**
+     * Writes only the step positions, on the row being edited: the draft if there is one, else the live graph. No version, no time change.
+     *
+     * @param int   $id
+     * @param array $graph From `GraphSchema::prepare()`.
+     * @return true|\WP_Error
+     */
+    public static function save_layout( int $id, array $graph ) {
+        $row     = self::row( $id );
+        $draft   = (int) ( $row['draft_version_id'] ?? 0 );
+        $version = $draft ? $draft : (int) ( $row['live_version_id'] ?? 0 );
+        return self::transaction( fn() => $version && VersionStore::set_layout( $version, GraphSchema::layout( $graph ) ) );
+    }
+
+    /**
+     * Clears a draft edited back to the live logic; its step positions go to the live row.
+     *
+     * @param int   $id
+     * @param array $graph From `GraphSchema::prepare()`.
+     * @return true|\WP_Error
+     */
+    public static function revert_draft( int $id, array $graph ) {
+        $row = self::row( $id );
+        return self::transaction(
+            fn() => VersionStore::delete( (int) ( $row['draft_version_id'] ?? 0 ) )
+                && self::write( $id, [ 'draft_version_id' => 0 ] )
+                && VersionStore::set_layout( (int) ( $row['live_version_id'] ?? 0 ), GraphSchema::layout( $graph ) )
         );
     }
 
@@ -322,14 +352,14 @@ final class WorkflowStore {
     }
 
     /**
-     * New version row with the live graph; its id, 0 when a write failed.
+     * New version row with the live graph and layout; its id, 0 when a write failed.
      *
      * @param int    $id
      * @param string $action VersionStore::ACTION_ACTIVATED or ACTION_DEACTIVATED.
      */
     private static function copy_live( int $id, string $action ): int {
         $live = VersionStore::find( self::live_version_id( $id ) );
-        return $live ? VersionStore::insert( $id, $action, $live['graph'] ) : 0;
+        return $live ? VersionStore::insert( $id, $action, GraphSchema::with_layout( $live['graph'], $live['layout'] ) ) : 0;
     }
 
     /**
@@ -373,10 +403,10 @@ final class WorkflowStore {
         global $wpdb;
         $workflows = self::table();
         $versions  = VersionStore::table();
-        $columns   = 'w.*, l.graph AS live_graph';
+        $columns   = 'w.*, l.graph AS live_graph, l.layout AS live_layout';
         $joins     = "LEFT JOIN {$versions} l ON l.id = w.live_version_id";
         if ( $with_draft ) {
-            $columns .= ", d.graph AS draft_graph, d.updated_at AS draft_updated_at, (SELECT MAX(v.updated_at) FROM {$versions} v WHERE v.workflow_id = w.id) AS last_version_at";
+            $columns .= ", d.graph AS draft_graph, d.layout AS draft_layout, d.updated_at AS draft_updated_at, (SELECT MAX(v.updated_at) FROM {$versions} v WHERE v.workflow_id = w.id) AS last_version_at";
             $joins   .= " LEFT JOIN {$versions} d ON d.id = w.draft_version_id";
         }
         $sql = "SELECT {$columns} FROM {$workflows} w {$joins} {$where} ORDER BY w.updated_at DESC, w.id DESC";
@@ -391,8 +421,8 @@ final class WorkflowStore {
             'id'             => (string) $row['id'],
             'name'           => $row['name'],
             'status'         => $active ? 'active' : 'inactive',
-            'graph'          => self::decode_graph( (string) $row['live_graph'] ),
-            'draft'          => isset( $row['draft_graph'] ) ? self::decode_graph( $row['draft_graph'] ) : null,
+            'graph'          => self::decode_graph( (string) $row['live_graph'], $row['live_layout'] ),
+            'draft'          => isset( $row['draft_graph'] ) ? self::decode_graph( $row['draft_graph'], $row['draft_layout'] ) : null,
             'updatedAt'      => $updated_at,
             'draftUpdatedAt' => isset( $row['draft_updated_at'] ) ? VersionStore::to_iso( $row['draft_updated_at'] ) : null,
             'lastVersionAt'  => isset( $row['last_version_at'] ) ? VersionStore::to_iso( $row['last_version_at'] ) : $updated_at,
@@ -402,16 +432,16 @@ final class WorkflowStore {
     }
 
     private static function trigger_id( array $graph ): string {
-        $trigger = '';
-        foreach ( $graph['nodes'] as $node ) {
-            if ( Step::KIND_TRIGGER === $node['kind'] ) {
-                $trigger = (string) $node['data']['block'];
-            }
-        }
-        return $trigger;
+        return (string) ( GraphSchema::trigger( $graph['nodes'] )['data']['block'] ?? '' );
     }
 
-    private static function decode_graph( string $json ): array {
+    /**
+     * Logic and layout JSON → the graph with step positions.
+     *
+     * @param string      $json
+     * @param string|null $layout_json
+     */
+    private static function decode_graph( string $json, ?string $layout_json ): array {
         $graph = json_decode( $json, true );
         if ( ! is_array( $graph ) || ! is_array( $graph['nodes'] ?? null ) || ! is_array( $graph['edges'] ?? null ) ) {
             return [
@@ -428,6 +458,7 @@ final class WorkflowStore {
             }
         }
         unset( $node );
-        return $graph;
+        $layout = json_decode( (string) $layout_json, true );
+        return GraphSchema::with_layout( $graph, is_array( $layout ) ? $layout : [] );
     }
 }

@@ -75,7 +75,7 @@ final class Schema {
                 PRIMARY KEY  (id),
                 KEY status (status,trigger_id)
             )",
-            // A saved version never changes; only the draft row is edited in place.
+            // A version's logic (`graph`) never changes, only the draft row's; its `layout` may, as moving a step isn't an edit.
             "CREATE TABLE {$versions} (
                 id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
                 workflow_id bigint(20) unsigned NOT NULL,
