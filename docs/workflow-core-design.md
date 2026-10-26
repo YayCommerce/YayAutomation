@@ -126,6 +126,7 @@ Our own small template module. **No Liquid or other template library, now or lat
   - **Free vs Pro is the folder.** `includes/Pro/` holds Pro modules that extend the free ones; the free zip leaves it out, and the registry loads the Pro modules only when their classes exist.
   - An unfinished step is not registered, so it stays out of a release. No tier checks inside steps.
   - Another plugin adds its module class on the filter `yaymatik_modules`, before `init` (the registry is first read on `init`). A taken id (module, step, data item) keeps its first owner.
+  - Filters for extending core's steps and data: `yaymatik_data_item_{id}_fields` (a data item's fields, `DataItem::fields()`), `yaymatik_trigger_provides` (the data items a trigger provides, `Trigger::resolved_provides()`), `yaymatik_trigger_refs` (a trigger's scope refs, `Trigger::resolved_refs()`; a null native ref stays null).
 - **Each Yay plugin owns its steps, templates and data types**, registered into Workflow Core. **YayMatik Pro** owns templates that combine several plugins.
 - **Plugin logo (L5).** Each module gives one logo: the URL of a one-colour SVG file its plugin ships (core's in `assets/logos/`). The admin app draws it as a CSS mask in the tile's text colour. It marks who provides a step or template (template cards, library sidebar, picker), never what a step does. One per plugin, not per step.
 - **Feature directory:** a static list in core of every known step and template, its plugin, and where to install it. The editor shows "Install X to use this"; the AI uses it to suggest features.
@@ -169,7 +170,7 @@ All confirmed 2026-10-07, except L5 (2026-10-08). Reasons, rejected options and 
 | C9 | Stored causation replaces the in-memory loop guard | §3 |
 | C10 | Custom tables replace the CPT, migrated before v1.0 | §2 |
 | C11 | Scheduled / query triggers fan out per subject with `trigger_claims` | §3 |
-| L2 | Step settings defined in PHP; editor checks built from them; small generic form; core imports custom forms; plugins use `registerStepPanel` | §5 |
+| L2 | Step settings defined in PHP; editor checks built from them; small generic form; core imports custom forms; plugin steps with custom forms wait for the public API, P4 | §5 |
 | L3 | Own template module, tiers 1 → 2 → escape valve; no Liquid | §6 |
 | L4 | Jack builds everything: F0 rename, then F1 foundation before M1; F2 workflows table after M2 | [ROADMAP-dev.md](ROADMAP-dev.md) |
 | L5 | Step icons: a lucide name from core's list; plugin logos: one SVG file per plugin | §5, §8 |

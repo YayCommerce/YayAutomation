@@ -206,7 +206,7 @@ Today errors only go to the WooCommerce log, which merchants never open.
 - PHP declares each step's settings (`fields()`). The editor builds its valibot checks from them. **Validation always runs in Automation.**
 - A small generic form draws simple steps.
 - Core steps with complex forms import their own React form directly.
-- Other plugins use `registerStepPanel()`.
+- Plugin steps with custom forms wait for the public API, P4.
 
 **Why.**
 - Today each step's rules are written twice: PHP `validate()` and TS `schema.ts`, kept in sync by hand. A mismatch means the editor says OK but Activate fails, or the reverse.
@@ -236,7 +236,7 @@ Today errors only go to the WooCommerce log, which merchants never open.
 
 **For devs.**
 - Simple step: one PHP class.
-- Complex core step: PHP class + a React form passed to `defineStep()`, same props `{ config, onChange, errors }`.
+- Complex core step: PHP class + a React form passed to `defineStep()`, same props `{ config, onChange }` (`StepFormProps`).
 - Never write valibot rules for a step by hand.
 
 ## L3. Own template module, no Liquid
