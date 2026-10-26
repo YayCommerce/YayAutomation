@@ -24,7 +24,7 @@ Changes from the ROADMAP-v1.0 order:
 | F1 | Workflow Core foundation | L | 3 | F0 | ✅ Done |
 | M1 | Customer emails + coupons | L | 3 | F1 | ✅ Done |
 | M2 | Wait + run history | L | 3 | F1 | ✅ Done |
-| F2 | Workflows table | M | 3 | F1 | — |
+| F2 | Workflows table | M | 3 | F1 | ⏳ Done, merge pending |
 | M7 | Cart tracking + Settings + Health check | L | 3 | F1 | — |
 | M8 | Abandoned cart + checkout | L | 2 | M1, M2, M7 | — |
 | M3 | Review request | M | 2 | M2 | — |
@@ -167,10 +167,12 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 
 ## F2 — Workflows table · M (3–5 days)
 
-- **F2.1** `workflows` + `workflow_versions` tables; repository rewritten onto them. *(§2)*
-- **F2.2** Remove the CPT; dev data is reset (`./run.sh reset-data`), no migration.
-- **F2.3** Check: list, editor, versions and runs work on new workflows.
-- **F2.4** Split graph layout (positions) from logic in stored graphs. *(§7)*
+**Status:** ⏳ Done on `jack/feature/f2-workflows-table`, merge pending.
+
+- ⏳ **F2.1** `workflows` + `workflow_versions` tables; repository rewritten onto them. *(§2)*
+- ⏳ **F2.2** Remove the CPT; dev data is reset (`./run.sh reset-data`), no migration.
+- ⏳ **F2.3** Check: list, editor, versions and runs work on new workflows.
+- ⏳ **F2.4** Split graph layout (positions) from logic in stored graphs. *(§7)*
 
 ## M7 — Cart tracking + Settings + Health check · L · risk 3
 
@@ -178,7 +180,7 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 - **M7.1 Cart tracking** — carts table; logged-in customers and guests; email captured at checkout (classic + block).
 - **M7.2 Restore link** — refills the cart and opens checkout.
 - **M7.3 Settings** — storage and REST.
-- **M7.4 Retention and privacy** — cleanup of carts and runs; personal data exporter and eraser.
+- **M7.4 Retention and privacy** — cleanup of carts and runs, including runs of deleted workflows; personal data exporter and eraser.
 - **M7.5 Health check v1** *(§9)*.
   - Runs stuck in `queued` or `waiting` with no pending Action Scheduler job (queueing failed).
   - Runs left `running` after their recovery job died.
@@ -203,6 +205,9 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 - **M8.8 Templates UI** — "Needs cart tracking" badge, "Before you start" in the preview.
 
 **Templates:** Abandoned cart ×3, Abandoned checkout ×2.
+
+**Follow-ups**
+- A trigger's `context()` and `refs()` load the order 2–3 times per event; load it once.
 
 ## M3 — Review request · M · risk 2
 
@@ -253,7 +258,7 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 ## v1.2 — Yay ecosystem + Pro connectors · L+
 
 - **V12.1 Pro modules** — YayMatik Pro registers its modules and multi-plugin templates. *(§8)*
-- **V12.2 Yay plugins** — register their steps (through their module) and templates; custom forms wait for P4. *(§5, §8)*
+- **V12.2 Yay plugins** — register their steps (through their module) and templates; custom forms wait for P4. Handle steps from an inactive plugin softly; today they fail as "Unknown step type." *(§5, §8)*
 - **V12.3 Feature directory** — "Install X to use this" in the pickers and the template library. *(§8)*
 - **V12.4 Connector basics** — credentials store, connector settings UI.
 - **V12.5 Connectors** — webhook in, HTTP request, Slack, Google Sheets, SMS; CSV source and export.

@@ -38,6 +38,7 @@ Table names below omit the prefix: each is `{prefix}yaymatik_<name>`, e.g. `wp_y
 | `run_steps` | id, run_id, step_id, iteration, status, input, output, error, attempt, started_at, finished_at |
 
 - A run pins the version it started on.
+- Deleting a workflow deletes its versions; its runs stay until retention cleanup (M7.4).
 - Why tables, not CPT: an indexed lookup on every event instead of a `meta_query`, no JSON slashing, atomic writes, simple cleanup.
 - Tables replace the CPT before v1.0, while no merchant has data: dev data is reset (`./run.sh reset-data`), no migration.
 
