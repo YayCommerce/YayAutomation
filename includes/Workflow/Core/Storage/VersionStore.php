@@ -1,13 +1,11 @@
 <?php
 namespace YayMatik\Workflow\Core\Storage;
 
-use YayMatik\Utils\Logger;
-
 defined( 'ABSPATH' ) || exit;
 
 // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
-/** Rows of the `versions` table: one graph snapshot per version, dates in GMT. */
+/** Rows of the `workflow_versions` table: one graph snapshot per version, dates in GMT. Writes return false on failure. */
 final class VersionStore {
 
     public const ACTION_CREATED     = 'created';
@@ -18,7 +16,7 @@ final class VersionStore {
     public const PER_PAGE = 10;
 
     public static function table(): string {
-        return Schema::table( Schema::VERSIONS );
+        return Schema::table( Schema::WORKFLOW_VERSIONS );
     }
 
     /**
@@ -52,7 +50,7 @@ final class VersionStore {
      * @param int    $workflow_id
      * @param string $action One of the ACTION_ constants.
      * @param array  $graph
-     * @return int Row id; 0 when the insert failed (logged).
+     * @return int Row id; 0 when the insert failed.
      */
     public static function insert( int $workflow_id, string $action, array $graph ): int {
         global $wpdb;
@@ -69,11 +67,7 @@ final class VersionStore {
             ],
             [ '%d', '%s', '%s', '%d', '%s', '%s' ]
         );
-        if ( ! $ok ) {
-            Logger::error( 'Could not record a workflow version: ' . $wpdb->last_error, [ 'workflow_id' => $workflow_id ] );
-            return 0;
-        }
-        return (int) $wpdb->insert_id;
+        return $ok ? (int) $wpdb->insert_id : 0;
     }
 
     /**
@@ -83,8 +77,8 @@ final class VersionStore {
      * @param string $action One of the ACTION_ constants.
      * @param array  $graph
      */
-    public static function update( int $id, string $action, array $graph ): void {
-        self::write(
+    public static function update( int $id, string $action, array $graph ): bool {
+        return self::write(
             $id,
             [
                 'action'  => $action,
@@ -99,18 +93,18 @@ final class VersionStore {
      *
      * @param int $id
      */
-    public static function touch( int $id ): void {
-        self::write( $id, [] );
+    public static function touch( int $id ): bool {
+        return self::write( $id, [] );
     }
 
-    public static function delete( int $id ): void {
+    public static function delete( int $id ): bool {
         global $wpdb;
-        $wpdb->delete( self::table(), [ 'id' => $id ], [ '%d' ] );
+        return false !== $wpdb->delete( self::table(), [ 'id' => $id ], [ '%d' ] );
     }
 
-    public static function delete_for_workflow( int $workflow_id ): void {
+    public static function delete_for_workflow( int $workflow_id ): bool {
         global $wpdb;
-        $wpdb->delete( self::table(), [ 'workflow_id' => $workflow_id ], [ '%d' ] );
+        return false !== $wpdb->delete( self::table(), [ 'workflow_id' => $workflow_id ], [ '%d' ] );
     }
 
     /**
@@ -136,46 +130,15 @@ final class VersionStore {
     }
 
     /**
-     * Each workflow's newest row time, ISO 8601; workflows without rows are left out.
-     *
-     * @param int[] $workflow_ids
-     * @return array<int, string>
-     */
-    public static function last_updated( array $workflow_ids ): array {
-        global $wpdb;
-        $workflow_ids = array_map( 'intval', $workflow_ids );
-        if ( ! $workflow_ids ) {
-            return [];
-        }
-        $table = self::table();
-        $in    = implode( ',', array_fill( 0, count( $workflow_ids ), '%d' ) );
-        $rows  = $wpdb->get_results(
-            $wpdb->prepare(
-                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
-                "SELECT workflow_id, MAX(updated_at) AS updated_at FROM {$table} WHERE workflow_id IN ({$in}) GROUP BY workflow_id",
-                $workflow_ids
-            ),
-            ARRAY_A
-        );
-        $map = [];
-        foreach ( $rows as $row ) {
-            $map[ (int) $row['workflow_id'] ] = self::to_iso( $row['updated_at'] );
-        }
-        return $map;
-    }
-
-    /**
      * @param string $gmt GMT `Y-m-d H:i:s`.
      */
     public static function to_iso( string $gmt ): string {
         return ( new \DateTimeImmutable( $gmt, new \DateTimeZone( 'UTC' ) ) )->format( 'c' );
     }
 
-    private static function write( int $id, array $fields ): void {
+    private static function write( int $id, array $fields ): bool {
         global $wpdb;
         $fields['updated_at'] = current_time( 'mysql', true );
-        if ( false === $wpdb->update( self::table(), $fields, [ 'id' => $id ] ) ) {
-            Logger::error( 'Could not update a workflow version: ' . $wpdb->last_error, [ 'version_id' => $id ] );
-        }
+        return false !== $wpdb->update( self::table(), $fields, [ 'id' => $id ] );
     }
 }

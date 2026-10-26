@@ -163,12 +163,12 @@ Today errors only go to the WooCommerce log, which merchants never open.
 
 **Why.**
 - Every store event runs a `meta_query` to find active workflows. That's slow, and it runs on checkout.
-- Graph JSON in post meta needs slashing tricks (see `WorkflowRepository::write_graph()`).
+- Graph JSON in post meta needs slashing tricks.
 - Several meta writes per save can half-fail.
 
 **Rejected.** Keep the CPT and cache the trigger lookup: fixes speed, keeps the rest.
 
-**Cost.** One migration (F2). It **must ship before v1.0**: after release it would touch merchants' data. We lose WP's export tool → JSON import/export later.
+**Cost.** It **must ship before v1.0**: after release it would touch merchants' data. Nothing has shipped, so dev data is reset, no migration (F2). We lose WP's export tool → JSON import/export later.
 
 **For devs.** Workflows are read through `WorkflowStore`, never `get_posts()`.
 

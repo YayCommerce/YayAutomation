@@ -8,7 +8,7 @@
 
 use YayMatik\Workflow\Core\Runtime\Runtime;
 use YayMatik\Workflow\Core\Steps\StepRegistry;
-use YayMatik\Workflow\Core\Storage\WorkflowRepository;
+use YayMatik\Workflow\Core\Storage\WorkflowStore;
 
 /**
  * @param int    $workflow_id Workflow id.
@@ -17,7 +17,7 @@ use YayMatik\Workflow\Core\Storage\WorkflowRepository;
  * @return array|null The run row afterwards, with its `steps`; null when no run started. Both are deleted.
  */
 function yaymatik_check_run( int $workflow_id, string $trigger_id, array $event ): ?array {
-    $workflow = WorkflowRepository::find( $workflow_id );
+    $workflow = WorkflowStore::find( $workflow_id );
     $trigger  = StepRegistry::get( $trigger_id );
     if ( ! $workflow || ! $trigger instanceof YayMatik\Workflow\Core\Steps\Trigger || ! Runtime::worker() ) {
         fwrite( STDERR, "Workflow {$workflow_id} or trigger {$trigger_id} not found, or WooCommerce is off.\n" ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fwrite
@@ -48,15 +48,15 @@ function yaymatik_check_run( int $workflow_id, string $trigger_id, array $event 
  */
 function yaymatik_check_remove_workflows( string $prefix ): array {
     $left = [];
-    foreach ( WorkflowRepository::all() as $workflow ) {
+    foreach ( WorkflowStore::all() as $workflow ) {
         $name = (string) $workflow['name'];
         if ( 0 !== strpos( $name, $prefix ) || '(temporary)' !== substr( $name, -11 ) ) {
             continue;
         }
         $id = (int) $workflow['id'];
-        WorkflowRepository::deactivate( $id );
-        WorkflowRepository::delete( $id );
-        if ( WorkflowRepository::find( $id ) ) {
+        WorkflowStore::deactivate( $id );
+        WorkflowStore::delete( $id );
+        if ( WorkflowStore::find( $id ) ) {
             $left[] = $id;
         }
     }

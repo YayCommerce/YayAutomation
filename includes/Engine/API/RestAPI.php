@@ -12,7 +12,7 @@ use YayMatik\Workflow\Core\Runtime\RunPresenter;
 use YayMatik\Workflow\Core\Runtime\VersionGraphSource;
 use YayMatik\Workflow\Core\Storage\RunStepStore;
 use YayMatik\Workflow\Core\Storage\RunStore;
-use YayMatik\Workflow\Core\Storage\WorkflowRepository;
+use YayMatik\Workflow\Core\Storage\WorkflowStore;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -207,7 +207,7 @@ class RestAPI {
      * @return array|\WP_Error
      */
     private function email_input( \WP_REST_Request $request ) {
-        $workflow = WorkflowRepository::find( (int) $request['id'] );
+        $workflow = WorkflowStore::find( (int) $request['id'] );
         if ( ! $workflow ) {
             return $this->not_found();
         }
@@ -231,7 +231,7 @@ class RestAPI {
 
     /** Every workflow with its issues and run stats. */
     public function list_workflows() {
-        $workflows = WorkflowRepository::all();
+        $workflows = WorkflowStore::all();
         $stats     = RunStore::stats( array_column( $workflows, 'id' ) );
         return rest_ensure_response(
             array_map(
@@ -247,7 +247,7 @@ class RestAPI {
      * @param \WP_REST_Request $request
      */
     public function get_workflow( \WP_REST_Request $request ) {
-        $workflow = WorkflowRepository::find( (int) $request['id'] );
+        $workflow = WorkflowStore::find( (int) $request['id'] );
         return $workflow ? $workflow + [ 'issues' => Validator::list_issues( $workflow ) ] + self::stats( $workflow ) : $this->not_found();
     }
 
@@ -261,7 +261,7 @@ class RestAPI {
         if ( is_wp_error( $workflow ) ) {
             return $workflow;
         }
-        $created = WorkflowRepository::create( $workflow['name'], $workflow['graph'] );
+        $created = WorkflowStore::create( $workflow['name'], $workflow['graph'] );
         if ( is_wp_error( $created ) ) {
             return $created;
         }
@@ -291,14 +291,17 @@ class RestAPI {
                     if ( $current['everActivated'] ) {
                         $draft = $same_as_live ? null : $changes['graph'];
                         if ( ! GraphSchema::same( $draft, $current['draft'] ) ) {
-                            WorkflowRepository::save_draft( $id, $draft );
+                            $saved = WorkflowStore::save_draft( $id, $draft );
+                            if ( is_wp_error( $saved ) ) {
+                                return $saved;
+                            }
                         }
                     } elseif ( ! $same_as_live ) {
                         $live_graph = $changes['graph'];
                     }
                 }
                 if ( null !== $name || null !== $live_graph ) {
-                    return WorkflowRepository::update_live( $id, $name, $live_graph );
+                    return WorkflowStore::update_live( $id, $name, $live_graph );
                 }
                 return true;
             }
@@ -329,7 +332,7 @@ class RestAPI {
                             ]
                         );
                     }
-                    return $errors ? Validator::issues_error( $errors, 'activate' ) : WorkflowRepository::activate( $id );
+                    return $errors ? Validator::issues_error( $errors, 'activate' ) : WorkflowStore::activate( $id );
                 }
             )
         );
@@ -348,7 +351,7 @@ class RestAPI {
                 if ( 'active' !== $current['status'] ) {
                     return true;
                 }
-                $done = WorkflowRepository::deactivate( $id );
+                $done = WorkflowStore::deactivate( $id );
                 if ( true === $done ) {
                     $cancelled = Cancellation::waiting( $id, Cancellation::turned_off() );
                 }
@@ -380,7 +383,7 @@ class RestAPI {
                 if ( $errors ) {
                     return Validator::issues_error( $errors, 'apply' );
                 }
-                $done = WorkflowRepository::apply_draft( $id, $current['draft'] );
+                $done = WorkflowStore::apply_draft( $id, $current['draft'] );
                 if ( true === $done ) {
                     $cancelled = Cancellation::waiting( $id, Cancellation::updated() );
                 }
@@ -399,10 +402,7 @@ class RestAPI {
         return self::with_issues(
             $this->with_workflow(
                 (int) $request['id'],
-                function ( int $id ) {
-                    WorkflowRepository::save_draft( $id, null );
-                    return true;
-                }
+                fn( int $id ) => WorkflowStore::save_draft( $id, null )
             )
         );
     }
@@ -414,10 +414,10 @@ class RestAPI {
      */
     public function list_versions( \WP_REST_Request $request ) {
         $id = (int) $request['id'];
-        if ( ! WorkflowRepository::find( $id ) ) {
+        if ( ! WorkflowStore::find( $id ) ) {
             return $this->not_found();
         }
-        return rest_ensure_response( WorkflowRepository::versions( $id, (int) $request['page'] ) );
+        return rest_ensure_response( WorkflowStore::versions( $id, (int) $request['page'] ) );
     }
 
     /**
@@ -427,7 +427,7 @@ class RestAPI {
      */
     public function list_runs( \WP_REST_Request $request ) {
         $id = (int) $request['id'];
-        if ( ! WorkflowRepository::find( $id ) ) {
+        if ( ! WorkflowStore::find( $id ) ) {
             return $this->not_found();
         }
         $filter = [
@@ -487,7 +487,7 @@ class RestAPI {
         }
         try {
             // Read inside the lock, so the change sees what the previous request wrote.
-            $current = WorkflowRepository::find( $id );
+            $current = WorkflowStore::find( $id );
             if ( ! $current ) {
                 return $this->not_found();
             }
@@ -495,7 +495,7 @@ class RestAPI {
             if ( is_wp_error( $result ) || $result instanceof \WP_REST_Response ) {
                 return $result;
             }
-            return WorkflowRepository::find( $id ) ?? $this->not_found();
+            return WorkflowStore::find( $id ) ?? $this->not_found();
         } finally {
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
             $wpdb->query( $wpdb->prepare( 'SELECT RELEASE_LOCK( %s )', $lock ) );
@@ -519,8 +519,7 @@ class RestAPI {
                         [ 'status' => 409 ]
                     );
                 }
-                // It exists (checked under the lock), so a false here is a failed delete, not a 404.
-                if ( ! WorkflowRepository::delete( $id ) ) {
+                if ( is_wp_error( WorkflowStore::delete( $id ) ) ) {
                     return new \WP_Error( 'yaymatik_delete_failed', __( 'Couldn’t delete the workflow. Try again.', 'yaymatik' ), [ 'status' => 500 ] );
                 }
                 return rest_ensure_response( [ 'deleted' => true ] );

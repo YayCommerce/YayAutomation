@@ -18,7 +18,7 @@
 | `Core/Data/` | `DataItem`, `DataRegistry`, `Type`, `Operators`, `Ref`, `RefResolver`, `Scope`, `Template`, `Filters` |
 | `Core/Definition/` | Graph schema, `Validator`, `Catalog` (steps, fields, outputs, data types → admin app and AI) |
 | `Core/Runtime/` | `Dispatcher`, `Executor`, `Worker`, `Runtime`, `Cancellation`; planned: `Scheduler`, `Retention` |
-| `Core/Storage/` | Tables, upgrades, `WorkflowRepository`, `VersionStore`, `RunStore` |
+| `Core/Storage/` | Tables, upgrades, `WorkflowStore`, `VersionStore`, `RunStore` |
 | `Core/Email/`, `Core/Coupon/` | Email rendering and unsubscribe; coupon writing |
 | `AI/` | Provider interface and AI features (v2.0) |
 
@@ -33,13 +33,13 @@ Table names below omit the prefix: each is `{prefix}yaymatik_<name>`, e.g. `wp_y
 | Table | Columns (main) |
 |---|---|
 | `workflows` | id, name, status, trigger_id, live_version_id, draft_version_id, activated_at, created_at, updated_at · index (status, trigger_id) |
-| `workflow_versions` | id, workflow_id, action, graph, user_id, created_at. A saved version never changes; only the draft row is edited in place |
+| `workflow_versions` | id, workflow_id, action, graph, user_id, created_at, updated_at. A saved version never changes; only the draft row is edited in place |
 | `runs` | id, workflow_id, version_id, trigger_id, subject, status, position, scope, wait_until, error, parent_run_id, root_run_id, depth, started_at, finished_at |
 | `run_steps` | id, run_id, step_id, iteration, status, input, output, error, attempt, started_at, finished_at |
 
 - A run pins the version it started on.
 - Why tables, not CPT: an indexed lookup on every event instead of a `meta_query`, no JSON slashing, atomic writes, simple cleanup.
-- The CPT migration must ship before v1.0. After release it would touch merchants' data.
+- Tables replace the CPT before v1.0, while no merchant has data: dev data is reset (`./run.sh reset-data`), no migration.
 
 ## §3 Runtime · C4, C5, C9, C11, P3
 
@@ -168,7 +168,7 @@ All confirmed 2026-10-07, except L5 (2026-10-08). Reasons, rejected options and 
 | C7 | Step outputs, scopes, typed data with relations | §4 |
 | C8 | Runs pin a version; saved versions never change | §2 |
 | C9 | Stored causation replaces the in-memory loop guard | §3 |
-| C10 | Custom tables replace the CPT, migrated before v1.0 | §2 |
+| C10 | Custom tables replace the CPT before v1.0; dev data reset, no migration | §2 |
 | C11 | Scheduled / query triggers fan out per subject with `trigger_claims` | §3 |
 | L2 | Step settings defined in PHP; editor checks built from them; small generic form; core imports custom forms; plugin steps with custom forms wait for the public API, P4 | §5 |
 | L3 | Own template module, tiers 1 → 2 → escape valve; no Liquid | §6 |
