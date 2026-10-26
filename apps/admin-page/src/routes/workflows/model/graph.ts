@@ -90,6 +90,33 @@ export function moveNode(graph: WorkflowGraph, nodeId: string, position: { x: nu
   };
 }
 
+/**
+ * Same steps, settings and links; where the cards sit doesn't count. Compares configs as given, while PHP
+ * `GraphSchema::same()` sanitizes them first, so it may see a change the server won't.
+ */
+export function sameLogic(a: WorkflowGraph, b: WorkflowGraph) {
+  return logicKey(a) === logicKey(b);
+}
+
+function logicKey(graph: WorkflowGraph) {
+  return JSON.stringify(
+    sortedKeys({ nodes: graph.nodes.map(({ id, kind, data }) => ({ id, kind, data })), edges: graph.edges }),
+  );
+}
+
+/** Config objects may list their keys in any order, so they're sorted before comparing. */
+function sortedKeys(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(sortedKeys);
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.keys(value)
+        .sort()
+        .map((key) => [key, sortedKeys((value as Record<string, unknown>)[key])]),
+    );
+  }
+  return value;
+}
+
 /** Applies `change` to one node's data. */
 function updateNodeData(
   graph: WorkflowGraph,

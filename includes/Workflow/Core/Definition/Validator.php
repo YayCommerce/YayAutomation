@@ -189,8 +189,8 @@ final class Validator {
 
         // Data items the steps can read. Unknown until a trigger is chosen; no_trigger covers that case.
         $available = $trigger_step ? array_merge( $trigger_step->resolved_provides(), DataRegistry::ALWAYS ) : null;
-        $by_id     = array_column( $nodes, null, 'id' );
-        $parents   = array_column( $workflow['graph']['edges'], 'source', 'target' );
+        $by_id     = GraphSchema::by_id( $nodes );
+        $parents   = GraphSchema::parents( $workflow['graph']['edges'] );
         foreach ( $nodes as $node ) {
             $error = self::step_error( $node, $available, $by_id, self::ancestors( $node['id'], $parents ) );
             if ( $error ) {
@@ -219,8 +219,8 @@ final class Validator {
             }
         }
 
-        $by_id   = array_column( $graph['nodes'], null, 'id' );
-        $parents = array_column( $graph['edges'], 'source', 'target' );
+        $by_id   = GraphSchema::by_id( $graph['nodes'] );
+        $parents = GraphSchema::parents( $graph['edges'] );
         // `ancestors()` walks up from the step, so reverse it to list from the trigger down.
         foreach ( array_reverse( array_keys( self::ancestors( $node_id, $parents ) ) ) as $id ) {
             $node = $by_id[ $id ] ?? null;
@@ -274,12 +274,8 @@ final class Validator {
      * @param array[] $nodes
      */
     private static function trigger_step( array $nodes ): ?Step {
-        foreach ( $nodes as $node ) {
-            if ( Step::KIND_TRIGGER === $node['kind'] ) {
-                return $node['data']['block'] ? StepRegistry::get( $node['data']['block'] ) : null;
-            }
-        }
-        return null;
+        $block = GraphSchema::trigger( $nodes )['data']['block'] ?? null;
+        return $block ? StepRegistry::get( $block ) : null;
     }
 
     /**
@@ -426,7 +422,7 @@ final class Validator {
      * @return string[]
      */
     public static function steps_above( array $graph, string $node_id ): array {
-        $parents = array_column( $graph['edges'], 'source', 'target' );
+        $parents = GraphSchema::parents( $graph['edges'] );
         return array_map( 'strval', array_reverse( array_keys( self::ancestors( $node_id, $parents ) ) ) );
     }
 
@@ -466,13 +462,9 @@ final class Validator {
      * @param array $graph
      */
     private static function reachable( array $graph ): array {
-        $queue = [];
-        foreach ( $graph['nodes'] as $node ) {
-            if ( Step::KIND_TRIGGER === $node['kind'] ) {
-                $queue[] = $node['id'];
-            }
-        }
-        $seen = [];
+        $trigger = GraphSchema::trigger( $graph['nodes'] );
+        $queue   = $trigger ? [ $trigger['id'] ] : [];
+        $seen    = [];
         while ( $queue ) {
             $id = array_shift( $queue );
             if ( isset( $seen[ $id ] ) ) {

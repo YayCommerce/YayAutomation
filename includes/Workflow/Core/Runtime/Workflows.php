@@ -3,7 +3,7 @@ namespace YayMatik\Workflow\Core\Runtime;
 
 defined( 'ABSPATH' ) || exit;
 
-/** The workflow operations of the Dispatcher and Worker, over `WorkflowRepository`. */
+/** The workflow operations of the Dispatcher and Worker, over `WorkflowStore`. */
 interface Workflows {
 
     /**

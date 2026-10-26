@@ -266,7 +266,7 @@ try {
     $ok( $notes( wc_get_order( $order->get_id() ) ) === $before, 'off before the job: no step ran' );
 
     // 6. Recovery on the real table: a run left `running` with its step `running` (its job died).
-    $workflow = YayMatik\Workflow\Core\Storage\WorkflowRepository::find( $created_wf );
+    $workflow = YayMatik\Workflow\Core\Storage\WorkflowStore::find( $created_wf );
     $run_id   = Runtime::dispatcher()->start_run( $workflow, StepRegistry::get( 'order_created' ), [ 'order_id' => $order->get_id() ] );
     as_unschedule_all_actions( ActionSchedulerQueue::HOOK, [ $run_id ], ActionSchedulerQueue::GROUP );
     RunStore::claim( $run_id );
@@ -392,7 +392,7 @@ try {
     $after = RunStore::find( (int) $run['id'] );
     $step  = RunStepStore::for_run( (int) $run['id'] )[0] ?? [];
     $ok( 1 === ( $off['cancelledRuns'] ?? null ) && 0 === $off['waitingRuns'], 'deactivate: cancelledRuns 1, none waiting' );
-    $ok( 'cancelled' === $after['status'] && 'The workflow was turned off.' === $after['error'] && null === $after['wait_until'] && null !== $after['finished_at'], 'deactivate: run cancelled with the reason, no wait_until' );
+    $ok( 'cancelled' === $after['status'] && 'The workflow was deactivated.' === $after['error'] && null === $after['wait_until'] && null !== $after['finished_at'], 'deactivate: run cancelled with the reason, no wait_until' );
     $ok( 'cancelled' === ( $step['status'] ?? '' ) && null !== $step['finished_at'], 'deactivate: its waiting step row cancelled' );
     $before = $notes( wc_get_order( $order->get_id() ) );
     if ( $job ) {
@@ -413,6 +413,29 @@ try {
     ( new RepositoryWorkflows() )->deactivate( $wait_wf );
     $ok( 'cancelled' === RunStore::find( (int) $run['id'] )['status'], 'pause: waiting run cancelled' );
 
+    // Another connection holds the workflow lock: the pause waits 10 s, logs and leaves it on.
+    $call( 'POST', "workflows/{$wait_wf}/activate" );
+    $holder = new wpdb( DB_USER, DB_PASSWORD, DB_NAME, DB_HOST );
+    $lock   = "{$wpdb->prefix}yaymatik_workflow_{$wait_wf}";
+    $holder->get_var( $holder->prepare( 'SELECT GET_LOCK( %s, 0 )', $lock ) );
+    $logged = [];
+    $log    = function ( $message ) use ( &$logged ) {
+        $logged[] = $message;
+        return $message;
+    };
+    add_filter( 'woocommerce_logger_log_message', $log );
+    ( new RepositoryWorkflows() )->deactivate( $wait_wf );
+    remove_filter( 'woocommerce_logger_log_message', $log );
+    $holder->get_var( $holder->prepare( 'SELECT RELEASE_LOCK( %s )', $lock ) );
+    $ok( YayMatik\Workflow\Core\Storage\WorkflowStore::is_active( $wait_wf ) && preg_grep( "/Workflow {$wait_wf} not turned off: could not take its lock/", $logged ), 'pause: lock held → logged, still active' );
+
+    // Already turned off by REST: the pause records no second version.
+    $call( 'POST', "workflows/{$wait_wf}/deactivate" );
+    $versions = fn() => count( YayMatik\Workflow\Core\Storage\WorkflowStore::versions( $wait_wf, 1 )['items'] );
+    $before   = $versions();
+    ( new RepositoryWorkflows() )->deactivate( $wait_wf );
+    $ok( $versions() === $before, 'pause: already off, no new version' );
+
     // 13. Turned off mid-run: the step running finishes, the next one never starts.
     $two_wf   = $create(
         'two notes',
@@ -427,7 +450,7 @@ try {
     );
     $turn_off = function ( $note_id ) use ( $two_wf ) {
         if ( false !== strpos( (string) get_comment_text( $note_id ), 'Check-runs: one' ) ) {
-            YayMatik\Workflow\Core\Storage\WorkflowRepository::deactivate( $two_wf );
+            YayMatik\Workflow\Core\Storage\WorkflowStore::deactivate( $two_wf );
         }
     };
     add_action( 'woocommerce_order_note_added', $turn_off );
@@ -438,7 +461,7 @@ try {
     $run  = $runs ? $run_job( $runs[0] ) : null;
     remove_action( 'woocommerce_order_note_added', $turn_off );
     $all = $notes( wc_get_order( $order->get_id() ) );
-    $ok( $run && 'cancelled' === $run['status'] && 'The workflow was turned off.' === $run['error'], 'mid-run: run cancelled when turned off' );
+    $ok( $run && 'cancelled' === $run['status'] && 'The workflow was deactivated.' === $run['error'], 'mid-run: run cancelled when turned off' );
     $ok( in_array( 'Check-runs: one', $all, true ) && ! in_array( 'Check-runs: two', $all, true ), 'mid-run: the next step never ran' );
     $ok( $run && [ 'one' => 'completed' ] === array_column( RunStepStore::for_run( (int) $run['id'] ), 'status', 'step_id' ), 'mid-run: only the first step has a row' );
 } catch ( Throwable $e ) {

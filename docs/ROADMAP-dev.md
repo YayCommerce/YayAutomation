@@ -14,7 +14,7 @@ Sizes are proposals until Jack estimates after M1, as ROADMAP-v1.0 says. **S** �
 
 Changes from the ROADMAP-v1.0 order:
 - **F0 and F1 come first.** M1 needs step outputs, templates and the new step contract. M2 needs stored runs. Building M1/M2 on the v0.1 runner means building them twice.
-- **F2 comes after M2.** The CPT → table migration must ship before v1.0, while there's no merchant data yet.
+- **F2 comes after M2.** Tables replace the CPT before v1.0, while there's no merchant data yet: dev data is reset, no migration.
 - **M6 stays after M8.** The inactive-customer trigger reuses M8's scheduled scan.
 - **Identity inside F1** *([plan-identity](plan-identity.md))*: F1 backend first, so the restyle reads step icons and summaries from the new catalog; then the restyle (phase 1, built on `jack/feature/identity-phase-1`: screens, cards and wording; PHP step wording only); then the forms (phase 2, with F1.9–F1.12), built once in the new style. Nothing is built twice.
 
@@ -23,8 +23,8 @@ Changes from the ROADMAP-v1.0 order:
 | F0 | Move and rename | S | 1 | — | ✅ Done |
 | F1 | Workflow Core foundation | L | 3 | F0 | ✅ Done |
 | M1 | Customer emails + coupons | L | 3 | F1 | ✅ Done |
-| M2 | Wait + run history | L | 3 | F1 | ⏳ Merge pending |
-| F2 | Workflows table | M | 3 | F1 | — |
+| M2 | Wait + run history | L | 3 | F1 | ✅ Done |
+| F2 | Workflows table | M | 3 | F1 | ⏳ Done, merge pending |
 | M7 | Cart tracking + Settings + Health check | L | 3 | F1 | — |
 | M8 | Abandoned cart + checkout | L | 2 | M1, M2, M7 | — |
 | M3 | Review request | M | 2 | M2 | — |
@@ -65,7 +65,7 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 - ✅ **F1.0 PHPUnit** *([plan-infra](plan-infra.md))* — plain unit tests, no WordPress loaded (`dev/tools/phpunit`); CI step. First tests: template parser, Validator v2, Scope.
 - ✅ **F1.1 Storage** *(§2)*
   - `runs`, `run_steps` tables with upgrades.
-  - Saved versions never change; runs pin their version.
+  - A version's logic never changes (its layout may); runs pin their version.
 - ✅ **F1.2 Data layer v2** *(§4)*
   - Types incl. boolean, money, list, entity.
   - Entity types order, customer, site with relations (`order.customer`, `order.items`).
@@ -95,7 +95,7 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
   - Generic `StepForm` with widgets: text, textarea, emails, select, multiselect, toggle, number, notice.
   - Read-only lines (e.g. "From" in Send internal email) use `notice`, not a new widget *([plan-identity](plan-identity.md))*.
   - valibot rules built from the catalog.
-  - `defineStep( { id, Form } )` for core; internal `registerStepPanel`.
+  - `defineStep( { id, Form } )` for core.
 - ✅ **F1.10 Port the 7 steps**
   - The 6 built steps' simple forms move to the generic form; their `schema.ts` / `Form.tsx` are deleted. The 3 coming-soon steps (Send email, Generate coupon, Wait) keep their custom forms on the shared widgets until M1 / M2.
   - Condition keeps its custom form, using the `rules` field type, written as a sentence *([plan-identity](plan-identity.md))*.
@@ -139,7 +139,7 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 
 ## M2 — Wait + run history · L · risk 3
 
-**Status:** ⏳ Done, merge pending. Backend merged (PR #26, `22bf12a`); UI (M2.6–M2.10) on `jack/feature/m2b-runs-ui` (PR B).
+**Status:** ✅ Done. Backend (PR #26, `22bf12a`) and UI (PR #27, `acb2acc`, M2.6–M2.10) merged into `develop`.
 
 **Backend**
 - ✅ **M2.1 Wait step** — number + unit (minutes, hours, days, weeks), a whole number up to a year; the run moves to waiting and resumes through Action Scheduler.
@@ -149,13 +149,13 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 - ✅ **M2.5 Email block: product grid** — cross-sell / upsell sources; `order.has_cross_sells` / `has_upsells`, `customer.paid_order_count`.
 
 **UI**
-- ⏳ **M2.6 Wait** — form and card ("Wait 1 hour", clock icon).
-- ⏳ **M2.7 Overview: runs table** — started, subject, status, steps run; loading and empty states.
-- ⏳ **M2.8 Run detail** — each step with result and time; links to the order (customer links with M4).
-- ⏳ **M2.9 Deactivate / Update dialog** — says how many waiting runs will be cancelled.
-- ⏳ **M2.10 Workflow list** — Runs and Last run columns, status filter.
+- ✅ **M2.6 Wait** — form and card ("Wait 1 hour", clock icon).
+- ✅ **M2.7 Overview: runs table** — started, subject, status, steps run; loading and empty states.
+- ✅ **M2.8 Run detail** — each step with result and time; links to the order (customer links with M4).
+- ✅ **M2.9 Deactivate / Update dialog** — says how many waiting runs will be cancelled.
+- ✅ **M2.10 Workflow list** — Runs and Last run columns, status filter.
 
-**Templates:** ⏳ Cross-sell / upsell ×4, installable since PR A, checked end to end in PR B (wait, email with product grid, cancel on Deactivate).
+**Templates:** ✅ Cross-sell / upsell ×4, installable since PR A, checked end to end in PR B (wait, email with product grid, cancel on Deactivate).
 
 **Follow-ups**
 - Kit Pagination (`components/ui/pagination.tsx`) has hard-coded English ("Page X of Y", "Go to") → M9.2.
@@ -167,10 +167,12 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 
 ## F2 — Workflows table · M (3–5 days)
 
-- **F2.1** `workflows` + `workflow_versions` tables; repository rewritten onto them. *(§2)*
-- **F2.2** One-time migration from the CPT, then remove the CPT.
-- **F2.3** Check: list, editor, versions and runs work on migrated workflows.
-- **F2.4** Split graph layout (positions) from logic in stored graphs. *(§7)*
+**Status:** ⏳ Done on `jack/feature/f2-workflows-table`, merge pending.
+
+- ⏳ **F2.1** `workflows` + `workflow_versions` tables; repository rewritten onto them. *(§2)*
+- ⏳ **F2.2** Remove the CPT; dev data is reset (`./run.sh reset-data`), no migration.
+- ⏳ **F2.3** Check: list, editor, versions and runs work on new workflows.
+- ⏳ **F2.4** Split graph layout (positions) from logic in stored graphs. *(§7)*
 
 ## M7 — Cart tracking + Settings + Health check · L · risk 3
 
@@ -178,7 +180,7 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 - **M7.1 Cart tracking** — carts table; logged-in customers and guests; email captured at checkout (classic + block).
 - **M7.2 Restore link** — refills the cart and opens checkout.
 - **M7.3 Settings** — storage and REST.
-- **M7.4 Retention and privacy** — cleanup of carts and runs; personal data exporter and eraser.
+- **M7.4 Retention and privacy** — cleanup of carts and runs, including runs of deleted workflows; personal data exporter and eraser.
 - **M7.5 Health check v1** *(§9)*.
   - Runs stuck in `queued` or `waiting` with no pending Action Scheduler job (queueing failed).
   - Runs left `running` after their recovery job died.
@@ -203,6 +205,9 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 - **M8.8 Templates UI** — "Needs cart tracking" badge, "Before you start" in the preview.
 
 **Templates:** Abandoned cart ×3, Abandoned checkout ×2.
+
+**Follow-ups**
+- A trigger's `context()` and `refs()` load the order 2–3 times per event; load it once.
 
 ## M3 — Review request · M · risk 2
 
@@ -234,6 +239,9 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 - **M9.3** Leave unfinished steps unregistered for the release; check plugin logos load (CSS mask) when assets come from a CDN. *(§8)*
 - **M9.4** Release checklist items picked in ROADMAP-v1.0.
 
+**Follow-ups**
+- Delete `dev/scripts/reset-data.sh` once every dev site has run it (F2).
+
 ---
 
 ## v1.1 — Control flow · L+
@@ -250,7 +258,7 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 ## v1.2 — Yay ecosystem + Pro connectors · L+
 
 - **V12.1 Pro modules** — YayMatik Pro registers its modules and multi-plugin templates. *(§8)*
-- **V12.2 Yay plugins** — register their steps and templates through the internal registry and `registerStepPanel`. *(§5)*
+- **V12.2 Yay plugins** — register their steps (through their module) and templates; custom forms wait for P4. Handle steps from an inactive plugin softly; today they fail as "Unknown step type." *(§5, §8)*
 - **V12.3 Feature directory** — "Install X to use this" in the pickers and the template library. *(§8)*
 - **V12.4 Connector basics** — credentials store, connector settings UI.
 - **V12.5 Connectors** — webhook in, HTTP request, Slack, Google Sheets, SMS; CSV source and export.
@@ -268,7 +276,7 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 
 After the Pro connectors and Yay integrations are stable. *(§10)*
 
-- Freeze the registry, the step contract and `registerStepPanel` as v1.
+- Freeze the registry and the step contract as v1; plugin steps get custom forms.
 - Developer docs and an example add-on.
 
 ---

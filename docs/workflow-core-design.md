@@ -18,7 +18,7 @@
 | `Core/Data/` | `DataItem`, `DataRegistry`, `Type`, `Operators`, `Ref`, `RefResolver`, `Scope`, `Template`, `Filters` |
 | `Core/Definition/` | Graph schema, `Validator`, `Catalog` (steps, fields, outputs, data types → admin app and AI) |
 | `Core/Runtime/` | `Dispatcher`, `Executor`, `Worker`, `Runtime`, `Cancellation`; planned: `Scheduler`, `Retention` |
-| `Core/Storage/` | Tables, upgrades, `WorkflowRepository`, `VersionStore`, `RunStore` |
+| `Core/Storage/` | Tables, upgrades, `WorkflowStore`, `VersionStore`, `RunStore` |
 | `Core/Email/`, `Core/Coupon/` | Email rendering and unsubscribe; coupon writing |
 | `AI/` | Provider interface and AI features (v2.0) |
 
@@ -33,13 +33,14 @@ Table names below omit the prefix: each is `{prefix}yaymatik_<name>`, e.g. `wp_y
 | Table | Columns (main) |
 |---|---|
 | `workflows` | id, name, status, trigger_id, live_version_id, draft_version_id, activated_at, created_at, updated_at · index (status, trigger_id) |
-| `workflow_versions` | id, workflow_id, action, graph, user_id, created_at. A saved version never changes; only the draft row is edited in place |
+| `workflow_versions` | id, workflow_id, action, graph (logic), layout (step positions), user_id, created_at, updated_at. A version's logic never changes; its layout may. Only the draft row's logic is edited in place |
 | `runs` | id, workflow_id, version_id, trigger_id, subject, status, position, scope, wait_until, error, parent_run_id, root_run_id, depth, started_at, finished_at |
 | `run_steps` | id, run_id, step_id, iteration, status, input, output, error, attempt, started_at, finished_at |
 
 - A run pins the version it started on.
+- Deleting a workflow deletes its versions; its runs stay until retention cleanup (M7.4).
 - Why tables, not CPT: an indexed lookup on every event instead of a `meta_query`, no JSON slashing, atomic writes, simple cleanup.
-- The CPT migration must ship before v1.0. After release it would touch merchants' data.
+- Tables replace the CPT before v1.0, while no merchant has data: dev data is reset (`./run.sh reset-data`), no migration.
 
 ## §3 Runtime · C4, C5, C9, C11, P3
 
@@ -51,7 +52,7 @@ Table names below omit the prefix: each is `{prefix}yaymatik_<name>`, e.g. `wp_y
 - **Errors.** Each step has a policy: stop the run (default) or continue. Retries come in v1.1.
 - **Loop safety.** `parent_run_id`, `root_run_id`, `depth` replace the in-memory chain. A workflow never starts again inside its own chain; max depth 5; a max loop size. Rate limits per workflow, per 60 s, pause (turn off) a runaway workflow: 100 runs started by other runs (a loop always has a parent), or 1000 runs in all. Runs from plain events only count toward the 1000, so a bulk edit of hundreds of orders never pauses a workflow.
 - **Scheduled and query triggers.** A schedule fans out to one run per matching subject, in batches. `trigger_claims` stops duplicates ("once per customer per 90 days"). This generalises the `_yaymatik_order_created` order meta in `OrderCreated::claim()`.
-- **Cancel.** Deactivate, Update (Apply) and the rate-limit pause cancel waiting runs (v1.0 rule) in one place, `Cancellation::waiting()`, under the workflow lock for the REST calls: it selects the waiting runs, cancels those still waiting in one UPDATE, then marks their waiting step rows `cancelled`. Deactivate and Apply return the count (`cancelledRuns`). The runs' Action Scheduler jobs stay; when one fires it can't take the run and does nothing. Apply leaves queued and running runs on their pinned version.
+- **Cancel.** Deactivate, Update (Apply) and the rate-limit pause cancel waiting runs (v1.0 rule) in one place, `Cancellation::waiting()`, under the workflow lock (`WorkflowStore::locked()`, shared by REST and the rate-limit pause; a pause that can't take it is logged, and the workflow stays paused for the rest of the request): it selects the waiting runs, cancels those still waiting in one UPDATE, then marks their waiting step rows `cancelled`. Deactivate and Apply return the count (`cancelledRuns`). The runs' Action Scheduler jobs stay; when one fires it can't take the run and does nothing. Apply leaves queued and running runs on their pinned version.
 - **Stop right away.** Before each step, and after saving a wait, the Executor reads the workflow's status fresh (not from the object cache); once it is off, the run ends `cancelled` ("The workflow was deactivated."). A run that ends this way, or before its first step, closes its open step rows (`running`, `waiting`).
 - **Known limit.** Action Scheduler fails a job still running after its timeout (~5 min). If a step is still running then, a recovery job can take the run while the old worker is alive. Slices stay far below that (~20 s), so only a single very slow step can hit it.
 
@@ -117,7 +118,7 @@ Our own small template module. **No Liquid or other template library, now or lat
 
 - One parent per step. Condition branches `then` / `otherwise`; Switch has N handles; For each has `body` and `done`.
 - **Branches never merge.** Shared steps go in a separate workflow started by Call workflow.
-- Stored JSON gets `schemaVersion`, with logic kept apart from layout (positions).
+- A version's `graph` holds the logic (`schemaVersion`, steps without positions, links); its `layout` holds step positions by step id. REST and the editor get one graph with `position` on each step. Logic alone decides drafts and versions: moving a card rewrites only the layout of the row being edited (`WorkflowStore::save_layout()`), and Activate / Deactivate copy the layout to the new version.
 
 ## §8 Modules and the Yay ecosystem · P1, P2
 
@@ -126,6 +127,7 @@ Our own small template module. **No Liquid or other template library, now or lat
   - **Free vs Pro is the folder.** `includes/Pro/` holds Pro modules that extend the free ones; the free zip leaves it out, and the registry loads the Pro modules only when their classes exist.
   - An unfinished step is not registered, so it stays out of a release. No tier checks inside steps.
   - Another plugin adds its module class on the filter `yaymatik_modules`, before `init` (the registry is first read on `init`). A taken id (module, step, data item) keeps its first owner.
+  - Filters for extending core's steps and data: `yaymatik_data_item_{id}_fields` (a data item's fields, `DataItem::fields()`), `yaymatik_trigger_provides` (the data items a trigger provides, `Trigger::resolved_provides()`), `yaymatik_trigger_refs` (a trigger's scope refs, `Trigger::resolved_refs()`; a null native ref stays null).
 - **Each Yay plugin owns its steps, templates and data types**, registered into Workflow Core. **YayMatik Pro** owns templates that combine several plugins.
 - **Plugin logo (L5).** Each module gives one logo: the URL of a one-colour SVG file its plugin ships (core's in `assets/logos/`). The admin app draws it as a CSS mask in the tile's text colour. It marks who provides a step or template (template cards, library sidebar, picker), never what a step does. One per plugin, not per step.
 - **Feature directory:** a static list in core of every known step and template, its plugin, and where to install it. The editor shows "Install X to use this"; the AI uses it to suggest features.
@@ -165,11 +167,11 @@ All confirmed 2026-10-07, except L5 (2026-10-08). Reasons, rejected options and 
 | C5 | Runs execute in slices with a row lock | §3 |
 | C6 | Scope stores refs, loaded lazily, plus trigger-time snapshots | §4 |
 | C7 | Step outputs, scopes, typed data with relations | §4 |
-| C8 | Runs pin a version; saved versions never change | §2 |
+| C8 | Runs pin a version; a version's logic never changes (its layout may) | §2 |
 | C9 | Stored causation replaces the in-memory loop guard | §3 |
-| C10 | Custom tables replace the CPT, migrated before v1.0 | §2 |
+| C10 | Custom tables replace the CPT before v1.0; dev data reset, no migration | §2 |
 | C11 | Scheduled / query triggers fan out per subject with `trigger_claims` | §3 |
-| L2 | Step settings defined in PHP; editor checks built from them; small generic form; core imports custom forms; plugins use `registerStepPanel` | §5 |
+| L2 | Step settings defined in PHP; editor checks built from them; small generic form; core imports custom forms; plugin steps with custom forms wait for the public API, P4 | §5 |
 | L3 | Own template module, tiers 1 → 2 → escape valve; no Liquid | §6 |
 | L4 | Jack builds everything: F0 rename, then F1 foundation before M1; F2 workflows table after M2 | [ROADMAP-dev.md](ROADMAP-dev.md) |
 | L5 | Step icons: a lucide name from core's list; plugin logos: one SVG file per plugin | §5, §8 |

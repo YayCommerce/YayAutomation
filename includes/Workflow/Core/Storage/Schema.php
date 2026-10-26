@@ -10,13 +10,14 @@ defined( 'ABSPATH' ) || exit;
 final class Schema {
 
     // Bump when a table below changes; dbDelta() then upgrades the tables on the next load.
-    private const DB_VERSION        = '3';
+    private const DB_VERSION        = '4';
     private const DB_VERSION_OPTION = 'yaymatik_db_version';
 
-    public const VERSIONS     = 'versions';
-    public const RUNS         = 'runs';
-    public const RUN_STEPS    = 'run_steps';
-    public const UNSUBSCRIBES = 'unsubscribes';
+    public const WORKFLOWS         = 'workflows';
+    public const WORKFLOW_VERSIONS = 'workflow_versions';
+    public const RUNS              = 'runs';
+    public const RUN_STEPS         = 'run_steps';
+    public const UNSUBSCRIBES      = 'unsubscribes';
 
     /**
      * @param string $name One of the table constants.
@@ -37,7 +38,7 @@ final class Schema {
         $charset = $wpdb->get_charset_collate();
         dbDelta( array_map( fn( string $columns ) => $columns . " {$charset};", self::tables() ) );
         // Without every table, keep the old version so the next load tries again.
-        foreach ( [ self::VERSIONS, self::RUNS, self::RUN_STEPS, self::UNSUBSCRIBES ] as $name ) {
+        foreach ( [ self::WORKFLOWS, self::WORKFLOW_VERSIONS, self::RUNS, self::RUN_STEPS, self::UNSUBSCRIBES ] as $name ) {
             $table = self::table( $name );
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- install check, runs once per DB version.
             if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $table ) ) ) !== $table ) {
@@ -53,17 +54,34 @@ final class Schema {
      * `trigger` and `cursor` are MySQL reserved words, hence `trigger_id` and `position`.
      */
     private static function tables(): array {
-        $versions = self::table( self::VERSIONS );
-        $runs     = self::table( self::RUNS );
-        $steps    = self::table( self::RUN_STEPS );
-        $unsubs   = self::table( self::UNSUBSCRIBES );
+        $workflows = self::table( self::WORKFLOWS );
+        $versions  = self::table( self::WORKFLOW_VERSIONS );
+        $runs      = self::table( self::RUNS );
+        $steps     = self::table( self::RUN_STEPS );
+        $unsubs    = self::table( self::UNSUBSCRIBES );
         return [
-            // A saved version never changes; only the draft row is edited in place.
+            // `trigger_id` is the live graph's trigger. A draft exists only once turned on (`activated_at`
+            // set); never turned on, edits go to the live row in place.
+            "CREATE TABLE {$workflows} (
+                id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+                name text NOT NULL,
+                status varchar(20) NOT NULL,
+                trigger_id varchar(100) NOT NULL DEFAULT '',
+                live_version_id bigint(20) unsigned NOT NULL DEFAULT 0,
+                draft_version_id bigint(20) unsigned NOT NULL DEFAULT 0,
+                activated_at datetime NULL,
+                created_at datetime NOT NULL,
+                updated_at datetime NOT NULL,
+                PRIMARY KEY  (id),
+                KEY status (status,trigger_id)
+            )",
+            // A version's logic (`graph`) never changes, only the draft row's; its `layout` may, as moving a step isn't an edit.
             "CREATE TABLE {$versions} (
                 id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
                 workflow_id bigint(20) unsigned NOT NULL,
                 action varchar(20) NOT NULL,
                 graph longtext NOT NULL,
+                layout longtext NULL,
                 user_id bigint(20) unsigned NOT NULL DEFAULT 0,
                 created_at datetime NOT NULL,
                 updated_at datetime NOT NULL,

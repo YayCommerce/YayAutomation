@@ -6,6 +6,7 @@ use YayMatik\Workflow\Core\Data\DataRegistry;
 use YayMatik\Workflow\Core\Data\GoneEntity;
 use YayMatik\Workflow\Core\Data\RefResolver;
 use YayMatik\Workflow\Core\Data\Scope;
+use YayMatik\Workflow\Core\Definition\GraphSchema;
 use YayMatik\Workflow\Core\Steps\Condition;
 use YayMatik\Workflow\Core\Steps\Step;
 use YayMatik\Workflow\Core\Steps\StepRegistry;
@@ -113,14 +114,14 @@ final class Executor {
         if ( ! $graph || ! is_array( $graph['nodes'] ?? null ) ) {
             return $this->fail( $id, null, null, __( 'The workflow version this run started on no longer exists.', 'yaymatik' ) );
         }
-        $nodes = array_column( $graph['nodes'], null, 'id' );
+        $nodes = GraphSchema::by_id( $graph['nodes'] );
         $edges = is_array( $graph['edges'] ?? null ) ? $graph['edges'] : [];
         $scope = Scope::from_array( is_array( $run['scope'] ?? null ) ? $run['scope'] : [], ( $this->resolver )() );
         $scope->set_output_display( self::output_display( $nodes, $this->steps ) );
         // The cursor is the pending step ids; the graph is a tree, so no visited set.
         $queue = is_array( $run['position']['queue'] ?? null )
             ? array_values( array_map( 'strval', $run['position']['queue'] ) )
-            : self::children( $edges, self::trigger_id( $graph['nodes'] ) );
+            : self::children( $edges, (string) ( GraphSchema::trigger( $graph['nodes'] )['id'] ?? '' ) );
 
         $rows = [];
         foreach ( $this->runs->steps( $id ) as $row ) {
@@ -378,18 +379,6 @@ final class Executor {
 
     private static function branch( array $output ): string {
         return 'yes' === ( $output['result'] ?? '' ) ? 'then' : 'otherwise';
-    }
-
-    /**
-     * @param array[] $nodes
-     */
-    private static function trigger_id( array $nodes ): string {
-        foreach ( $nodes as $node ) {
-            if ( Step::KIND_TRIGGER === ( $node['kind'] ?? '' ) ) {
-                return (string) $node['id'];
-            }
-        }
-        return '';
     }
 
     /**

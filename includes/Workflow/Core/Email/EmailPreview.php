@@ -91,7 +91,7 @@ final class EmailPreview {
         if ( is_wp_error( $graph ) ) {
             return $graph;
         }
-        $nodes = array_column( $graph['nodes'], null, 'id' );
+        $nodes = GraphSchema::by_id( $graph['nodes'] );
         $node  = $nodes[ $node_id ] ?? null;
         $step  = $node && $node['data']['block'] ? StepRegistry::get( $node['data']['block'] ) : null;
         if ( ! $step instanceof SendEmail && ! $step instanceof SendInternalEmail ) {

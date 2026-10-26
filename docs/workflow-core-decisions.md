@@ -141,11 +141,11 @@ Today errors only go to the WooCommerce log, which merchants never open.
 
 ## C8. Runs pin a version
 
-**Decision.** A run keeps the version it started with. Saved versions never change.
+**Decision.** A run keeps the version it started with. A version's logic never changes; its layout may.
 
 **Why.** Today a queued job reads whatever graph is live when it runs. With Waits, a 3-email series could start on version 1 and finish on version 3 with different steps. Pinning makes every run follow one known graph, and run detail can show it.
 
-**Cost.** Versions are only ever added, never edited. Only the draft row is edited in place.
+**Cost.** Versions are only ever added, and their logic is never edited, except the draft row's, which is edited in place. Moving a card rewrites a row's layout and nothing else.
 
 **For devs.** Never load "the live graph" inside the executor. Load `runs.version_id`.
 
@@ -163,12 +163,12 @@ Today errors only go to the WooCommerce log, which merchants never open.
 
 **Why.**
 - Every store event runs a `meta_query` to find active workflows. That's slow, and it runs on checkout.
-- Graph JSON in post meta needs slashing tricks (see `WorkflowRepository::write_graph()`).
+- Graph JSON in post meta needs slashing tricks.
 - Several meta writes per save can half-fail.
 
 **Rejected.** Keep the CPT and cache the trigger lookup: fixes speed, keeps the rest.
 
-**Cost.** One migration (F2). It **must ship before v1.0**: after release it would touch merchants' data. We lose WP's export tool → JSON import/export later.
+**Cost.** It **must ship before v1.0**: after release it would touch merchants' data. Nothing has shipped, so dev data is reset, no migration (F2). We lose WP's export tool → JSON import/export later.
 
 **For devs.** Workflows are read through `WorkflowStore`, never `get_posts()`.
 
@@ -206,7 +206,7 @@ Today errors only go to the WooCommerce log, which merchants never open.
 - PHP declares each step's settings (`fields()`). The editor builds its valibot checks from them. **Validation always runs in Automation.**
 - A small generic form draws simple steps.
 - Core steps with complex forms import their own React form directly.
-- Other plugins use `registerStepPanel()`.
+- Plugin steps with custom forms wait for the public API, P4.
 
 **Why.**
 - Today each step's rules are written twice: PHP `validate()` and TS `schema.ts`, kept in sync by hand. A mismatch means the editor says OK but Activate fails, or the reverse.
@@ -236,7 +236,7 @@ Today errors only go to the WooCommerce log, which merchants never open.
 
 **For devs.**
 - Simple step: one PHP class.
-- Complex core step: PHP class + a React form passed to `defineStep()`, same props `{ config, onChange, errors }`.
+- Complex core step: PHP class + a React form passed to `defineStep()`, same props `{ config, onChange }` (`StepFormProps`).
 - Never write valibot rules for a step by hand.
 
 ## L3. Own template module, no Liquid

@@ -26,7 +26,7 @@ use YayMatik\Workflow\Core\Storage\RunStepStore;
 use YayMatik\Workflow\Core\Storage\RunStore;
 use YayMatik\Workflow\Core\Storage\Schema;
 use YayMatik\Workflow\Core\Storage\UnsubscribeStore;
-use YayMatik\Workflow\Core\Storage\WorkflowRepository;
+use YayMatik\Workflow\Core\Storage\WorkflowStore;
 
 const CHECK_ORDERS_PREFIX = 'Check orders:';
 const CHECK_ORDERS_META   = '_yaymatik_check_orders';
@@ -279,7 +279,7 @@ try {
 echo wp_json_encode( $out, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ), "\n";
 
 $left = [
-    'workflow' => $workflow_id && WorkflowRepository::find( $workflow_id ) ? 1 : 0,
+    'workflow' => $workflow_id && WorkflowStore::find( $workflow_id ) ? 1 : 0,
     'orders'   => count( array_filter( array_map( 'wc_get_order', $orders ) ) ),
     'product'  => $product_id && wc_get_product( $product_id ) ? 1 : 0,
     'runs'     => $left['runs'],
