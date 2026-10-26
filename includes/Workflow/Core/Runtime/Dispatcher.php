@@ -137,8 +137,8 @@ final class Dispatcher {
         }
         if ( $reason ) {
             $this->paused[ $workflow_id ] = true;
+            Logger::error( "Workflow {$workflow_id} paused: {$reason} within " . self::RATE_WINDOW . ' seconds. Turning it off.', $context );
             $this->workflows->deactivate( $workflow_id );
-            Logger::error( "Workflow {$workflow_id} turned off: {$reason} within " . self::RATE_WINDOW . ' seconds.', $context );
             return 0;
         }
         $version_id = $this->workflows->live_version_id( $workflow_id );

@@ -270,6 +270,35 @@ final class WorkflowStore {
     }
 
     /**
+     * Runs `$work` under the workflow's lock, shared by REST edits and the rate-limit pause.
+     *
+     * @param int      $id
+     * @param callable $work
+     * @return mixed What `$work` returns; a 409 WP_Error when the lock wasn't taken within 10 seconds, a 500 one on a database error.
+     */
+    public static function locked( int $id, callable $work ) {
+        global $wpdb;
+        // Draft saves, apply and deactivate read then write the draft: without the lock an autosave
+        // landing mid-apply could be wiped, or a draft cleared by apply could reappear. A pause racing
+        // a REST Deactivate would record a second "deactivated" version.
+        // Lock names are global to the MySQL server; multisite sub-sites share it and reuse workflow ids.
+        $lock  = $wpdb->prefix . 'yaymatik_workflow_' . $id;
+        $taken = $wpdb->get_var( $wpdb->prepare( 'SELECT GET_LOCK( %s, 10 )', $lock ) );
+        if ( null === $taken && '' !== $wpdb->last_error ) {
+            Logger::error( 'Could not take the workflow lock: ' . $wpdb->last_error, [ 'workflow_id' => $id ] );
+            return new \WP_Error( 'yaymatik_save_failed', __( 'Couldn’t save the workflow. Try again.', 'yaymatik' ), [ 'status' => 500 ] );
+        }
+        if ( '1' !== (string) $taken ) {
+            return new \WP_Error( 'yaymatik_busy', __( 'This workflow is busy. Try again in a moment.', 'yaymatik' ), [ 'status' => 409 ] );
+        }
+        try {
+            return $work();
+        } finally {
+            $wpdb->query( $wpdb->prepare( 'SELECT RELEASE_LOCK( %s )', $lock ) );
+        }
+    }
+
+    /**
      * Runs `$writes` in one transaction; when it returns false, everything it wrote is rolled back.
      *
      * @param callable $writes Returns false when a write failed.

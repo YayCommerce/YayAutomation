@@ -1,6 +1,7 @@
 <?php
 namespace YayMatik\Workflow\Core\Runtime;
 
+use YayMatik\Utils\Logger;
 use YayMatik\Workflow\Core\Storage\WorkflowStore;
 
 defined( 'ABSPATH' ) || exit;
@@ -25,8 +26,29 @@ final class RepositoryWorkflows implements Workflows {
     }
 
     public function deactivate( int $id ): void {
-        if ( true === WorkflowStore::deactivate( $id ) ) {
-            Cancellation::waiting( $id, Cancellation::turned_off() );
+        try {
+            $result = WorkflowStore::locked(
+                $id,
+                function () use ( $id ) {
+                    // A REST Deactivate may have won the lock and already cancelled the waiting runs.
+                    if ( ! WorkflowStore::is_active( $id ) ) {
+                        return true;
+                    }
+                    $done = WorkflowStore::deactivate( $id );
+                    if ( true === $done ) {
+                        Cancellation::waiting( $id, Cancellation::turned_off() );
+                    }
+                    return $done;
+                }
+            );
+        } catch ( \Throwable $e ) {
+            // Thrown on to the Dispatcher, it would skip the event's other workflows.
+            Logger::error( "Workflow {$id} not turned off: " . $e->getMessage(), [ 'workflow_id' => $id ] );
+            return;
+        }
+        if ( is_wp_error( $result ) ) {
+            $reason = 'yaymatik_busy' === $result->get_error_code() ? 'could not take its lock within 10 seconds' : 'a database error, logged above';
+            Logger::error( "Workflow {$id} not turned off: {$reason}.", [ 'workflow_id' => $id ] );
         }
     }
 }

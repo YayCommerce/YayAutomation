@@ -477,29 +477,21 @@ class RestAPI {
      * @return array|\WP_Error|\WP_REST_Response
      */
     private function with_workflow( int $id, callable $change ) {
-        global $wpdb;
-        // Draft saves, apply and deactivate read then write the draft: without the lock an autosave
-        // landing mid-apply could be wiped, or a draft cleared by apply could reappear.
-        $lock = 'yaymatik_workflow_' . $id;
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-        if ( '1' !== (string) $wpdb->get_var( $wpdb->prepare( 'SELECT GET_LOCK( %s, 10 )', $lock ) ) ) {
-            return new \WP_Error( 'yaymatik_busy', __( 'This workflow is being saved. Try again.', 'yaymatik' ), [ 'status' => 409 ] );
-        }
-        try {
-            // Read inside the lock, so the change sees what the previous request wrote.
-            $current = WorkflowStore::find( $id );
-            if ( ! $current ) {
-                return $this->not_found();
+        return WorkflowStore::locked(
+            $id,
+            function () use ( $id, $change ) {
+                // Read inside the lock, so the change sees what the previous request wrote.
+                $current = WorkflowStore::find( $id );
+                if ( ! $current ) {
+                    return $this->not_found();
+                }
+                $result = $change( $id, $current );
+                if ( is_wp_error( $result ) || $result instanceof \WP_REST_Response ) {
+                    return $result;
+                }
+                return WorkflowStore::find( $id ) ?? $this->not_found();
             }
-            $result = $change( $id, $current );
-            if ( is_wp_error( $result ) || $result instanceof \WP_REST_Response ) {
-                return $result;
-            }
-            return WorkflowStore::find( $id ) ?? $this->not_found();
-        } finally {
-            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-            $wpdb->query( $wpdb->prepare( 'SELECT RELEASE_LOCK( %s )', $lock ) );
-        }
+        );
     }
 
     /**

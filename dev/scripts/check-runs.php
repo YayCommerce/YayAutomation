@@ -413,6 +413,29 @@ try {
     ( new RepositoryWorkflows() )->deactivate( $wait_wf );
     $ok( 'cancelled' === RunStore::find( (int) $run['id'] )['status'], 'pause: waiting run cancelled' );
 
+    // Another connection holds the workflow lock: the pause waits 10 s, logs and leaves it on.
+    $call( 'POST', "workflows/{$wait_wf}/activate" );
+    $holder = new wpdb( DB_USER, DB_PASSWORD, DB_NAME, DB_HOST );
+    $lock   = "{$wpdb->prefix}yaymatik_workflow_{$wait_wf}";
+    $holder->get_var( $holder->prepare( 'SELECT GET_LOCK( %s, 0 )', $lock ) );
+    $logged = [];
+    $log    = function ( $message ) use ( &$logged ) {
+        $logged[] = $message;
+        return $message;
+    };
+    add_filter( 'woocommerce_logger_log_message', $log );
+    ( new RepositoryWorkflows() )->deactivate( $wait_wf );
+    remove_filter( 'woocommerce_logger_log_message', $log );
+    $holder->get_var( $holder->prepare( 'SELECT RELEASE_LOCK( %s )', $lock ) );
+    $ok( YayMatik\Workflow\Core\Storage\WorkflowStore::is_active( $wait_wf ) && preg_grep( "/Workflow {$wait_wf} not turned off: could not take its lock/", $logged ), 'pause: lock held → logged, still active' );
+
+    // Already turned off by REST: the pause records no second version.
+    $call( 'POST', "workflows/{$wait_wf}/deactivate" );
+    $versions = fn() => count( YayMatik\Workflow\Core\Storage\WorkflowStore::versions( $wait_wf, 1 )['items'] );
+    $before   = $versions();
+    ( new RepositoryWorkflows() )->deactivate( $wait_wf );
+    $ok( $versions() === $before, 'pause: already off, no new version' );
+
     // 13. Turned off mid-run: the step running finishes, the next one never starts.
     $two_wf   = $create(
         'two notes',
