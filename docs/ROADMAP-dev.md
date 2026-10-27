@@ -24,7 +24,7 @@ Changes from the ROADMAP-v1.0 order:
 | F1 | Workflow Core foundation | L | 3 | F0 | ✅ Done |
 | M1 | Customer emails + coupons | L | 3 | F1 | ✅ Done |
 | M2 | Wait + run history | L | 3 | F1 | ✅ Done |
-| F2 | Workflows table | M | 3 | F1 | ⏳ Done, merge pending |
+| F2 | Workflows table | M | 3 | F1 | ✅ Done |
 | M7 | Cart tracking + Settings + Health check | L | 3 | F1 | — |
 | M8 | Abandoned cart + checkout | L | 2 | M1, M2, M7 | — |
 | M3 | Review request | M | 2 | M2 | — |
@@ -167,12 +167,12 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 
 ## F2 — Workflows table · M (3–5 days)
 
-**Status:** ⏳ Done on `jack/feature/f2-workflows-table`, merge pending.
+**Status:** ✅ Done. Merged into `develop` (PR #29, `6425140`).
 
-- ⏳ **F2.1** `workflows` + `workflow_versions` tables; repository rewritten onto them. *(§2)*
-- ⏳ **F2.2** Remove the CPT; dev data is reset (`./run.sh reset-data`), no migration.
-- ⏳ **F2.3** Check: list, editor, versions and runs work on new workflows.
-- ⏳ **F2.4** Split graph layout (positions) from logic in stored graphs. *(§7)*
+- ✅ **F2.1** `workflows` + `workflow_versions` tables; repository rewritten onto them. *(§2)*
+- ✅ **F2.2** Remove the CPT; dev data is reset (`./run.sh reset-data`), no migration.
+- ✅ **F2.3** Check: list, editor, versions and runs work on new workflows.
+- ✅ **F2.4** Split graph layout (positions) from logic in stored graphs. *(§7)*
 
 ## M7 — Cart tracking + Settings + Health check · L · risk 3
 
