@@ -24,6 +24,7 @@ final class CartTracker {
     public static function boot(): void {
         // Not a store-front hook: keeps rows right for later triggers even while tracking is off.
         add_action( 'woocommerce_order_status_changed', [ self::class, 'order_status_changed' ], 10, 4 );
+        EmailCapture::boot();
         if ( ! Settings::get( 'cart_tracking' ) ) {
             return;
         }
@@ -122,6 +123,35 @@ final class CartTracker {
         }
         CartStore::upsert( $key, $fields );
         WC()->session->set( self::HASH_KEY, $hash );
+    }
+
+    /**
+     * A guest typed this email at checkout: stored on this session's row, which counts as reaching checkout.
+     *
+     * @param string $email Normalized.
+     * @param string $first_name
+     */
+    public static function capture( string $email, string $first_name ): void {
+        $key      = self::session_key();
+        $snapshot = CartSnapshot::from_wc();
+        if ( '' === $key || ! $snapshot || ! $snapshot->lines() ) {
+            return;
+        }
+        self::record( $snapshot, 'capture' );
+        $row = CartStore::find_by_session( $key );
+        if ( ! $row ) {
+            return;
+        }
+        $now    = current_time( 'mysql', true );
+        $fields = [
+            'email'            => $email,
+            'first_name'       => $first_name,
+            'last_activity_at' => $now,
+        ];
+        if ( null === $row['checkout_at'] ) {
+            $fields['checkout_at'] = $now;
+        }
+        CartStore::touch( $key, $fields );
     }
 
     /** The cart is empty: its row goes, unless an order was made from it. */

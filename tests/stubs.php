@@ -278,3 +278,21 @@ if ( ! function_exists( 'update_option' ) ) {
         return true;
     }
 }
+
+if ( ! defined( 'MINUTE_IN_SECONDS' ) ) {
+    define( 'MINUTE_IN_SECONDS', 60 );
+}
+
+if ( ! function_exists( 'get_transient' ) ) {
+    // No expiry: tests move a clock, and code compares its own window end.
+    function get_transient( $transient ) {
+        return $GLOBALS['yaymatik_test_transients'][ $transient ] ?? false;
+    }
+}
+
+if ( ! function_exists( 'set_transient' ) ) {
+    function set_transient( $transient, $value, $expiration = 0 ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- same signature as WordPress.
+        $GLOBALS['yaymatik_test_transients'][ $transient ] = $value;
+        return true;
+    }
+}

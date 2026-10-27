@@ -23,7 +23,7 @@ foreach ( [ "workflows", "versions", "workflow_versions", "runs", "run_steps", "
         echo "Dropped {$table}\n";
     }
 }
-foreach ( [ "yaymatik_db_version", "yaymatik_settings" ] as $option ) {
+foreach ( [ "yaymatik_db_version", "yaymatik_settings", "yaymatik_cart_secret" ] as $option ) {
     echo delete_option( $option ) ? "Deleted option {$option}\n" : "";
 }
 if ( function_exists( "as_unschedule_all_actions" ) ) {

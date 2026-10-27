@@ -75,6 +75,19 @@ final class CartStore {
     }
 
     /**
+     * Rows holding this email, updated since then.
+     *
+     * @param string $email Normalized.
+     * @param string $since GMT datetime.
+     */
+    public static function sessions_with_email( string $email, string $since ): int {
+        global $wpdb;
+        $table = self::table();
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- own table, indexed by email.
+        return (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$table} WHERE email = %s AND updated_at >= %s", $email, $since ) );
+    }
+
+    /**
      * Login: the guest row becomes the user's, replacing the user's older row. No guest row → nothing changes.
      *
      * @param string $guest_key

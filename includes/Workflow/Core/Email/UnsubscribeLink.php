@@ -1,6 +1,8 @@
 <?php
 namespace YayMatik\Workflow\Core\Email;
 
+use YayMatik\Utils\Secret;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -30,17 +32,7 @@ final class UnsubscribeLink {
 
     /** The stored secret; creates it when missing. */
     public static function create_secret(): string {
-        // The plugin's own secret, not `wp_salt()`: a salt change must not break links already sent.
-        $secret = (string) get_option( self::SECRET_OPTION, '' );
-        if ( '' !== $secret ) {
-            return $secret;
-        }
-        $secret = bin2hex( random_bytes( 32 ) );
-        // Another request may have created it first: keep theirs, links already use it.
-        if ( ! add_option( self::SECRET_OPTION, $secret, '', false ) ) {
-            $secret = (string) get_option( self::SECRET_OPTION, '' );
-        }
-        return $secret;
+        return Secret::option( self::SECRET_OPTION );
     }
 
     /**

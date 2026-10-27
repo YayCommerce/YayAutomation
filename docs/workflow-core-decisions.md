@@ -361,7 +361,9 @@ Today errors only go to the WooCommerce log, which merchants never open.
 **Why.**
 - Carts, not pending orders: WooCommerce cancels unpaid orders after the hold-stock minutes, and most abandoned carts never become an order.
 - No own tracking cookie: WooCommerce's session already identifies the browser.
+- Capture any email with the same response: no account enumeration, and guest checkouts of registered customers still count.
 
 **Cost.**
 - A guest is unknown once their WooCommerce session ends (2 days).
+- A spoofed `X-Forwarded-For` skips the per-IP capture limit and can drain the site-wide one for 15 minutes.
 - An active row keeps the `order_id` of an unpaid order after its cart changes, so paying that order later closes the newer cart too. A missed reminder is better than reminding a buyer; AutomateWoo does the same.
