@@ -11,6 +11,7 @@ final class YayMatik {
         \YayMatik\Engine\Register\RegisterFacade::get_instance();
         \YayMatik\Engine\BEPages\AdminPage::get_instance();
         \YayMatik\Engine\API\RestAPI::get_instance();
+        \YayMatik\Engine\API\SettingsRoutes::get_instance();
         \YayMatik\Engine\FEPages\UnsubscribePage::get_instance();
         \YayMatik\Workflow\Core\Storage\Schema::maybe_install();
         if ( class_exists( 'WooCommerce' ) ) {

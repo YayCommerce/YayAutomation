@@ -260,3 +260,21 @@ if ( ! function_exists( 'admin_url' ) ) {
         return 'https://shop.test/wp-admin/' . ltrim( (string) $path, '/' );
     }
 }
+
+if ( ! function_exists( 'get_option' ) ) {
+    // Options a test set with update_option(); `admin_email` is always set.
+    function get_option( $name, $default_value = false ) {
+        $options = $GLOBALS['yaymatik_test_options'] ?? [];
+        if ( array_key_exists( $name, $options ) ) {
+            return $options[ $name ];
+        }
+        return 'admin_email' === $name ? 'admin@shop.test' : $default_value;
+    }
+}
+
+if ( ! function_exists( 'update_option' ) ) {
+    function update_option( $option, $value, $autoload = null ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- same signature as WordPress.
+        $GLOBALS['yaymatik_test_options'][ $option ] = $value;
+        return true;
+    }
+}
