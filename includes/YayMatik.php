@@ -16,6 +16,7 @@ final class YayMatik {
         \YayMatik\Workflow\Core\Storage\Schema::maybe_install();
         if ( class_exists( 'WooCommerce' ) ) {
             \YayMatik\Workflow\Core\Runtime\Runtime::boot();
+            \YayMatik\Workflow\Core\Cart\CartTracker::boot();
         }
 
         $this->register_admin_menu();

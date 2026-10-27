@@ -29,6 +29,7 @@ Each note: **Decision** · **Why** · **Rejected** · **Cost** · **For devs** (
 | [P1](#p1-runtime-free-free-vs-pro-by-folder) | Runtime free; Free vs Pro by folder | Owner |
 | [P2](#p2-yay-plugins-own-their-steps) | Yay plugins own their steps | Owner |
 | [P3–P6](#p3p6-smaller-decisions) | Cancel on Update, API last, AI later, Health check | Owner |
+| [M7](#m7-cart-tracking) | Cart tracking | Owner |
 
 "High" = recommended and accepted as-is. "Owner" = debated and decided by the product owner.
 
@@ -182,6 +183,8 @@ Today errors only go to the WooCommerce log, which merchants never open.
 - It generalises today's trick in `OrderCreated::claim()` (an order meta flag).
 
 **For devs.** A query trigger defines "find subjects" and "subject key". Batching and dedupe come from the Scheduler.
+
+**Note (M7).** Abandoned carts come from the `carts` table, not from pending orders: WooCommerce cancels unpaid orders after the hold-stock minutes.
 
 ---
 
@@ -350,3 +353,15 @@ Today errors only go to the WooCommerce log, which merchants never open.
 | P4 | Public extension API comes last, after Pro connectors and Yay integrations are stable | A public API is a promise. Freezing it before our own plugins have used it would lock in mistakes |
 | P5 | AI provider not chosen yet | It depends on price, privacy and WP's own AI work in 2027. v1.0 only keeps a provider interface open |
 | P6 | Settings → Health check | WP-Cron, big stores and email delivery are the top reasons "it doesn't work". Detecting them and proposing a fix saves support time |
+
+## M7. Cart tracking
+
+**Decision.** Carts of logged-in customers and guests are stored in their own `carts` table, one row per WooCommerce session.
+
+**Why.**
+- Carts, not pending orders: WooCommerce cancels unpaid orders after the hold-stock minutes, and most abandoned carts never become an order.
+- No own tracking cookie: WooCommerce's session already identifies the browser.
+
+**Cost.**
+- A guest is unknown once their WooCommerce session ends (2 days).
+- An active row keeps the `order_id` of an unpaid order after its cart changes, so paying that order later closes the newer cart too. A missed reminder is better than reminding a buyer; AutomateWoo does the same.

@@ -36,6 +36,7 @@ Table names below omit the prefix: each is `{prefix}yaymatik_<name>`, e.g. `wp_y
 | `workflow_versions` | id, workflow_id, action, graph (logic), layout (step positions), user_id, created_at, updated_at. A version's logic never changes; its layout may. Only the draft row's logic is edited in place |
 | `runs` | id, workflow_id, version_id, trigger_id, subject, status, position, scope, wait_until, error, parent_run_id, root_run_id, depth, started_at, finished_at |
 | `run_steps` | id, run_id, step_id, iteration, status, input, output, error, attempt, started_at, finished_at |
+| `carts` | id, session_key (WooCommerce session: user id or guest `t_…`; unique), user_id, email, first_name, items (JSON lines), total, currency, status (active, ordered), checkout_at, order_id, restored_at, last_activity_at, created_at, updated_at |
 
 - A run pins the version it started on.
 - Deleting a workflow deletes its versions; its runs stay until retention cleanup (M7.4).
@@ -156,7 +157,7 @@ Settings → Health check finds problems and proposes a fix the site owner can a
 
 ## §11 Decision log
 
-All confirmed 2026-10-07, except L5 (2026-10-08). Reasons, rejected options and costs: [workflow-core-decisions.md](workflow-core-decisions.md).
+All confirmed 2026-10-07, except L5 (2026-10-08) and M7 (2026-10-27). Reasons, rejected options and costs: [workflow-core-decisions.md](workflow-core-decisions.md).
 
 | ID | Decision | Section |
 |---|---|---|
@@ -182,3 +183,4 @@ All confirmed 2026-10-07, except L5 (2026-10-08). Reasons, rejected options and 
 | P5 | AI provider deferred | §10 |
 | P6 | Settings → Health check | §9 |
 | P7 | Tree + container steps; no merge | §7 |
+| M7 | Carts in their own table; no own tracking cookie | §2 |

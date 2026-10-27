@@ -7,8 +7,23 @@ use YayMatik\Workflow\Core\Storage\Settings;
 /** Settings read from and saved to the option. */
 final class SettingsTest extends TestCase {
 
+    protected function setUp(): void {
+        $this->forget_built();
+    }
+
     protected function tearDown(): void {
         unset( $GLOBALS['yaymatik_test_options'] );
+        $this->forget_built();
+    }
+
+    public function test_settings_are_built_once_and_update_starts_from_the_stored_option(): void {
+        Settings::all();
+        $GLOBALS['yaymatik_test_options']['yaymatik_settings'] = [ 'abandon_minutes' => 30 ];
+
+        $this->assertSame( 60, Settings::get( 'abandon_minutes' ) );
+        Settings::update( [ 'cart_tracking' => true ] );
+        $this->assertSame( 30, Settings::get( 'abandon_minutes' ) );
+        $this->assertTrue( Settings::get( 'cart_tracking' ) );
     }
 
     public function test_nothing_stored_reads_the_defaults(): void {
@@ -154,5 +169,12 @@ final class SettingsTest extends TestCase {
      */
     private function store( $value ): void {
         $GLOBALS['yaymatik_test_options']['yaymatik_settings'] = $value;
+        $this->forget_built();
+    }
+
+    private function forget_built(): void {
+        $built = new \ReflectionProperty( Settings::class, 'all' );
+        $built->setAccessible( true );
+        $built->setValue( null, null );
     }
 }

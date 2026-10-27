@@ -28,8 +28,14 @@ final class Settings {
         ];
     }
 
+    /** @var array|null Built once per request: store-front hooks read it on every request. */
+    private static $all = null;
+
     /** Stored values over the defaults; anything stored out of shape is read clamped or cast. */
     public static function all(): array {
+        if ( null !== self::$all ) {
+            return self::$all;
+        }
         $stored = get_option( self::OPTION, [] );
         $stored = is_array( $stored ) ? $stored : [];
         $values = [];
@@ -37,6 +43,7 @@ final class Settings {
             $value          = array_key_exists( $key, $stored ) ? $stored[ $key ] : $default;
             $values[ $key ] = self::read( $key, $value, $default );
         }
+        self::$all = $values;
         return $values;
     }
 
@@ -55,8 +62,9 @@ final class Settings {
      * @return array|\WP_Error All settings after the save, or errors[{ field, message }] with status 400.
      */
     public static function update( array $changes ) {
-        $values = self::all();
-        $errors = [];
+        self::$all = null;
+        $values    = self::all();
+        $errors    = [];
         foreach ( array_intersect_key( $changes, $values ) as $key => $value ) {
             $checked = self::check( $key, $value );
             if ( $checked instanceof \WP_Error ) {
@@ -79,6 +87,7 @@ final class Settings {
             );
         }
         update_option( self::OPTION, $values, true );
+        self::$all = null;
         return self::all();
     }
 
