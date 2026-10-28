@@ -1,6 +1,8 @@
 <?php
 namespace YayMatik\Workflow\Core\Storage;
 
+use YayMatik\Utils\Logger;
+
 defined( 'ABSPATH' ) || exit;
 
 /** Rows of the `carts` table, one per WooCommerce session key. */
@@ -233,6 +235,46 @@ final class CartStore {
             ],
             [ 'id' => $id ]
         );
+    }
+
+    /**
+     * Carts of any status last active before the cutoff, oldest ids first.
+     *
+     * @param string $before GMT datetime.
+     * @param int    $limit
+     * @return int|false Rows deleted.
+     */
+    public static function delete_inactive_before( string $before, int $limit ) {
+        global $wpdb;
+        $table = self::table();
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- own table, a write.
+        $done = $wpdb->query( $wpdb->prepare( "DELETE FROM {$table} WHERE last_activity_at < %s ORDER BY id LIMIT %d", $before, $limit ) );
+        if ( false === $done ) {
+            Logger::error( 'Could not delete old carts: ' . $wpdb->last_error );
+            return false;
+        }
+        return (int) $done;
+    }
+
+    /**
+     * @param string $email Normalized.
+     * @return array[]
+     */
+    public static function for_email( string $email ): array {
+        global $wpdb;
+        $table = self::table();
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- own table, indexed by email.
+        return (array) $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$table} WHERE email = %s ORDER BY id", $email ), ARRAY_A );
+    }
+
+    /**
+     * @param string $email Normalized.
+     * @return int Rows deleted.
+     */
+    public static function delete_for_email( string $email ): int {
+        global $wpdb;
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own table, a write.
+        return (int) $wpdb->delete( self::table(), [ 'email' => $email ] );
     }
 
     private static function table(): string {

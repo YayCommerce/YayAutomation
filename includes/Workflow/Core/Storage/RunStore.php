@@ -33,6 +33,9 @@ final class RunStore {
 
     public const PER_PAGE = 20;
 
+    /** A worker holds the run's scope in memory; writing to it now would be undone. */
+    private const IN_PROGRESS = [ self::STATUS_QUEUED, self::STATUS_RUNNING ];
+
     /**
      * A queued run; one with no parent is its own root.
      *
@@ -309,6 +312,245 @@ final class RunStore {
             return false;
         }
         return true;
+    }
+
+    /**
+     * Finished runs, deleted workflows' included, that finished before the cutoff; oldest ids first.
+     *
+     * @param string $before GMT datetime.
+     * @param int    $limit
+     * @return int[]
+     */
+    public static function finished_before( string $before, int $limit ): array {
+        global $wpdb;
+        $table    = self::table();
+        $open     = array_diff( self::STATUSES, self::FINISHED );
+        $finished = implode( ',', array_fill( 0, count( self::FINISHED ), '%s' ) );
+        $unended  = implode( ',', array_fill( 0, count( $open ), '%s' ) );
+        // A chain with an open run keeps all its runs: the loop guard walks parent_run_id and stops at a missing row.
+        $ids = $wpdb->get_col(
+            // phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- placeholders are built to match the array.
+            $wpdb->prepare(
+                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
+                "SELECT r.id FROM {$table} r WHERE r.status IN ({$finished}) AND r.finished_at < %s AND NOT EXISTS (SELECT 1 FROM {$table} o WHERE o.root_run_id = r.root_run_id AND o.status IN ({$unended})) ORDER BY r.id LIMIT %d",
+                array_merge( self::FINISHED, [ $before ], array_values( $open ), [ $limit ] )
+            )
+        );
+        return array_map( 'intval', (array) $ids );
+    }
+
+    /**
+     * Steps first, so a failure in between leaves no steps without their run.
+     *
+     * @param int[] $ids
+     */
+    public static function delete_with_steps( array $ids ): bool {
+        global $wpdb;
+        $in = implode( ',', array_map( 'intval', $ids ) );
+        if ( '' === $in ) {
+            return true;
+        }
+        $steps = RunStepStore::table();
+        $table = self::table();
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $in is a list of ints.
+        if ( false === $wpdb->query( "DELETE FROM {$steps} WHERE run_id IN ({$in})" ) || false === $wpdb->query( "DELETE FROM {$table} WHERE id IN ({$in})" ) ) {
+            Logger::error( 'Could not delete old runs: ' . $wpdb->last_error );
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Runs about a person (`about()`), any status; `workflow_name` null once deleted.
+     *
+     * @param string   $email Normalized.
+     * @param string[] $subjects Run subjects of the person's orders and carts.
+     * @param int      $limit
+     * @param int      $offset
+     * @return array[] `id`, `status`, `started_at`, `workflow_name`.
+     */
+    public static function for_export( string $email, array $subjects, int $limit, int $offset ): array {
+        global $wpdb;
+        $table                  = self::table();
+        $workflows              = Schema::table( Schema::WORKFLOWS );
+        list( $about, $params ) = self::about( $email, $subjects, false );
+        $rows                   = $wpdb->get_results(
+            // phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- placeholders are built to match the array.
+            $wpdb->prepare(
+                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
+                "SELECT r.id, r.status, r.started_at, w.name AS workflow_name FROM {$table} r LEFT JOIN {$workflows} w ON w.id = r.workflow_id WHERE {$about} ORDER BY r.id LIMIT %d OFFSET %d",
+                array_merge( $params, [ $limit, $offset ] )
+            ),
+            ARRAY_A
+        );
+        return (array) $rows;
+    }
+
+    /**
+     * The first runs erase changes: those mentioning the email, and waiting runs about the person's subjects;
+     * queued and running ones left out.
+     *
+     * @param string   $email Normalized.
+     * @param string[] $subjects
+     * @param int      $limit
+     * @return string[] Run id => status.
+     */
+    public static function ids_mentioning( string $email, array $subjects, int $limit ): array {
+        global $wpdb;
+        $table                  = self::table();
+        $busy                   = implode( ',', array_fill( 0, count( self::IN_PROGRESS ), '%s' ) );
+        list( $about, $params ) = self::about( $email, $subjects, true );
+        $rows                   = $wpdb->get_results(
+            // phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- placeholders are built to match the array.
+            $wpdb->prepare(
+                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
+                "SELECT r.id, r.status FROM {$table} r WHERE r.status NOT IN ({$busy}) AND ({$about}) ORDER BY r.id LIMIT %d",
+                array_merge( self::IN_PROGRESS, $params, [ $limit ] )
+            ),
+            ARRAY_A
+        );
+        return array_column( (array) $rows, 'status', 'id' );
+    }
+
+    /**
+     * Whether a queued or running run is about the person.
+     *
+     * @param string   $email Normalized.
+     * @param string[] $subjects
+     */
+    public static function in_progress_mentioning( string $email, array $subjects ): bool {
+        global $wpdb;
+        $table                  = self::table();
+        $busy                   = implode( ',', array_fill( 0, count( self::IN_PROGRESS ), '%s' ) );
+        list( $about, $params ) = self::about( $email, $subjects, false );
+        $found                  = $wpdb->get_var(
+            // phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- placeholders are built to match the array.
+            $wpdb->prepare(
+                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
+                "SELECT r.id FROM {$table} r WHERE r.status IN ({$busy}) AND ({$about}) LIMIT 1",
+                array_merge( self::IN_PROGRESS, $params )
+            )
+        );
+        return null !== $found;
+    }
+
+    /**
+     * `WHERE` part over `r` (runs): the email in any of the five columns `anonymize()` changes, or a run about one
+     * of the subjects (runs started by a trigger hold refs, not the email).
+     *
+     * @param string   $email
+     * @param string[] $subjects
+     * @param bool     $waiting_subjects Subjects match waiting runs only: a finished run about them has nothing to erase.
+     * @return array [ string $sql, array $params ]
+     */
+    private static function about( string $email, array $subjects, bool $waiting_subjects ): array {
+        $steps  = RunStepStore::table();
+        $like   = self::json_like( $email );
+        $regexp = self::text_regexp( $email );
+        $sql    = "r.scope LIKE %s OR r.error REGEXP %s OR EXISTS (SELECT 1 FROM {$steps} s WHERE s.run_id = r.id AND (s.input LIKE %s OR s.output LIKE %s OR s.error REGEXP %s))";
+        $params = [ $like, $regexp, $like, $like, $regexp ];
+        if ( $subjects ) {
+            $sql   .= ' OR (r.subject IN (' . implode( ',', array_fill( 0, count( $subjects ), '%s' ) ) . ')' . ( $waiting_subjects ? ' AND r.status = %s' : '' ) . ')';
+            $params = array_merge( $params, array_values( $subjects ), $waiting_subjects ? [ self::STATUS_WAITING ] : [] );
+        }
+        return [ $sql, $params ];
+    }
+
+    /**
+     * The email → `[deleted]` in runs' scope and error, steps' input, output and error; statuses and dates stay.
+     *
+     * @param int[]  $ids Queued and running ones are left alone.
+     * @param string $email Normalized.
+     * @return int Runs with a row changed.
+     */
+    public static function anonymize( array $ids, string $email ): int {
+        global $wpdb;
+        $in = implode( ',', array_map( 'intval', $ids ) );
+        if ( '' === $in ) {
+            return 0;
+        }
+        $table = self::table();
+        $busy  = implode( ',', array_fill( 0, count( self::IN_PROGRESS ), '%s' ) );
+        // A waiting run its job took meanwhile is running now.
+        $ids = $wpdb->get_col(
+            // phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- placeholders are built to match the array.
+            $wpdb->prepare(
+                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- $in is a list of ints.
+                "SELECT id FROM {$table} WHERE id IN ({$in}) AND status NOT IN ({$busy})",
+                self::IN_PROGRESS
+            )
+        );
+        $in = implode( ',', array_map( 'intval', (array) $ids ) );
+        if ( '' === $in ) {
+            return 0;
+        }
+        $changed = [];
+        $tables  = [
+            self::table()         => [ 'id', [ 'scope' ], [ 'error' ] ],
+            RunStepStore::table() => [ 'run_id', [ 'input', 'output' ], [ 'error' ] ],
+        ];
+        foreach ( $tables as $table => list( $run_column, $json_columns, $text_columns ) ) {
+            $columns = implode( ', ', array_merge( [ 'id', $run_column ], $json_columns, $text_columns ) );
+            // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- columns are ours, $in is a list of ints.
+            $rows = (array) $wpdb->get_results( "SELECT {$columns} FROM {$table} WHERE {$run_column} IN ({$in})", ARRAY_A );
+            foreach ( $rows as $row ) {
+                $update = [];
+                foreach ( $json_columns as $column ) {
+                    $update[ $column ] = self::replace_json( (string) $row[ $column ], $email );
+                }
+                foreach ( $text_columns as $column ) {
+                    $update[ $column ] = self::replace_text( (string) $row[ $column ], $email );
+                }
+                $update = array_filter( $update, fn( $value, $column ) => $value !== (string) $row[ $column ], ARRAY_FILTER_USE_BOTH );
+                if ( ! $update ) {
+                    continue;
+                }
+                $done = $wpdb->update( $table, $update, [ 'id' => (int) $row['id'] ] );
+                if ( false === $done ) {
+                    Logger::error( 'Could not erase an email from a run: ' . $wpdb->last_error, [ 'run_id' => (int) $row[ $run_column ] ] );
+                } elseif ( $done ) {
+                    $changed[ (int) $row[ $run_column ] ] = true;
+                }
+            }
+        }
+        return count( $changed );
+    }
+
+    /**
+     * `LIKE` value for the email as a whole JSON string; case-insensitive by the tables' `_ci` collation.
+     *
+     * @param string $email
+     */
+    private static function json_like( string $email ): string {
+        global $wpdb;
+        return '%' . $wpdb->esc_like( (string) wp_json_encode( $email ) ) . '%';
+    }
+
+    /**
+     * `REGEXP` value with the same boundaries as `replace_text()`; works with ICU (MySQL 8) and PCRE (MariaDB).
+     *
+     * @param string $email
+     */
+    private static function text_regexp( string $email ): string {
+        // A dot after the address ends it unless a letter or digit follows: `bob@x.test.` ending a sentence
+        // matches, `bob@x.test.au` doesn't.
+        return '(^|[^A-Za-z0-9._%+-])' . addcslashes( $email, '.[]()*+?{}|^$\\' ) . '($|[^A-Za-z0-9.-]|[.]($|[^A-Za-z0-9]))';
+    }
+
+    /**
+     * @param string $json
+     * @param string $email
+     */
+    private static function replace_json( string $json, string $email ): string {
+        return str_ireplace( (string) wp_json_encode( $email ), '"[deleted]"', $json );
+    }
+
+    /**
+     * @param string $text
+     * @param string $email
+     */
+    private static function replace_text( string $text, string $email ): string {
+        return (string) preg_replace( '/(?<![A-Za-z0-9._%+-])' . preg_quote( $email, '/' ) . '(?![A-Za-z0-9-]|\.[A-Za-z0-9])/i', '[deleted]', $text );
     }
 
     public static function table(): string {

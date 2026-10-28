@@ -5,7 +5,8 @@
  * Orders are WC_Order objects with a fake id that are never saved, so no order hook or workflow runs.
  * Email capture uses a real WC_Cart holding one temporary hidden product; the classic endpoint's answer is
  * read through the AJAX die handler. Restore calls RestoreCart::restore() (the request handler around it redirects
- * and exits) with more temporary products.
+ * and exits) with more temporary products. Cleanup and the privacy exporter / eraser run on temporary runs and
+ * emails at a random `.test` domain; cleanup also deletes the site's own runs and carts past the longest retention.
  * Prints PASS / FAIL lines; removes its rows and users. Run through check-carts.sh.
  *
  * @package YayMatik
@@ -14,14 +15,19 @@
 // phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.WP.GlobalVariablesOverride.Prohibited
 
 use YayMatik\Engine\FEPages\RestoreCart;
+use YayMatik\Engine\Privacy\PersonalData;
 use YayMatik\Workflow\Core\Cart\CartSnapshot;
 use YayMatik\Workflow\Core\Cart\CartTracker;
 use YayMatik\Workflow\Core\Cart\EmailCapture;
 use YayMatik\Workflow\Core\Cart\RestoreLink;
 use YayMatik\Workflow\Core\Email\UnsubscribeLink;
+use YayMatik\Workflow\Core\Runtime\Cleanup;
 use YayMatik\Workflow\Core\Storage\CartStore;
+use YayMatik\Workflow\Core\Storage\RunStepStore;
+use YayMatik\Workflow\Core\Storage\RunStore;
 use YayMatik\Workflow\Core\Storage\Schema;
 use YayMatik\Workflow\Core\Storage\Settings;
+use YayMatik\Workflow\Core\Storage\UnsubscribeStore;
 
 if ( ! function_exists( 'WC' ) ) {
     WP_CLI::error( 'WooCommerce is not active.' );
@@ -33,6 +39,9 @@ $table  = Schema::table( Schema::CARTS );
 $prefix = 't_check' . wp_rand( 1000, 9999 ) . '_';
 $users  = [];
 $posts  = [];
+$runs   = [];
+$orders = [];
+$domain = 'x' . wp_rand( 1000, 9999 ) . '.test';
 
 $fails = 0;
 $ok    = function ( bool $pass, string $what ) use ( &$fails ) {
@@ -40,8 +49,19 @@ $ok    = function ( bool $pass, string $what ) use ( &$fails ) {
     $fails += $pass ? 0 : 1;
 };
 
-$cleanup = function () use ( $wpdb, $table, $prefix, &$users, &$posts ) {
+$cleanup = function () use ( $wpdb, $table, $prefix, $domain, &$users, &$posts, &$runs, &$orders ) {
+    foreach ( $orders as $order_id ) {
+        $saved_order = wc_get_order( $order_id );
+        if ( $saved_order ) {
+            $saved_order->delete( true );
+        }
+    }
     $wpdb->query( $wpdb->prepare( "DELETE FROM {$table} WHERE session_key LIKE %s", $wpdb->esc_like( $prefix ) . '%' ) );
+    if ( $runs ) {
+        RunStore::delete_with_steps( $runs );
+    }
+    $unsubscribes = Schema::table( Schema::UNSUBSCRIBES );
+    $wpdb->query( $wpdb->prepare( "DELETE FROM {$unsubscribes} WHERE email LIKE %s", '%@' . $wpdb->esc_like( $domain ) . '%' ) );
     foreach ( $posts as $post_id ) {
         wp_delete_post( $post_id, true );
     }
@@ -634,6 +654,358 @@ $vt = $prefix . 'vt';
 $visitor( $vt );
 $url = $restore( $bt );
 $ok( $checkout === $url && [ $p1 => 1 ] === $in_cart() && null === WC()->session->get( 'yaymatik_restored_cart' ), 'tracking off: items restored, no restored id kept (never binds)' );
+$settings( $on );
+
+// Cleanup: the longest retention, so only test rows dated 2001 and the site's own very old rows qualify.
+$settings(
+    $on + [
+        'run_retention_days'  => 730,
+        'cart_retention_days' => 365,
+    ]
+);
+$runs_table  = RunStore::table();
+$steps_table = RunStepStore::table();
+/** A run (and its steps) finished in 2001, of no workflow and its own root unless given. */
+$new_run  = function ( array $run, array $steps = [] ) use ( $wpdb, $runs_table, $steps_table, $old, &$runs ) {
+    $wpdb->insert(
+        $runs_table,
+        $run + [
+            'workflow_id' => 0,
+            'version_id'  => 0,
+            'status'      => 'completed',
+            'scope'       => '{}',
+            'started_at'  => $old,
+            'finished_at' => $old,
+        ]
+    );
+    $id     = (int) $wpdb->insert_id;
+    $runs[] = $id;
+    if ( empty( $run['root_run_id'] ) ) {
+        $wpdb->update( $runs_table, [ 'root_run_id' => $id ], [ 'id' => $id ] );
+    }
+    foreach ( $steps as $step ) {
+        $wpdb->insert(
+            $steps_table,
+            $step + [
+                'run_id'     => $id,
+                'step_id'    => 'check',
+                'status'     => 'completed',
+                'started_at' => $old,
+            ]
+        );
+    }
+    return $id;
+};
+$run_row  = fn( int $id ) => $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$runs_table} WHERE id = %d", $id ), ARRAY_A );
+$step_row = fn( int $id ) => $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$steps_table} WHERE run_id = %d", $id ), ARRAY_A );
+$workflow = (int) $wpdb->get_var( 'SELECT MAX(id) FROM ' . Schema::table( Schema::WORKFLOWS ) );
+
+$done_old   = $new_run( [ 'workflow_id' => $workflow ], [ [], [] ] );
+$deleted_wf = $new_run( [ 'status' => 'failed' ] );
+$open       = [];
+foreach ( [ 'queued', 'running', 'waiting' ] as $status ) {
+    $open[] = $new_run( [ 'status' => $status ] );
+}
+$done_new = $new_run( [ 'finished_at' => gmdate( 'Y-m-d H:i:s', time() - 700 * DAY_IN_SECONDS ) ] );
+$saved( $prefix . 'old', [ $line( 1, 1 ) ] );
+$age( $prefix . 'old', "last_activity_at = '{$old}'" );
+$saved( $prefix . 'fresh', [ $line( 1, 1 ) ] );
+$age( $prefix . 'fresh', "last_activity_at = '" . gmdate( 'Y-m-d H:i:s', time() - 364 * DAY_IN_SECONDS ) . "'" );
+Cleanup::run();
+$ok( null === $run_row( $done_old ) && null === $step_row( $done_old ), 'cleanup: an old finished run and its steps deleted' );
+$ok( null === $run_row( $deleted_wf ), 'cleanup: an old run of a deleted workflow deleted' );
+$ok( 3 === count( array_filter( array_map( $run_row, $open ) ) ), 'cleanup: queued, running and waiting runs kept, even with an old finished_at' );
+$ok( null !== $run_row( $done_new ), 'cleanup: a finished run inside the window kept' );
+$ok( null === $row( $prefix . 'old' ) && null !== $row( $prefix . 'fresh' ), 'cleanup: an old cart deleted, one inside the window kept' );
+$parent = $new_run( [] );
+$child  = $new_run(
+    [
+        'status'        => 'waiting',
+        'finished_at'   => null,
+        'parent_run_id' => $parent,
+        'root_run_id'   => $parent,
+        'depth'         => 1,
+    ]
+);
+Cleanup::run();
+$ok( null !== $run_row( $parent ), 'cleanup: an old finished parent kept while its child waits' );
+$wpdb->update(
+    $runs_table,
+    [
+        'status'      => 'completed',
+        'finished_at' => current_time( 'mysql', true ),
+    ],
+    [ 'id' => $child ]
+);
+Cleanup::run();
+$ok( null === $run_row( $parent ) && null !== $run_row( $child ), 'cleanup: the parent deleted once its child finished; the child, inside the window, kept' );
+
+// Schedule ensure. Leaves the job scheduled and the option fresh, as on any page load.
+$pending = fn() => as_get_scheduled_actions(
+    [
+        'hook'     => Cleanup::HOOK,
+        'status'   => 'pending',
+        'per_page' => -1,
+    ]
+);
+as_unschedule_all_actions( Cleanup::HOOK );
+update_option( Cleanup::CHECKED_OPTION, time() - 120, true );
+Cleanup::ensure();
+$ok( [] === $pending(), 'ensure: checked under an hour ago, nothing scheduled' );
+delete_option( Cleanup::CHECKED_OPTION );
+Cleanup::ensure();
+Cleanup::ensure();
+$jobs     = $pending();
+$job      = reset( $jobs );
+$autoload = $wpdb->get_var( $wpdb->prepare( "SELECT autoload FROM {$wpdb->options} WHERE option_name = %s", Cleanup::CHECKED_OPTION ) );
+$ok( 1 === count( $jobs ) && 'yaymatik' === $job->get_group() && DAY_IN_SECONDS === (int) $job->get_schedule()->get_recurrence(), 'ensure twice within the hour: one daily job in the yaymatik group' );
+$ok( abs( time() - (int) get_option( Cleanup::CHECKED_OPTION ) ) < 60 && in_array( $autoload, [ 'yes', 'on' ], true ), 'ensure: checked time saved, autoloaded' );
+
+// Privacy: export and erase.
+$privacy = PersonalData::get_instance();
+$bob     = "bob@{$domain}";
+$jim     = "jimbob@{$domain}";
+$au      = "bob@{$domain}.au";
+$json    = fn( array $value ) => wp_json_encode( $value );
+$all     = $new_run(
+    [
+        'scope' => $json(
+            [
+                'email' => $bob,
+                'other' => $jim,
+            ]
+        ),
+        'error' => "Mail to {$bob} failed",
+    ],
+    [
+        [
+            'input'  => $json( [ 'to' => $bob ] ),
+            'output' => $json( [ 'to' => $bob ] ),
+            'error'  => "{$bob} bounced",
+        ],
+    ]
+);
+$others  = $new_run(
+    [
+        'scope' => $json(
+            [
+                'a'    => $jim,
+                'b'    => $au,
+                'note' => "Write to {$bob} today",
+            ]
+        ),
+        'error' => "{$jim}, {$au}",
+    ],
+    [
+        [
+            'input'  => $json( [ 'to' => $jim ] ),
+            'output' => $json( [ 'to' => $au ] ),
+            'error'  => "{$jim} {$au}",
+        ],
+    ]
+);
+$mixed   = $new_run( [ 'scope' => $json( [ 'email' => 'Bob@' . ucfirst( $domain ) ] ) ] );
+$run_err = $new_run( [ 'error' => "Bounce from {$bob}. Also {$bob}.au." ] );
+$step_er = $new_run( [], [ [ 'error' => "Could not send to <{$bob}>" ] ] );
+$step_in = $new_run( [], [ [ 'input' => $json( [ 'to' => $bob ] ) ] ] );
+$cart_b  = $saved( $prefix . 'bob', [ $line( $p1, 1 ) ] );
+$wpdb->update( $table, [ 'email' => $bob ], [ 'id' => (int) $cart_b['id'] ] );
+UnsubscribeStore::add( $bob );
+
+$export = $privacy->export( strtoupper( $bob ), 1 );
+$items  = array_column( $export['data'], 'data', 'item_id' );
+$ok(
+    $export['done'] && array_keys( $items ) === [ 'yaymatik-cart-' . $cart_b['id'], 'yaymatik-unsubscribe', "yaymatik-run-{$all}", "yaymatik-run-{$mixed}", "yaymatik-run-{$run_err}", "yaymatik-run-{$step_er}", "yaymatik-run-{$step_in}" ],
+    'export: the cart, the unsubscribe record and every run erase would change (error texts, a step input only), in one page'
+);
+$ok( in_array( $bob, array_column( $items[ "yaymatik-run-{$all}" ], 'value' ), true ) && ! in_array( 'Sent to', array_column( $items[ "yaymatik-run-{$mixed}" ], 'name' ), true ) && 'Deleted workflow' === $items[ "yaymatik-run-{$all}" ][0]['value'], 'export: "sent to" only where a step sent to it; a deleted workflow named so' );
+$ok(
+    [
+        'data' => [],
+        'done' => true,
+    ] === $privacy->export( 'not-an-email', 1 ),
+    'export: not an email → nothing, done'
+);
+
+$before_all   = $run_row( $all );
+$before_other = [ $run_row( $others ), $step_row( $others ) ];
+$erased       = $privacy->erase( $bob, 1 );
+$after_all    = $run_row( $all );
+$after_step   = $step_row( $all );
+$ok( $erased['done'] && $erased['items_removed'] && $erased['items_retained'] && [ 'The unsubscribe record is kept so this address gets no more workflow emails.' ] === $erased['messages'], 'erase: removed, retained with the unsubscribe note, done' );
+$ok( null === $row( $prefix . 'bob' ) && UnsubscribeStore::has( $bob ), 'erase: the cart deleted, the unsubscribe record kept' );
+$ok(
+    false !== strpos( $after_all['scope'], '"email":"[deleted]"' ) && false !== strpos( $after_all['scope'], $jim ) && 'Mail to [deleted] failed' === $after_all['error']
+        && $json( [ 'to' => '[deleted]' ] ) === $after_step['input'] && $json( [ 'to' => '[deleted]' ] ) === $after_step['output'] && '[deleted] bounced' === $after_step['error'],
+    'erase: [deleted] in the five columns, the other address kept'
+);
+$kept        = fn( array $r ) => [ $r['status'], $r['started_at'], $r['finished_at'] ];
+$ok( $kept( $before_all ) === $kept( $after_all ), 'erase: status and dates kept' );
+$after_other = [ $run_row( $others ), $step_row( $others ) ];
+$ok( $before_other === $after_other, "erase {$bob}: jimbob@, …test.au and a mention inside a longer JSON string untouched in all five columns" );
+$ok( '{"email":"[deleted]"}' === $run_row( $mixed )['scope'], 'erase: a mixed-case stored email erased' );
+$ok( "Bounce from [deleted]. Also {$bob}.au." === $run_row( $run_err )['error'] && 'Could not send to <[deleted]>' === $step_row( $step_er )['error'], 'erase: a run whose only mention is in an error text erased (run and step error); a sentence-final dot still matches, .au not' );
+$ok( [] === RunStore::ids_mentioning( $bob, [], 50 ), 'erase: nothing left that mentions the email' );
+$visitor( $prefix . 'vb' );
+$url = $restore( $cart_b );
+$ok( $shop_url === $url && [ $gone_text ] === $notices( 'notice' ), 'erase: the erased cart\'s restore link gives outcome 1' );
+
+$axb    = $new_run(
+    [
+        'scope' => $json( [ 'email' => "axb@{$domain}" ] ),
+        'error' => "axb@{$domain}",
+    ]
+);
+$before = $run_row( $axb );
+$erased = $privacy->erase( "a_b@{$domain}", 1 );
+$ok( $before === $run_row( $axb ) && ! $erased['items_removed'] && $erased['done'], 'erase a_b@: axb@ untouched (esc_like)' );
+
+// Open runs: a waiting one is cancelled, then anonymized; a running one is left until it ends.
+$op      = "open@{$domain}";
+$w_run   = $new_run(
+    [
+        'status'      => 'waiting',
+        'finished_at' => null,
+        'wait_until'  => gmdate( 'Y-m-d H:i:s', time() + DAY_IN_SECONDS ),
+        'scope'       => $json( [ 'email' => $op ] ),
+    ],
+    [
+        [
+            'status' => 'waiting',
+            'input'  => $json( [ 'to' => $op ] ),
+        ],
+    ]
+);
+$r_run   = $new_run(
+    [
+        'status'      => 'running',
+        'finished_at' => null,
+        'scope'       => $json( [ 'email' => $op ] ),
+    ]
+);
+$erased  = $privacy->erase( $op, 1 );
+$w_after = $run_row( $w_run );
+$w_step  = $step_row( $w_run );
+$reason  = "The customer's personal data was erased.";
+$ok(
+    'cancelled' === $w_after['status'] && $reason === $w_after['error'] && null !== $w_after['finished_at'] && '{"email":"[deleted]"}' === $w_after['scope']
+        && 'cancelled' === $w_step['status'] && $reason === $w_step['error'] && $json( [ 'to' => '[deleted]' ] ) === $w_step['input'],
+    'erase: a waiting run and its waiting step cancelled with the erase reason, then anonymized'
+);
+$ok(
+    $json( [ 'email' => $op ] ) === $run_row( $r_run )['scope'] && $erased['done'] && $erased['items_retained'] && [ 'A workflow run is in progress; erase again in a few minutes.' ] === $erased['messages'],
+    'erase: a running run left as is; retained with the in-progress message, done'
+);
+$wpdb->update(
+    $runs_table,
+    [
+        'status'      => 'completed',
+        'finished_at' => current_time( 'mysql', true ),
+    ],
+    [ 'id' => $r_run ]
+);
+$erased = $privacy->erase( $op, 1 );
+$ok( '{"email":"[deleted]"}' === $run_row( $r_run )['scope'] && [] === $erased['messages'] && $erased['done'], 'erase again once it ended: anonymized, no message' );
+
+// Runs about the person's orders and carts: the scope holds refs, never the email.
+/** A saved pending order; no trigger sees it (its woocommerce_new_order callbacks are set aside). */
+$saved_order = function ( string $email ) use ( &$orders ) {
+    global $wp_filter;
+    $hooks = $wp_filter['woocommerce_new_order'] ?? null;
+    unset( $wp_filter['woocommerce_new_order'] );
+    $new = new WC_Order();
+    $new->set_billing_email( $email );
+    $orders[] = $new->save();
+    if ( $hooks ) {
+        $wp_filter['woocommerce_new_order'] = $hooks;
+    }
+    return end( $orders );
+};
+$oe          = "ord@{$domain}";
+$oid         = $saved_order( $oe );
+$about       = fn( string $subject, array $run = [], array $steps = [] ) => $new_run(
+    $run + [
+        'subject' => $subject,
+        'scope'   => $json( [ 'trigger' => [ 'ref' => $subject ] ] ),
+    ],
+    $steps
+);
+$wait_on     = [
+    'status'      => 'waiting',
+    'finished_at' => null,
+    'wait_until'  => gmdate( 'Y-m-d H:i:s', time() + DAY_IN_SECONDS ),
+];
+$o_wait      = $about( "order:{$oid}", $wait_on, [ [ 'status' => 'waiting' ] ] );
+$o_done      = $about( "order:{$oid}" );
+$export      = $privacy->export( $oe, 1 );
+$ok( $export['done'] && array_column( $export['data'], 'item_id' ) === [ "yaymatik-run-{$o_wait}", "yaymatik-run-{$o_done}" ], 'export: runs about an order with that billing email, waiting and finished, listed' );
+$o_before = $run_row( $o_done );
+$erased   = $privacy->erase( $oe, 1 );
+$o_after  = $run_row( $o_wait );
+$ok(
+    $erased['done'] && $erased['items_removed'] && [] === $erased['messages'] && 'cancelled' === $o_after['status'] && $reason === $o_after['error'] && 'cancelled' === $step_row( $o_wait )['status'],
+    'erase: a waiting run about the order cancelled with the erase reason, done'
+);
+$ok( $o_before === $run_row( $o_done ), 'erase: a finished run about the order unchanged, not a no-change page' );
+$erased = $privacy->erase( $oe, 1 );
+$ok( $erased['done'] && ! $erased['items_removed'] && [] === $erased['messages'], 'erase again: nothing found, done' );
+
+$ce     = "cartrun@{$domain}";
+$cart_c = $saved( $prefix . 'cartrun', [ $line( $p1, 1 ) ] );
+$wpdb->update( $table, [ 'email' => $ce ], [ 'id' => (int) $cart_c['id'] ] );
+$c_run  = $about(
+    'cart:' . $cart_c['id'],
+    [
+        'status'      => 'running',
+        'finished_at' => null,
+    ]
+);
+$erased = $privacy->erase( $ce, 1 );
+$ok( $erased['done'] && [ 'A workflow run is in progress; erase again in a few minutes.' ] === $erased['messages'] && null !== $row( $prefix . 'cartrun' ), 'erase: a run about the cart in progress → retained, the cart kept for the next erase' );
+$wpdb->update( $runs_table, $wait_on, [ 'id' => $c_run ] );
+$erased = $privacy->erase( $ce, 1 );
+$ok( $erased['done'] && $erased['items_removed'] && 'cancelled' === $run_row( $c_run )['status'] && null === $row( $prefix . 'cartrun' ), 'erase again once it waits: the run about the cart cancelled, then the cart deleted' );
+
+// 120 runs: three pages each way.
+for ( $i = 0; $i < 120; $i++ ) {
+    $new_run( [ 'scope' => $json( [ 'email' => "pg@{$domain}" ] ) ] );
+}
+$pages = [];
+for ( $page = 1; $page <= 3; $page++ ) {
+    $result  = $privacy->export( "pg@{$domain}", $page );
+    $pages[] = [ count( $result['data'] ), $result['done'] ];
+}
+$ok( [ [ 50, false ], [ 50, false ], [ 20, true ] ] === $pages, 'export, 120 runs: pages of 50, 50, 20; done on the third' );
+$pages = [];
+for ( $page = 1; $page <= 3; $page++ ) {
+    $pages[] = $privacy->erase( "pg@{$domain}", $page )['done'];
+}
+$ok( [ false, false, true ] === $pages && [] === RunStore::ids_mentioning( "pg@{$domain}", [], 50 ), 'erase, 120 runs: done on the third page, none left' );
+
+// A page that finds runs but changes none ends instead of looping.
+$new_run( [ 'scope' => $json( [ 'email' => "nc@{$domain}" ] ) ] );
+$drop   = fn( $query ) => preg_match( '/^UPDATE `' . preg_quote( $runs_table, '/' ) . '/', $query ) ? 'SELECT 1 FROM DUAL WHERE 0' : $query;
+$logged = 0;
+$count  = function ( $message ) use ( &$logged ) {
+    $logged += 'Erase found runs but changed none; stopped.' === $message ? 1 : 0;
+    return $message;
+};
+add_filter( 'query', $drop );
+add_filter( 'woocommerce_logger_log_message', $count );
+$erased = $privacy->erase( "nc@{$domain}", 1 );
+remove_filter( 'query', $drop );
+remove_filter( 'woocommerce_logger_log_message', $count );
+// The log filter runs once per log handler.
+$ok( $erased['done'] && ! $erased['items_removed'] && $erased['items_retained'] && 1 === count( $erased['messages'] ) && $logged > 0, 'erase: a page that changes nothing → done, retained with a message, logged' );
+$ok(
+    [
+        'items_removed'  => false,
+        'items_retained' => false,
+        'messages'       => [],
+        'done'           => true,
+    ] === $privacy->erase( '', 1 ),
+    'erase: not an email → nothing, done'
+);
 $settings( $on );
 remove_all_filters( 'pre_option_yaymatik_settings' );
 

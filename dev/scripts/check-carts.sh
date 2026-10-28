@@ -1,5 +1,5 @@
 #!/bin/bash
-# Check cart tracking on the local site (wp-cli): writes, hash skip, empty, logout, login, orders, capture, restore. Removes its rows.
+# Check cart tracking on the local site (wp-cli): writes, hash skip, empty, logout, login, orders, capture, restore, cleanup, privacy export / erase. Removes its rows.
 #   ./run.sh check-carts
 cd "$(dirname "$0")/../.." || exit 1
 [[ -f yaymatik.php ]] || { echo "Not the plugin root: $(pwd)"; exit 1; }

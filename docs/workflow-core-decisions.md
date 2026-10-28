@@ -363,6 +363,8 @@ Today errors only go to the WooCommerce log, which merchants never open.
 - No own tracking cookie: WooCommerce's session already identifies the browser.
 - Capture any email with the same response: no account enumeration, and guest checkouts of registered customers still count.
 - The restore GET writes nothing: mail scanners open links.
+- Erase anonymizes runs and keeps the unsubscribe record: run history stays countable, and the address keeps getting no emails.
+- Erase also cancels waiting runs about the person's orders and carts (by `subject`): a run stores refs, not the email, and would still send.
 
 **Cost.**
 - A guest is unknown once their WooCommerce session ends (2 days).
@@ -371,3 +373,4 @@ Today errors only go to the WooCommerce log, which merchants never open.
 - A restored cart moves to the browser that first changes it; the browser it came from starts a new row without its email, unless it opens the link again.
 - Restore is one click: a page on another site can make a browser open a valid link; the saved items go into that browser's cart, and an empty guest checkout gets the cart's email. AutomateWoo asks for a confirm click instead.
 - Saved lines keep no cart item data, so products with add-on options come back without them.
+- A queued or running run about the person is left as is; the admin erases again a few minutes later, and the carts stay until then.

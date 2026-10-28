@@ -19,6 +19,9 @@ final class YayMatik {
             \YayMatik\Workflow\Core\Cart\CartTracker::boot();
             // Not in CartTracker::boot(): links in emails already sent work while tracking is off.
             \YayMatik\Engine\FEPages\RestoreCart::get_instance();
+            // Not behind cart tracking either: carts saved before it was turned off still expire and can be erased.
+            \YayMatik\Workflow\Core\Runtime\Cleanup::boot();
+            \YayMatik\Engine\Privacy\PersonalData::get_instance();
         }
 
         $this->register_admin_menu();
