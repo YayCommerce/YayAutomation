@@ -39,7 +39,8 @@ final class CaptureLimits {
     public function allow( string $session, string $ip ): bool {
         $keys    = [
             'session' => 'yaymatik_cap_s_' . md5( $session ),
-            'ip'      => 'yaymatik_cap_i_' . substr( hash_hmac( 'sha256', $ip, $this->secret ), 0, 32 ),
+            // The secret also signs restore links: the prefix keeps a client-chosen IP header from matching one.
+            'ip'      => 'yaymatik_cap_i_' . substr( hash_hmac( 'sha256', 'ip|' . $ip, $this->secret ), 0, 32 ),
             'site'    => 'yaymatik_cap_site',
         ];
         $now     = $this->clock->now();

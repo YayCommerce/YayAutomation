@@ -14,7 +14,6 @@ defined( 'ABSPATH' ) || exit;
 final class EmailCapture {
 
     private const AJAX_ACTION   = 'yaymatik_capture_email';
-    private const CART_SECRET   = 'yaymatik_cart_secret';
     private const CAPTURED_KEY  = 'yaymatik_captured';
     private const SESSIONS_MAX  = 3;
     private const EMAIL_MAX     = 190;
@@ -108,7 +107,7 @@ final class EmailCapture {
             return 'not an email';
         }
         $key    = (string) $session->get_customer_id();
-        $limits = new CaptureLimits( Secret::option( self::CART_SECRET ), new SystemClock() );
+        $limits = new CaptureLimits( Secret::option( RestoreLink::SECRET_OPTION ), new SystemClock() );
         if ( ! $limits->allow( $key, (string) \WC_Geolocation::get_ip_address() ) ) {
             return 'rate limit';
         }

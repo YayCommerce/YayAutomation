@@ -183,4 +183,4 @@ All confirmed 2026-10-07, except L5 (2026-10-08) and M7 (2026-10-27). Reasons, r
 | P5 | AI provider deferred | §10 |
 | P6 | Settings → Health check | §9 |
 | P7 | Tree + container steps; no merge | §7 |
-| M7 | Carts in their own table; no own tracking cookie; capture any email, same response | §2 |
+| M7 | Carts in their own table; no own tracking cookie; capture any email, same response; restore GET writes nothing | §2 |

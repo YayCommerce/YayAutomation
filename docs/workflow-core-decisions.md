@@ -362,8 +362,12 @@ Today errors only go to the WooCommerce log, which merchants never open.
 - Carts, not pending orders: WooCommerce cancels unpaid orders after the hold-stock minutes, and most abandoned carts never become an order.
 - No own tracking cookie: WooCommerce's session already identifies the browser.
 - Capture any email with the same response: no account enumeration, and guest checkouts of registered customers still count.
+- The restore GET writes nothing: mail scanners open links.
 
 **Cost.**
 - A guest is unknown once their WooCommerce session ends (2 days).
 - A spoofed `X-Forwarded-For` skips the per-IP capture limit and can drain the site-wide one for 15 minutes.
 - An active row keeps the `order_id` of an unpaid order after its cart changes, so paying that order later closes the newer cart too. A missed reminder is better than reminding a buyer; AutomateWoo does the same.
+- A restored cart moves to the browser that first changes it; the browser it came from starts a new row without its email, unless it opens the link again.
+- Restore is one click: a page on another site can make a browser open a valid link; the saved items go into that browser's cart, and an empty guest checkout gets the cart's email. AutomateWoo asks for a confirm click instead.
+- Saved lines keep no cart item data, so products with add-on options come back without them.

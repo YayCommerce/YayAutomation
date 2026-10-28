@@ -22,6 +22,47 @@ final class CartStore {
     }
 
     /**
+     * @param int $id
+     * @return array|null
+     */
+    public static function find( int $id ): ?array {
+        global $wpdb;
+        $table = self::table();
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- own table, one row by id.
+        $row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE id = %d", $id ), ARRAY_A );
+        return $row ? $row : null;
+    }
+
+    /**
+     * A restored cart moves to the session that first changes it: the session's own row goes, the restored row takes its key.
+     *
+     * @param int    $id
+     * @param string $session_key
+     * @param int    $user_id 0 keeps the row's.
+     */
+    public static function bind( int $id, string $session_key, int $user_id ): void {
+        global $wpdb;
+        $table = self::table();
+        $now   = current_time( 'mysql', true );
+        // Only while the restored row is still open, so an order placed meanwhile doesn't cost this session its row.
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- own table, a write.
+        $wpdb->query( $wpdb->prepare( "DELETE own FROM {$table} own JOIN {$table} restored ON restored.id = %d AND restored.status <> %s WHERE own.session_key = %s AND own.id <> %d", $id, self::ORDERED, $session_key, $id ) );
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- own table, a write.
+        $wpdb->query(
+            $wpdb->prepare(
+                "UPDATE {$table} SET session_key = %s, user_id = IF(%d > 0, %d, user_id), restored_at = %s, updated_at = %s WHERE id = %d AND status <> %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+                $session_key,
+                $user_id,
+                $user_id,
+                $now,
+                $now,
+                $id,
+                self::ORDERED
+            )
+        );
+    }
+
+    /**
      * Inserts the session's row or updates the given columns; one query, so two requests can't both insert.
      *
      * @param string $session_key

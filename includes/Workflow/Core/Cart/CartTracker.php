@@ -12,6 +12,8 @@ final class CartTracker {
 
     private const HASH_KEY = 'yaymatik_cart_hash';
 
+    private const RESTORED_KEY = 'yaymatik_restored_cart';
+
     /** A cart or checkout view refreshes `last_activity_at` at most this often. */
     private const VIEW_EVERY = 5 * MINUTE_IN_SECONDS;
 
@@ -20,6 +22,9 @@ final class CartTracker {
 
     /** @var bool An order was created from the cart in this request. */
     private static $ordered = false;
+
+    /** @var bool A restore link is handled in this request: nothing is written at shutdown. */
+    private static $suppressed = false;
 
     public static function boot(): void {
         // Not a store-front hook: keeps rows right for later triggers even while tracking is off.
@@ -64,7 +69,7 @@ final class CartTracker {
     }
 
     public static function shutdown(): void {
-        if ( ! self::$touched || ! self::front_end() || ! WC()->session || ! WC()->session->has_session() ) {
+        if ( self::$suppressed || ! self::$touched || ! self::front_end() || ! WC()->session || ! WC()->session->has_session() ) {
             return;
         }
         $snapshot = CartSnapshot::from_wc();
@@ -96,6 +101,7 @@ final class CartTracker {
         if ( 'cart' === $reason && ! $changed ) {
             return;
         }
+        self::bind_restored( $key );
         $row   = CartStore::find_by_session( $key );
         $reset = $row && CartStore::ORDERED === $row['status'] && $changed;
         if ( $reset ) {
@@ -169,6 +175,27 @@ final class CartTracker {
             CartStore::delete_by_session( $key );
         }
         WC()->session->set( self::HASH_KEY, '' );
+        WC()->session->set( self::RESTORED_KEY, null );
+    }
+
+    public static function suppress(): void {
+        self::$suppressed = true;
+    }
+
+    /**
+     * A restore link refilled this session's cart; its first real activity binds the row.
+     *
+     * @param int $id The restored row.
+     */
+    public static function restored( int $id ): void {
+        // The merged cart's hash: else the first page view after the redirect would look like a change and bind.
+        $snapshot = CartSnapshot::from_wc();
+        if ( $snapshot ) {
+            WC()->session->set( self::HASH_KEY, $snapshot->hash() );
+        }
+        if ( Settings::get( 'cart_tracking' ) ) {
+            WC()->session->set( self::RESTORED_KEY, $id );
+        }
     }
 
     /**
@@ -222,6 +249,30 @@ final class CartTracker {
             return;
         }
         CartStore::mark_ordered_by_email( $email, gmdate( 'Y-m-d H:i:s', $created->getTimestamp() ) );
+    }
+
+    /**
+     * Moves a restored row to this session, unless it's ordered, already this session's, or another user's.
+     *
+     * @param string $key This session's key.
+     */
+    private static function bind_restored( string $key ): void {
+        $id = (int) WC()->session->get( self::RESTORED_KEY );
+        if ( $id <= 0 ) {
+            return;
+        }
+        WC()->session->set( self::RESTORED_KEY, null );
+        $row     = CartStore::find( $id );
+        $user_id = get_current_user_id();
+        if ( ! $row || CartStore::ORDERED === $row['status'] || $row['session_key'] === $key || ! in_array( (int) $row['user_id'], [ 0, $user_id ], true ) ) {
+            return;
+        }
+        // Binding deletes this session's own row; paying the order linked to it must still find it.
+        $own = CartStore::find_by_session( $key );
+        if ( $own && (int) $own['order_id'] > 0 ) {
+            return;
+        }
+        CartStore::bind( $id, $key, $user_id );
     }
 
     /**

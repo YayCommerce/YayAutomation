@@ -83,14 +83,21 @@ final class CartSnapshot {
         return $this->currency;
     }
 
+    /**
+     * Product, variation and attributes: what makes two cart lines the same line.
+     *
+     * @param array $line
+     */
+    public static function line_key( array $line ): string {
+        $variation = array_map( 'strval', (array) ( $line['variation'] ?? [] ) );
+        ksort( $variation );
+        return (string) wp_json_encode( [ (int) $line['product_id'], (int) $line['variation_id'], $variation ] );
+    }
+
     /** What the shopper chose: products, variations, quantities and currency. Prices are left out, so a price or tax refresh isn't a change. */
     public function hash(): string {
         $keys = array_map(
-            function ( array $line ): string {
-                $variation = array_map( 'strval', (array) $line['variation'] );
-                ksort( $variation );
-                return (string) wp_json_encode( [ (int) $line['product_id'], (int) $line['variation_id'], (int) $line['quantity'], $variation ] );
-            },
+            fn( array $line ): string => self::line_key( $line ) . '|' . (int) $line['quantity'],
             $this->lines
         );
         sort( $keys );

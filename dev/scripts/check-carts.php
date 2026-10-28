@@ -4,7 +4,8 @@
  * session handler that is never started (no cookie, nothing saved), keyed `t_check…` or a temporary user's id.
  * Orders are WC_Order objects with a fake id that are never saved, so no order hook or workflow runs.
  * Email capture uses a real WC_Cart holding one temporary hidden product; the classic endpoint's answer is
- * read through the AJAX die handler.
+ * read through the AJAX die handler. Restore calls RestoreCart::restore() (the request handler around it redirects
+ * and exits) with more temporary products.
  * Prints PASS / FAIL lines; removes its rows and users. Run through check-carts.sh.
  *
  * @package YayMatik
@@ -12,9 +13,12 @@
 
 // phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.WP.GlobalVariablesOverride.Prohibited
 
+use YayMatik\Engine\FEPages\RestoreCart;
 use YayMatik\Workflow\Core\Cart\CartSnapshot;
 use YayMatik\Workflow\Core\Cart\CartTracker;
 use YayMatik\Workflow\Core\Cart\EmailCapture;
+use YayMatik\Workflow\Core\Cart\RestoreLink;
+use YayMatik\Workflow\Core\Email\UnsubscribeLink;
 use YayMatik\Workflow\Core\Storage\CartStore;
 use YayMatik\Workflow\Core\Storage\Schema;
 use YayMatik\Workflow\Core\Storage\Settings;
@@ -336,6 +340,301 @@ $ok( $old === $row( $c6 )['updated_at'], 'block checkout, same email and name ag
 $customer->set_billing_first_name( 'Evelyn' );
 EmailCapture::store_api( $customer, null );
 $ok( 'Evelyn' === $row( $c6 )['first_name'], 'block checkout, name changed: captured again' );
+
+// Restore link: RestoreCart::restore() on real products; each visit is a new browser with its own cart.
+$simple          = function ( string $name, callable $set = null ) use ( &$posts ) {
+    $item = new WC_Product_Simple();
+    $item->set_name( 'YayMatik check-carts ' . $name . ' (temporary)' );
+    $item->set_catalog_visibility( 'hidden' );
+    $item->set_regular_price( '10' );
+    if ( $set ) {
+        $set( $item );
+    }
+    $posts[] = $item->save();
+    return $item->get_id();
+};
+$variable        = function () use ( &$posts ) {
+    $attribute = new WC_Product_Attribute();
+    $attribute->set_name( 'Size' );
+    $attribute->set_options( [ 'S', 'M' ] );
+    $attribute->set_visible( true );
+    $attribute->set_variation( true );
+    $parent = new WC_Product_Variable();
+    $parent->set_name( 'YayMatik check-carts variable (temporary)' );
+    $parent->set_catalog_visibility( 'hidden' );
+    $parent->set_attributes( [ $attribute ] );
+    $posts[]   = $parent->save();
+    $variation = new WC_Product_Variation();
+    $variation->set_parent_id( $parent->get_id() );
+    $variation->set_attributes( [ 'size' => 'M' ] );
+    $variation->set_regular_price( '5' );
+    $posts[] = $variation->save();
+    return [ $parent->get_id(), $variation->get_id() ];
+};
+$p1              = $product->get_id();
+$p2              = $simple( 'two' );
+$p3              = $simple( 'three' );
+$oos             = $simple( 'out of stock', fn( $item ) => $item->set_stock_status( 'outofstock' ) );
+$low             = $simple(
+    'one in stock',
+    function ( $item ) {
+        $item->set_manage_stock( true );
+        $item->set_stock_quantity( 1 );
+    }
+);
+list( $vp, $vv ) = $variable();
+// A variation whose parent row is gone: WooCommerce reads it with parent 0.
+list( $gone_parent, $orphan ) = $variable();
+$wpdb->delete( $wpdb->posts, [ 'ID' => $gone_parent ] );
+$wpdb->delete( $wpdb->postmeta, [ 'post_id' => $gone_parent ] );
+$wpdb->delete( $wpdb->term_relationships, [ 'object_id' => $gone_parent ] );
+clean_post_cache( $gone_parent );
+clean_post_cache( $orphan );
+
+$vline = fn( int $parent_id, int $variation, int $quantity ) => [
+    'variation_id' => $variation,
+    'variation'    => [ 'attribute_size' => 'M' ],
+] + $line( $parent_id, $quantity, 5.0 );
+/** A saved cart: a row written by its own browser, with an email. */
+$saved = function ( string $key, array $lines, int $user_id = 0 ) use ( $browser, $cart, $row, $wpdb, $table ) {
+    $browser( $key, $user_id );
+    CartTracker::record( $cart( $lines ), 'cart' );
+    if ( ! $user_id ) {
+        $wpdb->update(
+            $table,
+            [
+                'email'      => 'sam.' . wp_rand( 1000, 9999 ) . '@example.test',
+                'first_name' => 'Sam',
+            ],
+            [ 'session_key' => $key ]
+        );
+    }
+    return $row( $key );
+};
+$link  = RestoreLink::from_options();
+$token = function ( array $r ) use ( $link ) {
+    parse_str( (string) wp_parse_url( $link->url( (int) $r['id'], $r['created_at'] ), PHP_URL_QUERY ), $args );
+    return $args[ UnsubscribeLink::ARG_TOKEN ];
+};
+/** A new browser holding these cart lines; with $own its cart is also recorded as its own row. */
+$visitor    = function ( string $key, array $lines = [], int $user_id = 0, bool $own = false ) use ( $browser ) {
+    $browser( $key, $user_id );
+    WC()->customer = new WC_Customer( $user_id, true );
+    WC()->cart->empty_cart( false );
+    foreach ( $lines as $l ) {
+        WC()->cart->add_to_cart( $l['product_id'], $l['quantity'], $l['variation_id'], $l['variation'] );
+    }
+    WC()->cart->calculate_totals();
+    if ( $own ) {
+        CartTracker::record( CartSnapshot::from_wc(), 'cart' );
+    }
+};
+$restore    = fn( array $r, string $tok = null ) => RestoreCart::get_instance()->restore( (int) $r['id'], $tok ?? $token( $r ) );
+$notices    = fn( string $type ) => array_column( (array) wc_get_notices( $type ), 'notice' );
+$in_cart    = function () {
+    $quantities = [];
+    foreach ( WC()->cart->get_cart() as $item ) {
+        $id                = (int) ( $item['variation_id'] ? $item['variation_id'] : $item['product_id'] );
+        $quantities[ $id ] = ( $quantities[ $id ] ?? 0 ) + (int) $item['quantity'];
+    }
+    ksort( $quantities );
+    return $quantities;
+};
+$checkout   = wc_get_checkout_url();
+$shop_url   = wc_get_page_permalink( 'shop' );
+$gone_text  = 'This cart is no longer available.';
+$added_text = 'We added your saved items to your cart.';
+$some_text  = 'Some items are no longer available.';
+
+$s = $saved( $prefix . 's', [ $line( $p1, 1 ), $line( $p2, 2 ) ] );
+$ok( $link->verify( (int) $s['id'], $s['created_at'], $token( $s ) ), 'restore URL verifies against its row' );
+$tok   = $token( $s );
+$other = ( 'A' === $tok[0] ? 'B' : 'A' ) . substr( $tok, 1 );
+$ok( ! $link->verify( (int) $s['id'], $s['created_at'], $other ) && ! $link->verify( (int) $s['id'] + 1, $s['created_at'], $tok ), 'restore URL: a changed token or another id fails' );
+
+// 1. Gone or bad token.
+$visitor( $prefix . 'v1' );
+$url = $restore(
+    [
+        'id'         => 999999999,
+        'created_at' => $s['created_at'],
+    ]
+);
+$ok( $shop_url === $url && [ $gone_text ] === $notices( 'notice' ) && null === WC()->session->get( 'yaymatik_restore_notice' ), 'outcome 1, row gone: shop + "no longer available", no checkout notice flag' );
+$visitor( $prefix . 'v1b' );
+$url = $restore( $s, $other );
+$ok( $shop_url === $url && [ $gone_text ] === $notices( 'notice' ) && [] === $in_cart(), 'outcome 1, bad token: shop + "no longer available", nothing added' );
+$cycle = $saved( $prefix . 'cycle', [ $line( $p1, 1 ) ] );
+$age( $prefix . 'cycle', "created_at = '{$old}', status = 'ordered'" );
+$cycle     = $row( $prefix . 'cycle' );
+$cycle_tok = $token( $cycle );
+CartStore::reset_cycle( (int) $cycle['id'] );
+$visitor( $prefix . 'v1c' );
+$url = $restore( $cycle, $cycle_tok );
+$ok( $shop_url === $url && [ $gone_text ] === $notices( 'notice' ), "outcome 1, a new cycle's created_at: the old link fails" );
+
+// 2. Ordered.
+$o2 = $saved( $prefix . 'o2', [ $line( $p1, 1 ) ] );
+$wpdb->update( $table, [ 'status' => 'ordered' ], [ 'id' => (int) $o2['id'] ] );
+$visitor( $prefix . 'v2' );
+$url = $restore( $o2 );
+$ok( $shop_url === $url && [ 'You already placed an order for these items.' ] === $notices( 'notice' ) && [] === $in_cart(), 'outcome 2, ordered: shop + "already placed an order", nothing added' );
+
+// 3. Every line unavailable, a variation with a deleted parent among them.
+$u3 = $saved( $prefix . 'u3', [ $line( $oos, 1 ), $vline( $gone_parent, $orphan, 1 ) ] );
+$visitor( $prefix . 'v3' );
+$url = $restore( $u3 );
+$ok( $shop_url === $url && [ $gone_text ] === $notices( 'notice' ) && [] === $in_cart(), 'outcome 3, all unavailable (out of stock, variation with a deleted parent): shop + "no longer available", no fatal' );
+
+// 4. Everything already in the cart.
+$visitor( $prefix . 'v4', [ $line( $p1, 1 ), $line( $p2, 3 ) ] );
+$before = $in_cart();
+$url    = $restore( $s );
+$ok( $checkout === $url && [] === (array) wc_get_notices() && $before === $in_cart(), 'outcome 4, all already in the cart: checkout, no notice, cart unchanged' );
+$ok( null === WC()->session->get( 'yaymatik_restore_notice' ), 'outcome 4 without a notice: no checkout notice flag' );
+$u4 = $saved( $prefix . 'u4', [ $line( $p1, 1 ), $line( $oos, 1 ) ] );
+$visitor( $prefix . 'v4b', [ $line( $p1, 1 ) ] );
+$before = $in_cart();
+$url    = $restore( $u4 );
+$ok( $checkout === $url && [] === $notices( 'success' ) && [ $some_text ] === $notices( 'notice' ) && $before === $in_cart(), 'outcome 4 with unavailable lines: checkout + "some no longer available" only, cart unchanged' );
+$ok( true === WC()->session->get( 'yaymatik_restore_notice' ), 'outcome 4 with a notice: checkout notice flag set' );
+
+// 5. Added, without and with skipped lines.
+$s_before = $row( $prefix . 's' );
+$v5       = $prefix . 'v5';
+$visitor( $v5 );
+$url = $restore( $s );
+$ok( $checkout === $url && [ $added_text ] === $notices( 'success' ) && [] === $notices( 'notice' ), 'outcome 5: checkout + "added", no skipped notice' );
+$ok( true === WC()->session->get( 'yaymatik_restore_notice' ), 'outcome 5: checkout notice flag set' );
+$ok(
+    [
+        $p1 => 1,
+        $p2 => 2,
+    ] === $in_cart(),
+    'outcome 5: both saved lines in the cart'
+);
+$ok( WC()->customer->get_billing_email() === $s['email'] && 'Sam' === WC()->customer->get_billing_first_name(), "outcome 5, guest's empty cart: email and first name prefilled" );
+$ok( $row( $prefix . 's' ) === $s_before && null === $row( $v5 ), 'restore writes nothing: saved row unchanged, no row for the visitor' );
+$ok( WC()->session->get( 'yaymatik_cart_hash' ) === CartSnapshot::from_wc()->hash() && (int) WC()->session->get( 'yaymatik_restored_cart' ) === (int) $s['id'], "restore: merged cart's hash and the restored id in the session" );
+CartTracker::record( CartSnapshot::from_wc(), 'cart' );
+$ok( $row( $prefix . 's' ) === $s_before && null === $row( $v5 ), 'next request, cart unchanged: still no write, no binding' );
+
+$block = '<div class="wp-block-woocommerce-checkout"></div>';
+$first = apply_filters( 'render_block_woocommerce/checkout', $block, [] );
+$ok( 1 === substr_count( $first, $added_text ) && 0 === strpos( $first, '<div class="woocommerce-notices-wrapper">' ) && null === WC()->session->get( 'yaymatik_restore_notice' ) && [] === (array) wc_get_notices(), 'Checkout block: the notice printed once before the block, flag and notices cleared' );
+$ok( apply_filters( 'render_block_woocommerce/checkout', $block, [] ) === $block, 'Checkout block, next render: nothing added' );
+
+$mix = $saved( $prefix . 'mix', [ $line( $p1, 1 ), $line( $oos, 1 ), $vline( $gone_parent, $orphan, 1 ), $vline( $vp, $vv, 2 ) ] );
+$visitor( $prefix . 'v5b' );
+$url = $restore( $mix );
+$ok(
+    $checkout === $url && [ $added_text ] === $notices( 'success' ) && [ $some_text ] === $notices( 'notice' ) && [
+        $p1 => 1,
+        $vv => 2,
+    ] === $in_cart(),
+    'outcome 5 with skipped lines: "added" + "some no longer available", the rest added'
+);
+
+$visitor( $prefix . 'v5c', [ $line( $p2, 5 ) ] );
+$restore( $s );
+$ok(
+    [
+        $p1 => 1,
+        $p2 => 5,
+    ] === $in_cart(),
+    'merge: the larger quantity wins, missing line added'
+);
+
+// Notices: earlier ones kept, ones added while merging dropped.
+$refuse = function ( $passed, $product_id ) use ( $p2 ) {
+    if ( $p2 === (int) $product_id ) {
+        wc_add_notice( 'Refused by a filter.', 'error' );
+        return false;
+    }
+    return $passed;
+};
+$n      = $saved( $prefix . 'n', [ $line( $p1, 1 ), $line( $p2, 1 ), $line( $low, 3 ) ] );
+$visitor( $prefix . 'v6' );
+wc_add_notice( 'An earlier notice.', 'error' );
+add_filter( 'woocommerce_add_to_cart_validation', $refuse, 10, 2 );
+$restore( $n );
+remove_filter( 'woocommerce_add_to_cart_validation', $refuse, 10 );
+$ok( [ 'An earlier notice.' ] === $notices( 'error' ) && [ $added_text ] === $notices( 'success' ) && [ $some_text ] === $notices( 'notice' ) && [ $p1 => 1 ] === $in_cart(), "notices: the earlier one kept; the filter's and WooCommerce's stock errors dropped; refused lines skipped" );
+
+// Prefill only into an empty guest checkout with a guest's cart.
+$visitor( $prefix . 'v7', [ $line( $p3, 1 ) ] );
+$restore( $s );
+$ok( '' === WC()->customer->get_billing_email(), 'no prefill when the cart had items' );
+$l7 = $user( 'restorer' );
+$visitor( (string) $l7, [], $l7 );
+$restore( $s );
+// A logged-in customer's session already holds the account email.
+$ok(
+    WC()->customer->get_billing_email() !== $s['email'] && 'Sam' !== WC()->customer->get_billing_first_name() && [
+        $p1 => 1,
+        $p2 => 2,
+    ] === $in_cart(),
+    'logged-in visitor: items added, no prefill'
+);
+$wpdb->delete( $table, [ 'session_key' => (string) $l7 ] );
+
+// Binding.
+$b  = $saved( $prefix . 'b', [ $line( $p1, 1 ), $line( $p2, 1 ) ] );
+$vb = $prefix . 'vb';
+$visitor( $vb, [ $line( $p3, 1 ) ], 0, true );
+$own = (int) $row( $vb )['id'];
+$restore( $b );
+$ok( $own === (int) $row( $vb )['id'] && $row( $prefix . 'b' )['session_key'] === $prefix . 'b', 'binding: nothing moves on the restore itself' );
+WC()->cart->add_to_cart( $p3, 1 );
+WC()->cart->calculate_totals();
+CartTracker::record( CartSnapshot::from_wc(), 'cart' );
+$r = $row( $vb );
+$ok( $r && (int) $r['id'] === (int) $b['id'] && null !== $r['restored_at'] && 3 === count( json_decode( $r['items'], true ) ) && null === $row( $prefix . 'b' ), 'binding: the first change moves the restored row to this browser, restored_at set, new items' );
+$ok( ! $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$table} WHERE id = %d", $own ) ) && null === WC()->session->get( 'yaymatik_restored_cart' ), "binding: the browser's own row deleted, session var cleared" );
+
+$uo  = $user( 'owner' );
+$urw = $saved( (string) $uo, [ $line( $p1, 1 ) ], $uo );
+$vu  = $prefix . 'vu';
+$visitor( $vu );
+$restore( $urw );
+WC()->cart->add_to_cart( $p3, 1 );
+WC()->cart->calculate_totals();
+CartTracker::record( CartSnapshot::from_wc(), 'cart' );
+$ok( $row( (string) $uo )['session_key'] === (string) $uo && null === $row( (string) $uo )['restored_at'] && $row( $vu ) && (int) $row( $vu )['id'] !== (int) $urw['id'], "a user's row is never bound to a guest; the guest gets its own row" );
+$ok( '' === WC()->customer->get_billing_email(), "a user's cart restored by a guest: no prefill" );
+
+$bo = $saved( $prefix . 'bo', [ $line( $p1, 1 ) ] );
+$vo = $prefix . 'vo';
+$visitor( $vo );
+$restore( $bo );
+$wpdb->update( $table, [ 'status' => 'ordered' ], [ 'id' => (int) $bo['id'] ] );
+WC()->cart->add_to_cart( $p3, 1 );
+WC()->cart->calculate_totals();
+CartTracker::record( CartSnapshot::from_wc(), 'cart' );
+$ok( $row( $prefix . 'bo' ) && $row( $vo ) && (int) $row( $vo )['id'] !== (int) $bo['id'], 'a row ordered before the first change is not bound' );
+
+$bp     = $saved( $prefix . 'bp', [ $line( $p1, 1 ) ] );
+$vp_key = $prefix . 'vp';
+$visitor( $vp_key, [ $line( $p3, 1 ) ], 0, true );
+$wpdb->update( $table, [ 'order_id' => $fake + 3 ], [ 'session_key' => $vp_key ] );
+$restore( $bp );
+WC()->cart->add_to_cart( $p3, 1 );
+WC()->cart->calculate_totals();
+CartTracker::record( CartSnapshot::from_wc(), 'cart' );
+$ok( (int) $row( $vp_key )['order_id'] === $fake + 3 && $row( $prefix . 'bp' )['session_key'] === $prefix . 'bp', "own row linked to an unpaid order: kept, the restored row isn't bound" );
+
+$visitor( $prefix . 've' );
+$restore( $s );
+CartTracker::emptied();
+$ok( null === WC()->session->get( 'yaymatik_restored_cart' ), 'emptied clears the restored id' );
+
+$settings( [ 'cart_tracking' => false ] + $on );
+$bt = $saved( $prefix . 'bt', [ $line( $p1, 1 ) ] );
+$vt = $prefix . 'vt';
+$visitor( $vt );
+$url = $restore( $bt );
+$ok( $checkout === $url && [ $p1 => 1 ] === $in_cart() && null === WC()->session->get( 'yaymatik_restored_cart' ), 'tracking off: items restored, no restored id kept (never binds)' );
+$settings( $on );
 remove_all_filters( 'pre_option_yaymatik_settings' );
 
 // Logout last: did_action( 'wp_logout' ) stays true for the rest of this process.

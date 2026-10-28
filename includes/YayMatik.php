@@ -17,6 +17,8 @@ final class YayMatik {
         if ( class_exists( 'WooCommerce' ) ) {
             \YayMatik\Workflow\Core\Runtime\Runtime::boot();
             \YayMatik\Workflow\Core\Cart\CartTracker::boot();
+            // Not in CartTracker::boot(): links in emails already sent work while tracking is off.
+            \YayMatik\Engine\FEPages\RestoreCart::get_instance();
         }
 
         $this->register_admin_menu();
