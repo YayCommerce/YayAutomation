@@ -369,8 +369,8 @@ Today errors only go to the WooCommerce log, which merchants never open.
 **Cost.**
 - A guest is unknown once their WooCommerce session ends (2 days).
 - A spoofed `X-Forwarded-For` skips the per-IP capture limit and can drain the site-wide one for 15 minutes.
-- An active row keeps the `order_id` of an unpaid order after its cart changes, so paying that order later closes the newer cart too. A missed reminder is better than reminding a buyer; AutomateWoo does the same.
+- An active row keeps the `order_id` of an unpaid order after its cart changes, so paying that order later closes the newer cart too. A missed reminder is better than reminding a buyer.
 - A restored cart moves to the browser that first changes it; the browser it came from starts a new row without its email, unless it opens the link again.
-- Restore is one click: a page on another site can make a browser open a valid link; the saved items go into that browser's cart, and an empty guest checkout gets the cart's email. AutomateWoo asks for a confirm click instead.
+- Restore is one click: a page on another site can make a browser open a valid link; the saved items go into that browser's cart, and an empty guest checkout gets the cart's email. A confirm page before the merge would stop this; not added in v1.0.
 - Saved lines keep no cart item data, so products with add-on options come back without them.
 - A queued or running run about the person is left as is; the admin erases again a few minutes later, and the carts stay until then.

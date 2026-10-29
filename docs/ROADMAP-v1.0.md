@@ -150,11 +150,11 @@ We chose these 8 because they cover what merchants install an automation plugin 
 
 ### Store front
 
-**Today:** nothing shown to shoppers.
+**Today:** the unsubscribe confirmation page (M1, its own page, not the theme); the restore link handler and its notices (M7). The email block that carries the link comes in M8.
 
 **v1.0 adds:**
 - "Restore my cart" link in reminder emails: refills the cart and opens checkout.
-- A simple unsubscribe confirmation page in the store's theme.
+- A simple unsubscribe confirmation page, its own page. ✅ M1
 
 **States:**
 - An old or invalid unsubscribe link shows "This link is no longer valid".

@@ -25,7 +25,7 @@ Changes from the ROADMAP-v1.0 order:
 | M1 | Customer emails + coupons | L | 3 | F1 | ✅ Done |
 | M2 | Wait + run history | L | 3 | F1 | ✅ Done |
 | F2 | Workflows table | M | 3 | F1 | ✅ Done |
-| M7 | Cart tracking + Settings + Health check | L | 3 | F1 | — |
+| M7 | Cart tracking + Settings + Health check | L | 3 | F1 | In progress |
 | M8 | Abandoned cart + checkout | L | 2 | M1, M2, M7 | — |
 | M3 | Review request | M | 2 | M2 | — |
 | M4 | Welcome series | S | 2 | M2 | — |
@@ -176,12 +176,14 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 
 ## M7 — Cart tracking + Settings + Health check · L · risk 3
 
+**Status:** In progress. Backend and store front (PR A, `jack/feature/m7a-carts-settings`) ⏳ merge pending; Settings page and health check panel (PR B) next.
+
 **Backend**
-- **M7.1 Cart tracking** — carts table; logged-in customers and guests; email captured at checkout (classic + block).
-- **M7.2 Restore link** — refills the cart and opens checkout.
-- **M7.3 Settings** — storage and REST.
-- **M7.4 Retention and privacy** — cleanup of carts and runs, including runs of deleted workflows; personal data exporter and eraser.
-- **M7.5 Health check v1** *(§9)*.
+- ⏳ **M7.1 Cart tracking** — carts table; logged-in customers and guests; email captured at checkout (classic + block).
+- ⏳ **M7.2 Restore link** — refills the cart and opens checkout.
+- ⏳ **M7.3 Settings** — storage and REST.
+- ⏳ **M7.4 Retention and privacy** — cleanup of carts and runs, including runs of deleted workflows; personal data exporter and eraser.
+- ⏳ **M7.5 Health check v1** *(§9)*.
   - (a) Runs stuck in `queued` or `waiting` with no Action Scheduler job → queue again.
   - (b) Runs left `running` with no run or recovery job → recover.
   - (c) Jobs late over 15 min → server cron guide (info).
@@ -190,7 +192,7 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 **UI**
 - **M7.6 Settings page** — Cart tracking, Emails, Run history.
 - **M7.7 Health check panel** — each problem with its proposed fix.
-- **M7.8 Store front** — message when a restore link's cart is gone.
+- ⏳ **M7.8 Store front** — message when a restore link's cart is gone.
 
 ## M8 — Abandoned cart + checkout · L · risk 2
 
@@ -210,6 +212,17 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 
 **Follow-ups**
 - A trigger's `context()` and `refs()` load the order 2–3 times per event; load it once.
+- Runs about a cart store `cart:<id>` as their subject, so the eraser finds them by subject (M7.4); the cart entity keeps that form.
+- M8.7 becomes a fixed note in the trigger panel: the run always stops when an order is placed, no setting (decided 2026-10-28, YayMatik Pages v3 #triggers).
+- Cart tracking off blocks Activate for workflows with a cart trigger (M1.10 pattern).
+- A cart run's subject label is the shopper's email; a run stopped by an order is Cancelled with "The shopper placed order #N."
+- The restore link goes into the email through the M8.5 block, built with `RestoreLink::from_options()->url()`.
+- When a cart turns active again or is ordered, cancel its waiting runs.
+- Pause per email address, not per cart or session.
+- Customer data in cart runs comes from the cart, never from an account found by its email.
+- Emails show the live product name and price; the saved snapshot only when the product is gone.
+- The paid-order email rule (M7 D7) also closes `abandoned` carts.
+- The abandon sweep job joins the cleanup job's schedule check (`Cleanup::ensure()`).
 
 ## M3 — Review request · M · risk 2
 
@@ -236,7 +249,7 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 
 ## M9 — Release hardening · M
 
-- **M9.1** End-to-end test of all 18 templates; classic and block checkout; light and dark admin.
+- **M9.1** End-to-end test of all 18 templates; classic and block checkout; light and dark admin. Run `./run.sh check-carts` on a MySQL 8 site (erase `REGEXP` tested only on MariaDB 11.2).
 - **M9.2** Translations and release build.
 - **M9.3** Leave unfinished steps unregistered for the release; check plugin logos load (CSS mask) when assets come from a CDN. *(§8)*
 - **M9.4** Release checklist items picked in ROADMAP-v1.0.
