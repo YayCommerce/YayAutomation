@@ -9,8 +9,9 @@
 - `includes/Engine/BEPages/AdminPage.php` — slug, capability, `yayMatikMeta`, mount div. Hook suffix: `yaycommerce_page_yaymatik`
 - `includes/YayMatikLicenseAdapter.php` — submenu under YayCommerce via `yaycommerce/admin-shell` (Lite). Registered in `YayMatik::register_admin_menu()`
 - `includes/YayMatikProLicenseAdapter.php` — license adapter, not registered (`TODO: EDD setup`)
-- `includes/Engine/API/RestAPI.php` — routes under `yaymatik/v1`; `POST /workflows/{id}/preview` and `/send-test` (`manage_woocommerce`, body `{ nodeId, config, graph? }`) → `Workflow/Core/Email/EmailPreview.php`
-- `includes/Engine/FEPages/UnsubscribePage.php` — store-front unsubscribe page (own HTML, not the theme)
+- `includes/Engine/API/RestAPI.php` — routes under `yaymatik/v1`; `POST /workflows/{id}/preview` and `/send-test` (`manage_woocommerce`, body `{ nodeId, config, graph? }`) → `Workflow/Core/Email/EmailPreview.php`. `SettingsRoutes` (`GET` / `PUT /settings`) and `HealthRoutes` (`GET /health/checks`, `POST /health/fix`) are their own singletons
+- `includes/Engine/FEPages/UnsubscribePage.php` — store-front unsubscribe page (own HTML, not the theme); `RestoreCart.php` — restore link handler (merge, notices, redirect to checkout)
+- `includes/Engine/Privacy/PersonalData.php` — personal data exporter, eraser and privacy policy text
 - `includes/Engine/Register/` — script loading; `RegisterDev.php` is stripped from the release zip
 - `includes/Engine/` — WP/WC glue only: `BEPages/`, `FEPages/`, `API/`, `Register/`. REST controllers call Workflow Core and hold no workflow logic.
 - `includes/Workflow/` — Workflow Core, namespace `YayMatik\Workflow\` (design §1). Layout rule: the top level holds what modules register, `Core/` holds the shared code every module uses (`includes/Engine/` = WordPress glue: REST, admin pages, scripts), and each folder is named for the plural of the base class it holds; namespaces follow folders.
@@ -26,12 +27,14 @@
   - `Core/Definition/GraphSchema.php` — graph shape on save (ids, kinds, one trigger, one parent per step, one child per handle) and its normalized form with `schemaVersion` (missing reads as 1; newer → 400). `same()` compares two graphs.
   - `Core/Definition/Validator.php` — REST input → storable parts, and issues that block Activate / Update (workflow, then per step: settings, merge tags the step can't reach, data it needs). Issues carry `code`, `message`, `field`, `nodeId`. `issues()` → `{ live, draft }` for REST responses. Mirrored by TS `validateWorkflow()`.
   - `Core/Definition/Messages.php` — messages PHP and TS both show; TS copy in `apps/admin-page/src/routes/workflows/model/messages.ts`, kept equal by the parity test.
-  - `Core/Storage/` — `Schema` (tables, `dbDelta`), `UnsubscribeStore`, `WorkflowStore` (`workflows` table, multi-row writes in one transaction; `live_version_id()`), `VersionStore`, `RunStore` (runs; `claim()` is the row lock), `RunStepStore` (one row per step a run ran).
+  - `Core/Cart/` — cart tracking (WooCommerce only): `CartTracker` (hooks, one write per request), `CartSnapshot` (lines + hash), `CartMerge`, `EmailCapture` (classic endpoint + Store API), `RequestOrigin`, `CaptureLimits`, `RestoreLink` (HMAC with option `yaymatik_cart_secret`).
+  - `Core/Storage/` — `Schema` (tables, `dbDelta`), `Settings` (option `yaymatik_settings`), `CartStore`, `UnsubscribeStore`, `WorkflowStore` (`workflows` table, multi-row writes in one transaction; `live_version_id()`), `VersionStore`, `RunStore` (runs; `claim()` is the row lock), `RunStepStore` (one row per step a run ran).
   - `Core/Runtime/` — wired by `Runtime::boot()` (WooCommerce only; trigger listeners on `init`). Never throws into the host request.
     - `Dispatcher` — triggers report events while a request runs; at shutdown: active workflows for the trigger, `claim()`, `validate()` + `matches()`, then per match a queued `runs` row (live version pinned, `Trigger::refs()` as scope, parent run) and one Action Scheduler job (`yaymatik_run`, args `[ run_id ]`); inline without Action Scheduler. Loop guard: workflow already in the parent chain, depth > 5. Turned off (logged) at ≥ 100 runs started by other runs, or ≥ 1000 runs in all, within 60 s.
     - `Worker` — the job: claims the run, cancels it (workflow off or deleted) or skips it (trigger entity gone) before the first step, then runs an `Executor` slice. Action Scheduler failure hooks queue a recovery job (`yaymatik_recover_run`) that may take a `running` run.
     - `Executor` — walks the pinned graph from the cursor (`position.queue`); a `run_steps` row before and after each step; declared outputs into `steps.<id>` (output display texts via `Scope::set_output_display()`); `run.id` / `run.step` set before each step (internal, not user variables); stop / continue policy; wait; ~20 s / 80% memory slices. Never reruns a finished step; a step left `running` fails as "Interrupted.".
     - Seams for PHPUnit fakes: `RunRepository`, `GraphSource`, `Queue`, `Clock`, `Workflows` (adapters `Db…`, `Version…`, `ActionScheduler…`, `System…`, `Repository…`).
+    - `Cleanup` — daily `yaymatik_cleanup` job (old runs and carts); `HealthCheck` — stuck runs, late jobs, cleanup job, each with its fix.
     - `RunPresenter` — REST shape of runs and steps (camelCase, ISO dates; no scope or cursor). Routes `GET /workflows/{id}/runs`, `GET /runs/{id}`.
 - `includes/Pro/Workflow/` — namespace `YayMatik\Pro\Workflow\`, left out of the free zip. `Modules/YayMatikProModule` / `WoocommerceProModule` extend the free modules (empty until Pro has steps); other folders appear with the first Pro file.
 
@@ -46,5 +49,5 @@
 - `vendor/` is dumped classmap-authoritative: after adding a PHP class, run `composer dump-autoload`.
 - Every REST route needs `permission_callback` (see `RestAPI::can_manage`).
 - Changing `yayMatikMeta` → update `apps/admin-page/src/types/localize.d.ts` and run `./run.sh meta-fixture`.
-- PHP tests: `pnpm test:php` (plain PHPUnit, no WordPress; `tests/`). Real-site checks (temporary data, removed after): `./run.sh check-storage`, `check-orders` (prints run steps, emails, notes and meta as JSON; mail goes to the local mail catcher), `check-status-flow`, `check-runs` (events → Dispatcher → Worker).
+- PHP tests: `pnpm test:php` (plain PHPUnit, no WordPress; `tests/`). Real-site checks (temporary data, removed after): `./run.sh check-storage`, `check-orders` (prints run steps, emails, notes and meta as JSON; mail goes to the local mail catcher), `check-status-flow`, `check-runs` (events → Dispatcher → Worker), `check-carts` (tracking, capture, restore, cleanup, erase).
 - Style: `phpcs.xml` (WPCS, 4 spaces, PHP 7.4+).

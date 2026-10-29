@@ -23,6 +23,18 @@ final class UnsubscribeStore {
     }
 
     /**
+     * @param string $email Normalized.
+     * @return array|null `email`, `created_at` (GMT).
+     */
+    public static function find( string $email ): ?array {
+        global $wpdb;
+        $table = self::table();
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- own table, one row by its unique key.
+        $row = $wpdb->get_row( $wpdb->prepare( "SELECT email, created_at FROM {$table} WHERE email = %s", $email ), ARRAY_A );
+        return $row ? $row : null;
+    }
+
+    /**
      * Already unsubscribed is fine.
      *
      * @param string $email Any case.

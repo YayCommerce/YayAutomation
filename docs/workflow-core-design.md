@@ -36,6 +36,7 @@ Table names below omit the prefix: each is `{prefix}yaymatik_<name>`, e.g. `wp_y
 | `workflow_versions` | id, workflow_id, action, graph (logic), layout (step positions), user_id, created_at, updated_at. A version's logic never changes; its layout may. Only the draft row's logic is edited in place |
 | `runs` | id, workflow_id, version_id, trigger_id, subject, status, position, scope, wait_until, error, parent_run_id, root_run_id, depth, started_at, finished_at |
 | `run_steps` | id, run_id, step_id, iteration, status, input, output, error, attempt, started_at, finished_at |
+| `carts` | id, session_key (WooCommerce session: user id or guest `t_…`; unique), user_id, email, first_name, items (JSON lines), total, currency, status (active, ordered), checkout_at, order_id, restored_at, last_activity_at, created_at, updated_at |
 
 - A run pins the version it started on.
 - Deleting a workflow deletes its versions; its runs stay until retention cleanup (M7.4).
@@ -54,6 +55,7 @@ Table names below omit the prefix: each is `{prefix}yaymatik_<name>`, e.g. `wp_y
 - **Scheduled and query triggers.** A schedule fans out to one run per matching subject, in batches. `trigger_claims` stops duplicates ("once per customer per 90 days"). This generalises the `_yaymatik_order_created` order meta in `OrderCreated::claim()`.
 - **Cancel.** Deactivate, Update (Apply) and the rate-limit pause cancel waiting runs (v1.0 rule) in one place, `Cancellation::waiting()`, under the workflow lock (`WorkflowStore::locked()`, shared by REST and the rate-limit pause; a pause that can't take it is logged, and the workflow stays paused for the rest of the request): it selects the waiting runs, cancels those still waiting in one UPDATE, then marks their waiting step rows `cancelled`. Deactivate and Apply return the count (`cancelledRuns`). The runs' Action Scheduler jobs stay; when one fires it can't take the run and does nothing. Apply leaves queued and running runs on their pinned version.
 - **Stop right away.** Before each step, and after saving a wait, the Executor reads the workflow's status fresh (not from the object cache); once it is off, the run ends `cancelled` ("The workflow was deactivated."). A run that ends this way, or before its first step, closes its open step rows (`running`, `waiting`).
+- **Cleanup.** A daily Action Scheduler job (`yaymatik_cleanup`, group `yaymatik`, `Runtime/Cleanup`) deletes carts last active more than `cart_retention_days` ago, then finished runs with their steps (deleted workflows' runs included) that finished more than `run_retention_days` ago. Carts go first: they hold emails, and the privacy text promises their deletion. Batches of 500 within ~20 s; what's left goes the next day. Queued, running and waiting runs are never deleted, nor any run of a chain (`root_run_id`) that still has one: the loop guard walks `parent_run_id`. `Cleanup::ensure()` on `action_scheduler_init` schedules the job when it's missing, checked at most hourly through the autoloaded option `yaymatik_cleanup_checked_at` (Unix time).
 - **Known limit.** Action Scheduler fails a job still running after its timeout (~5 min). If a step is still running then, a recovery job can take the run while the old worker is alive. Slices stay far below that (~20 s), so only a single very slow step can hit it.
 
 ## §4 Data layer · C6, C7
@@ -143,8 +145,12 @@ Settings → Health check finds problems and proposes a fix the site owner can a
 | Slow query triggers on big stores | Smaller batch size |
 | Email delivery not configured | Suggest an SMTP plugin (YaySMTP) |
 | Active workflow uses a step from a missing plugin | Install link from the feature directory |
-| Runs stuck in `queued` or `waiting` with no pending Action Scheduler job (queueing failed) | Queue them again |
-| Runs left `running` after their recovery job died | Queue recovery again; the interrupted step fails, it never runs twice |
+| (a) `runs_queued`: queued over 5 min, or waiting 15 min past `wait_until`, with no pending or in-progress `yaymatik_run` or `yaymatik_recover_run` job (an overdue job still counts: that is (c)) | Queue them again |
+| (b) `runs_running`: running with no `yaymatik_run` and no `yaymatik_recover_run` job | Queue recovery; the interrupted step fails, it never runs twice |
+| (c) `jobs_late`: pending `yaymatik` jobs over 15 min past due | Info only: server cron guide link |
+| (d) `cleanup_job`: `yaymatik_cleanup` not scheduled, or over 1 h past due | Schedule it again |
+
+Built: (a)–(d) in `Core/Runtime/HealthCheck.php`; REST `GET /health/checks` and `POST /health/fix { check }` in `Engine/API/HealthRoutes.php` (`manage_options`). Responses carry data only (`id`, `status`, `count`, `runIds` (the 50 oldest), `fix`); the admin app words them. The run checks read at most the 500 oldest candidate runs; a full read adds `capped: true` and `count` means "at least". A fix runs its check again on the server and fixes what it finds then (at most 50 runs per call), never ids from the client.
 
 ## §10 Deferred decisions
 
@@ -156,7 +162,7 @@ Settings → Health check finds problems and proposes a fix the site owner can a
 
 ## §11 Decision log
 
-All confirmed 2026-10-07, except L5 (2026-10-08). Reasons, rejected options and costs: [workflow-core-decisions.md](workflow-core-decisions.md).
+All confirmed 2026-10-07, except L5 (2026-10-08) and M7 (2026-10-27). Reasons, rejected options and costs: [workflow-core-decisions.md](workflow-core-decisions.md).
 
 | ID | Decision | Section |
 |---|---|---|
@@ -182,3 +188,4 @@ All confirmed 2026-10-07, except L5 (2026-10-08). Reasons, rejected options and 
 | P5 | AI provider deferred | §10 |
 | P6 | Settings → Health check | §9 |
 | P7 | Tree + container steps; no merge | §7 |
+| M7 | Carts in their own table; no own tracking cookie; capture any email, same response; restore GET writes nothing; erase anonymizes runs | §2 |

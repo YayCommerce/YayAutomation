@@ -3,6 +3,7 @@ namespace YayMatik\Engine\FEPages;
 
 use YayMatik\Utils\SingletonTrait;
 use YayMatik\Workflow\Core\Email\UnsubscribeLink;
+use YayMatik\Workflow\Core\Storage\Settings;
 use YayMatik\Workflow\Core\Storage\UnsubscribeStore;
 
 defined( 'ABSPATH' ) || exit;
@@ -61,8 +62,7 @@ class UnsubscribePage {
      * @param string $state One of the STATE_* constants.
      */
     private function render( string $state ): void {
-        // Stored escaped, like the site title everywhere; decoded once, escaped on output.
-        $store = wp_specialchars_decode( (string) get_bloginfo( 'name' ), ENT_QUOTES );
+        $store = self::store_name();
         $texts = self::texts( $store )[ $state ];
 
         $base    = sanitize_hex_color( (string) get_option( 'woocommerce_email_base_color', '' ) );
@@ -91,7 +91,7 @@ class UnsubscribePage {
 <main>
     <p class="store"><?php echo esc_html( $store ); ?></p>
     <h1><?php echo esc_html( $texts['heading'] ); ?></h1>
-    <p><?php echo esc_html( $texts['body'] ); ?></p>
+    <p><?php echo nl2br( esc_html( $texts['body'] ) ); ?></p>
         <?php if ( self::STATE_CONFIRM === $state ) : ?>
     <form method="post">
         <button type="submit"><?php esc_html_e( 'Unsubscribe', 'yaymatik' ); ?></button>
@@ -110,12 +110,24 @@ class UnsubscribePage {
         <?php
     }
 
+    /** The done state's text when the unsubscribe text setting is empty. */
+    public static function default_done_body(): string {
+        /* translators: %s: store name */
+        return sprintf( __( 'You won’t get emails like this one from %s any more.', 'yaymatik' ), self::store_name() );
+    }
+
+    private static function store_name(): string {
+        // Stored escaped, like the site title everywhere; decoded once, escaped on output.
+        return wp_specialchars_decode( (string) get_bloginfo( 'name' ), ENT_QUOTES );
+    }
+
     /**
      * Heading and text of each state.
      *
      * @param string $store Plain text.
      */
     private static function texts( string $store ): array {
+        $done = (string) Settings::get( 'unsubscribe_text' );
         return [
             self::STATE_CONFIRM => [
                 'heading' => __( 'Unsubscribe from these emails?', 'yaymatik' ),
@@ -124,8 +136,7 @@ class UnsubscribePage {
             ],
             self::STATE_DONE    => [
                 'heading' => __( 'You’re unsubscribed', 'yaymatik' ),
-                /* translators: %s: store name */
-                'body'    => sprintf( __( 'You won’t get emails like this one from %s any more.', 'yaymatik' ), $store ),
+                'body'    => '' !== $done ? $done : self::default_done_body(),
             ],
             self::STATE_INVALID => [
                 'heading' => __( 'This link is no longer valid', 'yaymatik' ),

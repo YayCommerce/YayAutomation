@@ -150,11 +150,11 @@ We chose these 8 because they cover what merchants install an automation plugin 
 
 ### Store front
 
-**Today:** nothing shown to shoppers.
+**Today:** the unsubscribe confirmation page (M1, its own page, not the theme); the restore link handler and its notices (M7). The email block that carries the link comes in M8.
 
 **v1.0 adds:**
 - "Restore my cart" link in reminder emails: refills the cart and opens checkout.
-- A simple unsubscribe confirmation page in the store's theme.
+- A simple unsubscribe confirmation page, its own page. ✅ M1
 
 **States:**
 - An old or invalid unsubscribe link shows "This link is no longer valid".
@@ -236,8 +236,8 @@ Cart and checkout emails stop as soon as the shopper places an order. Every emai
 
 ### Cart abandoned vs Checkout abandoned
 
-- **Checkout abandoned:** the shopper reached the checkout page and entered an email, then left without ordering.
-- **Cart abandoned:** the shopper added products but never reached checkout. We can only email shoppers we know: logged-in customers, or an email known from an earlier visit.
+- **Checkout abandoned:** the shopper reached the checkout page and entered an email, then left without ordering. A pending or failed order counts as reaching checkout; a pending order alone never starts it.
+- **Cart abandoned:** the shopper added products but never reached checkout. We can only email shoppers we know: logged-in customers, or an email known from an earlier visit in the same browser (WooCommerce session).
 - **A cart never starts both.** A cart that reached checkout starts only Checkout abandoned, so a shopper never gets two reminder series for the same cart. The editor explains this on both triggers.
 - A cart counts as abandoned after a set time without activity (default 60 minutes, changeable in Settings).
 
