@@ -52,19 +52,16 @@ final class Cleanup {
 
     public static function run(): void {
         $deadline = microtime( true ) + self::BUDGET;
-        $runs     = gmdate( 'Y-m-d H:i:s', time() - (int) Settings::get( 'run_retention_days' ) * DAY_IN_SECONDS );
-        do {
-            $ids   = RunStore::finished_before( $runs, self::BATCH );
-            $found = count( $ids );
-            if ( $found && ! RunStore::delete_with_steps( $ids ) ) {
-                break;
-            }
-        } while ( self::BATCH === $found && microtime( true ) < $deadline );
-
+        // Carts first: they hold emails, and the privacy text promises their deletion; runs get what's left.
         $carts = gmdate( 'Y-m-d H:i:s', time() - (int) Settings::get( 'cart_retention_days' ) * DAY_IN_SECONDS );
-        while ( microtime( true ) < $deadline ) {
+        do {
             $deleted = CartStore::delete_inactive_before( $carts, self::BATCH );
-            if ( self::BATCH !== $deleted ) {
+        } while ( self::BATCH === $deleted && microtime( true ) < $deadline );
+
+        $runs = gmdate( 'Y-m-d H:i:s', time() - (int) Settings::get( 'run_retention_days' ) * DAY_IN_SECONDS );
+        while ( microtime( true ) < $deadline ) {
+            $ids = RunStore::finished_before( $runs, self::BATCH );
+            if ( ! $ids || ! RunStore::delete_with_steps( $ids ) || self::BATCH !== count( $ids ) ) {
                 return;
             }
         }

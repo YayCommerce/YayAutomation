@@ -717,6 +717,23 @@ $ok( null === $run_row( $deleted_wf ), 'cleanup: an old run of a deleted workflo
 $ok( 3 === count( array_filter( array_map( $run_row, $open ) ) ), 'cleanup: queued, running and waiting runs kept, even with an old finished_at' );
 $ok( null !== $run_row( $done_new ), 'cleanup: a finished run inside the window kept' );
 $ok( null === $row( $prefix . 'old' ) && null !== $row( $prefix . 'fresh' ), 'cleanup: an old cart deleted, one inside the window kept' );
+
+// Carts go before any run query, so a run backlog that uses the whole budget can't keep an expired cart.
+$saved( $prefix . 'old', [ $line( 1, 1 ) ] );
+$age( $prefix . 'old', "last_activity_at = '{$old}'" );
+$queries = [];
+$record  = function ( $sql ) use ( &$queries, $table, $runs_table ) {
+    if ( 0 === strpos( $sql, "DELETE FROM {$table} " ) ) {
+        $queries[] = 'carts';
+    } elseif ( false !== strpos( $sql, "FROM {$runs_table} r WHERE" ) ) {
+        $queries[] = 'runs';
+    }
+    return $sql;
+};
+add_filter( 'query', $record );
+Cleanup::run();
+remove_filter( 'query', $record );
+$ok( null === $row( $prefix . 'old' ) && 'carts' === ( $queries[0] ?? '' ) && in_array( 'runs', $queries, true ), 'cleanup: expired carts deleted before the first run query (' . implode( ', ', $queries ) . ')' );
 $parent = $new_run( [] );
 $child  = $new_run(
     [
