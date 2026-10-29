@@ -464,6 +464,61 @@ try {
     $ok( $run && 'cancelled' === $run['status'] && 'The workflow was deactivated.' === $run['error'], 'mid-run: run cancelled when turned off' );
     $ok( in_array( 'Check-runs: one', $all, true ) && ! in_array( 'Check-runs: two', $all, true ), 'mid-run: the next step never ran' );
     $ok( $run && [ 'one' => 'completed' ] === array_column( RunStepStore::for_run( (int) $run['id'] ), 'status', 'step_id' ), 'mid-run: only the first step has a row' );
+
+    // 14. Health check: stuck runs and the cleanup job, found and fixed through REST. A fix also
+    // queues any other stuck run of this site: that is what it is for.
+    $health  = function ( string $id ) use ( $call ) {
+        $checks = array_column( $call( 'GET', 'health/checks' )['checks'] ?? [], null, 'id' );
+        return $checks[ $id ] ?? [];
+    };
+    $stuck   = function ( string $status ) use ( $created_wf, $order, $wpdb ) {
+        $run_id = Runtime::dispatcher()->start_run( YayMatik\Workflow\Core\Storage\WorkflowStore::find( $created_wf ), StepRegistry::get( 'order_created' ), [ 'order_id' => $order->get_id() ] );
+        as_unschedule_all_actions( ActionSchedulerQueue::HOOK, [ $run_id ], ActionSchedulerQueue::GROUP );
+        $wpdb->update(
+            RunStore::table(),
+            [
+                'status'     => $status,
+                'started_at' => gmdate( 'Y-m-d H:i:s', time() - 10 * MINUTE_IN_SECONDS ),
+            ],
+            [ 'id' => $run_id ]
+        );
+        return $run_id;
+    };
+    $has_job = fn( string $hook, int $run_id ) => as_has_scheduled_action( $hook, [ $run_id ], ActionSchedulerQueue::GROUP );
+    $fix     = function ( string $check ) {
+        $request = new WP_REST_Request( 'POST', '/yaymatik/v1/health/fix' );
+        $request->set_header( 'content-type', 'application/json' );
+        $request->set_body( wp_json_encode( [ 'check' => $check ] ) );
+        return rest_do_request( $request );
+    };
+
+    $run_id = $stuck( RunStore::STATUS_QUEUED );
+    $check  = $health( 'runs_queued' );
+    $ok( 'problem' === ( $check['status'] ?? '' ) && 'enqueue' === $check['fix'] && in_array( $run_id, $check['runIds'], true ), 'health: queued run with no job for 10 min → runs_queued problem' );
+    $fixed = $fix( 'runs_queued' )->get_data();
+    $after = array_column( $fixed['checks'] ?? [], null, 'id' )['runs_queued'] ?? [];
+    $ok( ( $fixed['fixed'] ?? 0 ) >= 1 && $has_job( ActionSchedulerQueue::HOOK, $run_id ), 'health: fix queued a yaymatik_run job for it' );
+    $ok( 'ok' === ( $after['status'] ?? '' ), 'health: runs_queued ok after the fix' );
+    as_unschedule_all_actions( ActionSchedulerQueue::HOOK, [ $run_id ], ActionSchedulerQueue::GROUP );
+
+    $run_id = $stuck( RunStore::STATUS_RUNNING );
+    $check  = $health( 'runs_running' );
+    $ok( 'problem' === ( $check['status'] ?? '' ) && 'recover' === $check['fix'] && in_array( $run_id, $check['runIds'], true ), 'health: running run with no job → runs_running problem' );
+    $fix( 'runs_running' );
+    $ok( $has_job( ActionSchedulerQueue::RECOVER_HOOK, $run_id ) && 'ok' === ( $health( 'runs_running' )['status'] ?? '' ), 'health: fix queued a yaymatik_recover_run job; runs_running ok' );
+    as_unschedule_all_actions( ActionSchedulerQueue::RECOVER_HOOK, [ $run_id ], ActionSchedulerQueue::GROUP );
+
+    as_unschedule_all_actions( YayMatik\Workflow\Core\Runtime\Cleanup::HOOK, [], ActionSchedulerQueue::GROUP );
+    $check = $health( 'cleanup_job' );
+    $ok( 'problem' === ( $check['status'] ?? '' ) && 'schedule' === $check['fix'], 'health: cleanup job removed → cleanup_job problem' );
+    $fix( 'cleanup_job' );
+    $next = as_next_scheduled_action( YayMatik\Workflow\Core\Runtime\Cleanup::HOOK, [], ActionSchedulerQueue::GROUP );
+    $ok( is_int( $next ) && $next > time() && 'ok' === ( $health( 'cleanup_job' )['status'] ?? '' ), 'health: fix scheduled it again; cleanup_job ok' );
+
+    $late = $health( 'jobs_late' );
+    $ok( in_array( $late['status'] ?? '', [ 'ok', 'info' ], true ) && null === $late['fix'] && 0 === strpos( (string) ( $late['guide'] ?? '' ), 'https://developer.wordpress.org/' ), 'health: jobs_late is ok or info (' . ( $late['count'] ?? '?' ) . ' late), no fix, guide link' );
+    $ok( 400 === $fix( 'jobs_late' )->get_status() && 400 === $fix( 'nope' )->get_status(), 'health: fix of jobs_late or an unknown check → 400' );
+    $ok( true === ( $call( 'GET', 'health' )['ok'] ?? null ), 'health: /health ping unchanged' );
 } catch ( Throwable $e ) {
     $ok( false, 'unexpected error: ' . $e->getMessage() );
 } finally {

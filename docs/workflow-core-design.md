@@ -145,8 +145,12 @@ Settings → Health check finds problems and proposes a fix the site owner can a
 | Slow query triggers on big stores | Smaller batch size |
 | Email delivery not configured | Suggest an SMTP plugin (YaySMTP) |
 | Active workflow uses a step from a missing plugin | Install link from the feature directory |
-| Runs stuck in `queued` or `waiting` with no pending Action Scheduler job (queueing failed) | Queue them again |
-| Runs left `running` after their recovery job died | Queue recovery again; the interrupted step fails, it never runs twice |
+| (a) `runs_queued`: queued over 5 min, or waiting 15 min past `wait_until`, with no pending or in-progress `yaymatik_run` or `yaymatik_recover_run` job (an overdue job still counts: that is (c)) | Queue them again |
+| (b) `runs_running`: running with no `yaymatik_run` and no `yaymatik_recover_run` job | Queue recovery; the interrupted step fails, it never runs twice |
+| (c) `jobs_late`: pending `yaymatik` jobs over 15 min past due | Info only: server cron guide link |
+| (d) `cleanup_job`: `yaymatik_cleanup` not scheduled, or over 1 h past due | Schedule it again |
+
+Built: (a)–(d) in `Core/Runtime/HealthCheck.php`; REST `GET /health/checks` and `POST /health/fix { check }` in `Engine/API/HealthRoutes.php` (`manage_options`). Responses carry data only (`id`, `status`, `count`, `runIds` (the 50 oldest), `fix`); the admin app words them. The run checks read at most the 500 oldest candidate runs; a full read adds `capped: true` and `count` means "at least". A fix runs its check again on the server and fixes what it finds then (at most 50 runs per call), never ids from the client.
 
 ## §10 Deferred decisions
 

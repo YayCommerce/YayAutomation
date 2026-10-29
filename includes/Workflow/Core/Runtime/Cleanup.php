@@ -34,9 +34,20 @@ final class Cleanup {
             return;
         }
         if ( ! as_has_scheduled_action( self::HOOK, [], ActionSchedulerQueue::GROUP ) ) {
-            as_schedule_recurring_action( time() + HOUR_IN_SECONDS, DAY_IN_SECONDS, self::HOOK, [], ActionSchedulerQueue::GROUP, true );
+            self::schedule();
         }
         update_option( self::CHECKED_OPTION, time(), true );
+    }
+
+    /** Replaces a missing or late job with a new one. */
+    public static function reschedule(): void {
+        as_unschedule_all_actions( self::HOOK, [], ActionSchedulerQueue::GROUP );
+        self::schedule();
+        update_option( self::CHECKED_OPTION, time(), true );
+    }
+
+    private static function schedule(): void {
+        as_schedule_recurring_action( time() + HOUR_IN_SECONDS, DAY_IN_SECONDS, self::HOOK, [], ActionSchedulerQueue::GROUP, true );
     }
 
     public static function run(): void {

@@ -246,6 +246,32 @@ final class RunStore {
     }
 
     /**
+     * Runs that should have a job by now: queued since before `$queued_before`, waiting past `$waiting_before`, any running; oldest first.
+     *
+     * @param string $queued_before GMT datetime.
+     * @param string $waiting_before GMT datetime.
+     * @param int    $limit
+     * @return array[] `id`, `status`, `started_at`, `wait_until`.
+     */
+    public static function overdue( string $queued_before, string $waiting_before, int $limit ): array {
+        global $wpdb;
+        $table = self::table();
+        return (array) $wpdb->get_results(
+            $wpdb->prepare(
+                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+                "SELECT id, status, started_at, wait_until FROM {$table} WHERE (status = %s AND started_at < %s) OR (status = %s AND wait_until < %s) OR status = %s ORDER BY id LIMIT %d",
+                self::STATUS_QUEUED,
+                $queued_before,
+                self::STATUS_WAITING,
+                $waiting_before,
+                self::STATUS_RUNNING,
+                $limit
+            ),
+            ARRAY_A
+        );
+    }
+
+    /**
      * Ends these runs as cancelled if still waiting, in one UPDATE, so a run its job took meanwhile is left alone.
      *
      * @param int[]  $ids

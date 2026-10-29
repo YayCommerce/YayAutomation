@@ -182,8 +182,10 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 - **M7.3 Settings** — storage and REST.
 - **M7.4 Retention and privacy** — cleanup of carts and runs, including runs of deleted workflows; personal data exporter and eraser.
 - **M7.5 Health check v1** *(§9)*.
-  - Runs stuck in `queued` or `waiting` with no pending Action Scheduler job (queueing failed).
-  - Runs left `running` after their recovery job died.
+  - (a) Runs stuck in `queued` or `waiting` with no Action Scheduler job → queue again.
+  - (b) Runs left `running` with no run or recovery job → recover.
+  - (c) Jobs late over 15 min → server cron guide (info).
+  - (d) Cleanup job missing or late → schedule again.
 
 **UI**
 - **M7.6 Settings page** — Cart tracking, Emails, Run history.
