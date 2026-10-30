@@ -1,13 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { useStore } from '@tanstack/react-form';
 import type { Settings, SettingsResponse } from '@yaymatik/types';
-import { CircleAlert, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { __, sprintf } from '@wordpress/i18n';
 
 import { useBeforeUnloadWarning } from '@/hooks/useBeforeUnloadWarning';
 import { useRouteLeaveGuard } from '@/hooks/useRouteLeaveGuard';
-import { AlertDescription } from '@/components/ui/alert';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -23,13 +22,14 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/components/ui/sonner';
 import { PageCard } from '@/components/widget/PageWidget';
 import { errorMessage } from '@/routes/workflows/api/workflow.api';
-import { ErrorAlert } from '@/routes/workflows/shared/ui/ErrorAlert';
 import { SettingsError } from './api/settings.api';
 import { useSaveSettings, useSettingsQuery } from './api/settings.query';
 import { CartTrackingSection } from './CartTrackingSection';
 import { EmailsSection } from './EmailsSection';
+import { HealthPanel } from './HealthPanel';
 import { RunHistorySection } from './RunHistorySection';
 import type { ServerErrors } from './SettingFields';
+import { SettingsErrorAlert } from './SettingsErrorAlert';
 import { changedSettings, toValues, useSettingsForm, type SettingsValues } from './settingsForm';
 
 export default function SettingsPage() {
@@ -155,6 +155,7 @@ function SettingsEditor({ settings }: { settings: SettingsResponse }) {
         <CartTrackingSection form={form} serverErrors={serverErrors} />
         <EmailsSection form={form} serverErrors={serverErrors} unsubscribeDefault={settings.unsubscribeDefault} />
         <RunHistorySection form={form} serverErrors={serverErrors} />
+        <HealthPanel />
       </div>
 
       {headerSlot &&
@@ -206,22 +207,6 @@ function useHeaderSlot() {
   const [slot, setSlot] = useState<HTMLElement | null>(null);
   useEffect(() => setSlot(document.getElementById('yay-header-actions')), []);
   return slot;
-}
-
-function SettingsErrorAlert({ message, onRetry }: { message: string; onRetry?: () => void }) {
-  return (
-    <ErrorAlert>
-      <CircleAlert aria-hidden />
-      <AlertDescription className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
-        <span>{message}</span>
-        {onRetry && (
-          <Button variant="outline" size="sm" onClick={onRetry}>
-            {__('Try again', 'yaymatik')}
-          </Button>
-        )}
-      </AlertDescription>
-    </ErrorAlert>
-  );
 }
 
 function CardSkeleton({ rows }: { rows: number }) {

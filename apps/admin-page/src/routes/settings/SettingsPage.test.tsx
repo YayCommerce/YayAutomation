@@ -10,6 +10,10 @@ import { getSettings, saveSettings, SettingsError } from './api/settings.api';
 import SettingsPage from './SettingsPage';
 
 vi.mock('@/components/ui/sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
+vi.mock('./api/health.api', () => ({
+  getHealthChecks: vi.fn(async () => ({ checks: [], checkedAt: new Date().toISOString() })),
+  fixHealthCheck: vi.fn(),
+}));
 vi.mock('./api/settings.api', async (original) => ({
   ...(await original<typeof import('./api/settings.api')>()),
   getSettings: vi.fn(),
