@@ -1,12 +1,11 @@
-import { Workflow } from 'lucide-react';
-
 export default function HeaderLogo() {
   return (
-    <div className="flex h-full items-center gap-2 pl-4 lg:pl-6">
-      <span className="bg-primary text-primary-foreground flex size-7 items-center justify-center rounded-md">
-        <Workflow className="size-4" />
-      </span>
-      <span className="text-base font-semibold max-md:hidden">YayMatik</span>
+    <div className="bg-logo-tile flex h-full shrink-0 px-0.75 pt-0.75">
+      <img
+        src={`${window.yayMatikMeta.plugin.pluginUrl}assets/images/yaymatik-logo.png`}
+        alt="YayMatik"
+        className="size-12.5"
+      />
     </div>
   );
 }

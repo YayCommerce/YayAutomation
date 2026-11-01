@@ -43,7 +43,7 @@ class AdminPage {
         if ( strpos( $classes, 'yay-ui' ) === false ) {
             $classes .= ' yay-ui';
         }
-        return $classes;
+        return $classes . ' yaymatik-page';
     }
 
     public function admin_enqueue_scripts( $hook_suffix ) {

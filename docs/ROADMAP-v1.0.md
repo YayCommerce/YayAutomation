@@ -135,10 +135,10 @@ We chose these 8 because they cover what merchants install an automation plugin 
 
 ### Settings
 
-**Today:** an empty page.
+**Today:** one page with Cart tracking, Emails and Run history, and Health check as the last card. Save changes sits in the app header; leaving with unsaved changes asks first.
 
 **v1.0 adds:**
-- **Cart tracking:** on/off (off by default, proposal), minutes without activity before a cart counts as abandoned (default 60), capture guest emails at checkout, delete old carts after N days (default 60).
+- **Cart tracking:** on/off (off by default), minutes without activity before a cart counts as abandoned (default 60), capture guest emails at checkout, delete old carts after N days (default 60).
 - **Emails:** unsubscribe page text, and a link to WooCommerce email settings (sender, colors).
 - **Run history:** keep N days (default 90).
 

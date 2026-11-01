@@ -34,3 +34,7 @@ Without it, WP loads the prod build in `assets/dist/admin-page/`.
 - `steps/core/fields/` holds what step forms share: `StepForm` (drawn from catalog fields), `catalogSchema`, `widgets.tsx`, `RichTextEditor` for `html` fields (classic editor; PHP `AdminPage` calls `wp_enqueue_editor()`), `ConfigField`, `VariablePicker` / `InsertVariable`, and the per-step contexts `feedback`, `variableScope`, `emailTools`.
 - `defineStep` extras beside the drawn form: `Footer` (under the form, gets the form's latest config) and `Actions` (panel header under the title).
 
+## App shell and Settings (`apps/admin-page/src/routes/`)
+
+- `layout/Layout.tsx` — sticky app header: `top` = `--wp-admin--admin-bar--height` (0 at ≤600px, where the admin bar scrolls away), z-40; sticky sub-bars under it (overview title bar) use z-30. Logo `assets/images/yaymatik-logo.png`. A page puts its header buttons into `#yay-header-actions` with `createPortal` (Settings' Save changes).
+- `settings/` — `SettingsPage` (form, leave guard), sections `CartTrackingSection`, `EmailsSection`, `RunHistorySection`, `HealthPanel` (last card), `api/` (settings and health queries).

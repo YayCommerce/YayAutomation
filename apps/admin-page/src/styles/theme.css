@@ -58,6 +58,10 @@
   --yay-avatar-soft: #ede7f6;
   --yay-avatar-soft-foreground: #5b3a8e;
 
+  /* App header (app-only): the logo tile and the shadow once the page scrolls. */
+  --yay-logo-tile: #fff5db;
+  --yay-header-shadow: rgb(0 0 0 / 10%);
+
   --radius: 0.625rem;
   --default-transition-duration: 0.3s;
 }
@@ -122,6 +126,8 @@
   --color-email-canvas: var(--yay-email-canvas) /* #f7f7f7 */;
   --color-avatar-soft: var(--yay-avatar-soft) /* #ede7f6 */;
   --color-avatar-soft-foreground: var(--yay-avatar-soft-foreground) /* #5b3a8e */;
+  --color-logo-tile: var(--yay-logo-tile) /* #fff5db */;
+  --color-header-shadow: var(--yay-header-shadow) /* rgb(0 0 0 / 10%) */;
 
   --font-sans:
     -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif,
@@ -188,4 +194,6 @@
   --yay-link: #8ea0ff;
   --yay-avatar-soft: rgb(166 140 255 / 18%);
   --yay-avatar-soft-foreground: #c9b8ff;
+  --yay-logo-tile: rgb(255 245 219 / 15%);
+  --yay-header-shadow: rgb(0 0 0 / 50%);
 }

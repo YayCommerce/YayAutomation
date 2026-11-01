@@ -176,23 +176,30 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 
 ## M7 — Cart tracking + Settings + Health check · L · risk 3
 
-**Status:** In progress. Backend and store front (PR A, `jack/feature/m7a-carts-settings`) ⏳ merge pending; Settings page and health check panel (PR B) next.
+**Status:** In progress. Backend and store front merged (PR #30); Settings page and health check panel (PR B, `jack/feature/m7b-settings-ui`) open.
 
 **Backend**
-- ⏳ **M7.1 Cart tracking** — carts table; logged-in customers and guests; email captured at checkout (classic + block).
-- ⏳ **M7.2 Restore link** — refills the cart and opens checkout.
-- ⏳ **M7.3 Settings** — storage and REST.
-- ⏳ **M7.4 Retention and privacy** — cleanup of carts and runs, including runs of deleted workflows; personal data exporter and eraser.
-- ⏳ **M7.5 Health check v1** *(§9)*.
+- ✅ **M7.1 Cart tracking** — carts table; logged-in customers and guests; email captured at checkout (classic + block).
+- ✅ **M7.2 Restore link** — refills the cart and opens checkout.
+- ✅ **M7.3 Settings** — storage and REST.
+- ✅ **M7.4 Retention and privacy** — cleanup of carts and runs, including runs of deleted workflows; personal data exporter and eraser.
+- ✅ **M7.5 Health check v1** *(§9)*.
   - (a) Runs stuck in `queued` or `waiting` with no Action Scheduler job → queue again.
   - (b) Runs left `running` with no run or recovery job → recover.
   - (c) Jobs late over 15 min → server cron guide (info).
   - (d) Cleanup job missing or late → schedule again.
 
 **UI**
-- **M7.6 Settings page** — Cart tracking, Emails, Run history.
-- **M7.7 Health check panel** — each problem with its proposed fix.
-- ⏳ **M7.8 Store front** — message when a restore link's cart is gone.
+- ⏳ **M7.6 Settings page** — Cart tracking, Emails, Run history.
+- ⏳ **M7.7 Health check panel** — each problem with its proposed fix.
+- ✅ **M7.8 Store front** — message when a restore link's cart is gone.
+
+**Follow-ups**
+- Editor canvas: the mouse wheel zooms and panning needs a drag (ReactFlow defaults since F1), so a step added below the view can't be scrolled to; proposal: wheel / trackpad pans, Ctrl/Cmd + wheel zooms, a new step is brought into view.
+- Leave dialog titles differ: Settings "Unsaved changes", editor "Leave without saving?".
+- Unused dependencies in `apps/admin-page`: zod, react-hook-form, @hookform/resolvers, @formisch/react.
+- `routes/settings/api/request.ts` repeats the private `request()` of `workflow.api.ts`.
+- Settings changed in another tab show only after a reload (no refetch); the health check is reachable only when Settings load.
 
 ## M8 — Abandoned cart + checkout · L · risk 2
 

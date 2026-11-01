@@ -35,9 +35,9 @@ export default function WorkflowOverviewPage() {
   return (
     <OverviewLayout title={!error && <Skeleton className="h-5 w-48" />}>
       {error ? (
-        <div className="text-muted-foreground flex size-full items-center justify-center">{error.message}</div>
+        <div className="text-muted-foreground flex flex-1 items-center justify-center">{error.message}</div>
       ) : (
-        <Skeleton className="size-full" />
+        <Skeleton className="flex-1" />
       )}
     </OverviewLayout>
   );
@@ -306,12 +306,13 @@ function SummaryRow({ workflow }: { workflow: Workflow }) {
   );
 }
 
-/** Header ("<" back to the list, app icon, title, actions) above a full-height body. */
+/** Header ("<" back to the list, app icon, title, actions) pinned under the app header; the page scrolls. */
 function OverviewLayout({ title, actions, children }: { title: ReactNode; actions?: ReactNode; children: ReactNode }) {
   return (
-    // Fill the viewport below the WP admin bar (32px) and plugin header (h-13.5).
-    <div className="flex h-[calc(100vh-32px-3.375rem)] flex-col">
-      <div className="bg-background flex h-12 shrink-0 items-center gap-2 border-y px-4">
+    // At least the viewport below the WP admin bar (--wp-admin--admin-bar--height) and plugin header (h-13.5), so a short body leaves no gap.
+    <div className="flex min-h-[calc(100vh-var(--wp-admin--admin-bar--height,32px)-3.375rem)] flex-col">
+      {/* Same top offsets as the app header, plus its height; z-30 slides under its z-40. */}
+      <div className="bg-background sticky top-13.5 z-30 flex h-12 shrink-0 items-center gap-2 border-b px-4 min-[601px]:top-[calc(var(--wp-admin--admin-bar--height,32px)+3.375rem)]">
         <Button variant="ghost" size="icon-sm" asChild>
           <Link to="/workflows" aria-label={__('Back to workflows', 'yaymatik')}>
             <ChevronLeft />
@@ -324,7 +325,7 @@ function OverviewLayout({ title, actions, children }: { title: ReactNode; action
         <div className="flex min-w-0 flex-1 items-center gap-2">{title}</div>
         {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
       </div>
-      <div className="min-h-0 flex-1 overflow-y-auto">{children}</div>
+      <div className="flex flex-1 flex-col">{children}</div>
     </div>
   );
 }

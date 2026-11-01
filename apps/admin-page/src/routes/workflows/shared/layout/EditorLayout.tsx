@@ -26,9 +26,9 @@ export function EditorLayout({
   onClose,
 }: EditorCloseProps & { title: ReactNode; actions?: ReactNode; children: ReactNode }) {
   return (
-    // Fill the viewport below the WP admin bar (32px) and plugin header (h-13.5).
-    <div className="flex h-[calc(100vh-32px-3.375rem)] flex-col">
-      <div className="bg-background flex h-12 shrink-0 items-center gap-2 border-t px-4">
+    // Fill the viewport below the WP admin bar (--wp-admin--admin-bar--height) and plugin header (h-13.5).
+    <div className="flex h-[calc(100vh-var(--wp-admin--admin-bar--height,32px)-3.375rem)] flex-col">
+      <div className="bg-background flex h-12 shrink-0 items-center gap-2 px-4">
         <WorkflowAppIcon />
         <div className="flex min-w-0 flex-1 items-center gap-2">{title}</div>
         {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}

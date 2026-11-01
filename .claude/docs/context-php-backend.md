@@ -6,7 +6,7 @@
 
 - `yaymatik.php` — constants, Composer autoload, `plugins_loaded` boot
 - `includes/YayMatik.php` — entry; wire new engine classes here; `is_prod()`
-- `includes/Engine/BEPages/AdminPage.php` — slug, capability, `yayMatikMeta`, mount div. Hook suffix: `yaycommerce_page_yaymatik`
+- `includes/Engine/BEPages/AdminPage.php` — slug, capability, `yayMatikMeta`, mount div. Hook suffix: `yaycommerce_page_yaymatik`; `admin_body_class` adds `yay-ui` and `yaymatik-page` on this page only (`preflight.css` scopes its WordPress overrides to `.yaymatik-page`)
 - `includes/YayMatikLicenseAdapter.php` — submenu under YayCommerce via `yaycommerce/admin-shell` (Lite). Registered in `YayMatik::register_admin_menu()`
 - `includes/YayMatikProLicenseAdapter.php` — license adapter, not registered (`TODO: EDD setup`)
 - `includes/Engine/API/RestAPI.php` — routes under `yaymatik/v1`; `POST /workflows/{id}/preview` and `/send-test` (`manage_woocommerce`, body `{ nodeId, config, graph? }`) → `Workflow/Core/Email/EmailPreview.php`. `SettingsRoutes` (`GET` / `PUT /settings`) and `HealthRoutes` (`GET /health/checks`, `POST /health/fix`) are their own singletons
