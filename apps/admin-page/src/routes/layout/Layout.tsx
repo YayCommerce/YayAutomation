@@ -23,7 +23,7 @@ export default function Layout() {
       <div
         className={cn(
           'bg-background border-border sticky top-0 z-40 flex h-13.5 items-center justify-between gap-1.5 border-b py-0 pr-3 transition-shadow duration-300 min-[601px]:top-(--wp-admin--admin-bar--height,32px) lg:gap-5 lg:pr-6',
-          scrolled && 'shadow-md dark:shadow-black/50',
+          scrolled && 'shadow-header-shadow shadow-md',
         )}
       >
         <HeaderLogo />
