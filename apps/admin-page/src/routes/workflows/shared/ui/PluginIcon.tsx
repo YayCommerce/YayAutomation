@@ -11,7 +11,6 @@ export const plugins = Object.fromEntries(
 /** Core's own tints; another plugin's logo sits on a neutral tile. */
 const tones: Partial<Record<WorkflowPlugin, string>> = {
   woocommerce: 'bg-primary/10 text-primary',
-  // Same look as the app's own icon in the header.
   yaymatik: 'bg-primary text-primary-foreground',
 };
 

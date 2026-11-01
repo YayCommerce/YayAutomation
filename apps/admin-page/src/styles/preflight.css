@@ -61,6 +61,16 @@ body.yay-ui {
   z-index: 100 !important;
 }
 
+.yaymatik-page {
+  #wpbody-content {
+    padding-bottom: 0;
+  }
+
+  #wpfooter {
+    display: none;
+  }
+}
+
 #screen-meta,
 #screen-meta-links {
   display: none;
