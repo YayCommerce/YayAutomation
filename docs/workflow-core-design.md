@@ -150,7 +150,7 @@ Settings → Health check finds problems and proposes a fix the site owner can a
 | (c) `jobs_late`: pending `yaymatik` jobs over 15 min past due | Info only: server cron guide link |
 | (d) `cleanup_job`: `yaymatik_cleanup` not scheduled, or over 1 h past due | Schedule it again |
 
-Built: (a)–(d) in `Core/Runtime/HealthCheck.php`; REST `GET /health/checks` and `POST /health/fix { check }` in `Engine/API/HealthRoutes.php` (`manage_options`). Responses carry data only (`id`, `status`, `count`, `runIds` (the 50 oldest), `fix`); the admin app words them. The run checks read at most the 500 oldest candidate runs; a full read adds `capped: true` and `count` means "at least". A fix runs its check again on the server and fixes what it finds then (at most 50 runs per call), never ids from the client.
+Built: (a)–(d) in `Core/Runtime/HealthCheck.php`; REST `GET /health/checks` and `POST /health/fix { check }` in `Engine/API/HealthRoutes.php` (`manage_options`). Responses carry data only (`id`, `status`, `count`, `runIds` (the 50 oldest), `fix`); the admin app words them. The run checks read at most the 500 oldest candidate runs; a full read adds `capped: true` and `count` means "at least". A fix runs its check again on the server and fixes what it finds then (at most 50 runs per call), never ids from the client. Panel (M7.7, `routes/settings/HealthPanel.tsx`): the last card of Settings; it words the checks and offers one click per fixable check (at most 50 runs each).
 
 ## §10 Deferred decisions
 
