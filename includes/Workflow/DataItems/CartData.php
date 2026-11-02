@@ -4,6 +4,8 @@ namespace YayMatik\Workflow\DataItems;
 use YayMatik\Workflow\Core\Cart\SavedCart;
 use YayMatik\Workflow\Core\Data\DataItem;
 use YayMatik\Workflow\Core\Data\Type;
+use YayMatik\Workflow\Core\Email\CartItems;
+use YayMatik\Workflow\Core\Email\ProductGrid;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -30,42 +32,60 @@ final class CartData extends DataItem {
 
     protected function define(): array {
         return [
-            'email'         => [
+            'email'          => [
                 'label' => __( 'Email', 'yaymatik' ),
                 'type'  => self::TYPE_STRING,
                 'value' => fn( SavedCart $cart ) => $cart->email(),
             ],
-            'first_name'    => [
+            'first_name'     => [
                 'label' => __( 'First name', 'yaymatik' ),
                 'type'  => self::TYPE_STRING,
                 'value' => fn( SavedCart $cart ) => $cart->first_name(),
             ],
-            'total'         => [
+            'total'          => [
                 'label'      => __( 'Cart total', 'yaymatik' ),
                 'type'       => self::TYPE_NUMBER,
                 'value_type' => Type::money(),
                 'value'      => fn( SavedCart $cart ) => $cart->total(),
-                'display'    => fn( SavedCart $cart, bool $html ) => self::price( $cart, $cart->total(), $html ),
+                'display'    => fn( SavedCart $cart, bool $html ) => $cart->price( $cart->total(), $html ),
             ],
-            'item_count'    => [
+            'item_count'     => [
                 'label' => __( 'Number of products', 'yaymatik' ),
                 'type'  => self::TYPE_NUMBER,
                 'value' => fn( SavedCart $cart ) => (float) array_sum( array_column( $cart->lines(), 'quantity' ) ),
             ],
-            'product_names' => [
+            'product_names'  => [
                 'label' => __( 'Product names', 'yaymatik' ),
                 'type'  => self::TYPE_STRING,
                 'value' => fn( SavedCart $cart ) => self::names( $cart->lines() ),
             ],
-            'last_activity' => [
+            'last_activity'  => [
                 'label'   => __( 'Last activity', 'yaymatik' ),
                 'type'    => self::TYPE_DATE,
                 'value'   => fn( SavedCart $cart ) => wp_date( 'Y-m-d', strtotime( $cart->last_activity() . ' UTC' ) ),
-                'display' => function ( SavedCart $cart, bool $html ) {
-                    $format = get_option( 'date_format', 'F j, Y' ) . ' ' . get_option( 'time_format', 'g:i a' );
-                    $text   = (string) wp_date( $format, strtotime( $cart->last_activity() . ' UTC' ) );
-                    return $html ? esc_html( $text ) : $text;
-                },
+                'display' => fn( SavedCart $cart, bool $html ) => $html ? esc_html( self::activity_text( $cart ) ) : self::activity_text( $cart ),
+            ],
+            'restore_url'    => [
+                'label'       => __( 'Restore link', 'yaymatik' ),
+                'type'        => self::TYPE_STRING,
+                'value'       => fn( SavedCart $cart ) => $cart->restore_url(),
+                'conditional' => false,
+            ],
+            'items'          => [
+                'label'       => __( 'Cart items', 'yaymatik' ),
+                'type'        => self::TYPE_STRING,
+                'value'       => fn( SavedCart $cart ) => CartItems::render( $cart, false ),
+                'display'     => [ CartItems::class, 'render' ],
+                'conditional' => false,
+                'block'       => true,
+            ],
+            'restore_button' => [
+                'label'       => __( 'Restore my cart button', 'yaymatik' ),
+                'type'        => self::TYPE_STRING,
+                'value'       => fn( SavedCart $cart ) => CartItems::button( $cart, false ),
+                'display'     => [ CartItems::class, 'button' ],
+                'conditional' => false,
+                'block'       => true,
             ],
         ];
     }
@@ -91,15 +111,82 @@ final class CartData extends DataItem {
         return sprintf( _n( '%1$s, %2$s and %3$d more', '%1$s, %2$s and %3$d more', $more, 'yaymatik' ), $names[0], $names[1], $more );
     }
 
+    /** Up to 3 of the store's newest products (made-up names when it has none), with a link that goes nowhere. */
+    public function sample(): array {
+        // SampleValues reads this once per merge tag.
+        static $sample = null;
+        if ( null !== $sample ) {
+            return $sample;
+        }
+        $products = array_slice( ProductGrid::newest(), 0, 3 );
+        $lines    = array_map(
+            fn( \WC_Product $product ) => [
+                'product_id' => $product->get_id(),
+                'name'       => $product->get_name(),
+                'quantity'   => 1,
+                'line_total' => (float) $product->get_price(),
+            ],
+            $products
+        );
+        if ( ! $lines ) {
+            $lines = [
+                [
+                    'name'       => __( 'Sample product', 'yaymatik' ),
+                    'quantity'   => 1,
+                    'line_total' => 29.0,
+                ],
+                [
+                    'name'       => __( 'Another sample product', 'yaymatik' ),
+                    'quantity'   => 2,
+                    'line_total' => 40.0,
+                ],
+            ];
+        }
+        $now    = time();
+        $total  = (float) array_sum( array_column( $lines, 'line_total' ) );
+        $cart   = ( new SavedCart(
+            [
+                'id'               => 0,
+                'items'            => (string) wp_json_encode( $lines ),
+                'total'            => $total,
+                'currency'         => get_woocommerce_currency(),
+                'last_activity_at' => gmdate( 'Y-m-d H:i:s', $now ),
+                'created_at'       => gmdate( 'Y-m-d H:i:s', $now ),
+            ]
+        ) )->inert();
+        $block  = fn( callable $render ) => [
+            'value' => $render( $cart, false ),
+            'text'  => $render( $cart, false ),
+            'html'  => $render( $cart, true ),
+        ];
+        $sample = [
+            'email'          => 'jane.doe@example.com',
+            'first_name'     => 'Jane',
+            'total'          => [
+                'value' => $total,
+                'text'  => $cart->price( $total, false ),
+                'html'  => $cart->price( $total, true ),
+            ],
+            'item_count'     => (float) array_sum( array_column( $lines, 'quantity' ) ),
+            'product_names'  => self::names( $lines ),
+            'last_activity'  => [
+                'value' => wp_date( 'Y-m-d', $now ),
+                'text'  => self::activity_text( $cart ),
+            ],
+            'restore_url'    => '#',
+            'items'          => $block( [ CartItems::class, 'render' ] ),
+            'restore_button' => $block( [ CartItems::class, 'button' ] ),
+        ];
+        return $sample;
+    }
+
     /**
-     * An amount in the cart's currency: HTML from wc_price(), or the same as plain text.
+     * Date and time in the store's timezone.
      *
      * @param SavedCart $cart
-     * @param float     $amount
-     * @param bool      $html
      */
-    public static function price( SavedCart $cart, float $amount, bool $html ): string {
-        $price = wc_price( $amount, [ 'currency' => $cart->currency() ] );
-        return $html ? $price : html_entity_decode( wp_strip_all_tags( $price ), ENT_QUOTES, 'UTF-8' );
+    private static function activity_text( SavedCart $cart ): string {
+        $format = get_option( 'date_format', 'F j, Y' ) . ' ' . get_option( 'time_format', 'g:i a' );
+        return (string) wp_date( $format, strtotime( $cart->last_activity() . ' UTC' ) );
     }
 }

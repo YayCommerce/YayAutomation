@@ -22,10 +22,12 @@ use YayMatik\Workflow\Core\Cart\CartSweep;
 use YayMatik\Workflow\Core\Cart\CartTracker;
 use YayMatik\Workflow\Core\Cart\EmailCapture;
 use YayMatik\Workflow\Core\Cart\RestoreLink;
+use YayMatik\Workflow\Core\Email\CartItems;
 use YayMatik\Workflow\Core\Email\UnsubscribeLink;
 use YayMatik\Workflow\Core\Data\Ref;
 use YayMatik\Workflow\Core\Runtime\ActionSchedulerQueue;
 use YayMatik\Workflow\Core\Runtime\Cleanup;
+use YayMatik\Workflow\Core\Runtime\RunPresenter;
 use YayMatik\Workflow\Core\Runtime\Runtime;
 use YayMatik\Workflow\Core\Storage\CartStore;
 use YayMatik\Workflow\Core\Storage\RunStepStore;
@@ -1164,7 +1166,7 @@ $admin    = get_users(
         'fields' => 'ID',
     ]
 );
-$new_flow = function ( string $name, string $trigger, bool $two_emails = false ) use ( $admin, &$flows ) {
+$new_flow = function ( string $name, string $trigger, bool $two_emails = false, string $message = '<p>{{ cart.total }}</p>' ) use ( $admin, &$flows ) {
     wp_set_current_user( (int) $admin[0] );
     $graph   = [
         'nodes' => [
@@ -1193,7 +1195,7 @@ $new_flow = function ( string $name, string $trigger, bool $two_emails = false )
                         'to'      => '{{ customer.email }}',
                         'subject' => 'Check carts: {{ cart.product_names }}',
                         'heading' => 'Hi',
-                        'message' => '<p>{{ cart.total }}</p>',
+                        'message' => $message,
                     ],
                 ],
             ],
@@ -1426,6 +1428,144 @@ as_unschedule_all_actions( ActionSchedulerQueue::HOOK, [ $running_run ], ActionS
 $status = Runtime::worker()->run( $running_run );
 remove_filter( 'pre_wp_mail', $ordering );
 $ok( 'cancelled' === $status && 1 === $sends && $placed === $run_row( $running_run )['error'], 'running run: ordered during its first email, stops before the second' );
+
+// Blocks. A real product whose price changes after the cart was saved, and one that is gone.
+$block_product = new WC_Product_Simple();
+$block_product->set_name( 'Live & name' );
+$block_product->set_status( 'publish' );
+$block_product->set_regular_price( '99' );
+$block_product->save();
+$posts[]   = $block_product->get_id();
+$gone_line = [ 'name' => 'Gone product' ] + $line( 999999999, 2, 7.0 );
+$snap_line = [ 'name' => 'Snapshot name' ] + $line( $block_product->get_id(), 3, 11.0 );
+$blocks    = new YayMatik\Workflow\Core\Cart\SavedCart(
+    [
+        'id'               => 77,
+        'items'            => (string) wp_json_encode( [ $snap_line, $gone_line ] ),
+        'total'            => 40.5,
+        'currency'         => 'EUR',
+        'last_activity_at' => gmdate( 'Y-m-d H:i:s' ),
+        'created_at'       => gmdate( 'Y-m-d H:i:s' ),
+    ]
+);
+$html      = CartItems::render( $blocks, true );
+$text      = CartItems::render( $blocks, false );
+$ok( false !== strpos( $html, '33.00' ) && false === strpos( $html, '99.00' ) && false !== strpos( $html, '40.50' ), 'cart.items: snapshot line total and cart total, not the live price' );
+$ok( false !== strpos( $html, 'Live &amp; name' ) && false === strpos( $html, 'Snapshot name' ) && false !== strpos( $html, esc_url( $block_product->get_permalink() ) ), 'cart.items: live name and link' );
+$gone_at = strpos( $html, 'Gone product' );
+$ok( false !== $gone_at && false === strpos( substr( $html, $gone_at - 60, 60 ), '<a ' ), 'cart.items: a gone product shows its snapshot name without a link' );
+$ok( false !== strpos( $html, 'Cart total' ) && false === strpos( $html, "\n" ), 'cart.items: a total row, on one line' );
+$ok( false !== strpos( $text, 'Live & name × 3' ) && false !== strpos( $text, 'Gone product × 2' ) && false !== strpos( $text, 'Cart total: ' ) && false === strpos( $text, '<' ), 'cart.items as text: lines, then the total' );
+$ok( '' === CartItems::render( new YayMatik\Workflow\Core\Cart\SavedCart( [ 'items' => '[]' ] ), true ), 'cart.items: no lines → empty' );
+
+$parent = new WC_Product_Variable();
+$parent->set_name( 'Parent' );
+$parent->set_status( 'draft' );
+$parent->save();
+$posts[]   = $parent->get_id();
+$variation = new WC_Product_Variation();
+$variation->set_parent_id( $parent->get_id() );
+$variation->set_status( 'publish' );
+$variation->set_regular_price( '5' );
+$variation->save();
+$posts[]   = $variation->get_id();
+$var_line  = [
+    'name'         => 'Saved variation',
+    'variation_id' => $variation->get_id(),
+] + $line( $parent->get_id(), 1, 5.0 );
+$var_cart  = new YayMatik\Workflow\Core\Cart\SavedCart(
+    [
+        'items'    => (string) wp_json_encode( [ $var_line ] ),
+        'total'    => 5,
+        'currency' => 'USD',
+    ]
+);
+$var_html  = CartItems::render( $var_cart, true );
+$ok( false !== strpos( $var_html, 'Saved variation' ) && false === strpos( $var_html, '<a ' ), 'cart.items: a published variation of a draft parent shows its saved name, no link' );
+
+$block_row = $saved( $sw . 'blocks', [ $line( $block_product->get_id(), 1 ) ] );
+$real_cart = YayMatik\Workflow\Core\Cart\SavedCart::find( (int) $block_row['id'] );
+parse_str( (string) wp_parse_url( $real_cart->restore_url(), PHP_URL_QUERY ), $args );
+$ok( RestoreLink::from_options()->verify( (int) $block_row['id'], $block_row['created_at'], $args[ UnsubscribeLink::ARG_TOKEN ] ), 'restore_url verifies through RestoreLink' );
+$button = CartItems::button( $real_cart, true );
+$ok( false !== strpos( $button, esc_url( $real_cart->restore_url() ) ) && false !== strpos( $button, 'Restore my cart' ) && false === strpos( $button, "\n" ), 'restore button: real link, on one line' );
+$ok( false !== strpos( CartItems::button( $real_cart->inert(), true ), 'href="#"' ) && '#' === $real_cart->inert()->restore_url(), 'inert cart: the button and link go nowhere' );
+
+// Preview.
+$preview_graph = wp_json_encode( WorkflowStore::find( $cart_flow )['graph'] );
+$preview       = function ( array $config = [] ) use ( $preview_graph ) {
+    $graph = json_decode( $preview_graph, true );
+    return YayMatik\Workflow\Core\Email\EmailPreview::render(
+        $graph,
+        'mail',
+        $config + [
+            'to'      => '{{ customer.email }}',
+            'subject' => 'Your cart',
+            'heading' => 'Hi',
+            'message' => '<p>{{ cart.items }}</p><p>{{ cart.restore_button }}</p>',
+        ]
+    );
+};
+$shown         = $preview();
+$ok( ! is_wp_error( $shown ) && false === $shown['sample'] && null === $shown['order'] && false !== strpos( $shown['html'], 'href="#"' ) && false !== strpos( $shown['html'], 'Restore my cart' ) && false === strpos( $shown['html'], UnsubscribeLink::ARG_TOKEN . '=' ), 'preview: a real cart, the button goes nowhere, no token' );
+$no_carts = function ( $query ) use ( $table ) {
+    return false !== strpos( $query, "SELECT id FROM {$table}" ) && false !== strpos( $query, 'ORDER BY id DESC LIMIT 1' ) ? 'SELECT 0' : $query;
+};
+add_filter( 'query', $no_carts );
+$shown = $preview();
+remove_filter( 'query', $no_carts );
+$ok( ! is_wp_error( $shown ) && true === $shown['sample'] && false !== strpos( $shown['html'], 'Restore my cart' ) && false !== strpos( $shown['html'], 'href="#"' ), 'preview, no carts: sample data, the button goes nowhere' );
+
+// Run list and detail.
+$label_row = $row( $sw . 'tcart' );
+$a_run     = RunStore::find( $cart_runs( (int) $label_row['id'] )[0] );
+$ok( RunPresenter::item( $a_run, 0 )['subjectLabel'] === $label_row['email'], 'run subject: the shopper\'s email' );
+$ok( 'Cart #987654' === RunPresenter::item( [ 'subject' => 'cart:987654' ] + $a_run, 0 )['subjectLabel'], 'run subject, gone cart: Cart #id' );
+$stopped = RunStore::find( $by_email );
+$ok( RunPresenter::detail( $stopped, [], null )['stoppedByOrderUrl'] === $stop_order->get_edit_order_url(), 'run detail: the order link when stopped by an order' );
+$ok( null === RunPresenter::detail( $run_row( $gone_run ), [], null )['stoppedByOrderUrl'], 'run detail: no order link when the cart was emptied' );
+$ok( ! array_key_exists( 'stoppedByOrderUrl', RunPresenter::item( $stopped, 0 ) ), 'runs list: no order link' );
+
+// Activate with tracking off: REST, as the editor calls it.
+wp_set_current_user( (int) $admin[0] );
+$off_flow = $new_flow( 'tracking off', 'cart_abandoned' );
+$settings( [ 'cart_tracking' => false ] + $on );
+$activate = fn( int $id ) => rest_do_request( new WP_REST_Request( 'POST', "/yaymatik/v1/workflows/{$id}/activate" ) );
+$update   = function ( int $id, array $graph ) {
+    $request = new WP_REST_Request( 'PUT', "/yaymatik/v1/workflows/{$id}" );
+    $request->set_header( 'content-type', 'application/json' );
+    $request->set_body( wp_json_encode( [ 'graph' => $graph ] ) );
+    return rest_do_request( $request );
+};
+$active_graph = WorkflowStore::find( $off_flow )['graph'];
+$ok( 'active' === WorkflowStore::find( $off_flow )['status'] && 200 === $update( $off_flow, $active_graph )->get_status(), 'tracking off: an active workflow stays active and can be updated' );
+WorkflowStore::deactivate( $off_flow );
+$blocked = $activate( $off_flow );
+$errors  = $blocked->get_data()['data']['errors'] ?? [];
+$ok( 400 === $blocked->get_status() && 'cart_tracking_off' === ( $errors[0]['code'] ?? '' ) && 'trigger' === ( $errors[0]['nodeId'] ?? '' ) && 'Turn on cart tracking before activating. Cart abandoned never starts while it’s off.' === ( $errors[0]['message'] ?? '' ), 'tracking off: Activate → 400 cart_tracking_off on the trigger, with its message' );
+$settings( [ 'abandon_minutes' => 60 ] + $on );
+$ok( 200 === $activate( $off_flow )->get_status(), 'tracking on: Activate works' );
+
+// A real send goes through the mail catcher.
+$sent_html = [];
+$catch     = function ( $short_circuit, $atts ) use ( &$sent_html ) {
+    $sent_html[] = $atts;
+    return true;
+};
+add_filter( 'pre_wp_mail', $catch, 10, 2 );
+$real_flow = $new_flow( 'real send', 'cart_abandoned', false, '<p>Hi {{ customer.first_name | default: "there" }},</p><p>{{ cart.items }}</p><p>{{ cart.restore_button }}</p>' );
+$due_row( 'realsend' );
+$sweep();
+$real_id  = (int) $row( $sw . 'realsend' )['id'];
+$real_run = (int) $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$runs_table} WHERE subject = %s AND workflow_id = %d", 'cart:' . $real_id, $real_flow ) );
+$cart_runs( $real_id );
+as_unschedule_all_actions( ActionSchedulerQueue::HOOK, [ $real_run ], ActionSchedulerQueue::GROUP );
+Runtime::worker()->run( $real_run );
+remove_filter( 'pre_wp_mail', $catch );
+$mail_body = (string) ( $sent_html[0]['message'] ?? '' );
+$html_path = get_temp_dir() . 'yaymatik-check-carts-email.html';
+file_put_contents( $html_path, $mail_body ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- a file for the developer to open.
+$ok( 'completed' === $run_row( $real_run )['status'] && false !== strpos( $mail_body, 'Cart total' ) && false !== strpos( $mail_body, RestoreLink::ARG_CART . '=' . $real_id ), "real send: items table and a working restore link; HTML at {$html_path}" );
 
 foreach ( $flows as $flow_id ) {
     WorkflowStore::deactivate( $flow_id );

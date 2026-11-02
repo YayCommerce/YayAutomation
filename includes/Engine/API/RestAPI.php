@@ -334,8 +334,9 @@ class RestAPI {
                     if ( ! $errors && null !== $current['draft'] ) {
                         $errors = Validator::errors(
                             [
-                                'name'  => $current['name'],
-                                'graph' => $current['draft'],
+                                'name'   => $current['name'],
+                                'graph'  => $current['draft'],
+                                'status' => $current['status'],
                             ]
                         );
                     }

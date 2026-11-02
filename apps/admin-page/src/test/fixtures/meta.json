@@ -18,7 +18,9 @@
     "wc": {
         "active": true,
         "currencySymbol": "$",
-        "freeShippingCoupon": ""
+        "freeShippingCoupon": "",
+        "cartTracking": false,
+        "abandonMinutes": 60
     },
     "automation": {
         "plugins": [
@@ -976,6 +978,29 @@
                         "type": "date",
                         "valueType": "date",
                         "conditional": true
+                    },
+                    {
+                        "key": "cart.restore_url",
+                        "label": "Restore link",
+                        "type": "string",
+                        "valueType": "string",
+                        "conditional": false
+                    },
+                    {
+                        "key": "cart.items",
+                        "label": "Cart items",
+                        "type": "string",
+                        "valueType": "string",
+                        "conditional": false,
+                        "block": true
+                    },
+                    {
+                        "key": "cart.restore_button",
+                        "label": "Restore my cart button",
+                        "type": "string",
+                        "valueType": "string",
+                        "conditional": false,
+                        "block": true
                     }
                 ],
                 "relations": []

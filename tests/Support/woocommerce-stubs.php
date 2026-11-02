@@ -120,6 +120,18 @@ if ( ! class_exists( 'WC_DateTime' ) ) {
     }
 }
 
+if ( ! function_exists( 'get_woocommerce_currency' ) ) {
+    function get_woocommerce_currency() {
+        return 'USD';
+    }
+}
+
+if ( ! function_exists( 'wc_light_or_dark' ) ) {
+    function wc_light_or_dark( $color, $dark = '#000000', $light = '#FFFFFF' ) {
+        return $light;
+    }
+}
+
 if ( ! function_exists( 'wc_price' ) ) {
     function wc_price( $amount, $args = [] ) {
         return '<span class="amount">' . ( $args['currency'] ?? '' ) . '&#36;' . number_format( (float) $amount, 2 ) . '</span>';

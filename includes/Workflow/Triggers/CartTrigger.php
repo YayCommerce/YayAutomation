@@ -7,6 +7,7 @@ use YayMatik\Workflow\Core\Data\Ref;
 use YayMatik\Workflow\Core\Runtime\Cancellation;
 use YayMatik\Workflow\Core\Steps\Trigger;
 use YayMatik\Workflow\Core\Storage\CartStore;
+use YayMatik\Workflow\Core\Storage\Settings;
 use YayMatik\Workflow\Core\Storage\UnsubscribeStore;
 use YayMatik\Workflow\DataItems\CartData;
 use YayMatik\Workflow\DataItems\CustomerData;
@@ -86,6 +87,14 @@ abstract class CartTrigger extends Trigger {
         }
         CartStore::mark_series( $id );
         return true;
+    }
+
+    public function setup_issue(): ?string {
+        if ( Settings::get( 'cart_tracking' ) ) {
+            return null;
+        }
+        /* translators: %s: trigger name */
+        return sprintf( __( 'Turn on cart tracking before activating. %s never starts while it’s off.', 'yaymatik' ), $this->label() );
     }
 
     /**

@@ -39,6 +39,7 @@ const run: RunDetail = {
   subject: 'order:12',
   subjectLabel: 'Order #12',
   subjectUrl: 'https://shop.test/wp-admin/post.php?post=12',
+  stoppedByOrderUrl: null,
   status: 'completed',
   error: null,
   waitUntil: null,

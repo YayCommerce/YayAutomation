@@ -1,6 +1,9 @@
 <?php
 namespace YayMatik\Workflow\Core\Runtime;
 
+use YayMatik\Workflow\Core\Storage\CartStore;
+use YayMatik\Workflow\Core\Storage\RunStore;
+
 defined( 'ABSPATH' ) || exit;
 
 /** Runs, step rows and run stats shaped like the TS types, without scope or cursor. */
@@ -39,13 +42,21 @@ final class RunPresenter {
     }
 
     /**
-     * What a run is about, for people: "Order #1012" and its admin URL (null once the order is gone).
+     * What a run is about, for people: "Order #1012" and its admin URL (null once the order is gone), or a cart's shopper.
      *
-     * @param string $subject E.g. `order:12`.
+     * @param string $subject E.g. `order:12`, `cart:5`.
      * @return array `subjectLabel`, `subjectUrl`.
      */
     private static function subject( string $subject ): array {
         list( $type, $id ) = array_pad( explode( ':', $subject, 2 ), 2, '' );
+        if ( 'cart' === $type && (int) $id > 0 ) {
+            $cart = CartStore::find( (int) $id );
+            return [
+                /* translators: %d: cart id */
+                'subjectLabel' => $cart && '' !== $cart['email'] ? $cart['email'] : sprintf( __( 'Cart #%d', 'yaymatik' ), (int) $id ),
+                'subjectUrl'   => null,
+            ];
+        }
         if ( 'order' !== $type || (int) $id <= 0 ) {
             return [
                 'subjectLabel' => $subject,
@@ -76,11 +87,30 @@ final class RunPresenter {
             }
         }
         return self::run( $run ) + self::subject( (string) $run['subject'] ) + [
-            'steps' => array_map(
+            'stoppedByOrderUrl' => self::stopped_by_order_url( $run ),
+            'steps'             => array_map(
                 fn( array $step ) => self::step( $step ) + [ 'stepType' => $types[ (string) $step['step_id'] ] ?? null ],
                 $steps
             ),
         ];
+    }
+
+    /**
+     * The admin URL of the order that ended a cancelled cart run; null for anything else. Read from the stored reason: the cart may be ordered long after the run stopped for another reason.
+     *
+     * @param array $run
+     */
+    private static function stopped_by_order_url( array $run ): ?string {
+        list( $type, $id ) = array_pad( explode( ':', (string) $run['subject'], 2 ), 2, '' );
+        if ( 'cart' !== $type || RunStore::STATUS_CANCELLED !== $run['status'] ) {
+            return null;
+        }
+        $cart = CartStore::find( (int) $id );
+        if ( ! $cart || CartStore::ORDERED !== $cart['status'] || (int) $cart['order_id'] <= 0 || Cancellation::order_placed( (int) $cart['order_id'] ) !== $run['error'] ) {
+            return null;
+        }
+        $order = wc_get_order( (int) $cart['order_id'] );
+        return $order ? $order->get_edit_order_url() : null;
     }
 
     /**

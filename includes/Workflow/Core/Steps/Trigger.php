@@ -95,6 +95,11 @@ abstract class Trigger extends Step {
         return true;
     }
 
+    /** Why this trigger can't start on this site, shown when activating; null when it can. */
+    public function setup_issue(): ?string {
+        return null;
+    }
+
     /**
      * Why a run about this subject must stop before its next step, or null to go on.
      *

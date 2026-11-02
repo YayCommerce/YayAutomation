@@ -149,7 +149,8 @@ export type WorkflowIssueCode =
   | 'unlinked'
   | 'no_block'
   | 'invalid_config'
-  | 'missing_data';
+  | 'missing_data'
+  | 'cart_tracking_off';
 
 /** Something that blocks Activate or Update. `nodeId` is set when the issue belongs to one step. */
 export interface WorkflowIssue {
@@ -249,6 +250,8 @@ export interface WorkflowRunsPage {
 
 /** `GET /runs/{id}`. */
 export interface RunDetail extends Run, RunSubject {
+  /** Admin URL of the order that ended a cancelled cart run; null for anything else. */
+  stoppedByOrderUrl: string | null;
   steps: (RunStep & {
     /** Step type id from the pinned version's graph; null when the node isn't there. */
     stepType: StepId | null;

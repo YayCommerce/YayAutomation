@@ -145,6 +145,9 @@ declare global {
         currencySymbol: string;
         /** What a Free shipping method needs to accept a coupon; '' when none accepts one. */
         freeShippingCoupon: 'coupon' | 'coupon_and_minimum' | '';
+        cartTracking: boolean;
+        /** Minutes without activity before a cart counts as abandoned. */
+        abandonMinutes: number;
       };
       automation: {
         plugins: PluginMeta[];

@@ -44,6 +44,16 @@ final class CartDataTest extends TestCase {
         $this->assertSame( 5.0, $value( new SavedCart( [ 'items' => '[{"quantity":2},{"quantity":3}]' ] ) ) );
     }
 
+    public function test_every_field_has_a_sample(): void {
+        $item = new CartData();
+
+        $this->assertSame( array_keys( $item->fields() ), array_keys( $item->sample() ) );
+    }
+
+    public function test_a_sample_restores_nowhere(): void {
+        $this->assertSame( '#', ( new CartData() )->sample()['restore_url'] );
+    }
+
     public function test_bad_json_reads_as_no_lines(): void {
         $this->assertSame( [], ( new SavedCart( [ 'items' => 'nope' ] ) )->lines() );
     }

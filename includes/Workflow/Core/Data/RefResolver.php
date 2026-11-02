@@ -46,7 +46,7 @@ final class RefResolver {
     }
 
     /** @return callable[] */
-    private static function default_loaders(): array {
+    public static function default_loaders(): array {
         return [
             OrderData::ID     => fn( string $id ) => self::order( $id ),
             CartData::ID      => fn( string $id ) => SavedCart::find( (int) $id ),

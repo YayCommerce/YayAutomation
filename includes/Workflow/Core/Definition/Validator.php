@@ -114,14 +114,16 @@ final class Validator {
         return [
             'live'  => self::errors(
                 [
-                    'name'  => $workflow['name'],
-                    'graph' => $workflow['graph'],
+                    'name'   => $workflow['name'],
+                    'graph'  => $workflow['graph'],
+                    'status' => $workflow['status'] ?? null,
                 ]
             ),
             'draft' => null === $draft ? null : self::errors(
                 [
-                    'name'  => $workflow['name'],
-                    'graph' => $draft,
+                    'name'   => $workflow['name'],
+                    'graph'  => $draft,
+                    'status' => $workflow['status'] ?? null,
                 ]
             ),
         ];
@@ -148,7 +150,7 @@ final class Validator {
     /**
      * Problems that block turning a workflow on or applying a draft.
      *
-     * @param array $workflow Graph from `GraphSchema::prepare()`.
+     * @param array $workflow Graph from `GraphSchema::prepare()`. `status` only when turning on matters: an active workflow, or none, skips the setup check.
      * @return array[] [ [ 'code' => string, 'message' => string, 'field'? => string, 'nodeId'? => string, 'nodeIds'? => string[] ], … ]
      */
     public static function errors( array $workflow ): array {
@@ -169,6 +171,16 @@ final class Validator {
                 'code'    => 'no_trigger',
                 'message' => Messages::get( 'noTrigger' ),
             ];
+        }
+        if ( $trigger_step && isset( $workflow['status'] ) && 'active' !== $workflow['status'] ) {
+            $setup = $trigger_step->setup_issue();
+            if ( null !== $setup ) {
+                $errors[] = [
+                    'code'    => 'cart_tracking_off',
+                    'message' => $setup,
+                    'nodeId'  => GraphSchema::trigger( $nodes )['id'],
+                ];
+            }
         }
         if ( ! in_array( Step::KIND_ACTION, array_column( $nodes, 'kind' ), true ) ) {
             $errors[] = [

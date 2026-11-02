@@ -227,7 +227,7 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 - A shopper who comes back and leaves again: the series goes on; only an order or a gone cart stops it.
 - Pause per email address, not per cart or session.
 - Customer data in cart runs comes from the cart, never from an account found by its email.
-- Emails show the live product name and price; the saved snapshot only when the product is gone.
+- Emails show the price, line total, total and currency the shopper saw; live name, image and link; a gone product shows its snapshot name without a link.
 - The paid-order email rule (M7 D7) also closes `abandoned` carts.
 - The abandon sweep job joins the cleanup job's schedule check (`Cleanup::ensure()`).
 

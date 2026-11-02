@@ -299,6 +299,14 @@ final class CartStore {
         );
     }
 
+    /** The newest cart with an email and items, of any status; 0 when there's none. */
+    public static function newest_for_preview(): int {
+        global $wpdb;
+        $table = self::table();
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- own table, an admin action.
+        return (int) $wpdb->get_var( "SELECT id FROM {$table} WHERE email <> '' AND items NOT IN ('', '[]') ORDER BY id DESC LIMIT 1" );
+    }
+
     /**
      * Another open cart with this email started a reminder series since then.
      *
