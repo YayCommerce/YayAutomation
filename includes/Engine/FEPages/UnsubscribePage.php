@@ -3,6 +3,8 @@ namespace YayMatik\Engine\FEPages;
 
 use YayMatik\Utils\SingletonTrait;
 use YayMatik\Workflow\Core\Email\UnsubscribeLink;
+use YayMatik\Workflow\Core\Runtime\Cancellation;
+use YayMatik\Workflow\Core\Storage\CartStore;
 use YayMatik\Workflow\Core\Storage\Settings;
 use YayMatik\Workflow\Core\Storage\UnsubscribeStore;
 
@@ -39,7 +41,7 @@ class UnsubscribePage {
         if ( null === $email ) {
             $state = self::STATE_INVALID;
         } elseif ( $post ) {
-            $state = UnsubscribeStore::add( $email ) ? self::STATE_DONE : self::STATE_ERROR;
+            $state = self::unsubscribe( $email ) ? self::STATE_DONE : self::STATE_ERROR;
         } else {
             $state = UnsubscribeStore::has( $email ) ? self::STATE_DONE : self::STATE_CONFIRM;
         }
@@ -56,6 +58,20 @@ class UnsubscribePage {
         header( 'Referrer-Policy: no-referrer' );
         $this->render( $state );
         exit;
+    }
+
+    /**
+     * Records the address and stops its carts' waiting runs, so none later makes a coupon nobody gets.
+     *
+     * @param string $email
+     */
+    public static function unsubscribe( string $email ): bool {
+        if ( ! UnsubscribeStore::add( $email ) ) {
+            return false;
+        }
+        $carts = CartStore::for_email( UnsubscribeLink::normalize( $email ) );
+        Cancellation::carts( array_map( 'intval', array_column( $carts, 'id' ) ), Cancellation::unsubscribed() );
+        return true;
     }
 
     /**

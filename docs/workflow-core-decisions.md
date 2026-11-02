@@ -386,7 +386,7 @@ Today errors only go to the WooCommerce log, which merchants never open.
 - One cart has one row, and only a new cycle (after an order) clears `abandoned_at`, so a per-row column already answers "did this cart start yet".
 - A shopper who returns turns the row active and keeps `abandoned_at`, so leaving again can't start a second series.
 - The sweep only looks 24 h past the abandon time, so turning tracking on doesn't email old carts.
-- A series goes on when the shopper returns: coming back without ordering is not a reason to stop reminding. Only an order or a gone cart stops it.
+- A series goes on when the shopper returns: coming back without ordering is not a reason to stop reminding. Only an order, a gone cart or an unsubscribe stops it.
 - Cart emails show the prices the shopper saw, with the product's live name, image and link: the reminder must match the cart, and a price the shop raised since would read as a bait. The cart page may show a newer price after restoring.
 - One series per email in 7 days, read from `series_at`, set when an active workflow takes the cart: two carts of one shopper, in one browser and another, would otherwise send two series.
 

@@ -222,7 +222,7 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 - A trigger's `context()` and `refs()` load the order 2–3 times per event; load it once.
 - Cart tracking off blocks Activate for workflows with a cart trigger (M1.10 pattern), and Update when it changes the trigger to one.
 - `woocommerce_email_base_color` lookup repeated in GenerateCoupon, UnsubscribePage, CartItems; one helper after v1.0.
-- A shopper who comes back and leaves again: the series goes on; only an order or a gone cart stops it.
+- A shopper who comes back and leaves again: the series goes on; only an order, a gone cart or an unsubscribe stops it.
 - Emails show the price, line total, total and currency the shopper saw; live name, image and link; a gone product shows its snapshot name without a link.
 
 ## M3 — Review request · M · risk 2

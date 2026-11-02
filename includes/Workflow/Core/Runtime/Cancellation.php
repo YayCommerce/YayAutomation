@@ -6,7 +6,7 @@ use YayMatik\Workflow\Core\Storage\RunStore;
 
 defined( 'ABSPATH' ) || exit;
 
-/** Cancels waiting runs: a workflow's when it is turned off or updated, a cart's when it is ordered or gone. */
+/** Cancels waiting runs: a workflow's when it is turned off or updated, a cart's when it is ordered or gone or its shopper unsubscribes. */
 final class Cancellation {
 
     /** Why a run stopped: its workflow was deactivated. */
@@ -22,6 +22,11 @@ final class Cancellation {
     /** Why a run about a cart stopped: the cart's row is gone. */
     public static function cart_gone(): string {
         return __( 'The cart was emptied or deleted.', 'yaymatik' );
+    }
+
+    /** Why a run about a cart stopped: its shopper unsubscribed. */
+    public static function unsubscribed(): string {
+        return __( 'The shopper unsubscribed from these emails.', 'yaymatik' );
     }
 
     /**

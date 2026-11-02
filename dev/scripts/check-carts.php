@@ -16,6 +16,7 @@
 // phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.WP.GlobalVariablesOverride.Prohibited
 
 use YayMatik\Engine\FEPages\RestoreCart;
+use YayMatik\Engine\FEPages\UnsubscribePage;
 use YayMatik\Engine\Privacy\PersonalData;
 use YayMatik\Workflow\Core\Cart\CartSnapshot;
 use YayMatik\Workflow\Core\Cart\CartSweep;
@@ -1401,6 +1402,27 @@ $next_request();
 CartTracker::record( $cart( [ $line( 1, 4 ) ] ), 'cart' );
 $ok( 'active' === $row( $sw . 'back' )['status'] && 'waiting' === $run_row( $back_run )['status'], 'a returning shopper: cart active, run still waiting' );
 
+// Unsubscribed: stops the run before a coupon or an email nobody gets.
+$left      = 'The shopper unsubscribed from these emails.';
+$left_mail = "left@{$domain}";
+$left_run  = $waiting( 'left', "email = '{$left_mail}'" );
+$left_order = $new_run(
+    [
+        'subject'     => 'order:' . ( $fake + 42 ),
+        'status'      => 'waiting',
+        'finished_at' => null,
+        'wait_until'  => gmdate( 'Y-m-d H:i:s', time() + HOUR_IN_SECONDS ),
+    ],
+    [ [ 'status' => 'waiting' ] ]
+);
+$ok( UnsubscribePage::unsubscribe( strtoupper( $left_mail ) ) && UnsubscribeStore::has( $left_mail ), 'unsubscribe: recorded, any case' );
+$ok( 'cancelled' === $run_row( $left_run )['status'] && $left === $run_row( $left_run )['error'] && 'cancelled' === $step_row( $left_run )['status'], 'unsubscribe: the waiting cart run cancelled at once' );
+$ok( 'waiting' === $run_row( $left_order )['status'] && 'waiting' === $step_row( $left_order )['status'], 'unsubscribe: a waiting order run untouched' );
+$ok( null === YayMatik\Workflow\Core\Steps\StepRegistry::get( 'order_created' )->stop_reason( 'order:' . ( $fake + 42 ) ), 'unsubscribe: an order trigger has no stop reason' );
+$ok( 'waiting' === $run_row( $back_run )['status'], 'unsubscribe: another email\'s cart run untouched' );
+$ok( UnsubscribePage::unsubscribe( "nocart@{$domain}" ), 'unsubscribe: an email with no carts' );
+$ok( ! UnsubscribePage::unsubscribe( 'not an email' ), 'unsubscribe: not an email is refused' );
+
 // Queued, then running: stopped by the trigger hook.
 $due_row( 'queued' );
 $sweep();
@@ -1417,6 +1439,14 @@ $gone_q    = $cart_runs( $gone_cart )[0];
 $wpdb->delete( $table, [ 'id' => $gone_cart ] );
 as_unschedule_all_actions( ActionSchedulerQueue::HOOK, [ $gone_q ], ActionSchedulerQueue::GROUP );
 $ok( 'cancelled' === Runtime::worker()->run( $gone_q ) && 'The cart was emptied or deleted.' === $run_row( $gone_q )['error'], 'queued run + gone cart: Cancelled, not skipped' );
+
+$late_mail = "late@{$domain}";
+$due_row( 'late', "email = '{$late_mail}'" );
+$sweep();
+$late_run = $cart_runs( (int) $row( $sw . 'late' )['id'] )[0];
+UnsubscribeStore::add( $late_mail );
+as_unschedule_all_actions( ActionSchedulerQueue::HOOK, [ $late_run ], ActionSchedulerQueue::GROUP );
+$ok( 'cancelled' === Runtime::worker()->run( $late_run ) && $left === $run_row( $late_run )['error'], 'queued run + unsubscribed email: Cancelled at start' );
 
 $two_flow = $new_flow( 'two emails', 'cart_abandoned', true );
 $due_row( 'running' );

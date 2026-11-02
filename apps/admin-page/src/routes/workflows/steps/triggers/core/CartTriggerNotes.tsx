@@ -38,6 +38,12 @@ export function CartTriggerNotes({ trigger }: { trigger: 'cart' | 'checkout' }) 
   const { active, cartTracking, abandonMinutes } = window.yayMatikMeta.wc;
   return (
     <div className="flex flex-col gap-3">
+      {active && !cartTracking && (
+        <CartTrackingWarning
+          message={__('Cart tracking is off, so this trigger never starts.', 'yaymatik')}
+          linkLabel={__('Turn on cart tracking in Settings', 'yaymatik')}
+        />
+      )}
       <p className="text-muted-foreground text-sm">{__('No settings needed.', 'yaymatik')}</p>
       <p className="bg-primary/8 flex items-start gap-2 rounded-lg px-3 py-2.5 text-[13px]">
         <Info className="text-primary mt-0.5 size-4 shrink-0" aria-hidden />
@@ -69,12 +75,6 @@ export function CartTriggerNotes({ trigger }: { trigger: 'cart' | 'checkout' }) 
           'yaymatik',
         )}
       </Hint>
-      {active && !cartTracking && (
-        <CartTrackingWarning
-          message={__('Cart tracking is off, so this trigger never starts.', 'yaymatik')}
-          linkLabel={__('Turn on cart tracking in Settings', 'yaymatik')}
-        />
-      )}
     </div>
   );
 }

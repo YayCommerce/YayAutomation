@@ -42,6 +42,7 @@ describe('CartTriggerNotes', () => {
     wc.cartTracking = false;
     mount('cart');
     const warning = container.querySelector('[data-slot="alert"]');
+    expect(container.firstElementChild?.firstElementChild).toBe(warning);
     expect(warning?.textContent).toContain('Cart tracking is off, so this trigger never starts.');
     expect(warning?.querySelector('a')?.getAttribute('href')).toBe('/settings');
 
