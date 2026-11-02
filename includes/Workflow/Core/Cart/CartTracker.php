@@ -181,6 +181,9 @@ final class CartTracker {
         if ( $row && ! self::$ordered ) {
             if ( 0 === (int) $row['order_id'] ) {
                 CartStore::delete_by_session( $key );
+            } elseif ( CartStore::ORDERED !== $row['status'] ) {
+                // No items: the sweep skips it, so the shopper gets no reminder about what they removed.
+                CartStore::touch( $key, [ 'items' => '[]' ] );
             }
             Cancellation::carts( [ (int) $row['id'] ], Cancellation::cart_gone() );
         }

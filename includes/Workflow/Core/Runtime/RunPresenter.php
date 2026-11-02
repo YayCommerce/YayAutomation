@@ -96,7 +96,7 @@ final class RunPresenter {
     }
 
     /**
-     * The admin URL of the order that ended a cancelled cart run; null for anything else. Read from the stored reason: the cart may be ordered long after the run stopped for another reason.
+     * The admin URL of the order that ended a cancelled cart run; null for anything else, also an order placed after the run stopped for another reason.
      *
      * @param array $run
      */
@@ -106,11 +106,12 @@ final class RunPresenter {
             return null;
         }
         $cart = CartStore::find( (int) $id );
-        if ( ! $cart || CartStore::ORDERED !== $cart['status'] || (int) $cart['order_id'] <= 0 || Cancellation::order_placed( (int) $cart['order_id'] ) !== $run['error'] ) {
+        if ( ! $cart || CartStore::ORDERED !== $cart['status'] || (int) $cart['order_id'] <= 0 ) {
             return null;
         }
-        $order = wc_get_order( (int) $cart['order_id'] );
-        return $order ? $order->get_edit_order_url() : null;
+        $order   = wc_get_order( (int) $cart['order_id'] );
+        $created = $order ? $order->get_date_created() : null;
+        return $created && $created->getTimestamp() <= strtotime( (string) $run['finished_at'] . ' UTC' ) ? $order->get_edit_order_url() : null;
     }
 
     /**

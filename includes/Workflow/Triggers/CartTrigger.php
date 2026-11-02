@@ -104,7 +104,8 @@ abstract class CartTrigger extends Trigger {
      */
     public function stop_reason( string $subject ): ?string {
         $row = CartStore::find( (int) substr( $subject, strlen( 'cart:' ) ) );
-        if ( ! $row ) {
+        // `[]`: emptied, the row kept only so paying its order can find it.
+        if ( ! $row || '[]' === $row['items'] ) {
             return Cancellation::cart_gone();
         }
         return CartStore::ORDERED === $row['status'] ? Cancellation::order_placed( (int) $row['order_id'] ) : null;

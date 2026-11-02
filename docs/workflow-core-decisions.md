@@ -388,11 +388,12 @@ Today errors only go to the WooCommerce log, which merchants never open.
 - The sweep only looks 24 h past the abandon time, so turning tracking on doesn't email old carts.
 - A series goes on when the shopper returns: coming back without ordering is not a reason to stop reminding. Only an order or a gone cart stops it.
 - Cart emails show the prices the shopper saw, with the product's live name, image and link: the reminder must match the cart, and a price the shop raised since would read as a bait. The cart page may show a newer price after restoring.
-- One series per email in 7 days, read from `series_at`, set only when a workflow really takes the cart: two carts of one shopper, in one browser and another, would otherwise send two series.
+- One series per email in 7 days, read from `series_at`, set when an active workflow takes the cart: two carts of one shopper, in one browser and another, would otherwise send two series.
 
 **Cost.**
 - A cart abandoned before its workflow was activated never starts it: the event fires once per cycle.
 - A cart idle over 24 h past the abandon time is skipped for good, also when the job itself was that late (a store with no visits and no server cron).
+- A cart a workflow took but couldn't start (rate limit, no live version) still blocks that email for 7 days.
 - Emptying a cart deletes its row and its claim, so a new cart can start a new series; one series per email limits this.
 - Events fire at shutdown of the sweep: a crash between marking and that shutdown loses that cart's series.
 - The job adds 288 Action Scheduler rows a day, even with tracking off; Action Scheduler's own retention removes them.

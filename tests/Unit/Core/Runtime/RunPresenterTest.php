@@ -125,14 +125,14 @@ final class RunPresenterTest extends TestCase {
         $order                 = new FakeOrder(
             [
                 'id'           => 40,
-                'order_number' => 'WC-40',
+                'date_created' => new \WC_DateTime( '2026-10-12 09:00:00', new \DateTimeZone( 'UTC' ) ),
             ]
         );
         FakeOrder::$found[40]  = $order;
         $cancelled             = [
             'subject' => 'cart:5',
             'status'  => 'cancelled',
-            'error'   => 'The shopper placed order #WC-40.',
+            'finished_at' => '2026-10-12 09:00:05',
         ] + self::run_row();
         $ordered               = [
             'email'    => 'ann@x.com',
@@ -145,7 +145,7 @@ final class RunPresenterTest extends TestCase {
         $this->assertSame( $order->get_edit_order_url(), $url( $cancelled ) );
         $this->assertNull( $url( [ 'status' => 'completed' ] + $cancelled ), 'not cancelled' );
         $this->assertNull( $url( [ 'subject' => 'order:40' ] + $cancelled ), 'not a cart run' );
-        $this->assertNull( $url( [ 'error' => 'The workflow was deactivated.' ] + $cancelled ), 'stopped for another reason, ordered later' );
+        $this->assertNull( $url( [ 'finished_at' => '2026-10-12 08:59:00' ] + $cancelled ), 'stopped for another reason, ordered later' );
 
         $this->with_cart( [ 'status' => 'active' ] + $ordered );
         $this->assertNull( $url( $cancelled ), 'the cart was not ordered: an unpaid order, or stopped for another reason' );

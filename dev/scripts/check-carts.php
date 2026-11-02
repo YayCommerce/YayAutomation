@@ -1374,7 +1374,14 @@ $unpaid_run = $waiting( 'unpaid', 'order_id = ' . ( $fake + 41 ) );
 $browser( $sw . 'unpaid' );
 $next_request();
 CartTracker::emptied();
-$ok( null !== $row( $sw . 'unpaid' ) && 'cancelled' === $run_row( $unpaid_run )['status'], 'emptied with an unpaid order: row kept for the payment, run cancelled' );
+$ok( null !== $row( $sw . 'unpaid' ) && 'cancelled' === $run_row( $unpaid_run )['status'] && '[]' === $row( $sw . 'unpaid' )['items'], 'emptied with an unpaid order: row kept for the payment, no items, run cancelled' );
+$age( $sw . 'unpaid', "status = 'active', {$idle}, abandoned_at = NULL" );
+$fired = [];
+add_action( 'yaymatik_cart_abandoned', $listen );
+$sweep();
+remove_action( 'yaymatik_cart_abandoned', $listen );
+$ok( 'active' === $row( $sw . 'unpaid' )['status'] && ! in_array( (int) $row( $sw . 'unpaid' )['id'], $fired, true ), 'emptied with an unpaid order: the sweep skips it' );
+$ok( 'The cart was emptied or deleted.' === YayMatik\Workflow\Core\Steps\StepRegistry::get( 'cart_abandoned' )->stop_reason( 'cart:' . $row( $sw . 'unpaid' )['id'] ), 'emptied with an unpaid order: a queued run stops too' );
 
 $settings(
     [
@@ -1524,6 +1531,8 @@ $ok( 'Cart #987654' === RunPresenter::item( [ 'subject' => 'cart:987654' ] + $a_
 $stopped = RunStore::find( $by_email );
 $ok( RunPresenter::detail( $stopped, [], null )['stoppedByOrderUrl'] === $stop_order->get_edit_order_url(), 'run detail: the order link when stopped by an order' );
 $ok( null === RunPresenter::detail( $run_row( $gone_run ), [], null )['stoppedByOrderUrl'], 'run detail: no order link when the cart was emptied' );
+$late_order = RunStore::find( $by_email );
+$ok( null === RunPresenter::detail( [ 'finished_at' => '2001-01-01 00:00:00' ] + $late_order, [], null )['stoppedByOrderUrl'], 'run detail: no order link for an order placed after the run stopped' );
 $ok( ! array_key_exists( 'stoppedByOrderUrl', RunPresenter::item( $stopped, 0 ) ), 'runs list: no order link' );
 
 // Activate with tracking off: REST, as the editor calls it.
