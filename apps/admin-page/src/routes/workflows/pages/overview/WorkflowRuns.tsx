@@ -174,7 +174,7 @@ function NoRuns() {
         </EmptyMedia>
         <EmptyTitle className="text-base font-semibold">{__('No runs yet', 'yaymatik')}</EmptyTitle>
         <EmptyDescription className="text-[13px]">
-          {__('Each time an order starts this workflow, the run shows up here with every step’s result.', 'yaymatik')}
+          {__('Each time this workflow starts, the run shows up here with every step’s result.', 'yaymatik')}
         </EmptyDescription>
       </EmptyHeader>
       <EmptyContent>

@@ -124,7 +124,7 @@ We chose these 8 because they cover what merchants install an automation plugin 
 - Deactivate and Update say how many waiting runs will be cancelled. Cancelled runs show "Cancelled" right away, never "Waiting until …".
 
 **States:**
-- No runs yet: an empty state that says "No runs yet" and "Each time an order starts this workflow, the run shows up here with every step's result."
+- No runs yet: an empty state that says "No runs yet" and "Each time this workflow starts, the run shows up here with every step's result."
 - Loading: placeholder rows.
 - A failed run shows its error in the row and in the detail.
 - Skipped emails show why, e.g. the customer unsubscribed.
