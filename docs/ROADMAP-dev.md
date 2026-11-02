@@ -25,7 +25,7 @@ Changes from the ROADMAP-v1.0 order:
 | M1 | Customer emails + coupons | L | 3 | F1 | ✅ Done |
 | M2 | Wait + run history | L | 3 | F1 | ✅ Done |
 | F2 | Workflows table | M | 3 | F1 | ✅ Done |
-| M7 | Cart tracking + Settings + Health check | L | 3 | F1 | In progress |
+| M7 | Cart tracking + Settings + Health check | L | 3 | F1 | ✅ Done |
 | M8 | Abandoned cart + checkout | L | 2 | M1, M2, M7 | — |
 | M3 | Review request | M | 2 | M2 | — |
 | M4 | Welcome series | S | 2 | M2 | — |
@@ -176,7 +176,7 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 
 ## M7 — Cart tracking + Settings + Health check · L · risk 3
 
-**Status:** In progress. Backend and store front merged (PR #30); Settings page and health check panel (PR B, `jack/feature/m7b-settings-ui`) open.
+**Status:** ✅ Done. Merged into `develop` (PR #30, PR #31, `cfb9337`).
 
 **Backend**
 - ✅ **M7.1 Cart tracking** — carts table; logged-in customers and guests; email captured at checkout (classic + block).
@@ -190,8 +190,8 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
   - (d) Cleanup job missing or late → schedule again.
 
 **UI**
-- ⏳ **M7.6 Settings page** — Cart tracking, Emails, Run history.
-- ⏳ **M7.7 Health check panel** — each problem with its proposed fix.
+- ✅ **M7.6 Settings page** — Cart tracking, Emails, Run history.
+- ✅ **M7.7 Health check panel** — each problem with its proposed fix.
 - ✅ **M7.8 Store front** — message when a restore link's cart is gone.
 
 **Follow-ups**
