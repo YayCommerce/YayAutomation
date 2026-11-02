@@ -5,7 +5,6 @@ import { Link } from 'react-router';
 import { __, sprintf } from '@wordpress/i18n';
 
 import { cn } from '@/lib/utils';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -13,6 +12,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { stepsInOrder } from '../../../model/graph';
 import type { LibraryNavState } from '../../../shared/nav/library.nav';
 import { PluginIcon, plugins } from '../../../shared/ui/PluginIcon';
+import { WarningBadge } from '../../../shared/ui/WarningBadge';
 import { stepOf } from '../../../steps';
 import { StepTile } from '../../../steps/core/StepTile';
 import { categoryLabels, needsCartTracking, pluginsOf, templates, workflowRank } from '../../../templates';
@@ -335,9 +335,7 @@ function TemplateCard({ template }: { template: WorkflowTemplate }) {
         <p className="text-muted-foreground line-clamp-2 text-[13px]">{template.description}</p>
         <div className="mt-auto flex items-center justify-between gap-2 pt-3">
           <PluginStack ids={used} />
-          {needsCartTracking(template.graph) && (
-            <Badge variant="warning-soft">{__('Needs cart tracking', 'yaymatik')}</Badge>
-          )}
+          {needsCartTracking(template.graph) && <WarningBadge>{__('Needs cart tracking', 'yaymatik')}</WarningBadge>}
         </div>
       </div>
     </Link>
