@@ -195,7 +195,6 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 - ✅ **M7.8 Store front** — message when a restore link's cart is gone.
 
 **Follow-ups**
-- Editor canvas: the mouse wheel zooms and panning needs a drag (ReactFlow defaults since F1), so a step added below the view can't be scrolled to; proposal: wheel / trackpad pans, Ctrl/Cmd + wheel zooms, a new step is brought into view.
 - Leave dialog titles differ: Settings "Unsaved changes", editor "Leave without saving?".
 - Unused dependencies in `apps/admin-page`: zod, react-hook-form, @hookform/resolvers, @formisch/react.
 - `routes/settings/api/request.ts` repeats the private `request()` of `workflow.api.ts`.

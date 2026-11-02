@@ -99,6 +99,11 @@ export function WorkflowCanvas({ panelInset, onPaneClick }: { panelInset: number
       colorMode={theme}
       style={canvasStyle}
       nodesConnectable={false}
+      // Wheel and trackpad move around a long workflow; Ctrl/Cmd + wheel and pinch zoom.
+      panOnScroll
+      zoomOnScroll={false}
+      zoomOnPinch
+      zoomActivationKeyCode={['Meta', 'Control']}
       fitView
       fitViewOptions={fitViewOptions}
     >
@@ -109,6 +114,9 @@ export function WorkflowCanvas({ panelInset, onPaneClick }: { panelInset: number
     </ReactFlow>
   );
 }
+
+/** Frames to wait for a new step's size before giving up on bringing it into view. */
+const MEASURE_FRAMES = 30;
 
 /**
  * Keeps the graph usable at any screen size: re-fits it when the canvas is resized (window, admin
@@ -131,12 +139,16 @@ function ViewKeeper({ panelInset, openNodeId }: { panelInset: number; openNodeId
 
   useEffect(() => {
     if (!openNodeId) return;
-    // Next frame: a step just added hasn't been measured yet.
-    const frame = requestAnimationFrame(() => {
+    let frame = 0;
+    const bringIntoView = (framesLeft: number) => {
       const node = getInternalNode(openNodeId);
       const w = node?.measured.width;
       const h = node?.measured.height;
-      if (!node || !w || !h) return;
+      // A step just added is measured by a ResizeObserver, which runs after this frame's callbacks.
+      if (!node || !w || !h) {
+        if (framesLeft > 0) frame = requestAnimationFrame(() => bringIntoView(framesLeft - 1));
+        return;
+      }
       const { x, y, zoom } = getViewport();
       const { x: nodeX, y: nodeY } = node.internals.positionAbsolute;
       const left = nodeX * zoom + x;
@@ -149,7 +161,8 @@ function ViewKeeper({ panelInset, openNodeId }: { panelInset: number; openNodeId
         { x: centerX - (nodeX + w / 2) * zoom, y: height / 2 - (nodeY + h / 2) * zoom, zoom },
         { duration: 300 },
       );
-    });
+    };
+    frame = requestAnimationFrame(() => bringIntoView(MEASURE_FRAMES));
     return () => cancelAnimationFrame(frame);
     // Only when another step's panel opens, not on every resize or pan.
     // eslint-disable-next-line react-hooks/exhaustive-deps
