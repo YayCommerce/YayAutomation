@@ -1,6 +1,7 @@
 import { useState, type CSSProperties, type ReactNode } from 'react';
 import type { WorkflowIssue, WorkflowNode } from '@yaymatik/types';
 import { ChevronLeft, ChevronRight, CircleAlert } from 'lucide-react';
+import { Link } from 'react-router';
 import { __, sprintf } from '@wordpress/i18n';
 
 import { cn } from '@/lib/utils';
@@ -27,8 +28,8 @@ function withStepName(message: string, name: string): ReactNode {
 /**
  * Error-mode bar: one issue at a time, with "1 / N" paging on the right.
  * A step issue shows the step's tile and message and links to the step; `unlinked` links to its
- * first step; `name_required` offers Rename; other workflow-level issues (no trigger, no action)
- * are just their message.
+ * first step; `cart_tracking_off` links to Settings; `name_required` offers Rename; other
+ * workflow-level issues (no trigger, no action) are just their message.
  */
 export function IssueBanner({
   issues,
@@ -83,9 +84,15 @@ export function IssueBanner({
       )}
       <p className="min-w-0 flex-1">
         {withStepName(issue.message, stepName)}{' '}
-        {stepId
-          ? link(__('Show step', 'yaymatik'), () => onView(stepId))
-          : issue.code === 'name_required' && link(__('Rename workflow', 'yaymatik'), onRename)}
+        {issue.code === 'cart_tracking_off' ? (
+          <Button variant="link" size="sm" className="h-auto p-0 align-baseline" asChild>
+            <Link to="/settings">{__('Open Settings', 'yaymatik')}</Link>
+          </Button>
+        ) : stepId ? (
+          link(__('Show step', 'yaymatik'), () => onView(stepId))
+        ) : (
+          issue.code === 'name_required' && link(__('Rename workflow', 'yaymatik'), onRename)
+        )}
       </p>
       {issues.length > 1 && (
         <div className="text-muted-foreground flex shrink-0 items-center gap-0.5 text-xs">

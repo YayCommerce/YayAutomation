@@ -3,7 +3,7 @@ import { crossSellCoupon, crossSellFirstTime, crossSellRepeat, upsellAfter30Days
 import { firstOrderDiscount, firstOrderFreeShipping } from './first-order-thank-you';
 import highValueOrderAlert from './high-value-order-alert';
 
-export { categoryLabels, sendsCustomerEmail, workflowRank } from './core/meta';
+export { categoryLabels, needsCartTracking, sendsCustomerEmail, workflowRank } from './core/meta';
 export { pluginsOf } from './core/plugins';
 
 /**

@@ -89,17 +89,15 @@ export function StepPicker({
   let list: ReactNode;
   if (plugin) {
     const own = choices.filter((stepDef) => stepDef.plugin === plugin && matches(stepDef.label, query));
-    // Actions come in sections (Email, Order, …); triggers are one list.
-    const sections =
-      kind === 'action' ? [...new Set(own.map((stepDef) => stepDef.category!))] : own.length ? [null] : [];
-    list = sections.map((category) => (
+    // Another plugin's step may have no category: no heading for those.
+    list = [...new Set(own.map((stepDef) => stepDef.category))].map((category) => (
       <section key={category ?? 'all'}>
         {category && (
           <h3 className="text-muted-foreground px-2 pt-2.5 pb-1 text-[11px] font-semibold tracking-wider uppercase">
             {categoryLabels[category]}
           </h3>
         )}
-        {stepRows(own.filter((stepDef) => !category || stepDef.category === category))}
+        {stepRows(own.filter((stepDef) => stepDef.category === category))}
       </section>
     ));
   } else if (query.trim()) {

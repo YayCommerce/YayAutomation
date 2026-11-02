@@ -277,6 +277,11 @@ describe('withServerIssues', () => {
     expect(withServerIssues([], { graph: checked, issues: [percent] }, moved)).toEqual([percent]);
   });
 
+  it('adds cart tracking being off, which only the server knows', () => {
+    const off = { code: 'cart_tracking_off', message: 'Turn on cart tracking.', nodeId: 'trigger' } as const;
+    expect(withServerIssues([], { graph: checked, issues: [off] }, checked)).toEqual([off]);
+  });
+
   it('drops it once the step is edited, until the next save checks it again', () => {
     const edited = updateNodeConfig(checked, 'email', { ...node(checked, 'email').data.config, subject: 'New' });
     expect(withServerIssues([], { graph: checked, issues: [percent] }, edited)).toEqual([]);

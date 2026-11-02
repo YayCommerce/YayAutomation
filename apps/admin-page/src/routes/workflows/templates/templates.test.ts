@@ -1,9 +1,10 @@
-import { describe, expect, it } from 'vitest';
+import type { WorkflowGraph } from '@yaymatik/types';
+import { afterEach, describe, expect, it } from 'vitest';
 
 import { structureErrors } from '../model/structure';
 import { validateWorkflow } from '../model/validation';
 import { emailMessage } from './core/email';
-import { findTemplate, sendsCustomerEmail, templates, versionsOf, workflowRank } from './index';
+import { findTemplate, needsCartTracking, sendsCustomerEmail, templates, versionsOf, workflowRank } from './index';
 
 describe('templates', () => {
   it('has templates with unique ids', () => {
@@ -56,6 +57,38 @@ describe('templates', () => {
 
   it('staff-only templates send no customer email', () => {
     expect(sendsCustomerEmail(findTemplate('high-value-order-alert')!.graph)).toBe(false);
+  });
+});
+
+describe('needsCartTracking', () => {
+  const { wc } = window.yayMatikMeta;
+  const before = { ...wc };
+  const trigger = (block: string) =>
+    ({
+      nodes: [{ id: 't', kind: 'trigger', position: { x: 0, y: 0 }, data: { block, config: {} } }],
+      edges: [],
+    }) as WorkflowGraph;
+
+  afterEach(() => {
+    Object.assign(wc, before);
+  });
+
+  it('holds for a cart or checkout trigger while tracking is off', () => {
+    wc.cartTracking = false;
+    expect(needsCartTracking(trigger('cart_abandoned'))).toBe(true);
+    expect(needsCartTracking(trigger('checkout_abandoned'))).toBe(true);
+    expect(needsCartTracking(trigger('order_created'))).toBe(false);
+  });
+
+  it('leaves WooCommerce being off to "Install WooCommerce"', () => {
+    wc.cartTracking = false;
+    wc.active = false;
+    expect(needsCartTracking(trigger('cart_abandoned'))).toBe(false);
+  });
+
+  it('goes away as soon as tracking is on', () => {
+    wc.cartTracking = true;
+    expect(needsCartTracking(trigger('cart_abandoned'))).toBe(false);
   });
 });
 

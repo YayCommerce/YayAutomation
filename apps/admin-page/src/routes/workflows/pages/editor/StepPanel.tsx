@@ -232,7 +232,8 @@ export function StepPanel({
   const shown =
     feedback !== 'none' && issue && issue.message !== stepDef.firstError(node.data.config) ? issue : undefined;
   const underField = shown?.field && stepDef.drawsField(shown.field) ? shown : undefined;
-  const notice = underField ? undefined : shown;
+  // The cart trigger's notes already warn about tracking, with a link to fix it.
+  const notice = underField || shown?.code === 'cart_tracking_off' ? undefined : shown;
 
   return (
     <EmailToolsContext.Provider value={emailTools}>

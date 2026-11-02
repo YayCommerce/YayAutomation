@@ -95,6 +95,32 @@ describe('RunDetailSheet', () => {
     expect(onClose).not.toHaveBeenCalled();
   });
 
+  it('links the order that stopped a cart run', async () => {
+    const viewOrder = (sheet: Element) =>
+      [...sheet.querySelectorAll('a')].find((link) => link.textContent === 'View order');
+    const orderUrl = 'https://shop.test/wp-admin/admin.php?page=wc-orders&id=52';
+    vi.mocked(getRun).mockResolvedValue({
+      ...run,
+      subjectLabel: 'a@b.com',
+      subjectUrl: null,
+      status: 'cancelled',
+      error: 'The shopper placed order #52.',
+      stoppedByOrderUrl: orderUrl,
+    });
+    await open('31');
+    const sheet = document.body.querySelector('[data-slot="sheet-content"]')!;
+    await vi.waitFor(() => expect(viewOrder(sheet)?.getAttribute('href')).toBe(orderUrl));
+    expect(sheet.textContent).toContain('The shopper placed order #52.');
+  });
+
+  it('shows no order link on a run no order stopped', async () => {
+    vi.mocked(getRun).mockResolvedValue(run);
+    await open('31');
+    const sheet = document.body.querySelector('[data-slot="sheet-content"]')!;
+    await vi.waitFor(() => expect(sheet.querySelector('a')?.textContent).toBe('Order #12'));
+    expect(sheet.textContent).not.toContain('View order');
+  });
+
   it('says "Run not found." and closes for a missing run or another workflow’s run', async () => {
     vi.mocked(getRun).mockRejectedValue(new ApiError('Run not found.', 404));
     const closeMissing = await open('99');

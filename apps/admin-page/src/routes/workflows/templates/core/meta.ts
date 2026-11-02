@@ -1,6 +1,8 @@
 import type { TemplateCategory, TemplateWorkflow, WorkflowGraph } from '@yaymatik/types';
 import { __ } from '@wordpress/i18n';
 
+import { stepOf } from '../../steps';
+
 /** In library chip order. */
 export const categoryLabels: Record<TemplateCategory, string> = {
   recover_carts: __('Recover carts', 'yaymatik'),
@@ -25,3 +27,16 @@ export const workflowRank: Record<TemplateWorkflow, number> = {
 
 /** The graph emails the customer: Use template asks to review the emails before activating. */
 export const sendsCustomerEmail = (graph: WorkflowGraph) => graph.nodes.some(({ data }) => data.block === 'send_email');
+
+/**
+ * The graph starts from a cart trigger while cart tracking is off. Saving Settings changes the answer:
+ * call it when rendering. Not while WooCommerce is off: "Install WooCommerce" says enough.
+ */
+export const needsCartTracking = (graph: WorkflowGraph) => {
+  const { active, cartTracking } = window.yayMatikMeta.wc;
+  return (
+    active &&
+    !cartTracking &&
+    graph.nodes.some((node) => node.kind === 'trigger' && stepOf(node.data)?.category === 'cart')
+  );
+};
