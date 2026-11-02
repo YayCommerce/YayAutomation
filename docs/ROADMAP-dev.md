@@ -26,7 +26,7 @@ Changes from the ROADMAP-v1.0 order:
 | M2 | Wait + run history | L | 3 | F1 | ✅ Done |
 | F2 | Workflows table | M | 3 | F1 | ✅ Done |
 | M7 | Cart tracking + Settings + Health check | L | 3 | F1 | ✅ Done |
-| M8 | Abandoned cart + checkout | L | 2 | M1, M2, M7 | — |
+| M8 | Abandoned cart + checkout | L | 2 | M1, M2, M7 | In progress |
 | M3 | Review request | M | 2 | M2 | — |
 | M4 | Welcome series | S | 2 | M2 | — |
 | M5 | High-value order alert | S | 1 | — | — |
@@ -203,33 +203,27 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 
 ## M8 — Abandoned cart + checkout · L · risk 2
 
+**Status:** In progress. Backend on PR A (`jack/feature/m8a-abandoned-carts`).
+
 **Backend**
-- **M8.1 Abandon sweep (no claims)** *(§3)* — a 5-minute job, 200 carts each; a cart's first abandon in its cycle is the claim.
-- **M8.2 Cart entity type** *(§4)*.
-- **M8.3 Triggers** — Cart abandoned, Checkout abandoned; a cart never starts both.
-- **M8.4 Exit condition** — stop the run when an order is placed for the cart or customer, or the cart is gone (no setting; see design §3 "Stop on order").
-- **M8.5 Email blocks** — cart items, "Restore my cart" button.
+- ⏳ **M8.1 Abandon sweep (no claims)** *(§3)* — a 5-minute job, 200 carts each; a cart's first abandon in its cycle is the claim.
+- ⏳ **M8.2 Cart entity type** *(§4)*.
+- ⏳ **M8.3 Triggers** — Cart abandoned, Checkout abandoned; a cart never starts both.
+- ⏳ **M8.4 Exit condition** — stop the run when an order is placed for the cart or customer, or the cart is gone (no setting; see design §3 "Stop on order").
+- ⏳ **M8.5 Email blocks** — cart items, "Restore my cart" button.
 
 **UI**
 - **M8.6 Trigger panels** — notes, plus a warning when cart tracking is off.
-- **M8.7 Exit condition setting.**
+- **M8.7 Fixed note in the trigger panel, no setting:** the run always stops when an order is placed.
 - **M8.8 Templates UI** — "Needs cart tracking" badge, "Before you start" in the preview.
 
 **Templates:** Abandoned cart ×3, Abandoned checkout ×2.
 
 **Follow-ups**
 - A trigger's `context()` and `refs()` load the order 2–3 times per event; load it once.
-- Runs about a cart store `cart:<id>` as their subject, so the eraser finds them by subject (M7.4); the cart entity keeps that form.
-- M8.7 becomes a fixed note in the trigger panel: the run always stops when an order is placed, no setting (decided 2026-10-28, YayMatik Pages v3 #triggers).
 - Cart tracking off blocks Activate for workflows with a cart trigger (M1.10 pattern).
-- A cart run's subject label is the shopper's email; a run stopped by an order is Cancelled with "The shopper placed order #N."
-- The restore link goes into the email through the M8.5 block, built with `RestoreLink::from_options()->url()`.
 - A shopper who comes back and leaves again: the series goes on; only an order or a gone cart stops it.
-- Pause per email address, not per cart or session.
-- Customer data in cart runs comes from the cart, never from an account found by its email.
 - Emails show the price, line total, total and currency the shopper saw; live name, image and link; a gone product shows its snapshot name without a link.
-- The paid-order email rule (M7 D7) also closes `abandoned` carts.
-- The abandon sweep job joins the cleanup job's schedule check (`Cleanup::ensure()`).
 
 ## M3 — Review request · M · risk 2
 
