@@ -8,8 +8,9 @@ defined( 'ABSPATH' ) || exit;
 /** Rows of the `carts` table, one per WooCommerce session key. */
 final class CartStore {
 
-    public const ACTIVE  = 'active';
-    public const ORDERED = 'ordered';
+    public const ACTIVE    = 'active';
+    public const ABANDONED = 'abandoned';
+    public const ORDERED   = 'ordered';
 
     /**
      * @param string $session_key
@@ -176,7 +177,7 @@ final class CartStore {
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- own table, a write.
         $done = $wpdb->query(
             $wpdb->prepare(
-                "UPDATE {$table} SET order_id = %d, checkout_at = COALESCE(checkout_at, %s), email = IF(email = '', %s, email), first_name = IF(first_name = '', %s, first_name), last_activity_at = %s, updated_at = %s WHERE session_key = %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+                "UPDATE {$table} SET status = IF(status = 'abandoned', 'active', status), order_id = %d, checkout_at = COALESCE(checkout_at, %s), email = IF(email = '', %s, email), first_name = IF(first_name = '', %s, first_name), last_activity_at = %s, updated_at = %s WHERE session_key = %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
                 $order_id,
                 $now,
                 $email,
@@ -201,17 +202,18 @@ final class CartStore {
     }
 
     /**
-     * Active carts with this email, last active no later than the order was created.
+     * Active and abandoned carts with this email, last active no later than the order was created.
      *
      * @param string $email Normalized.
      * @param string $before GMT datetime.
+     * @param int    $order_id
      * @return int Rows marked.
      */
-    public static function mark_ordered_by_email( string $email, string $before ): int {
+    public static function mark_ordered_by_email( string $email, string $before, int $order_id ): int {
         global $wpdb;
         $table = self::table();
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- own table, a write.
-        return (int) $wpdb->query( $wpdb->prepare( "UPDATE {$table} SET status = %s, updated_at = %s WHERE email = %s AND status = %s AND last_activity_at <= %s", self::ORDERED, current_time( 'mysql', true ), $email, self::ACTIVE, $before ) );
+        return (int) $wpdb->query( $wpdb->prepare( "UPDATE {$table} SET status = %s, order_id = %d, updated_at = %s WHERE email = %s AND status IN (%s, %s) AND last_activity_at <= %s", self::ORDERED, $order_id, current_time( 'mysql', true ), $email, self::ACTIVE, self::ABANDONED, $before ) );
     }
 
     /**
@@ -226,14 +228,62 @@ final class CartStore {
         return (bool) $wpdb->update(
             self::table(),
             [
-                'status'      => self::ACTIVE,
-                'created_at'  => $now,
-                'checkout_at' => null,
-                'order_id'    => 0,
-                'restored_at' => null,
-                'updated_at'  => $now,
+                'status'          => self::ACTIVE,
+                'created_at'      => $now,
+                'abandoned_at'    => null,
+                'abandon_trigger' => '',
+                'series_at'       => null,
+                'checkout_at'     => null,
+                'order_id'        => 0,
+                'restored_at'     => null,
+                'updated_at'      => $now,
             ],
             [ 'id' => $id ]
+        );
+    }
+
+    /**
+     * Active carts with an email and items, last active inside the window, oldest first.
+     *
+     * @param string $before GMT datetime.
+     * @param string $after  GMT datetime.
+     * @param int    $limit
+     * @return array[] `id`, `last_activity_at`, `checkout_at`, `abandoned_at`.
+     */
+    public static function due( string $before, string $after, int $limit ): array {
+        global $wpdb;
+        $table = self::table();
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- own table, uses KEY status.
+        return (array) $wpdb->get_results( $wpdb->prepare( "SELECT id, last_activity_at, checkout_at, abandoned_at FROM {$table} WHERE status = %s AND email <> '' AND items NOT IN ('', '[]') AND last_activity_at <= %s AND last_activity_at > %s ORDER BY last_activity_at, id LIMIT %d", self::ACTIVE, $before, $after, $limit ), ARRAY_A );
+    }
+
+    /**
+     * Only while the row is still active and no newer activity came in since it was read.
+     *
+     * @param int    $id
+     * @param string $last_activity The `last_activity_at` that was read.
+     * @param string $kind          The cycle's first abandon: the trigger id to store. Empty on a later abandon.
+     * @return bool This call changed the row.
+     */
+    public static function mark_abandoned( int $id, string $last_activity, string $kind ): bool {
+        global $wpdb;
+        $fields = [ 'status' => self::ABANDONED ];
+        if ( '' !== $kind ) {
+            $fields += [
+                'abandoned_at'    => current_time( 'mysql', true ),
+                'abandon_trigger' => $kind,
+            ];
+        }
+        // `updated_at` stays: the capture limit counts it as the shopper's activity.
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own table, a write.
+        return 1 === $wpdb->update(
+            self::table(),
+            $fields,
+            [
+                'id'               => $id,
+                'status'           => self::ACTIVE,
+                'last_activity_at' => $last_activity,
+            ]
         );
     }
 

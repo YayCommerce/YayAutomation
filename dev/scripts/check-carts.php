@@ -7,6 +7,7 @@
  * read through the AJAX die handler. Restore calls RestoreCart::restore() (the request handler around it redirects
  * and exits) with more temporary products. Cleanup and the privacy exporter / eraser run on temporary runs and
  * emails at a random `.test` domain; cleanup also deletes the site's own runs and carts past the longest retention.
+ * The sweep also marks the site's own due carts.
  * Prints PASS / FAIL lines; removes its rows and users. Run through check-carts.sh.
  *
  * @package YayMatik
@@ -17,6 +18,7 @@
 use YayMatik\Engine\FEPages\RestoreCart;
 use YayMatik\Engine\Privacy\PersonalData;
 use YayMatik\Workflow\Core\Cart\CartSnapshot;
+use YayMatik\Workflow\Core\Cart\CartSweep;
 use YayMatik\Workflow\Core\Cart\CartTracker;
 use YayMatik\Workflow\Core\Cart\EmailCapture;
 use YayMatik\Workflow\Core\Cart\RestoreLink;
@@ -777,6 +779,19 @@ $job      = reset( $jobs );
 $autoload = $wpdb->get_var( $wpdb->prepare( "SELECT autoload FROM {$wpdb->options} WHERE option_name = %s", Cleanup::CHECKED_OPTION ) );
 $ok( 1 === count( $jobs ) && 'yaymatik' === $job->get_group() && DAY_IN_SECONDS === (int) $job->get_schedule()->get_recurrence(), 'ensure twice within the hour: one daily job in the yaymatik group' );
 $ok( abs( time() - (int) get_option( Cleanup::CHECKED_OPTION ) ) < 60 && in_array( $autoload, [ 'yes', 'on' ], true ), 'ensure: checked time saved, autoloaded' );
+as_unschedule_all_actions( CartSweep::HOOK );
+delete_option( Cleanup::CHECKED_OPTION );
+Cleanup::ensure();
+Cleanup::ensure();
+$jobs = as_get_scheduled_actions(
+    [
+        'hook'     => CartSweep::HOOK,
+        'status'   => 'pending',
+        'per_page' => -1,
+    ]
+);
+$job  = reset( $jobs );
+$ok( 1 === count( $jobs ) && 'yaymatik' === $job->get_group() && 300 === (int) $job->get_schedule()->get_recurrence(), 'ensure: one sweep job every 5 minutes in the yaymatik group' );
 
 // Privacy: export and erase.
 $privacy = PersonalData::get_instance();
@@ -1023,6 +1038,97 @@ $ok(
     ] === $privacy->erase( '', 1 ),
     'erase: not an email → nothing, done'
 );
+$settings( $on );
+
+// Abandon sweep. Each cart is an hour past the 60 minutes unless a check says otherwise.
+$settings( [ 'abandon_minutes' => 60 ] + $on );
+$idle    = 'last_activity_at = UTC_TIMESTAMP() - INTERVAL 2 HOUR';
+$sw      = $prefix . 'sw_';
+$fired   = [];
+$listen  = function ( $id ) use ( &$fired ) {
+    $fired[] = (int) $id;
+};
+add_action( 'yaymatik_cart_abandoned', $listen );
+$due_row = function ( string $name, string $columns = '' ) use ( $saved, $age, $sw, $line, $idle ) {
+    $saved( $sw . $name, [ $line( 1, 1 ) ] );
+    $age( $sw . $name, $idle . ( '' === $columns ? '' : ", {$columns}" ) );
+};
+
+$due_row( 'due' );
+$due_row( 'checkout', 'checkout_at = UTC_TIMESTAMP()' );
+$due_row( 'noemail', "email = ''" );
+$due_row( 'noitems', "items = '[]'" );
+$due_row( 'blank', "items = ''" );
+$due_row( 'new', 'last_activity_at = UTC_TIMESTAMP() - INTERVAL 30 MINUTE' );
+$due_row( 'stale', 'last_activity_at = UTC_TIMESTAMP() - INTERVAL 26 HOUR' );
+$due_row( 'ordered', "status = 'ordered'" );
+$settings( [ 'cart_tracking' => false ] + $on );
+CartSweep::run();
+$ok( 'active' === $row( $sw . 'due' )['status'] && [] === $fired, 'sweep, tracking off: nothing marked' );
+$settings( [ 'abandon_minutes' => 60 ] + $on );
+$sweep_at = gmdate( 'Y-m-d H:i:s', time() - 5 );
+$updated  = $row( $sw . 'due' )['updated_at'];
+CartSweep::run();
+$r = $row( $sw . 'due' );
+$ok( 'abandoned' === $r['status'] && $r['abandoned_at'] >= $sweep_at && 'cart_abandoned' === $r['abandon_trigger'], 'sweep: a due cart abandoned, cart_abandoned' );
+$ok( $updated === $r['updated_at'], 'sweep: updated_at untouched, the capture limit counts only the shopper' );
+$r2 = $row( $sw . 'checkout' );
+$ok( 'abandoned' === $r2['status'] && 'checkout_abandoned' === $r2['abandon_trigger'], 'sweep: a cart that reached checkout → checkout_abandoned' );
+$ok( in_array( (int) $r['id'], $fired, true ) && in_array( (int) $r2['id'], $fired, true ), 'sweep: the first abandon fires the action' );
+foreach ( [ 'noemail', 'noitems', 'blank', 'new', 'stale' ] as $name ) {
+    $ok( 'active' === $row( $sw . $name )['status'] && ! in_array( (int) $row( $sw . $name )['id'], $fired, true ), "sweep ignores {$name}" );
+}
+$ok( 'ordered' === $row( $sw . 'ordered' )['status'] && ! in_array( (int) $row( $sw . 'ordered' )['id'], $fired, true ), 'sweep ignores an ordered cart' );
+
+// Activity on an abandoned row, then a second abandon.
+$first_at = '2026-01-02 03:04:05';
+$age( $sw . 'due', "abandoned_at = '{$first_at}'" );
+$browser( $sw . 'due' );
+CartTracker::record( $cart( [ $line( 1, 2 ) ] ), 'cart' );
+$r = $row( $sw . 'due' );
+$ok( 'active' === $r['status'] && $first_at === $r['abandoned_at'] && 'cart_abandoned' === $r['abandon_trigger'], 'record on an abandoned cart: active, abandoned_at and trigger kept' );
+
+$age( $sw . 'due', $idle . ', checkout_at = UTC_TIMESTAMP()' );
+$fired = [];
+CartSweep::run();
+$r = $row( $sw . 'due' );
+$ok( 'abandoned' === $r['status'] && $first_at === $r['abandoned_at'] && 'cart_abandoned' === $r['abandon_trigger'], 'second abandon: abandoned, first abandoned_at and trigger kept, even after reaching checkout' );
+$ok( ! in_array( (int) $r['id'], $fired, true ), 'second abandon: no action' );
+
+add_filter( 'woocommerce_is_checkout', '__return_true' );
+$browser( $sw . 'due' );
+CartTracker::view();
+remove_filter( 'woocommerce_is_checkout', '__return_true' );
+$r = $row( $sw . 'due' );
+$ok( 'active' === $r['status'] && $first_at === $r['abandoned_at'] && gmdate( 'Y-m-d' ) === substr( $r['last_activity_at'], 0, 10 ) && strtotime( $r['last_activity_at'] . ' UTC' ) > time() - 60, 'view of an abandoned cart: active, last activity now, abandoned_at kept' );
+
+$age( $sw . 'due', "status = 'abandoned'" );
+CartStore::link_order( $sw . 'due', $fake + 30, 'x@example.test', 'X' );
+$r = $row( $sw . 'due' );
+$ok( 'active' === $r['status'] && $first_at === $r['abandoned_at'] && $fake + 30 === (int) $r['order_id'], 'order linked to an abandoned cart: active, abandoned_at kept' );
+$age( $sw . 'ordered', "order_id = {$fake}" );
+CartStore::link_order( $sw . 'ordered', $fake + 31, 'x@example.test', 'X' );
+$ok( 'ordered' === $row( $sw . 'ordered' )['status'], 'order linked to an ordered cart: still ordered' );
+
+// Activity came in after the sweep read the row.
+$due_row( 'race' );
+$read = $row( $sw . 'race' );
+$age( $sw . 'race', 'last_activity_at = UTC_TIMESTAMP()' );
+$ok( false === CartStore::mark_abandoned( (int) $read['id'], $read['last_activity_at'], 'cart_abandoned' ) && 'active' === $row( $sw . 'race' )['status'] && null === $row( $sw . 'race' )['abandoned_at'], 'activity after the read: not marked' );
+
+// New cycle.
+$age( $sw . 'race', "status = 'ordered', abandoned_at = UTC_TIMESTAMP(), abandon_trigger = 'cart_abandoned', series_at = UTC_TIMESTAMP()" );
+CartStore::reset_cycle( (int) $read['id'] );
+$r = $row( $sw . 'race' );
+$ok( 'active' === $r['status'] && null === $r['abandoned_at'] && '' === $r['abandon_trigger'] && null === $r['series_at'], 'reset_cycle clears abandoned_at, abandon_trigger and series_at' );
+
+// Paid by email closes an abandoned cart.
+$by_email = "abandoned@{$domain}";
+$due_row( 'paid', "email = '{$by_email}', status = 'abandoned'" );
+CartTracker::order_status_changed( $fake + 32, 'pending', 'processing', $order( $fake + 32, $by_email, 25.0 ) );
+$r = $row( $sw . 'paid' );
+$ok( 'ordered' === $r['status'] && $fake + 32 === (int) $r['order_id'], 'paid by email: an abandoned cart ordered, order_id set' );
+remove_action( 'yaymatik_cart_abandoned', $listen );
 $settings( $on );
 remove_all_filters( 'pre_option_yaymatik_settings' );
 

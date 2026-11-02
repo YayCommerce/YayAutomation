@@ -10,7 +10,7 @@ defined( 'ABSPATH' ) || exit;
 final class Schema {
 
     // Bump when a table below changes; dbDelta() then upgrades the tables on the next load.
-    private const DB_VERSION        = '5';
+    private const DB_VERSION        = '6';
     private const DB_VERSION_OPTION = 'yaymatik_db_version';
 
     public const WORKFLOWS         = 'workflows';
@@ -138,6 +138,7 @@ final class Schema {
             )",
             // One per WooCommerce session (`session_key` = WC customer id: a user id, or `t_…` for a guest).
             // `items` is a JSON list of lines; `total` and line prices as the cart showed them.
+            // `abandoned_at` and `abandon_trigger` hold a cycle's first abandon, kept when the shopper returns.
             "CREATE TABLE {$carts} (
                 id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
                 session_key varchar(100) NOT NULL,
@@ -148,6 +149,9 @@ final class Schema {
                 total decimal(19,4) NOT NULL DEFAULT 0,
                 currency char(3) NOT NULL DEFAULT '',
                 status varchar(20) NOT NULL,
+                abandoned_at datetime NULL,
+                abandon_trigger varchar(30) NOT NULL DEFAULT '',
+                series_at datetime NULL,
                 checkout_at datetime NULL,
                 order_id bigint(20) unsigned NOT NULL DEFAULT 0,
                 restored_at datetime NULL,

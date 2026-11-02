@@ -36,7 +36,7 @@ Table names below omit the prefix: each is `{prefix}yaymatik_<name>`, e.g. `wp_y
 | `workflow_versions` | id, workflow_id, action, graph (logic), layout (step positions), user_id, created_at, updated_at. A version's logic never changes; its layout may. Only the draft row's logic is edited in place |
 | `runs` | id, workflow_id, version_id, trigger_id, subject, status, position, scope, wait_until, error, parent_run_id, root_run_id, depth, started_at, finished_at |
 | `run_steps` | id, run_id, step_id, iteration, status, input, output, error, attempt, started_at, finished_at |
-| `carts` | id, session_key (WooCommerce session: user id or guest `t_…`; unique), user_id, email, first_name, items (JSON lines), total, currency, status (active, ordered), checkout_at, order_id, restored_at, last_activity_at, created_at, updated_at |
+| `carts` | id, session_key (WooCommerce session: user id or guest `t_…`; unique), user_id, email, first_name, items (JSON lines), total, currency, status (active, abandoned, ordered), abandoned_at, abandon_trigger, series_at (the cycle's first abandon, its trigger, and when a reminder series started), checkout_at, order_id, restored_at, last_activity_at, created_at, updated_at |
 
 - A run pins the version it started on.
 - Deleting a workflow deletes its versions; its runs stay until retention cleanup (M7.4).
@@ -52,7 +52,8 @@ Table names below omit the prefix: each is `{prefix}yaymatik_<name>`, e.g. `wp_y
 - **Slices.** A job keeps running steps until the run finishes, hits a Wait, uses ~20 s or its memory budget, or ends a loop batch. It then saves its position (the `position` column) and queues the next slice.
 - **Errors.** Each step has a policy: stop the run (default) or continue. Retries come in v1.1.
 - **Loop safety.** `parent_run_id`, `root_run_id`, `depth` replace the in-memory chain. A workflow never starts again inside its own chain; max depth 5; a max loop size. Rate limits per workflow, per 60 s, pause (turn off) a runaway workflow: 100 runs started by other runs (a loop always has a parent), or 1000 runs in all. Runs from plain events only count toward the 1000, so a bulk edit of hundreds of orders never pauses a workflow.
-- **Scheduled and query triggers.** A schedule fans out to one run per matching subject, in batches. `trigger_claims` stops duplicates ("once per customer per 90 days"). This generalises the `_yaymatik_order_created` order meta in `OrderCreated::claim()`.
+- **Scheduled and query triggers.** A schedule fans out to one run per matching subject, in batches. `trigger_claims` (M6) stops duplicates ("once per customer per 90 days"). This generalises the `_yaymatik_order_created` order meta in `OrderCreated::claim()`.
+- **Abandon sweep.** Every 5 minutes (`yaymatik_cart_sweep`, group `yaymatik`, `Cart/CartSweep`; `Cleanup::ensure()` keeps it scheduled) the job marks `abandoned` every active cart with an email and items whose last activity is past `abandon_minutes`, up to 24 h further back. At most 200 carts per sweep: its events start runs at one shutdown, and a larger backlog could reach the 1000-run limit and pause a workflow. It does nothing while cart tracking is off. Only the first abandon of a cart's cycle fires `yaymatik_cart_abandoned`: `abandoned_at` is the claim, and only a new cycle (`CartStore::reset_cycle`) clears it, so no `trigger_claims` row is needed. Activity turns the row active again and keeps `abandoned_at`.
 - **Cancel.** Deactivate, Update (Apply) and the rate-limit pause cancel waiting runs (v1.0 rule) in one place, `Cancellation::waiting()`, under the workflow lock (`WorkflowStore::locked()`, shared by REST and the rate-limit pause; a pause that can't take it is logged, and the workflow stays paused for the rest of the request): it selects the waiting runs, cancels those still waiting in one UPDATE, then marks their waiting step rows `cancelled`. Deactivate and Apply return the count (`cancelledRuns`). The runs' Action Scheduler jobs stay; when one fires it can't take the run and does nothing. Apply leaves queued and running runs on their pinned version.
 - **Stop right away.** Before each step, and after saving a wait, the Executor reads the workflow's status fresh (not from the object cache); once it is off, the run ends `cancelled` ("The workflow was deactivated."). A run that ends this way, or before its first step, closes its open step rows (`running`, `waiting`).
 - **Cleanup.** A daily Action Scheduler job (`yaymatik_cleanup`, group `yaymatik`, `Runtime/Cleanup`) deletes carts last active more than `cart_retention_days` ago, then finished runs with their steps (deleted workflows' runs included) that finished more than `run_retention_days` ago. Carts go first: they hold emails, and the privacy text promises their deletion. Batches of 500 within ~20 s; what's left goes the next day. Queued, running and waiting runs are never deleted, nor any run of a chain (`root_run_id`) that still has one: the loop guard walks `parent_run_id`. `Cleanup::ensure()` on `action_scheduler_init` schedules the job when it's missing, checked at most hourly through the autoloaded option `yaymatik_cleanup_checked_at` (Unix time).
@@ -162,7 +163,7 @@ Built: (a)–(d) in `Core/Runtime/HealthCheck.php`; REST `GET /health/checks` an
 
 ## §11 Decision log
 
-All confirmed 2026-10-07, except L5 (2026-10-08) and M7 (2026-10-27). Reasons, rejected options and costs: [workflow-core-decisions.md](workflow-core-decisions.md).
+All confirmed 2026-10-07, except L5 (2026-10-08), M7 (2026-10-27) and M8. Reasons, rejected options and costs: [workflow-core-decisions.md](workflow-core-decisions.md).
 
 | ID | Decision | Section |
 |---|---|---|
@@ -189,3 +190,4 @@ All confirmed 2026-10-07, except L5 (2026-10-08) and M7 (2026-10-27). Reasons, r
 | P6 | Settings → Health check | §9 |
 | P7 | Tree + container steps; no merge | §7 |
 | M7 | Carts in their own table; no own tracking cookie; capture any email, same response; restore GET writes nothing; erase anonymizes runs | §2 |
+| M8 | Abandon sweep, a cart's cycle is its claim | §3 |

@@ -15,7 +15,7 @@ Sizes are proposals until Jack estimates after M1, as ROADMAP-v1.0 says. **S** �
 Changes from the ROADMAP-v1.0 order:
 - **F0 and F1 come first.** M1 needs step outputs, templates and the new step contract. M2 needs stored runs. Building M1/M2 on the v0.1 runner means building them twice.
 - **F2 comes after M2.** Tables replace the CPT before v1.0, while there's no merchant data yet: dev data is reset, no migration.
-- **M6 stays after M8.** The inactive-customer trigger reuses M8's scheduled scan.
+- **M6 stays after M8.** The inactive-customer trigger reuses the pattern of M8's abandon sweep.
 - **Identity inside F1** *([plan-identity](plan-identity.md))*: F1 backend first, so the restyle reads step icons and summaries from the new catalog; then the restyle (phase 1, built on `jack/feature/identity-phase-1`: screens, cards and wording; PHP step wording only); then the forms (phase 2, with F1.9–F1.12), built once in the new style. Nothing is built twice.
 
 | # | Phase | Size | Risk | Depends on | Status |
@@ -204,7 +204,7 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 ## M8 — Abandoned cart + checkout · L · risk 2
 
 **Backend**
-- **M8.1 Scheduler + query triggers** *(§3)* — batches, plus the `trigger_claims` table (workflow_id, subject, claimed_at; unique per workflow and subject) and its store. Shared by M6 and the v1.1 Interval trigger.
+- **M8.1 Abandon sweep (no claims)** *(§3)* — a 5-minute job, 200 carts each; a cart's first abandon in its cycle is the claim.
 - **M8.2 Cart entity type** *(§4)*.
 - **M8.3 Triggers** — Cart abandoned, Checkout abandoned; a cart never starts both.
 - **M8.4 Exit condition** — stop the run when an order is placed for the cart or customer.
@@ -250,7 +250,7 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 
 ## M6 — Win-back · M · risk 2
 
-- **M6.1 BE** — Customer inactive query trigger, checked daily in batches (reuses M8.1).
+- **M6.1 BE** — Customer inactive query trigger, checked daily in batches (the pattern of M8.1), plus the `trigger_claims` table (workflow_id, subject, claimed_at; unique per workflow and subject) and its store.
 - **M6.2 UI** — trigger panel: days (default 90), "Checked once a day".
 - **Templates:** Win-back ×2.
 
@@ -270,7 +270,7 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 
 - **V11.1 For each** — body / done handles, saved cursor per item, limits; container card in the editor. *(§3, §7)*
 - **V11.2 Get data** — Get orders / customers / products / coupons with filters, returning lists.
-- **V11.3 Interval trigger** — every N minutes / hours / days, at a time, on weekdays; reuses M8.1; schedule UI.
+- **V11.3 Interval trigger** — every N minutes / hours / days, at a time, on weekdays; reuses M6.1; schedule UI.
 - **V11.4 Call workflow** — action + "Called by workflow" trigger with typed inputs; depth limit. *(§3)*
 - **V11.5 Manual runs** — Manual trigger, Run now, Test run on a picked order; dry run via `simulate()`.
 - **V11.6 More control steps** — Switch, Set variable, Stop, A/B split.

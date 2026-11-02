@@ -64,6 +64,9 @@ final class CartTracker {
         }
         if ( $fields || strtotime( $row['last_activity_at'] . ' UTC' ) < time() - self::VIEW_EVERY ) {
             $fields['last_activity_at'] = $now;
+            if ( CartStore::ABANDONED === $row['status'] ) {
+                $fields['status'] = CartStore::ACTIVE;
+            }
             CartStore::touch( $key, $fields );
         }
     }
@@ -107,13 +110,16 @@ final class CartTracker {
         if ( $reset ) {
             CartStore::reset_cycle( (int) $row['id'] );
         }
-        $now     = current_time( 'mysql', true );
-        $fields  = [
+        $now    = current_time( 'mysql', true );
+        $fields = [
             'items'            => (string) wp_json_encode( $snapshot->lines() ),
             'total'            => $snapshot->total(),
             'currency'         => $snapshot->currency(),
             'last_activity_at' => $now,
         ];
+        if ( $row && CartStore::ABANDONED === $row['status'] ) {
+            $fields['status'] = CartStore::ACTIVE;
+        }
         $user_id = get_current_user_id();
         if ( $user_id ) {
             list( $email, $first_name ) = self::account( $user_id );
@@ -230,7 +236,7 @@ final class CartTracker {
     }
 
     /**
-     * Paid: its own cart is ordered, and (not for free orders) every active cart with the billing email last active before it.
+     * Paid: its own cart is ordered, and (not for free orders) every open cart with the billing email last active before it.
      *
      * @param int       $order_id
      * @param string    $from
@@ -248,7 +254,7 @@ final class CartTracker {
         if ( '' === $email || ! $created || (float) $order->get_total( 'edit' ) <= 0 ) {
             return;
         }
-        CartStore::mark_ordered_by_email( $email, gmdate( 'Y-m-d H:i:s', $created->getTimestamp() ) );
+        CartStore::mark_ordered_by_email( $email, gmdate( 'Y-m-d H:i:s', $created->getTimestamp() ), (int) $order_id );
     }
 
     /**
