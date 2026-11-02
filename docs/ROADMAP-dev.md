@@ -202,21 +202,21 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 
 ## M8 — Abandoned cart + checkout · L · risk 2
 
-**Status:** In progress. Backend on PR A (`jack/feature/m8a-abandoned-carts`).
+**Status:** PR A merged (#32); PR B open.
 
 **Backend**
-- ⏳ **M8.1 Abandon sweep (no claims)** *(§3)* — a 5-minute job, 200 carts each; a cart's first abandon in its cycle is the claim.
-- ⏳ **M8.2 Cart entity type** *(§4)*.
-- ⏳ **M8.3 Triggers** — Cart abandoned, Checkout abandoned; a cart never starts both.
-- ⏳ **M8.4 Exit condition** — stop the run when an order is placed for the cart or customer, or the cart is gone (no setting; see design §3 "Stop on order").
-- ⏳ **M8.5 Email blocks** — cart items, "Restore my cart" button.
+- ✅ **M8.1 Abandon sweep (no claims)** *(§3)* — a 5-minute job, 200 carts each; a cart's first abandon in its cycle is the claim. (#32)
+- ✅ **M8.2 Cart entity type** *(§4)*. (#32)
+- ✅ **M8.3 Triggers** — Cart abandoned, Checkout abandoned; a cart never starts both. (#32)
+- ✅ **M8.4 Exit condition** — stop the run when an order is placed for the cart or customer, or the cart is gone (no setting; see design §3 "Stop on order"). (#32)
+- ✅ **M8.5 Email blocks** — cart items, "Restore my cart" button. (#32)
 
 **UI**
-- **M8.6 Trigger panels** — notes, plus a warning when cart tracking is off.
-- **M8.7 Fixed note in the trigger panel, no setting:** the run always stops when an order is placed.
-- **M8.8 Templates UI** — "Needs cart tracking" badge, "Before you start" in the preview.
+- ⏳ **M8.6 Trigger panels** — notes, plus a warning when cart tracking is off.
+- ⏳ **M8.7 Fixed note in the trigger panel, no setting:** the run always stops when an order is placed.
+- ⏳ **M8.8 Templates UI** — "Needs cart tracking" badge, "Before you start" in the preview.
 
-**Templates:** Abandoned cart ×3, Abandoned checkout ×2.
+⏳ **Templates:** Abandoned cart ×3, Abandoned checkout ×2.
 
 **Follow-ups**
 - A trigger's `context()` and `refs()` load the order 2–3 times per event; load it once.

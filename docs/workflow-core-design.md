@@ -87,6 +87,7 @@ Step:   id() label() plugin() module()
 
 - **Field vocabulary** (kept small): text, textarea, html (rich text, cleaned with `wp_kses_post`; drawn as WordPress's classic editor, Visual / Code tabs, stored as WordPress saves it: paragraphs as blank lines or `<p>`, `wpautop` puts them back), emails, select, multiselect, toggle, number, number_unit, notice, rules (core only). Modifiers: `required`, `variables`, `placeholder`, `help`, `show_if`. A form that needs more gets a custom panel, not a new word.
 - **Catalog.** Steps, fields, outputs and data types go to the admin app through `yayMatikMeta` (and to the AI in v2.0).
+- **Picker sections.** `Action::category()` and `Trigger::category()` put a step under a heading in its plugin's list (Email, Order, Carts). A trigger's is optional: one without a category has no heading.
 - **Editor checks.** Automation builds valibot rules from the PHP fields. Validation always runs in Automation, never in a panel. Rules only in PHP `validate()` show up as the step's issue after a save (under its field when the form draws it, else at the top of the panel; "Needs setup" on the card), and still block Activate.
 - **Forms.**
   - No custom form → the generic `StepForm` draws one from the fields. A simple step from a Yay plugin needs PHP only.
