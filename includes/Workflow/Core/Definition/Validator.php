@@ -121,9 +121,10 @@ final class Validator {
             ),
             'draft' => null === $draft ? null : self::errors(
                 [
-                    'name'   => $workflow['name'],
-                    'graph'  => $draft,
-                    'status' => $workflow['status'] ?? null,
+                    'name'       => $workflow['name'],
+                    'graph'      => $draft,
+                    'status'     => $workflow['status'] ?? null,
+                    'live_graph' => $workflow['graph'],
                 ]
             ),
         ];
@@ -150,7 +151,7 @@ final class Validator {
     /**
      * Problems that block turning a workflow on or applying a draft.
      *
-     * @param array $workflow Graph from `GraphSchema::prepare()`. `status` only when turning on matters: an active workflow, or none, skips the setup check.
+     * @param array $workflow Graph from `GraphSchema::prepare()`. `status`, `live_graph`: when `setup_checked()` applies.
      * @return array[] [ [ 'code' => string, 'message' => string, 'field'? => string, 'nodeId'? => string, 'nodeIds'? => string[] ], … ]
      */
     public static function errors( array $workflow ): array {
@@ -172,7 +173,7 @@ final class Validator {
                 'message' => Messages::get( 'noTrigger' ),
             ];
         }
-        if ( $trigger_step && isset( $workflow['status'] ) && 'active' !== $workflow['status'] ) {
+        if ( $trigger_step && self::setup_checked( $trigger_step, $workflow ) ) {
             $setup = $trigger_step->setup_issue();
             if ( null !== $setup ) {
                 $errors[] = [
@@ -283,6 +284,22 @@ final class Validator {
     /**
      * The chosen trigger step, or null.
      *
+     * @param array[] $nodes
+     */
+    /**
+     * Turning on, or a draft that changes the trigger; an active workflow keeps its trigger editable with tracking off.
+     *
+     * @param Step  $trigger
+     * @param array $workflow
+     */
+    private static function setup_checked( Step $trigger, array $workflow ): bool {
+        if ( isset( $workflow['status'] ) && 'active' !== $workflow['status'] ) {
+            return true;
+        }
+        return isset( $workflow['live_graph'] ) && $trigger->id() !== ( GraphSchema::trigger( $workflow['live_graph']['nodes'] )['data']['block'] ?? null );
+    }
+
+    /**
      * @param array[] $nodes
      */
     private static function trigger_step( array $nodes ): ?Step {

@@ -136,10 +136,18 @@ final class CustomerDataTest extends TestCase {
         );
     }
 
+    public function test_a_cart_is_a_first_order_only_with_no_paid_order(): void {
+        $customer = $this->cart_customer( [ 'user_id' => 0 ], null );
+
+        $this->assertTrue( $this->first( $this->item( [], [] ), $customer ), 'no paid order' );
+        $this->assertFalse( $this->first( $this->item( [], [ 'ann@x.com' => [ 7 ] ] ), $customer ), 'one paid order' );
+        $this->assertFalse( $this->first( $this->item( [], [ 'ann@x.com' => [ 7, 8 ] ] ), $customer ), 'two paid orders' );
+    }
+
     public function test_a_guest_cart_looks_up_by_email_only(): void {
         $item = $this->item( [], [ 'ann@x.com' => [ 7 ] ] );
 
-        $this->assertTrue( $this->first( $item, $this->cart_customer( [ 'user_id' => 0 ], null ) ), 'exactly one paid order' );
+        $this->first( $item, $this->cart_customer( [ 'user_id' => 0 ], null ) );
         $this->assertSame( [ 'ann@x.com' ], array_map( fn( array $query ) => $query['customer_id'] ?? $query['billing_email'], $this->queries ) );
     }
 
@@ -159,7 +167,7 @@ final class CustomerDataTest extends TestCase {
             ]
         );
 
-        $this->assertTrue( $this->first( $item, $this->cart_customer( [ 'user_id' => 5 ], $account ) ) );
+        $this->assertFalse( $this->first( $item, $this->cart_customer( [ 'user_id' => 5 ], $account ) ) );
         $this->assertSame( [ 5, 'ann@x.com' ], array_map( fn( array $query ) => $query['customer_id'] ?? $query['billing_email'], $this->queries ) );
     }
 

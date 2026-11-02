@@ -1555,6 +1555,38 @@ $ok( 400 === $blocked->get_status() && 'cart_tracking_off' === ( $errors[0]['cod
 $settings( [ 'abandon_minutes' => 60 ] + $on );
 $ok( 200 === $activate( $off_flow )->get_status(), 'tracking on: Activate works' );
 
+// Apply with tracking off: the trigger decides, on an active workflow.
+$apply_flow  = $new_flow( 'apply', 'cart_abandoned' );
+$apply_graph = WorkflowStore::find( $apply_flow )['graph'];
+$apply       = fn( int $id ) => rest_do_request( new WP_REST_Request( 'POST', "/yaymatik/v1/workflows/{$id}/apply" ) );
+$settings( [ 'cart_tracking' => false ] + $on );
+$same_trigger = $apply_graph;
+$same_trigger['nodes'][1]['data']['config']['heading'] = 'Changed';
+$update( $apply_flow, $same_trigger );
+$ok( 200 === $apply( $apply_flow )->get_status(), 'tracking off, active workflow: Update with the same trigger works' );
+$new_trigger = $same_trigger;
+$new_trigger['nodes'][0]['data']['block'] = 'checkout_abandoned';
+$drafted     = $update( $apply_flow, $new_trigger )->get_data();
+$ok( 'cart_tracking_off' === ( $drafted['issues']['draft'][0]['code'] ?? '' ) && [] === $drafted['issues']['live'], 'tracking off: a draft that changes the trigger shows the issue on the draft only' );
+$refused = $apply( $apply_flow );
+$ok( 400 === $refused->get_status() && 'cart_tracking_off' === ( $refused->get_data()['data']['errors'][0]['code'] ?? '' ), 'tracking off: Update that changes to a cart trigger → 400 cart_tracking_off' );
+$settings( [ 'abandon_minutes' => 60 ] + $on );
+$ok( 200 === $apply( $apply_flow )->get_status(), 'tracking on: that Update works' );
+
+// customer.is_first_order on a cart.
+$first_email = "first@{$domain}";
+$due_row( 'firstorder', "email = '{$first_email}'" );
+$first_cart  = YayMatik\Workflow\Core\Cart\SavedCart::find( (int) $row( $sw . 'firstorder' )['id'] );
+$first_value = ( new YayMatik\Workflow\DataItems\CustomerData() )->fields()['is_first_order']['value'];
+$first_cust  = YayMatik\Workflow\Core\Cart\CartCustomer::of( $first_cart );
+$ok( true === $first_value( $first_cust ), 'is_first_order on a cart: true with no paid order' );
+$paid_order = wc_create_order();
+$paid_order->set_billing_email( $first_email );
+$paid_order->set_status( 'completed' );
+$paid_order->save();
+$orders[] = $paid_order->get_id();
+$ok( false === $first_value( $first_cust ), 'is_first_order on a cart: false with one paid order' );
+
 // A real send goes through the mail catcher.
 $sent_html = [];
 $catch     = function ( $short_circuit, $atts ) use ( &$sent_html ) {

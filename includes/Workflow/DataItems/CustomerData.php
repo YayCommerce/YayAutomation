@@ -123,13 +123,16 @@ final class CustomerData extends DataItem {
     }
 
     /**
-     * Whether the customer has no paid order besides this one, whatever this order's status.
+     * An order: no paid order besides this one, whatever its status. A cart: no paid order yet.
      *
      * @param \WC_Order|\WC_Customer|CartCustomer $customer
      */
     private function is_first_order( $customer ): bool {
         // 2 are enough to tell whether there's one besides this order.
         $ids = $this->paid_ids( $customer, 2 );
+        if ( $customer instanceof CartCustomer ) {
+            return ! $ids;
+        }
         if ( ! $customer instanceof \WC_Order ) {
             // A customer trigger: exactly one paid order.
             return 1 === count( $ids );
