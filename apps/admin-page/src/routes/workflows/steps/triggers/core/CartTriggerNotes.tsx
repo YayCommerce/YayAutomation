@@ -32,9 +32,10 @@ function Hint({ icon, children }: { icon: ReactNode; children: ReactNode }) {
   );
 }
 
-/** Both cart triggers have no settings, only what they do. Settings can change while the page is open: read the meta here. */
+/** Both cart triggers have no settings, only what they do. */
 export function CartTriggerNotes({ trigger }: { trigger: 'cart' | 'checkout' }) {
-  const { cartTracking, abandonMinutes } = window.yayMatikMeta.wc;
+  // Read per render: saving Settings changes it.
+  const { active, cartTracking, abandonMinutes } = window.yayMatikMeta.wc;
   return (
     <div className="flex flex-col gap-3">
       <p className="text-muted-foreground text-sm">{__('No settings needed.', 'yaymatik')}</p>
@@ -68,7 +69,7 @@ export function CartTriggerNotes({ trigger }: { trigger: 'cart' | 'checkout' }) 
           'yaymatik',
         )}
       </Hint>
-      {!cartTracking && (
+      {active && !cartTracking && (
         <CartTrackingWarning
           message={__('Cart tracking is off, so this trigger never starts.', 'yaymatik')}
           linkLabel={__('Turn on cart tracking in Settings', 'yaymatik')}

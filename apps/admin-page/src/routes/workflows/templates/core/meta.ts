@@ -28,11 +28,9 @@ export const workflowRank: Record<TemplateWorkflow, number> = {
 /** The graph emails the customer: Use template asks to review the emails before activating. */
 export const sendsCustomerEmail = (graph: WorkflowGraph) => graph.nodes.some(({ data }) => data.block === 'send_email');
 
-/**
- * The graph starts from a cart trigger while cart tracking is off. Saving Settings changes the answer:
- * call it when rendering. Not while WooCommerce is off: "Install WooCommerce" says enough.
- */
+/** The graph starts from a cart trigger while cart tracking is off. */
 export const needsCartTracking = (graph: WorkflowGraph) => {
+  // Read per call: saving Settings changes it. While WooCommerce is off, "Install WooCommerce" says enough.
   const { active, cartTracking } = window.yayMatikMeta.wc;
   return (
     active &&

@@ -50,6 +50,13 @@ describe('CartTriggerNotes', () => {
     expect(container.querySelector('[data-slot="alert"]')).toBeNull();
   });
 
+  it('leaves WooCommerce being off to "Install WooCommerce"', () => {
+    wc.cartTracking = false;
+    wc.active = false;
+    mount('cart');
+    expect(container.querySelector('[data-slot="alert"]')).toBeNull();
+  });
+
   it('says each trigger never starts the other, and the rest in both', () => {
     mount('cart');
     expect(container.textContent).toContain('Carts that reached checkout start Checkout abandoned instead');

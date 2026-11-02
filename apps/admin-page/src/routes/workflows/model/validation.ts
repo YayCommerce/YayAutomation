@@ -220,10 +220,9 @@ export const editedIssues = (workflow: Pick<Workflow, 'draft' | 'issues'>) =>
   workflow.draft !== null ? (workflow.issues.draft ?? []) : workflow.issues.live;
 
 /**
- * The editor's issues plus the ones only PHP finds (`Step::validate()` rules such as a percentage
- * over 100, cart tracking being off), from the server's last check. A server issue counts while its
- * step's data is the same object as in the graph that was checked and the editor has no issue of its
- * own for it.
+ * The editor's issues plus the ones only PHP finds (a percentage over 100, cart tracking off), from
+ * the server's last check. A server issue counts while its step's data is the same object as in the
+ * graph that was checked and the editor has no issue of its own for it.
  */
 export function withServerIssues(issues: WorkflowIssue[], server: ServerCheck, graph: WorkflowGraph): WorkflowIssue[] {
   const checked = new Map(server.graph.nodes.map((node) => [node.id, node.data]));
