@@ -7,15 +7,18 @@ use YayMatik\Workflow\Actions\GenerateCoupon;
 use YayMatik\Workflow\Actions\SendEmail;
 use YayMatik\Workflow\Actions\SendInternalEmail;
 use YayMatik\Workflow\Actions\UpdateOrderMeta;
+use YayMatik\Workflow\DataItems\CartData;
 use YayMatik\Workflow\DataItems\CustomerData;
 use YayMatik\Workflow\DataItems\OrderData;
 use YayMatik\Workflow\DataItems\OrderItemData;
+use YayMatik\Workflow\Triggers\CartAbandoned;
+use YayMatik\Workflow\Triggers\CheckoutAbandoned;
 use YayMatik\Workflow\Triggers\OrderCreated;
 use YayMatik\Workflow\Triggers\OrderStatusChanged;
 
 defined( 'ABSPATH' ) || exit;
 
-/** Order triggers, the order, email and coupon actions, and order and customer data. */
+/** Order and cart triggers, the order, email and coupon actions, and order, cart and customer data. */
 class WoocommerceModule extends Module {
 
     public const ID = 'woocommerce';
@@ -41,7 +44,7 @@ class WoocommerceModule extends Module {
     }
 
     public function triggers(): array {
-        return [ OrderCreated::class, OrderStatusChanged::class ];
+        return [ OrderCreated::class, OrderStatusChanged::class, CartAbandoned::class, CheckoutAbandoned::class ];
     }
 
     public function actions(): array {
@@ -56,6 +59,6 @@ class WoocommerceModule extends Module {
     }
 
     public function data_items(): array {
-        return [ OrderData::class, CustomerData::class, OrderItemData::class ];
+        return [ OrderData::class, CartData::class, CustomerData::class, OrderItemData::class ];
     }
 }

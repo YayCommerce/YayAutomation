@@ -47,6 +47,24 @@ if ( ! class_exists( 'WC_Order' ) ) {
     }
 }//end if
 
+if ( ! class_exists( 'WC_Customer' ) ) {
+    /** An account from an array of getter values. */
+    class WC_Customer {
+
+        /** @var array */
+        public $data;
+
+        public function __construct( array $data ) {
+            $this->data = $data;
+        }
+
+        public function __call( $name, $args ) {
+            $key = substr( $name, 4 );
+            return array_key_exists( $key, $this->data ) ? $this->data[ $key ] : '';
+        }
+    }
+}
+
 if ( ! class_exists( 'WC_Product' ) ) {
     /** A product from an array of getter values. */
     class WC_Product {
@@ -99,6 +117,18 @@ if ( ! class_exists( 'WC_DateTime' ) ) {
         public function date( $format ) {
             return $this->format( $format );
         }
+    }
+}
+
+if ( ! function_exists( 'get_woocommerce_currency' ) ) {
+    function get_woocommerce_currency() {
+        return 'USD';
+    }
+}
+
+if ( ! function_exists( 'wc_light_or_dark' ) ) {
+    function wc_light_or_dark( $color, $dark = '#000000', $light = '#FFFFFF' ) {
+        return $light;
     }
 }
 

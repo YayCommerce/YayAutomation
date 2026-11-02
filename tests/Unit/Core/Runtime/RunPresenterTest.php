@@ -3,6 +3,7 @@ namespace YayMatik\Tests\Unit\Core\Runtime;
 
 use PHPUnit\Framework\TestCase;
 use YayMatik\Tests\Support\FakeOrder;
+use YayMatik\Tests\Support\FakeWpdb;
 use YayMatik\Workflow\Core\Runtime\RunPresenter;
 
 require_once dirname( __DIR__, 3 ) . '/Support/woocommerce-stubs.php';
@@ -88,9 +89,73 @@ final class RunPresenterTest extends TestCase {
         $this->assertSame( 'Order #1693', $gone['subjectLabel'] );
         $this->assertNull( $gone['subjectUrl'] );
 
+        $other = RunPresenter::item( [ 'subject' => 'thing:5' ] + self::run_row(), 0 );
+        $this->assertSame( 'thing:5', $other['subjectLabel'] );
+        $this->assertNull( $other['subjectUrl'] );
+    }
+
+    /**
+     * Runs with this cart row in the carts table.
+     *
+     * @param array|null $cart
+     */
+    private function with_cart( ?array $cart ): void {
+        global $wpdb;
+        $wpdb         = new FakeWpdb(); // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- a test double.
+        $wpdb->result = $cart;
+    }
+
+    protected function tearDown(): void {
+        global $wpdb;
+        $wpdb             = null; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- a test double.
+        FakeOrder::$found = [];
+    }
+
+    public function test_a_cart_run_is_labelled_by_the_shoppers_email_or_the_cart_id_once_gone(): void {
+        $this->with_cart( [ 'email' => 'ann@x.com' ] );
         $cart = RunPresenter::item( [ 'subject' => 'cart:5' ] + self::run_row(), 0 );
-        $this->assertSame( 'cart:5', $cart['subjectLabel'] );
+        $this->assertSame( 'ann@x.com', $cart['subjectLabel'] );
         $this->assertNull( $cart['subjectUrl'] );
+
+        $this->with_cart( null );
+        $this->assertSame( 'Cart #5', RunPresenter::item( [ 'subject' => 'cart:5' ] + self::run_row(), 0 )['subjectLabel'] );
+    }
+
+    public function test_only_a_cancelled_cart_run_of_an_ordered_cart_links_its_order(): void {
+        $order                 = new FakeOrder(
+            [
+                'id'           => 40,
+                'date_created' => new \WC_DateTime( '2026-10-12 09:00:00', new \DateTimeZone( 'UTC' ) ),
+            ]
+        );
+        FakeOrder::$found[40]  = $order;
+        $cancelled             = [
+            'subject' => 'cart:5',
+            'status'  => 'cancelled',
+            'finished_at' => '2026-10-12 09:00:05',
+        ] + self::run_row();
+        $ordered               = [
+            'email'    => 'ann@x.com',
+            'status'   => 'ordered',
+            'order_id' => 40,
+        ];
+        $url                   = fn( array $run ) => RunPresenter::detail( $run, [], null )['stoppedByOrderUrl'];
+
+        $this->with_cart( $ordered );
+        $this->assertSame( $order->get_edit_order_url(), $url( $cancelled ) );
+        $this->assertNull( $url( [ 'status' => 'completed' ] + $cancelled ), 'not cancelled' );
+        $this->assertNull( $url( [ 'subject' => 'order:40' ] + $cancelled ), 'not a cart run' );
+        $this->assertNull( $url( [ 'finished_at' => '2026-10-12 08:59:00' ] + $cancelled ), 'stopped for another reason, ordered later' );
+
+        $this->with_cart( [ 'status' => 'active' ] + $ordered );
+        $this->assertNull( $url( $cancelled ), 'the cart was not ordered: an unpaid order, or stopped for another reason' );
+
+        $this->with_cart( null );
+        $this->assertNull( $url( $cancelled ), 'the cart is gone' );
+
+        unset( FakeOrder::$found[40] );
+        $this->with_cart( $ordered );
+        $this->assertNull( $url( $cancelled ), 'the order is gone' );
     }
 
     public function test_detail_adds_the_subject_and_steps_in_the_rest_shape_with_their_step_type(): void {

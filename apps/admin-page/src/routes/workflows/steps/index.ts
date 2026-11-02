@@ -10,6 +10,8 @@ import { waitStep } from './actions/wait';
 import { criteriaStep } from './conditions/criteria';
 import { defineStep } from './core/defineStep';
 import { createRegistry } from './core/registry';
+import { cartAbandonedStep } from './triggers/cart-abandoned';
+import { checkoutAbandonedStep } from './triggers/checkout-abandoned';
 import { orderCreatedStep } from './triggers/order-created';
 import { orderStatusChangedStep } from './triggers/order-status-changed';
 
@@ -19,6 +21,8 @@ export { plainSummary, SummaryText } from './core/defineStep';
 const coreSteps = [
   orderCreatedStep,
   orderStatusChangedStep,
+  cartAbandonedStep,
+  checkoutAbandonedStep,
   criteriaStep,
   sendEmailStep,
   sendInternalEmailStep,

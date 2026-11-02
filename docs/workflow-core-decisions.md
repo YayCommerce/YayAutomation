@@ -30,6 +30,7 @@ Each note: **Decision** · **Why** · **Rejected** · **Cost** · **For devs** (
 | [P2](#p2-yay-plugins-own-their-steps) | Yay plugins own their steps | Owner |
 | [P3–P6](#p3p6-smaller-decisions) | Cancel on Update, API last, AI later, Health check | Owner |
 | [M7](#m7-cart-tracking) | Cart tracking | Owner |
+| [M8](#m8-abandoned-carts) | Abandoned carts | Owner |
 
 "High" = recommended and accepted as-is. "Owner" = debated and decided by the product owner.
 
@@ -185,6 +186,8 @@ Today errors only go to the WooCommerce log, which merchants never open.
 **For devs.** A query trigger defines "find subjects" and "subject key". Batching and dedupe come from the Scheduler.
 
 **Note (M7).** Abandoned carts come from the `carts` table, not from pending orders: WooCommerce cancels unpaid orders after the hold-stock minutes.
+
+**Note (M8).** Claims are built in M6. Abandoned carts need none: see [M8](#m8-abandoned-carts).
 
 ---
 
@@ -374,3 +377,23 @@ Today errors only go to the WooCommerce log, which merchants never open.
 - Restore is one click: a page on another site can make a browser open a valid link; the saved items go into that browser's cart, and an empty guest checkout gets the cart's email. A confirm page before the merge would stop this; not added in v1.0.
 - Saved lines keep no cart item data, so products with add-on options come back without them.
 - A queued or running run about the person is left as is; the admin erases again a few minutes later, and the carts stay until then.
+
+## M8. Abandoned carts
+
+**Decision.** A 5-minute job marks carts abandoned. A cart's first abandon in its cycle starts its trigger, and the `abandoned_at` column on the row is the claim. No `trigger_claims` table.
+
+**Why.**
+- One cart has one row, and only a new cycle (after an order) clears `abandoned_at`, so a per-row column already answers "did this cart start yet".
+- A shopper who returns turns the row active and keeps `abandoned_at`, so leaving again can't start a second series.
+- The sweep only looks 24 h past the abandon time, so turning tracking on doesn't email old carts.
+- A series goes on when the shopper returns: coming back without ordering is not a reason to stop reminding. Only an order or a gone cart stops it.
+- Cart emails show the prices the shopper saw, with the product's live name, image and link: the reminder must match the cart, and a price the shop raised since would read as a bait. The cart page may show a newer price after restoring.
+- One series per email in 7 days, read from `series_at`, set when an active workflow takes the cart: two carts of one shopper, in one browser and another, would otherwise send two series.
+
+**Cost.**
+- A cart abandoned before its workflow was activated never starts it: the event fires once per cycle.
+- A cart idle over 24 h past the abandon time is skipped for good, also when the job itself was that late (a store with no visits and no server cron).
+- A cart a workflow took but couldn't start (rate limit, no live version) still blocks that email for 7 days.
+- Emptying a cart deletes its row and its claim, so a new cart can start a new series; one series per email limits this.
+- Events fire at shutdown of the sweep: a crash between marking and that shutdown loses that cart's series.
+- The job adds 288 Action Scheduler rows a day, even with tracking off; Action Scheduler's own retention removes them.

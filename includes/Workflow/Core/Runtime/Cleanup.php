@@ -1,6 +1,7 @@
 <?php
 namespace YayMatik\Workflow\Core\Runtime;
 
+use YayMatik\Workflow\Core\Cart\CartSweep;
 use YayMatik\Workflow\Core\Storage\CartStore;
 use YayMatik\Workflow\Core\Storage\RunStore;
 use YayMatik\Workflow\Core\Storage\Settings;
@@ -25,7 +26,7 @@ final class Cleanup {
         add_action( self::HOOK, [ self::class, 'run' ] );
     }
 
-    /** Schedules the job when it's missing, checked at most hourly. */
+    /** Schedules this job and the cart sweep when missing, checked at most hourly. */
     public static function ensure(): void {
         if ( ! function_exists( 'as_has_scheduled_action' ) ) {
             return;
@@ -35,6 +36,9 @@ final class Cleanup {
         }
         if ( ! as_has_scheduled_action( self::HOOK, [], ActionSchedulerQueue::GROUP ) ) {
             self::schedule();
+        }
+        if ( ! as_has_scheduled_action( CartSweep::HOOK, [], ActionSchedulerQueue::GROUP ) ) {
+            CartSweep::schedule();
         }
         update_option( self::CHECKED_OPTION, time(), true );
     }
@@ -55,7 +59,9 @@ final class Cleanup {
         // Carts first: they hold emails, and the privacy text promises their deletion; runs get what's left.
         $carts = gmdate( 'Y-m-d H:i:s', time() - (int) Settings::get( 'cart_retention_days' ) * DAY_IN_SECONDS );
         do {
-            $deleted = CartStore::delete_inactive_before( $carts, self::BATCH );
+            $ids = CartStore::inactive_ids_before( $carts, self::BATCH );
+            Cancellation::carts( $ids, Cancellation::cart_gone() );
+            $deleted = CartStore::delete_ids( $ids );
         } while ( self::BATCH === $deleted && microtime( true ) < $deadline );
 
         $runs = gmdate( 'Y-m-d H:i:s', time() - (int) Settings::get( 'run_retention_days' ) * DAY_IN_SECONDS );

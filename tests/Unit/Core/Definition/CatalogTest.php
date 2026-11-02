@@ -19,7 +19,7 @@ final class CatalogTest extends TestCase {
     public function test_each_step_keeps_its_v01_keys_first_then_the_contract(): void {
         $steps = $this->steps();
 
-        $this->assertSame( [ 'kind', 'plugin', 'provides', 'label' ], array_slice( array_keys( $steps['order_created'] ), 0, 4 ) );
+        $this->assertSame( [ 'kind', 'plugin', 'provides', 'category', 'label' ], array_slice( array_keys( $steps['order_created'] ), 0, 5 ) );
         $this->assertSame( [ 'kind', 'plugin', 'category', 'requires', 'label' ], array_slice( array_keys( $steps['add_order_note'] ), 0, 5 ) );
         foreach ( $steps as $id => $step ) {
             foreach ( [ 'kind', 'plugin', 'label', 'description', 'icon', 'summary', 'onError', 'fields', 'outputs' ] as $key ) {
@@ -152,7 +152,7 @@ final class CatalogTest extends TestCase {
         }
         $blocks = array_keys( array_filter( $fields, fn( array $field ) => ! empty( $field['block'] ) ) );
 
-        $this->assertSame( [ 'order.cross_sell_products', 'order.upsell_products' ], $blocks );
+        $this->assertSame( [ 'order.cross_sell_products', 'order.upsell_products', 'cart.items', 'cart.restore_button' ], $blocks );
         $this->assertFalse( $fields['order.cross_sell_products']['conditional'] );
         $this->assertSame( 'boolean', $fields['order.has_cross_sells']['type'] );
         $this->assertTrue( $fields['order.has_cross_sells']['conditional'] );

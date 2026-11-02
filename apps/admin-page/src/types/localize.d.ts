@@ -72,8 +72,8 @@ export interface StepMeta {
   plugin?: WorkflowPlugin;
   /** Data items the step adds: a trigger's for every run, an action's for the steps below it. */
   provides?: string[];
-  /** Actions: picker section. */
-  category?: 'email' | 'order' | 'coupon' | 'flow';
+  /** Picker section. */
+  category?: 'email' | 'order' | 'coupon' | 'flow' | 'cart';
   /** Actions: data items needed whatever the config. */
   requires?: string[];
 }
@@ -145,6 +145,9 @@ declare global {
         currencySymbol: string;
         /** What a Free shipping method needs to accept a coupon; '' when none accepts one. */
         freeShippingCoupon: 'coupon' | 'coupon_and_minimum' | '';
+        cartTracking: boolean;
+        /** Minutes without activity before a cart counts as abandoned. */
+        abandonMinutes: number;
       };
       automation: {
         plugins: PluginMeta[];

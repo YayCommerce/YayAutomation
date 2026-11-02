@@ -1,7 +1,11 @@
 <?php
 namespace YayMatik\Workflow\Core\Email;
 
+use YayMatik\Workflow\Core\Cart\SavedCart;
 use YayMatik\Workflow\Core\Data\DataRegistry;
+use YayMatik\Workflow\Core\Data\RefResolver;
+use YayMatik\Workflow\Core\Storage\CartStore;
+use YayMatik\Workflow\DataItems\CartData;
 use YayMatik\Workflow\DataItems\OrderData;
 use YayMatik\Workflow\Core\Data\SampleValues;
 use YayMatik\Workflow\Core\Data\Scope;
@@ -31,7 +35,7 @@ final class EmailPreview {
      * @param mixed    $graph
      * @param string   $node_id
      * @param mixed    $config
-     * @param int|null $order_id Null = the latest paid order, 0 = made-up data.
+     * @param int|null $order_id Null = the latest paid order (a cart trigger: the newest cart), 0 = made-up data.
      * @return array|\WP_Error [ 'subject', 'heading', 'html' (wrapped, styles inlined), 'to', 'sample',
      *                         'order' (the order's number; null with made-up data) ]
      */
@@ -159,20 +163,34 @@ final class EmailPreview {
 
         $provides = $trigger ? $trigger->resolved_provides() : [];
         $refs     = null;
+        $resolver = null;
         if ( in_array( OrderData::ID, $provides, true ) ) {
             $order_id = $order_id ?? self::latest_paid_order();
             $refs     = $order_id ? $trigger->resolved_refs( [ 'order_id' => $order_id ] ) : null;
+        } elseif ( in_array( CartData::ID, $provides, true ) && 0 !== $order_id ) {
+            $cart_id = CartStore::newest_for_preview();
+            $refs    = $cart_id ? $trigger->resolved_refs( [ 'cart_id' => $cart_id ] ) : null;
+            // A real cart, but its restore link must not reach a test inbox.
+            $resolver = new RefResolver(
+                [
+                    CartData::ID => function ( string $id ) {
+                        $cart = SavedCart::find( (int) $id );
+                        return $cart ? $cart->inert() : null;
+                    },
+                ] + RefResolver::default_loaders()
+            );
         }
 
         $scope = new Scope(
             [
                 'trigger' => $refs ?? [],
                 'steps'   => $outputs,
-            ]
+            ],
+            $resolver
         );
         $scope->set_output_display( Executor::output_display( $nodes, [ StepRegistry::class, 'get' ] ) );
         if ( $refs ) {
-            $order = wc_get_order( $order_id );
+            $order = $order_id ? wc_get_order( $order_id ) : null;
             return [ $scope, false, $order ? (string) $order->get_order_number() : null ];
         }
         return [ new SampleValues( $scope, array_intersect_key( DataRegistry::items(), array_flip( $provides ) ) ), true, null ];

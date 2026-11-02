@@ -7,6 +7,7 @@ use YayMatik\Engine\Register\ScriptName;
 use YayMatik\Workflow\Core\Coupon\FreeShipping;
 use YayMatik\Utils\SingletonTrait;
 use YayMatik\Workflow\Core\Definition\Catalog;
+use YayMatik\Workflow\Core\Storage\Settings;
 use YayMatik\Workflow\Actions\SendInternalEmail;
 use YayMatik\YayMatik;
 
@@ -90,6 +91,8 @@ class AdminPage {
                     : '',
                 // What free shipping coupons need: 'coupon', 'coupon_and_minimum', or '' (they do nothing).
                 'freeShippingCoupon' => FreeShipping::coupon_mode(),
+                'cartTracking'       => (bool) Settings::get( 'cart_tracking' ),
+                'abandonMinutes'     => (int) Settings::get( 'abandon_minutes' ),
             ],
             'automation' => Catalog::to_client() + [ 'email' => SendInternalEmail::sender() ],
             'docs'       => [

@@ -2,6 +2,7 @@
 namespace YayMatik\Workflow\Core\Cart;
 
 use YayMatik\Workflow\Core\Email\UnsubscribeLink;
+use YayMatik\Workflow\Core\Runtime\Cancellation;
 use YayMatik\Workflow\Core\Storage\CartStore;
 use YayMatik\Workflow\Core\Storage\Settings;
 
@@ -64,6 +65,9 @@ final class CartTracker {
         }
         if ( $fields || strtotime( $row['last_activity_at'] . ' UTC' ) < time() - self::VIEW_EVERY ) {
             $fields['last_activity_at'] = $now;
+            if ( CartStore::ABANDONED === $row['status'] ) {
+                $fields['status'] = CartStore::ACTIVE;
+            }
             CartStore::touch( $key, $fields );
         }
     }
@@ -107,13 +111,16 @@ final class CartTracker {
         if ( $reset ) {
             CartStore::reset_cycle( (int) $row['id'] );
         }
-        $now     = current_time( 'mysql', true );
-        $fields  = [
+        $now    = current_time( 'mysql', true );
+        $fields = [
             'items'            => (string) wp_json_encode( $snapshot->lines() ),
             'total'            => $snapshot->total(),
             'currency'         => $snapshot->currency(),
             'last_activity_at' => $now,
         ];
+        if ( $row && CartStore::ABANDONED === $row['status'] ) {
+            $fields['status'] = CartStore::ACTIVE;
+        }
         $user_id = get_current_user_id();
         if ( $user_id ) {
             list( $email, $first_name ) = self::account( $user_id );
@@ -160,7 +167,7 @@ final class CartTracker {
         CartStore::touch( $key, $fields );
     }
 
-    /** The cart is empty: its row goes, unless an order was made from it. */
+    /** The cart is empty: its runs stop and its row goes, unless an order was made from it (paying that order must still find the row). */
     public static function emptied(): void {
         // Logout empties the cart while the session key is still the user id: that row must stay.
         if ( did_action( 'wp_logout' ) ) {
@@ -171,8 +178,14 @@ final class CartTracker {
             return;
         }
         $row = CartStore::find_by_session( $key );
-        if ( $row && 0 === (int) $row['order_id'] && ! self::$ordered ) {
-            CartStore::delete_by_session( $key );
+        if ( $row && ! self::$ordered ) {
+            if ( 0 === (int) $row['order_id'] ) {
+                CartStore::delete_by_session( $key );
+            } elseif ( CartStore::ORDERED !== $row['status'] ) {
+                // No items: the sweep skips it, so the shopper gets no reminder about what they removed.
+                CartStore::touch( $key, [ 'items' => '[]' ] );
+            }
+            Cancellation::carts( [ (int) $row['id'] ], Cancellation::cart_gone() );
         }
         WC()->session->set( self::HASH_KEY, '' );
         WC()->session->set( self::RESTORED_KEY, null );
@@ -230,7 +243,7 @@ final class CartTracker {
     }
 
     /**
-     * Paid: its own cart is ordered, and (not for free orders) every active cart with the billing email last active before it.
+     * Paid: its own cart is ordered, and (not for free orders) every open cart with the billing email last active before it; their waiting runs stop.
      *
      * @param int       $order_id
      * @param string    $from
@@ -242,13 +255,23 @@ final class CartTracker {
         if ( (int) $order_id <= 0 || ! in_array( $to, [ 'processing', 'completed', 'on-hold' ], true ) || ! $order instanceof \WC_Order ) {
             return;
         }
-        CartStore::mark_ordered_by_order( (int) $order_id );
+        self::stop_runs( CartStore::mark_ordered_by_order( (int) $order_id ), (int) $order_id );
         $email   = UnsubscribeLink::normalize( $order->get_billing_email() );
         $created = $order->get_date_created();
         if ( '' === $email || ! $created || (float) $order->get_total( 'edit' ) <= 0 ) {
             return;
         }
-        CartStore::mark_ordered_by_email( $email, gmdate( 'Y-m-d H:i:s', $created->getTimestamp() ) );
+        self::stop_runs( CartStore::mark_ordered_by_email( $email, gmdate( 'Y-m-d H:i:s', $created->getTimestamp() ), (int) $order_id ), (int) $order_id );
+    }
+
+    /**
+     * @param int[] $cart_ids
+     * @param int   $order_id
+     */
+    private static function stop_runs( array $cart_ids, int $order_id ): void {
+        if ( $cart_ids ) {
+            Cancellation::carts( $cart_ids, Cancellation::order_placed( $order_id ) );
+        }
     }
 
     /**

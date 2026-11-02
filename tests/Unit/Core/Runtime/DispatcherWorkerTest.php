@@ -8,6 +8,7 @@ use YayMatik\Tests\Support\FakeOrder;
 use YayMatik\Tests\Support\FakeQueue;
 use YayMatik\Tests\Support\FakeRunRepository;
 use YayMatik\Tests\Support\FakeStep;
+use YayMatik\Tests\Support\FakeTrigger;
 use YayMatik\Tests\Support\FakeWorkflows;
 use YayMatik\Workflow\Core\Data\Ref;
 use YayMatik\Workflow\Core\Data\RefResolver;
@@ -351,6 +352,25 @@ final class DispatcherWorkerTest extends TestCase {
         $this->assertSame( 'Order no longer exists.', $this->runs->runs[ $id ]['error'] );
         $this->assertNotNull( $this->runs->runs[ $id ]['finished_at'] );
         $this->assertSame( [], $this->runs->steps( $id ) );
+    }
+
+    public function test_worker_cancels_before_the_first_step_on_a_stop_reason_even_if_a_ref_is_gone(): void {
+        $trigger                     = new FakeTrigger();
+        $trigger->reason             = 'The cart was emptied or deleted.';
+        $this->steps['fake_trigger'] = $trigger;
+        $id                          = $this->runs->create_run(
+            [
+                'workflow_id' => 1,
+                'version_id'  => 11,
+                'trigger_id'  => 'fake_trigger',
+                'subject'     => 'cart:5',
+                'scope'       => ( new Scope( [ 'trigger' => [ 'order' => new Ref( 'order', 99 ) ] ], null, [] ) )->to_array(),
+            ]
+        );
+
+        $this->assertSame( 'cancelled', $this->worker->run( $id ) );
+        $this->assertSame( 'The cart was emptied or deleted.', $this->runs->runs[ $id ]['error'] );
+        $this->assertSame( 0, $this->steps['act']->runs );
     }
 
     public function test_turning_off_stops_a_run_already_going_before_its_next_step(): void {

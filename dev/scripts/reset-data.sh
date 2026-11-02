@@ -27,7 +27,7 @@ foreach ( [ "yaymatik_db_version", "yaymatik_settings", "yaymatik_cart_secret", 
     echo delete_option( $option ) ? "Deleted option {$option}\n" : "";
 }
 if ( function_exists( "as_unschedule_all_actions" ) ) {
-    foreach ( [ "yaymatik_run", "yaymatik_recover_run", "yaymatik_cleanup" ] as $hook ) {
+    foreach ( [ "yaymatik_run", "yaymatik_recover_run", "yaymatik_cleanup", "yaymatik_cart_sweep" ] as $hook ) {
         $pending = count( as_get_scheduled_actions( [ "hook" => $hook, "status" => "pending", "per_page" => -1 ], "ids" ) );
         as_unschedule_all_actions( $hook );
         echo $pending ? "Unscheduled {$pending} {$hook} actions\n" : "";

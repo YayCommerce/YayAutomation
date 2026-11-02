@@ -2,6 +2,8 @@
 namespace YayMatik\Tests\Unit\DataItems;
 
 use PHPUnit\Framework\TestCase;
+use YayMatik\Workflow\Core\Cart\CartCustomer;
+use YayMatik\Workflow\Core\Cart\SavedCart;
 use YayMatik\Workflow\DataItems\CustomerData;
 
 require_once dirname( __DIR__, 2 ) . '/Support/woocommerce-stubs.php';
@@ -116,6 +118,88 @@ final class CustomerDataTest extends TestCase {
         $this->assertSame( 4.0, $count( $this->order( 10, 5, 'ann@x.com' ) ) );
         $this->assertSame( [ -1, -1 ], array_column( $this->queries, 'limit' ), 'no limit, unlike is_first_order' );
         $this->assertSame( 0.0, $count( $this->order( 11, 0, '' ) ) );
+    }
+
+    /**
+     * @param array             $row
+     * @param \WC_Customer|null $account
+     */
+    private function cart_customer( array $row, ?\WC_Customer $account ): CartCustomer {
+        return new CartCustomer(
+            new SavedCart(
+                $row + [
+                    'email'      => 'ann@x.com',
+                    'first_name' => 'Ann',
+                ]
+            ),
+            $account
+        );
+    }
+
+    public function test_a_cart_is_a_first_order_only_with_no_paid_order(): void {
+        $customer = $this->cart_customer( [ 'user_id' => 0 ], null );
+
+        $this->assertTrue( $this->first( $this->item( [], [] ), $customer ), 'no paid order' );
+        $this->assertFalse( $this->first( $this->item( [], [ 'ann@x.com' => [ 7 ] ] ), $customer ), 'one paid order' );
+        $this->assertFalse( $this->first( $this->item( [], [ 'ann@x.com' => [ 7, 8 ] ] ), $customer ), 'two paid orders' );
+    }
+
+    public function test_a_guest_cart_looks_up_by_email_only(): void {
+        $item = $this->item( [], [ 'ann@x.com' => [ 7 ] ] );
+
+        $this->first( $item, $this->cart_customer( [ 'user_id' => 0 ], null ) );
+        $this->assertSame( [ 'ann@x.com' ], array_map( fn( array $query ) => $query['customer_id'] ?? $query['billing_email'], $this->queries ) );
+    }
+
+    public function test_a_gone_account_on_a_cart_looks_up_by_email_only(): void {
+        $item = $this->item( [ 5 => [ 7 ] ], [] );
+
+        $this->first( $item, $this->cart_customer( [ 'user_id' => 5 ], null ) );
+        $this->assertSame( [ 'ann@x.com' ], array_map( fn( array $query ) => $query['customer_id'] ?? $query['billing_email'], $this->queries ) );
+    }
+
+    public function test_a_logged_in_cart_looks_up_by_account_and_the_rows_email(): void {
+        $item    = $this->item( [ 5 => [ 7 ] ], [ 'ann@x.com' => [ 7 ] ] );
+        $account = new \WC_Customer(
+            [
+                'id'            => 5,
+                'billing_email' => 'old@x.com',
+            ]
+        );
+
+        $this->assertFalse( $this->first( $item, $this->cart_customer( [ 'user_id' => 5 ], $account ) ) );
+        $this->assertSame( [ 5, 'ann@x.com' ], array_map( fn( array $query ) => $query['customer_id'] ?? $query['billing_email'], $this->queries ) );
+    }
+
+    public function test_a_cart_customer_reads_email_and_first_name_from_the_row_and_the_rest_from_the_account(): void {
+        $account  = new \WC_Customer(
+            [
+                'billing_email'      => '',
+                'billing_first_name' => '',
+                'billing_last_name'  => 'Lee',
+                'billing_phone'      => '555',
+                'billing_country'    => 'VN',
+            ]
+        );
+        $customer = $this->cart_customer( [ 'user_id' => 5 ], $account );
+        $fields   = $this->item( [], [] )->fields();
+
+        $this->assertSame( 'ann@x.com', ( $fields['email']['value'] )( $customer ), 'never empty' );
+        $this->assertSame( 'Ann', ( $fields['first_name']['value'] )( $customer ) );
+        $this->assertSame( 'Lee', ( $fields['last_name']['value'] )( $customer ) );
+        $this->assertSame( 'Ann Lee', ( $fields['full_name']['value'] )( $customer ) );
+        $this->assertSame( '555', ( $fields['phone']['value'] )( $customer ) );
+        $this->assertSame( 'VN', ( $fields['billing_country']['value'] )( $customer ) );
+    }
+
+    public function test_a_guest_cart_customer_has_only_email_and_first_name(): void {
+        $customer = $this->cart_customer( [ 'user_id' => 0 ], null );
+
+        $this->assertSame( 0, $customer->get_id() );
+        $this->assertSame( 'ann@x.com', $customer->get_billing_email() );
+        $this->assertSame( '', $customer->get_billing_last_name() );
+        $this->assertSame( '', $customer->get_billing_phone() );
+        $this->assertSame( '', $customer->get_billing_country() );
     }
 
     public function test_unsubscribed_reads_the_billing_email(): void {

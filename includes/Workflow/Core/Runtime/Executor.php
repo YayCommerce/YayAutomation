@@ -11,6 +11,7 @@ use YayMatik\Workflow\Core\Steps\Condition;
 use YayMatik\Workflow\Core\Steps\Step;
 use YayMatik\Workflow\Core\Steps\StepRegistry;
 use YayMatik\Workflow\Core\Steps\StepResult;
+use YayMatik\Workflow\Core\Steps\Trigger;
 use YayMatik\Workflow\Core\Storage\RunStepStore;
 use YayMatik\Workflow\Core\Storage\RunStore;
 
@@ -108,6 +109,17 @@ final class Executor {
         };
     }
 
+    /**
+     * Why the run's trigger stops it now, or null to go on.
+     *
+     * @param array    $run
+     * @param callable $steps fn( string $id ): ?Step.
+     */
+    public static function stop_reason( array $run, callable $steps ): ?string {
+        $trigger = $steps( (string) ( $run['trigger_id'] ?? '' ) );
+        return $trigger instanceof Trigger ? $trigger->stop_reason( (string) ( $run['subject'] ?? '' ) ) : null;
+    }
+
     private function slice( array $run ): string {
         $id    = (int) $run['id'];
         $graph = $this->graphs->graph( (int) $run['version_id'] );
@@ -131,7 +143,11 @@ final class Executor {
 
         while ( $queue ) {
             if ( ! $this->workflows->is_active( (int) $run['workflow_id'] ) ) {
-                return $this->cancel( $id, $queue, $scope );
+                return $this->cancel( $id, $queue, $scope, Cancellation::turned_off() );
+            }
+            $reason = self::stop_reason( $run, $this->steps );
+            if ( null !== $reason ) {
+                return $this->cancel( $id, $queue, $scope, $reason );
             }
             $step_id = $queue[0];
             $node    = $nodes[ $step_id ] ?? null;
@@ -140,7 +156,7 @@ final class Executor {
             $outcome = $this->outcome( $run, $step_id, $node, $step, $rows[ $step_id ] ?? null, $scope );
 
             if ( RunStepStore::STATUS_WAITING === $outcome['status'] ) {
-                return $this->wait( $id, (int) $run['workflow_id'], $queue, $scope, $outcome );
+                return $this->wait( $run, $queue, $scope, $outcome );
             }
             if ( RunStepStore::STATUS_FAILED === $outcome['status'] && ( ! $step || Step::ON_ERROR_CONTINUE !== $step->on_error() ) ) {
                 return $this->fail( $id, $queue, $scope, (string) $outcome['error'] );
@@ -292,13 +308,13 @@ final class Executor {
     /**
      * Pauses the run until the step's `until`. Without a queue nothing could wake it, so it fails.
      *
-     * @param int      $id
-     * @param int      $workflow_id
-     * @param string[] $queue       The waiting step first.
+     * @param array    $run
+     * @param string[] $queue   The waiting step first.
      * @param Scope    $scope
      * @param array    $outcome
      */
-    private function wait( int $id, int $workflow_id, array $queue, Scope $scope, array $outcome ): string {
+    private function wait( array $run, array $queue, Scope $scope, array $outcome ): string {
+        $id    = (int) $run['id'];
         $until = (int) $outcome['until'];
         if ( ! $this->queue->available() ) {
             $error = __( 'This run can\'t wait: Action Scheduler is not available.', 'yaymatik' );
@@ -314,9 +330,13 @@ final class Executor {
                 'scope'      => $scope->to_array(),
             ]
         );
-        // Turned off while the step ran: Cancellation only finds runs already saved as waiting.
-        if ( ! $this->workflows->is_active( $workflow_id ) ) {
-            return $this->cancel( $id, $queue, $scope );
+        // Turned off or stopped while the step ran: Cancellation only finds runs already saved as waiting.
+        if ( ! $this->workflows->is_active( (int) $run['workflow_id'] ) ) {
+            return $this->cancel( $id, $queue, $scope, Cancellation::turned_off() );
+        }
+        $reason = self::stop_reason( $run, $this->steps );
+        if ( null !== $reason ) {
+            return $this->cancel( $id, $queue, $scope, $reason );
         }
         if ( ! $this->queue->enqueue( $id, $until ) ) {
             Logger::error( "Run {$id}: could not queue the end of its wait.", [ 'run_id' => $id ] );
@@ -345,14 +365,14 @@ final class Executor {
     }
 
     /**
-     * Stops the run before its next step: the workflow was turned off.
+     * Stops the run before its next step.
      *
      * @param int      $id
      * @param string[] $queue
      * @param Scope    $scope
+     * @param string   $reason
      */
-    private function cancel( int $id, array $queue, Scope $scope ): string {
-        $reason = Cancellation::turned_off();
+    private function cancel( int $id, array $queue, Scope $scope, string $reason ): string {
         $this->runs->save_run(
             $id,
             [

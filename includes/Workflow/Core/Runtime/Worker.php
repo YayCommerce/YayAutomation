@@ -5,6 +5,7 @@ use YayMatik\Utils\Logger;
 use YayMatik\Workflow\Core\Data\GoneEntity;
 use YayMatik\Workflow\Core\Data\Ref;
 use YayMatik\Workflow\Core\Data\RefResolver;
+use YayMatik\Workflow\Core\Steps\StepRegistry;
 use YayMatik\Workflow\Core\Storage\RunStore;
 
 defined( 'ABSPATH' ) || exit;
@@ -184,6 +185,11 @@ final class Worker {
             $reason = $this->workflows->find( $workflow_id )
                 ? Cancellation::turned_off()
                 : __( 'The workflow was deleted before this run started.', 'yaymatik' );
+            return $this->end( (int) $run['id'], RunStore::STATUS_CANCELLED, $reason );
+        }
+        // Before the refs: a gone cart ends cancelled, not skipped.
+        $reason = Executor::stop_reason( $run, $this->steps ?? [ StepRegistry::class, 'get' ] );
+        if ( null !== $reason ) {
             return $this->end( (int) $run['id'], RunStore::STATUS_CANCELLED, $reason );
         }
         try {

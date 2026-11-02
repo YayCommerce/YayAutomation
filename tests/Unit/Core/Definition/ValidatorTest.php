@@ -4,6 +4,7 @@ namespace YayMatik\Tests\Unit\Core\Definition;
 use PHPUnit\Framework\TestCase;
 use YayMatik\Workflow\Core\Definition\GraphSchema;
 use YayMatik\Workflow\Core\Definition\Validator;
+use YayMatik\Workflow\Core\Storage\Settings;
 
 require_once dirname( __DIR__, 3 ) . '/Support/woocommerce-stubs.php';
 
@@ -112,6 +113,101 @@ final class ValidatorTest extends TestCase {
                 [ self::edge( 't', 'c' ), self::edge( 'c', 'email', 'then' ), self::edge( 'email', 'note' ) ]
             )
         );
+    }
+
+    /**
+     * A prepared cart workflow, with this status when not null.
+     *
+     * @param string|null $status
+     */
+    private static function cart_workflow( ?string $status ): array {
+        $workflow = [
+            'name'  => 'Reminder',
+            'graph' => GraphSchema::prepare(
+                [
+                    'nodes' => [
+                        self::node( 't', 'trigger', 'cart_abandoned' ),
+                        self::node(
+                            'n',
+                            'action',
+                            'send_internal_email',
+                            [
+                                'recipients' => 'a@x.com',
+                                'subject'    => 'Hi',
+                                'message'    => 'Hi',
+                            ]
+                        ),
+                    ],
+                    'edges' => [ self::edge( 't', 'n' ) ],
+                ]
+            ),
+        ];
+        return null === $status ? $workflow : $workflow + [ 'status' => $status ];
+    }
+
+    /**
+     * Issue codes with cart tracking on or off.
+     *
+     * @param array $workflow
+     * @param bool  $tracking
+     */
+    private static function codes_with_tracking( array $workflow, bool $tracking ): array {
+        update_option( 'yaymatik_settings', [ 'cart_tracking' => $tracking ] );
+        $built = new \ReflectionProperty( Settings::class, 'all' );
+        $built->setAccessible( true );
+        $built->setValue( null, null );
+        $issues = Validator::errors( $workflow );
+        unset( $GLOBALS['yaymatik_test_options']['yaymatik_settings'] );
+        $built->setValue( null, null );
+        return array_column( $issues, 'code', 'nodeId' );
+    }
+
+    public function test_tracking_off_blocks_activating_a_cart_workflow(): void {
+        $this->assertSame( [ 't' => 'cart_tracking_off' ], self::codes_with_tracking( self::cart_workflow( 'inactive' ), false ) );
+    }
+
+    public function test_tracking_on_has_no_setup_issue(): void {
+        $this->assertSame( [], self::codes_with_tracking( self::cart_workflow( 'inactive' ), true ) );
+    }
+
+    public function test_an_active_cart_workflow_has_no_setup_issue(): void {
+        $this->assertSame( [], self::codes_with_tracking( self::cart_workflow( 'active' ), false ) );
+    }
+
+    public function test_no_status_means_no_setup_issue_so_apply_and_preview_go_on(): void {
+        $this->assertSame( [], self::codes_with_tracking( self::cart_workflow( null ), false ) );
+    }
+
+    /**
+     * The same steps under another trigger, as a live graph.
+     *
+     * @param string $trigger
+     */
+    private static function live_graph( string $trigger ): array {
+        $graph                                  = self::cart_workflow( null )['graph'];
+        $graph['nodes'][0]['data']['block']     = $trigger;
+        return $graph;
+    }
+
+    public function test_a_draft_keeping_the_cart_trigger_has_no_setup_issue(): void {
+        $workflow = [ 'live_graph' => self::live_graph( 'cart_abandoned' ) ] + self::cart_workflow( 'active' );
+
+        $this->assertSame( [], self::codes_with_tracking( $workflow, false ) );
+    }
+
+    public function test_a_draft_changing_to_a_cart_trigger_with_tracking_off_has_the_setup_issue(): void {
+        $workflow = [ 'live_graph' => self::live_graph( 'order_created' ) ] + self::cart_workflow( 'active' );
+
+        $this->assertSame( [ 't' => 'cart_tracking_off' ], self::codes_with_tracking( $workflow, false ) );
+        $this->assertSame( [], self::codes_with_tracking( $workflow, true ) );
+    }
+
+    public function test_apply_without_a_status_checks_only_a_changed_trigger(): void {
+        $same    = [ 'live_graph' => self::live_graph( 'cart_abandoned' ) ] + self::cart_workflow( null );
+        $changed = [ 'live_graph' => self::live_graph( 'order_created' ) ] + self::cart_workflow( null );
+
+        $this->assertSame( [], self::codes_with_tracking( $same, false ) );
+        $this->assertSame( [ 't' => 'cart_tracking_off' ], self::codes_with_tracking( $changed, false ) );
     }
 
     public function test_workflow_level_issues_come_first(): void {

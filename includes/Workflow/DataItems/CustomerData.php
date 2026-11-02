@@ -1,13 +1,14 @@
 <?php
 namespace YayMatik\Workflow\DataItems;
 
+use YayMatik\Workflow\Core\Cart\CartCustomer;
 use YayMatik\Workflow\Core\Data\DataItem;
 use YayMatik\Workflow\Core\Storage\UnsubscribeStore;
 
 defined( 'ABSPATH' ) || exit;
 
 /**
- * The person behind the event: anything with WooCommerce billing getters (a \WC_Order, so guests work too).
+ * The person behind the event: anything with WooCommerce billing getters (a \WC_Order or `CartCustomer`, so guests work too).
  */
 final class CustomerData extends DataItem {
 
@@ -40,7 +41,7 @@ final class CustomerData extends DataItem {
     }
 
     public function description(): string {
-        return __( 'The person who placed the order, from its billing details. Works for guests too.', 'yaymatik' );
+        return __( 'The person behind the event, from their billing details. Works for guests too.', 'yaymatik' );
     }
 
     public function icon(): string {
@@ -122,13 +123,16 @@ final class CustomerData extends DataItem {
     }
 
     /**
-     * Whether the customer has no paid order besides this one, whatever this order's status.
+     * An order: no paid order besides this one, whatever its status. A cart: no paid order yet.
      *
-     * @param \WC_Order|\WC_Customer $customer
+     * @param \WC_Order|\WC_Customer|CartCustomer $customer
      */
     private function is_first_order( $customer ): bool {
         // 2 are enough to tell whether there's one besides this order.
         $ids = $this->paid_ids( $customer, 2 );
+        if ( $customer instanceof CartCustomer ) {
+            return ! $ids;
+        }
         if ( ! $customer instanceof \WC_Order ) {
             // A customer trigger: exactly one paid order.
             return 1 === count( $ids );
@@ -139,8 +143,8 @@ final class CustomerData extends DataItem {
     /**
      * The customer's paid order ids, by account and by billing email, so a guest order with the same email counts too.
      *
-     * @param \WC_Order|\WC_Customer $customer
-     * @param int                    $limit    Per lookup; -1 = all.
+     * @param \WC_Order|\WC_Customer|CartCustomer $customer
+     * @param int                                 $limit    Per lookup; -1 = all.
      * @return int[]
      */
     private function paid_ids( $customer, int $limit ): array {

@@ -15,7 +15,7 @@ Sizes are proposals until Jack estimates after M1, as ROADMAP-v1.0 says. **S** �
 Changes from the ROADMAP-v1.0 order:
 - **F0 and F1 come first.** M1 needs step outputs, templates and the new step contract. M2 needs stored runs. Building M1/M2 on the v0.1 runner means building them twice.
 - **F2 comes after M2.** Tables replace the CPT before v1.0, while there's no merchant data yet: dev data is reset, no migration.
-- **M6 stays after M8.** The inactive-customer trigger reuses M8's scheduled scan.
+- **M6 stays after M8.** The inactive-customer trigger reuses the pattern of M8's abandon sweep.
 - **Identity inside F1** *([plan-identity](plan-identity.md))*: F1 backend first, so the restyle reads step icons and summaries from the new catalog; then the restyle (phase 1, built on `jack/feature/identity-phase-1`: screens, cards and wording; PHP step wording only); then the forms (phase 2, with F1.9–F1.12), built once in the new style. Nothing is built twice.
 
 | # | Phase | Size | Risk | Depends on | Status |
@@ -25,8 +25,8 @@ Changes from the ROADMAP-v1.0 order:
 | M1 | Customer emails + coupons | L | 3 | F1 | ✅ Done |
 | M2 | Wait + run history | L | 3 | F1 | ✅ Done |
 | F2 | Workflows table | M | 3 | F1 | ✅ Done |
-| M7 | Cart tracking + Settings + Health check | L | 3 | F1 | In progress |
-| M8 | Abandoned cart + checkout | L | 2 | M1, M2, M7 | — |
+| M7 | Cart tracking + Settings + Health check | L | 3 | F1 | ✅ Done |
+| M8 | Abandoned cart + checkout | L | 2 | M1, M2, M7 | In progress |
 | M3 | Review request | M | 2 | M2 | — |
 | M4 | Welcome series | S | 2 | M2 | — |
 | M5 | High-value order alert | S | 1 | — | — |
@@ -176,7 +176,7 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 
 ## M7 — Cart tracking + Settings + Health check · L · risk 3
 
-**Status:** In progress. Backend and store front merged (PR #30); Settings page and health check panel (PR B, `jack/feature/m7b-settings-ui`) open.
+**Status:** ✅ Done. Merged into `develop` (PR #30, PR #31, `cfb9337`).
 
 **Backend**
 - ✅ **M7.1 Cart tracking** — carts table; logged-in customers and guests; email captured at checkout (classic + block).
@@ -190,8 +190,8 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
   - (d) Cleanup job missing or late → schedule again.
 
 **UI**
-- ⏳ **M7.6 Settings page** — Cart tracking, Emails, Run history.
-- ⏳ **M7.7 Health check panel** — each problem with its proposed fix.
+- ✅ **M7.6 Settings page** — Cart tracking, Emails, Run history.
+- ✅ **M7.7 Health check panel** — each problem with its proposed fix.
 - ✅ **M7.8 Store front** — message when a restore link's cart is gone.
 
 **Follow-ups**
@@ -203,33 +203,28 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 
 ## M8 — Abandoned cart + checkout · L · risk 2
 
+**Status:** In progress. Backend on PR A (`jack/feature/m8a-abandoned-carts`).
+
 **Backend**
-- **M8.1 Scheduler + query triggers** *(§3)* — batches, plus the `trigger_claims` table (workflow_id, subject, claimed_at; unique per workflow and subject) and its store. Shared by M6 and the v1.1 Interval trigger.
-- **M8.2 Cart entity type** *(§4)*.
-- **M8.3 Triggers** — Cart abandoned, Checkout abandoned; a cart never starts both.
-- **M8.4 Exit condition** — stop the run when an order is placed for the cart or customer.
-- **M8.5 Email blocks** — cart items, "Restore my cart" button.
+- ⏳ **M8.1 Abandon sweep (no claims)** *(§3)* — a 5-minute job, 200 carts each; a cart's first abandon in its cycle is the claim.
+- ⏳ **M8.2 Cart entity type** *(§4)*.
+- ⏳ **M8.3 Triggers** — Cart abandoned, Checkout abandoned; a cart never starts both.
+- ⏳ **M8.4 Exit condition** — stop the run when an order is placed for the cart or customer, or the cart is gone (no setting; see design §3 "Stop on order").
+- ⏳ **M8.5 Email blocks** — cart items, "Restore my cart" button.
 
 **UI**
 - **M8.6 Trigger panels** — notes, plus a warning when cart tracking is off.
-- **M8.7 Exit condition setting.**
+- **M8.7 Fixed note in the trigger panel, no setting:** the run always stops when an order is placed.
 - **M8.8 Templates UI** — "Needs cart tracking" badge, "Before you start" in the preview.
 
 **Templates:** Abandoned cart ×3, Abandoned checkout ×2.
 
 **Follow-ups**
 - A trigger's `context()` and `refs()` load the order 2–3 times per event; load it once.
-- Runs about a cart store `cart:<id>` as their subject, so the eraser finds them by subject (M7.4); the cart entity keeps that form.
-- M8.7 becomes a fixed note in the trigger panel: the run always stops when an order is placed, no setting (decided 2026-10-28, YayMatik Pages v3 #triggers).
-- Cart tracking off blocks Activate for workflows with a cart trigger (M1.10 pattern).
-- A cart run's subject label is the shopper's email; a run stopped by an order is Cancelled with "The shopper placed order #N."
-- The restore link goes into the email through the M8.5 block, built with `RestoreLink::from_options()->url()`.
-- When a cart turns active again or is ordered, cancel its waiting runs.
-- Pause per email address, not per cart or session.
-- Customer data in cart runs comes from the cart, never from an account found by its email.
-- Emails show the live product name and price; the saved snapshot only when the product is gone.
-- The paid-order email rule (M7 D7) also closes `abandoned` carts.
-- The abandon sweep job joins the cleanup job's schedule check (`Cleanup::ensure()`).
+- Cart tracking off blocks Activate for workflows with a cart trigger (M1.10 pattern), and Update when it changes the trigger to one.
+- `woocommerce_email_base_color` lookup repeated in GenerateCoupon, UnsubscribePage, CartItems; one helper after v1.0.
+- A shopper who comes back and leaves again: the series goes on; only an order or a gone cart stops it.
+- Emails show the price, line total, total and currency the shopper saw; live name, image and link; a gone product shows its snapshot name without a link.
 
 ## M3 — Review request · M · risk 2
 
@@ -250,7 +245,7 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 
 ## M6 — Win-back · M · risk 2
 
-- **M6.1 BE** — Customer inactive query trigger, checked daily in batches (reuses M8.1).
+- **M6.1 BE** — Customer inactive query trigger, checked daily in batches (the pattern of M8.1), plus the `trigger_claims` table (workflow_id, subject, claimed_at; unique per workflow and subject) and its store.
 - **M6.2 UI** — trigger panel: days (default 90), "Checked once a day".
 - **Templates:** Win-back ×2.
 
@@ -270,7 +265,7 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 
 - **V11.1 For each** — body / done handles, saved cursor per item, limits; container card in the editor. *(§3, §7)*
 - **V11.2 Get data** — Get orders / customers / products / coupons with filters, returning lists.
-- **V11.3 Interval trigger** — every N minutes / hours / days, at a time, on weekdays; reuses M8.1; schedule UI.
+- **V11.3 Interval trigger** — every N minutes / hours / days, at a time, on weekdays; reuses M6.1; schedule UI.
 - **V11.4 Call workflow** — action + "Called by workflow" trigger with typed inputs; depth limit. *(§3)*
 - **V11.5 Manual runs** — Manual trigger, Run now, Test run on a picked order; dry run via `simulate()`.
 - **V11.6 More control steps** — Switch, Set variable, Stop, A/B split.

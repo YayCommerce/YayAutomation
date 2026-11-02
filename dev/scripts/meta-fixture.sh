@@ -19,6 +19,8 @@ add_filter( "pre_option_admin_email", fn() => "admin@example.test" );
 $meta = \YayMatik\Engine\BEPages\AdminPage::client_meta();
 $meta["plugin"]["version"]      = "0.0.0";
 $meta["wc"]["currencySymbol"]   = "$";
+$meta["wc"]["cartTracking"]     = false;
+$meta["wc"]["abandonMinutes"]   = 60;
 $meta["plugin"]["pluginUrl"]  = "https://example.test/wp-content/plugins/yaymatik/";
 foreach ( $meta["automation"]["plugins"] as &$plugin ) {
     $plugin["logo"] = str_replace( YAYMATIK_PLUGIN_URL, "https://example.test/wp-content/plugins/yaymatik/", $plugin["logo"] );

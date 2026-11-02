@@ -13,7 +13,7 @@
 |---|---|
 | `ModuleRegistry.php`, `Modules/` | The modules and what they register (§8); planned: connectors |
 | `Triggers/`, `Conditions/`, `Actions/` | One class per step; Wait (an action, YayMatik module); planned: control steps (For each, Switch, Call workflow, Set variable, Stop) |
-| `DataItems/` | Data items (order, customer, site, order_item) |
+| `DataItems/` | Data items (order, cart, customer, site, order_item) |
 | `Core/Steps/` | The step contract (`Step`, `Trigger`, `Condition`, `Action`, `Field`, `StepResult`, `StepIcons`, `StepRegistry`) |
 | `Core/Data/` | `DataItem`, `DataRegistry`, `Type`, `Operators`, `Ref`, `RefResolver`, `Scope`, `Template`, `Filters` |
 | `Core/Definition/` | Graph schema, `Validator`, `Catalog` (steps, fields, outputs, data types → admin app and AI) |
@@ -36,7 +36,7 @@ Table names below omit the prefix: each is `{prefix}yaymatik_<name>`, e.g. `wp_y
 | `workflow_versions` | id, workflow_id, action, graph (logic), layout (step positions), user_id, created_at, updated_at. A version's logic never changes; its layout may. Only the draft row's logic is edited in place |
 | `runs` | id, workflow_id, version_id, trigger_id, subject, status, position, scope, wait_until, error, parent_run_id, root_run_id, depth, started_at, finished_at |
 | `run_steps` | id, run_id, step_id, iteration, status, input, output, error, attempt, started_at, finished_at |
-| `carts` | id, session_key (WooCommerce session: user id or guest `t_…`; unique), user_id, email, first_name, items (JSON lines), total, currency, status (active, ordered), checkout_at, order_id, restored_at, last_activity_at, created_at, updated_at |
+| `carts` | id, session_key (WooCommerce session: user id or guest `t_…`; unique), user_id, email, first_name, items (JSON lines), total, currency, status (active, abandoned, ordered), abandoned_at, abandon_trigger, series_at (the cycle's first abandon, its trigger, and when a reminder series started), checkout_at, order_id, restored_at, last_activity_at, created_at, updated_at |
 
 - A run pins the version it started on.
 - Deleting a workflow deletes its versions; its runs stay until retention cleanup (M7.4).
@@ -52,10 +52,12 @@ Table names below omit the prefix: each is `{prefix}yaymatik_<name>`, e.g. `wp_y
 - **Slices.** A job keeps running steps until the run finishes, hits a Wait, uses ~20 s or its memory budget, or ends a loop batch. It then saves its position (the `position` column) and queues the next slice.
 - **Errors.** Each step has a policy: stop the run (default) or continue. Retries come in v1.1.
 - **Loop safety.** `parent_run_id`, `root_run_id`, `depth` replace the in-memory chain. A workflow never starts again inside its own chain; max depth 5; a max loop size. Rate limits per workflow, per 60 s, pause (turn off) a runaway workflow: 100 runs started by other runs (a loop always has a parent), or 1000 runs in all. Runs from plain events only count toward the 1000, so a bulk edit of hundreds of orders never pauses a workflow.
-- **Scheduled and query triggers.** A schedule fans out to one run per matching subject, in batches. `trigger_claims` stops duplicates ("once per customer per 90 days"). This generalises the `_yaymatik_order_created` order meta in `OrderCreated::claim()`.
+- **Scheduled and query triggers.** A schedule fans out to one run per matching subject, in batches. `trigger_claims` (M6) stops duplicates ("once per customer per 90 days"). This generalises the `_yaymatik_order_created` order meta in `OrderCreated::claim()`.
+- **Abandon sweep.** Every 5 minutes (`yaymatik_cart_sweep`, group `yaymatik`, `Cart/CartSweep`; `Cleanup::ensure()` keeps it scheduled) the job marks `abandoned` every active cart with an email and items whose last activity is past `abandon_minutes`, up to 24 h further back. At most 200 carts per sweep: its events start runs at one shutdown, and a larger backlog could reach the 1000-run limit and pause a workflow. It does nothing while cart tracking is off. Only the first abandon of a cart's cycle fires `yaymatik_cart_abandoned`: `abandoned_at` is the claim, and only a new cycle (`CartStore::reset_cycle`) clears it, so no claims table is needed. Activity turns the row active again and keeps `abandoned_at`.
 - **Cancel.** Deactivate, Update (Apply) and the rate-limit pause cancel waiting runs (v1.0 rule) in one place, `Cancellation::waiting()`, under the workflow lock (`WorkflowStore::locked()`, shared by REST and the rate-limit pause; a pause that can't take it is logged, and the workflow stays paused for the rest of the request): it selects the waiting runs, cancels those still waiting in one UPDATE, then marks their waiting step rows `cancelled`. Deactivate and Apply return the count (`cancelledRuns`). The runs' Action Scheduler jobs stay; when one fires it can't take the run and does nothing. Apply leaves queued and running runs on their pinned version.
 - **Stop right away.** Before each step, and after saving a wait, the Executor reads the workflow's status fresh (not from the object cache); once it is off, the run ends `cancelled` ("The workflow was deactivated."). A run that ends this way, or before its first step, closes its open step rows (`running`, `waiting`).
 - **Cleanup.** A daily Action Scheduler job (`yaymatik_cleanup`, group `yaymatik`, `Runtime/Cleanup`) deletes carts last active more than `cart_retention_days` ago, then finished runs with their steps (deleted workflows' runs included) that finished more than `run_retention_days` ago. Carts go first: they hold emails, and the privacy text promises their deletion. Batches of 500 within ~20 s; what's left goes the next day. Queued, running and waiting runs are never deleted, nor any run of a chain (`root_run_id`) that still has one: the loop guard walks `parent_run_id`. `Cleanup::ensure()` on `action_scheduler_init` schedules the job when it's missing, checked at most hourly through the autoloaded option `yaymatik_cleanup_checked_at` (Unix time).
+- **Stop on order.** A cart run stops as soon as its shopper orders or the cart is gone. At once: paying an order (by its own cart or by email), emptying a cart and cleanup cancel the cart's waiting runs (`Cancellation::carts()`). For a queued or running run: `Trigger::stop_reason()`, read before the first step (`Worker`), before each step and after saving a wait (`Executor`). Such a run ends `cancelled` with "The shopper placed order #N." or "The cart was emptied or deleted." A shopper who returns and leaves again stays in the series.
 - **Known limit.** Action Scheduler fails a job still running after its timeout (~5 min). If a step is still running then, a recovery job can take the run while the old worker is alive. Slices stay far below that (~20 s), so only a single very slow step can hit it.
 
 ## §4 Data layer · C6, C7
@@ -64,6 +66,7 @@ Table names below omit the prefix: each is `{prefix}yaymatik_<name>`, e.g. `wp_y
 - **Entity types** with relations: order (`customer`, `items`), order_item (`product`), customer, product, coupon, cart, site.
 - **Scope** paths: `trigger.*` (with `order` / `customer` shortcuts), `steps.<id>.*`, `loop.item` / `loop.index`, `run.*`, `site.*`.
 - **Refs, loaded lazily.** Entities are stored as `{type: 'order', id: 12}` and loaded on demand, cached per slice. Facts only true at trigger time (status from / to, cart contents, event payload) are snapshotted. Data is fresh after a long Wait, and rows stay small.
+- **Cart entity.** `cart` reads a saved row (`Cart/SavedCart`). A cart run's customer is `Cart/CartCustomer` (`cart:<id>`): email and first name from the row, the rest from the row's own account, never an account found by email. A cart run's subject is `cart:<id>`.
 - **Gone entity.** If an order or customer was deleted, the step is skipped and run history says why.
 - **Available variables per step.** Each step declares outputs. The Validator walks the steps above each step to list what it can use. "Insert variable" and the template checks use the same list.
 
@@ -108,13 +111,13 @@ Our own small template module. **No Liquid or other template library, now or lat
   - Today's `{{ item.field }}` tags keep working.
   - **HTML messages** (`html` fields): the stored HTML stays as written; each value is escaped for where it lands: `esc_html` in text, `esc_url` over a whole `href` / `src` (a value after the start of the URL is `rawurlencode`d first), `esc_attr` in other attributes, dropped inside a tag. A block value alone in a paragraph replaces it. Then `wpautop`. Plain text is what the editor saves for a message without tags (`"Hi\n\nTom &amp; Jerry"`): it's read as plain text. `Template::render_html()`, `Email\EmailBody`.
   - Subjects and headings are plain text on one line: typed HTML tags removed, values never stripped.
-- **Tier 2 (on demand):** lists come from server-rendered email blocks (product grid, cart items, coupon box; the coupon box and product grid exist). A product grid is a data field marked `block` (`order.cross_sell_products`, `order.upsell_products`, `Email\ProductGrid`): up to 4 published, visible, in-stock suggestions not already in the order, 2 per row (an odd last one centered), each image scaled into a square of up to 160px (narrower with the column on phones), names cut at 60 characters, as wide and spaced as the coupon box; none → empty, so the block is left out. With sample data it shows the store's 4 newest products. "Insert variable" offers it under Blocks, in a section named after its data item, in rich text fields only (never in a subject, heading, To or condition). Conditional text comes from a "Show if" setting on a block, using the Condition rules builder.
+- **Tier 2 (on demand):** lists come from server-rendered email blocks (product grid, cart items, coupon box; all three exist). A product grid is a data field marked `block` (`order.cross_sell_products`, `order.upsell_products`, `Email\ProductGrid`): up to 4 published, visible, in-stock suggestions not already in the order, 2 per row (an odd last one centered), each image scaled into a square of up to 160px (narrower with the column on phones), names cut at 60 characters, as wide and spaced as the coupon box; none → empty, so the block is left out. With sample data it shows the store's 4 newest products. "Insert variable" offers it under Blocks, in a section named after its data item, in rich text fields only (never in a subject, heading, To or condition). `cart.items` (`Email\CartItems`) shows the price, line total, total and currency the shopper saw, with the product's live name, image and link; a gone product shows its saved name, a placeholder image and no link. `cart.restore_button` is a link in a table, in the store's email color; with an inert cart (`SavedCart::inert()`) it goes to `#`. Conditional text comes from a "Show if" setting on a block, using the Condition rules builder.
 - **Escape valve (only if users ask):** `{% if path %}…{% else %}…{% endif %}`, truthy check only.
 
 **Customer emails** (Send email):
 - WooCommerce sender and email template, styles inlined by WooCommerce's mailer. One To address; the final address (after variables) decides.
 - Every customer email has an "Unsubscribe" link under the message and `List-Unsubscribe` / `List-Unsubscribe-Post` (one-click) headers. The link carries base64url(email) and an HMAC of it (own secret, no expiry). Unsubscribes are per address, for all YayMatik customer emails; the step is skipped ("The customer unsubscribed from these emails." in run history) and the run goes on. Staff email ignores them.
-- **Preview / Send test** render only, from the editor's unsaved step and graph: the latest paid order (its number shown), or made-up data (`DataItem::sample()`, flagged for the "Sample data" badge); steps above give sample outputs. The unsubscribe link goes nowhere (`#`) and there are no List-Unsubscribe headers. A test goes to the logged-in admin, subject prefixed `[Test]`. A step with issues is refused (400 with `issues`), listed in the panel.
+- **Preview / Send test** render only, from the editor's unsaved step and graph: the latest paid order (its number shown), for a cart trigger the newest cart with its restore link going nowhere (`#`), or made-up data (`DataItem::sample()`, flagged for the "Sample data" badge); steps above give sample outputs. The unsubscribe link goes nowhere (`#`) and there are no List-Unsubscribe headers. A test goes to the logged-in admin, subject prefixed `[Test]`. A step with issues is refused (400 with `issues`), listed in the panel.
 
 ## §7 Graph · P7
 
@@ -162,7 +165,7 @@ Built: (a)–(d) in `Core/Runtime/HealthCheck.php`; REST `GET /health/checks` an
 
 ## §11 Decision log
 
-All confirmed 2026-10-07, except L5 (2026-10-08) and M7 (2026-10-27). Reasons, rejected options and costs: [workflow-core-decisions.md](workflow-core-decisions.md).
+All confirmed 2026-10-07, except L5 (2026-10-08), M7 (2026-10-27) and M8. Reasons, rejected options and costs: [workflow-core-decisions.md](workflow-core-decisions.md).
 
 | ID | Decision | Section |
 |---|---|---|
@@ -189,3 +192,4 @@ All confirmed 2026-10-07, except L5 (2026-10-08) and M7 (2026-10-27). Reasons, r
 | P6 | Settings → Health check | §9 |
 | P7 | Tree + container steps; no merge | §7 |
 | M7 | Carts in their own table; no own tracking cookie; capture any email, same response; restore GET writes nothing; erase anonymizes runs | §2 |
+| M8 | Abandon sweep, a cart's cycle is its claim | §3 |
