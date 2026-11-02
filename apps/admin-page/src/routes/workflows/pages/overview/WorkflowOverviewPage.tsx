@@ -215,10 +215,12 @@ function WorkflowOverview({ workflow }: { workflow: Workflow }) {
 /**
  * Why the workflow can't be activated: "2 steps need setup before this workflow can run.", then
  * each issue in its own words, after its step's name (`messages`; the server may report ones the
- * editor doesn't show). "Fix in editor" opens the editor showing them.
+ * editor doesn't show). "Fix in editor" opens the editor showing them; cart tracking is fixed in
+ * Settings instead.
  */
 function SetupNotice({ issues, messages, onFix }: { issues: WorkflowIssue[]; messages: string[]; onFix: () => void }) {
   const steps = stepsNeedingSetup(issues);
+  const isTracking = (issue: WorkflowIssue) => issue.code === 'cart_tracking_off';
   return (
     <ErrorAlert className="flex items-center gap-3 [&>svg]:translate-y-0">
       <CircleAlert />
@@ -243,9 +245,16 @@ function SetupNotice({ issues, messages, onFix }: { issues: WorkflowIssue[]; mes
           ))}
         </ul>
       </div>
-      <Button variant="destructive-soft" size="sm" onClick={onFix}>
-        {__('Fix in editor', 'yaymatik')}
-      </Button>
+      {issues.some(isTracking) && (
+        <Button variant="destructive-soft" size="sm" asChild>
+          <Link to="/settings">{__('Open Settings', 'yaymatik')}</Link>
+        </Button>
+      )}
+      {!issues.every(isTracking) && (
+        <Button variant="destructive-soft" size="sm" onClick={onFix}>
+          {__('Fix in editor', 'yaymatik')}
+        </Button>
+      )}
     </ErrorAlert>
   );
 }

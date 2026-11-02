@@ -53,7 +53,7 @@ We chose these 8 because they cover what merchants install an automation plugin 
 
 ### Template Library
 
-**Today:** a few templates, with search, sort, a sidebar (categories with counts, plugins) and cards with a strip of step icons.
+**Today:** a few templates, including the 5 Recover carts ones, with search, sort, a sidebar (categories with counts, plugins), cards with a strip of step icons, and a "Needs cart tracking" badge while cart tracking is off.
 
 **v1.0 adds:**
 - 18 templates, arriving with their milestones.
@@ -70,7 +70,7 @@ We chose these 8 because they cover what merchants install an automation plugin 
 
 ### Template preview
 
-**Today:** a read-only view of the workflow, a breadcrumb back to the library, a side panel (what it does step by step, plugins used) and Use template.
+**Today:** a read-only view of the workflow, a breadcrumb back to the library, a side panel (what it does step by step, plugins used, other versions, Before you start) and Use template.
 
 **v1.0 adds:**
 - A side panel next to the canvas and a breadcrumb back to the library (✅ identity phase 1, with Steps and Plugins used) *([identity](plan-identity.md))*. It holds:
@@ -88,7 +88,7 @@ We chose these 8 because they cover what merchants install an automation plugin 
 
 ### Editor
 
-**Today:** a visual canvas with 2 order triggers, 4 actions (staff email, change order status, order note, order custom field), conditions, "Insert variable", and "Needs setup" / error highlights.
+**Today:** a visual canvas that pans on wheel or trackpad and zooms on Ctrl/Cmd + wheel or pinch, with 2 order triggers, Cart abandoned and Checkout abandoned, 4 actions (staff email, change order status, order note, order custom field), conditions, "Insert variable", and "Needs setup" / error highlights.
 
 **v1.0 adds:**
 - **Pickers:** WooCommerce gets new sections: Carts and Customers for triggers, Coupons for actions. A new YayMatik group holds Wait. *(M1, M2, M4, M6, M8)*
@@ -124,7 +124,7 @@ We chose these 8 because they cover what merchants install an automation plugin 
 - Deactivate and Update say how many waiting runs will be cancelled. Cancelled runs show "Cancelled" right away, never "Waiting until …".
 
 **States:**
-- No runs yet: an empty state that says "No runs yet" and "Each time an order starts this workflow, the run shows up here with every step's result."
+- No runs yet: an empty state that says "No runs yet" and "Each time this workflow starts, the run shows up here with every step's result."
 - Loading: placeholder rows.
 - A failed run shows its error in the row and in the detail.
 - Skipped emails show why, e.g. the customer unsubscribed.

@@ -24,7 +24,15 @@ import { stepOf, SummaryText } from '../../steps';
 import { generateCouponStep, type GenerateCouponConfig } from '../../steps/actions/generate-coupon';
 import { FreeShippingWarning, needsShippingSetup } from '../../steps/actions/generate-coupon/FreeShippingWarning';
 import { StepTile } from '../../steps/core/StepTile';
-import { categoryLabels, findTemplate, pluginsOf, sendsCustomerEmail, versionsOf } from '../../templates';
+import { CartTrackingWarning } from '../../steps/triggers/core/CartTriggerNotes';
+import {
+  categoryLabels,
+  findTemplate,
+  needsCartTracking,
+  pluginsOf,
+  sendsCustomerEmail,
+  versionsOf,
+} from '../../templates';
 import { installFirst, useCreateDraft } from './useCreateDraft';
 
 /** Names of the plugins a template uses that aren't installed. */
@@ -115,6 +123,7 @@ function TemplateSidePanel({ template, navState }: { template: WorkflowTemplate;
   const incoming = new Map(template.graph.edges.map((edge) => [edge.target, edge.sourceHandle]));
   const versions = versionsOf(template);
   const setupCoupon = shippingSetupCoupons(template)[0];
+  const setupTracking = needsCartTracking(template.graph);
 
   return (
     <aside className="bg-background flex w-75 shrink-0 flex-col gap-5 overflow-y-auto border-l p-4.5 text-[13.5px] max-md:max-h-[45%] max-md:w-full max-md:border-t max-md:border-l-0">
@@ -203,10 +212,16 @@ function TemplateSidePanel({ template, navState }: { template: WorkflowTemplate;
       )}
 
       {/* Hidden when nothing is missing. */}
-      {setupCoupon && (
-        <section>
+      {(setupCoupon || setupTracking) && (
+        <section className="flex flex-col gap-2">
           <h3 className={groupHeading}>{__('Before you start', 'yaymatik')}</h3>
-          <FreeShippingWarning config={setupCoupon} />
+          {setupTracking && (
+            <CartTrackingWarning
+              message={__('Turn on cart tracking. Without it this workflow never starts.', 'yaymatik')}
+              linkLabel={__('Open Settings', 'yaymatik')}
+            />
+          )}
+          {setupCoupon && <FreeShippingWarning config={setupCoupon} />}
         </section>
       )}
 

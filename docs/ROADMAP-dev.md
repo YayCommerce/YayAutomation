@@ -195,7 +195,6 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 - ✅ **M7.8 Store front** — message when a restore link's cart is gone.
 
 **Follow-ups**
-- Editor canvas: the mouse wheel zooms and panning needs a drag (ReactFlow defaults since F1), so a step added below the view can't be scrolled to; proposal: wheel / trackpad pans, Ctrl/Cmd + wheel zooms, a new step is brought into view.
 - Leave dialog titles differ: Settings "Unsaved changes", editor "Leave without saving?".
 - Unused dependencies in `apps/admin-page`: zod, react-hook-form, @hookform/resolvers, @formisch/react.
 - `routes/settings/api/request.ts` repeats the private `request()` of `workflow.api.ts`.
@@ -203,28 +202,29 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 
 ## M8 — Abandoned cart + checkout · L · risk 2
 
-**Status:** In progress. Backend on PR A (`jack/feature/m8a-abandoned-carts`).
+**Status:** PR A merged (#32); PR B open.
 
 **Backend**
-- ⏳ **M8.1 Abandon sweep (no claims)** *(§3)* — a 5-minute job, 200 carts each; a cart's first abandon in its cycle is the claim.
-- ⏳ **M8.2 Cart entity type** *(§4)*.
-- ⏳ **M8.3 Triggers** — Cart abandoned, Checkout abandoned; a cart never starts both.
-- ⏳ **M8.4 Exit condition** — stop the run when an order is placed for the cart or customer, or the cart is gone (no setting; see design §3 "Stop on order").
-- ⏳ **M8.5 Email blocks** — cart items, "Restore my cart" button.
+- ✅ **M8.1 Abandon sweep (no claims)** *(§3)* — a 5-minute job, 200 carts each; a cart's first abandon in its cycle is the claim. (#32)
+- ✅ **M8.2 Cart entity type** *(§4)*. (#32)
+- ✅ **M8.3 Triggers** — Cart abandoned, Checkout abandoned; a cart never starts both. (#32)
+- ✅ **M8.4 Exit condition** — stop the run when an order is placed for the cart or customer, or the cart is gone (no setting; see design §3 "Stop on order"). (#32)
+- ✅ **M8.5 Email blocks** — cart items, "Restore my cart" button. (#32)
 
 **UI**
-- **M8.6 Trigger panels** — notes, plus a warning when cart tracking is off.
-- **M8.7 Fixed note in the trigger panel, no setting:** the run always stops when an order is placed.
-- **M8.8 Templates UI** — "Needs cart tracking" badge, "Before you start" in the preview.
+- ⏳ **M8.6 Trigger panels** — notes, plus a warning when cart tracking is off.
+- ⏳ **M8.7 Fixed note in the trigger panel, no setting:** the run always stops when an order is placed.
+- ⏳ **M8.8 Templates UI** — "Needs cart tracking" badge, "Before you start" in the preview.
 
-**Templates:** Abandoned cart ×3, Abandoned checkout ×2.
+⏳ **Templates:** Abandoned cart ×3, Abandoned checkout ×2.
 
 **Follow-ups**
 - A trigger's `context()` and `refs()` load the order 2–3 times per event; load it once.
 - Cart tracking off blocks Activate for workflows with a cart trigger (M1.10 pattern), and Update when it changes the trigger to one.
 - `woocommerce_email_base_color` lookup repeated in GenerateCoupon, UnsubscribePage, CartItems; one helper after v1.0.
-- A shopper who comes back and leaves again: the series goes on; only an order or a gone cart stops it.
+- A shopper who comes back and leaves again: the series goes on; only an order, a gone cart or an unsubscribe stops it.
 - Emails show the price, line total, total and currency the shopper saw; live name, image and link; a gone product shows its snapshot name without a link.
+- Template preview 'Not installed' badge and install note use the kit's pale warning variant; move to WarningBadge / warning-soft tokens after v1.0.
 
 ## M3 — Review request · M · risk 2
 

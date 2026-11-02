@@ -1,9 +1,11 @@
-import { describe, expect, it } from 'vitest';
+import type { WorkflowGraph } from '@yaymatik/types';
+import { afterEach, describe, expect, it } from 'vitest';
 
 import { structureErrors } from '../model/structure';
 import { validateWorkflow } from '../model/validation';
+import type { WaitConfig } from '../steps/actions/wait/schema';
 import { emailMessage } from './core/email';
-import { findTemplate, sendsCustomerEmail, templates, versionsOf, workflowRank } from './index';
+import { findTemplate, needsCartTracking, sendsCustomerEmail, templates, versionsOf, workflowRank } from './index';
 
 describe('templates', () => {
   it('has templates with unique ids', () => {
@@ -56,6 +58,134 @@ describe('templates', () => {
 
   it('staff-only templates send no customer email', () => {
     expect(sendsCustomerEmail(findTemplate('high-value-order-alert')!.graph)).toBe(false);
+  });
+});
+
+describe('cart and checkout templates', () => {
+  const hours = (id: string) =>
+    findTemplate(id)!
+      .graph.nodes.filter((node) => node.data.block === 'wait')
+      .reduce((sum, node) => {
+        const { value, unit } = (node.data.config as WaitConfig).delay;
+        return sum + value! * (unit === 'days' ? 24 : 1);
+      }, 0);
+  const emailsOf = (id: string) =>
+    findTemplate(id)!
+      .graph.nodes.filter((node) => node.data.block === 'send_email')
+      .map((n) => n.data.config);
+
+  it('links the versions of each workflow', () => {
+    expect(versionsOf(findTemplate('cart-reminder')!).map((t) => t.id)).toEqual(['cart-series', 'cart-series-coupon']);
+    expect(versionsOf(findTemplate('checkout-reminder')!).map((t) => t.id)).toEqual(['checkout-reminder-coupon']);
+  });
+
+  it.each([
+    ['cart-reminder', 1],
+    ['cart-series', 72],
+    ['cart-series-coupon', 72],
+    ['checkout-reminder', 1],
+    ['checkout-reminder-coupon', 24],
+  ])('%s sends its last email %d hours after the start', (id, total) => {
+    expect(hours(id)).toBe(total);
+  });
+
+  it.each(['cart-series-coupon', 'checkout-reminder-coupon'])(
+    '%s makes a 10%% coupon for 7 days right before its last email',
+    (id) => {
+      const { nodes, edges } = findTemplate(id)!.graph;
+      const coupon = nodes.find((node) => node.data.block === 'generate_coupon')!;
+      expect(coupon.data.config).toMatchObject({ discount_type: 'percent', amount: 10, expiry_days: 7 });
+      const next = nodes.find((node) => node.id === edges.find((edge) => edge.source === coupon.id)!.target)!;
+      expect(next.data.block).toBe('send_email');
+      expect(next.data.config.message).toContain('<p>{{ steps.coupon.box }}</p>');
+      expect(edges.some((edge) => edge.source === next.id)).toBe(false);
+    },
+  );
+
+  it.each([
+    ['cart-reminder', 'cart_abandoned'],
+    ['cart-series', 'cart_abandoned'],
+    ['cart-series-coupon', 'cart_abandoned'],
+    ['checkout-reminder', 'checkout_abandoned'],
+    ['checkout-reminder-coupon', 'checkout_abandoned'],
+  ])('%s starts from %s', (id, trigger) => {
+    expect(findTemplate(id)!.graph.nodes[0].data.block).toBe(trigger);
+  });
+
+  it.each(['cart-reminder', 'cart-series', 'cart-series-coupon', 'checkout-reminder', 'checkout-reminder-coupon'])(
+    '%s emails the cart to the shopper in every email',
+    (id) => {
+      const emails = emailsOf(id);
+      expect(emails.length).toBeGreaterThan(0);
+      for (const email of emails) {
+        expect(email.to).toBe('{{ customer.email }}');
+        expect(email.message).toContain('<p>{{ cart.items }}</p>\n<p>{{ cart.restore_button }}</p>');
+        expect(email.message).toContain('<p>Hi {{ customer.first_name | default: "there" }},</p>');
+        expect(email.message).toContain('<p>See you soon,<br>\n{{ site.name }}</p>');
+      }
+    },
+  );
+
+  it.each([
+    ['cart-reminder', [['You left something in your cart', 'Your cart is saved']]],
+    [
+      'cart-series',
+      [
+        ['You left something in your cart', 'Your cart is saved'],
+        ['Still thinking it over?', 'Your cart is waiting'],
+        ['Last reminder about your cart', 'Your cart is still here'],
+      ],
+    ],
+    [
+      'cart-series-coupon',
+      [
+        ['You left something in your cart', 'Your cart is saved'],
+        ['Still thinking it over?', 'Your cart is waiting'],
+        ['{{ steps.coupon.amount }} off the cart you left', 'A little something to help you decide'],
+      ],
+    ],
+    ['checkout-reminder', [['Did something go wrong at checkout?', 'Finish your order']]],
+    [
+      'checkout-reminder-coupon',
+      [
+        ['Did something go wrong at checkout?', 'Finish your order'],
+        ['{{ steps.coupon.amount }} off to finish your order', 'Your order is still waiting'],
+      ],
+    ],
+  ])('%s has the agreed subjects and headings', (id, expected) => {
+    expect(emailsOf(id).map((email) => [email.subject, email.heading])).toEqual(expected);
+  });
+});
+
+describe('needsCartTracking', () => {
+  const { wc } = window.yayMatikMeta;
+  const before = { ...wc };
+  const trigger = (block: string) =>
+    ({
+      nodes: [{ id: 't', kind: 'trigger', position: { x: 0, y: 0 }, data: { block, config: {} } }],
+      edges: [],
+    }) as WorkflowGraph;
+
+  afterEach(() => {
+    Object.assign(wc, before);
+  });
+
+  it('holds for a cart or checkout trigger while tracking is off', () => {
+    wc.cartTracking = false;
+    expect(needsCartTracking(trigger('cart_abandoned'))).toBe(true);
+    expect(needsCartTracking(trigger('checkout_abandoned'))).toBe(true);
+    expect(needsCartTracking(trigger('order_created'))).toBe(false);
+  });
+
+  it('leaves WooCommerce being off to "Install WooCommerce"', () => {
+    wc.cartTracking = false;
+    wc.active = false;
+    expect(needsCartTracking(trigger('cart_abandoned'))).toBe(false);
+  });
+
+  it('goes away as soon as tracking is on', () => {
+    wc.cartTracking = true;
+    expect(needsCartTracking(trigger('cart_abandoned'))).toBe(false);
   });
 });
 

@@ -98,7 +98,7 @@ abstract class CartTrigger extends Trigger {
     }
 
     /**
-     * Only a gone or ordered cart stops a run: a shopper who returns and leaves again stays in the series.
+     * A gone or ordered cart or an unsubscribed shopper stops a run: a shopper who returns and leaves again stays in the series.
      *
      * @param string $subject
      */
@@ -108,6 +108,9 @@ abstract class CartTrigger extends Trigger {
         if ( ! $row || '[]' === $row['items'] ) {
             return Cancellation::cart_gone();
         }
-        return CartStore::ORDERED === $row['status'] ? Cancellation::order_placed( (int) $row['order_id'] ) : null;
+        if ( CartStore::ORDERED === $row['status'] ) {
+            return Cancellation::order_placed( (int) $row['order_id'] );
+        }
+        return UnsubscribeStore::has( $row['email'] ) ? Cancellation::unsubscribed() : null;
     }
 }

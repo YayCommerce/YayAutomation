@@ -81,6 +81,12 @@ export function RunDetailSheet({
           {shown?.error && !shown.steps.some((step) => step.error === shown.error) && (
             <p className="text-muted-foreground mt-4 text-sm">{shown.error}</p>
           )}
+          {/* Its own line: the reason may sit on a step's row or below the steps. */}
+          {shown?.stoppedByOrderUrl && (
+            <a href={shown.stoppedByOrderUrl} className="text-link mt-3 block text-sm hover:underline">
+              {__('View order', 'yaymatik')}
+            </a>
+          )}
         </div>
       </SheetContent>
     </Sheet>

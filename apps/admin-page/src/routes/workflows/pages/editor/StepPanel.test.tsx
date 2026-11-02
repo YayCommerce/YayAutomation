@@ -2,6 +2,7 @@ import { act } from 'react';
 import { useStore } from '@tanstack/react-form';
 import type { Workflow, WorkflowGraph, WorkflowIssue } from '@yaymatik/types';
 import { createRoot, type Root } from 'react-dom/client';
+import { MemoryRouter } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { addNode, updateNodeConfig } from '../../model/graph';
@@ -95,7 +96,14 @@ afterEach(() => {
 
 const mount = (graph: WorkflowGraph, nodeId: string, feedback?: Feedback, serverIssues?: WorkflowIssue[]) => {
   const editor: Partial<Editor> = {};
-  act(() => root.render(<Harness graph={graph} editor={editor} feedback={feedback} serverIssues={serverIssues} />));
+  act(() =>
+    root.render(
+      // The cart trigger's notes link to Settings.
+      <MemoryRouter>
+        <Harness graph={graph} editor={editor} feedback={feedback} serverIssues={serverIssues} />
+      </MemoryRouter>,
+    ),
+  );
   act(() => editor.panel!.setPanel({ nodeId, picking: false }));
   return editor as Editor;
 };
@@ -202,6 +210,19 @@ describe('an issue only the server found', () => {
     expect(amount.getAttribute('aria-invalid')).toBe('true');
     expect(amount.closest('[data-slot="field"]')?.textContent ?? container.textContent).toContain(issue.message);
     expect(container.querySelectorAll('[aria-invalid="true"]')).toHaveLength(1);
+  });
+});
+
+describe('cart tracking being off', () => {
+  it('leaves the warning to the trigger notes, without a red notice', () => {
+    const graph = live();
+    const trigger = graph.nodes.find((node) => node.kind === 'trigger')!;
+    trigger.data = { block: 'cart_abandoned', config: {} };
+    const issue = { code: 'cart_tracking_off', message: 'Turn on cart tracking.', nodeId: trigger.id } as const;
+    mount(graph, trigger.id, 'review', [issue]);
+
+    expect(container.textContent).toContain('Cart tracking is off, so this trigger never starts.');
+    expect(container.textContent).not.toContain(issue.message);
   });
 });
 

@@ -12,9 +12,10 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { stepsInOrder } from '../../../model/graph';
 import type { LibraryNavState } from '../../../shared/nav/library.nav';
 import { PluginIcon, plugins } from '../../../shared/ui/PluginIcon';
+import { WarningBadge } from '../../../shared/ui/WarningBadge';
 import { stepOf } from '../../../steps';
 import { StepTile } from '../../../steps/core/StepTile';
-import { categoryLabels, pluginsOf, templates, workflowRank } from '../../../templates';
+import { categoryLabels, needsCartTracking, pluginsOf, templates, workflowRank } from '../../../templates';
 import { usesAnyOf } from './filter';
 import { countLabel, FilterChip, LibrarySidebar } from './LibraryFilters';
 import { SearchInput } from './SearchInput';
@@ -334,6 +335,7 @@ function TemplateCard({ template }: { template: WorkflowTemplate }) {
         <p className="text-muted-foreground line-clamp-2 text-[13px]">{template.description}</p>
         <div className="mt-auto flex items-center justify-between gap-2 pt-3">
           <PluginStack ids={used} />
+          {needsCartTracking(template.graph) && <WarningBadge>{__('Needs cart tracking', 'yaymatik')}</WarningBadge>}
         </div>
       </div>
     </Link>

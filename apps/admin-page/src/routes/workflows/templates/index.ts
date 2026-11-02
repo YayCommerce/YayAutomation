@@ -1,9 +1,11 @@
+import { cartReminder, cartSeries, cartSeriesCoupon } from './abandoned-cart';
+import { checkoutReminder, checkoutReminderCoupon } from './abandoned-checkout';
 import { createTemplateRegistry } from './core/registry';
 import { crossSellCoupon, crossSellFirstTime, crossSellRepeat, upsellAfter30Days } from './cross-sell-upsell';
 import { firstOrderDiscount, firstOrderFreeShipping } from './first-order-thank-you';
 import highValueOrderAlert from './high-value-order-alert';
 
-export { categoryLabels, sendsCustomerEmail, workflowRank } from './core/meta';
+export { categoryLabels, needsCartTracking, sendsCustomerEmail, workflowRank } from './core/meta';
 export { pluginsOf } from './core/plugins';
 
 /**
@@ -12,6 +14,11 @@ export { pluginsOf } from './core/plugins';
  * share a folder, which exports each one by name.
  */
 export const { templates, findTemplate, versionsOf } = createTemplateRegistry([
+  cartReminder,
+  cartSeries,
+  cartSeriesCoupon,
+  checkoutReminder,
+  checkoutReminderCoupon,
   highValueOrderAlert,
   firstOrderDiscount,
   firstOrderFreeShipping,
