@@ -8,6 +8,7 @@ use YayMatik\Tests\Support\FakeGraphSource;
 use YayMatik\Tests\Support\FakeQueue;
 use YayMatik\Tests\Support\FakeRunRepository;
 use YayMatik\Tests\Support\FakeStep;
+use YayMatik\Tests\Support\FakeTrigger;
 use YayMatik\Tests\Support\FakeWorkflows;
 use YayMatik\Workflow\Core\Data\Ref;
 use YayMatik\Workflow\Core\Data\RefResolver;
@@ -490,6 +491,110 @@ final class ExecutorTest extends TestCase {
         $this->assertNull( $this->run_of( $id )['wait_until'] );
         $this->assertSame( [ 'w' => 'cancelled' ], $this->statuses( $id ) );
         $this->assertSame( [], $this->queue->jobs );
+    }
+
+    /**
+     * A claimed run of a trigger whose stop reason the test sets.
+     *
+     * @return array [ run id, trigger ].
+     */
+    private function stoppable_run(): array {
+        $trigger                     = new FakeTrigger();
+        $this->steps['fake_trigger'] = $trigger;
+        $id                          = $this->runs->create_run(
+            [
+                'workflow_id' => 9,
+                'version_id'  => self::VERSION,
+                'trigger_id'  => 'fake_trigger',
+                'subject'     => 'cart:5',
+                'scope'       => [],
+            ]
+        );
+        return [ $id, $trigger ];
+    }
+
+    public function test_a_trigger_stop_reason_cancels_before_the_next_step(): void {
+        list( $id, $trigger ) = $this->stoppable_run();
+        $this->steps['first'] = new FakeStep(
+            'first',
+            function () use ( $trigger ) {
+                $trigger->reason = 'The shopper placed order #7.';
+                return StepResult::ok();
+            }
+        );
+        $this->graph(
+            [
+                'a' => [ 'first', [] ],
+                'b' => [ 'act', [] ],
+            ],
+            [ [ 't', 'a' ], [ 'a', 'b' ] ]
+        );
+
+        $this->assertSame( 'cancelled', $this->slice( $id ) );
+        $this->assertSame( 'The shopper placed order #7.', $this->run_of( $id )['error'] );
+        $this->assertSame( 1, $this->steps['first']->runs );
+        $this->assertSame( 0, $this->steps['act']->runs );
+    }
+
+    public function test_a_trigger_stop_reason_set_while_the_wait_step_ran_cancels_instead_of_waiting(): void {
+        list( $id, $trigger ) = $this->stoppable_run();
+        $this->steps['wait']  = new FakeStep(
+            'wait',
+            function () use ( $trigger ) {
+                $trigger->reason = 'The cart was emptied or deleted.';
+                return StepResult::wait( $this->clock->now + 3600 );
+            }
+        );
+        $this->graph( [ 'w' => [ 'wait', [] ] ], [ [ 't', 'w' ] ] );
+
+        $this->assertSame( 'cancelled', $this->slice( $id ) );
+        $this->assertNull( $this->run_of( $id )['wait_until'] );
+        $this->assertSame( 'The cart was emptied or deleted.', $this->run_of( $id )['error'] );
+        $this->assertSame( [ 'w' => 'cancelled' ], $this->statuses( $id ) );
+        $this->assertSame( [], $this->queue->jobs );
+    }
+
+    public function test_a_wait_ending_after_the_stop_reason_cancels_and_closes_the_wait(): void {
+        list( $id, $trigger ) = $this->stoppable_run();
+        $until                = $this->clock->now + 3600;
+        $this->steps['wait']  = new FakeStep( 'wait', fn() => StepResult::wait( $until ) );
+        $this->graph(
+            [
+                'w' => [ 'wait', [] ],
+                'b' => [ 'act', [] ],
+            ],
+            [ [ 't', 'w' ], [ 'w', 'b' ] ]
+        );
+        $this->assertSame( 'waiting', $this->slice( $id ) );
+
+        $trigger->reason  = 'The cart was emptied or deleted.';
+        $this->clock->now = $until;
+        $this->assertSame( 'cancelled', $this->slice( $id ) );
+        $this->assertSame( 'The cart was emptied or deleted.', $this->runs->steps( $id )[0]['error'] );
+        $this->assertSame( 0, $this->steps['act']->runs );
+    }
+
+    public function test_a_trigger_without_a_stop_reason_goes_on(): void {
+        list( $id ) = $this->stoppable_run();
+        $this->graph( [ 'a' => [ 'act', [] ] ], [ [ 't', 'a' ] ] );
+
+        $this->assertSame( 'completed', $this->slice( $id ) );
+        $this->assertSame( 1, $this->steps['act']->runs );
+    }
+
+    public function test_a_run_whose_trigger_is_not_a_trigger_step_goes_on(): void {
+        $id = $this->runs->create_run(
+            [
+                'workflow_id' => 9,
+                'version_id'  => self::VERSION,
+                'trigger_id'  => 'act',
+                'subject'     => 'cart:5',
+                'scope'       => [],
+            ]
+        );
+        $this->graph( [ 'a' => [ 'act', [] ] ], [ [ 't', 'a' ] ] );
+
+        $this->assertSame( 'completed', $this->slice( $id ) );
     }
 
     public function test_wait_without_a_queue_fails_the_run(): void {

@@ -246,6 +246,22 @@ final class RunStore {
     }
 
     /**
+     * @param string[] $subjects
+     * @return int[]
+     */
+    public static function waiting_ids_for_subjects( array $subjects ): array {
+        global $wpdb;
+        if ( ! $subjects ) {
+            return [];
+        }
+        $table = self::table();
+        $in    = implode( ',', array_fill( 0, count( $subjects ), '%s' ) );
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared -- $in is placeholders.
+        $ids = $wpdb->get_col( $wpdb->prepare( "SELECT id FROM {$table} WHERE status = %s AND subject IN ({$in})", array_merge( [ self::STATUS_WAITING ], $subjects ) ) );
+        return array_map( 'intval', (array) $ids );
+    }
+
+    /**
      * Runs that should have a job by now: queued since before `$queued_before`, waiting past `$waiting_before`, any running; oldest first.
      *
      * @param string $queued_before GMT datetime.

@@ -4,6 +4,7 @@ namespace YayMatik\Workflow\Triggers;
 use YayMatik\Workflow\Core\Cart\CartCustomer;
 use YayMatik\Workflow\Core\Cart\SavedCart;
 use YayMatik\Workflow\Core\Data\Ref;
+use YayMatik\Workflow\Core\Runtime\Cancellation;
 use YayMatik\Workflow\Core\Steps\Trigger;
 use YayMatik\Workflow\Core\Storage\CartStore;
 use YayMatik\Workflow\Core\Storage\UnsubscribeStore;
@@ -85,5 +86,18 @@ abstract class CartTrigger extends Trigger {
         }
         CartStore::mark_series( $id );
         return true;
+    }
+
+    /**
+     * Only a gone or ordered cart stops a run: a shopper who returns and leaves again stays in the series.
+     *
+     * @param string $subject
+     */
+    public function stop_reason( string $subject ): ?string {
+        $row = CartStore::find( (int) substr( $subject, strlen( 'cart:' ) ) );
+        if ( ! $row ) {
+            return Cancellation::cart_gone();
+        }
+        return CartStore::ORDERED === $row['status'] ? Cancellation::order_placed( (int) $row['order_id'] ) : null;
     }
 }

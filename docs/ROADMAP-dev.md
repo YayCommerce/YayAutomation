@@ -207,7 +207,7 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 - **M8.1 Abandon sweep (no claims)** *(§3)* — a 5-minute job, 200 carts each; a cart's first abandon in its cycle is the claim.
 - **M8.2 Cart entity type** *(§4)*.
 - **M8.3 Triggers** — Cart abandoned, Checkout abandoned; a cart never starts both.
-- **M8.4 Exit condition** — stop the run when an order is placed for the cart or customer.
+- **M8.4 Exit condition** — stop the run when an order is placed for the cart or customer, or the cart is gone (no setting; see design §3 "Stop on order").
 - **M8.5 Email blocks** — cart items, "Restore my cart" button.
 
 **UI**
@@ -224,7 +224,7 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 - Cart tracking off blocks Activate for workflows with a cart trigger (M1.10 pattern).
 - A cart run's subject label is the shopper's email; a run stopped by an order is Cancelled with "The shopper placed order #N."
 - The restore link goes into the email through the M8.5 block, built with `RestoreLink::from_options()->url()`.
-- When a cart turns active again or is ordered, cancel its waiting runs.
+- A shopper who comes back and leaves again: the series goes on; only an order or a gone cart stops it.
 - Pause per email address, not per cart or session.
 - Customer data in cart runs comes from the cart, never from an account found by its email.
 - Emails show the live product name and price; the saved snapshot only when the product is gone.

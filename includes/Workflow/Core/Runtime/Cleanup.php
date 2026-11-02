@@ -59,7 +59,9 @@ final class Cleanup {
         // Carts first: they hold emails, and the privacy text promises their deletion; runs get what's left.
         $carts = gmdate( 'Y-m-d H:i:s', time() - (int) Settings::get( 'cart_retention_days' ) * DAY_IN_SECONDS );
         do {
-            $deleted = CartStore::delete_inactive_before( $carts, self::BATCH );
+            $ids = CartStore::inactive_ids_before( $carts, self::BATCH );
+            Cancellation::carts( $ids, Cancellation::cart_gone() );
+            $deleted = CartStore::delete_ids( $ids );
         } while ( self::BATCH === $deleted && microtime( true ) < $deadline );
 
         $runs = gmdate( 'Y-m-d H:i:s', time() - (int) Settings::get( 'run_retention_days' ) * DAY_IN_SECONDS );

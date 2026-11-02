@@ -96,6 +96,15 @@ abstract class Trigger extends Step {
     }
 
     /**
+     * Why a run about this subject must stop before its next step, or null to go on.
+     *
+     * @param string $subject
+     */
+    public function stop_reason( string $subject ): ?string { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- for triggers whose subject can end a run.
+        return null;
+    }
+
+    /**
      * Nothing to do: what the trigger supplies is already in the Scope.
      *
      * @param Scope $scope

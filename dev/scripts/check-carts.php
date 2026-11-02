@@ -1164,7 +1164,7 @@ $admin    = get_users(
         'fields' => 'ID',
     ]
 );
-$new_flow = function ( string $name, string $trigger ) use ( $admin, &$flows ) {
+$new_flow = function ( string $name, string $trigger, bool $two_emails = false ) use ( $admin, &$flows ) {
     wp_set_current_user( (int) $admin[0] );
     $graph   = [
         'nodes' => [
@@ -1206,6 +1206,20 @@ $new_flow = function ( string $name, string $trigger ) use ( $admin, &$flows ) {
             ],
         ],
     ];
+    if ( $two_emails ) {
+        $second               = $graph['nodes'][1];
+        $second['id']         = 'mail2';
+        $second['position']   = [
+            'x' => 0,
+            'y' => 340,
+        ];
+        $graph['nodes'][]     = $second;
+        $graph['edges'][]     = [
+            'id'     => 'e2',
+            'source' => 'mail',
+            'target' => 'mail2',
+        ];
+    }
     $request = new WP_REST_Request( 'POST', '/yaymatik/v1/workflows' );
     $request->set_header( 'content-type', 'application/json' );
     $request->set_body(
@@ -1298,6 +1312,121 @@ $to = (array) ( $sent[0]['to'] ?? [] );
 $ok( '' === get_user_meta( $u, 'billing_email', true ) && 'completed' === RunStore::find( $found[0] ?? 0 )['status'] && [ $r['email'] ] === $to, 'logged-in customer, no billing email: the email goes to the cart\'s address' );
 $ok( false !== strpos( (string) ( $sent[0]['subject'] ?? '' ), 'Check product 1' ), 'cart data reaches the email' );
 remove_filter( 'pre_wp_mail', $mail );
+
+// Stop on order. A run parked on its Wait, as after the first slice of a real series.
+$waiting    = function ( string $key, string $columns = '' ) use ( $due_row, $sweep, $sw, $row, $cart_runs, $wpdb, $runs_table, $steps_table ) {
+    $due_row( $key, $columns );
+    $sweep();
+    $cart_id = (int) $row( $sw . $key )['id'];
+    $run_id  = $cart_runs( $cart_id )[0];
+    $wpdb->update(
+        $runs_table,
+        [
+            'status'     => 'waiting',
+            'wait_until' => gmdate( 'Y-m-d H:i:s', time() + HOUR_IN_SECONDS ),
+        ],
+        [ 'id' => $run_id ]
+    );
+    $wpdb->insert(
+        $steps_table,
+        [
+            'run_id'  => $run_id,
+            'step_id' => 'wait',
+            'status'  => 'waiting',
+        ]
+    );
+    return $run_id;
+};
+$stop_order = wc_create_order();
+$stop_order->set_billing_email( "stop@{$domain}" );
+$stop_order->set_total( 25 );
+$stop_order->save();
+$orders[]  = $stop_order->get_id();
+$placed    = 'The shopper placed order #' . $stop_order->get_order_number() . '.';
+$other_run = $waiting( 'bystander' );
+
+$by_order = $waiting( 'byorder', 'order_id = ' . $stop_order->get_id() );
+CartTracker::order_status_changed( $stop_order->get_id(), 'pending', 'processing', $order( $stop_order->get_id(), "byorder@{$domain}", 0.0 ) );
+$ok( 'cancelled' === $run_row( $by_order )['status'] && $placed === $run_row( $by_order )['error'] && 'cancelled' === $step_row( $by_order )['status'], 'paid by order: the waiting run cancelled at once with the order number' );
+$ok( 'waiting' === $run_row( $other_run )['status'], 'another cart\'s run untouched' );
+
+$stop_email = "stop@{$domain}";
+$by_email   = $waiting( 'byemail', "email = '{$stop_email}'" );
+$ok( 'abandoned' === $row( $sw . 'byemail' )['status'], 'paid by email: the cart starts abandoned' );
+CartTracker::order_status_changed( $stop_order->get_id(), 'pending', 'processing', $order( $stop_order->get_id(), $stop_email, 25.0 ) );
+$r = $row( $sw . 'byemail' );
+$ok( 'ordered' === $r['status'] && $stop_order->get_id() === (int) $r['order_id'] && 'cancelled' === $run_row( $by_email )['status'] && $placed === $run_row( $by_email )['error'], 'paid by email: an abandoned cart ordered with order_id; its run cancelled with the order number' );
+
+$free_email = "free@{$domain}";
+$free_run   = $waiting( 'free', "email = '{$free_email}'" );
+CartTracker::order_status_changed( $fake + 40, 'pending', 'processing', $order( $fake + 40, $free_email, 0.0 ) );
+$ok( 'waiting' === $run_row( $free_run )['status'] && 'abandoned' === $row( $sw . 'free' )['status'], 'a free order closes only its own cart: another cart with the email goes on' );
+
+$gone_run = $waiting( 'emptied' );
+$browser( $sw . 'emptied' );
+$next_request();
+CartTracker::emptied();
+$ok( null === $row( $sw . 'emptied' ) && 'cancelled' === $run_row( $gone_run )['status'] && 'The cart was emptied or deleted.' === $run_row( $gone_run )['error'] && 'cancelled' === $step_row( $gone_run )['status'], 'emptied: row gone, run cancelled "emptied or deleted"' );
+
+$unpaid_run = $waiting( 'unpaid', 'order_id = ' . ( $fake + 41 ) );
+$browser( $sw . 'unpaid' );
+$next_request();
+CartTracker::emptied();
+$ok( null !== $row( $sw . 'unpaid' ) && 'cancelled' === $run_row( $unpaid_run )['status'], 'emptied with an unpaid order: row kept for the payment, run cancelled' );
+
+$settings(
+    [
+        'cart_retention_days' => 365,
+        'run_retention_days'  => 730,
+    ] + $on
+);
+$old_run = $waiting( 'expired' );
+$age( $sw . 'expired', "last_activity_at = '{$old}'" );
+Cleanup::run();
+$ok( null === $row( $sw . 'expired' ) && 'cancelled' === $run_row( $old_run )['status'] && 'The cart was emptied or deleted.' === $run_row( $old_run )['error'], 'cleanup: old cart gone, its waiting run cancelled' );
+$settings( [ 'abandon_minutes' => 60 ] + $on );
+
+$back_run = $waiting( 'back' );
+$browser( $sw . 'back' );
+$next_request();
+CartTracker::record( $cart( [ $line( 1, 4 ) ] ), 'cart' );
+$ok( 'active' === $row( $sw . 'back' )['status'] && 'waiting' === $run_row( $back_run )['status'], 'a returning shopper: cart active, run still waiting' );
+
+// Queued, then running: stopped by the trigger hook.
+$due_row( 'queued' );
+$sweep();
+$queued_cart = $row( $sw . 'queued' );
+$queued_run  = $cart_runs( (int) $queued_cart['id'] )[0];
+$age( $sw . 'queued', "status = 'ordered', order_id = " . $stop_order->get_id() );
+as_unschedule_all_actions( ActionSchedulerQueue::HOOK, [ $queued_run ], ActionSchedulerQueue::GROUP );
+$ok( 'cancelled' === Runtime::worker()->run( $queued_run ) && $placed === $run_row( $queued_run )['error'], 'queued run + ordered cart: Cancelled at start, with the order number' );
+
+$due_row( 'gonequeued' );
+$sweep();
+$gone_cart = (int) $row( $sw . 'gonequeued' )['id'];
+$gone_q    = $cart_runs( $gone_cart )[0];
+$wpdb->delete( $table, [ 'id' => $gone_cart ] );
+as_unschedule_all_actions( ActionSchedulerQueue::HOOK, [ $gone_q ], ActionSchedulerQueue::GROUP );
+$ok( 'cancelled' === Runtime::worker()->run( $gone_q ) && 'The cart was emptied or deleted.' === $run_row( $gone_q )['error'], 'queued run + gone cart: Cancelled, not skipped' );
+
+$two_flow = $new_flow( 'two emails', 'cart_abandoned', true );
+$due_row( 'running' );
+$sweep();
+$running_id  = (int) $row( $sw . 'running' )['id'];
+$running_run = (int) $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$runs_table} WHERE subject = %s AND workflow_id = %d", 'cart:' . $running_id, $two_flow ) );
+$cart_runs( $running_id );
+$sends    = 0;
+$ordering = function () use ( &$sends, $age, $sw, $stop_order ) {
+    ++$sends;
+    $age( $sw . 'running', "status = 'ordered', order_id = " . $stop_order->get_id() );
+    return true;
+};
+add_filter( 'pre_wp_mail', $ordering );
+as_unschedule_all_actions( ActionSchedulerQueue::HOOK, [ $running_run ], ActionSchedulerQueue::GROUP );
+$status = Runtime::worker()->run( $running_run );
+remove_filter( 'pre_wp_mail', $ordering );
+$ok( 'cancelled' === $status && 1 === $sends && $placed === $run_row( $running_run )['error'], 'running run: ordered during its first email, stops before the second' );
+
 foreach ( $flows as $flow_id ) {
     WorkflowStore::deactivate( $flow_id );
 }
