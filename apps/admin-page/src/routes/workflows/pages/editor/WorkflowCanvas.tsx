@@ -137,7 +137,12 @@ function ViewKeeper({ panelInset, openNodeId }: { panelInset: number; openNodeId
     lastSize.current = size;
   }, [width, height, panelInset, fitView]);
 
+  // The panel open at mount is already in the first fit. Moving now would read the viewport before
+  // that fit applies and race it. Compared, not a "mounted" flag: StrictMode runs this effect twice.
+  const lastOpen = useRef(openNodeId);
   useEffect(() => {
+    if (openNodeId === lastOpen.current) return;
+    lastOpen.current = openNodeId;
     if (!openNodeId) return;
     let frame = 0;
     const bringIntoView = (framesLeft: number) => {

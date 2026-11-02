@@ -67,7 +67,7 @@ describe('CartTriggerNotes', () => {
     expect(container.textContent).toContain('Only carts that reached checkout with an email.');
     expect(container.textContent).toContain('Runs stop as soon as the shopper places an order.');
     expect(container.textContent).toContain(
-      'Shoppers who unsubscribed, or already got a reminder this week for another cart, are skipped.',
+      'Shoppers who unsubscribe get no more reminders. A shopper who already got a reminder this week for another cart is skipped.',
     );
   });
 });
