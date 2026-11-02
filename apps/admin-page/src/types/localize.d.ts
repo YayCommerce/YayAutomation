@@ -72,8 +72,8 @@ export interface StepMeta {
   plugin?: WorkflowPlugin;
   /** Data items the step adds: a trigger's for every run, an action's for the steps below it. */
   provides?: string[];
-  /** Actions: picker section. */
-  category?: 'email' | 'order' | 'coupon' | 'flow';
+  /** Picker section. */
+  category?: 'email' | 'order' | 'coupon' | 'flow' | 'cart';
   /** Actions: data items needed whatever the config. */
   requires?: string[];
 }

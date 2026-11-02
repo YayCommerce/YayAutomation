@@ -288,6 +288,29 @@ final class CartStore {
     }
 
     /**
+     * Another open cart with this email started a reminder series since then.
+     *
+     * @param string $email Normalized.
+     * @param int    $id    The cart asking.
+     * @param string $since GMT datetime.
+     */
+    public static function series_taken( string $email, int $id, string $since ): bool {
+        global $wpdb;
+        $table = self::table();
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- own table, indexed by email.
+        return (bool) $wpdb->get_var( $wpdb->prepare( "SELECT 1 FROM {$table} WHERE email = %s AND id <> %d AND status <> %s AND series_at >= %s LIMIT 1", $email, $id, self::ORDERED, $since ) );
+    }
+
+    /**
+     * @param int $id
+     */
+    public static function mark_series( int $id ): void {
+        global $wpdb;
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own table, a write.
+        $wpdb->update( self::table(), [ 'series_at' => current_time( 'mysql', true ) ], [ 'id' => $id ] );
+    }
+
+    /**
      * Carts of any status last active before the cutoff, oldest ids first.
      *
      * @param string $before GMT datetime.

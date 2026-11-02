@@ -14,6 +14,11 @@ abstract class Trigger extends Step {
         return self::KIND_TRIGGER;
     }
 
+    /** Picker section; empty for none. */
+    public function category(): string {
+        return '';
+    }
+
     /** Data items every run context of this trigger holds. */
     abstract public function provides(): array;
 
@@ -101,8 +106,10 @@ abstract class Trigger extends Step {
     }
 
     public function client_meta(): array {
-        return [
-            'provides' => $this->resolved_provides(),
-        ];
+        $meta = [ 'provides' => $this->resolved_provides() ];
+        if ( '' !== $this->category() ) {
+            $meta['category'] = $this->category();
+        }
+        return $meta;
     }
 }

@@ -13,7 +13,7 @@
 |---|---|
 | `ModuleRegistry.php`, `Modules/` | The modules and what they register (§8); planned: connectors |
 | `Triggers/`, `Conditions/`, `Actions/` | One class per step; Wait (an action, YayMatik module); planned: control steps (For each, Switch, Call workflow, Set variable, Stop) |
-| `DataItems/` | Data items (order, customer, site, order_item) |
+| `DataItems/` | Data items (order, cart, customer, site, order_item) |
 | `Core/Steps/` | The step contract (`Step`, `Trigger`, `Condition`, `Action`, `Field`, `StepResult`, `StepIcons`, `StepRegistry`) |
 | `Core/Data/` | `DataItem`, `DataRegistry`, `Type`, `Operators`, `Ref`, `RefResolver`, `Scope`, `Template`, `Filters` |
 | `Core/Definition/` | Graph schema, `Validator`, `Catalog` (steps, fields, outputs, data types → admin app and AI) |
@@ -65,6 +65,7 @@ Table names below omit the prefix: each is `{prefix}yaymatik_<name>`, e.g. `wp_y
 - **Entity types** with relations: order (`customer`, `items`), order_item (`product`), customer, product, coupon, cart, site.
 - **Scope** paths: `trigger.*` (with `order` / `customer` shortcuts), `steps.<id>.*`, `loop.item` / `loop.index`, `run.*`, `site.*`.
 - **Refs, loaded lazily.** Entities are stored as `{type: 'order', id: 12}` and loaded on demand, cached per slice. Facts only true at trigger time (status from / to, cart contents, event payload) are snapshotted. Data is fresh after a long Wait, and rows stay small.
+- **Cart entity.** `cart` reads a saved row (`Cart/SavedCart`). A cart run's customer is `Cart/CartCustomer` (`cart:<id>`): email and first name from the row, the rest from the row's own account, never an account found by email. A cart run's subject is `cart:<id>`.
 - **Gone entity.** If an order or customer was deleted, the step is skipped and run history says why.
 - **Available variables per step.** Each step declares outputs. The Validator walks the steps above each step to list what it can use. "Insert variable" and the template checks use the same list.
 

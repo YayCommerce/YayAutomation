@@ -138,6 +138,7 @@
                     "order",
                     "customer"
                 ],
+                "category": "order",
                 "label": "Order created",
                 "description": "Starts when a new order is created.",
                 "icon": "shopping-bag",
@@ -153,6 +154,7 @@
                     "order",
                     "customer"
                 ],
+                "category": "order",
                 "label": "Order status changed",
                 "description": "Starts when an order moves to another status. Choose which status changes count.",
                 "icon": "shopping-bag",
@@ -251,6 +253,38 @@
                         "default": false
                     }
                 ],
+                "outputs": []
+            },
+            "cart_abandoned": {
+                "kind": "trigger",
+                "plugin": "woocommerce",
+                "provides": [
+                    "cart",
+                    "customer"
+                ],
+                "category": "cart",
+                "label": "Cart abandoned",
+                "description": "A shopper leaves products in the cart",
+                "icon": "shopping-cart",
+                "summary": "When a cart is abandoned",
+                "onError": "stop",
+                "fields": [],
+                "outputs": []
+            },
+            "checkout_abandoned": {
+                "kind": "trigger",
+                "plugin": "woocommerce",
+                "provides": [
+                    "cart",
+                    "customer"
+                ],
+                "category": "cart",
+                "label": "Checkout abandoned",
+                "description": "A shopper leaves the checkout page without ordering",
+                "icon": "credit-card",
+                "summary": "When a checkout is abandoned",
+                "onError": "stop",
+                "fields": [],
                 "outputs": []
             },
             "send_email": {
@@ -896,9 +930,60 @@
                 ]
             },
             {
+                "id": "cart",
+                "label": "Cart",
+                "description": "The cart that started this workflow: its shopper, products and total.",
+                "icon": "shopping-cart",
+                "fields": [
+                    {
+                        "key": "cart.email",
+                        "label": "Email",
+                        "type": "string",
+                        "valueType": "string",
+                        "conditional": true
+                    },
+                    {
+                        "key": "cart.first_name",
+                        "label": "First name",
+                        "type": "string",
+                        "valueType": "string",
+                        "conditional": true
+                    },
+                    {
+                        "key": "cart.total",
+                        "label": "Cart total",
+                        "type": "number",
+                        "valueType": "money",
+                        "conditional": true
+                    },
+                    {
+                        "key": "cart.item_count",
+                        "label": "Number of products",
+                        "type": "number",
+                        "valueType": "number",
+                        "conditional": true
+                    },
+                    {
+                        "key": "cart.product_names",
+                        "label": "Product names",
+                        "type": "string",
+                        "valueType": "string",
+                        "conditional": true
+                    },
+                    {
+                        "key": "cart.last_activity",
+                        "label": "Last activity",
+                        "type": "date",
+                        "valueType": "date",
+                        "conditional": true
+                    }
+                ],
+                "relations": []
+            },
+            {
                 "id": "customer",
                 "label": "Customer",
-                "description": "The person who placed the order, from its billing details. Works for guests too.",
+                "description": "The person behind the event, from their billing details. Works for guests too.",
                 "icon": "user",
                 "fields": [
                     {

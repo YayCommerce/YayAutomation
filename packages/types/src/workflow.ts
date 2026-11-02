@@ -12,6 +12,8 @@ export type WorkflowBranch = 'then' | 'otherwise';
 export type StepId =
   | 'order_created'
   | 'order_status_changed'
+  | 'cart_abandoned'
+  | 'checkout_abandoned'
   | 'condition'
   | 'send_email'
   | 'send_internal_email'

@@ -23,13 +23,17 @@ use YayMatik\Workflow\Core\Cart\CartTracker;
 use YayMatik\Workflow\Core\Cart\EmailCapture;
 use YayMatik\Workflow\Core\Cart\RestoreLink;
 use YayMatik\Workflow\Core\Email\UnsubscribeLink;
+use YayMatik\Workflow\Core\Data\Ref;
+use YayMatik\Workflow\Core\Runtime\ActionSchedulerQueue;
 use YayMatik\Workflow\Core\Runtime\Cleanup;
+use YayMatik\Workflow\Core\Runtime\Runtime;
 use YayMatik\Workflow\Core\Storage\CartStore;
 use YayMatik\Workflow\Core\Storage\RunStepStore;
 use YayMatik\Workflow\Core\Storage\RunStore;
 use YayMatik\Workflow\Core\Storage\Schema;
 use YayMatik\Workflow\Core\Storage\Settings;
 use YayMatik\Workflow\Core\Storage\UnsubscribeStore;
+use YayMatik\Workflow\Core\Storage\WorkflowStore;
 
 if ( ! function_exists( 'WC' ) ) {
     WP_CLI::error( 'WooCommerce is not active.' );
@@ -43,6 +47,7 @@ $users  = [];
 $posts  = [];
 $runs   = [];
 $orders = [];
+$flows  = [];
 $domain = 'x' . wp_rand( 1000, 9999 ) . '.test';
 
 $fails = 0;
@@ -51,7 +56,11 @@ $ok    = function ( bool $pass, string $what ) use ( &$fails ) {
     $fails += $pass ? 0 : 1;
 };
 
-$cleanup = function () use ( $wpdb, $table, $prefix, $domain, &$users, &$posts, &$runs, &$orders ) {
+$cleanup = function () use ( $wpdb, $table, $prefix, $domain, &$users, &$posts, &$runs, &$orders, &$flows ) {
+    foreach ( $flows as $flow_id ) {
+        WorkflowStore::deactivate( $flow_id );
+        WorkflowStore::delete( $flow_id );
+    }
     foreach ( $orders as $order_id ) {
         $saved_order = wc_get_order( $order_id );
         if ( $saved_order ) {
@@ -1129,6 +1138,172 @@ CartTracker::order_status_changed( $fake + 32, 'pending', 'processing', $order( 
 $r = $row( $sw . 'paid' );
 $ok( 'ordered' === $r['status'] && $fake + 32 === (int) $r['order_id'], 'paid by email: an abandoned cart ordered, order_id set' );
 remove_action( 'yaymatik_cart_abandoned', $listen );
+
+// Cart triggers: real workflows through the real Dispatcher; a sweep's events start at flush().
+$cart_runs = function ( int $cart_id ) use ( $wpdb, $runs_table, &$runs ) {
+    $ids = array_map( 'intval', $wpdb->get_col( $wpdb->prepare( "SELECT id FROM {$runs_table} WHERE subject = %s ORDER BY id", 'cart:' . $cart_id ) ) );
+    $runs = array_values( array_unique( array_merge( $runs, $ids ) ) );
+    return $ids;
+};
+$sweep     = function () {
+    CartSweep::run();
+    Runtime::dispatcher()->flush();
+};
+$series    = "series@{$domain}";
+Runtime::dispatcher()->flush();
+
+$due_row( 'noflow', "email = '{$series}'" );
+$sweep();
+$r = $row( $sw . 'noflow' );
+$ok( 'abandoned' === $r['status'] && [] === $cart_runs( (int) $r['id'] ) && null === $r['series_at'], 'no active workflow: abandoned, no run, no series' );
+
+$admin    = get_users(
+    [
+        'role'   => 'administrator',
+        'number' => 1,
+        'fields' => 'ID',
+    ]
+);
+$new_flow = function ( string $name, string $trigger ) use ( $admin, &$flows ) {
+    wp_set_current_user( (int) $admin[0] );
+    $graph   = [
+        'nodes' => [
+            [
+                'id'       => 'trigger',
+                'kind'     => 'trigger',
+                'position' => [
+                    'x' => 0,
+                    'y' => 0,
+                ],
+                'data'     => [
+                    'block'  => $trigger,
+                    'config' => (object) [],
+                ],
+            ],
+            [
+                'id'       => 'mail',
+                'kind'     => 'action',
+                'position' => [
+                    'x' => 0,
+                    'y' => 170,
+                ],
+                'data'     => [
+                    'block'  => 'send_email',
+                    'config' => (object) [
+                        'to'      => '{{ customer.email }}',
+                        'subject' => 'Check carts: {{ cart.product_names }}',
+                        'heading' => 'Hi',
+                        'message' => '<p>{{ cart.total }}</p>',
+                    ],
+                ],
+            ],
+        ],
+        'edges' => [
+            [
+                'id'     => 'e1',
+                'source' => 'trigger',
+                'target' => 'mail',
+            ],
+        ],
+    ];
+    $request = new WP_REST_Request( 'POST', '/yaymatik/v1/workflows' );
+    $request->set_header( 'content-type', 'application/json' );
+    $request->set_body(
+        wp_json_encode(
+            [
+                'name'  => "Check carts: {$name} (temporary)",
+                'graph' => $graph,
+            ]
+        )
+    );
+    $id      = (int) rest_do_request( $request )->get_data()['id'];
+    $flows[] = $id;
+    $status  = rest_do_request( new WP_REST_Request( 'POST', "/yaymatik/v1/workflows/{$id}/activate" ) )->get_status();
+    return 200 === $status ? $id : 0;
+};
+$cart_flow     = $new_flow( 'cart', 'cart_abandoned' );
+$checkout_flow = $new_flow( 'checkout', 'checkout_abandoned' );
+$ok( $cart_flow > 0 && $checkout_flow > 0, 'a workflow per cart trigger activates' );
+
+$due_row( 'tcart' );
+$due_row( 'tcheckout', 'checkout_at = UTC_TIMESTAMP()' );
+$sweep();
+$r     = $row( $sw . 'tcart' );
+$found = $cart_runs( (int) $r['id'] );
+$run   = $found ? RunStore::find( $found[0] ) : null;
+$ok( 1 === count( $found ) && (int) $run['workflow_id'] === $cart_flow && 'cart_abandoned' === $run['trigger_id'] && null !== $r['series_at'], 'cart kind: one run, of the cart workflow only; series_at set' );
+$keys = array_map( fn( $value ) => Ref::from_json( $value )->key(), (array) ( $run['scope']['trigger'] ?? [] ) );
+$ok( 'cart:' . $r['id'] === $run['subject'] && 'cart:' . $r['id'] === $keys['cart'] && 'customer:cart:' . $r['id'] === $keys['customer'] && 2 === count( $keys ), 'cart kind: subject and refs on the cart' );
+$found = $cart_runs( (int) $row( $sw . 'tcheckout' )['id'] );
+$ok( 1 === count( $found ) && (int) RunStore::find( $found[0] )['workflow_id'] === $checkout_flow, 'checkout kind: one run, of the checkout workflow only' );
+
+// Series per email.
+$unsub = "unsub@{$domain}";
+UnsubscribeStore::add( $unsub );
+$due_row( 'unsub', "email = '{$unsub}'" );
+$sweep();
+$r = $row( $sw . 'unsub' );
+$ok( 'abandoned' === $r['status'] && [] === $cart_runs( (int) $r['id'] ) && null === $r['series_at'], 'unsubscribed: abandoned, no run, no series' );
+
+$pair = "pair@{$domain}";
+$due_row( 'younger', "email = '{$pair}'" );
+$due_row( 'older', "email = '{$pair}', last_activity_at = UTC_TIMESTAMP() - INTERVAL 3 HOUR" );
+$sweep();
+$ok( 1 === count( $cart_runs( (int) $row( $sw . 'older' )['id'] ) ) && [] === $cart_runs( (int) $row( $sw . 'younger' )['id'] ) && null === $row( $sw . 'younger' )['series_at'], 'two carts, one email, one sweep: only the older starts, though its id is higher' );
+
+$due_row( 'unblocked', "email = '{$series}'" );
+$sweep();
+$ok( 1 === count( $cart_runs( (int) $row( $sw . 'unblocked' )['id'] ) ), 'an earlier cart abandoned with no workflow does not block' );
+
+$past = "past@{$domain}";
+$due_row( 'ordered2', "email = '{$past}', status = 'ordered', series_at = UTC_TIMESTAMP()" );
+$due_row( 'afterorder', "email = '{$past}'" );
+$sweep();
+$ok( 1 === count( $cart_runs( (int) $row( $sw . 'afterorder' )['id'] ) ), 'an ordered cart\'s series does not block' );
+
+$week = "week@{$domain}";
+$due_row( 'eight', "email = '{$week}', status = 'abandoned', abandoned_at = UTC_TIMESTAMP(), series_at = UTC_TIMESTAMP() - INTERVAL 8 DAY" );
+$due_row( 'aftereight', "email = '{$week}'" );
+$sweep();
+$ok( 1 === count( $cart_runs( (int) $row( $sw . 'aftereight' )['id'] ) ), 'a series 8 days old does not block' );
+$six = "six@{$domain}";
+$due_row( 'six', "email = '{$six}', status = 'abandoned', abandoned_at = UTC_TIMESTAMP(), series_at = UTC_TIMESTAMP() - INTERVAL 6 DAY" );
+$due_row( 'aftersix', "email = '{$six}'" );
+$sweep();
+$ok( [] === $cart_runs( (int) $row( $sw . 'aftersix' )['id'] ), 'a series 6 days old blocks' );
+
+$due_row( 'late', "email = 'late@{$domain}'" );
+CartSweep::run();
+$age( $sw . 'late', "status = 'ordered'" );
+Runtime::dispatcher()->flush();
+$r = $row( $sw . 'late' );
+$ok( [] === $cart_runs( (int) $r['id'] ) && null === $r['series_at'], 'ordered between the sweep and its shutdown: no run, no series' );
+
+// Account with no billing email: the run still reaches the cart's address.
+$sent = [];
+$mail = function ( $short_circuit, $atts ) use ( &$sent ) {
+    $sent[] = $atts;
+    return true;
+};
+add_filter( 'pre_wp_mail', $mail, 10, 2 );
+$u = $user( 'series', 'Una' );
+$saved( (string) $u, [ $line( 1, 1 ) ], $u );
+$age( (string) $u, $idle );
+$sweep();
+$r     = $row( (string) $u );
+$found = $cart_runs( (int) $r['id'] );
+as_unschedule_all_actions( ActionSchedulerQueue::HOOK, [ $found[0] ?? 0 ], ActionSchedulerQueue::GROUP );
+Runtime::worker()->run( $found[0] ?? 0 );
+$to = (array) ( $sent[0]['to'] ?? [] );
+$ok( '' === get_user_meta( $u, 'billing_email', true ) && 'completed' === RunStore::find( $found[0] ?? 0 )['status'] && [ $r['email'] ] === $to, 'logged-in customer, no billing email: the email goes to the cart\'s address' );
+$ok( false !== strpos( (string) ( $sent[0]['subject'] ?? '' ), 'Check product 1' ), 'cart data reaches the email' );
+remove_filter( 'pre_wp_mail', $mail );
+foreach ( $flows as $flow_id ) {
+    WorkflowStore::deactivate( $flow_id );
+}
+foreach ( $wpdb->get_col( $wpdb->prepare( "SELECT r.id FROM {$runs_table} r JOIN {$table} c ON r.subject = CONCAT('cart:', c.id) WHERE c.session_key LIKE %s OR c.session_key = %s", $wpdb->esc_like( $sw ) . '%', (string) $u ) ) as $run_id ) {
+    as_unschedule_all_actions( ActionSchedulerQueue::HOOK, [ (int) $run_id ], ActionSchedulerQueue::GROUP );
+}
 $settings( $on );
 remove_all_filters( 'pre_option_yaymatik_settings' );
 

@@ -14,6 +14,10 @@ abstract class OrderTrigger extends Trigger {
     /** Statuses of orders not placed yet: auto-drafts and block checkout drafts. */
     protected const DRAFT_STATUSES = [ 'auto-draft', 'new', 'checkout-draft' ];
 
+    public function category(): string {
+        return 'order';
+    }
+
     public function provides(): array {
         return [ OrderData::ID, CustomerData::ID ];
     }

@@ -47,6 +47,24 @@ if ( ! class_exists( 'WC_Order' ) ) {
     }
 }//end if
 
+if ( ! class_exists( 'WC_Customer' ) ) {
+    /** An account from an array of getter values. */
+    class WC_Customer {
+
+        /** @var array */
+        public $data;
+
+        public function __construct( array $data ) {
+            $this->data = $data;
+        }
+
+        public function __call( $name, $args ) {
+            $key = substr( $name, 4 );
+            return array_key_exists( $key, $this->data ) ? $this->data[ $key ] : '';
+        }
+    }
+}
+
 if ( ! class_exists( 'WC_Product' ) ) {
     /** A product from an array of getter values. */
     class WC_Product {
