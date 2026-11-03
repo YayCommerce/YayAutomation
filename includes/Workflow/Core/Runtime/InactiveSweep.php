@@ -46,7 +46,10 @@ final class InactiveSweep {
     /** One job per days value, so a slow or failing value can't starve the others. */
     public static function run(): void {
         foreach ( self::active_days() as $days ) {
-            as_schedule_single_action( time(), self::BATCH_HOOK, [ $days, 1 ], ActionSchedulerQueue::GROUP, true );
+            // Not `$unique`: before Action Scheduler 4.0 it ignores args, so a second days value would be dropped.
+            if ( ! as_has_scheduled_action( self::BATCH_HOOK, [ $days, 1 ], ActionSchedulerQueue::GROUP ) ) {
+                as_schedule_single_action( time(), self::BATCH_HOOK, [ $days, 1 ], ActionSchedulerQueue::GROUP );
+            }
         }
     }
 
