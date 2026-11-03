@@ -74,10 +74,7 @@ function graph({
 
 const hasCrossSells = rule('order.has_cross_sells', 'is_true');
 
-const couponLines = [
-  __('Use this coupon for {{ steps.coupon.amount }} off your next order:', 'yaymatik'),
-  COUPON_LINE,
-];
+const couponLines = [__('Use this coupon for {{ steps.coupon.amount }} off your next order:', 'yaymatik'), COUPON_LINE];
 
 const crossSellEmail = (extra: string[] = []) =>
   customerEmail(__('Picked for you, {{ customer.first_name }}', 'yaymatik'), __('You might also like', 'yaymatik'), [
