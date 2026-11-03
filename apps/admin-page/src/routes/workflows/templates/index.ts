@@ -4,8 +4,10 @@ import { createTemplateRegistry } from './core/registry';
 import { crossSellCoupon, crossSellFirstTime, crossSellRepeat, upsellAfter30Days } from './cross-sell-upsell';
 import { firstOrderDiscount, firstOrderFreeShipping } from './first-order-thank-you';
 import highValueOrderAlert from './high-value-order-alert';
+import { reviewRequest, reviewRequestReminder } from './review-request';
+import { welcomeEmail, welcomeSeries } from './welcome';
 
-export { categoryLabels, needsCartTracking, sendsCustomerEmail, workflowRank } from './core/meta';
+export { categoryLabels, needsCartTracking, needsProductReviews, sendsCustomerEmail, workflowRank } from './core/meta';
 export { pluginsOf } from './core/plugins';
 
 /**
@@ -26,4 +28,8 @@ export const { templates, findTemplate, versionsOf } = createTemplateRegistry([
   crossSellRepeat,
   crossSellCoupon,
   upsellAfter30Days,
+  reviewRequest,
+  reviewRequestReminder,
+  welcomeEmail,
+  welcomeSeries,
 ]);

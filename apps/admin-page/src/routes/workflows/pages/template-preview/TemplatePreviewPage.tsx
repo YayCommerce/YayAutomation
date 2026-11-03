@@ -1,9 +1,10 @@
 import type { MouseEventHandler } from 'react';
 import type { WorkflowTemplate } from '@yaymatik/types';
-import { ChevronLeft, Info } from 'lucide-react';
+import { ChevronLeft, Info, TriangleAlert } from 'lucide-react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router';
 import { __ } from '@wordpress/i18n';
 
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import {
   Breadcrumb,
@@ -29,6 +30,7 @@ import {
   categoryLabels,
   findTemplate,
   needsCartTracking,
+  needsProductReviews,
   pluginsOf,
   sendsCustomerEmail,
   versionsOf,
@@ -115,6 +117,27 @@ const shippingSetupCoupons = (template: WorkflowTemplate) =>
     .map((node) => generateCouponStep.normalize(node.data.config) as GenerateCouponConfig)
     .filter(needsShippingSetup);
 
+function ProductReviewsWarning() {
+  return (
+    <Alert className="bg-warning-soft [&>svg]:text-warning-soft-foreground">
+      <TriangleAlert aria-hidden />
+      <AlertDescription className="text-foreground">
+        <p>
+          {__('Turn on product reviews. Without them there’s nothing to review.', 'yaymatik')}{' '}
+          <a
+            href={`${window.yayMatikMeta.wp.adminUrl}admin.php?page=wc-settings&tab=products`}
+            target="_blank"
+            rel="noreferrer"
+            className="text-foreground underline"
+          >
+            {__('Open WooCommerce settings', 'yaymatik')}
+          </a>
+        </p>
+      </AlertDescription>
+    </Alert>
+  );
+}
+
 /**
  * Docked beside the canvas: what the template is, what it does step by step, its plugins, its other
  * versions, what to set up first, what's next.
@@ -124,6 +147,7 @@ function TemplateSidePanel({ template, navState }: { template: WorkflowTemplate;
   const versions = versionsOf(template);
   const setupCoupon = shippingSetupCoupons(template)[0];
   const setupTracking = needsCartTracking(template.graph);
+  const setupReviews = needsProductReviews(template.graph);
 
   return (
     <aside className="bg-background flex w-75 shrink-0 flex-col gap-5 overflow-y-auto border-l p-4.5 text-[13.5px] max-md:max-h-[45%] max-md:w-full max-md:border-t max-md:border-l-0">
@@ -212,7 +236,7 @@ function TemplateSidePanel({ template, navState }: { template: WorkflowTemplate;
       )}
 
       {/* Hidden when nothing is missing. */}
-      {(setupCoupon || setupTracking) && (
+      {(setupCoupon || setupTracking || setupReviews) && (
         <section className="flex flex-col gap-2">
           <h3 className={groupHeading}>{__('Before you start', 'yaymatik')}</h3>
           {setupTracking && (
@@ -221,6 +245,7 @@ function TemplateSidePanel({ template, navState }: { template: WorkflowTemplate;
               linkLabel={__('Open Settings', 'yaymatik')}
             />
           )}
+          {setupReviews && <ProductReviewsWarning />}
           {setupCoupon && <FreeShippingWarning config={setupCoupon} />}
         </section>
       )}
