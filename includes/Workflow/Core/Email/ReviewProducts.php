@@ -21,7 +21,8 @@ final class ReviewProducts {
         $products = [];
         foreach ( $order->get_items() as $item ) {
             $id = $item instanceof \WC_Order_Item_Product ? (int) $item->get_product_id() : 0;
-            if ( $id <= 0 || isset( $products[ $id ] ) ) {
+            // A refund's quantity is negative. A returned line isn't worth asking about, though the order stays completed.
+            if ( $id <= 0 || isset( $products[ $id ] ) || $item->get_quantity() + $order->get_qty_refunded_for_item( $item->get_id() ) <= 0 ) {
                 continue;
             }
             $product = wc_get_product( $id );
@@ -49,6 +50,8 @@ final class ReviewProducts {
         $query    = [
             'post__in'                  => $ids,
             'type'                      => 'review',
+            // WooCommerce stores a reply to a review as a review too.
+            'parent'                    => 0,
             'status'                    => [ 'approve', 'hold' ],
             'update_comment_meta_cache' => false,
             'update_comment_post_cache' => false,
@@ -76,7 +79,7 @@ final class ReviewProducts {
         }
         if ( ! $html ) {
             $lines = array_map(
-                fn( \WC_Product $product ) => ProductGrid::short_name( $product->get_name() ) . ' — ' . EmailButton::render( self::label(), self::url( $product ), false ),
+                fn( \WC_Product $product ) => html_entity_decode( $product->get_name(), ENT_QUOTES, 'UTF-8' ) . ' — ' . EmailButton::render( self::label(), self::url( $product ), false ),
                 $products
             );
             return implode( "\n", $lines );
@@ -91,7 +94,7 @@ final class ReviewProducts {
     private static function row( \WC_Product $product ): string {
         $name = esc_html( ProductGrid::short_name( $product->get_name() ) );
         $link = esc_url( $product->get_permalink() );
-        return '<tr><td width="64" style="width:64px;padding:0 12px 12px 0;vertical-align:middle;"><a href="' . $link . '">' . CartItems::image( $product, $name ) . '</a></td>'
+        return '<tr><td width="' . CartItems::IMAGE . '" style="width:' . CartItems::IMAGE . 'px;padding:0 12px 12px 0;vertical-align:middle;"><a href="' . $link . '">' . CartItems::image( $product, $name ) . '</a></td>'
             . '<td style="padding:0 12px 12px 0;vertical-align:middle;"><a href="' . $link . '" style="font-weight:bold;text-decoration:none;">' . $name . '</a></td>'
             . '<td style="padding:0 0 12px;vertical-align:middle;text-align:right;white-space:nowrap;">' . EmailButton::render( self::label(), self::url( $product ), true, 'small' ) . '</td></tr>';
     }

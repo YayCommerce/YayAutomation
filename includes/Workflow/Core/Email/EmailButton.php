@@ -7,12 +7,12 @@ defined( 'ABSPATH' ) || exit;
 final class EmailButton {
 
     /**
-     * Text: "Label: URL".
+     * Text: "Label: URL". Style `solid`, or `small`: no outer margin, for a table cell.
      *
      * @param string $label
      * @param string $url
      * @param bool   $html
-     * @param string $style `solid` or `small`, which has no outer margin, for a table cell.
+     * @param string $style
      */
     public static function render( string $label, string $url, bool $html, string $style = 'solid' ): string {
         if ( ! $html ) {

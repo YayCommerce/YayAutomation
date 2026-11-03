@@ -8,7 +8,7 @@ defined( 'ABSPATH' ) || exit;
 /** A saved cart in an email: its products with the prices the shopper saw, and the restore button. */
 final class CartItems {
 
-    private const IMAGE = 64;
+    public const IMAGE = 64;
 
     /**
      * Table in HTML, on one line: the email body goes through wpautop(), which would put <br> between table rows. No lines → ''.

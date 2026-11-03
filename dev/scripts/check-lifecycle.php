@@ -167,6 +167,18 @@ $review(
 );
 $ok( [ $plain->get_id() ] === $ids( $saved ), "a comment that isn't a review doesn't count" );
 
+$replied       = $product( 'Check reply' );
+$saved         = $order( [ $replied ], "reply@{$domain}" );
+$parent_review = $review( $replied->get_id(), [ 'comment_author_email' => "someone@{$domain}" ] );
+$review(
+    $replied->get_id(),
+    [
+        'comment_author_email' => "reply@{$domain}",
+        'comment_parent'       => $parent_review,
+    ]
+);
+$ok( [ $replied->get_id() ] === $ids( $saved ), "a reply to someone's review doesn't count" );
+
 $others = $product( 'Check others' );
 $saved  = $order( [ $others ], "me@{$domain}" );
 $review( $others->get_id(), [ 'comment_author_email' => "someone-else@{$domain}" ] );
@@ -216,6 +228,27 @@ $ok( [ $kept->get_id() ] === $ids( $saved ), 'a deleted product is skipped' );
 $many  = array_map( fn( int $n ) => $product( "Check many {$n}" ), range( 1, 7 ) );
 $saved = $order( $many, "many@{$domain}" );
 $ok( ReviewProducts::MAX === count( $ids( $saved ) ) && 6 === substr_count( $shown( $saved, true ), '#reviews' ), 'at most 6 products' );
+
+$returned = $product( 'Check returned' );
+$stays    = $product( 'Check stays' );
+$saved    = $order( [ $returned, $stays ], "refund@{$domain}" );
+$line_id  = 0;
+foreach ( $saved->get_items() as $line ) {
+    $line_id = $returned->get_id() === $line->get_product_id() ? $line->get_id() : $line_id;
+}
+$refund = wc_create_refund(
+    [
+        'order_id'   => $saved->get_id(),
+        'amount'     => 0,
+        'line_items' => [
+            $line_id => [
+                'qty'          => 1,
+                'refund_total' => 0,
+            ],
+        ],
+    ]
+);
+$ok( ! is_wp_error( $refund ) && [ $stays->get_id() ] === $ids( $saved ), 'a fully refunded line is left out' );
 
 // Read when the step runs: no cache between reads.
 $later = $product( 'Check later' );

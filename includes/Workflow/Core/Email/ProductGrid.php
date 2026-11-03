@@ -168,7 +168,7 @@ final class ProductGrid {
     }
 
     /**
-     * About two lines at 14px in a half-width cell.
+     * Cut to about two lines at 14px in a half-width cell.
      *
      * @param string $name
      */
