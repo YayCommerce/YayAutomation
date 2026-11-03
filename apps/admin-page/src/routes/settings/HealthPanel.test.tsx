@@ -31,6 +31,7 @@ const running = (count: number): HealthCheck => ({
   fix: 'recover',
 });
 const cleanup: HealthCheck = { id: 'cleanup_job', status: 'problem', count: 1, runIds: [], fix: 'schedule' };
+const sweep: HealthCheck = { id: 'inactive_sweep_job', status: 'problem', count: 1, runIds: [], fix: 'schedule' };
 const late = (count: number): HealthCheck => ({
   id: 'jobs_late',
   status: 'info',
@@ -39,7 +40,7 @@ const late = (count: number): HealthCheck => ({
   fix: null,
   guide: GUIDE,
 });
-const allOk = [ok('runs_queued'), ok('runs_running'), ok('jobs_late'), ok('cleanup_job')];
+const allOk = [ok('runs_queued'), ok('runs_running'), ok('jobs_late'), ok('cleanup_job'), ok('inactive_sweep_job')];
 const scan = (checks: HealthCheck[]): HealthChecksResponse => ({ checks, checkedAt: new Date().toISOString() });
 
 let container: HTMLDivElement;
@@ -248,6 +249,20 @@ describe('HealthPanel', () => {
     expect(toast.info).toHaveBeenCalledWith('Nothing to fix any more.');
     await tick();
     expect(container.textContent).toContain('No problems found');
+  });
+
+  it('words the inactive sweep row and toasts its fix', async () => {
+    await render([late(1), sweep]);
+
+    expect(titles()).toEqual(['The daily inactive-customer check isn’t running on time', '1 background job is late']);
+    expect(container.textContent).toContain(
+      'It’s missing or more than a day late, so customers may start their win-back late or miss it.',
+    );
+
+    vi.mocked(fixHealthCheck).mockResolvedValueOnce({ fixed: 1, checks: [] });
+    await act(async () => button('Schedule again')!.click());
+    expect(fixHealthCheck).toHaveBeenLastCalledWith('inactive_sweep_job');
+    expect(toast.success).toHaveBeenLastCalledWith('The daily inactive-customer check is scheduled again.');
   });
 
   it('toasts a failed fix and keeps the row', async () => {

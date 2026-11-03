@@ -10,9 +10,10 @@ final class HealthCheck {
 
     /** Check id => fix id; `jobs_late` has none (the server's cron is the fix). */
     public const FIXES = [
-        'runs_queued'  => 'enqueue',
-        'runs_running' => 'recover',
-        'cleanup_job'  => 'schedule',
+        'runs_queued'        => 'enqueue',
+        'runs_running'       => 'recover',
+        'cleanup_job'        => 'schedule',
+        'inactive_sweep_job' => 'schedule',
     ];
 
     private const CRON_GUIDE = 'https://developer.wordpress.org/plugins/cron/hooking-wp-cron-into-the-system-task-scheduler/';
@@ -28,6 +29,7 @@ final class HealthCheck {
     private const WAITING_AFTER = 900;
     private const LATE_AFTER    = 900;
     private const CLEANUP_LATE  = 3600;
+    private const SWEEP_LATE    = 86400;
 
     /** @return array[] Every check: `id`, `status` (ok|problem|info), `count`, `runIds`, `fix` (null unless a problem), `capped` (count is a lower bound). */
     public static function run(): array {
@@ -37,7 +39,8 @@ final class HealthCheck {
             self::result( 'runs_queued', $runs['runs_queued'] ),
             self::result( 'runs_running', $runs['runs_running'] ),
             self::jobs_late( $now ),
-            self::cleanup_job( $now ),
+            self::result( 'cleanup_job', self::job( Cleanup::HOOK, self::CLEANUP_LATE, $now ) ),
+            self::result( 'inactive_sweep_job', self::job( InactiveSweep::HOOK, self::SWEEP_LATE, $now ) ),
         ];
     }
 
@@ -45,15 +48,22 @@ final class HealthCheck {
      * Runs the check again and fixes what it finds now.
      *
      * @param string $check A key of `FIXES`.
-     * @return int Runs queued or recovered; 1 when the cleanup job was scheduled again.
+     * @return int Runs queued or recovered; 1 when a daily job was scheduled again.
      */
     public static function fix( string $check ): int {
         $now = time();
         if ( 'cleanup_job' === $check ) {
-            if ( 'problem' !== self::cleanup_job( $now )['status'] ) {
+            if ( ! self::job( Cleanup::HOOK, self::CLEANUP_LATE, $now )['count'] ) {
                 return 0;
             }
             Cleanup::reschedule();
+            return 1;
+        }
+        if ( 'inactive_sweep_job' === $check ) {
+            if ( ! self::job( InactiveSweep::HOOK, self::SWEEP_LATE, $now )['count'] ) {
+                return 0;
+            }
+            InactiveSweep::reschedule();
             return 1;
         }
         $queue = new ActionSchedulerQueue();
@@ -145,19 +155,21 @@ final class HealthCheck {
     }
 
     /**
-     * @param int $now
+     * A recurring job that is missing, or late by more than `$late` seconds.
+     *
+     * @param string $hook
+     * @param int    $late
+     * @param int    $now
+     * @return array `count`, `ids`.
      */
-    private static function cleanup_job( int $now ): array {
+    private static function job( string $hook, int $late, int $now ): array {
         // True = running now (or async); an int = the next run's time.
-        $next    = as_next_scheduled_action( Cleanup::HOOK, [], ActionSchedulerQueue::GROUP );
-        $problem = false === $next || ( is_int( $next ) && $next < $now - self::CLEANUP_LATE );
-        return self::result(
-            'cleanup_job',
-            [
-                'count' => $problem ? 1 : 0,
-                'ids'   => [],
-            ]
-        );
+        $next    = as_next_scheduled_action( $hook, [], ActionSchedulerQueue::GROUP );
+        $problem = false === $next || ( is_int( $next ) && $next < $now - $late );
+        return [
+            'count' => $problem ? 1 : 0,
+            'ids'   => [],
+        ];
     }
 
     /**

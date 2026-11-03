@@ -14,6 +14,7 @@ use YayMatik\Workflow\DataItems\OrderItemData;
 use YayMatik\Workflow\Triggers\CartAbandoned;
 use YayMatik\Workflow\Triggers\CheckoutAbandoned;
 use YayMatik\Workflow\Triggers\CustomerAccountCreated;
+use YayMatik\Workflow\Triggers\CustomerInactive;
 use YayMatik\Workflow\Triggers\OrderCreated;
 use YayMatik\Workflow\Triggers\OrderStatusChanged;
 
@@ -45,7 +46,7 @@ class WoocommerceModule extends Module {
     }
 
     public function triggers(): array {
-        return [ OrderCreated::class, OrderStatusChanged::class, CartAbandoned::class, CheckoutAbandoned::class, CustomerAccountCreated::class ];
+        return [ OrderCreated::class, OrderStatusChanged::class, CartAbandoned::class, CheckoutAbandoned::class, CustomerAccountCreated::class, CustomerInactive::class ];
     }
 
     public function actions(): array {

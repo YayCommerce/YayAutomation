@@ -22,6 +22,7 @@ final class YayMatik {
             // Not behind cart tracking either: carts saved before it was turned off still expire and can be erased.
             \YayMatik\Workflow\Core\Runtime\Cleanup::boot();
             \YayMatik\Workflow\Core\Cart\CartSweep::boot();
+            \YayMatik\Workflow\Core\Runtime\InactiveSweep::boot();
             \YayMatik\Engine\Privacy\PersonalData::get_instance();
             \YayMatik\Engine\API\HealthRoutes::get_instance();
         }

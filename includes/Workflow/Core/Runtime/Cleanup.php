@@ -27,7 +27,7 @@ final class Cleanup {
         add_action( self::HOOK, [ self::class, 'run' ] );
     }
 
-    /** Schedules this job and the cart sweep when missing, checked at most hourly. */
+    /** Schedules this job, the cart sweep and the inactive sweep when missing, checked at most hourly. */
     public static function ensure(): void {
         if ( ! function_exists( 'as_has_scheduled_action' ) ) {
             return;
@@ -40,6 +40,9 @@ final class Cleanup {
         }
         if ( ! as_has_scheduled_action( CartSweep::HOOK, [], ActionSchedulerQueue::GROUP ) ) {
             CartSweep::schedule();
+        }
+        if ( ! as_has_scheduled_action( InactiveSweep::HOOK, [], ActionSchedulerQueue::GROUP ) ) {
+            InactiveSweep::schedule();
         }
         update_option( self::CHECKED_OPTION, time(), true );
     }

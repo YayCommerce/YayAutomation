@@ -305,6 +305,32 @@
                 "fields": [],
                 "outputs": []
             },
+            "customer_inactive": {
+                "kind": "trigger",
+                "plugin": "woocommerce",
+                "provides": [
+                    "order",
+                    "customer"
+                ],
+                "category": "customer",
+                "label": "Customer inactive",
+                "description": "A customer has not ordered for a number of days",
+                "icon": "hourglass",
+                "summary": "When %days% days without an order",
+                "onError": "stop",
+                "fields": [
+                    {
+                        "key": "days",
+                        "type": "number",
+                        "label": "Days without an order",
+                        "required": true,
+                        "default": 90,
+                        "min": 7,
+                        "max": 730
+                    }
+                ],
+                "outputs": []
+            },
             "send_email": {
                 "kind": "action",
                 "plugin": "woocommerce",
