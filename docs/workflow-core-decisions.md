@@ -412,7 +412,7 @@ Today errors only go to the WooCommerce log, which merchants never open.
 - **`site` isn't provided.** It's always available without a ref. Listing it would make Preview take `site.name` from a sample, which is empty, so it reads live: the URLs are public and the newest products are what the run sends.
 
 **Cost.**
-- High-value: processing → on-hold → processing alerts again; "Run once per order" is in the v1.1 backlog.
+- High-value: processing → on-hold → processing alerts again; "Run once per order" is in the v1.1 backlog. An order that never reaches Processing gets no alert: a virtual and downloadable order goes from Pending straight to Completed, and a late payment on a cancelled order goes from Cancelled.
 - Reviews: WordPress's "Users must be registered and logged in to comment" sends guests to a login. WooCommerce's "verified owners only" hides the form for buyers of a guest order. The `#reviews` anchor is checked on classic templates only.
 - `wc.reviewsEnabled` stays stale until the page reloads: it changes in WooCommerce's settings.
 - Welcome: bot sign-ups get welcome emails. Admin-created and imported users don't start it, including REST and code that saves a new `WC_Customer`. An importer that calls `wc_create_new_customer()` directly looks like a shopper and does start it. A sign-up that doesn't go through WooCommerce (`wp-login.php` registration, a plugin calling `wp_insert_user()`) doesn't start it.

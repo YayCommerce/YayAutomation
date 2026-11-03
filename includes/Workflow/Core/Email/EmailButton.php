@@ -55,9 +55,9 @@ final class EmailButton {
         $size  = 'small' === $style ? 'padding:6px 12px;font-size:13px;' : 'padding:12px 24px;';
         $fill  = 'outline' === $style ? '#ffffff' : $color;
         // On white, a light store color would hide the outline button's label and border.
-        $ink   = wc_light_or_dark( $color, '#202020', $color );
-        $text  = 'outline' === $style ? $ink : wc_light_or_dark( $color, '#202020', '#ffffff' );
-        $edge  = 'outline' === $style ? 'border:1px solid ' . esc_attr( $ink ) . ';' : '';
+        $ink  = wc_light_or_dark( $color, '#202020', $color );
+        $text = 'outline' === $style ? $ink : wc_light_or_dark( $color, '#202020', '#ffffff' );
+        $edge = 'outline' === $style ? 'border:1px solid ' . esc_attr( $ink ) . ';' : '';
         return '<td align="center" bgcolor="' . esc_attr( $fill ) . '" style="padding:0;background-color:' . esc_attr( $fill ) . ';' . $edge . 'border-radius:4px;">'
             . '<a href="' . esc_url( $url ) . '" style="display:inline-block;' . $size . 'font-weight:bold;text-decoration:none;color:' . esc_attr( $text ) . ';">' . esc_html( $label ) . '</a>'
             . '</td>';

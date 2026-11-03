@@ -6,7 +6,7 @@ defined( 'ABSPATH' ) || exit;
 /** An order's products the customer hasn't reviewed, read when the step runs, and the block that asks for a review of each. */
 final class ReviewProducts {
 
-    public const MAX = 6;
+    private const MAX = 6;
 
     /**
      * Published parents (a variation counts as its parent) open for reviews and not reviewed yet; none while the store has reviews off.

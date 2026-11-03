@@ -259,7 +259,7 @@ $ok( [ $kept->get_id() ] === $ids( $saved ), 'a deleted product is skipped' );
 
 $many  = array_map( fn( int $n ) => $product( "Check many {$n}" ), range( 1, 7 ) );
 $saved = $order( $many, "many@{$domain}" );
-$ok( ReviewProducts::MAX === count( $ids( $saved ) ) && 6 === substr_count( $shown( $saved, true ), '#reviews' ), 'at most 6 products' );
+$ok( 6 === count( $ids( $saved ) ) && 6 === substr_count( $shown( $saved, true ), '#reviews' ), 'at most 6 products' );
 
 $returned = $product( 'Check returned' );
 $stays    = $product( 'Check stays' );
