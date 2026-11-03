@@ -1,6 +1,6 @@
 <?php
 /**
- * Review data, and account-created runs through the real Dispatcher and Worker, on real orders, products,
+ * Review data, site blocks, and account-created runs through the real Dispatcher and Worker, on real orders, products,
  * comments, users and workflows, all temporary, at a random `.test` domain. Mail never leaves.
  * Prints PASS / FAIL lines; removes its rows. Run through check-lifecycle.sh.
  *
@@ -10,8 +10,10 @@
 // phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.WP.GlobalVariablesOverride.Prohibited
 
 use YayMatik\Engine\Privacy\PersonalData;
+use YayMatik\Workflow\Core\Data\DataItem;
 use YayMatik\Workflow\Core\Data\DataRegistry;
 use YayMatik\Workflow\Core\Data\RefResolver;
+use YayMatik\Workflow\Core\Email\EmailPreview;
 use YayMatik\Workflow\Core\Email\ProductGrid;
 use YayMatik\Workflow\Core\Email\ReviewProducts;
 use YayMatik\Workflow\Core\Runtime\ActionSchedulerQueue;
@@ -553,6 +555,53 @@ $bystander = $signup( 'bystander' );
 $run_c     = $waiting_run( $bystander );
 $privacy->erase( "no-runs@{$domain}" );
 $ok( 'waiting' === RunStore::find( $run_c )['status'], 'erasing someone else leaves a run alone' );
+
+// Site blocks.
+$site       = DataRegistry::entities()['site'];
+$site_field = fn( string $key ) => $site->fields()[ $key ];
+$block      = fn( string $key, bool $html ) => DataItem::display( $site_field( $key ), null, $html );
+$account    = wc_get_page_permalink( 'myaccount' );
+$shop_page  = wc_get_page_permalink( 'shop' );
+$ok( $account === $site_field( 'account_url' )['value']( null ) && $shop_page === $site_field( 'shop_url' )['value']( null ), "site URLs are WooCommerce's pages" );
+$links = $block( 'welcome_links', true );
+$base  = sanitize_hex_color( (string) get_option( 'woocommerce_email_base_color', '' ) );
+$base  = $base ? $base : '#7f54b3';
+$ok( false !== strpos( $links, esc_url( $account ) ) && false !== strpos( $links, esc_url( $shop_page ) ) && false === strpos( $links, "\n" ) && false !== strpos( $links, $base ) && false !== strpos( $links, 'border:1px solid ' . $base ), 'welcome_links: both pages, one line, solid and outline in the base color' );
+$ok( "Go to your account: {$account}\nVisit the shop: {$shop_page}" === $block( 'welcome_links', false ), 'welcome_links in text: one line each' );
+$ok( false !== strpos( $block( 'shop_button', true ), esc_url( $shop_page ) ) && false === strpos( $block( 'shop_button', true ), $account ) && "Visit the shop: {$shop_page}" === $block( 'shop_button', false ), 'shop_button: only the shop' );
+$ok( false !== strpos( $block( 'account_button', true ), esc_url( $account ) ) && "Go to your account: {$account}" === $block( 'account_button', false ), 'account_button: only the account' );
+
+$newest = ProductGrid::newest();
+$shows  = $block( 'new_products', true );
+$ok( count( $newest ) <= ProductGrid::MAX && ! array_filter( $newest, fn( WC_Product $item ) => 'publish' !== $item->get_status() || ! $item->is_visible() ) && ( ! $newest || false !== strpos( $shows, esc_url( $newest[0]->get_permalink() ) ) ), 'new_products: up to 4 newest, published, visible' );
+$newest_prop = new ReflectionProperty( ProductGrid::class, 'newest' );
+$newest_prop->setAccessible( true );
+$kept_newest = $newest_prop->getValue();
+$newest_prop->setValue( null, [] );
+$ok( '' === $block( 'new_products', true ), 'new_products, none: empty' );
+$newest_prop->setValue( null, $kept_newest );
+
+$welcome_graph = [
+    'nodes' => [ $node( 'trigger', 'trigger', 0, 'customer_account_created', [] ), $email_node( 'mail', 170 ) ],
+    'edges' => [
+        [
+            'id'     => 'e1',
+            'source' => 'trigger',
+            'target' => 'mail',
+        ],
+    ],
+];
+$preview       = EmailPreview::render(
+    json_decode( wp_json_encode( $welcome_graph ), true ),
+    'mail',
+    [
+        'to'      => '{{ customer.email }}',
+        'subject' => 'Welcome to {{ site.name }}',
+        'heading' => 'Welcome',
+        'message' => '<p>Hi {{ customer.first_name }},</p><p>{{ site.welcome_links }}</p>',
+    ]
+);
+$ok( ! is_wp_error( $preview ) && true === $preview['sample'] && false !== strpos( $preview['html'], 'Hi Jane,' ) && false !== strpos( $preview['subject'], wp_specialchars_decode( get_bloginfo( 'name' ), ENT_QUOTES ) ) && false !== strpos( $preview['html'], esc_url( $account ) ), 'preview of a customer email: sample data, Jane, the real site name and links' );
 
 echo $fails ? "{$fails} failed\n" : "All passed\n"; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 exit( $fails ? 1 : 0 );

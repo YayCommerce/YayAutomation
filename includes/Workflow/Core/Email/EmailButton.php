@@ -7,7 +7,7 @@ defined( 'ABSPATH' ) || exit;
 final class EmailButton {
 
     /**
-     * Text: "Label: URL". Style `solid`, or `small`: no outer margin, for a table cell.
+     * Text: "Label: URL". Style `solid`, `outline` (white with a colored border), or `small`: no outer margin, for a table cell.
      *
      * @param string $label
      * @param string $url
@@ -23,6 +23,26 @@ final class EmailButton {
     }
 
     /**
+     * A solid and an outline button side by side, centered. Text: one line each.
+     *
+     * @param string $solid_label
+     * @param string $solid_url
+     * @param string $outline_label
+     * @param string $outline_url
+     * @param bool   $html
+     */
+    public static function pair( string $solid_label, string $solid_url, string $outline_label, string $outline_url, bool $html ): string {
+        if ( ! $html ) {
+            return self::render( $solid_label, $solid_url, false ) . "\n" . self::render( $outline_label, $outline_url, false );
+        }
+        return '<table role="presentation" align="center" cellspacing="0" cellpadding="0" border="0" style="margin:0 auto 16px;"><tr>'
+            . self::cell( $solid_label, $solid_url, 'solid' )
+            . '<td width="8" style="width:8px;padding:0;">&nbsp;</td>'
+            . self::cell( $outline_label, $outline_url, 'outline' )
+            . '</tr></table>';
+    }
+
+    /**
      * @param string $label
      * @param string $url
      * @param string $style
@@ -31,8 +51,11 @@ final class EmailButton {
         $color = sanitize_hex_color( (string) get_option( 'woocommerce_email_base_color', '' ) );
         $color = $color ? $color : '#7f54b3';
         $size  = 'small' === $style ? 'padding:6px 12px;font-size:13px;' : 'padding:12px 24px;';
-        return '<td align="center" bgcolor="' . esc_attr( $color ) . '" style="padding:0;background-color:' . esc_attr( $color ) . ';border-radius:4px;">'
-            . '<a href="' . esc_url( $url ) . '" style="display:inline-block;' . $size . 'font-weight:bold;text-decoration:none;color:' . esc_attr( wc_light_or_dark( $color, '#202020', '#ffffff' ) ) . ';">' . esc_html( $label ) . '</a>'
+        $fill  = 'outline' === $style ? '#ffffff' : $color;
+        $text  = 'outline' === $style ? $color : wc_light_or_dark( $color, '#202020', '#ffffff' );
+        $edge  = 'outline' === $style ? 'border:1px solid ' . esc_attr( $color ) . ';' : '';
+        return '<td align="center" bgcolor="' . esc_attr( $fill ) . '" style="padding:0;background-color:' . esc_attr( $fill ) . ';' . $edge . 'border-radius:4px;">'
+            . '<a href="' . esc_url( $url ) . '" style="display:inline-block;' . $size . 'font-weight:bold;text-decoration:none;color:' . esc_attr( $text ) . ';">' . esc_html( $label ) . '</a>'
             . '</td>';
     }
 }

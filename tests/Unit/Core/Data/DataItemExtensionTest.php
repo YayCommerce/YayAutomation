@@ -48,7 +48,7 @@ final class DataItemExtensionTest extends TestCase {
 
         $fields = ( new SiteData() )->fields();
 
-        $this->assertSame( [ 'name', 'url', 'first_plugin_field', 'second_plugin_field' ], array_keys( $fields ) );
+        $this->assertSame( [ 'name', 'url', 'account_url', 'shop_url', 'welcome_links', 'shop_button', 'account_button', 'new_products', 'first_plugin_field', 'second_plugin_field' ], array_keys( $fields ) );
         $this->assertTrue( $fields['first_plugin_field']['conditional'], 'core applies field defaults after integrations' );
         $this->assertFalse( $fields['second_plugin_field']['conditional'] );
         $this->assertArrayNotHasKey( 'first_plugin_field', ( new OrderData() )->fields(), 'the dynamic hook is scoped to Site' );

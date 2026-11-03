@@ -764,7 +764,7 @@
             {
                 "id": "site",
                 "label": "Site",
-                "description": "Your WordPress site: its name and address. Available in every workflow.",
+                "description": "Your WordPress site: its name, address, shop and account pages, and email blocks for them. Available in every workflow.",
                 "icon": "globe",
                 "fields": [
                     {
@@ -780,6 +780,52 @@
                         "type": "string",
                         "valueType": "string",
                         "conditional": false
+                    },
+                    {
+                        "key": "site.account_url",
+                        "label": "My account URL",
+                        "type": "string",
+                        "valueType": "string",
+                        "conditional": false
+                    },
+                    {
+                        "key": "site.shop_url",
+                        "label": "Shop URL",
+                        "type": "string",
+                        "valueType": "string",
+                        "conditional": false
+                    },
+                    {
+                        "key": "site.welcome_links",
+                        "label": "Account and shop buttons",
+                        "type": "string",
+                        "valueType": "string",
+                        "conditional": false,
+                        "block": true
+                    },
+                    {
+                        "key": "site.shop_button",
+                        "label": "Visit the shop button",
+                        "type": "string",
+                        "valueType": "string",
+                        "conditional": false,
+                        "block": true
+                    },
+                    {
+                        "key": "site.account_button",
+                        "label": "Go to your account button",
+                        "type": "string",
+                        "valueType": "string",
+                        "conditional": false,
+                        "block": true
+                    },
+                    {
+                        "key": "site.new_products",
+                        "label": "Newest products",
+                        "type": "string",
+                        "valueType": "string",
+                        "conditional": false,
+                        "block": true
                     }
                 ],
                 "relations": []

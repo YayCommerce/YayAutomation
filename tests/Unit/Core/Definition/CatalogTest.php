@@ -152,7 +152,7 @@ final class CatalogTest extends TestCase {
         }
         $blocks = array_keys( array_filter( $fields, fn( array $field ) => ! empty( $field['block'] ) ) );
 
-        $this->assertSame( [ 'order.cross_sell_products', 'order.upsell_products', 'order.review_products', 'cart.items', 'cart.restore_button' ], $blocks );
+        $this->assertSame( [ 'site.welcome_links', 'site.shop_button', 'site.account_button', 'site.new_products', 'order.cross_sell_products', 'order.upsell_products', 'order.review_products', 'cart.items', 'cart.restore_button' ], $blocks );
         $this->assertFalse( $fields['order.cross_sell_products']['conditional'] );
         $this->assertSame( 'boolean', $fields['order.has_cross_sells']['type'] );
         $this->assertTrue( $fields['order.has_cross_sells']['conditional'] );

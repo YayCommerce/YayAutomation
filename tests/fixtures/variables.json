@@ -41,7 +41,13 @@
             "nodeId": "note",
             "keys": [
                 "site.name",
-                "site.url"
+                "site.url",
+                "site.account_url",
+                "site.shop_url",
+                "site.welcome_links",
+                "site.shop_button",
+                "site.account_button",
+                "site.new_products"
             ]
         },
         {
@@ -171,7 +177,13 @@
                 "customer.paid_order_count",
                 "customer.unsubscribed",
                 "site.name",
-                "site.url"
+                "site.url",
+                "site.account_url",
+                "site.shop_url",
+                "site.welcome_links",
+                "site.shop_button",
+                "site.account_button",
+                "site.new_products"
             ]
         },
         {
@@ -302,6 +314,12 @@
                 "customer.unsubscribed",
                 "site.name",
                 "site.url",
+                "site.account_url",
+                "site.shop_url",
+                "site.welcome_links",
+                "site.shop_button",
+                "site.account_button",
+                "site.new_products",
                 "steps.c.result",
                 "steps.note.type"
             ]
@@ -434,6 +452,12 @@
                 "customer.unsubscribed",
                 "site.name",
                 "site.url",
+                "site.account_url",
+                "site.shop_url",
+                "site.welcome_links",
+                "site.shop_button",
+                "site.account_button",
+                "site.new_products",
                 "steps.c.result"
             ]
         },
@@ -523,7 +547,13 @@
                 "customer.paid_order_count",
                 "customer.unsubscribed",
                 "site.name",
-                "site.url"
+                "site.url",
+                "site.account_url",
+                "site.shop_url",
+                "site.welcome_links",
+                "site.shop_button",
+                "site.account_button",
+                "site.new_products"
             ]
         }
     ]

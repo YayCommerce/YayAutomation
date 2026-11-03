@@ -1,5 +1,5 @@
 #!/bin/bash
-# Check the review, welcome and high-value workflows on the local site (wp-cli): review data and block, account created (who starts it, billing fill, run subject, deleted users, privacy). Removes its rows.
+# Check the review, welcome and high-value workflows on the local site (wp-cli): review data and block, account created (who starts it, billing fill, run subject, deleted users, privacy), site blocks. Removes its rows.
 #   ./run.sh check-lifecycle
 cd "$(dirname "$0")/../.." || exit 1
 [[ -f yaymatik.php ]] || { echo "Not the plugin root: $(pwd)"; exit 1; }

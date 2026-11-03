@@ -55,6 +55,10 @@ describe('availableVariables', () => {
       'order.cross_sell_products',
       'order.upsell_products',
       'order.review_products',
+      'site.welcome_links',
+      'site.shop_button',
+      'site.account_button',
+      'site.new_products',
       'steps.c.box',
     ]);
     expect(variables.find((variable) => variable.key === 'steps.c.code')?.block).toBe(false);

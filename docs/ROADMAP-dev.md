@@ -234,7 +234,7 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 ## M4 — Welcome series · S · risk 2
 
 - **M4.1 BE** — Customer account created trigger (customer entity from `WC_Customer`, `user:<id>`). Only a shopper's own sign-up starts it: `WC_Customer::save()` (REST, imports) and Users → Add New don't.
-- **M4.2 UI** — Customers section in the trigger picker; welcome email block.
+- **M4.2 UI** — Customers section in the trigger picker. Site blocks for welcome emails: `site.welcome_links`, `site.shop_button`, `site.account_button`, `site.new_products`; fields `site.account_url`, `site.shop_url`.
 - **Templates:** Welcome ×2.
 
 ## M5 — High-value order alert · S · risk 1
