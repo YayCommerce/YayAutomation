@@ -228,7 +228,7 @@ Times count from the moment the workflow starts. All coupons are limited to the 
 | Welcome 3-email series | Day 0, 3, 7 | — |
 | Win-back + discount | When 90 days without an order | % off · 15% · 14 days |
 | Win-back + free shipping | When 90 days without an order | Free shipping · — · 14 days |
-| High-value order alert | Right away, to staff, for orders over 500 (store currency, editable) | — |
+| High-value order alert | Right away, to staff, for orders of 500 or more (store currency, editable) | — |
 
 Cart and checkout times count from when the cart is marked abandoned, which is 60 minutes after the shopper's last activity. So the first reminder arrives about 2 hours after the shopper leaves.
 

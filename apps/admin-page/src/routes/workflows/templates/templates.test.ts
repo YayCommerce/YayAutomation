@@ -59,6 +59,26 @@ describe('templates', () => {
   it('staff-only templates send no customer email', () => {
     expect(sendsCustomerEmail(findTemplate('high-value-order-alert')!.graph)).toBe(false);
   });
+
+  it('high-value alert fires at 500 or more when the order starts processing', () => {
+    const { nodes } = findTemplate('high-value-order-alert')!.graph;
+    expect(nodes.map((node) => node.data.block)).toEqual(['order_status_changed', 'condition', 'send_internal_email']);
+    expect(nodes[0].data.config).toEqual({
+      from: ['pending', 'on-hold', 'failed'],
+      to: ['processing'],
+      only_checkout: false,
+    });
+    expect(nodes[1].data.config).toEqual({
+      match: 'all',
+      rules: [{ field: 'order.total', operator: 'greater_or_equal', value: '500' }],
+    });
+    expect(nodes[2].data.config).toMatchObject({
+      recipients: '',
+      subject: 'High-value order {{ order.number }} - {{ order.total }}',
+    });
+    expect(nodes[2].data.config.message).toContain('A high-value order was placed on {{ site.name }}.');
+    expect(nodes[2].data.config.message).toContain('{{ order.items }}');
+  });
 });
 
 describe('cart and checkout templates', () => {

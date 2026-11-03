@@ -161,7 +161,6 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 - Kit Pagination (`components/ui/pagination.tsx`) has hard-coded English ("Page X of Y", "Go to") → M9.2.
 - Preview picks the newest paid order even with no cross-sells / upsells, so the grid is left out with no hint; option: a note in the Preview dialog.
 - Product grid: the square's grey and the price colour are fixed, not the store's email colours; Outlook desktop ignores max-width (the square fills the column).
-- A workflow runs again when the same order is completed again (duplicate email / coupon); consider a once-per-order guard.
 - A run that ends at a Condition's No path shows Completed; consider a short outcome in the runs table (e.g. "Stopped at Condition (No)").
 - Insert variable shows the customer twice (the Customer group and the Customer section inside Order); from F1.12.
 
@@ -240,7 +239,7 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 
 ## M5 — High-value order alert · S · risk 1
 
-- **M5.1** — Move the template to "order starts processing" (Order status changed config).
+- **M5.1** — Move the template to "order starts processing": Order status changed, from Pending, On hold or Failed to Processing; condition order total ≥ 500. Known limit: processing → on-hold → processing alerts again, as Order created's once-per-order claim is lost.
 - **Templates:** High-value order alert ×1.
 
 ## M6 — Win-back · M · risk 2
@@ -271,7 +270,7 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 - **V11.6 More control steps** — Switch, Set variable, Stop, A/B split.
 - **V11.7 Retries** — backoff; replay a failed run from the failed step (button in run detail).
 - **V11.8 Product items** — the v1.1 list in ROADMAP-v1.0: Branched post-purchase, Nth order reward, alerts, order tags.
-- **Backlog** — Opt-in mode (consent checkbox) + transactional-only workflows.
+- **Backlog** — Opt-in mode (consent checkbox) + transactional-only workflows. "Run once per order" through M6's `trigger_claims`: today a status trigger starts again when an order returns to the status (duplicate email / coupon, a second high-value alert).
 
 ## v1.2 — Yay ecosystem + Pro connectors · L+
 
