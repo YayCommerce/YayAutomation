@@ -1,6 +1,6 @@
 <?php
 /**
- * Review data, site blocks, and account-created runs through the real Dispatcher and Worker, on real orders, products,
+ * Review data, site blocks, and account-created and high-value runs through the real Dispatcher and Worker, on real orders, products,
  * comments, users and workflows, all temporary, at a random `.test` domain. Mail never leaves.
  * Prints PASS / FAIL lines; removes its rows. Run through check-lifecycle.sh.
  *
@@ -605,6 +605,112 @@ $preview       = EmailPreview::render(
     ]
 );
 $ok( ! is_wp_error( $preview ) && true === $preview['sample'] && false !== strpos( $preview['html'], 'Hi Jane,' ) && false !== strpos( $preview['subject'], wp_specialchars_decode( get_bloginfo( 'name' ), ENT_QUOTES ) ) && false !== strpos( $preview['html'], esc_url( $account ) ), 'preview of a customer email: sample data, Jane, the real site name and links' );
+
+// High-value alert: the template's trigger and condition on real orders.
+$alert_flow = $new_flow(
+    'high value',
+    [
+        'nodes' => [
+            $node(
+                'trigger',
+                'trigger',
+                0,
+                'order_status_changed',
+                [
+                    'from'          => [ 'pending', 'on-hold', 'failed' ],
+                    'to'            => [ 'processing' ],
+                    'only_checkout' => false,
+                ]
+            ),
+            $node(
+                'condition',
+                'condition',
+                170,
+                'condition',
+                [
+                    'match' => 'all',
+                    'rules' => [
+                        [
+                            'field'    => 'order.total',
+                            'operator' => 'greater_or_equal',
+                            'value'    => '500',
+                        ],
+                    ],
+                ]
+            ),
+            $node( 'note', 'action', 340, 'add_order_note', [ 'note' => 'Check lifecycle: alert' ] ),
+        ],
+        'edges' => [
+            [
+                'id'     => 'e1',
+                'source' => 'trigger',
+                'target' => 'condition',
+            ],
+            [
+                'id'           => 'e2',
+                'source'       => 'condition',
+                'target'       => 'note',
+                'sourceHandle' => 'then',
+            ],
+        ],
+    ]
+);
+$ok( $alert_flow > 0, 'the alert workflow activates' );
+
+$alert_runs = fn( int $order_id ) => array_map( 'intval', $wpdb->get_col( $wpdb->prepare( "SELECT id FROM {$runs_table} WHERE workflow_id = %d AND subject = %s ORDER BY id", $alert_flow, "order:{$order_id}" ) ) );
+$at_status  = function ( string $status, float $total = 600.0 ) use ( &$orders ) {
+    $saved = wc_create_order( [ 'status' => $status ] );
+    $saved->set_total( $total );
+    $saved->save();
+    $orders[] = $saved->get_id();
+    Runtime::dispatcher()->flush();
+    return $saved;
+};
+$move       = function ( WC_Order $saved, string $to ) {
+    $saved->set_status( $to );
+    $saved->save();
+    Runtime::dispatcher()->flush();
+};
+foreach ( [ 'pending', 'on-hold', 'failed' ] as $from ) {
+    $saved = $at_status( $from );
+    $move( $saved, 'processing' );
+    $ok( 1 === count( $alert_runs( $saved->get_id() ) ), "{$from} → processing starts it" );
+}
+$saved = $at_status( 'completed' );
+$move( $saved, 'processing' );
+$ok( [] === $alert_runs( $saved->get_id() ), "completed → processing doesn't" );
+
+$saved  = $at_status( 'processing' );
+$before = count( $alert_runs( $saved->get_id() ) );
+$move( $saved, 'completed' );
+$ok( count( $alert_runs( $saved->get_id() ) ) === $before, "processing → completed doesn't" );
+
+$draft_order = new WC_Order();
+$draft_order->set_status( 'auto-draft' );
+$draft_order->set_total( 600 );
+$draft_order->save();
+$orders[] = $draft_order->get_id();
+Runtime::dispatcher()->flush();
+$move( $draft_order, 'processing' );
+$ok( 1 === count( $alert_runs( $draft_order->get_id() ) ), 'a new order through auto-draft reads as pending' );
+
+$condition_result = function ( float $total ) use ( $at_status, $move, $alert_runs, $slice ) {
+    $saved = $at_status( 'pending', $total );
+    $move( $saved, 'processing' );
+    $run_id = $alert_runs( $saved->get_id() )[0] ?? 0;
+    $slice( $run_id );
+    return array_column( RunStepStore::for_run( $run_id ), 'status', 'step_id' );
+};
+$under            = $condition_result( 499.0 );
+$ok( isset( $under['condition'] ) && ! isset( $under['note'] ), 'total 499 stops at the condition' );
+$exact = $condition_result( 500.0 );
+$ok( 'completed' === ( $exact['note'] ?? '' ), 'total 500 passes' );
+
+$saved = $at_status( 'pending' );
+$move( $saved, 'processing' );
+$move( $saved, 'on-hold' );
+$move( $saved, 'processing' );
+$ok( 2 === count( $alert_runs( $saved->get_id() ) ), 'processing → on-hold → processing runs twice: the known limit' );
 
 echo $fails ? "{$fails} failed\n" : "All passed\n"; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 exit( $fails ? 1 : 0 );

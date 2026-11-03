@@ -31,6 +31,7 @@ Each note: **Decision** · **Why** · **Rejected** · **Cost** · **For devs** (
 | [P3–P6](#p3p6-smaller-decisions) | Cancel on Update, API last, AI later, Health check | Owner |
 | [M7](#m7-cart-tracking) | Cart tracking | Owner |
 | [M8](#m8-abandoned-carts) | Abandoned carts | Owner |
+| [M3–M5](#m3m5-lifecycle-workflows) | Lifecycle workflows | Owner |
 
 "High" = recommended and accepted as-is. "Owner" = debated and decided by the product owner.
 
@@ -397,3 +398,24 @@ Today errors only go to the WooCommerce log, which merchants never open.
 - Emptying a cart deletes its row and its claim, so a new cart can start a new series; one series per email limits this.
 - Events fire at shutdown of the sweep: a crash between marking and that shutdown loses that cart's series.
 - The job adds 288 Action Scheduler rows a day, even with tracking off; Action Scheduler's own retention removes them.
+
+## M3–M5. Lifecycle workflows
+
+**Decision.** The high-value alert starts on a status change, to Processing. A review email reads what's left to review when its step runs, with two comment queries. Customer account created refuses accounts saved through `WC_Customer`. An account's empty billing details are filled in memory. The account trigger provides `customer` only.
+
+**Why.**
+- **Status change over Order created.** An order is created before it's paid, so Order created would alert on bank transfers that never arrive. Moving to Processing means the money is there or the order is ready to fulfil. From is Pending, On hold or Failed, so completed → processing, a correction, doesn't alert.
+- **Reviews read when the step runs.** The 7-day wait is the point: a customer who reviewed meanwhile, or a store that closed reviews, must count. Nothing is stored at trigger time.
+- **Two comment queries.** `WP_Comment_Query` ANDs `author_email` and `user_id`, and a customer may review under either. One query by product and filtering in PHP would load every review of a popular product. An empty `post__in` or `author_email` is ignored and `user_id` 0 matches every guest, so either could mark everything reviewed: `ReviewProducts::reviewed_ids()` skips those.
+- **The data store guard.** `WC_Customer_Data_Store::create()` calls `wc_create_new_customer()`, so every saved `new WC_Customer` looks like a sign-up: REST and importers would email their whole list. Only that path fires `woocommerce_new_customer`, right after, so `claim()` refuses those ids per id: a request that holds both a shopper and a saved customer starts the shopper's run only.
+- **Billing fill in memory.** `customer.*` reads billing details, empty until a first checkout. Saving them would write to the customer's address book from a read, and could fill checkout with values they never typed. The fill is at most two setters per load.
+- **`site` isn't provided.** It's always available without a ref. Listing it would make Preview take `site.name` from a sample, which is empty, so it reads live: the URLs are public and the newest products are what the run sends.
+
+**Cost.**
+- High-value: processing → on-hold → processing alerts again; "Run once per order" is in the v1.1 backlog.
+- Reviews: WordPress's "Users must be registered and logged in to comment" sends guests to a login. WooCommerce's "verified owners only" hides the form for buyers of a guest order. The `#reviews` anchor is checked on classic templates only.
+- `wc.reviewsEnabled` stays stale until the page reloads: it changes in WooCommerce's settings.
+- Welcome: bot sign-ups get welcome emails. Admin-created and imported users don't start it, including REST and code that saves a new `WC_Customer`. An importer that calls `wc_create_new_customer()` directly looks like a shopper and does start it. A sign-up that doesn't go through WooCommerce (`wp-login.php` registration, a plugin calling `wp_insert_user()`) doesn't start it.
+- A customer deleted during a wait: later emails are skipped and the run ends Completed. After the WP user is deleted, its runs stay until run retention, and the eraser finds them only by the email in their step output.
+- The second welcome email with no visible products sends its text and shop button without a grid. "New" means the store's newest, however old.
+- `customer.full_name` on an account with no billing details is the first name only, and `last_name` stays empty: the fill covers email and first name only.

@@ -53,7 +53,7 @@ We chose these 8 because they cover what merchants install an automation plugin 
 
 ### Template Library
 
-**Today:** a few templates, including the 5 Recover carts ones, with search, sort, a sidebar (categories with counts, plugins), cards with a strip of step icons, and a "Needs cart tracking" badge while cart tracking is off.
+**Today:** 16 templates (Recover carts, Post-purchase, Customer lifecycle, Alerts), with search, sort, a sidebar (categories with counts, plugins), cards with a strip of step icons, and a "Needs cart tracking" badge while cart tracking is off.
 
 **v1.0 adds:**
 - 18 templates, arriving with their milestones.
@@ -88,7 +88,7 @@ We chose these 8 because they cover what merchants install an automation plugin 
 
 ### Editor
 
-**Today:** a visual canvas that pans on wheel or trackpad and zooms on Ctrl/Cmd + wheel or pinch, with 2 order triggers, Cart abandoned and Checkout abandoned, 4 actions (staff email, change order status, order note, order custom field), conditions, "Insert variable", and "Needs setup" / error highlights.
+**Today:** a visual canvas that pans on wheel or trackpad and zooms on Ctrl/Cmd + wheel or pinch, with 2 order triggers, Cart abandoned, Checkout abandoned and Customer account created, 4 actions (staff email, change order status, order note, order custom field), conditions, "Insert variable", and "Needs setup" / error highlights.
 
 **v1.0 adds:**
 - **Pickers:** WooCommerce gets new sections: Carts and Customers for triggers, Coupons for actions. A new YayMatik group holds Wait. *(M1, M2, M4, M6, M8)*
@@ -166,7 +166,7 @@ We chose these 8 because they cover what merchants install an automation plugin 
 
 ### Customer emails
 
-**Today:** only the staff email (High-value order alert).
+**Today:** every row below except Win-back.
 
 **v1.0 adds:** every customer email uses the store's WooCommerce email look (logo, colors, footer) and has a subject, a heading and a message the store owner can edit. Ready-made blocks are added from "Insert variable":
 
@@ -181,6 +181,8 @@ We chose these 8 because they cover what merchants install an automation plugin 
 | High-value order alert (staff) | Unchanged: order number, total, customer, items table, link to the order |
 
 **States:** a block with nothing to show (e.g. no suggested products) is left out; the workflow's conditions normally stop that email first.
+
+**Known limits (reviews):** WordPress's "Users must be registered and logged in to comment" sends guests to a login. WooCommerce's "verified owners only" hides the form for buyers of a guest order. The "Leave a review" link goes to the product's Reviews tab, checked on classic templates only.
 
 **Done when:** each template's emails arrive with the right blocks and look right in common email apps.
 
