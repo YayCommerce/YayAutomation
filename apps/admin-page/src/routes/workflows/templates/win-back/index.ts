@@ -11,7 +11,7 @@ const shared = { category: 'customer_lifecycle', workflow: 'win_back', createdAt
 /** Bring back a customer whose last order is 90 days old. Two versions that differ only in the coupon and the line that offers it. */
 function graph(coupon: Partial<GenerateCouponConfig>, offer: string): WorkflowGraph {
   const email = customerEmail(__('We miss you at {{ site.name }}', 'yaymatik'), __('It’s been a while', 'yaymatik'), [
-    `${__('It’s been a while since your last order.', 'yaymatik')} ${offer}`,
+    offer,
     COUPON_LINE,
     '{{ site.shop_button }}',
   ]);
@@ -64,7 +64,7 @@ export const winBackDiscount = defineTemplate({
   description: __('When a customer hasn’t ordered for 90 days, send a 15% off coupon, valid for 14 days.', 'yaymatik'),
   graph: graph(
     { discount_type: 'percent', amount: 15 },
-    __('Here’s {{ steps.coupon.amount }} off your next one:', 'yaymatik'),
+    __('It’s been a while since your last order. Here’s {{ steps.coupon.amount }} off your next one:', 'yaymatik'),
   ),
 });
 
@@ -78,6 +78,6 @@ export const winBackFreeShipping = defineTemplate({
   ),
   graph: graph(
     { discount_type: 'free_shipping', amount: null },
-    __('Here’s free shipping on your next order:', 'yaymatik'),
+    __('It’s been a while since your last order. Here’s free shipping on your next order:', 'yaymatik'),
   ),
 });
