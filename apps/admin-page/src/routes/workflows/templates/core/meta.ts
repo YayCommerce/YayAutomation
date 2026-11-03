@@ -42,7 +42,7 @@ export const needsCartTracking = (graph: WorkflowGraph) => {
 
 /** The graph reads whether a product is left to review while the store has reviews off. */
 export const needsProductReviews = (graph: WorkflowGraph) => {
-  // Read per call: it changes in WooCommerce's settings, and goes stale in this tab until a reload.
+  // Fixed at page load: it changes in WooCommerce's settings, so the note stays until a reload.
   const { active, reviewsEnabled } = window.yayMatikMeta.wc;
   return (
     active &&

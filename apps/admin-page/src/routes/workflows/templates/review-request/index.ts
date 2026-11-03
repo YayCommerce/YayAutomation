@@ -28,10 +28,7 @@ const second = customerEmail(__('A quick review?', 'yaymatik'), __('Still have a
   '{{ order.review_products }}',
 ]);
 
-/**
- * Check there is something to review, wait, then check again with fresh data (still completed, still
- * something to review, not unsubscribed meanwhile), then email; the reminder repeats the wait and the check.
- */
+/** Something to review → wait → check again with fresh data → email; the reminder repeats the last three. */
 function graph(reminder?: SendEmailConfig): WorkflowGraph {
   // Each "then" branch steps left, like steps added in the editor.
   const step = (

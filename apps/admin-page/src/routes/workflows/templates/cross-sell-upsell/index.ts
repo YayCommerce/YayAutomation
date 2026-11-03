@@ -7,7 +7,7 @@ import type { SendEmailConfig } from '../../steps/actions/send-email/schema';
 import type { WaitConfig } from '../../steps/actions/wait/schema';
 import type { Rule } from '../../steps/conditions/criteria/schema';
 import { defineTemplate } from '../core/defineTemplate';
-import { customerEmail, rule } from '../core/flow';
+import { COUPON_LINE, customerEmail, rule } from '../core/flow';
 
 /**
  * Suggest more products some time after a completed order: check who it's for and that there is
@@ -76,7 +76,7 @@ const hasCrossSells = rule('order.has_cross_sells', 'is_true');
 
 const couponLines = [
   __('Use this coupon for {{ steps.coupon.amount }} off your next order:', 'yaymatik'),
-  '{{ steps.coupon.box }}',
+  COUPON_LINE,
 ];
 
 const crossSellEmail = (extra: string[] = []) =>
