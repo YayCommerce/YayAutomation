@@ -170,12 +170,21 @@ $order = function ( string $email, int $age, string $status = 'completed', int $
     $orders[] = $new->get_id();
     return $new->get_id();
 };
-$runs_of = fn( int $flow_id ) => $wpdb->get_col( $wpdb->prepare( 'SELECT subject FROM ' . RunStore::table() . ' WHERE workflow_id = %d ORDER BY id', $flow_id ) );
+// The script's own orders only: the sweep reads every order of the site.
+$runs_of = function ( int $flow_id ) use ( $wpdb, &$orders ) {
+    return array_values(
+        array_intersect(
+            $wpdb->get_col( $wpdb->prepare( 'SELECT subject FROM ' . RunStore::table() . ' WHERE workflow_id = %d ORDER BY id', $flow_id ) ),
+            array_map( fn( int $order_id ) => "order:{$order_id}", $orders )
+        )
+    );
+};
 $sweep   = [ InactiveSweep::class, 'run' ];
 $has     = fn( int $flow_id, int $order_id ) => in_array( "order:{$order_id}", $runs_of( $flow_id ), true );
 
-const CHECK_DAY  = DAY_IN_SECONDS;
-const CHECK_DAYS = 90;
+const CHECK_DAY = DAY_IN_SECONDS;
+// Far back, where a dev site has no orders of its own to start runs on.
+const CHECK_DAYS = 613;
 $margin          = MINUTE_IN_SECONDS;
 
 // Nothing active: only the workflows read, no order query.

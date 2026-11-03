@@ -50,16 +50,21 @@ final class InactiveSweep {
     }
 
     /**
-     * Fires the event for one page of candidates; a full page queues the next. Turning off the last workflow on `$days` ends the chain.
+     * Fires the event for one page of candidates; a full page queues the next.
      *
      * @param int $days
      * @param int $page
      */
     public static function batch( int $days, int $page ): void {
+        // Turning off the last workflow on these days ends the chain.
         if ( ! in_array( $days, self::active_days(), true ) ) {
             return;
         }
         $ids = self::candidates( $days, $page );
+        // Queued first, so a failure on one order doesn't hold back the pages after it.
+        if ( self::BATCH === count( $ids ) ) {
+            as_schedule_single_action( time() + self::NEXT_AFTER, self::BATCH_HOOK, [ $days, $page + 1 ], ActionSchedulerQueue::GROUP );
+        }
         foreach ( $ids as $id ) {
             $order = wc_get_order( $id );
             if ( $order instanceof \WC_Order && self::is_last_order( $order ) ) {
@@ -67,18 +72,12 @@ final class InactiveSweep {
             }
         }
         // A long `wp action-scheduler run` has one shutdown for many batches; they'd start their runs together.
-        $dispatcher = Runtime::dispatcher();
-        if ( $dispatcher ) {
-            $dispatcher->flush();
-        }
-        if ( self::BATCH === count( $ids ) ) {
-            as_schedule_single_action( time() + self::NEXT_AFTER, self::BATCH_HOOK, [ $days, $page + 1 ], ActionSchedulerQueue::GROUP );
-        }
+        Runtime::dispatcher()->flush();
     }
 
     /**
-     * @param array[] $workflows `graph` holds the live graph.
-     * @return int[] The distinct days their triggers wait for.
+     * @param array[] $workflows
+     * @return int[] Distinct.
      */
     public static function days_of( array $workflows ): array {
         $days = [];
@@ -90,12 +89,13 @@ final class InactiveSweep {
     }
 
     /**
-     * `date_created` range for orders `$days` to `$days` + 7 days old, in Unix timestamps: a date string would be day precision in the site's timezone.
+     * `date_created` range for orders `$days` to `$days` + 7 days old.
      *
      * @param int $days
      * @param int $now
      */
     public static function window( int $days, int $now ): string {
+        // Timestamps: a date string would be day precision in the site's timezone.
         return ( $now - ( $days + self::WINDOW_DAYS ) * self::DAY ) . '...' . ( $now - $days * self::DAY );
     }
 
@@ -124,12 +124,12 @@ final class InactiveSweep {
     }
 
     /**
-     * Whether the order is the person's latest, by billing email and by account. Same-second orders: the higher id is the last.
-     * An anonymized order's billing email is a placeholder, not a person.
+     * Whether the order is the person's latest, by billing email and by account.
      *
      * @param \WC_Order $order
      */
     private static function is_last_order( \WC_Order $order ): bool {
+        // An anonymized order's billing email is a placeholder, not a person.
         $email = $order->get_billing_email();
         if ( '' === $email || $order->get_meta( '_anonymized' ) ) {
             return false;
@@ -144,7 +144,9 @@ final class InactiveSweep {
     }
 
     /**
-     * @param array $person `billing_email` or `customer_id`.
+     * Same-second orders: the higher id is the last.
+     *
+     * @param array $person
      */
     private static function latest_order_id( array $person ): int {
         $ids = wc_get_orders(
