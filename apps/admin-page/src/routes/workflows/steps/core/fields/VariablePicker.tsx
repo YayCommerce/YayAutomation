@@ -35,7 +35,7 @@ function describe(group: VariableGroup, { trigger, steps }: VariableScope) {
     return {
       label: __('Blocks', 'yaymatik'),
       description: __('Ready-made parts of the email, e.g. a product grid or a coupon box', 'yaymatik'),
-      // Neutral: blocks come from the trigger's data and from steps above.
+      // Neutral: blocks come from the trigger's data, the site and steps above.
       tile: <StepTile kind="neutral" icon={Blocks} />,
     };
   }

@@ -61,7 +61,7 @@ final class ProductGrid {
     }
 
     /**
-     * The store's newest products a grid would show, read once per request: for a preview with sample data.
+     * The store's newest products a grid would show, read once per request: `site.new_products`, and a preview with sample data.
      *
      * @return \WC_Product[]
      */

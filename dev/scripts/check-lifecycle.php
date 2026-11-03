@@ -568,7 +568,10 @@ $base  = sanitize_hex_color( (string) get_option( 'woocommerce_email_base_color'
 $base  = $base ? $base : '#7f54b3';
 $ok( false !== strpos( $links, esc_url( $account ) ) && false !== strpos( $links, esc_url( $shop_page ) ) && false === strpos( $links, "\n" ) && false !== strpos( $links, $base ) && false !== strpos( $links, 'border:1px solid ' . $base ), 'welcome_links: both pages, one line, solid and outline in the base color' );
 $ok( "Go to your account: {$account}\nVisit the shop: {$shop_page}" === $block( 'welcome_links', false ), 'welcome_links in text: one line each' );
-$ok( false !== strpos( $block( 'shop_button', true ), esc_url( $shop_page ) ) && false === strpos( $block( 'shop_button', true ), $account ) && "Visit the shop: {$shop_page}" === $block( 'shop_button', false ), 'shop_button: only the shop' );
+add_filter( 'pre_option_woocommerce_email_base_color', fn() => '#f7f7f7' );
+$ok( false !== strpos( $block( 'welcome_links', true ), 'border:1px solid #202020' ), 'a light store color: the outline button stays readable' );
+remove_all_filters( 'pre_option_woocommerce_email_base_color' );
+$ok( false !== strpos( $block( 'shop_button', true ), esc_url( $shop_page ) ) && "Visit the shop: {$shop_page}" === $block( 'shop_button', false ), 'shop_button: only the shop' );
 $ok( false !== strpos( $block( 'account_button', true ), esc_url( $account ) ) && "Go to your account: {$account}" === $block( 'account_button', false ), 'account_button: only the account' );
 
 $newest = ProductGrid::newest();

@@ -61,10 +61,10 @@ final class SiteData extends DataItem {
     }
 
     /**
-     * An email block; a site has no object, so `$render` gets only the format.
+     * An email block. A site has no object, so `$render` is `fn( bool $html ): string`.
      *
      * @param string   $label
-     * @param callable $render fn( bool $html ): string.
+     * @param callable $render
      */
     private static function block( string $label, callable $render ): array {
         return [
