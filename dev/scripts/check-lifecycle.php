@@ -49,10 +49,13 @@ $ok    = function ( bool $pass, string $what ) use ( &$fails ) {
 };
 
 $cleanup = function () use ( $wpdb, $domain, &$posts, &$orders, &$comments, &$users, &$flows, &$runs ) {
+    $runs_table = RunStore::table();
     foreach ( $flows as $flow_id ) {
         WorkflowStore::deactivate( $flow_id );
         WorkflowStore::delete( $flow_id );
+        $runs = array_merge( $runs, array_map( 'intval', $wpdb->get_col( $wpdb->prepare( "SELECT id FROM {$runs_table} WHERE workflow_id = %d", $flow_id ) ) ) );
     }
+    $runs = array_unique( $runs );
     foreach ( $runs as $run_id ) {
         as_unschedule_all_actions( ActionSchedulerQueue::HOOK, [ $run_id ], ActionSchedulerQueue::GROUP );
     }
@@ -295,6 +298,12 @@ $newest = ProductGrid::newest();
 $ok( (bool) $newest === $sample['has_products_not_reviewed'] && ( ! $newest || false !== strpos( $sample['review_products']['html'], '#reviews' ) ), 'sample data renders from the newest products' );
 
 // Account created: real workflows through the real Dispatcher; events start at flush().
+foreach ( WorkflowStore::all() as $site_flow ) {
+    $site_trigger = YayMatik\Workflow\Core\Definition\GraphSchema::trigger( $site_flow['graph']['nodes'] ?? [] );
+    if ( 'active' === $site_flow['status'] && 'customer_account_created' === ( $site_trigger['data']['block'] ?? '' ) ) {
+        WP_CLI::error( "Deactivate workflow {$site_flow['id']} first: it would start on this script's accounts." );
+    }
+}
 wp_set_current_user(
     (int) get_users(
         [

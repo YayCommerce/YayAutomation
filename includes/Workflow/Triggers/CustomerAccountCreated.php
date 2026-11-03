@@ -8,7 +8,7 @@ use YayMatik\Workflow\DataItems\CustomerData;
 
 defined( 'ABSPATH' ) || exit;
 
-/** A shopper creates an account. Accounts made by code, an import or REST don't count. Event args hold `customer_id`. */
+/** A shopper creates an account. An account saved through `WC_Customer` (REST, imports) or Users → Add New doesn't count. Event args hold `customer_id`. */
 class CustomerAccountCreated extends Trigger {
 
     public const ID = 'customer_account_created';
@@ -89,6 +89,6 @@ class CustomerAccountCreated extends Trigger {
      * @param array $args
      */
     public function refs( array $args ): ?array {
-        return RefResolver::account( (int) ( $args['customer_id'] ?? 0 ) ) ? [ CustomerData::ID => new Ref( CustomerData::ID, $this->subject( $args ) ) ] : null;
+        return get_userdata( (int) ( $args['customer_id'] ?? 0 ) ) ? [ CustomerData::ID => new Ref( CustomerData::ID, $this->subject( $args ) ) ] : null;
     }
 }
