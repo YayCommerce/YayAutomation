@@ -53,7 +53,7 @@ We chose these 8 because they cover what merchants install an automation plugin 
 
 ### Template Library
 
-**Today:** 16 templates (Recover carts, Post-purchase, Customer lifecycle, Alerts), with search, sort, a sidebar (categories with counts, plugins), cards with a strip of step icons, and a "Needs cart tracking" badge while cart tracking is off.
+**Today:** 18 templates (Recover carts, Post-purchase, Customer lifecycle, Alerts), with search, sort, a sidebar (categories with counts, plugins), cards with a strip of step icons, and a "Needs cart tracking" badge while cart tracking is off.
 
 **v1.0 adds:**
 - 18 templates, arriving with their milestones.
@@ -166,7 +166,7 @@ We chose these 8 because they cover what merchants install an automation plugin 
 
 ### Customer emails
 
-**Today:** every row below except Win-back.
+**Today:** every row below.
 
 **v1.0 adds:** every customer email uses the store's WooCommerce email look (logo, colors, footer) and has a subject, a heading and a message the store owner can edit. Ready-made blocks are added from "Insert variable":
 

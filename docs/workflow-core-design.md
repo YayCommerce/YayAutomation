@@ -171,7 +171,7 @@ Built: (a)–(e) in `Core/Runtime/HealthCheck.php`; REST `GET /health/checks` an
 
 ## §11 Decision log
 
-All confirmed 2026-10-07, except L5 (2026-10-08), M7 (2026-10-27), M8 and M3–M5. Reasons, rejected options and costs: [workflow-core-decisions.md](workflow-core-decisions.md).
+All confirmed 2026-10-07, except L5 (2026-10-08), M7 (2026-10-27), M8, M3–M5 and M6. Reasons, rejected options and costs: [workflow-core-decisions.md](workflow-core-decisions.md).
 
 | ID | Decision | Section |
 |---|---|---|
@@ -200,3 +200,4 @@ All confirmed 2026-10-07, except L5 (2026-10-08), M7 (2026-10-27), M8 and M3–M
 | M7 | Carts in their own table; no own tracking cookie; capture any email, same response; restore GET writes nothing; erase anonymizes runs | §2 |
 | M8 | Abandon sweep, a cart's cycle is its claim | §3 |
 | M3–M5 | High-value on a status change; reviews read when the step runs; account trigger refuses saved `WC_Customer`s; billing fill in memory | §4, §6 |
+| M6 | Win-back on a person's last real order, in a 7-day window, once per workflow and order through `trigger_claims` | §2, §3 |

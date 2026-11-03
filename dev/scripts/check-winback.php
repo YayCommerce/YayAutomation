@@ -1,7 +1,8 @@
 <?php
 /**
  * Trigger claims on the real table, with workflow ids no real workflow has, plus temporary workflows.
- * The inactive sweep on real orders at a random `.test` domain, through the real Dispatcher. Runs stay queued: their jobs are removed.
+ * The inactive sweep on real orders at a random `.test` domain, through the real Dispatcher. Runs stay queued, their jobs removed, except the
+ * template runs, which go through the real Worker: their email goes to the local mail catcher, their coupons are removed.
  * Refuses to run while the site has an active Customer inactive workflow: it would start on these orders.
  * Cleanup also deletes the site's own old runs and carts, and claims of its deleted workflows.
  * Prints PASS / FAIL lines; removes its rows. Run through check-winback.sh.
@@ -11,13 +12,18 @@
 
 // phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.WP.GlobalVariablesOverride.Prohibited
 
+use YayMatik\Workflow\Core\Email\EmailPreview;
 use YayMatik\Workflow\Core\Runtime\ActionSchedulerQueue;
 use YayMatik\Workflow\Core\Runtime\Cleanup;
 use YayMatik\Workflow\Core\Runtime\HealthCheck;
 use YayMatik\Workflow\Core\Runtime\InactiveSweep;
+use YayMatik\Workflow\Core\Runtime\Runtime;
+use YayMatik\Workflow\Core\Steps\StepRegistry;
+use YayMatik\Workflow\Core\Storage\RunStepStore;
 use YayMatik\Workflow\Core\Storage\RunStore;
 use YayMatik\Workflow\Core\Storage\Schema;
 use YayMatik\Workflow\Core\Storage\TriggerClaimStore;
+use YayMatik\Workflow\Core\Storage\UnsubscribeStore;
 use YayMatik\Workflow\Core\Storage\WorkflowStore;
 
 if ( ! function_exists( 'WC' ) ) {
@@ -35,6 +41,7 @@ $ghost   = 999999;
 $subject = 'order:' . wp_rand( 100000, 999999 );
 $flows   = [];
 $orders  = [];
+$coupons = [];
 $domain  = 'x' . wp_rand( 1000, 9999 ) . '.test';
 
 $fails = 0;
@@ -43,7 +50,12 @@ $ok    = function ( bool $pass, string $what ) use ( &$fails ) {
     $fails += $pass ? 0 : 1;
 };
 
-$cleanup = function () use ( $wpdb, $claims, $ghost, &$flows, &$orders ) {
+$cleanup = function () use ( $wpdb, $claims, $ghost, $domain, &$flows, &$orders, &$coupons ) {
+    foreach ( $coupons as $coupon_id ) {
+        wp_delete_post( $coupon_id, true );
+    }
+    $unsubscribes = Schema::table( Schema::UNSUBSCRIBES );
+    $wpdb->query( $wpdb->prepare( "DELETE FROM {$unsubscribes} WHERE email LIKE %s", '%@' . $wpdb->esc_like( $domain ) ) );
     $runs_table = RunStore::table();
     foreach ( $flows as $flow_id ) {
         WorkflowStore::deactivate( $flow_id );
@@ -358,6 +370,221 @@ as_schedule_recurring_action( time() - HOUR_IN_SECONDS, DAY_IN_SECONDS, Inactive
 $ok( 'ok' === $check()['status'], 'health: under a day late is fine' );
 as_unschedule_all_actions( InactiveSweep::HOOK );
 InactiveSweep::schedule();
+
+// Batches: pages of 200, a next page only after a full one, no pause.
+foreach ( [ $main, $second, $other ] as $off ) {
+    WorkflowStore::deactivate( $off );
+}
+$batch_days = CHECK_DAYS + 40;
+$batch_flow = $flow( $batch_days );
+for ( $i = 0; $i < 500; $i++ ) {
+    $order( $person(), ( $batch_days + 1 ) * CHECK_DAY );
+}
+$next_pages = function () {
+    return array_values(
+        array_map(
+            fn( $action ) => [ $action->get_args(), $action->get_schedule()->get_date()->getTimestamp() ],
+            as_get_scheduled_actions(
+                [
+                    'hook'     => InactiveSweep::BATCH_HOOK,
+                    'status'   => 'pending',
+                    'per_page' => -1,
+                ]
+            )
+        )
+    );
+};
+$soon       = fn( array $pending, int $page ) => 1 === count( $pending ) && [ $batch_days, $page ] === $pending[0][0] && abs( $pending[0][1] - ( time() + 2 * MINUTE_IN_SECONDS ) ) < 60;
+InactiveSweep::run();
+$first_job  = $next_pages();
+$ok( 1 === count( $first_job ) && [ $batch_days, 1 ] === $first_job[0][0], 'the daily job queues one batch per days value' );
+as_unschedule_all_actions( InactiveSweep::BATCH_HOOK );
+foreach ( [
+    [ 1, 200, 2 ],
+    [ 2, 400, 3 ],
+] as list( $page, $total, $next ) ) {
+    InactiveSweep::batch( $batch_days, $page );
+    $pending = $next_pages();
+    $ok( count( $runs_of( $batch_flow ) ) === $total && $soon( $pending, $next ), "page {$page}: {$total} runs so far, the next page queued 2 minutes ahead" );
+    as_unschedule_all_actions( InactiveSweep::BATCH_HOOK );
+}
+InactiveSweep::batch( $batch_days, 3 );
+$ok( 500 === count( $runs_of( $batch_flow ) ) && [] === $next_pages(), 'page 3: 500 runs, a part page queues nothing' );
+$ok( WorkflowStore::is_active( $batch_flow ), '500 runs: the workflow stays active, no pause' );
+WorkflowStore::deactivate( $batch_flow );
+InactiveSweep::batch( $batch_days, 1 );
+$ok( 500 === count( $runs_of( $batch_flow ) ) && [] === $next_pages(), 'workflow off: the batch does nothing, the chain ends' );
+
+// The template graphs, end to end.
+$template      = function ( array $coupon, string $offer ) use ( &$flows ): int {
+    $at      = fn( int $row ) => [
+        'x' => 0,
+        'y' => 200 * $row,
+    ];
+    $graph   = [
+        'nodes' => [
+            [
+                'id'       => 'trigger',
+                'kind'     => 'trigger',
+                'position' => $at( 0 ),
+                'data'     => [
+                    'block'  => 'customer_inactive',
+                    'config' => [ 'days' => CHECK_DAYS + 80 ],
+                ],
+            ],
+            [
+                'id'       => 'condition',
+                'kind'     => 'condition',
+                'position' => $at( 1 ),
+                'data'     => [
+                    'block'  => 'condition',
+                    'config' => [
+                        'match' => 'all',
+                        'rules' => [
+                            [
+                                'field'     => 'customer.unsubscribed',
+                                'operator'  => 'is_false',
+                                'value'     => '',
+                                'valueType' => 'value',
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+            [
+                'id'       => 'coupon',
+                'kind'     => 'action',
+                'position' => $at( 2 ),
+                'data'     => [
+                    'block'  => 'generate_coupon',
+                    'config' => StepRegistry::get( 'generate_coupon' )->sanitize( $coupon + [ 'expiry_days' => 14 ] ),
+                ],
+            ],
+            [
+                'id'       => 'email',
+                'kind'     => 'action',
+                'position' => $at( 3 ),
+                'data'     => [
+                    'block'  => 'send_email',
+                    'config' => [
+                        'to'      => '{{ customer.email }}',
+                        'subject' => 'We miss you at {{ site.name }}',
+                        'heading' => 'It’s been a while',
+                        'message' => '<p>Hi {{ customer.first_name | default: "there" }},</p><p>' . $offer . '</p><p>{{ steps.coupon.box }}</p><p>{{ site.shop_button }}</p><p>See you soon,<br>{{ site.name }}</p>',
+                    ],
+                ],
+            ],
+        ],
+        'edges' => [
+            [
+                'id'     => 'e-trigger-condition',
+                'source' => 'trigger',
+                'target' => 'condition',
+            ],
+            [
+                'id'           => 'e-condition-coupon',
+                'source'       => 'condition',
+                'target'       => 'coupon',
+                'sourceHandle' => 'then',
+            ],
+            [
+                'id'     => 'e-coupon-email',
+                'source' => 'coupon',
+                'target' => 'email',
+            ],
+        ],
+    ];
+    $created = WorkflowStore::create( 'check-winback template', $graph );
+    if ( ! is_array( $created ) ) {
+        WP_CLI::error( 'Could not create a temporary workflow.' );
+    }
+    $flows[] = (int) $created['id'];
+    WorkflowStore::activate( (int) $created['id'] );
+    return (int) $created['id'];
+};
+$discount_flow = $template(
+    [
+        'discount_type' => 'percent',
+        'amount'        => 15,
+    ],
+    'It’s been a while since your last order. Here’s {{ steps.coupon.amount }} off your next one:'
+);
+$shipping_flow = $template(
+    [
+        'discount_type' => 'free_shipping',
+        'amount'        => null,
+    ],
+    'It’s been a while since your last order. Here’s free shipping on your next order:'
+);
+
+$mails = [];
+add_filter(
+    'wp_mail',
+    function ( array $mail ) use ( &$mails ) {
+        $mails[] = $mail;
+        return $mail;
+    }
+);
+$away_email = $person();
+$away       = $order( $away_email, ( CHECK_DAYS + 81 ) * CHECK_DAY );
+$gone_email = $person();
+$gone       = $order( $gone_email, ( CHECK_DAYS + 81 ) * CHECK_DAY );
+UnsubscribeStore::add( $gone_email );
+$sweep();
+$run_of = function ( int $flow_id, int $order_id ) use ( $wpdb ): int {
+    return (int) $wpdb->get_var( $wpdb->prepare( 'SELECT id FROM ' . RunStore::table() . ' WHERE workflow_id = %d AND subject = %s', $flow_id, "order:{$order_id}" ) );
+};
+$finish = function ( int $run_id ) {
+    as_unschedule_all_actions( ActionSchedulerQueue::HOOK, [ $run_id ], ActionSchedulerQueue::GROUP );
+    Runtime::worker()->run( $run_id );
+    return [ RunStore::find( $run_id )['status'], array_column( RunStepStore::for_run( $run_id ), 'step_id' ) ];
+};
+$ok( [ 'completed', [ 'condition' ] ] === $finish( $run_of( $discount_flow, $gone ) ) && [] === $mails, 'unsubscribed: ends at the Condition’s No path, no coupon, no email' );
+
+$output_of = function ( int $run_id, string $step_id ) {
+    foreach ( RunStepStore::for_run( $run_id ) as $row ) {
+        if ( $step_id === $row['step_id'] ) {
+            return $row['output'];
+        }
+    }
+    return [];
+};
+foreach ( [
+    [ $discount_flow, 'percent', '15', 'off your next one:' ],
+    [ $shipping_flow, 'free_shipping', '0', 'free shipping on your next order:' ],
+] as list( $flow_id, $type, $amount, $line ) ) {
+    $mails  = [];
+    $run_id = $run_of( $flow_id, $away );
+    $ok( [ 'completed', [ 'condition', 'coupon', 'email' ] ] === $finish( $run_id ), "{$type}: runs the condition, the coupon and the email" );
+    $code      = (string) ( $output_of( $run_id, 'coupon' )['code'] ?? '' );
+    $coupon    = new WC_Coupon( $code );
+    $coupons[] = $coupon->get_id();
+    $expires   = $coupon->get_date_expires();
+    $ok(
+        $coupon->get_id() > 0 && ( 'free_shipping' === $type ? $coupon->get_free_shipping() : $type === $coupon->get_discount_type() )
+            && (float) $amount === (float) $coupon->get_amount() && [ $away_email ] === $coupon->get_email_restrictions()
+            && $expires && abs( $expires->getTimestamp() - ( time() + 14 * DAY_IN_SECONDS ) ) < 2 * DAY_IN_SECONDS,
+        "{$type}: coupon of the right kind, limited to the customer, about 14 days"
+    );
+    $mail = $mails[0] ?? [];
+    $ok( 1 === count( $mails ) && ( is_array( $mail['to'] ) ? $mail['to'][0] : $mail['to'] ) === $away_email && false !== strpos( $mail['subject'], 'We miss you at' ), "{$type}: one email to the customer, subject" );
+    $body = (string) ( $mail['message'] ?? '' );
+    $ok( false !== strpos( $body, 'Hi there,' ) && false !== strpos( $body, $line ) && false !== strpos( $body, $code ) && false !== strpos( $body, 'See you soon' ), "{$type}: greeting, offer, coupon code, sign-off" );
+}
+$ok( 2 === count( $coupons ), 'both versions active: one customer gets both, the known limit' );
+
+// Preview: the newest paid order, or sample data without one.
+$newest  = wc_get_order( $order( $person(), 0, 'processing' ) );
+$graph   = WorkflowStore::find( $discount_flow )['graph'];
+$config  = current( array_filter( $graph['nodes'], fn( array $node ) => 'email' === $node['id'] ) )['data']['config'];
+$preview = EmailPreview::render( $graph, 'email', $config );
+$ok( ! is_wp_error( $preview ) && false === $preview['sample'] && (string) $newest->get_order_number() === (string) $preview['order'], 'preview: the newest paid order, not sample data' );
+$ok( ! is_wp_error( $preview ) && false !== strpos( $preview['html'], 'YMSAMPLE' ) && false !== strpos( $preview['html'], '15%' ), 'preview: the coupon box, 15%' );
+$none    = fn() => [];
+add_filter( 'woocommerce_order_query', $none );
+$preview = EmailPreview::render( $graph, 'email', $config );
+remove_filter( 'woocommerce_order_query', $none );
+$ok( ! is_wp_error( $preview ) && true === $preview['sample'], 'preview, no orders: sample data' );
 
 echo $fails ? "{$fails} failed\n" : "All passed\n"; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 exit( $fails ? 1 : 0 );

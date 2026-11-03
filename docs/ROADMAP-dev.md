@@ -30,7 +30,7 @@ Changes from the ROADMAP-v1.0 order:
 | M3 | Review request | M | 2 | M2 | ✅ Done |
 | M4 | Welcome series | S | 2 | M2 | ✅ Done |
 | M5 | High-value order alert | S | 1 | — | ✅ Done |
-| M6 | Win-back | M | 2 | M8 | — |
+| M6 | Win-back | M | 2 | M8 | ⏳ |
 | M9 | Release hardening | M | 2 | all | — |
 | v1.1 | Control flow | L+ | 3 | v1.0 | — |
 | v1.2 | Yay ecosystem + Pro connectors | L+ | 3 | v1.1 | — |
@@ -250,9 +250,9 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 
 ## M6 — Win-back · M · risk 2
 
-- **M6.1 BE** — Customer inactive query trigger, checked daily in batches (the pattern of M8.1), plus the `trigger_claims` table (workflow_id, subject, claimed_at; unique per workflow and subject) and its store.
-- **M6.2 UI** — trigger panel: days (default 90), "Checked once a day".
-- **Templates:** Win-back ×2.
+- ⏳ **M6.1 BE** — Customer inactive trigger: a person's last real order N days old (up to 7 days late), found by a daily job in batches of 200, plus the `trigger_claims` table (workflow_id, subject, claimed_at; unique per workflow and subject) and its store. Once per workflow and order: a later order starts a new period.
+- ⏳ **M6.2 UI** — trigger panel: days (whole number, 7–730, default 90), "Checked once a day". Health check row for the daily job.
+- ⏳ **Templates:** Win-back ×2.
 
 ## M9 — Release hardening · M
 
