@@ -68,12 +68,12 @@ describe('templates', () => {
     expect(sendsCustomerEmail(findTemplate('high-value-order-alert')!.graph)).toBe(false);
   });
 
-  it('high-value alert fires at 500 or more when the order starts processing', () => {
+  it('high-value alert fires at 500 or more when the order is paid', () => {
     const { nodes } = findTemplate('high-value-order-alert')!.graph;
     expect(nodes.map((node) => node.data.block)).toEqual(['order_status_changed', 'condition', 'send_internal_email']);
     expect(nodes[0].data.config).toEqual({
       from: ['pending', 'on-hold', 'failed'],
-      to: ['processing'],
+      to: ['processing', 'completed'],
       only_checkout: false,
     });
     expect(nodes[1].data.config).toEqual({

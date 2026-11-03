@@ -618,7 +618,7 @@ $alert_flow = $new_flow(
                 'order_status_changed',
                 [
                     'from'          => [ 'pending', 'on-hold', 'failed' ],
-                    'to'            => [ 'processing' ],
+                    'to'            => [ 'processing', 'completed' ],
                     'only_checkout' => false,
                 ]
             ),
@@ -676,9 +676,16 @@ foreach ( [ 'pending', 'on-hold', 'failed' ] as $from ) {
     $move( $saved, 'processing' );
     $ok( 1 === count( $alert_runs( $saved->get_id() ) ), "{$from} → processing starts it" );
 }
-$saved = $at_status( 'completed' );
+foreach ( [ 'pending', 'on-hold' ] as $from ) {
+    $saved = $at_status( $from );
+    $move( $saved, 'completed' );
+    $ok( 1 === count( $alert_runs( $saved->get_id() ) ), "{$from} → completed starts it" );
+}
+// Created at this status, the order may already have started a run from pending.
+$saved  = $at_status( 'completed' );
+$before = count( $alert_runs( $saved->get_id() ) );
 $move( $saved, 'processing' );
-$ok( [] === $alert_runs( $saved->get_id() ), "completed → processing doesn't" );
+$ok( count( $alert_runs( $saved->get_id() ) ) === $before, "completed → processing doesn't" );
 
 $saved  = $at_status( 'processing' );
 $before = count( $alert_runs( $saved->get_id() ) );
@@ -711,6 +718,11 @@ $move( $saved, 'processing' );
 $move( $saved, 'on-hold' );
 $move( $saved, 'processing' );
 $ok( 2 === count( $alert_runs( $saved->get_id() ) ), 'processing → on-hold → processing runs twice: the known limit' );
+$saved = $at_status( 'pending' );
+$move( $saved, 'processing' );
+$move( $saved, 'on-hold' );
+$move( $saved, 'completed' );
+$ok( 2 === count( $alert_runs( $saved->get_id() ) ), 'processing → on-hold → completed runs twice: the known limit' );
 
 echo $fails ? "{$fails} failed\n" : "All passed\n"; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 exit( $fails ? 1 : 0 );

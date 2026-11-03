@@ -239,7 +239,7 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 
 ## M5 — High-value order alert · S · risk 1
 
-- ⏳ **M5.1** — Move the template to "order starts processing": Order status changed, from Pending, On hold or Failed to Processing; condition order total ≥ 500. Known limit: processing → on-hold → processing alerts again, as Order created's once-per-order claim is lost.
+- ⏳ **M5.1** — Move the template to "order is paid": Order status changed, from Pending, On hold or Failed to Processing or Completed (orders that don't need processing, such as downloads, go straight to Completed); condition order total ≥ 500. Known limit: processing → on-hold → processing or completed alerts again, as Order created's once-per-order claim is lost.
 - ⏳ **Templates:** High-value order alert ×1.
 
 ## M6 — Win-back · M · risk 2

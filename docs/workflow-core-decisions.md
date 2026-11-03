@@ -401,10 +401,10 @@ Today errors only go to the WooCommerce log, which merchants never open.
 
 ## M3–M5. Lifecycle workflows
 
-**Decision.** The high-value alert starts on a status change, to Processing. A review email reads what's left to review when its step runs, with two comment queries. Customer account created refuses accounts saved through `WC_Customer`. An account's empty billing details are filled in memory. The account trigger provides `customer` only.
+**Decision.** The high-value alert starts on a status change, to Processing or Completed. A review email reads what's left to review when its step runs, with two comment queries. Customer account created refuses accounts saved through `WC_Customer`. An account's empty billing details are filled in memory. The account trigger provides `customer` only.
 
 **Why.**
-- **Status change over Order created.** An order is created before it's paid, so Order created would alert on bank transfers that never arrive. Moving to Processing means the money is there or the order is ready to fulfil. From is Pending, On hold or Failed, so completed → processing, a correction, doesn't alert.
+- **Status change over Order created.** An order is created before it's paid, so Order created would alert on bank transfers that never arrive. Moving to Processing means the money is there or the order is ready to fulfil. To also has Completed because WooCommerce's `payment_complete()` sends an order that doesn't need processing (virtual and downloadable) straight there. From is Pending, On hold or Failed, so processing → completed, the usual end of an order, and completed → processing, a correction, don't alert.
 - **Reviews read when the step runs.** The 7-day wait is the point: a customer who reviewed meanwhile, or a store that closed reviews, must count. Nothing is stored at trigger time.
 - **Two comment queries.** `WP_Comment_Query` ANDs `author_email` and `user_id`, and a customer may review under either. One query by product and filtering in PHP would load every review of a popular product. An empty `post__in` or `author_email` is ignored and `user_id` 0 matches every guest, so either could mark everything reviewed: `ReviewProducts::reviewed_ids()` skips those.
 - **The data store guard.** `WC_Customer_Data_Store::create()` calls `wc_create_new_customer()`, so every saved `new WC_Customer` looks like a sign-up: REST and importers would email their whole list. Only that path fires `woocommerce_new_customer`, right after, so `claim()` refuses those ids per id: a request that holds both a shopper and a saved customer starts the shopper's run only.
@@ -412,7 +412,8 @@ Today errors only go to the WooCommerce log, which merchants never open.
 - **`site` isn't provided.** It's always available without a ref. Listing it would make Preview take `site.name` from a sample, which is empty, so it reads live: the URLs are public and the newest products are what the run sends.
 
 **Cost.**
-- High-value: processing → on-hold → processing alerts again; "Run once per order" is in the v1.1 backlog. An order that never reaches Processing gets no alert: a virtual and downloadable order goes from Pending straight to Completed, and a late payment on a cancelled order goes from Cancelled.
+- High-value: processing → on-hold → processing or completed alerts again; "Run once per order" is in the v1.1 backlog. A late payment on a cancelled order doesn't alert: it moves from Cancelled.
+- An erase keeps the WordPress account, so the run label still shows its email until the user is deleted.
 - Reviews: WordPress's "Users must be registered and logged in to comment" sends guests to a login. WooCommerce's "verified owners only" hides the form for buyers of a guest order. The `#reviews` anchor is checked on classic templates only.
 - `wc.reviewsEnabled` stays stale until the page reloads: it changes in WooCommerce's settings.
 - Welcome: bot sign-ups get welcome emails. Admin-created and imported users don't start it, including REST and code that saves a new `WC_Customer`. An importer that calls `wc_create_new_customer()` directly looks like a shopper and does start it. A sign-up that doesn't go through WooCommerce (`wp-login.php` registration, a plugin calling `wp_insert_user()`) doesn't start it.

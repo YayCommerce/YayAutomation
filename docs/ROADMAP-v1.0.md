@@ -201,7 +201,7 @@ Every customer email includes an unsubscribe link. Unsubscribed customers never 
 | Review request | Review request · Request + reminder | An order is completed |
 | Welcome series | Welcome email · 3-email series | A customer creates an account |
 | Win-back 90 days | Win-back + discount · Win-back + free shipping | A customer has not ordered for 90 days |
-| High-value order alert | High-value order alert (email to staff) | A large order starts processing |
+| High-value order alert | High-value order alert (email to staff) | A large order is paid (starts processing, or is completed at once for downloads) |
 
 Template names, timings and coupon values are proposals until confirmed: see [Template details](#template-details-proposals).
 
@@ -254,7 +254,7 @@ Risk scale: **1** = UI or template content, easy to undo · **2** = new feature 
 | M2 | Wait + run history | Wait step, run history on the overview page; **Cross-sell / upsell** (4) | Jack | Todo | 3 | M1 |
 | M3 | Review request | Review conditions and review links; **Review request** (2) | Jack | Todo | 2 | M2 |
 | M4 | Welcome series | Account created trigger; **Welcome series** (2) | Jack | Todo | 2 | M2 |
-| M5 | High-value order alert | Template moved to "order starts processing"; **High-value order alert** (1) | Jack | Todo | 1 | — |
+| M5 | High-value order alert | Template moved to "order is paid"; **High-value order alert** (1) | Jack | Todo | 1 | — |
 | M6 | Win-back | Inactive customer trigger (checked daily); **Win-back 90 days** (2) | Jack | Todo | 2 | M2 |
 | M7 | Cart tracking + Settings | Tracks carts and guest emails at checkout, restore link, Settings page | Jack | Todo | 3 | — |
 | M8 | Abandoned cart + checkout | Both triggers; **Abandoned cart** (3), **Abandoned checkout** (2) | Jack | Todo | 2 | M1, M2, M7 |

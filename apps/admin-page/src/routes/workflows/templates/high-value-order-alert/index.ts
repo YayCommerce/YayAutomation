@@ -3,12 +3,12 @@ import { __ } from '@wordpress/i18n';
 import { BRANCH_OFFSET, ROW_GAP } from '../../model/graph';
 import { defineTemplate } from '../core/defineTemplate';
 
-/** Email the store team when a big order starts processing. */
+/** Email the store team when a big order is paid. */
 export default defineTemplate({
   id: 'high-value-order-alert',
   name: __('High-value order alert', 'yaymatik'),
   description: __(
-    'Email the store team when an order of an amount you choose or more starts processing, so big orders get attention fast.',
+    'Email the store team when an order of an amount you choose or more is paid, so big orders get attention fast.',
     'yaymatik',
   ),
   category: 'alerts',
@@ -22,7 +22,7 @@ export default defineTemplate({
         position: { x: 0, y: 0 },
         data: {
           block: 'order_status_changed',
-          config: { from: ['pending', 'on-hold', 'failed'], to: ['processing'], only_checkout: false },
+          config: { from: ['pending', 'on-hold', 'failed'], to: ['processing', 'completed'], only_checkout: false },
         },
       },
       {
