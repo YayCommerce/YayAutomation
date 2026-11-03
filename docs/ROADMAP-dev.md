@@ -26,7 +26,7 @@ Changes from the ROADMAP-v1.0 order:
 | M2 | Wait + run history | L | 3 | F1 | ✅ Done |
 | F2 | Workflows table | M | 3 | F1 | ✅ Done |
 | M7 | Cart tracking + Settings + Health check | L | 3 | F1 | ✅ Done |
-| M8 | Abandoned cart + checkout | L | 2 | M1, M2, M7 | In progress |
+| M8 | Abandoned cart + checkout | L | 2 | M1, M2, M7 | ✅ Done |
 | M3 | Review request | M | 2 | M2 | — |
 | M4 | Welcome series | S | 2 | M2 | — |
 | M5 | High-value order alert | S | 1 | — | — |
@@ -202,7 +202,7 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 
 ## M8 — Abandoned cart + checkout · L · risk 2
 
-**Status:** PR A merged (#32); PR B open.
+**Status:** ✅ Done. Merged into `develop` (PR #32, PR #33, `374260a`).
 
 **Backend**
 - ✅ **M8.1 Abandon sweep (no claims)** *(§3)* — a 5-minute job, 200 carts each; a cart's first abandon in its cycle is the claim. (#32)
@@ -212,11 +212,11 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 - ✅ **M8.5 Email blocks** — cart items, "Restore my cart" button. (#32)
 
 **UI**
-- ⏳ **M8.6 Trigger panels** — notes, plus a warning when cart tracking is off.
-- ⏳ **M8.7 Fixed note in the trigger panel, no setting:** the run always stops when an order is placed.
-- ⏳ **M8.8 Templates UI** — "Needs cart tracking" badge, "Before you start" in the preview.
+- ✅ **M8.6 Trigger panels** — notes, plus a warning when cart tracking is off.
+- ✅ **M8.7 Fixed note in the trigger panel, no setting:** the run always stops when an order is placed.
+- ✅ **M8.8 Templates UI** — "Needs cart tracking" badge, "Before you start" in the preview.
 
-⏳ **Templates:** Abandoned cart ×3, Abandoned checkout ×2.
+✅ **Templates:** Abandoned cart ×3, Abandoned checkout ×2.
 
 **Follow-ups**
 - A trigger's `context()` and `refs()` load the order 2–3 times per event; load it once.
