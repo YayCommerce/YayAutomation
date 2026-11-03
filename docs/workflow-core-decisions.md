@@ -450,3 +450,4 @@ Today errors only go to the WooCommerce log, which merchants never open.
 - A pending order doesn't count as ordering: a customer who left a payment unfinished still gets win-back.
 - Claims of live workflows are never deleted: one small row per customer per last order.
 - Changing days on a live workflow doesn't restart orders it already claimed.
+- A run doesn't stop when the customer orders during a Wait (no `stop_reason`); the v1.0 templates have no Wait.

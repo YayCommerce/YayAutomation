@@ -397,7 +397,7 @@ $next_pages = function () {
 $soon       = fn( array $pending, int $page ) => 1 === count( $pending ) && [ $batch_days, $page ] === $pending[0][0] && abs( $pending[0][1] - ( time() + 2 * MINUTE_IN_SECONDS ) ) < 60;
 InactiveSweep::run();
 InactiveSweep::run();
-$first_job  = $next_pages();
+$first_job = $next_pages();
 $ok( 1 === count( $first_job ) && [ $batch_days, 1 ] === $first_job[0][0], 'the daily job queues one batch per days value, not a second while one is pending' );
 as_unschedule_all_actions( InactiveSweep::BATCH_HOOK );
 foreach ( [
