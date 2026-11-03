@@ -282,7 +282,7 @@ final class DispatcherWorkerTest extends TestCase {
     }
 
     public function test_turning_the_workflow_off_before_a_queued_run_starts_releases_its_claim(): void {
-        $trigger                                = $this->claiming_trigger();
+        $trigger                               = $this->claiming_trigger();
         $this->steps[ OrderStatusChanged::ID ] = $trigger;
         $this->dispatcher->collect( $trigger, $this->event() );
         $this->dispatcher->flush();
@@ -290,6 +290,18 @@ final class DispatcherWorkerTest extends TestCase {
 
         $this->assertSame( 'cancelled', $this->worker->run( 1 ) );
         $this->assertSame( [], $this->runs->claims );
+    }
+
+    public function test_turning_the_workflow_off_keeps_the_claim_when_a_step_already_ran(): void {
+        $trigger                               = $this->claiming_trigger();
+        $this->steps[ OrderStatusChanged::ID ] = $trigger;
+        $this->dispatcher->collect( $trigger, $this->event() );
+        $this->dispatcher->flush();
+        $this->runs->start_step( 1, 'a', [] );
+        $this->workflows->deactivate( 1 );
+
+        $this->assertSame( 'cancelled', $this->worker->run( 1 ) );
+        $this->assertSame( [ '1|order:12' => true ], $this->runs->claims );
     }
 
     public function test_events_raised_by_a_run_carry_it_as_parent(): void {

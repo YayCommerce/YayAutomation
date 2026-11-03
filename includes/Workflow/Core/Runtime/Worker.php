@@ -208,13 +208,14 @@ final class Worker {
     }
 
     /**
-     * A run cancelled by turning the workflow off did nothing, so its subject can start again once it's back on.
+     * A run cancelled by turning the workflow off before any step did nothing, so its subject can start again once it's back on.
      *
      * @param array $run
      */
     private function release_claim( array $run ): void {
         $trigger = ( $this->steps ?? [ StepRegistry::class, 'get' ] )( (string) $run['trigger_id'] );
-        if ( $trigger instanceof Trigger && $trigger->claims_per_workflow() ) {
+        // A recovered run has no position yet even if a first step already ran.
+        if ( $trigger instanceof Trigger && $trigger->claims_per_workflow() && ! $this->runs->steps( (int) $run['id'] ) ) {
             $this->runs->release_subject( (int) $run['workflow_id'], (string) $run['subject'] );
         }
     }

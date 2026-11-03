@@ -15,7 +15,6 @@ use YayMatik\Workflow\Core\Runtime\ActionSchedulerQueue;
 use YayMatik\Workflow\Core\Runtime\Cleanup;
 use YayMatik\Workflow\Core\Runtime\HealthCheck;
 use YayMatik\Workflow\Core\Runtime\InactiveSweep;
-use YayMatik\Workflow\Core\Runtime\Runtime;
 use YayMatik\Workflow\Core\Storage\RunStore;
 use YayMatik\Workflow\Core\Storage\Schema;
 use YayMatik\Workflow\Core\Storage\TriggerClaimStore;
@@ -179,8 +178,22 @@ $runs_of = function ( int $flow_id ) use ( $wpdb, &$orders ) {
         )
     );
 };
-$sweep   = [ InactiveSweep::class, 'run' ];
-$has     = fn( int $flow_id, int $order_id ) => in_array( "order:{$order_id}", $runs_of( $flow_id ), true );
+// The daily job, then the batches it queued, as Action Scheduler would.
+$sweep = function (): void {
+    InactiveSweep::run();
+    $queued = as_get_scheduled_actions(
+        [
+            'hook'     => InactiveSweep::BATCH_HOOK,
+            'status'   => 'pending',
+            'per_page' => -1,
+        ]
+    );
+    foreach ( $queued as $action ) {
+        as_unschedule_action( InactiveSweep::BATCH_HOOK, $action->get_args(), ActionSchedulerQueue::GROUP );
+        InactiveSweep::batch( ...$action->get_args() );
+    }
+};
+$has   = fn( int $flow_id, int $order_id ) => in_array( "order:{$order_id}", $runs_of( $flow_id ), true );
 
 const CHECK_DAY = DAY_IN_SECONDS;
 // Far back, where a dev site has no orders of its own to start runs on.
@@ -283,7 +296,6 @@ $second = $flow( CHECK_DAYS );
 $other  = $flow( CHECK_DAYS + 30 );
 
 $sweep();
-Runtime::dispatcher()->flush();
 
 $ok( ! $has( $main, $younger ), 'N-1 days old: no' );
 $ok( $has( $main, $edge_n ), 'N days old (a minute over): yes' );
@@ -308,17 +320,14 @@ $ok( [] === $runs_of( $other ), 'different days: not started' );
 
 $before = count( $runs_of( $main ) );
 $sweep();
-Runtime::dispatcher()->flush();
 $ok( count( $runs_of( $main ) ) === $before, 'second sweep: no new run' );
 
 $repeat_email = $person();
 $repeat_old   = $order( $repeat_email, $in_window );
 $sweep();
-Runtime::dispatcher()->flush();
 $ok( $has( $main, $repeat_old ), 'a person new to the window starts' );
 $repeat_new = $order( $repeat_email, $in_window - HOUR_IN_SECONDS );
 $sweep();
-Runtime::dispatcher()->flush();
 $ok( $has( $main, $repeat_new ), 'a new order later N days old: a new run' );
 
 // Schedule and health. The site's own job comes back as it was.

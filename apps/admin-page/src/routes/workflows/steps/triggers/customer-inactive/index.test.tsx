@@ -21,7 +21,7 @@ describe('Customer inactive', () => {
     expect(step.firstError({ days: null })).not.toBeNull();
   });
 
-  it('keeps whole days like PHP sanitize(), and a blank as blank', () => {
+  it('rounds to whole days like PHP sanitize(), and keeps a blank for the required message', () => {
     expect(step.normalize({ days: 90.5 })).toEqual({ days: 91 });
     expect(step.normalize({ days: 90, junk: 1 })).toEqual({ days: 90 });
     expect(step.normalize({})).toEqual({ days: 90 });
