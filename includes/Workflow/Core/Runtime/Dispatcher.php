@@ -186,9 +186,17 @@ final class Dispatcher {
                     || ! $trigger->matches( $context, $node['data']['config'] ) ) {
                     continue;
                 }
+                $claims  = $trigger->claims_per_workflow();
+                $subject = $trigger->subject( $args );
+                if ( $claims && ! $this->runs->claim_subject( (int) $workflow['id'], $subject ) ) {
+                    continue;
+                }
                 $run_id = $this->start_run( $workflow, $trigger, $args, $parent_run, $refs );
                 if ( $run_id ) {
                     $this->queue_run( $run_id );
+                } elseif ( $claims ) {
+                    // A run that never started must not use up the claim, which has no end date: the next check retries.
+                    $this->runs->release_subject( (int) $workflow['id'], $subject );
                 }
             }
         } catch ( \Throwable $e ) {

@@ -10,7 +10,7 @@ defined( 'ABSPATH' ) || exit;
 final class Schema {
 
     // Bump when a table below changes; dbDelta() then upgrades the tables on the next load.
-    private const DB_VERSION        = '6';
+    private const DB_VERSION        = '7';
     private const DB_VERSION_OPTION = 'yaymatik_db_version';
 
     public const WORKFLOWS         = 'workflows';
@@ -19,6 +19,7 @@ final class Schema {
     public const RUN_STEPS         = 'run_steps';
     public const UNSUBSCRIBES      = 'unsubscribes';
     public const CARTS             = 'carts';
+    public const TRIGGER_CLAIMS    = 'trigger_claims';
 
     /**
      * @param string $name One of the table constants.
@@ -39,7 +40,7 @@ final class Schema {
         $charset = $wpdb->get_charset_collate();
         dbDelta( array_map( fn( string $columns ) => $columns . " {$charset};", self::tables() ) );
         // Without every table, keep the old version so the next load tries again.
-        foreach ( [ self::WORKFLOWS, self::WORKFLOW_VERSIONS, self::RUNS, self::RUN_STEPS, self::UNSUBSCRIBES, self::CARTS ] as $name ) {
+        foreach ( [ self::WORKFLOWS, self::WORKFLOW_VERSIONS, self::RUNS, self::RUN_STEPS, self::UNSUBSCRIBES, self::CARTS, self::TRIGGER_CLAIMS ] as $name ) {
             $table = self::table( $name );
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- install check, runs once per DB version.
             if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $table ) ) ) !== $table ) {
@@ -61,6 +62,7 @@ final class Schema {
         $steps     = self::table( self::RUN_STEPS );
         $unsubs    = self::table( self::UNSUBSCRIBES );
         $carts     = self::table( self::CARTS );
+        $claims    = self::table( self::TRIGGER_CLAIMS );
         return [
             // `trigger_id` is the live graph's trigger. A draft exists only once turned on (`activated_at`
             // set); never turned on, edits go to the live row in place.
@@ -163,6 +165,15 @@ final class Schema {
                 KEY email (email),
                 KEY status (status,last_activity_at),
                 KEY order_id (order_id)
+            )",
+            // One per workflow and subject (`order:12`), for triggers that start once per subject.
+            "CREATE TABLE {$claims} (
+                id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+                workflow_id bigint(20) unsigned NOT NULL,
+                subject varchar(100) NOT NULL,
+                claimed_at datetime NOT NULL,
+                PRIMARY KEY  (id),
+                UNIQUE KEY workflow_subject (workflow_id,subject)
             )",
         ];
     }

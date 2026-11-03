@@ -203,6 +203,61 @@ final class DispatcherWorkerTest extends TestCase {
         $this->assertSame( [], $this->runs->runs );
     }
 
+    /** The status trigger, opted in to a claim per workflow and subject. */
+    private function claiming_trigger(): OrderStatusChanged {
+        return new class() extends OrderStatusChanged {
+            public function claims_per_workflow(): bool {
+                return true;
+            }
+        };
+    }
+
+    public function test_claiming_trigger_starts_once_per_subject_across_requests(): void {
+        $trigger = $this->claiming_trigger();
+        $this->dispatcher->collect( $trigger, $this->event() );
+        $this->dispatcher->flush();
+        $this->dispatcher->collect( $trigger, $this->event() );
+        $this->dispatcher->flush();
+
+        $this->assertCount( 1, $this->runs->runs );
+        $this->assertSame( [ '1|order:12' => true ], $this->runs->claims );
+    }
+
+    public function test_claim_is_per_workflow(): void {
+        $this->add_workflow( 2 );
+        $this->dispatcher->collect( $this->claiming_trigger(), $this->event() );
+        $this->dispatcher->flush();
+
+        $this->assertSame( [ 1, 2 ], array_column( $this->runs->runs, 'workflow_id' ) );
+    }
+
+    public function test_trigger_without_claims_starts_every_time_and_writes_none(): void {
+        $this->dispatcher->collect( $this->trigger, $this->event() );
+        $this->dispatcher->flush();
+        $this->dispatcher->collect( $this->trigger, $this->event() );
+        $this->dispatcher->flush();
+
+        $this->assertCount( 2, $this->runs->runs );
+        $this->assertSame( [], $this->runs->claims );
+    }
+
+    public function test_claim_is_released_when_the_run_could_not_start_and_retried_later(): void {
+        $trigger                      = $this->claiming_trigger();
+        $this->workflows->versions[1] = 0;
+        $this->dispatcher->collect( $trigger, $this->event() );
+        $this->dispatcher->flush();
+
+        $this->assertSame( [], $this->runs->runs );
+        $this->assertSame( [], $this->runs->claims );
+
+        $this->workflows->versions[1] = 11;
+        $this->dispatcher->collect( $trigger, $this->event() );
+        $this->dispatcher->flush();
+
+        $this->assertCount( 1, $this->runs->runs );
+        $this->assertSame( [ '1|order:12' => true ], $this->runs->claims );
+    }
+
     public function test_events_raised_by_a_run_carry_it_as_parent(): void {
         $this->add_workflow( 2 );
         $this->steps['raise']       = new FakeStep(

@@ -3,6 +3,7 @@ namespace YayMatik\Workflow\Core\Runtime;
 
 use YayMatik\Workflow\Core\Storage\RunStepStore;
 use YayMatik\Workflow\Core\Storage\RunStore;
+use YayMatik\Workflow\Core\Storage\TriggerClaimStore;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -43,5 +44,13 @@ final class DbRunRepository implements RunRepository {
 
     public function steps( int $run_id ): array {
         return RunStepStore::for_run( $run_id );
+    }
+
+    public function claim_subject( int $workflow_id, string $subject ): bool {
+        return TriggerClaimStore::claim( $workflow_id, $subject );
+    }
+
+    public function release_subject( int $workflow_id, string $subject ): void {
+        TriggerClaimStore::release( $workflow_id, $subject );
     }
 }

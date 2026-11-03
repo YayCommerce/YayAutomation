@@ -5,10 +5,11 @@ use YayMatik\Workflow\Core\Cart\CartSweep;
 use YayMatik\Workflow\Core\Storage\CartStore;
 use YayMatik\Workflow\Core\Storage\RunStore;
 use YayMatik\Workflow\Core\Storage\Settings;
+use YayMatik\Workflow\Core\Storage\TriggerClaimStore;
 
 defined( 'ABSPATH' ) || exit;
 
-/** Daily job deleting finished runs and carts older than their retention settings. */
+/** Daily job deleting finished runs and carts older than their retention settings, and deleted workflows' claims. */
 final class Cleanup {
 
     public const HOOK = 'yaymatik_cleanup';
@@ -63,6 +64,10 @@ final class Cleanup {
             Cancellation::carts( $ids, Cancellation::cart_gone() );
             $deleted = CartStore::delete_ids( $ids );
         } while ( self::BATCH === $deleted && microtime( true ) < $deadline );
+
+        while ( self::BATCH === TriggerClaimStore::delete_orphans( self::BATCH ) && microtime( true ) < $deadline ) {
+            continue;
+        }
 
         $runs = gmdate( 'Y-m-d H:i:s', time() - (int) Settings::get( 'run_retention_days' ) * DAY_IN_SECONDS );
         while ( microtime( true ) < $deadline ) {

@@ -3,7 +3,7 @@ namespace YayMatik\Workflow\Core\Runtime;
 
 defined( 'ABSPATH' ) || exit;
 
-/** The `runs` and `run_steps` operations of the runtime, over `RunStore` and `RunStepStore`. */
+/** The `runs`, `run_steps` and `trigger_claims` operations of the runtime, over `RunStore`, `RunStepStore` and `TriggerClaimStore`. */
 interface RunRepository {
 
     /**
@@ -55,4 +55,17 @@ interface RunRepository {
      * @return array[] In the order they ran.
      */
     public function steps( int $run_id ): array;
+
+    /**
+     * @param int    $workflow_id
+     * @param string $subject
+     * @return bool True only for the first claim.
+     */
+    public function claim_subject( int $workflow_id, string $subject ): bool;
+
+    /**
+     * @param int    $workflow_id
+     * @param string $subject
+     */
+    public function release_subject( int $workflow_id, string $subject ): void;
 }

@@ -177,14 +177,14 @@ Today errors only go to the WooCommerce log, which merchants never open.
 
 ## C11. Scheduled and query triggers with claims
 
-**Decision.** A schedule fans out to one run per matching subject, in batches. Table `trigger_claims` records "this workflow already ran for this subject".
+**Decision.** A schedule fans out to one run per matching subject, in batches. Table `trigger_claims` records "this workflow already ran for this subject"; it has no end date, and a run that doesn't start gives its claim back.
 
 **Why.**
 - Inactive customer (M6) and abandoned cart (M8) aren't events. Something has to look for them on a schedule.
 - Without claims, the daily check would email the same customer every day.
 - It generalises today's trick in `OrderCreated::claim()` (an order meta flag).
 
-**For devs.** A query trigger defines "find subjects" and "subject key". Batching and dedupe come from the Scheduler.
+**For devs.** A query trigger opts in with `Trigger::claims_per_workflow()` and keeps its usual `subject()`. A daily job of its own finds the subjects in batches and fires the trigger's event; the Dispatcher takes the claim.
 
 **Note (M7).** Abandoned carts come from the `carts` table, not from pending orders: WooCommerce cancels unpaid orders after the hold-stock minutes.
 
