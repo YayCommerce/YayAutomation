@@ -20,7 +20,8 @@
         "currencySymbol": "$",
         "freeShippingCoupon": "",
         "cartTracking": false,
-        "abandonMinutes": 60
+        "abandonMinutes": 60,
+        "reviewsEnabled": true
     },
     "automation": {
         "plugins": [
@@ -285,6 +286,21 @@
                 "description": "A shopper leaves the checkout page without ordering",
                 "icon": "credit-card",
                 "summary": "When a checkout is abandoned",
+                "onError": "stop",
+                "fields": [],
+                "outputs": []
+            },
+            "customer_account_created": {
+                "kind": "trigger",
+                "plugin": "woocommerce",
+                "provides": [
+                    "customer"
+                ],
+                "category": "customer",
+                "label": "Customer account created",
+                "description": "A customer creates an account",
+                "icon": "user-plus",
+                "summary": "When a customer creates an account",
                 "onError": "stop",
                 "fields": [],
                 "outputs": []
@@ -748,7 +764,7 @@
             {
                 "id": "site",
                 "label": "Site",
-                "description": "Your WordPress site: its name and address. Available in every workflow.",
+                "description": "Your WordPress site: its name, address, shop and account pages, and email blocks for them. Available in every workflow.",
                 "icon": "globe",
                 "fields": [
                     {
@@ -764,6 +780,52 @@
                         "type": "string",
                         "valueType": "string",
                         "conditional": false
+                    },
+                    {
+                        "key": "site.account_url",
+                        "label": "My account URL",
+                        "type": "string",
+                        "valueType": "string",
+                        "conditional": false
+                    },
+                    {
+                        "key": "site.shop_url",
+                        "label": "Shop URL",
+                        "type": "string",
+                        "valueType": "string",
+                        "conditional": false
+                    },
+                    {
+                        "key": "site.welcome_links",
+                        "label": "Account and shop buttons",
+                        "type": "string",
+                        "valueType": "string",
+                        "conditional": false,
+                        "block": true
+                    },
+                    {
+                        "key": "site.shop_button",
+                        "label": "Visit the shop button",
+                        "type": "string",
+                        "valueType": "string",
+                        "conditional": false,
+                        "block": true
+                    },
+                    {
+                        "key": "site.account_button",
+                        "label": "Go to your account button",
+                        "type": "string",
+                        "valueType": "string",
+                        "conditional": false,
+                        "block": true
+                    },
+                    {
+                        "key": "site.new_products",
+                        "label": "Newest products",
+                        "type": "string",
+                        "valueType": "string",
+                        "conditional": false,
+                        "block": true
                     }
                 ],
                 "relations": []
@@ -917,6 +979,21 @@
                     {
                         "key": "order.upsell_products",
                         "label": "Upsell products",
+                        "type": "string",
+                        "valueType": "string",
+                        "conditional": false,
+                        "block": true
+                    },
+                    {
+                        "key": "order.has_products_not_reviewed",
+                        "label": "Order has products not reviewed",
+                        "type": "boolean",
+                        "valueType": "boolean",
+                        "conditional": true
+                    },
+                    {
+                        "key": "order.review_products",
+                        "label": "Products to review",
                         "type": "string",
                         "valueType": "string",
                         "conditional": false,

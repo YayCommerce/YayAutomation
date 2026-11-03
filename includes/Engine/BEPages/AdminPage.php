@@ -93,6 +93,7 @@ class AdminPage {
                 'freeShippingCoupon' => FreeShipping::coupon_mode(),
                 'cartTracking'       => (bool) Settings::get( 'cart_tracking' ),
                 'abandonMinutes'     => (int) Settings::get( 'abandon_minutes' ),
+                'reviewsEnabled'     => 'yes' === get_option( 'woocommerce_enable_reviews', 'yes' ),
             ],
             'automation' => Catalog::to_client() + [ 'email' => SendInternalEmail::sender() ],
             'docs'       => [

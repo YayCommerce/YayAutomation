@@ -1,26 +1,26 @@
 import { __ } from '@wordpress/i18n';
 
-import { cartEmail, cartGraph, COUPON_LINE, couponStep, emailStep, ITEM_LINES, waitStep } from '../core/cartFlow';
 import { defineTemplate } from '../core/defineTemplate';
+import { COUPON_LINE, couponStep, customerEmail, emailStep, ITEM_LINES, lineGraph, waitStep } from '../core/flow';
 
 const shared = { category: 'recover_carts', workflow: 'abandoned_cart', createdAt: '2026-11-02' } as const;
 
-const first = cartEmail(__('You left something in your cart', 'yaymatik'), __('Your cart is saved', 'yaymatik'), [
+const first = customerEmail(__('You left something in your cart', 'yaymatik'), __('Your cart is saved', 'yaymatik'), [
   __('We saved the items you left at {{ site.name }}:', 'yaymatik'),
   ...ITEM_LINES,
 ]);
 
-const second = cartEmail(__('Still thinking it over?', 'yaymatik'), __('Your cart is waiting', 'yaymatik'), [
+const second = customerEmail(__('Still thinking it over?', 'yaymatik'), __('Your cart is waiting', 'yaymatik'), [
   __('Your cart is still saved. Pick up where you left off:', 'yaymatik'),
   ...ITEM_LINES,
 ]);
 
-const last = cartEmail(__('Last reminder about your cart', 'yaymatik'), __('Your cart is still here', 'yaymatik'), [
+const last = customerEmail(__('Last reminder about your cart', 'yaymatik'), __('Your cart is still here', 'yaymatik'), [
   __('This is our last reminder. Your items are one click away:', 'yaymatik'),
   ...ITEM_LINES,
 ]);
 
-const lastCoupon = cartEmail(
+const lastCoupon = customerEmail(
   __('{{ steps.coupon.amount }} off the cart you left', 'yaymatik'),
   __('A little something to help you decide', 'yaymatik'),
   [__('Use this coupon for {{ steps.coupon.amount }} off your order:', 'yaymatik'), COUPON_LINE, ...ITEM_LINES],
@@ -34,7 +34,7 @@ export const cartReminder = defineTemplate({
     'An hour after a cart is abandoned, email the shopper their cart. Stops as soon as they order.',
     'yaymatik',
   ),
-  graph: cartGraph('cart_abandoned', [waitStep('wait-1', 1, 'hours'), emailStep('email-1', first)]),
+  graph: lineGraph('cart_abandoned', [waitStep('wait-1', 1, 'hours'), emailStep('email-1', first)]),
 });
 
 export const cartSeries = defineTemplate({
@@ -45,7 +45,7 @@ export const cartSeries = defineTemplate({
     'Three reminders with the shopper’s cart: after 1 hour, 1 day and 3 days. Stops as soon as they order.',
     'yaymatik',
   ),
-  graph: cartGraph('cart_abandoned', [
+  graph: lineGraph('cart_abandoned', [
     waitStep('wait-1', 1, 'hours'),
     emailStep('email-1', first),
     waitStep('wait-2', 23, 'hours'),
@@ -63,7 +63,7 @@ export const cartSeriesCoupon = defineTemplate({
     'Three reminders with the shopper’s cart; the last adds a 10% off coupon valid for 7 days. Stops as soon as they order.',
     'yaymatik',
   ),
-  graph: cartGraph('cart_abandoned', [
+  graph: lineGraph('cart_abandoned', [
     waitStep('wait-1', 1, 'hours'),
     emailStep('email-1', first),
     waitStep('wait-2', 23, 'hours'),

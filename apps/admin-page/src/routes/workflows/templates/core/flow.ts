@@ -5,6 +5,7 @@ import { ROW_GAP } from '../../model/graph';
 import { generateCouponStep } from '../../steps/actions/generate-coupon';
 import type { SendEmailConfig } from '../../steps/actions/send-email/schema';
 import type { WaitConfig, WaitUnit } from '../../steps/actions/wait/schema';
+import type { Rule } from '../../steps/conditions/criteria/schema';
 import { emailMessage } from './email';
 
 interface FlowStep {
@@ -28,8 +29,15 @@ export const couponStep = (): FlowStep => ({
   config: { ...generateCouponStep.defaults(), amount: 10, expiry_days: 7 },
 });
 
-/** A cart trigger, then the steps in one line. */
-export function cartGraph(trigger: 'cart_abandoned' | 'checkout_abandoned', steps: FlowStep[]): WorkflowGraph {
+export const rule = (field: string, operator: string, value = ''): Rule => ({
+  field,
+  operator,
+  value,
+  valueType: 'value',
+});
+
+/** A trigger with no settings, then the steps in one line. */
+export function lineGraph(trigger: StepId, steps: FlowStep[]): WorkflowGraph {
   const nodes: WorkflowNode[] = [
     { id: 'trigger', kind: 'trigger', position: { x: 0, y: 0 }, data: { block: trigger, config: {} } },
     ...steps.map(({ id, stepId, config }, i): WorkflowNode => ({
@@ -50,8 +58,8 @@ export function cartGraph(trigger: 'cart_abandoned' | 'checkout_abandoned', step
 export const COUPON_LINE = '{{ steps.coupon.box }}';
 export const ITEM_LINES = ['{{ cart.items }}', '{{ cart.restore_button }}'];
 
-/** Send email to the shopper: a guest may have left no first name. */
-export const cartEmail = (subject: string, heading: string, lines: string[]): SendEmailConfig => ({
+/** Send email to the customer: a guest or a new account may have no first name. */
+export const customerEmail = (subject: string, heading: string, lines: string[]): SendEmailConfig => ({
   to: '{{ customer.email }}',
   subject,
   heading,

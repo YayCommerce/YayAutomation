@@ -41,7 +41,13 @@
             "nodeId": "note",
             "keys": [
                 "site.name",
-                "site.url"
+                "site.url",
+                "site.account_url",
+                "site.shop_url",
+                "site.welcome_links",
+                "site.shop_button",
+                "site.account_button",
+                "site.new_products"
             ]
         },
         {
@@ -150,6 +156,8 @@
                 "order.has_upsells",
                 "order.cross_sell_products",
                 "order.upsell_products",
+                "order.has_products_not_reviewed",
+                "order.review_products",
                 "order.customer.email",
                 "order.customer.first_name",
                 "order.customer.last_name",
@@ -169,7 +177,13 @@
                 "customer.paid_order_count",
                 "customer.unsubscribed",
                 "site.name",
-                "site.url"
+                "site.url",
+                "site.account_url",
+                "site.shop_url",
+                "site.welcome_links",
+                "site.shop_button",
+                "site.account_button",
+                "site.new_products"
             ]
         },
         {
@@ -278,6 +292,8 @@
                 "order.has_upsells",
                 "order.cross_sell_products",
                 "order.upsell_products",
+                "order.has_products_not_reviewed",
+                "order.review_products",
                 "order.customer.email",
                 "order.customer.first_name",
                 "order.customer.last_name",
@@ -298,6 +314,12 @@
                 "customer.unsubscribed",
                 "site.name",
                 "site.url",
+                "site.account_url",
+                "site.shop_url",
+                "site.welcome_links",
+                "site.shop_button",
+                "site.account_button",
+                "site.new_products",
                 "steps.c.result",
                 "steps.note.type"
             ]
@@ -408,6 +430,8 @@
                 "order.has_upsells",
                 "order.cross_sell_products",
                 "order.upsell_products",
+                "order.has_products_not_reviewed",
+                "order.review_products",
                 "order.customer.email",
                 "order.customer.first_name",
                 "order.customer.last_name",
@@ -428,6 +452,12 @@
                 "customer.unsubscribed",
                 "site.name",
                 "site.url",
+                "site.account_url",
+                "site.shop_url",
+                "site.welcome_links",
+                "site.shop_button",
+                "site.account_button",
+                "site.new_products",
                 "steps.c.result"
             ]
         },
@@ -496,6 +526,8 @@
                 "order.has_upsells",
                 "order.cross_sell_products",
                 "order.upsell_products",
+                "order.has_products_not_reviewed",
+                "order.review_products",
                 "order.customer.email",
                 "order.customer.first_name",
                 "order.customer.last_name",
@@ -515,7 +547,13 @@
                 "customer.paid_order_count",
                 "customer.unsubscribed",
                 "site.name",
-                "site.url"
+                "site.url",
+                "site.account_url",
+                "site.shop_url",
+                "site.welcome_links",
+                "site.shop_button",
+                "site.account_button",
+                "site.new_products"
             ]
         }
     ]

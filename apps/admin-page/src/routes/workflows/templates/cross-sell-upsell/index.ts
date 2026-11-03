@@ -7,9 +7,7 @@ import type { SendEmailConfig } from '../../steps/actions/send-email/schema';
 import type { WaitConfig } from '../../steps/actions/wait/schema';
 import type { Rule } from '../../steps/conditions/criteria/schema';
 import { defineTemplate } from '../core/defineTemplate';
-import { emailMessage } from '../core/email';
-
-const rule = (field: string, operator: string, value = ''): Rule => ({ field, operator, value, valueType: 'value' });
+import { COUPON_LINE, customerEmail, rule } from '../core/flow';
 
 /**
  * Suggest more products some time after a completed order: check who it's for and that there is
@@ -76,22 +74,10 @@ function graph({
 
 const hasCrossSells = rule('order.has_cross_sells', 'is_true');
 
-const greeting = __('Hi {{ customer.first_name }},', 'yaymatik');
-const signOff = __('See you soon,\n{{ site.name }}', 'yaymatik');
-const couponLines = [
-  __('Use this coupon for {{ steps.coupon.amount }} off your next order:', 'yaymatik'),
-  '{{ steps.coupon.box }}',
-];
-
-const email = (subject: string, heading: string, lines: string[]): SendEmailConfig => ({
-  to: '{{ customer.email }}',
-  subject,
-  heading,
-  message: emailMessage([greeting, ...lines, signOff]),
-});
+const couponLines = [__('Use this coupon for {{ steps.coupon.amount }} off your next order:', 'yaymatik'), COUPON_LINE];
 
 const crossSellEmail = (extra: string[] = []) =>
-  email(__('Picked for you, {{ customer.first_name }}', 'yaymatik'), __('You might also like', 'yaymatik'), [
+  customerEmail(__('Picked for you, {{ customer.first_name }}', 'yaymatik'), __('You might also like', 'yaymatik'), [
     __('Thanks again for your order {{ order.number }}. These go well with what you bought:', 'yaymatik'),
     '{{ order.cross_sell_products }}',
     ...extra,
@@ -159,7 +145,7 @@ export const upsellAfter30Days = defineTemplate({
     suggestions: rule('order.has_upsells', 'is_true'),
     days: 30,
     coupon: { amount: 15, expiry_days: 14 },
-    email: email(
+    email: customerEmail(
       __('Ready for an upgrade, {{ customer.first_name }}?', 'yaymatik'),
       __('Upgrade what you love', 'yaymatik'),
       [

@@ -18,7 +18,7 @@ final class ProductGrid {
     /** Longer names are cut, with "…". */
     private const NAME_MAX = 60;
 
-    /** @var \WC_Product[]|null The store's newest products, for previews. */
+    /** @var \WC_Product[]|null The store's newest products. */
     private static $newest = null;
 
     /**
@@ -61,7 +61,7 @@ final class ProductGrid {
     }
 
     /**
-     * The store's newest products a grid would show, for a preview with sample data; read once per request.
+     * The store's newest products a grid would show, read once per request: `site.new_products`, and a preview with sample data.
      *
      * @return \WC_Product[]
      */
@@ -168,11 +168,11 @@ final class ProductGrid {
     }
 
     /**
-     * About two lines at 14px in a half-width cell.
+     * Cut to about two lines at 14px in a half-width cell.
      *
      * @param string $name
      */
-    private static function short_name( string $name ): string {
+    public static function short_name( string $name ): string {
         // Cut the text, not its entities (`&amp;`): saved names can hold them.
         $name = html_entity_decode( $name, ENT_QUOTES, 'UTF-8' );
         return mb_strlen( $name ) > self::NAME_MAX ? rtrim( mb_substr( $name, 0, self::NAME_MAX - 1 ) ) . '…' : $name;

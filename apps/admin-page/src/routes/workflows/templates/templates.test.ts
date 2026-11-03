@@ -5,7 +5,15 @@ import { structureErrors } from '../model/structure';
 import { validateWorkflow } from '../model/validation';
 import type { WaitConfig } from '../steps/actions/wait/schema';
 import { emailMessage } from './core/email';
-import { findTemplate, needsCartTracking, sendsCustomerEmail, templates, versionsOf, workflowRank } from './index';
+import {
+  findTemplate,
+  needsCartTracking,
+  needsProductReviews,
+  sendsCustomerEmail,
+  templates,
+  versionsOf,
+  workflowRank,
+} from './index';
 
 describe('templates', () => {
   it('has templates with unique ids', () => {
@@ -58,6 +66,26 @@ describe('templates', () => {
 
   it('staff-only templates send no customer email', () => {
     expect(sendsCustomerEmail(findTemplate('high-value-order-alert')!.graph)).toBe(false);
+  });
+
+  it('high-value alert fires at 500 or more when the order is paid', () => {
+    const { nodes } = findTemplate('high-value-order-alert')!.graph;
+    expect(nodes.map((node) => node.data.block)).toEqual(['order_status_changed', 'condition', 'send_internal_email']);
+    expect(nodes[0].data.config).toEqual({
+      from: ['pending', 'on-hold', 'failed'],
+      to: ['processing', 'completed'],
+      only_checkout: false,
+    });
+    expect(nodes[1].data.config).toEqual({
+      match: 'all',
+      rules: [{ field: 'order.total', operator: 'greater_or_equal', value: '500' }],
+    });
+    expect(nodes[2].data.config).toMatchObject({
+      recipients: '',
+      subject: 'High-value order {{ order.number }} - {{ order.total }}',
+    });
+    expect(nodes[2].data.config.message).toContain('A high-value order was placed on {{ site.name }}.');
+    expect(nodes[2].data.config.message).toContain('{{ order.items }}');
   });
 });
 
@@ -154,6 +182,154 @@ describe('cart and checkout templates', () => {
     ],
   ])('%s has the agreed subjects and headings', (id, expected) => {
     expect(emailsOf(id).map((email) => [email.subject, email.heading])).toEqual(expected);
+  });
+});
+
+describe('review and welcome templates', () => {
+  const graphOf = (id: string) => findTemplate(id)!.graph;
+  const emailsOf = (id: string) =>
+    graphOf(id)
+      .nodes.filter((node) => node.data.block === 'send_email')
+      .map((node) => node.data.config);
+  const greeting = '<p>Hi {{ customer.first_name | default: "there" }},</p>';
+  const signOff = '<p>See you soon,<br>\n{{ site.name }}</p>';
+  const stillValid = [
+    { field: 'order.status', operator: 'is', value: 'completed', valueType: 'value' },
+    { field: 'order.has_products_not_reviewed', operator: 'is_true', value: '', valueType: 'value' },
+    { field: 'customer.unsubscribed', operator: 'is_false', value: '', valueType: 'value' },
+  ];
+  const parentOf = (id: string, child: string) => graphOf(id).edges.find((edge) => edge.target === child);
+
+  it('links the versions of each workflow', () => {
+    expect(versionsOf(findTemplate('review-request')!).map((t) => t.id)).toEqual(['review-request-reminder']);
+    expect(versionsOf(findTemplate('welcome-email')!).map((t) => t.id)).toEqual(['welcome-series']);
+  });
+
+  it('checks for products, waits 7 days, then checks again before the review email', () => {
+    const { nodes } = graphOf('review-request');
+    expect(nodes.map((node) => node.id)).toEqual(['trigger', 'condition', 'wait', 'still-valid', 'email']);
+    expect(nodes[0].data).toEqual({
+      block: 'order_status_changed',
+      config: { from: [], to: ['completed'], only_checkout: false },
+    });
+    expect(nodes[1].data.config.rules).toEqual([stillValid[1]]);
+    expect(parentOf('review-request', 'wait')).toMatchObject({ source: 'condition', sourceHandle: 'then' });
+    expect((nodes[2].data.config as WaitConfig).delay).toEqual({ value: 7, unit: 'days' });
+    expect(nodes[3].data.config).toEqual({ match: 'all', rules: stillValid });
+    expect(parentOf('review-request', 'email')).toMatchObject({ source: 'still-valid', sourceHandle: 'then' });
+  });
+
+  it('sends the reminder only after the first email, after another wait and check', () => {
+    const { nodes } = graphOf('review-request-reminder');
+    expect(nodes.map((node) => node.id)).toEqual([
+      'trigger',
+      'condition',
+      'wait',
+      'still-valid',
+      'email',
+      'wait-2',
+      'still-valid-2',
+      'email-2',
+    ]);
+    expect(parentOf('review-request-reminder', 'wait-2')?.source).toBe('email');
+    expect((nodes[5].data.config as WaitConfig).delay).toEqual({ value: 7, unit: 'days' });
+    expect(nodes[6].data.config).toEqual({ match: 'all', rules: stillValid });
+    expect(parentOf('review-request-reminder', 'email-2')).toMatchObject({
+      source: 'still-valid-2',
+      sourceHandle: 'then',
+    });
+  });
+
+  it('welcomes right away, then waits 3 and 4 days, with no condition or coupon', () => {
+    expect(graphOf('welcome-email').nodes.map((node) => node.data.block)).toEqual([
+      'customer_account_created',
+      'send_email',
+    ]);
+    const { nodes } = graphOf('welcome-series');
+    expect(nodes.map((node) => node.data.block)).toEqual([
+      'customer_account_created',
+      'send_email',
+      'wait',
+      'send_email',
+      'wait',
+      'send_email',
+    ]);
+    expect((nodes[2].data.config as WaitConfig).delay).toEqual({ value: 3, unit: 'days' });
+    expect((nodes[4].data.config as WaitConfig).delay).toEqual({ value: 4, unit: 'days' });
+  });
+
+  it.each([
+    ['review-request', [['How did your order go?', 'Tell us what you think', ['{{ order.review_products }}']]]],
+    [
+      'review-request-reminder',
+      [
+        ['How did your order go?', 'Tell us what you think', ['{{ order.review_products }}']],
+        ['A quick review?', 'Still have a minute?', ['{{ order.review_products }}']],
+      ],
+    ],
+    ['welcome-email', [['Welcome to {{ site.name }}', 'Welcome to {{ site.name }}', ['{{ site.welcome_links }}']]]],
+    [
+      'welcome-series',
+      [
+        ['Welcome to {{ site.name }}', 'Welcome to {{ site.name }}', ['{{ site.welcome_links }}']],
+        ['New in the shop', 'New in the shop', ['{{ site.new_products }}', '{{ site.shop_button }}']],
+        ['Anything we can help with?', 'Anything we can help with?', ['{{ site.account_button }}']],
+      ],
+    ],
+  ] as const)('%s has the agreed emails, with blocks on their own paragraphs', (id, expected) => {
+    const emails = emailsOf(id);
+    expect(emails.map((email) => [email.subject, email.heading])).toEqual(expected.map(([s, h]) => [s, h]));
+    emails.forEach((email, i) => {
+      expect(email.to).toBe('{{ customer.email }}');
+      expect(email.message).toContain(greeting);
+      expect(email.message).toContain(signOff);
+      for (const block of expected[i][2]) expect(email.message).toContain(`<p>${block}</p>`);
+    });
+  });
+
+  it('asks for a review with the order number, without a #', () => {
+    expect(emailsOf('review-request')[0].message).toContain(
+      'Thanks again for order {{ order.number }}. If you have a minute',
+    );
+  });
+
+  it.each(['cross-sell-first-time-buyers', 'cross-sell-repeat-buyers', 'cross-sell-coupon', 'upsell-after-30-days'])(
+    '%s greets a customer with no first name',
+    (id) => {
+      expect(emailsOf(id)[0].message).toContain(greeting);
+    },
+  );
+});
+
+describe('needsProductReviews', () => {
+  const { wc } = window.yayMatikMeta;
+  const before = { ...wc };
+
+  afterEach(() => {
+    Object.assign(wc, before);
+  });
+
+  it('holds for the review templates while reviews are off', () => {
+    wc.reviewsEnabled = false;
+    expect(needsProductReviews(findTemplate('review-request')!.graph)).toBe(true);
+    expect(needsProductReviews(findTemplate('review-request-reminder')!.graph)).toBe(true);
+  });
+
+  it('goes away when reviews are on', () => {
+    wc.reviewsEnabled = true;
+    expect(needsProductReviews(findTemplate('review-request')!.graph)).toBe(false);
+  });
+
+  it('leaves WooCommerce being off to "Install WooCommerce"', () => {
+    wc.reviewsEnabled = false;
+    wc.active = false;
+    expect(needsProductReviews(findTemplate('review-request')!.graph)).toBe(false);
+  });
+
+  it('skips other templates', () => {
+    wc.reviewsEnabled = false;
+    expect(needsProductReviews(findTemplate('welcome-email')!.graph)).toBe(false);
+    expect(needsProductReviews(findTemplate('cross-sell-coupon')!.graph)).toBe(false);
   });
 });
 

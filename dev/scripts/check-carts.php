@@ -1526,6 +1526,12 @@ parse_str( (string) wp_parse_url( $real_cart->restore_url(), PHP_URL_QUERY ), $a
 $ok( RestoreLink::from_options()->verify( (int) $block_row['id'], $block_row['created_at'], $args[ UnsubscribeLink::ARG_TOKEN ] ), 'restore_url verifies through RestoreLink' );
 $button = CartItems::button( $real_cart, true );
 $ok( false !== strpos( $button, esc_url( $real_cart->restore_url() ) ) && false !== strpos( $button, 'Restore my cart' ) && false === strpos( $button, "\n" ), 'restore button: real link, on one line' );
+$button_color = sanitize_hex_color( (string) get_option( 'woocommerce_email_base_color', '' ) );
+$button_color = $button_color ? $button_color : '#7f54b3';
+$ok(
+    '<table role="presentation" align="center" cellspacing="0" cellpadding="0" border="0" style="margin:0 auto 16px;"><tr><td align="center" bgcolor="' . $button_color . '" style="padding:0;background-color:' . $button_color . ';border-radius:4px;"><a href="' . esc_url( $real_cart->restore_url() ) . '" style="display:inline-block;padding:12px 24px;font-weight:bold;text-decoration:none;color:' . wc_light_or_dark( $button_color, '#202020', '#ffffff' ) . ';">Restore my cart</a></td></tr></table>' === $button,
+    'restore button: the bulletproof table, byte for byte'
+);
 $ok( false !== strpos( CartItems::button( $real_cart->inert(), true ), 'href="#"' ) && '#' === $real_cart->inert()->restore_url(), 'inert cart: the button and link go nowhere' );
 
 // Preview.

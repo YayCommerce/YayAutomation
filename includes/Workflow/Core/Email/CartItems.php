@@ -8,7 +8,7 @@ defined( 'ABSPATH' ) || exit;
 /** A saved cart in an email: its products with the prices the shopper saw, and the restore button. */
 final class CartItems {
 
-    private const IMAGE = 64;
+    public const IMAGE = 64;
 
     /**
      * Table in HTML, on one line: the email body goes through wpautop(), which would put <br> between table rows. No lines → ''.
@@ -37,23 +37,11 @@ final class CartItems {
     }
 
     /**
-     * A button built as a table with a padded link, as many mail clients ignore padding on a bare link.
-     *
      * @param SavedCart $cart
      * @param bool      $html
      */
     public static function button( SavedCart $cart, bool $html ): string {
-        $label = __( 'Restore my cart', 'yaymatik' );
-        $url   = $cart->restore_url();
-        if ( ! $html ) {
-            return $label . ': ' . $url;
-        }
-        $color = sanitize_hex_color( (string) get_option( 'woocommerce_email_base_color', '' ) );
-        $color = $color ? $color : '#7f54b3';
-        return '<table role="presentation" align="center" cellspacing="0" cellpadding="0" border="0" style="margin:0 auto 16px;"><tr>'
-            . '<td align="center" bgcolor="' . esc_attr( $color ) . '" style="padding:0;background-color:' . esc_attr( $color ) . ';border-radius:4px;">'
-            . '<a href="' . esc_url( $url ) . '" style="display:inline-block;padding:12px 24px;font-weight:bold;text-decoration:none;color:' . esc_attr( wc_light_or_dark( $color, '#202020', '#ffffff' ) ) . ';">' . esc_html( $label ) . '</a>'
-            . '</td></tr></table>';
+        return EmailButton::render( __( 'Restore my cart', 'yaymatik' ), $cart->restore_url(), $html );
     }
 
     /**
@@ -83,7 +71,7 @@ final class CartItems {
      * @param \WC_Product|null $product
      * @param string           $alt     Escaped.
      */
-    private static function image( ?\WC_Product $product, string $alt ): string {
+    public static function image( ?\WC_Product $product, string $alt ): string {
         $image = $product && $product->get_image_id() ? wp_get_attachment_image_src( $product->get_image_id(), 'woocommerce_thumbnail' ) : false;
         $src   = $image ? $image[0] : wc_placeholder_img_src( 'woocommerce_thumbnail' );
         return '<img src="' . esc_url( $src ) . '" alt="' . $alt . '" width="' . self::IMAGE . '" style="display:block;width:' . self::IMAGE . 'px;max-width:100%;height:auto;margin:0;border:0;background-color:#f4f4f5;">';

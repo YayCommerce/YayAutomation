@@ -95,6 +95,29 @@ if ( ! function_exists( 'wp_get_attachment_image_src' ) ) {
     }
 }
 
+if ( ! function_exists( 'get_userdata' ) ) {
+    /**
+     * The tests' sites have no users.
+     *
+     * @param int $user_id
+     */
+    function get_userdata( $user_id ) {
+        return false;
+    }
+}
+
+if ( ! function_exists( 'get_comments' ) ) {
+    /**
+     * Records the query in `$GLOBALS['yaymatik_test_comment_queries']`; finds nothing.
+     *
+     * @param array $args
+     */
+    function get_comments( $args = [] ) {
+        $GLOBALS['yaymatik_test_comment_queries'][] = $args;
+        return [];
+    }
+}
+
 if ( ! function_exists( 'wc_get_image_size' ) ) {
     function wc_get_image_size( $image_size ) {
         return [

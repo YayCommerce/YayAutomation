@@ -13,12 +13,13 @@ use YayMatik\Workflow\DataItems\OrderData;
 use YayMatik\Workflow\DataItems\OrderItemData;
 use YayMatik\Workflow\Triggers\CartAbandoned;
 use YayMatik\Workflow\Triggers\CheckoutAbandoned;
+use YayMatik\Workflow\Triggers\CustomerAccountCreated;
 use YayMatik\Workflow\Triggers\OrderCreated;
 use YayMatik\Workflow\Triggers\OrderStatusChanged;
 
 defined( 'ABSPATH' ) || exit;
 
-/** Order and cart triggers, the order, email and coupon actions, and order, cart and customer data. */
+/** Order, cart and customer triggers, the order, email and coupon actions, and order, cart and customer data. */
 class WoocommerceModule extends Module {
 
     public const ID = 'woocommerce';
@@ -44,7 +45,7 @@ class WoocommerceModule extends Module {
     }
 
     public function triggers(): array {
-        return [ OrderCreated::class, OrderStatusChanged::class, CartAbandoned::class, CheckoutAbandoned::class ];
+        return [ OrderCreated::class, OrderStatusChanged::class, CartAbandoned::class, CheckoutAbandoned::class, CustomerAccountCreated::class ];
     }
 
     public function actions(): array {

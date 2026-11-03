@@ -64,12 +64,30 @@ final class RefResolver {
                     $cart = SavedCart::find( (int) $number );
                     return $cart ? CartCustomer::of( $cart ) : null;
                 }
-                if ( 'user' === $kind && (int) $number > 0 && function_exists( 'WC' ) && get_userdata( (int) $number ) ) {
-                    return new \WC_Customer( (int) $number );
-                }
-                return null;
+                return 'user' === $kind ? self::account( (int) $number ) : null;
             },
         ];
+    }
+
+    /**
+     * An account as a customer, null when gone. Billing details are empty until a first checkout, and the customer's data reads those: the account's email and first name fill them in memory, never saved.
+     *
+     * @param int $id
+     */
+    public static function account( int $id ): ?\WC_Customer {
+        $user = function_exists( 'WC' ) && $id > 0 ? get_userdata( $id ) : false;
+        if ( ! $user ) {
+            return null;
+        }
+        $customer = new \WC_Customer( $id );
+        // The setter throws on an invalid address: a legacy one shouldn't fail the whole run at its start.
+        if ( '' === $customer->get_billing_email( 'edit' ) && is_email( $user->user_email ) ) {
+            $customer->set_billing_email( $user->user_email );
+        }
+        if ( '' === $customer->get_billing_first_name( 'edit' ) ) {
+            $customer->set_billing_first_name( $user->first_name );
+        }
+        return $customer;
     }
 
     private static function order( string $id ) {

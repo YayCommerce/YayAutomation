@@ -26,10 +26,10 @@ Changes from the ROADMAP-v1.0 order:
 | M2 | Wait + run history | L | 3 | F1 | ✅ Done |
 | F2 | Workflows table | M | 3 | F1 | ✅ Done |
 | M7 | Cart tracking + Settings + Health check | L | 3 | F1 | ✅ Done |
-| M8 | Abandoned cart + checkout | L | 2 | M1, M2, M7 | In progress |
-| M3 | Review request | M | 2 | M2 | — |
-| M4 | Welcome series | S | 2 | M2 | — |
-| M5 | High-value order alert | S | 1 | — | — |
+| M8 | Abandoned cart + checkout | L | 2 | M1, M2, M7 | ✅ Done |
+| M3 | Review request | M | 2 | M2 | ⏳ |
+| M4 | Welcome series | S | 2 | M2 | ⏳ |
+| M5 | High-value order alert | S | 1 | — | ⏳ |
 | M6 | Win-back | M | 2 | M8 | — |
 | M9 | Release hardening | M | 2 | all | — |
 | v1.1 | Control flow | L+ | 3 | v1.0 | — |
@@ -151,7 +151,7 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 **UI**
 - ✅ **M2.6 Wait** — form and card ("Wait 1 hour", clock icon).
 - ✅ **M2.7 Overview: runs table** — started, subject, status, steps run; loading and empty states.
-- ✅ **M2.8 Run detail** — each step with result and time; links to the order (customer links with M4).
+- ✅ **M2.8 Run detail** — each step with result and time; links to the order, or to the user for a customer run.
 - ✅ **M2.9 Deactivate / Update dialog** — says how many waiting runs will be cancelled.
 - ✅ **M2.10 Workflow list** — Runs and Last run columns, status filter.
 
@@ -161,7 +161,6 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 - Kit Pagination (`components/ui/pagination.tsx`) has hard-coded English ("Page X of Y", "Go to") → M9.2.
 - Preview picks the newest paid order even with no cross-sells / upsells, so the grid is left out with no hint; option: a note in the Preview dialog.
 - Product grid: the square's grey and the price colour are fixed, not the store's email colours; Outlook desktop ignores max-width (the square fills the column).
-- A workflow runs again when the same order is completed again (duplicate email / coupon); consider a once-per-order guard.
 - A run that ends at a Condition's No path shows Completed; consider a short outcome in the runs table (e.g. "Stopped at Condition (No)").
 - Insert variable shows the customer twice (the Customer group and the Customer section inside Order); from F1.12.
 
@@ -202,7 +201,7 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 
 ## M8 — Abandoned cart + checkout · L · risk 2
 
-**Status:** PR A merged (#32); PR B open.
+**Status:** ✅ Done. Merged into `develop` (PR #32, PR #33, `374260a`).
 
 **Backend**
 - ✅ **M8.1 Abandon sweep (no claims)** *(§3)* — a 5-minute job, 200 carts each; a cart's first abandon in its cycle is the claim. (#32)
@@ -212,36 +211,36 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 - ✅ **M8.5 Email blocks** — cart items, "Restore my cart" button. (#32)
 
 **UI**
-- ⏳ **M8.6 Trigger panels** — notes, plus a warning when cart tracking is off.
-- ⏳ **M8.7 Fixed note in the trigger panel, no setting:** the run always stops when an order is placed.
-- ⏳ **M8.8 Templates UI** — "Needs cart tracking" badge, "Before you start" in the preview.
+- ✅ **M8.6 Trigger panels** — notes, plus a warning when cart tracking is off.
+- ✅ **M8.7 Fixed note in the trigger panel, no setting:** the run always stops when an order is placed.
+- ✅ **M8.8 Templates UI** — "Needs cart tracking" badge, "Before you start" in the preview.
 
-⏳ **Templates:** Abandoned cart ×3, Abandoned checkout ×2.
+✅ **Templates:** Abandoned cart ×3, Abandoned checkout ×2.
 
 **Follow-ups**
 - A trigger's `context()` and `refs()` load the order 2–3 times per event; load it once.
 - Cart tracking off blocks Activate for workflows with a cart trigger (M1.10 pattern), and Update when it changes the trigger to one.
-- `woocommerce_email_base_color` lookup repeated in GenerateCoupon, UnsubscribePage, CartItems; one helper after v1.0.
+- `woocommerce_email_base_color` lookup repeated in GenerateCoupon, UnsubscribePage, EmailButton; one helper after v1.0.
 - A shopper who comes back and leaves again: the series goes on; only an order, a gone cart or an unsubscribe stops it.
 - Emails show the price, line total, total and currency the shopper saw; live name, image and link; a gone product shows its snapshot name without a link.
 - Template preview 'Not installed' badge and install note use the kit's pale warning variant; move to WarningBadge / warning-soft tokens after v1.0.
 
 ## M3 — Review request · M · risk 2
 
-- **M3.1 BE** — `products_not_reviewed` data and the "Leave a review" email block.
-- **M3.2 UI** — "Before you start": turn on product reviews.
-- **Templates:** Review request ×2.
+- ⏳ **M3.1 BE** — `order.has_products_not_reviewed` and the `order.review_products` email block ("Leave a review" per product), read when the step runs.
+- ⏳ **M3.2 UI** — "Before you start": turn on product reviews.
+- ⏳ **Templates:** Review request ×2.
 
 ## M4 — Welcome series · S · risk 2
 
-- **M4.1 BE** — Customer account created trigger (customer entity from `WC_Customer`).
-- **M4.2 UI** — Customers section in the trigger picker; welcome email block.
-- **Templates:** Welcome ×2.
+- ⏳ **M4.1 BE** — Customer account created trigger (customer entity from `WC_Customer`, `user:<id>`). Only a shopper's own sign-up starts it: `WC_Customer::save()` (REST, imports) and Users → Add New don't.
+- ⏳ **M4.2 UI** — Customers section in the trigger picker. Site blocks for welcome emails: `site.welcome_links`, `site.shop_button`, `site.account_button`, `site.new_products`; fields `site.account_url`, `site.shop_url`.
+- ⏳ **Templates:** Welcome ×2.
 
 ## M5 — High-value order alert · S · risk 1
 
-- **M5.1** — Move the template to "order starts processing" (Order status changed config).
-- **Templates:** High-value order alert ×1.
+- ⏳ **M5.1** — Move the template to "order is paid": Order status changed, from Pending, On hold or Failed to Processing or Completed (orders that don't need processing, such as downloads, go straight to Completed); condition order total ≥ 500. Known limit: processing → on-hold → processing or completed alerts again, as Order created's once-per-order claim is lost.
+- ⏳ **Templates:** High-value order alert ×1.
 
 ## M6 — Win-back · M · risk 2
 
@@ -271,7 +270,7 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 - **V11.6 More control steps** — Switch, Set variable, Stop, A/B split.
 - **V11.7 Retries** — backoff; replay a failed run from the failed step (button in run detail).
 - **V11.8 Product items** — the v1.1 list in ROADMAP-v1.0: Branched post-purchase, Nth order reward, alerts, order tags.
-- **Backlog** — Opt-in mode (consent checkbox) + transactional-only workflows.
+- **Backlog** — Opt-in mode (consent checkbox) + transactional-only workflows. "Run once per order" through M6's `trigger_claims`: today a status trigger starts again when an order returns to the status (duplicate email / coupon, a second high-value alert).
 
 ## v1.2 — Yay ecosystem + Pro connectors · L+
 

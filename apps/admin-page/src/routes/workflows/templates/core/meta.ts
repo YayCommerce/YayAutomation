@@ -2,6 +2,7 @@ import type { TemplateCategory, TemplateWorkflow, WorkflowGraph } from '@yaymati
 import { __ } from '@wordpress/i18n';
 
 import { stepOf } from '../../steps';
+import type { Rule } from '../../steps/conditions/criteria/schema';
 
 /** In library chip order. */
 export const categoryLabels: Record<TemplateCategory, string> = {
@@ -36,5 +37,20 @@ export const needsCartTracking = (graph: WorkflowGraph) => {
     active &&
     !cartTracking &&
     graph.nodes.some((node) => node.kind === 'trigger' && stepOf(node.data)?.category === 'cart')
+  );
+};
+
+/** The graph reads whether a product is left to review while the store has reviews off. */
+export const needsProductReviews = (graph: WorkflowGraph) => {
+  // Fixed at page load: it changes in WooCommerce's settings, so the note stays until a reload.
+  const { active, reviewsEnabled } = window.yayMatikMeta.wc;
+  return (
+    active &&
+    !reviewsEnabled &&
+    graph.nodes.some(
+      (node) =>
+        node.kind === 'condition' &&
+        ((node.data.config.rules ?? []) as Rule[]).some((rule) => rule.field === 'order.has_products_not_reviewed'),
+    )
   );
 };

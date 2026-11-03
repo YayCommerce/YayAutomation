@@ -69,7 +69,7 @@ describe('VariablePicker blocks', () => {
     const dialog = open(true);
     act(() => rowNamed(dialog, 'Blocks')!.click());
     const headings = [...dialog.querySelectorAll('p.uppercase')].map((p) => p.textContent);
-    expect(headings).toEqual(['Order', '10% off']);
+    expect(headings).toEqual(['Order', 'Site', '10% off']);
     const text = dialog.textContent ?? '';
     expect(text).toContain('Cross-sell products');
     expect(text).toContain('Upsell products');

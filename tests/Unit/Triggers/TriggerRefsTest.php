@@ -6,6 +6,7 @@ use YayMatik\Tests\Support\FakeOrder;
 use YayMatik\Workflow\Core\Data\Ref;
 use YayMatik\Workflow\Core\Data\Scope;
 use YayMatik\Workflow\Core\Steps\Trigger;
+use YayMatik\Workflow\Triggers\CustomerAccountCreated;
 use YayMatik\Workflow\Triggers\OrderCreated;
 use YayMatik\Workflow\Triggers\OrderStatusChanged;
 
@@ -45,6 +46,16 @@ final class TriggerRefsTest extends TestCase {
         if ( $this->refs_filter ) {
             remove_filter( 'yaymatik_trigger_refs', $this->refs_filter );
         }
+    }
+
+    public function test_account_created_is_about_the_user_provides_only_the_customer_and_a_gone_user_has_no_refs(): void {
+        $trigger = new CustomerAccountCreated();
+
+        $this->assertSame( 'user:7', $trigger->subject( [ 'customer_id' => 7 ] ) );
+        $this->assertSame( [ 'customer' ], $trigger->provides() );
+        $this->assertSame( 'customer', $trigger->category() );
+        $this->assertNull( $trigger->refs( [ 'customer_id' => 7 ] ) );
+        $this->assertNull( $trigger->context( [ 'customer_id' => 7 ] ) );
     }
 
     public function test_order_created_refs_the_order_and_its_billing_customer(): void {

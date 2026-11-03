@@ -153,7 +153,7 @@ class PersonalData {
     }
 
     /**
-     * Run subjects of the person's orders and carts.
+     * Run subjects of the person's orders, carts and accounts: by billing email too, as a welcome run sends there.
      *
      * @param string $email Normalized.
      * @return string[]
@@ -170,6 +170,20 @@ class PersonalData {
         $subjects = array_map( fn( $id ) => 'order:' . (int) $id, (array) $orders );
         foreach ( CartStore::for_email( $email ) as $cart ) {
             $subjects[] = 'cart:' . (int) $cart['id'];
+        }
+        $users = get_users(
+            [
+                'meta_key'   => 'billing_email', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+                'meta_value' => $email, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
+                'fields'     => 'ID',
+            ]
+        );
+        $user  = get_user_by( 'email', $email );
+        if ( $user ) {
+            $users[] = $user->ID;
+        }
+        foreach ( array_unique( array_map( 'intval', $users ) ) as $user_id ) {
+            $subjects[] = 'user:' . $user_id;
         }
         return $subjects;
     }

@@ -53,7 +53,7 @@ We chose these 8 because they cover what merchants install an automation plugin 
 
 ### Template Library
 
-**Today:** a few templates, including the 5 Recover carts ones, with search, sort, a sidebar (categories with counts, plugins), cards with a strip of step icons, and a "Needs cart tracking" badge while cart tracking is off.
+**Today:** 16 templates (Recover carts, Post-purchase, Customer lifecycle, Alerts), with search, sort, a sidebar (categories with counts, plugins), cards with a strip of step icons, and a "Needs cart tracking" badge while cart tracking is off.
 
 **v1.0 adds:**
 - 18 templates, arriving with their milestones.
@@ -88,7 +88,7 @@ We chose these 8 because they cover what merchants install an automation plugin 
 
 ### Editor
 
-**Today:** a visual canvas that pans on wheel or trackpad and zooms on Ctrl/Cmd + wheel or pinch, with 2 order triggers, Cart abandoned and Checkout abandoned, 4 actions (staff email, change order status, order note, order custom field), conditions, "Insert variable", and "Needs setup" / error highlights.
+**Today:** a visual canvas that pans on wheel or trackpad and zooms on Ctrl/Cmd + wheel or pinch, with 2 order triggers, Cart abandoned, Checkout abandoned and Customer account created, 4 actions (staff email, change order status, order note, order custom field), conditions, "Insert variable", and "Needs setup" / error highlights.
 
 **v1.0 adds:**
 - **Pickers:** WooCommerce gets new sections: Carts and Customers for triggers, Coupons for actions. A new YayMatik group holds Wait. *(M1, M2, M4, M6, M8)*
@@ -120,7 +120,7 @@ We chose these 8 because they cover what merchants install an automation plugin 
 **v1.0 adds:**
 - **Summary row** (✅ identity phase 1; run cells filled in M2) *([identity](plan-identity.md))*: status (e.g. "Active since Oct 2"), trigger, runs in the last 30 days, last run.
 - **Workflow runs** table: started, what it ran for (order number, cart, customer), status (Running, Waiting until …, Completed, Failed, Cancelled), steps run. Pages and a status filter.
-- **Run detail:** click a run to see the trigger and each step that ran, with its result and time, e.g. "Condition → No", "Wait → until Oct 9, 3:00 PM", "Send email → sent to a@b.com", "Generate coupon → YAY-7K2P", with a link to the order. A `?run=` link opens it directly. Customer links come with the customer triggers (M4).
+- **Run detail:** click a run to see the trigger and each step that ran, with its result and time, e.g. "Condition → No", "Wait → until Oct 9, 3:00 PM", "Send email → sent to a@b.com", "Generate coupon → YAY-7K2P", with a link to the order, or to the user for a customer run. A `?run=` link opens it directly.
 - Deactivate and Update say how many waiting runs will be cancelled. Cancelled runs show "Cancelled" right away, never "Waiting until …".
 
 **States:**
@@ -166,7 +166,7 @@ We chose these 8 because they cover what merchants install an automation plugin 
 
 ### Customer emails
 
-**Today:** only the staff email (High-value order alert).
+**Today:** every row below except Win-back.
 
 **v1.0 adds:** every customer email uses the store's WooCommerce email look (logo, colors, footer) and has a subject, a heading and a message the store owner can edit. Ready-made blocks are added from "Insert variable":
 
@@ -181,6 +181,8 @@ We chose these 8 because they cover what merchants install an automation plugin 
 | High-value order alert (staff) | Unchanged: order number, total, customer, items table, link to the order |
 
 **States:** a block with nothing to show (e.g. no suggested products) is left out; the workflow's conditions normally stop that email first.
+
+**Known limits (reviews):** WordPress's "Users must be registered and logged in to comment" sends guests to a login. WooCommerce's "verified owners only" hides the form for buyers of a guest order. The "Leave a review" link goes to the product's Reviews tab, checked on classic templates only.
 
 **Done when:** each template's emails arrive with the right blocks and look right in common email apps.
 
@@ -199,7 +201,7 @@ Every customer email includes an unsubscribe link. Unsubscribed customers never 
 | Review request | Review request · Request + reminder | An order is completed |
 | Welcome series | Welcome email · 3-email series | A customer creates an account |
 | Win-back 90 days | Win-back + discount · Win-back + free shipping | A customer has not ordered for 90 days |
-| High-value order alert | High-value order alert (email to staff) | A large order starts processing |
+| High-value order alert | High-value order alert (email to staff) | A large order is paid (starts processing, or is completed at once for downloads) |
 
 Template names, timings and coupon values are proposals until confirmed: see [Template details](#template-details-proposals).
 
@@ -228,7 +230,7 @@ Times count from the moment the workflow starts. All coupons are limited to the 
 | Welcome 3-email series | Day 0, 3, 7 | — |
 | Win-back + discount | When 90 days without an order | % off · 15% · 14 days |
 | Win-back + free shipping | When 90 days without an order | Free shipping · — · 14 days |
-| High-value order alert | Right away, to staff, for orders over 500 (store currency, editable) | — |
+| High-value order alert | Right away, to staff, for orders of 500 or more (store currency, editable) | — |
 
 Cart and checkout times count from when the cart is marked abandoned, which is 60 minutes after the shopper's last activity. So the first reminder arrives about 2 hours after the shopper leaves.
 
@@ -252,7 +254,7 @@ Risk scale: **1** = UI or template content, easy to undo · **2** = new feature 
 | M2 | Wait + run history | Wait step, run history on the overview page; **Cross-sell / upsell** (4) | Jack | Todo | 3 | M1 |
 | M3 | Review request | Review conditions and review links; **Review request** (2) | Jack | Todo | 2 | M2 |
 | M4 | Welcome series | Account created trigger; **Welcome series** (2) | Jack | Todo | 2 | M2 |
-| M5 | High-value order alert | Template moved to "order starts processing"; **High-value order alert** (1) | Jack | Todo | 1 | — |
+| M5 | High-value order alert | Template moved to "order is paid"; **High-value order alert** (1) | Jack | Todo | 1 | — |
 | M6 | Win-back | Inactive customer trigger (checked daily); **Win-back 90 days** (2) | Jack | Todo | 2 | M2 |
 | M7 | Cart tracking + Settings | Tracks carts and guest emails at checkout, restore link, Settings page | Jack | Todo | 3 | — |
 | M8 | Abandoned cart + checkout | Both triggers; **Abandoned cart** (3), **Abandoned checkout** (2) | Jack | Todo | 2 | M1, M2, M7 |

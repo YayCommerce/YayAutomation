@@ -73,7 +73,7 @@ export interface StepMeta {
   /** Data items the step adds: a trigger's for every run, an action's for the steps below it. */
   provides?: string[];
   /** Picker section. */
-  category?: 'email' | 'order' | 'coupon' | 'flow' | 'cart';
+  category?: 'email' | 'order' | 'coupon' | 'flow' | 'cart' | 'customer';
   /** Actions: data items needed whatever the config. */
   requires?: string[];
 }
@@ -148,6 +148,8 @@ declare global {
         cartTracking: boolean;
         /** Minutes without activity before a cart counts as abandoned. */
         abandonMinutes: number;
+        /** WooCommerce's Enable product reviews. Changes in another tab, so it can be stale until a reload. */
+        reviewsEnabled: boolean;
       };
       automation: {
         plugins: PluginMeta[];

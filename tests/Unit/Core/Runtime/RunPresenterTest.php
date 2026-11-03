@@ -62,6 +62,13 @@ final class RunPresenterTest extends TestCase {
         $this->assertSame( 3, $item['stepsRun'] );
     }
 
+    public function test_a_gone_account_is_named_by_id_with_no_link(): void {
+        $item = RunPresenter::item( [ 'subject' => 'user:7' ] + self::run_row(), 0 );
+
+        $this->assertSame( 'Customer #7', $item['subjectLabel'] );
+        $this->assertNull( $item['subjectUrl'] );
+    }
+
     public function test_dates_are_iso_utc_and_missing_dates_null(): void {
         $run = RunPresenter::detail( self::run_row(), [], null );
 
@@ -122,24 +129,24 @@ final class RunPresenterTest extends TestCase {
     }
 
     public function test_only_a_cancelled_cart_run_of_an_ordered_cart_links_its_order(): void {
-        $order                 = new FakeOrder(
+        $order                = new FakeOrder(
             [
                 'id'           => 40,
                 'date_created' => new \WC_DateTime( '2026-10-12 09:00:00', new \DateTimeZone( 'UTC' ) ),
             ]
         );
-        FakeOrder::$found[40]  = $order;
-        $cancelled             = [
-            'subject' => 'cart:5',
-            'status'  => 'cancelled',
+        FakeOrder::$found[40] = $order;
+        $cancelled            = [
+            'subject'     => 'cart:5',
+            'status'      => 'cancelled',
             'finished_at' => '2026-10-12 09:00:05',
         ] + self::run_row();
-        $ordered               = [
+        $ordered              = [
             'email'    => 'ann@x.com',
             'status'   => 'ordered',
             'order_id' => 40,
         ];
-        $url                   = fn( array $run ) => RunPresenter::detail( $run, [], null )['stoppedByOrderUrl'];
+        $url                  = fn( array $run ) => RunPresenter::detail( $run, [], null )['stoppedByOrderUrl'];
 
         $this->with_cart( $ordered );
         $this->assertSame( $order->get_edit_order_url(), $url( $cancelled ) );

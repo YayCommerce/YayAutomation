@@ -88,7 +88,7 @@ $edge = fn( string $source, string $target, ?string $handle = null ) => array_fi
     ]
 );
 
-// The high-value template's shape: order created → total ≥ 500 → email + meta, otherwise a note.
+// Order created → total ≥ 500 → email + meta, otherwise a note. The high-value template itself starts on the status change: check-lifecycle.
 $graph = [
     'nodes' => [
         $node( 'trigger', 'trigger', 0, 'order_created', [] ),
