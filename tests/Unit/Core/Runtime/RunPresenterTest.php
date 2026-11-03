@@ -62,6 +62,13 @@ final class RunPresenterTest extends TestCase {
         $this->assertSame( 3, $item['stepsRun'] );
     }
 
+    public function test_a_gone_account_is_named_by_id_with_no_link(): void {
+        $item = RunPresenter::item( [ 'subject' => 'user:7' ] + self::run_row(), 0 );
+
+        $this->assertSame( 'Customer #7', $item['subjectLabel'] );
+        $this->assertNull( $item['subjectUrl'] );
+    }
+
     public function test_dates_are_iso_utc_and_missing_dates_null(): void {
         $run = RunPresenter::detail( self::run_row(), [], null );
 

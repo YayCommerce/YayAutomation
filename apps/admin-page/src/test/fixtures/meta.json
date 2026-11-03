@@ -290,6 +290,21 @@
                 "fields": [],
                 "outputs": []
             },
+            "customer_account_created": {
+                "kind": "trigger",
+                "plugin": "woocommerce",
+                "provides": [
+                    "customer"
+                ],
+                "category": "customer",
+                "label": "Customer account created",
+                "description": "A customer creates an account",
+                "icon": "user-plus",
+                "summary": "When a customer creates an account",
+                "onError": "stop",
+                "fields": [],
+                "outputs": []
+            },
             "send_email": {
                 "kind": "action",
                 "plugin": "woocommerce",

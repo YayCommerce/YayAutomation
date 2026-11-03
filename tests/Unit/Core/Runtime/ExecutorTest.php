@@ -10,6 +10,7 @@ use YayMatik\Tests\Support\FakeRunRepository;
 use YayMatik\Tests\Support\FakeStep;
 use YayMatik\Tests\Support\FakeTrigger;
 use YayMatik\Tests\Support\FakeWorkflows;
+use YayMatik\Workflow\Core\Data\GoneEntity;
 use YayMatik\Workflow\Core\Data\Ref;
 use YayMatik\Workflow\Core\Data\RefResolver;
 use YayMatik\Workflow\Core\Data\Scope;
@@ -243,6 +244,12 @@ final class ExecutorTest extends TestCase {
 
         $this->assertSame( 'failed', $this->slice( $id ) );
         $this->assertSame( 'Oops.', $this->run_of( $id )['error'] );
+    }
+
+    public function test_a_gone_account_says_the_customer_was_deleted_and_other_customers_keep_their_text(): void {
+        $this->assertSame( 'The customer was deleted.', Executor::gone_message( new GoneEntity( new Ref( 'customer', 'user:5' ) ) ) );
+        $this->assertSame( 'Customer no longer exists.', Executor::gone_message( new GoneEntity( new Ref( 'customer', 'order:5' ) ) ) );
+        $this->assertSame( 'Customer no longer exists.', Executor::gone_message( new GoneEntity( new Ref( 'customer', 'cart:5' ) ) ) );
     }
 
     public function test_gone_entity_skips_the_step_and_the_run_goes_on(): void {

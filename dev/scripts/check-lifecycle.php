@@ -1,16 +1,27 @@
 <?php
 /**
- * Review data on real orders, products and comments, all temporary, at a random `.test` domain.
+ * Review data, and account-created runs through the real Dispatcher and Worker, on real orders, products,
+ * comments, users and workflows, all temporary, at a random `.test` domain. Mail never leaves.
  * Prints PASS / FAIL lines; removes its rows. Run through check-lifecycle.sh.
  *
  * @package YayMatik
  */
 
-// phpcs:disable WordPress.WP.GlobalVariablesOverride.Prohibited
+// phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.WP.GlobalVariablesOverride.Prohibited
 
+use YayMatik\Engine\Privacy\PersonalData;
 use YayMatik\Workflow\Core\Data\DataRegistry;
+use YayMatik\Workflow\Core\Data\RefResolver;
 use YayMatik\Workflow\Core\Email\ProductGrid;
 use YayMatik\Workflow\Core\Email\ReviewProducts;
+use YayMatik\Workflow\Core\Runtime\ActionSchedulerQueue;
+use YayMatik\Workflow\Core\Runtime\RunPresenter;
+use YayMatik\Workflow\Core\Runtime\Runtime;
+use YayMatik\Workflow\Core\Storage\RunStepStore;
+use YayMatik\Workflow\Core\Storage\RunStore;
+use YayMatik\Workflow\Core\Storage\Schema;
+use YayMatik\Workflow\Core\Storage\UnsubscribeStore;
+use YayMatik\Workflow\Core\Storage\WorkflowStore;
 
 if ( ! function_exists( 'WC' ) ) {
     WP_CLI::error( 'WooCommerce is not active.' );
@@ -26,6 +37,10 @@ $posts    = [];
 $orders   = [];
 $comments = [];
 $users    = [];
+$flows    = [];
+$runs     = [];
+
+global $wpdb;
 
 $fails = 0;
 $ok    = function ( bool $pass, string $what ) use ( &$fails ) {
@@ -33,7 +48,19 @@ $ok    = function ( bool $pass, string $what ) use ( &$fails ) {
     $fails += $pass ? 0 : 1;
 };
 
-$cleanup = function () use ( &$posts, &$orders, &$comments, &$users ) {
+$cleanup = function () use ( $wpdb, $domain, &$posts, &$orders, &$comments, &$users, &$flows, &$runs ) {
+    foreach ( $flows as $flow_id ) {
+        WorkflowStore::deactivate( $flow_id );
+        WorkflowStore::delete( $flow_id );
+    }
+    foreach ( $runs as $run_id ) {
+        as_unschedule_all_actions( ActionSchedulerQueue::HOOK, [ $run_id ], ActionSchedulerQueue::GROUP );
+    }
+    if ( $runs ) {
+        RunStore::delete_with_steps( $runs );
+    }
+    $unsubscribes = Schema::table( Schema::UNSUBSCRIBES );
+    $wpdb->query( $wpdb->prepare( "DELETE FROM {$unsubscribes} WHERE email LIKE %s", '%@' . $wpdb->esc_like( $domain ) . '%' ) );
     foreach ( $comments as $comment_id ) {
         wp_delete_comment( $comment_id, true );
     }
@@ -266,6 +293,259 @@ remove_all_filters( 'pre_option_woocommerce_enable_reviews' );
 $sample = $item->sample();
 $newest = ProductGrid::newest();
 $ok( (bool) $newest === $sample['has_products_not_reviewed'] && ( ! $newest || false !== strpos( $sample['review_products']['html'], '#reviews' ) ), 'sample data renders from the newest products' );
+
+// Account created: real workflows through the real Dispatcher; events start at flush().
+wp_set_current_user(
+    (int) get_users(
+        [
+            'role'   => 'administrator',
+            'number' => 1,
+            'fields' => 'ID',
+        ]
+    )[0]
+);
+add_filter( 'pre_wp_mail', fn() => true );
+$runs_table = RunStore::table();
+$new_flow   = function ( string $name, array $graph ) use ( &$flows ) {
+    $request = new WP_REST_Request( 'POST', '/yaymatik/v1/workflows' );
+    $request->set_header( 'content-type', 'application/json' );
+    $request->set_body(
+        wp_json_encode(
+            [
+                'name'  => "Check lifecycle: {$name} (temporary)",
+                'graph' => $graph,
+            ]
+        )
+    );
+    $id      = (int) rest_do_request( $request )->get_data()['id'];
+    $flows[] = $id;
+    return 200 === rest_do_request( new WP_REST_Request( 'POST', "/yaymatik/v1/workflows/{$id}/activate" ) )->get_status() ? $id : 0;
+};
+$node       = fn( string $id, string $kind, int $y, string $block, array $config ) => [
+    'id'       => $id,
+    'kind'     => $kind,
+    'position' => [
+        'x' => 0,
+        'y' => $y,
+    ],
+    'data'     => [
+        'block'  => $block,
+        'config' => (object) $config,
+    ],
+];
+$email_node = fn( string $id, int $y ) => $node(
+    $id,
+    'action',
+    $y,
+    'send_email',
+    [
+        'to'      => '{{ customer.email }}',
+        'subject' => 'Check lifecycle',
+        'heading' => 'Hi',
+        'message' => '<p>Hi {{ customer.first_name | default: "there" }},</p>',
+    ]
+);
+$runs_of    = function ( string $subject ) use ( $wpdb, $runs_table, &$runs ) {
+    $found = array_map( 'intval', $wpdb->get_col( $wpdb->prepare( "SELECT id FROM {$runs_table} WHERE subject = %s", $subject ) ) );
+    $runs  = array_merge( $runs, $found );
+    return $found;
+};
+// A run's job is taken over by the script, as check-carts does.
+$slice          = function ( int $run_id ) {
+    as_unschedule_all_actions( ActionSchedulerQueue::HOOK, [ $run_id ], ActionSchedulerQueue::GROUP );
+    return Runtime::worker()->run( $run_id );
+};
+$signup         = function ( string $name, string $first_name = '' ) use ( $domain, &$users ) {
+    $id = wc_create_new_customer(
+        "{$name}@{$domain}",
+        'yaymatik_check_' . $name . wp_rand( 1000, 9999 ),
+        wp_generate_password(),
+        [ 'first_name' => $first_name ]
+    );
+    if ( is_wp_error( $id ) ) {
+        throw new RuntimeException( $id->get_error_message() );
+    }
+    $users[] = $id;
+    return $id;
+};
+$saved_customer = function ( string $name ) use ( $domain, &$users ) {
+    $customer = new WC_Customer();
+    $customer->set_email( "{$name}@{$domain}" );
+    $customer->set_username( 'yaymatik_check_' . $name . wp_rand( 1000, 9999 ) );
+    $customer->set_password( wp_generate_password() );
+    $id      = $customer->save();
+    $users[] = $id;
+    return $id;
+};
+$customer_field = function ( int $id, string $key ) {
+    return DataRegistry::entities()['customer']->fields()[ $key ]['value']( RefResolver::account( $id ) );
+};
+
+$before = $signup( 'no-flow' );
+Runtime::dispatcher()->flush();
+$ok( [] === $runs_of( "user:{$before}" ), 'account created, no workflow: no run' );
+
+$account_flow = $new_flow(
+    'account',
+    [
+        'nodes' => [ $node( 'trigger', 'trigger', 0, 'customer_account_created', [] ), $email_node( 'mail', 170 ) ],
+        'edges' => [
+            [
+                'id'     => 'e1',
+                'source' => 'trigger',
+                'target' => 'mail',
+            ],
+        ],
+    ]
+);
+$ok( $account_flow > 0, 'a workflow on the trigger activates' );
+
+$shopper = $signup( 'shopper', 'Ann' );
+Runtime::dispatcher()->flush();
+$found = $runs_of( "user:{$shopper}" );
+$ok( 1 === count( $found ) && 'queued' === RunStore::find( $found[0] )['status'], 'wc_create_new_customer: one queued run about user:<id>' );
+
+$from_code = $saved_customer( 'from-code' );
+Runtime::dispatcher()->flush();
+$ok( [] === $runs_of( "user:{$from_code}" ), 'new WC_Customer … save(): no run' );
+
+$both_shopper = $signup( 'both-shopper' );
+$both_saved   = $saved_customer( 'both-saved' );
+Runtime::dispatcher()->flush();
+$ok( 1 === count( $runs_of( "user:{$both_shopper}" ) ) && [] === $runs_of( "user:{$both_saved}" ), 'one request, a shopper and a saved customer: one run, the shopper\'s' );
+
+$added   = wp_insert_user(
+    [
+        'user_login' => 'yaymatik_check_added' . wp_rand( 1000, 9999 ),
+        'user_email' => "added@{$domain}",
+        'user_pass'  => wp_generate_password(),
+        'role'       => 'customer',
+    ]
+);
+$users[] = $added;
+Runtime::dispatcher()->flush();
+$ok( [] === $runs_of( "user:{$added}" ), 'wp_insert_user: no run' );
+
+// Billing details filled in memory.
+$ok( "shopper@{$domain}" === $customer_field( $shopper, 'email' ) && 'Ann' === $customer_field( $shopper, 'first_name' ), 'empty billing: email and first name come from the account' );
+$ok( '' === get_user_meta( $shopper, 'billing_email', true ) && '' === get_user_meta( $shopper, 'billing_first_name', true ), 'reading never saves billing details' );
+UnsubscribeStore::add( "shopper@{$domain}" );
+$ok( true === $customer_field( $shopper, 'unsubscribed' ), 'unsubscribed reads the account email' );
+$wpdb->delete( Schema::table( Schema::UNSUBSCRIBES ), [ 'email' => "shopper@{$domain}" ] );
+$ok( 0.0 === $customer_field( $shopper, 'paid_order_count' ) && false === $customer_field( $shopper, 'is_first_order' ), 'no paid order: count 0, not a first order' );
+$guest_order = $order( [ $mug ], "shopper@{$domain}" );
+$guest_order->set_status( 'processing' );
+$guest_order->save();
+$ok( 1.0 === $customer_field( $shopper, 'paid_order_count' ) && true === $customer_field( $shopper, 'is_first_order' ), 'a guest order with that email counts; one paid order is the first' );
+
+$billed = $signup( 'billed', 'Account' );
+update_user_meta( $billed, 'billing_email', "billed-other@{$domain}" );
+update_user_meta( $billed, 'billing_first_name', 'Billing' );
+$ok( "billed-other@{$domain}" === $customer_field( $billed, 'email' ) && 'Billing' === $customer_field( $billed, 'first_name' ), 'existing billing values win' );
+
+// How a run reads in the admin.
+$subject_of = fn( string $subject ) => RunPresenter::item(
+    [
+        'id'            => 1,
+        'workflow_id'   => 1,
+        'version_id'    => 1,
+        'trigger_id'    => 'customer_account_created',
+        'subject'       => $subject,
+        'status'        => 'completed',
+        'error'         => null,
+        'wait_until'    => null,
+        'parent_run_id' => 0,
+        'root_run_id'   => 1,
+        'depth'         => 0,
+        'started_at'    => null,
+        'finished_at'   => null,
+    ],
+    0
+);
+$shown_run  = $subject_of( "user:{$shopper}" );
+$ok( "shopper@{$domain}" === $shown_run['subjectLabel'] && admin_url( "user-edit.php?user_id={$shopper}" ) === $shown_run['subjectUrl'], 'run subject, empty billing: account email, user link' );
+$ok( "billed-other@{$domain}" === $subject_of( "user:{$billed}" )['subjectLabel'], 'run subject, changed billing email: the billing email, the recipient' );
+
+$deleted = $signup( 'deleted' );
+Runtime::dispatcher()->flush();
+$queued = $runs_of( "user:{$deleted}" )[0] ?? 0;
+wp_delete_user( $deleted );
+$users     = array_diff( $users, [ $deleted ] );
+$shown_run = $subject_of( "user:{$deleted}" );
+$ok( "Customer #{$deleted}" === $shown_run['subjectLabel'] && null === $shown_run['subjectUrl'], 'run subject, deleted user: Customer #id, no link' );
+$ok( 'skipped' === $slice( $queued ) && 'The customer was deleted.' === RunStore::find( $queued )['error'], 'queued run of a deleted user: Skipped, The customer was deleted.' );
+
+WorkflowStore::deactivate( $account_flow );
+$wait_flow = $new_flow(
+    'account wait',
+    [
+        'nodes' => [
+            $node( 'trigger', 'trigger', 0, 'customer_account_created', [] ),
+            $node(
+                'wait',
+                'action',
+                170,
+                'wait',
+                [
+                    'delay' => [
+                        'value' => 1,
+                        'unit'  => 'days',
+                    ],
+                ]
+            ),
+            $email_node( 'mail', 340 ),
+        ],
+        'edges' => [
+            [
+                'id'     => 'e1',
+                'source' => 'trigger',
+                'target' => 'wait',
+            ],
+            [
+                'id'     => 'e2',
+                'source' => 'wait',
+                'target' => 'mail',
+            ],
+        ],
+    ]
+);
+
+/** A run of the wait workflow, left waiting by its first slice. */
+$waiting_run = function ( int $user_id ) use ( $runs_of, $slice ) {
+    Runtime::dispatcher()->flush();
+    $run_id = $runs_of( "user:{$user_id}" )[0] ?? 0;
+    $slice( $run_id );
+    return $run_id;
+};
+$leaves      = $signup( 'leaves' );
+$waiting     = $waiting_run( $leaves );
+$ok( 'waiting' === RunStore::find( $waiting )['status'], 'a run waits before its email' );
+wp_delete_user( $leaves );
+$users = array_diff( $users, [ $leaves ] );
+RunStore::save( $waiting, [ 'wait_until' => gmdate( 'Y-m-d H:i:s', time() - 60 ) ] );
+$status = $slice( $waiting );
+$mail   = array_values( array_filter( RunStepStore::for_run( $waiting ), fn( array $step ) => 'mail' === $step['step_id'] ) )[0] ?? [];
+$ok( 'completed' === $status && 'skipped' === ( $mail['status'] ?? '' ) && 'The customer was deleted.' === ( $mail['error'] ?? '' ), 'waiting run of a deleted user: its email is skipped, The customer was deleted.' );
+
+// Personal data.
+$privacy = PersonalData::get_instance();
+$by_acct = $signup( 'erase-account' );
+$run_a   = $waiting_run( $by_acct );
+$items   = $privacy->export( "erase-account@{$domain}" )['data'];
+$ok( in_array( "yaymatik-run-{$run_a}", array_column( $items, 'item_id' ), true ), 'export lists a user: run by the account email' );
+$privacy->erase( "erase-account@{$domain}" );
+$ok( 'cancelled' === RunStore::find( $run_a )['status'], 'erase by the account email cancels its waiting run' );
+
+$by_bill = $signup( 'erase-bill' );
+update_user_meta( $by_bill, 'billing_email', "erase-billing@{$domain}" );
+$run_b = $waiting_run( $by_bill );
+$privacy->erase( "erase-billing@{$domain}" );
+$ok( 'cancelled' === RunStore::find( $run_b )['status'], 'erase by the billing email cancels its waiting run' );
+
+$bystander = $signup( 'bystander' );
+$run_c     = $waiting_run( $bystander );
+$privacy->erase( "no-runs@{$domain}" );
+$ok( 'waiting' === RunStore::find( $run_c )['status'], 'erasing someone else leaves a run alone' );
 
 echo $fails ? "{$fails} failed\n" : "All passed\n"; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 exit( $fails ? 1 : 0 );

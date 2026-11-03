@@ -1,6 +1,7 @@
 <?php
 namespace YayMatik\Workflow\Core\Runtime;
 
+use YayMatik\Workflow\Core\Data\RefResolver;
 use YayMatik\Workflow\Core\Storage\CartStore;
 use YayMatik\Workflow\Core\Storage\RunStore;
 
@@ -42,9 +43,9 @@ final class RunPresenter {
     }
 
     /**
-     * What a run is about, for people: "Order #1012" and its admin URL (null once the order is gone), or a cart's shopper.
+     * What a run is about, for people: "Order #1012" and its admin URL (null once the order is gone), a cart's shopper, or an account's email.
      *
-     * @param string $subject E.g. `order:12`, `cart:5`.
+     * @param string $subject E.g. `order:12`, `cart:5`, `user:7`.
      * @return array `subjectLabel`, `subjectUrl`.
      */
     private static function subject( string $subject ): array {
@@ -55,6 +56,16 @@ final class RunPresenter {
                 /* translators: %d: cart id */
                 'subjectLabel' => $cart && '' !== $cart['email'] ? $cart['email'] : sprintf( __( 'Cart #%d', 'yaymatik' ), (int) $id ),
                 'subjectUrl'   => null,
+            ];
+        }
+        if ( 'user' === $type && (int) $id > 0 ) {
+            $customer = RefResolver::account( (int) $id );
+            $email    = $customer ? (string) $customer->get_billing_email() : '';
+            return [
+                /* translators: %d: user id */
+                'subjectLabel' => '' !== $email ? $email : sprintf( __( 'Customer #%d', 'yaymatik' ), (int) $id ),
+                // Not get_edit_user_link(): empty when this user can't edit that one. The page checks access itself.
+                'subjectUrl'   => $customer ? admin_url( 'user-edit.php?user_id=' . (int) $id ) : null,
             ];
         }
         if ( 'order' !== $type || (int) $id <= 0 ) {

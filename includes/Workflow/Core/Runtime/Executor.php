@@ -14,6 +14,7 @@ use YayMatik\Workflow\Core\Steps\StepResult;
 use YayMatik\Workflow\Core\Steps\Trigger;
 use YayMatik\Workflow\Core\Storage\RunStepStore;
 use YayMatik\Workflow\Core\Storage\RunStore;
+use YayMatik\Workflow\DataItems\CustomerData;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -295,11 +296,14 @@ final class Executor {
     }
 
     /**
-     * "Order no longer exists."
+     * "Order no longer exists."; an account is a person, so "The customer was deleted."
      *
      * @param GoneEntity $gone
      */
     public static function gone_message( GoneEntity $gone ): string {
+        if ( CustomerData::ID === $gone->ref()->type() && 0 === strpos( $gone->ref()->id(), 'user:' ) ) {
+            return __( 'The customer was deleted.', 'yaymatik' );
+        }
         $entity = DataRegistry::entities()[ $gone->ref()->type() ] ?? null;
         /* translators: %s: what was deleted, e.g. "Order" */
         return sprintf( __( '%s no longer exists.', 'yaymatik' ), $entity ? $entity->label() : $gone->ref()->type() );

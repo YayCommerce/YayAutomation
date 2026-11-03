@@ -120,7 +120,7 @@ We chose these 8 because they cover what merchants install an automation plugin 
 **v1.0 adds:**
 - **Summary row** (✅ identity phase 1; run cells filled in M2) *([identity](plan-identity.md))*: status (e.g. "Active since Oct 2"), trigger, runs in the last 30 days, last run.
 - **Workflow runs** table: started, what it ran for (order number, cart, customer), status (Running, Waiting until …, Completed, Failed, Cancelled), steps run. Pages and a status filter.
-- **Run detail:** click a run to see the trigger and each step that ran, with its result and time, e.g. "Condition → No", "Wait → until Oct 9, 3:00 PM", "Send email → sent to a@b.com", "Generate coupon → YAY-7K2P", with a link to the order. A `?run=` link opens it directly. Customer links come with the customer triggers (M4).
+- **Run detail:** click a run to see the trigger and each step that ran, with its result and time, e.g. "Condition → No", "Wait → until Oct 9, 3:00 PM", "Send email → sent to a@b.com", "Generate coupon → YAY-7K2P", with a link to the order, or to the user for a customer run. A `?run=` link opens it directly.
 - Deactivate and Update say how many waiting runs will be cancelled. Cancelled runs show "Cancelled" right away, never "Waiting until …".
 
 **States:**

@@ -68,7 +68,8 @@ Table names below omit the prefix: each is `{prefix}yaymatik_<name>`, e.g. `wp_y
 - **Scope** paths: `trigger.*` (with `order` / `customer` shortcuts), `steps.<id>.*`, `loop.item` / `loop.index`, `run.*`, `site.*`.
 - **Refs, loaded lazily.** Entities are stored as `{type: 'order', id: 12}` and loaded on demand, cached per slice. Facts only true at trigger time (status from / to, cart contents, event payload) are snapshotted. Data is fresh after a long Wait, and rows stay small.
 - **Cart entity.** `cart` reads a saved row (`Cart/SavedCart`). A cart run's customer is `Cart/CartCustomer` (`cart:<id>`): email and first name from the row, the rest from the row's own account, never an account found by email. A cart run's subject is `cart:<id>`.
-- **Gone entity.** If an order or customer was deleted, the step is skipped and run history says why.
+- **Account customer.** A customer from an account (`user:<id>`, the subject of Customer account created) is a `WC_Customer` through `RefResolver::account()`. Billing details are empty until a first checkout, so the account's email and first name fill them in memory, never saved; billing values already there win. The label of such a run is the email `customer.email` reads, and the link goes to the user's edit page. Personal data lookups find `user:` runs by the account email and by the `billing_email` meta.
+- **Gone entity.** If an order or customer was deleted, the step is skipped and run history says why: "Order no longer exists.", and for an account "The customer was deleted."; once a queued run's subject is gone, the run ends Skipped with the same text.
 - **Available variables per step.** Each step declares outputs. The Validator walks the steps above each step to list what it can use. "Insert variable" and the template checks use the same list.
 
 ## §5 Step contract · L2
@@ -88,7 +89,7 @@ Step:   id() label() plugin() module()
 
 - **Field vocabulary** (kept small): text, textarea, html (rich text, cleaned with `wp_kses_post`; drawn as WordPress's classic editor, Visual / Code tabs, stored as WordPress saves it: paragraphs as blank lines or `<p>`, `wpautop` puts them back), emails, select, multiselect, toggle, number, number_unit, notice, rules (core only). Modifiers: `required`, `variables`, `placeholder`, `help`, `show_if`. A form that needs more gets a custom panel, not a new word.
 - **Catalog.** Steps, fields, outputs and data types go to the admin app through `yayMatikMeta` (and to the AI in v2.0).
-- **Picker sections.** `Action::category()` and `Trigger::category()` put a step under a heading in its plugin's list (Email, Order, Carts). A trigger's is optional: one without a category has no heading.
+- **Picker sections.** `Action::category()` and `Trigger::category()` put a step under a heading in its plugin's list (Email, Order, Carts, Customers). A trigger's is optional: one without a category has no heading.
 - **Editor checks.** Automation builds valibot rules from the PHP fields. Validation always runs in Automation, never in a panel. Rules only in PHP `validate()` show up as the step's issue after a save (under its field when the form draws it, else at the top of the panel; "Needs setup" on the card), and still block Activate.
 - **Forms.**
   - No custom form → the generic `StepForm` draws one from the fields. A simple step from a Yay plugin needs PHP only.

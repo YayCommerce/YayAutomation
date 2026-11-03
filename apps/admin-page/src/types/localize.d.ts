@@ -73,7 +73,7 @@ export interface StepMeta {
   /** Data items the step adds: a trigger's for every run, an action's for the steps below it. */
   provides?: string[];
   /** Picker section. */
-  category?: 'email' | 'order' | 'coupon' | 'flow' | 'cart';
+  category?: 'email' | 'order' | 'coupon' | 'flow' | 'cart' | 'customer';
   /** Actions: data items needed whatever the config. */
   requires?: string[];
 }

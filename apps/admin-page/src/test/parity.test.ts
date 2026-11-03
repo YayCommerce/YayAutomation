@@ -46,7 +46,7 @@ const strings = (value: unknown): string[] =>
 
 describe('PHP ↔ TS parity', () => {
   it('every TS step is in the PHP catalog', () => {
-    expect(phpStepIds).toHaveLength(12);
+    expect(phpStepIds).toHaveLength(13);
     expect(tsStepIds.filter((id) => !php.steps[id])).toEqual([]);
   });
 
