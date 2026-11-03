@@ -6,6 +6,7 @@ use YayMatik\Workflow\Core\Data\GoneEntity;
 use YayMatik\Workflow\Core\Data\Ref;
 use YayMatik\Workflow\Core\Data\RefResolver;
 use YayMatik\Workflow\Core\Steps\StepRegistry;
+use YayMatik\Workflow\Core\Steps\Trigger;
 use YayMatik\Workflow\Core\Storage\RunStore;
 
 defined( 'ABSPATH' ) || exit;
@@ -182,6 +183,7 @@ final class Worker {
     private function start( array $run, RefResolver $resolver ): ?string {
         $workflow_id = (int) $run['workflow_id'];
         if ( ! $this->workflows->is_active( $workflow_id ) ) {
+            $this->release_claim( $run );
             $reason = $this->workflows->find( $workflow_id )
                 ? Cancellation::turned_off()
                 : __( 'The workflow was deleted before this run started.', 'yaymatik' );
@@ -203,6 +205,18 @@ final class Worker {
             return $this->end( (int) $run['id'], RunStore::STATUS_SKIPPED, Executor::gone_message( $gone ) );
         }
         return null;
+    }
+
+    /**
+     * A run cancelled by turning the workflow off did nothing, so its subject can start again once it's back on.
+     *
+     * @param array $run
+     */
+    private function release_claim( array $run ): void {
+        $trigger = ( $this->steps ?? [ StepRegistry::class, 'get' ] )( (string) $run['trigger_id'] );
+        if ( $trigger instanceof Trigger && $trigger->claims_per_workflow() ) {
+            $this->runs->release_subject( (int) $run['workflow_id'], (string) $run['subject'] );
+        }
     }
 
     /**

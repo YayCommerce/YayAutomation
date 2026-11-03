@@ -1,6 +1,8 @@
 <?php
 namespace YayMatik\Workflow\Core\Storage;
 
+use YayMatik\Utils\Logger;
+
 defined( 'ABSPATH' ) || exit;
 
 /** "This workflow already started for this subject", kept for as long as the workflow exists. */
@@ -16,6 +18,9 @@ final class TriggerClaimStore {
         $table = self::table();
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- own table, a write; the unique key decides who wins.
         $done = $wpdb->query( $wpdb->prepare( "INSERT IGNORE INTO {$table} (workflow_id, subject, claimed_at) VALUES (%d, %s, %s)", $workflow_id, $subject, current_time( 'mysql', true ) ) );
+        if ( false === $done ) {
+            Logger::error( 'Could not claim a trigger subject: ' . $wpdb->last_error, [ 'workflow_id' => $workflow_id, 'subject' => $subject ] ); // phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound
+        }
         return 1 === $done;
     }
 
@@ -26,7 +31,7 @@ final class TriggerClaimStore {
     public static function release( int $workflow_id, string $subject ): void {
         global $wpdb;
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own table, a write.
-        $wpdb->delete(
+        $done = $wpdb->delete(
             self::table(),
             [
                 'workflow_id' => $workflow_id,
@@ -34,6 +39,9 @@ final class TriggerClaimStore {
             ],
             [ '%d', '%s' ]
         );
+        if ( false === $done ) {
+            Logger::error( 'Could not release a trigger claim: ' . $wpdb->last_error, [ 'workflow_id' => $workflow_id, 'subject' => $subject ] ); // phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound
+        }
     }
 
     /**
@@ -53,7 +61,11 @@ final class TriggerClaimStore {
         }
         $list = implode( ',', $ids );
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- own table, ids cast to int above.
-        return (int) $wpdb->query( "DELETE FROM {$table} WHERE id IN ({$list})" );
+        $done = $wpdb->query( "DELETE FROM {$table} WHERE id IN ({$list})" );
+        if ( false === $done ) {
+            Logger::error( 'Could not delete claims of deleted workflows: ' . $wpdb->last_error );
+        }
+        return (int) $done;
     }
 
     private static function table(): string {

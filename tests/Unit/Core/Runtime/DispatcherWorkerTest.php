@@ -258,6 +258,40 @@ final class DispatcherWorkerTest extends TestCase {
         $this->assertSame( [ '1|order:12' => true ], $this->runs->claims );
     }
 
+    public function test_claim_is_released_when_the_rate_limit_stops_the_run(): void {
+        $this->runs->recent = [ 1 => [ 'all' => Dispatcher::CEILING ] ];
+        $this->dispatcher->collect( $this->claiming_trigger(), $this->event() );
+        $this->dispatcher->flush();
+
+        $this->assertSame( [], $this->runs->runs );
+        $this->assertSame( [], $this->runs->claims );
+    }
+
+    public function test_claim_is_released_when_starting_the_run_throws(): void {
+        $runs       = new class() extends FakeRunRepository {
+            public function create_run( array $run ): int {
+                throw new \RuntimeException( 'write failed' );
+            }
+        };
+        $dispatcher = new Dispatcher( $runs, $this->queue, $this->workflows, function (): void {}, fn() => null );
+        $dispatcher->collect( $this->claiming_trigger(), $this->event() );
+        $dispatcher->flush();
+
+        $this->assertSame( [], $runs->claims );
+        $this->assertSame( [], $this->queue->jobs );
+    }
+
+    public function test_turning_the_workflow_off_before_a_queued_run_starts_releases_its_claim(): void {
+        $trigger                                = $this->claiming_trigger();
+        $this->steps[ OrderStatusChanged::ID ] = $trigger;
+        $this->dispatcher->collect( $trigger, $this->event() );
+        $this->dispatcher->flush();
+        $this->workflows->deactivate( 1 );
+
+        $this->assertSame( 'cancelled', $this->worker->run( 1 ) );
+        $this->assertSame( [], $this->runs->claims );
+    }
+
     public function test_events_raised_by_a_run_carry_it_as_parent(): void {
         $this->add_workflow( 2 );
         $this->steps['raise']       = new FakeStep(

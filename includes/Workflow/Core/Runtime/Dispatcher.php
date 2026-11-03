@@ -191,12 +191,17 @@ final class Dispatcher {
                 if ( $claims && ! $this->runs->claim_subject( (int) $workflow['id'], $subject ) ) {
                     continue;
                 }
-                $run_id = $this->start_run( $workflow, $trigger, $args, $parent_run, $refs );
+                $run_id = 0;
+                try {
+                    $run_id = $this->start_run( $workflow, $trigger, $args, $parent_run, $refs );
+                } finally {
+                    // A run that never started must not use up the claim, which has no end date: the next check retries.
+                    if ( $claims && ! $run_id ) {
+                        $this->runs->release_subject( (int) $workflow['id'], $subject );
+                    }
+                }
                 if ( $run_id ) {
                     $this->queue_run( $run_id );
-                } elseif ( $claims ) {
-                    // A run that never started must not use up the claim, which has no end date: the next check retries.
-                    $this->runs->release_subject( (int) $workflow['id'], $subject );
                 }
             }
         } catch ( \Throwable $e ) {

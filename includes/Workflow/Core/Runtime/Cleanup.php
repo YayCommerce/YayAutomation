@@ -65,9 +65,9 @@ final class Cleanup {
             $deleted = CartStore::delete_ids( $ids );
         } while ( self::BATCH === $deleted && microtime( true ) < $deadline );
 
-        while ( self::BATCH === TriggerClaimStore::delete_orphans( self::BATCH ) && microtime( true ) < $deadline ) {
-            continue;
-        }
+        do {
+            $deleted = TriggerClaimStore::delete_orphans( self::BATCH );
+        } while ( self::BATCH === $deleted && microtime( true ) < $deadline );
 
         $runs = gmdate( 'Y-m-d H:i:s', time() - (int) Settings::get( 'run_retention_days' ) * DAY_IN_SECONDS );
         while ( microtime( true ) < $deadline ) {
