@@ -23,7 +23,7 @@ export function CartTrackingWarning({ message, linkLabel }: { message: string; l
   );
 }
 
-function Hint({ icon, children }: { icon: ReactNode; children: ReactNode }) {
+export function Hint({ icon, children }: { icon: ReactNode; children: ReactNode }) {
   return (
     <p className="text-muted-foreground flex items-start gap-1.5 text-xs [&>svg]:mt-0.5 [&>svg]:size-3.5 [&>svg]:shrink-0">
       {icon}
