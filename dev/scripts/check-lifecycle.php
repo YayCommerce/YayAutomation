@@ -298,11 +298,9 @@ $newest = ProductGrid::newest();
 $ok( (bool) $newest === $sample['has_products_not_reviewed'] && ( ! $newest || false !== strpos( $sample['review_products']['html'], '#reviews' ) ), 'sample data renders from the newest products' );
 
 // Account created: real workflows through the real Dispatcher; events start at flush().
-foreach ( WorkflowStore::all() as $site_flow ) {
-    $site_trigger = YayMatik\Workflow\Core\Definition\GraphSchema::trigger( $site_flow['graph']['nodes'] ?? [] );
-    if ( 'active' === $site_flow['status'] && 'customer_account_created' === ( $site_trigger['data']['block'] ?? '' ) ) {
-        WP_CLI::error( "Deactivate workflow {$site_flow['id']} first: it would start on this script's accounts." );
-    }
+$site_flows = WorkflowStore::active_for_trigger( 'customer_account_created' );
+if ( $site_flows ) {
+    WP_CLI::error( "Deactivate workflow {$site_flows[0]['id']} first: it would start on this script's accounts." );
 }
 wp_set_current_user(
     (int) get_users(
