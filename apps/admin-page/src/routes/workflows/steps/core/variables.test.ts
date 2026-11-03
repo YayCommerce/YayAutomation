@@ -54,6 +54,7 @@ describe('availableVariables', () => {
     expect(variables.filter((variable) => variable.block).map((variable) => variable.key)).toEqual([
       'order.cross_sell_products',
       'order.upsell_products',
+      'order.review_products',
       'steps.c.box',
     ]);
     expect(variables.find((variable) => variable.key === 'steps.c.code')?.block).toBe(false);

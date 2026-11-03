@@ -148,6 +148,8 @@ declare global {
         cartTracking: boolean;
         /** Minutes without activity before a cart counts as abandoned. */
         abandonMinutes: number;
+        /** WooCommerce's Enable product reviews. Changes in another tab, so it can be stale until a reload. */
+        reviewsEnabled: boolean;
       };
       automation: {
         plugins: PluginMeta[];
