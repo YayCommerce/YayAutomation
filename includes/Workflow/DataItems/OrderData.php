@@ -110,6 +110,7 @@ final class OrderData extends DataItem {
             'product_ids'               => [
                 'label'   => __( 'Products in order', 'yaymatik' ),
                 'type'    => self::TYPE_LIST,
+                'search'  => 'product',
                 // Parents, so a variation matches a rule on its product.
                 'value'   => fn( \WC_Order $order ) => array_values( array_unique( array_map( fn( \WC_Order_Item $item ) => (string) $item->get_product_id(), $order->get_items() ) ) ),
                 'display' => fn( \WC_Order $order, bool $html ) => self::text( implode( ', ', array_map( fn( \WC_Order_Item $item ) => $item->get_name(), $order->get_items() ) ), $html ),
@@ -117,12 +118,14 @@ final class OrderData extends DataItem {
             'category_ids'              => [
                 'label'   => __( 'Product categories in order', 'yaymatik' ),
                 'type'    => self::TYPE_LIST,
+                'search'  => 'category',
                 'value'   => [ self::class, 'category_ids' ],
                 'display' => fn( \WC_Order $order, bool $html ) => self::text( implode( ', ', array_filter( array_map( fn( string $id ) => (string) get_term_field( 'name', (int) $id, 'product_cat', 'raw' ), self::category_ids( $order ) ) ) ), $html ),
             ],
             'coupon_codes'              => [
                 'label'   => __( 'Coupons used', 'yaymatik' ),
                 'type'    => self::TYPE_LIST,
+                'search'  => 'coupon',
                 'value'   => fn( \WC_Order $order ) => array_values( $order->get_coupon_codes() ),
                 'display' => fn( \WC_Order $order, bool $html ) => self::text( implode( ', ', $order->get_coupon_codes() ), $html ),
             ],

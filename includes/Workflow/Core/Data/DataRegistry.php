@@ -94,6 +94,9 @@ final class DataRegistry {
                 if ( $field['block'] ) {
                     $client['block'] = true;
                 }
+                if ( $field['search'] ) {
+                    $client['search'] = $field['search'];
+                }
                 if ( ! $field['merge_tag'] ) {
                     $client['mergeTag'] = false;
                 }

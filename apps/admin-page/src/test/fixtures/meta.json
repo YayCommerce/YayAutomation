@@ -990,21 +990,24 @@
                         "label": "Products in order",
                         "type": "list",
                         "valueType": "list<string>",
-                        "conditional": true
+                        "conditional": true,
+                        "search": "product"
                     },
                     {
                         "key": "order.category_ids",
                         "label": "Product categories in order",
                         "type": "list",
                         "valueType": "list<string>",
-                        "conditional": true
+                        "conditional": true,
+                        "search": "category"
                     },
                     {
                         "key": "order.coupon_codes",
                         "label": "Coupons used",
                         "type": "list",
                         "valueType": "list<string>",
-                        "conditional": true
+                        "conditional": true,
+                        "search": "coupon"
                     },
                     {
                         "key": "order.billing_country",
@@ -5145,7 +5148,8 @@
                         "label": "Products purchased",
                         "type": "list",
                         "valueType": "list<string>",
-                        "conditional": true
+                        "conditional": true,
+                        "search": "product"
                     },
                     {
                         "key": "customer.meta",

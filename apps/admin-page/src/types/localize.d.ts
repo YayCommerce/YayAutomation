@@ -114,6 +114,8 @@ export interface DataItemMeta {
     /** False: merge tag only, not offered in conditions. */
     conditional: boolean;
     options?: { value: string; label: string }[];
+    /** A list searched through REST; its values are never sent here. */
+    search?: 'product' | 'category' | 'coupon';
     /** False: not offered by "Insert variable" and not a known merge tag. */
     mergeTag?: false;
     /** A ready-made email block (e.g. a product grid), rendered on the server; inserted on its own line. */

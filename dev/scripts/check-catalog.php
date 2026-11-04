@@ -317,6 +317,90 @@ if ( ! $posts_store ) {
     WorkflowStore::deactivate( $flow_b );
 }//end if
 
+if ( ! $posts_store ) {
+    // REST search: paging, include, and who may call it.
+    $admins = get_users(
+        [
+            'role'   => 'administrator',
+            'number' => 1,
+            'fields' => 'ID',
+        ]
+    );
+    wp_set_current_user( (int) $admins[0] );
+    $word   = 'chk' . wp_rand( 100000, 999999 );
+    $ids    = [];
+    $cat_id = [];
+    $codes  = [];
+    for ( $i = 0; $i < 21; $i++ ) {
+        $posts[]  = wp_insert_post(
+            [
+                'post_type'   => 'product',
+                'post_status' => 'publish',
+                'post_title'  => "{$word} product {$i}",
+            ]
+        );
+        $ids[]    = end( $posts );
+        $term     = wp_insert_term( "{$word} category {$i}", 'product_cat' );
+        $terms[]  = $term['term_id'];
+        $cat_id[] = $term['term_id'];
+        $posts[]  = wp_insert_post(
+            [
+                'post_type'   => 'shop_coupon',
+                'post_status' => 'publish',
+                'post_title'  => "{$word}code{$i}",
+            ]
+        );
+        $codes[]  = "{$word}code{$i}";
+    }
+    $search = function ( string $type, array $params ) {
+        $request = new WP_REST_Request( 'GET', "/yaymatik/v1/search/{$type}" );
+        $request->set_query_params( $params );
+        return rest_do_request( $request );
+    };
+    foreach ( [
+        'products'   => $ids,
+        'categories' => $cat_id,
+        'coupons'    => $codes,
+    ] as $type => $values ) {
+        $first  = $search( $type, [ 'term' => $word ] );
+        $second = $search(
+            $type,
+            [
+                'term' => $word,
+                'page' => 2,
+            ]
+        );
+        $data   = $first->get_data();
+        $last   = $second->get_data();
+        $ok( 200 === $first->get_status() && 20 === count( $data['items'] ) && true === $data['hasMore'], "search {$type}: a full first page says there is more" );
+        $ok( 1 === count( $last['items'] ) && false === $last['hasMore'], "search {$type}: the last page says there isn't" );
+        $ok( [ 'value', 'label' ] === array_keys( $data['items'][0] ) && is_string( $data['items'][0]['value'] ), "search {$type}: items hold value and label" );
+        $picked = (string) $values[3];
+        $exact  = $search( $type, [ 'include' => [ $picked ] ] )->get_data();
+        $ok( 1 === count( $exact['items'] ) && $picked === $exact['items'][0]['value'] && false === $exact['hasMore'], "search {$type}: include returns exactly that item" );
+    }
+    $parent_cat = wp_insert_term( "{$word} Men & Boys", 'product_cat' );
+    $child_cat  = wp_insert_term( "{$word} Shoes", 'product_cat', [ 'parent' => $parent_cat['term_id'] ] );
+    array_push( $terms, $child_cat['term_id'], $parent_cat['term_id'] );
+    $path = $search( 'categories', [ 'include' => [ (string) $child_cat['term_id'] ] ] )->get_data();
+    $ok( "{$word} Men & Boys › {$word} Shoes" === $path['items'][0]['label'], 'search categories: a label shows its parents, with no entities' );
+    $found = $search( 'categories', [ 'term' => 'Men & Boys' ] )->get_data();
+    $ok( in_array( (string) $parent_cat['term_id'], array_column( $found['items'], 'value' ), true ), 'search categories: a name with & is found' );
+    $gone = $search( 'products', [ 'include' => [ '999999999' ] ] )->get_data();
+    $ok( [] === $gone['items'], 'search products: include of a deleted id returns nothing, so the form shows #12' );
+    $bad = $search( 'orders', [] );
+    $ok( 404 === $bad->get_status(), 'search: an unknown type is a 404' );
+
+    $shopper = wp_create_user( 'shopper_' . wp_rand( 100000, 999999 ), wp_generate_password(), 'shopper@' . $domain );
+    $users[] = $shopper;
+    ( new WP_User( $shopper ) )->set_role( 'customer' );
+    wp_set_current_user( $shopper );
+    foreach ( [ 'products', 'categories', 'coupons' ] as $type ) {
+        $ok( 403 === $search( $type, [ 'term' => $word ] )->get_status(), "search {$type}: a customer gets a 403" );
+    }
+    wp_set_current_user( 0 );
+}//end if
+
 // The order meta guard, on this order store.
 $meta_step = new UpdateOrderMeta();
 $saved     = $order( [ 'total' => '50' ] );

@@ -160,6 +160,7 @@ final class CustomerData extends DataItem {
             'purchased_product_ids' => [
                 'label'   => __( 'Products purchased', 'yaymatik' ),
                 'type'    => self::TYPE_LIST,
+                'search'  => 'product',
                 'value'   => [ self::class, 'purchased' ],
                 'display' => fn( $customer, bool $html ) => self::text( implode( ', ', array_filter( array_map( fn( string $id ) => (string) get_post_field( 'post_title', (int) $id, 'raw' ), self::purchased( $customer ) ) ) ), $html ),
             ],
