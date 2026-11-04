@@ -26,12 +26,14 @@ function Harness({
   editor,
   feedback = 'none',
   serverIssues = [],
+  warning,
 }: {
   graph: WorkflowGraph;
   editor: Partial<Editor>;
   feedback?: Feedback;
   /** What the server found in `graph`. */
   serverIssues?: WorkflowIssue[];
+  warning?: string;
 }) {
   const form = useWorkflowForm({ draft: graph, graph } as Workflow);
   const panel = useStepPanel(form, () => {});
@@ -59,6 +61,7 @@ function Harness({
             picking={open.picking}
             feedback={feedback}
             issue={issues.find((issue) => issue.nodeId === open.nodeId)}
+            warning={warning}
             closable
             onPick={() => {}}
             onSwap={() => {}}
@@ -94,13 +97,19 @@ afterEach(() => {
   container.remove();
 });
 
-const mount = (graph: WorkflowGraph, nodeId: string, feedback?: Feedback, serverIssues?: WorkflowIssue[]) => {
+const mount = (
+  graph: WorkflowGraph,
+  nodeId: string,
+  feedback?: Feedback,
+  serverIssues?: WorkflowIssue[],
+  warning?: string,
+) => {
   const editor: Partial<Editor> = {};
   act(() =>
     root.render(
       // The cart trigger's notes link to Settings.
       <MemoryRouter>
-        <Harness graph={graph} editor={editor} feedback={feedback} serverIssues={serverIssues} />
+        <Harness graph={graph} editor={editor} feedback={feedback} serverIssues={serverIssues} warning={warning} />
       </MemoryRouter>,
     ),
   );
@@ -210,6 +219,13 @@ describe('an issue only the server found', () => {
     expect(amount.getAttribute('aria-invalid')).toBe('true');
     expect(amount.closest('[data-slot="field"]')?.textContent ?? container.textContent).toContain(issue.message);
     expect(container.querySelectorAll('[aria-invalid="true"]')).toHaveLength(1);
+  });
+});
+
+describe('a warning from the server', () => {
+  it('shows a line in the step’s panel', () => {
+    mount(live(), 'email', 'none', [], 'This step can set off this workflow’s own trigger.');
+    expect(container.textContent).toContain('This step can set off this workflow’s own trigger.');
   });
 });
 

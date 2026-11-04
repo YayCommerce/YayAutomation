@@ -61,6 +61,13 @@ describe('stepResult', () => {
     }
   });
 
+  it('says whether a custom field changed, without its value', () => {
+    const meta = (changed: boolean) =>
+      stepResult(row({ stepType: 'update_order_meta', output: { key: 'gift_wrap', changed } }), run);
+    expect(meta(true)).toBe('Custom field gift_wrap updated');
+    expect(meta(false)).toBe('Custom field gift_wrap unchanged');
+  });
+
   it('falls back to the card summary, and to nothing for a removed step', () => {
     expect(stepResult(row({ stepType: 'add_order_note', input: { note: 'Thanks', type: 'private' } }), run)).not.toBe(
       '',

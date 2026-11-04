@@ -21,6 +21,7 @@ final class Messages {
             'deleteActive'      => __( 'Deactivate this workflow before you delete it.', 'yaymatik' ),
             /* translators: %s: data item or step, e.g. "Order" */
             'missingData'       => __( '%s data isn’t available at this step.', 'yaymatik' ),
+            'mayRefire'         => __( 'This step can set off this workflow’s own trigger. The workflow won’t start again from it.', 'yaymatik' ),
             // Merge tags.
             /* translators: %s: merge tag, e.g. {{ order.foo }} */
             'unknownVariable'   => __( '%s isn’t an available variable.', 'yaymatik' ),

@@ -19,13 +19,21 @@ if ( ! class_exists( 'WC_Order' ) ) {
         /** @var array */
         public $data;
 
-        public function __construct( array $data ) {
+        public function __construct( array $data = [] ) {
             $this->data = $data;
         }
 
         public function __call( $name, $args ) {
             $key = substr( $name, 4 );
             return array_key_exists( $key, $this->data ) ? $this->data[ $key ] : '';
+        }
+
+        public function get_data_store() {
+            return new class() {
+                public function get_internal_meta_keys() {
+                    return [ '_order_total', '_billing_email' ];
+                }
+            };
         }
 
         public function get_date_created() {

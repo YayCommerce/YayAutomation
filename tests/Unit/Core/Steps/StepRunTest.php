@@ -183,9 +183,10 @@ final class StepRunTest extends TestCase {
         $this->assertSame( [], $this->order->status_changes );
     }
 
-    public function test_update_order_meta_saves_and_outputs_the_key(): void {
-        $step   = new UpdateOrderMeta();
-        $result = $this->run_step(
+    public function test_update_order_meta_outputs_no_values_and_adds_a_note(): void {
+        $step                      = new UpdateOrderMeta();
+        $this->order->meta['_vip'] = 'no';
+        $result                    = $this->run_step(
             $step,
             [
                 'key'   => '_vip',
@@ -194,9 +195,77 @@ final class StepRunTest extends TestCase {
         );
 
         $this->assert_ok_outputs( $step, $result );
-        $this->assertSame( [ 'key' => '_vip' ], $result->outputs() );
+        $this->assertSame(
+            [
+                'key'     => '_vip',
+                'changed' => true,
+            ],
+            $result->outputs()
+        );
         $this->assertSame( [ '_vip' => 'yes 1012' ], $this->order->meta );
         $this->assertSame( 1, $this->order->saves );
+        $this->assertSame( [ [ 'Custom field _vip changed from “no” to “yes 1012” by a YayMatik workflow.', 0 ] ], $this->order->notes );
+    }
+
+    public function test_update_order_meta_with_the_same_value_reads_unchanged_and_adds_no_note(): void {
+        $this->order->meta['_vip'] = 'x';
+        $result                    = $this->run_step(
+            new UpdateOrderMeta(),
+            [
+                'key'   => '_vip',
+                'value' => 'x',
+            ]
+        );
+        $this->assertFalse( $result->outputs()['changed'] );
+        $this->assertSame( [], $this->order->notes );
+        $this->assertSame( 0, $this->order->saves );
+    }
+
+    public function test_update_order_meta_counts_a_new_empty_value_as_changed(): void {
+        $result = $this->run_step( new UpdateOrderMeta(), [ 'key' => '_vip' ] );
+        $this->assertTrue( $result->outputs()['changed'] );
+        $this->assertSame( [ '_vip' => '' ], $this->order->meta );
+    }
+
+    public function test_update_order_meta_reads_a_non_scalar_old_value_as_empty(): void {
+        $this->order->meta['_vip'] = [ 'a' ];
+        $result                    = $this->run_step(
+            new UpdateOrderMeta(),
+            [
+                'key'   => '_vip',
+                'value' => '',
+            ]
+        );
+        $this->assertTrue( $result->outputs()['changed'] );
+        $this->assertSame( [ [ 'Custom field _vip changed from “” to “” by a YayMatik workflow.', 0 ] ], $this->order->notes );
+    }
+
+    /**
+     * @dataProvider blocked_order_keys
+     * @param string $key
+     */
+    public function test_update_order_meta_refuses_a_blocked_key_at_run_time( string $key ): void {
+        $result = ( new UpdateOrderMeta() )->run(
+            $this->scope(),
+            [
+                'key'   => $key,
+                'value' => '0',
+            ]
+        );
+        $this->assertSame( StepResult::FAILED, $result->status() );
+        $this->assertSame( [], $this->order->meta );
+        $this->assertSame( 0, $this->order->saves );
+    }
+
+    public function blocked_order_keys(): array {
+        return [
+            'internal'        => [ '_order_total' ],
+            'internal, upper' => [ '_ORDER_TOTAL' ],
+            'own prefix'      => [ '_yaymatik_x' ],
+            'own, upper'      => [ '_YAYMATIK_X' ],
+            'hidden'          => [ 'wp_vip' ],
+            'hidden, upper'   => [ 'WP_VIP' ],
+        ];
     }
 
     public function test_send_internal_email_outputs_who_it_was_sent_to_only(): void {

@@ -29,6 +29,15 @@ abstract class Action extends Step {
     abstract public function requires(): array;
 
     /**
+     * Trigger ids this action can set off.
+     *
+     * @return string[]
+     */
+    public function emits(): array {
+        return [];
+    }
+
+    /**
      * The data items in `requires()`; the Validator checks what merge tags read.
      *
      * @param array $config

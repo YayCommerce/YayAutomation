@@ -48,7 +48,8 @@ Table names below omit the prefix: each is `{prefix}yaymatik_<name>`, e.g. `wp_y
 
 **Run states:** queued → running → waiting → completed / failed / cancelled / skipped.
 
-- **Dispatcher.** Keeps today's flow: collect events during the request, match at shutdown. It now creates a `runs` row per matching workflow and queues it.
+- **Dispatcher.** Keeps today's flow: collect events during the request, match at shutdown. It now creates a `runs` row per matching workflow and queues it. It reads each trigger's active workflows once per `flush()`.
+- **Active triggers.** The Dispatcher listens only to triggers with an active workflow, read from the autoloaded option `yaymatik_active_triggers`, so a store's other events cost nothing. A reader with no option computes the list and stores it with `INSERT IGNORE`, never overwriting a writer. Activate, Deactivate, Apply and Delete rewrite it after their commit under one lock (`WorkflowStore::refresh_active_triggers()`), then fire `yaymatik_active_triggers_changed`, and the Dispatcher adds the listeners it lacks. If the lock isn't taken in 5 seconds or a query fails, the write logs and deletes the option, and the next reader rebuilds it. Cleanup recomputes it daily. A read that fails isn't stored, and that request listens to all triggers. Known limits: past the lock wait, a slow writer or an earlier reader can leave a trigger out until the next change or the daily recompute. A process that started before an activation (a long Action Scheduler batch) misses that trigger's events until it ends.
 - **Worker.** Action Scheduler is the clock and the worker; the `runs` table is the source of truth. A job takes a row lock (`UPDATE … WHERE status IN (…)`) so two workers never run the same run.
 - **Slices.** A job keeps running steps until the run finishes, hits a Wait, uses ~20 s or its memory budget, or ends a loop batch. It then saves its position (the `position` column) and queues the next slice.
 - **Errors.** Each step has a policy: stop the run (default) or continue. Retries come in v1.1.
@@ -89,11 +90,14 @@ Step:   id() label() plugin() module()
         sample_outputs( config ) made-up outputs for previews of later steps (Generate coupon → YMSAMPLE)
         summary(): string        card text, one short line, e.g. "Send to %recipients%"
         run( Scope, config ): StepResult   ok( outputs ) | skipped( reason ) | failed( error )
+Action: emits(): string[]        trigger ids it can set off
+Trigger: fires_for_own_runs( config )   whether its workflow reacts to events its own runs cause
 ```
 
 - **Field vocabulary** (kept small): text, textarea, html (rich text, cleaned with `wp_kses_post`; drawn as WordPress's classic editor, Visual / Code tabs, stored as WordPress saves it: paragraphs as blank lines or `<p>`, `wpautop` puts them back), emails, select, multiselect, toggle, number, number_unit, notice, rules (core only). Modifiers: `required`, `variables`, `placeholder`, `help`, `show_if`. A form that needs more gets a custom panel, not a new word.
 - **Catalog.** Steps, fields, outputs and data types go to the admin app through `yayMatikMeta` (and to the AI in v2.0).
 - **Picker sections.** `Action::category()` and `Trigger::category()` put a step under a heading in its plugin's list (Email, Order, Carts, Customers). A trigger's is optional: one without a category has no heading.
+- **Warnings.** `Validator::warnings()` lists what never blocks Activate: `may_refire`, an action whose `emits()` holds its workflow's trigger, when the trigger's `fires_for_own_runs()` is true. REST sends `warnings: { live, draft }` with every workflow; the step's panel shows the line from the last save.
 - **Editor checks.** Automation builds valibot rules from the PHP fields. Validation always runs in Automation, never in a panel. Rules only in PHP `validate()` show up as the step's issue after a save (under its field when the form draws it, else at the top of the panel; "Needs setup" on the card), and still block Activate.
 - **Forms.**
   - No custom form → the generic `StepForm` draws one from the fields. A simple step from a Yay plugin needs PHP only.

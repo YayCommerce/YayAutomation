@@ -23,6 +23,7 @@ import { updateNodeConfig } from '../../model/graph';
 import { availableData, sameItems } from '../../model/validation';
 import { kindMeta } from '../../shared/canvas/NodeCardView';
 import { StepEyebrow } from '../../shared/ui/StepTile';
+import { WarningBadge } from '../../shared/ui/WarningBadge';
 import { steps as stepDefs, stepOf } from '../../steps';
 import { alwaysAvailable } from '../../steps/core/data';
 import { EmailToolsContext, type EmailTools } from '../../steps/core/fields/emailTools';
@@ -75,6 +76,7 @@ export function StepPanel({
   picking,
   feedback,
   issue,
+  warning,
   closable,
   onPick,
   onSwap,
@@ -91,6 +93,8 @@ export function StepPanel({
    * its field when the form draws that field, else at the top of the panel body.
    */
   issue?: WorkflowIssue;
+  /** What the server wants known about this step; never blocks anything. */
+  warning?: string;
   /** False for a new workflow's first trigger picker: a trigger must be chosen first. */
   closable: boolean;
   /** A step was chosen in the picker (the same one keeps its settings). */
@@ -273,6 +277,11 @@ export function StepPanel({
             <CircleAlert aria-hidden />
             <AlertDescription>{notice.message}</AlertDescription>
           </Alert>
+        )}
+        {warning && (
+          <WarningBadge className="mb-4 h-auto w-full justify-start py-1.5 text-left whitespace-normal">
+            {warning}
+          </WarningBadge>
         )}
         {stepDef.Form ? (
           <FeedbackContext.Provider value={feedback}>

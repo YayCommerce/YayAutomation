@@ -281,6 +281,9 @@ final class StepConfigsTest extends TestCase {
                 self::OK,
             ],
             'meta: empty value ok'         => [ 'update_order_meta', [ 'key' => '_vip' ], null, self::OK ],
+            'meta: internal key'           => [ 'update_order_meta', [ 'key' => '_order_total' ], null, 'WooCommerce or YayMatik manages this field. Choose another field name.' ],
+            'meta: internal key, upper'    => [ 'update_order_meta', [ 'key' => '_ORDER_TOTAL' ], null, 'WooCommerce or YayMatik manages this field. Choose another field name.' ],
+            'meta: own prefix'             => [ 'update_order_meta', [ 'key' => '_yaymatik_x' ], null, 'WooCommerce or YayMatik manages this field. Choose another field name.' ],
             'meta: unknown tag'            => [
                 'update_order_meta',
                 [

@@ -34,6 +34,14 @@ final class FakeOrder extends \WC_Order {
         return true;
     }
 
+    public function get_meta( $key = '', $single = true, $context = 'view' ) {
+        return $this->meta[ $key ] ?? '';
+    }
+
+    public function meta_exists( $key = '' ) {
+        return isset( $this->meta[ $key ] );
+    }
+
     public function update_meta_data( $key, $value ) {
         $this->meta[ $key ] = $value;
     }

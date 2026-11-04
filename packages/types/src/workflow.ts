@@ -56,6 +56,12 @@ export interface WorkflowGraph {
 
 export type WorkflowStatus = 'inactive' | 'active';
 
+export interface WorkflowWarning {
+  code: 'may_refire';
+  nodeId: string;
+  message: string;
+}
+
 /** A saved workflow, as returned by the REST API. */
 export interface Workflow {
   id: string;
@@ -77,6 +83,8 @@ export interface Workflow {
   lastVersionAt: string;
   /** What blocks Activate / Update, found by the server: the live graph's, and the draft's (null without one). */
   issues: { live: WorkflowIssue[]; draft: WorkflowIssue[] | null };
+  /** What the server wants known but never blocks anything: the live graph's, and the draft's (null without one). */
+  warnings: { live: WorkflowWarning[]; draft: WorkflowWarning[] | null };
   /** Runs started in the last 30 days, any status. */
   runs30d: number;
   /** ISO date the newest run started; null when it never ran. */

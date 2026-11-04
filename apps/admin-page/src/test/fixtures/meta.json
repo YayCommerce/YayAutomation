@@ -675,6 +675,11 @@
                         "key": "key",
                         "label": "Field name",
                         "type": "string"
+                    },
+                    {
+                        "key": "changed",
+                        "label": "Value changed",
+                        "type": "boolean"
                     }
                 ]
             },
@@ -2246,6 +2251,7 @@
             "noBlock": "Choose an action.",
             "deleteActive": "Deactivate this workflow before you delete it.",
             "missingData": "%s data isn’t available at this step.",
+            "mayRefire": "This step can set off this workflow’s own trigger. The workflow won’t start again from it.",
             "unknownVariable": "%s isn’t an available variable.",
             "unknownFilter": "%1$s isn’t a filter. Available filters: %2$s.",
             "stepGone": "%s comes from a step that isn’t in this workflow anymore. Add that step above this one, or remove the variable.",

@@ -105,7 +105,7 @@ final class StepContractTest extends TestCase {
                 'send_internal_email'  => [ 'to' ],
                 'change_order_status'  => [ 'from', 'to' ],
                 'add_order_note'       => [ 'type' ],
-                'update_order_meta'    => [ 'key' ],
+                'update_order_meta'    => [ 'key', 'changed' ],
                 'generate_coupon'      => [ 'code', 'amount', 'expires_at', 'box' ],
                 'wait'                 => [],
             ],

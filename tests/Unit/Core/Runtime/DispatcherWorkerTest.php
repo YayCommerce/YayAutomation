@@ -95,7 +95,8 @@ final class DispatcherWorkerTest extends TestCase {
             function ( int $run_id ) {
                 $this->worker->run( $run_id );
             },
-            [ $this->worker, 'current' ]
+            [ $this->worker, 'current' ],
+            fn() => []
         );
     }
 
@@ -273,7 +274,7 @@ final class DispatcherWorkerTest extends TestCase {
                 throw new \RuntimeException( 'write failed' );
             }
         };
-        $dispatcher = new Dispatcher( $runs, $this->queue, $this->workflows, function (): void {}, fn() => null );
+        $dispatcher = new Dispatcher( $runs, $this->queue, $this->workflows, function (): void {}, fn() => null, fn() => [] );
         $dispatcher->collect( $this->claiming_trigger(), $this->event() );
         $dispatcher->flush();
 
@@ -593,5 +594,80 @@ final class DispatcherWorkerTest extends TestCase {
         $this->assertSame( 'completed', $this->worker->run( $id ) );
         $this->assertNull( $this->runs->runs[ $id ]['wait_until'] );
         $this->assertSame( [], $this->queue->jobs );
+    }
+
+    /**
+     * A Dispatcher over these triggers and the test's workflows.
+     *
+     * @param FakeTrigger[] $triggers
+     */
+    private function dispatcher_with( array $triggers ): Dispatcher {
+        return new Dispatcher( $this->runs, $this->queue, $this->workflows, function (): void {}, fn() => null, fn() => $triggers );
+    }
+
+    public function test_listens_only_to_triggers_with_an_active_workflow(): void {
+        $active = new FakeTrigger( OrderStatusChanged::ID );
+        $idle   = new FakeTrigger( 'idle' );
+        $this->dispatcher_with( [ $active, $idle ] )->listen_active();
+
+        $this->assertSame( 1, $active->listens );
+        $this->assertSame( 0, $idle->listens );
+    }
+
+    public function test_a_change_adds_a_new_trigger_once(): void {
+        $active     = new FakeTrigger( OrderStatusChanged::ID );
+        $later      = new FakeTrigger( 'later' );
+        $dispatcher = $this->dispatcher_with( [ $active, $later ] );
+        $dispatcher->listen_active();
+
+        $this->workflows->workflows[2] = [
+            'id'     => 2,
+            'status' => 'active',
+            'graph'  => [
+                'nodes' => [
+                    [
+                        'kind' => 'trigger',
+                        'data' => [ 'block' => 'later' ],
+                    ],
+                ],
+            ],
+        ];
+        $dispatcher->listen_active();
+        $dispatcher->listen_active();
+
+        $this->assertSame( 1, $active->listens );
+        $this->assertSame( 1, $later->listens );
+    }
+
+    public function test_an_unreadable_list_listens_to_every_trigger(): void {
+        $this->workflows->list_fails = true;
+        $idle                        = new FakeTrigger( 'idle' );
+        $this->dispatcher_with( [ $idle ] )->listen_active();
+
+        $this->assertSame( 1, $idle->listens );
+    }
+
+    public function test_active_workflows_are_read_once_per_flush(): void {
+        $this->dispatcher->collect( $this->trigger, self::paid( 12 ) );
+        $this->dispatcher->collect( $this->trigger, self::paid( 13 ) );
+        $this->dispatcher->flush();
+        $this->assertSame( 1, $this->workflows->lookups );
+
+        $this->dispatcher->collect( $this->trigger, self::paid( 14 ) );
+        $this->dispatcher->flush();
+        $this->assertSame( 2, $this->workflows->lookups );
+    }
+
+    /**
+     * A status event for an order.
+     *
+     * @param int $order_id
+     */
+    private static function paid( int $order_id ): array {
+        return [
+            'order_id' => $order_id,
+            'from'     => 'pending',
+            'to'       => 'processing',
+        ];
     }
 }

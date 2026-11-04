@@ -3,6 +3,7 @@ namespace YayMatik\Tests\Unit\Core\Definition;
 
 use PHPUnit\Framework\TestCase;
 use YayMatik\Workflow\Core\Definition\GraphSchema;
+use YayMatik\Workflow\Core\Definition\Messages;
 use YayMatik\Workflow\Core\Definition\Validator;
 use YayMatik\Workflow\Core\Storage\Settings;
 
@@ -184,8 +185,8 @@ final class ValidatorTest extends TestCase {
      * @param string $trigger
      */
     private static function live_graph( string $trigger ): array {
-        $graph                                  = self::cart_workflow( null )['graph'];
-        $graph['nodes'][0]['data']['block']     = $trigger;
+        $graph                              = self::cart_workflow( null )['graph'];
+        $graph['nodes'][0]['data']['block'] = $trigger;
         return $graph;
     }
 
@@ -451,7 +452,7 @@ final class ValidatorTest extends TestCase {
     /** @return array[] Cases shared with the admin app's `availableVariables()` (tests/fixtures/variables.json). */
     public function variable_cases(): array {
         $cases = json_decode( (string) file_get_contents( dirname( __DIR__, 3 ) . '/fixtures/variables.json' ), true )['cases'];
-        $sets = [];
+        $sets  = [];
         foreach ( $cases as $case ) {
             if ( isset( $sets[ $case['name'] ] ) ) {
                 throw new \LogicException( 'Two variable cases with the same name: ' . $case['name'] );
@@ -472,7 +473,7 @@ final class ValidatorTest extends TestCase {
     }
 
     public function test_variables_carry_label_and_type(): void {
-        $graph = GraphSchema::prepare(
+        $graph  = GraphSchema::prepare(
             [
                 'nodes' => [ self::trigger(), self::node( 'c', 'condition', 'condition' ), self::note( 'n' ) ],
                 'edges' => [ self::edge( 't', 'c' ), self::edge( 'c', 'note', 'then' ) ],
@@ -493,14 +494,14 @@ final class ValidatorTest extends TestCase {
     }
 
     public function test_every_listed_variable_passes_the_tag_check(): void {
-        $graph = GraphSchema::prepare(
+        $graph  = GraphSchema::prepare(
             [
                 'nodes' => [ self::trigger(), self::node( 'c', 'condition', 'condition' ), self::note( 'n' ) ],
                 'edges' => [ self::edge( 't', 'c' ), self::edge( 'c', 'note', 'then' ) ],
             ]
         );
-        $tags  = implode( ' ', array_map( fn( array $v ) => '{{ ' . $v['key'] . ' }}', Validator::variables( $graph, 'note' ) ) );
-        $graph = GraphSchema::prepare(
+        $tags   = implode( ' ', array_map( fn( array $v ) => '{{ ' . $v['key'] . ' }}', Validator::variables( $graph, 'note' ) ) );
+        $graph  = GraphSchema::prepare(
             [
                 'nodes' => [ self::trigger(), self::node( 'c', 'condition', 'condition' ), self::note( $tags ) ],
                 'edges' => [ self::edge( 't', 'c' ), self::edge( 'c', 'note', 'then' ) ],
@@ -550,5 +551,60 @@ final class ValidatorTest extends TestCase {
         );
         $this->assertStringContainsString( 'Could not check workflow 42', (string) file_get_contents( $log ) );
         unlink( $log );
+    }
+
+    public function test_warns_when_an_action_can_set_off_its_own_trigger(): void {
+        $graph = GraphSchema::prepare(
+            [
+                'nodes' => [
+                    self::node( 't', 'trigger', 'order_status_changed' ),
+                    self::node(
+                        'a',
+                        'action',
+                        'change_order_status',
+                        [ 'status' => 'completed' ]
+                    ),
+                    self::node( 'n', 'action', 'add_order_note', [ 'note' => 'Hi' ] ),
+                ],
+                'edges' => [ self::edge( 't', 'a' ), self::edge( 'a', 'n' ) ],
+            ]
+        );
+
+        $this->assertSame(
+            [
+                [
+                    'code'    => 'may_refire',
+                    'nodeId'  => 'a',
+                    'message' => Messages::get( 'mayRefire' ),
+                ],
+            ],
+            Validator::warnings( $graph )
+        );
+        $errors = Validator::errors(
+            [
+                'name'  => 'Alert',
+                'graph' => $graph,
+            ]
+        );
+        $this->assertSame( [], array_values( array_filter( $errors, fn( array $error ) => 'may_refire' === $error['code'] ) ) );
+    }
+
+    public function test_no_warning_on_another_trigger_or_a_graph_without_a_trigger(): void {
+        $action = self::node( 'a', 'action', 'change_order_status', [ 'status' => 'completed' ] );
+        $graph  = GraphSchema::prepare(
+            [
+                'nodes' => [ self::node( 't', 'trigger', 'order_created' ), $action ],
+                'edges' => [ self::edge( 't', 'a' ) ],
+            ]
+        );
+        $this->assertSame( [], Validator::warnings( $graph ) );
+
+        $no_step = GraphSchema::prepare(
+            [
+                'nodes' => [ self::node( 't', 'trigger', null ), $action ],
+                'edges' => [ self::edge( 't', 'a' ) ],
+            ]
+        );
+        $this->assertSame( [], Validator::warnings( $no_step ) );
     }
 }

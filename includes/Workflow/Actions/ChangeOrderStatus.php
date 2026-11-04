@@ -7,6 +7,7 @@ use YayMatik\Workflow\Core\Data\Type;
 use YayMatik\Workflow\Core\Steps\Action;
 use YayMatik\Workflow\Core\Steps\Field;
 use YayMatik\Workflow\Core\Steps\StepResult;
+use YayMatik\Workflow\Triggers\OrderStatusChanged;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -37,6 +38,10 @@ class ChangeOrderStatus extends Action {
 
     public function requires(): array {
         return [ OrderData::ID ];
+    }
+
+    public function emits(): array {
+        return [ OrderStatusChanged::ID ];
     }
 
     public function fields(): array {

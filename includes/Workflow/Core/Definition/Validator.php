@@ -5,9 +5,11 @@ use YayMatik\Workflow\Core\Data\DataItem;
 use YayMatik\Workflow\Core\Data\DataRegistry;
 use YayMatik\Workflow\Core\Data\Template;
 use YayMatik\Workflow\Core\Data\Type;
+use YayMatik\Workflow\Core\Steps\Action;
 use YayMatik\Workflow\Core\Steps\Field;
 use YayMatik\Workflow\Core\Steps\Step;
 use YayMatik\Workflow\Core\Steps\StepRegistry;
+use YayMatik\Workflow\Core\Steps\Trigger;
 use YayMatik\Utils\Logger;
 
 defined( 'ABSPATH' ) || exit;
@@ -211,6 +213,53 @@ final class Validator {
             }
         }
         return $errors;
+    }
+
+    /**
+     * Things to know that never block Activate: an action that can set off its own workflow's trigger.
+     *
+     * @param array $graph
+     * @return array[] [ [ 'code' => string, 'nodeId' => string, 'message' => string ], … ]
+     */
+    public static function warnings( array $graph ): array {
+        $node    = GraphSchema::trigger( $graph['nodes'] );
+        $trigger = self::trigger_step( $graph['nodes'] );
+        if ( ! $trigger instanceof Trigger || ! $trigger->fires_for_own_runs( $node['data']['config'] ) ) {
+            return [];
+        }
+        $warnings = [];
+        foreach ( $graph['nodes'] as $action ) {
+            $step = $action['data']['block'] ? StepRegistry::get( $action['data']['block'] ) : null;
+            if ( $step instanceof Action && in_array( $trigger->id(), $step->emits(), true ) ) {
+                $warnings[] = [
+                    'code'    => 'may_refire',
+                    'nodeId'  => $action['id'],
+                    'message' => Messages::get( 'mayRefire' ),
+                ];
+            }
+        }
+        return $warnings;
+    }
+
+    /**
+     * `warnings()` of a stored workflow's live graph and draft; never throws, as they never block anything.
+     *
+     * @param array $workflow id, graph, draft.
+     * @return array [ 'live' => warning[], 'draft' => warning[]|null ]
+     */
+    public static function list_warnings( array $workflow ): array {
+        try {
+            return [
+                'live'  => self::warnings( $workflow['graph'] ),
+                'draft' => isset( $workflow['draft'] ) ? self::warnings( $workflow['draft'] ) : null,
+            ];
+        } catch ( \Throwable $e ) {
+            Logger::error( 'Could not check workflow ' . ( $workflow['id'] ?? '?' ) . ': ' . $e->getMessage(), [ 'workflow_id' => $workflow['id'] ?? null ] );
+            return [
+                'live'  => [],
+                'draft' => null,
+            ];
+        }
     }
 
     /**

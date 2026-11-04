@@ -42,6 +42,13 @@ const results: Partial<Record<StepId, ResultText>> = {
     /* translators: %s: email addresses, comma-separated */
     sprintf(__('Sent to %s', 'yaymatik'), Array.isArray(step.output.to) ? step.output.to.join(', ') : ''),
   generate_coupon: (step) => text(step.output.code),
+  update_order_meta: (step) =>
+    sprintf(
+      step.output.changed
+        ? /* translators: %s: custom field name */ __('Custom field %s updated', 'yaymatik')
+        : /* translators: %s: custom field name */ __('Custom field %s unchanged', 'yaymatik'),
+      text(step.output.key),
+    ),
 };
 
 /** What a step did ("Yes", "Sent to a@b.com"), why it didn't, or else its card summary ("Set to Completed"). */

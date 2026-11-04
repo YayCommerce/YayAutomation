@@ -2,6 +2,7 @@
 namespace YayMatik\Workflow\Actions;
 
 use YayMatik\Workflow\DataItems\OrderData;
+use YayMatik\Workflow\Core\Data\MetaKeys;
 use YayMatik\Workflow\Core\Data\Scope;
 use YayMatik\Workflow\Core\Data\Type;
 use YayMatik\Workflow\Core\Steps\Action;
@@ -56,11 +57,28 @@ class UpdateOrderMeta extends Action {
 
     public function outputs(): array {
         return [
-            'key' => [
+            'key'     => [
                 'label' => __( 'Field name', 'yaymatik' ),
                 'type'  => Type::string(),
             ],
+            'changed' => [
+                'label' => __( 'Value changed', 'yaymatik' ),
+                'type'  => Type::boolean(),
+            ],
         ];
+    }
+
+    /**
+     * Refuses the fields WooCommerce and YayMatik keep for themselves.
+     *
+     * @param array $config
+     */
+    public function validate( array $config ) {
+        $error = $this->field_error( $config );
+        if ( $error ) {
+            return $error;
+        }
+        return MetaKeys::order_blocked( new \WC_Order(), $config['key'] ) ? $this->invalid( self::blocked_message(), 'key' ) : true;
     }
 
     public function run( Scope $scope, array $config ): StepResult {
@@ -68,8 +86,39 @@ class UpdateOrderMeta extends Action {
         if ( ! $order ) {
             return StepResult::skipped( __( 'There is no order to update.', 'yaymatik' ) );
         }
-        $order->update_meta_data( $config['key'], self::render( $config['value'], $scope ) );
+        $key = $config['key'];
+        // `validate()` only saw a blank order; this order's data store has the last word.
+        if ( MetaKeys::order_blocked( $order, $key ) ) {
+            return StepResult::failed( self::blocked_message() );
+        }
+        $stored = $order->get_meta( $key );
+        $old    = is_scalar( $stored ) ? (string) $stored : '';
+        $new    = self::render( $config['value'], $scope );
+        // A saved order runs every save hook, so the same value isn't written again.
+        if ( $order->meta_exists( $key ) && is_scalar( $stored ) && $old === $new ) {
+            return StepResult::ok(
+                [
+                    'key'     => $key,
+                    'changed' => false,
+                ]
+            );
+        }
+        $order->update_meta_data( $key, $new );
         $order->save();
-        return StepResult::ok( [ 'key' => $config['key'] ] );
+        $order->add_order_note(
+            /* translators: 1: custom field name, 2: its previous value, 3: its new value */
+            sprintf( __( 'Custom field %1$s changed from “%2$s” to “%3$s” by a YayMatik workflow.', 'yaymatik' ), $key, $old, $new )
+        );
+        // Runs keep refs only: the rendered values stay in the note, with the order.
+        return StepResult::ok(
+            [
+                'key'     => $key,
+                'changed' => true,
+            ]
+        );
+    }
+
+    private static function blocked_message(): string {
+        return __( 'WooCommerce or YayMatik manages this field. Choose another field name.', 'yaymatik' );
     }
 }
