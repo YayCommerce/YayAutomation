@@ -13,8 +13,8 @@
 
 use Automattic\WooCommerce\Utilities\OrderUtil;
 use YayMatik\Workflow\Actions\UpdateOrderMeta;
+use YayMatik\Workflow\Conditions\Criteria;
 use YayMatik\Workflow\Core\Data\Ref;
-use YayMatik\Workflow\Core\Data\RefResolver;
 use YayMatik\Workflow\Core\Data\Scope;
 use YayMatik\Workflow\Core\Definition\GraphSchema;
 use YayMatik\Workflow\Core\Runtime\ActionSchedulerQueue;
@@ -304,7 +304,7 @@ if ( ! $posts_store ) {
 // The order meta guard, on this order store.
 $meta_step = new UpdateOrderMeta();
 $saved     = $order( [ 'total' => '50' ] );
-$scope     = new Scope( [ 'trigger' => [ 'order' => new Ref( 'order', (string) $saved ) ] ], new RefResolver(), [] );
+$scope     = new Scope( [ 'trigger' => [ 'order' => new Ref( 'order', (string) $saved ) ] ] );
 
 $blocked = $meta_step->validate(
     [
@@ -349,6 +349,68 @@ $again = $meta_step->run(
     ]
 );
 $ok( false === $again->outputs()['changed'] && count( $notes ) === count( wc_get_order_notes( [ 'order_id' => $saved ] ) ), 'update_order_meta: the same value reads unchanged, no second note' );
+
+// Rules on a real order, on this order store.
+$criteria = new Criteria();
+$matches  = fn( array $rule ) => $criteria->evaluate(
+    $scope,
+    $criteria->sanitize(
+        [
+            'match' => 'all',
+            'rules' => [ $rule + [ 'valueType' => 'value' ] ],
+        ]
+    )
+);
+$created  = [ 'field' => 'order.created_date' ];
+$ok(
+    $matches(
+        $created + [
+            'operator' => 'in_last',
+            'value'    => '2',
+            'unit'     => 'days',
+        ]
+    ),
+    'rule: an order made now is in the last 2 days'
+);
+$ok(
+    $matches(
+        $created + [
+            'operator' => 'in_last',
+            'value'    => '1',
+            'unit'     => 'hours',
+        ]
+    ),
+    'rule: and in the last hour, read from its real time, not 00:00'
+);
+$ok(
+    ! $matches(
+        $created + [
+            'operator' => 'not_in_last',
+            'value'    => '2',
+            'unit'     => 'days',
+        ]
+    ),
+    'rule: and not outside them'
+);
+$ok(
+    $matches(
+        $created + [
+            'operator' => 'is_set',
+            'value'    => '',
+        ]
+    ),
+    'rule: its date is set'
+);
+$ok(
+    $matches(
+        [
+            'field'    => 'order.status',
+            'operator' => 'is_any_of',
+            'value'    => [ 'pending', 'processing' ],
+        ]
+    ),
+    'rule: is any of reads its status'
+);
 
 if ( $fails ) {
     WP_CLI::error( "{$fails} check(s) failed." );

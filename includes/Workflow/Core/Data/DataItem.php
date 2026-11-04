@@ -10,9 +10,10 @@ defined( 'ABSPATH' ) || exit;
  * - `label`       string
  * - `type`        TYPE_*: picks the condition operators
  * - `value_type`  Type, default from `type`; `entity` or `list<entity>` holds Refs (a relation)
- * - `value`       fn( $object ): mixed: float, `Y-m-d`, slug, bool, string, or Ref(s)
+ * - `value`       fn( $object ): mixed: float, `Y-m-d`, slug, bool, string, string[] (list), or Ref(s)
  * - `display`     fn( $object, bool $html ): string; default the value (an enum's option label)
- * - `options`     fn(): array value => label, enum only
+ * - `options`     fn(): array value => label, enum and list
+ * - `timestamp`   fn( $object ): ?int, the moment behind a date, for "in the last N hours"; without it a date counts as 00:00 store time
  * - `conditional` bool, default true; false = display only
  * - `block`       bool, default false; a ready-made email block (HTML display), inserted on its own line
  */
@@ -23,6 +24,8 @@ abstract class DataItem {
     public const TYPE_ENUM    = 'enum';
     public const TYPE_DATE    = 'date';
     public const TYPE_BOOLEAN = 'boolean';
+    public const TYPE_LIST    = 'list';
+    public const TYPE_META    = 'meta';
 
     /** @var array[]|null */
     private $fields = null;
@@ -74,6 +77,7 @@ abstract class DataItem {
                     'conditional' => true,
                     'block'       => false,
                     'display'     => null,
+                    'timestamp'   => null,
                     'value_type'  => Type::from_condition_type( $field['type'] ),
                 ];
             }

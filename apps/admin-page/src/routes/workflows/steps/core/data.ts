@@ -28,7 +28,15 @@ export const itemLabel = (id: string) => dataItems.find((item) => item.id === id
 export const operatorsFor = (type: DataFieldType) => meta.operators[type];
 
 /** Operators that compare against nothing. Mirrors PHP `Operators::needs_value()`. */
-export const needsValue = (operator: string) => !['is_empty', 'is_not_empty', 'is_true', 'is_false'].includes(operator);
+export const needsValue = (operator: string) =>
+  !['is_empty', 'is_not_empty', 'is_true', 'is_false', 'is_set', 'is_not_set'].includes(operator);
+
+/** Operators whose value is a list. Mirrors PHP `Operators::takes_list()`. */
+export const takesList = (operator: string) =>
+  ['matches_any', 'matches_all', 'matches_none', 'is_any_of'].includes(operator);
+
+/** Operators whose value is an amount and a unit. Mirrors PHP `Operators::is_relative()`. */
+export const isRelative = (operator: string) => ['in_last', 'not_in_last'].includes(operator);
 
 /** How each operator reads in the condition's rules and summary ("is greater than"), from PHP `Operators::labels()`. */
 export const operatorLabels = meta.operatorLabels;

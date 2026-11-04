@@ -2,14 +2,30 @@ import * as v from 'valibot';
 import { sprintf } from '@wordpress/i18n';
 
 import { messages } from '../../../model/messages';
-import { fieldByKey, needsValue, operatorLabels, operatorsFor, type DataField } from '../../core/data';
+import {
+  fieldByKey,
+  isRelative,
+  needsValue,
+  operatorLabels,
+  operatorsFor,
+  takesList,
+  type DataField,
+} from '../../core/data';
 
 /**
  * Mirrors includes/Workflow/Conditions/Criteria.php: criteria joined by AND (`all`) or OR (`any`).
  * `valueType: 'value'` compares with `value` as typed (cast by the field type); `'variable'` compares
- * with another field, whose key `value` holds.
+ * with another field, whose key `value` holds. `value` is a list for list comparisons, a whole number
+ * with `unit` for relative dates.
  */
-export type Rule = { field: string; operator: string; value: string; valueType: 'value' | 'variable' };
+export type RuleUnit = 'hours' | 'days';
+export type Rule = {
+  field: string;
+  operator: string;
+  value: string | string[];
+  valueType: 'value' | 'variable';
+  unit?: RuleUnit;
+};
 export type CriteriaConfig = { match: 'all' | 'any'; rules: Rule[] };
 
 export const emptyRule = (): Rule => ({ field: '', operator: '', value: '', valueType: 'value' });
@@ -28,25 +44,33 @@ function ruleError({ field: key, operator, value, valueType }: Rule): string | n
   if (!operatorsFor(field.type).includes(operator)) return messages.ruleComparison;
   if (!needsValue(operator)) return null;
 
+  if (takesList(operator)) {
+    if (!Array.isArray(value) || !value.length) return messages.ruleListRequired;
+    const known = (item: string) => field.options?.some((option) => option.value === item);
+    return field.options?.length && !value.every(known) ? messages.ruleOption : null;
+  }
+  const text = typeof value === 'string' ? value : '';
+  if (isRelative(operator)) return /^[1-9]\d*$/.test(text.trim()) ? null : messages.ruleAmount;
+
   if (valueType === 'variable') {
-    const other = fieldByKey(value);
+    const other = fieldByKey(text);
     return other && comparableWith(field)(other) ? null : messages.ruleCompareWith;
   }
 
   // PHP trims values on save.
-  if (value.trim() === '') {
+  if (text.trim() === '') {
     const required = sprintf(messages.ruleValueRequired, field.label);
     // Text can be checked for blank instead.
     return field.type === 'string'
       ? `${required} ${sprintf(messages.ruleBlankHint, operatorLabels.is_empty)}`
       : required;
   }
-  if (field.type === 'number' && !/^\s*[+-]?(\d+\.?\d*|\.\d+)(e[+-]?\d+)?\s*$/i.test(value)) {
+  if (field.type === 'number' && !/^\s*[+-]?(\d+\.?\d*|\.\d+)(e[+-]?\d+)?\s*$/i.test(text)) {
     return messages.ruleNumber;
   }
-  if (field.type === 'date' && !/^\d{4}-\d{2}-\d{2}$/.test(value)) return messages.ruleDate;
+  if (field.type === 'date' && !/^\d{4}-\d{2}-\d{2}$/.test(text)) return messages.ruleDate;
   // Without the plugin that provides the options there's nothing to check against.
-  if (field.options?.length && !field.options.some((option) => option.value === value)) {
+  if (field.options?.length && !field.options.some((option) => option.value === text)) {
     return messages.ruleOption;
   }
   return null;
@@ -73,8 +97,9 @@ export const schema = v.pipe(
       v.object({
         field: v.string(),
         operator: v.string(),
-        value: v.string(),
+        value: v.union([v.string(), v.array(v.string())]),
         valueType: v.picklist(['value', 'variable']),
+        unit: v.optional(v.picklist(['hours', 'days'])),
       }),
     ),
   }),
@@ -90,12 +115,22 @@ export const defaults = (): CriteriaConfig => ({ match: 'all', rules: [emptyRule
 
 export const normalize = (config: Record<string, unknown>): CriteriaConfig => ({
   match: config.match === 'any' ? 'any' : 'all',
-  rules: Array.isArray(config.rules)
-    ? config.rules.map((rule: Partial<Rule>) => ({
-        field: String(rule?.field ?? ''),
-        operator: String(rule?.operator ?? ''),
-        value: String(rule?.value ?? ''),
-        valueType: rule?.valueType === 'variable' ? 'variable' : 'value',
-      }))
-    : [],
+  rules: Array.isArray(config.rules) ? config.rules.map((rule: Partial<Rule>) => normalizeRule(rule)) : [],
 });
+
+/** One rule as PHP `Criteria::sanitize_rule()` stores it; a plain rule has exactly its four keys. */
+function normalizeRule(rule: Partial<Rule>): Rule {
+  const operator = String(rule?.operator ?? '');
+  const raw = rule?.value;
+  const text = Array.isArray(raw) ? '' : String(raw ?? '');
+  const items = Array.isArray(raw) ? raw : [text];
+  const list = [...new Set(items.map((item) => (typeof item === 'string' ? item.trim() : '')).filter(Boolean))];
+  const fixed = takesList(operator) || isRelative(operator);
+  return {
+    field: String(rule?.field ?? ''),
+    operator,
+    value: takesList(operator) ? list : text,
+    valueType: !fixed && rule?.valueType === 'variable' ? 'variable' : 'value',
+    ...(isRelative(operator) ? { unit: rule?.unit === 'hours' ? 'hours' : 'days' } : {}),
+  };
+}

@@ -97,11 +97,12 @@ final class OrderData extends DataItem {
                 'value' => fn( \WC_Order $order ) => (float) $order->get_item_count(),
             ],
             'created_date'              => [
-                'label'   => __( 'Order date', 'yaymatik' ),
-                'type'    => self::TYPE_DATE,
+                'label'     => __( 'Order date', 'yaymatik' ),
+                'type'      => self::TYPE_DATE,
                 // WC_DateTime is in the site's timezone, so this is the date the store sees.
-                'value'   => fn( \WC_Order $order ) => $order->get_date_created() ? $order->get_date_created()->date( 'Y-m-d' ) : '',
-                'display' => fn( \WC_Order $order, bool $html ) => self::text( wc_format_datetime( $order->get_date_created() ), $html ),
+                'value'     => fn( \WC_Order $order ) => $order->get_date_created() ? $order->get_date_created()->date( 'Y-m-d' ) : '',
+                'timestamp' => fn( \WC_Order $order ) => $order->get_date_created() ? $order->get_date_created()->getTimestamp() : null,
+                'display'   => fn( \WC_Order $order, bool $html ) => self::text( wc_format_datetime( $order->get_date_created() ), $html ),
             ],
             'customer'                  => [
                 'label'       => __( 'Customer', 'yaymatik' ),

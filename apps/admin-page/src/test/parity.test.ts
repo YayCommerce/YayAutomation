@@ -13,7 +13,7 @@ import { sprintf } from '@wordpress/i18n';
 import type { DataFieldType } from '@/types/localize';
 import { messages } from '../routes/workflows/model/messages';
 import { steps } from '../routes/workflows/steps';
-import { fieldByPath, needsValue, operatorLabels } from '../routes/workflows/steps/core/data';
+import { fieldByPath, isRelative, needsValue, operatorLabels, takesList } from '../routes/workflows/steps/core/data';
 import { stepIcons } from '../routes/workflows/steps/core/icons';
 import { templatePaths } from '../routes/workflows/steps/core/template';
 import { templates } from '../routes/workflows/templates';
@@ -25,10 +25,15 @@ const phpDataKeys = new Set(php.data.flatMap((item) => item.fields.map((field) =
 const phpOperators = new Set(Object.values(php.operators).flat());
 
 /** Every TS `DataFieldType`; the `satisfies` keeps it in step with the type. */
-const dataFieldTypes = { number: true, string: true, enum: true, date: true, boolean: true } satisfies Record<
-  DataFieldType,
-  true
->;
+const dataFieldTypes = {
+  number: true,
+  string: true,
+  enum: true,
+  date: true,
+  boolean: true,
+  list: true,
+  meta: true,
+} satisfies Record<DataFieldType, true>;
 const workflowPlugins = { woocommerce: true, yaymatik: true } satisfies Record<WorkflowPlugin, true>;
 
 /** PHP `Type::to_string()`: a scalar name, `entity<id>` or `list<…>`. */
@@ -112,10 +117,13 @@ describe('PHP ↔ TS parity', () => {
     expect(Object.values(php.operatorLabels).every((label) => label.trim() !== '')).toBe(true);
     expect(operatorLabels).toBe(php.operatorLabels);
     expect(Object.keys(php.operators).sort()).toEqual(Object.keys(dataFieldTypes).sort());
-    // TS `needsValue()` mirrors PHP: the no-value operators are the boolean and empty checks.
+    // TS `needsValue()` mirrors PHP: the no-value operators are the boolean, empty and set checks.
     expect([...phpOperators].filter((op) => !needsValue(op)).sort()).toEqual(
-      ['is_empty', 'is_false', 'is_not_empty', 'is_true'].sort(),
+      ['is_empty', 'is_false', 'is_not_empty', 'is_not_set', 'is_set', 'is_true'].sort(),
     );
+    // So do `takesList()` and `isRelative()`, which decide a rule's stored shape.
+    expect([...phpOperators].filter(takesList).sort()).toEqual([...php.operators.list, 'is_any_of'].sort());
+    expect([...phpOperators].filter(isRelative).sort()).toEqual(['in_last', 'not_in_last']);
   });
 
   it('shared messages are the same in PHP and TS', () => {

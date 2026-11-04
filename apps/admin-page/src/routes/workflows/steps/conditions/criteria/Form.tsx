@@ -149,17 +149,19 @@ function RuleBox({
   const chooseField = (key: string) => {
     const next = fieldByKey(key)!;
     const keep = next.type === field?.type;
-    const other = fieldByKey(rule.value);
+    const text = typeof rule.value === 'string' ? rule.value : '';
+    const other = fieldByKey(text);
     const fits =
       keep &&
       (rule.valueType === 'variable'
         ? !!other && comparableWith(next)(other)
-        : !next.options?.length || next.options.some((o) => o.value === rule.value));
+        : !next.options?.length || next.options.some((o) => o.value === text));
     onChange({
       field: key,
       operator: keep ? rule.operator : operatorsFor(next.type)[0],
       value: fits ? rule.value : '',
       valueType: fits ? rule.valueType : 'value',
+      ...(fits && rule.unit ? { unit: rule.unit } : {}),
     });
   };
 

@@ -104,6 +104,25 @@ final class Scope implements Values {
     }
 
     /**
+     * The moment a date field stands for: its `timestamp`, else 00:00 store time on its date; null when it has none.
+     *
+     * @param string $path
+     * @throws GoneEntity When an entity on the path no longer exists.
+     */
+    public function timestamp( string $path ): ?int {
+        $found = $this->resolve( $path );
+        $field = $found['field'] ?? null;
+        if ( ! $field ) {
+            return null;
+        }
+        if ( $field['timestamp'] ) {
+            return ( $field['timestamp'] )( $found['object'] );
+        }
+        $date = \DateTimeImmutable::createFromFormat( '!Y-m-d', (string) ( $field['value'] )( $found['object'] ), wp_timezone() );
+        return $date ? $date->getTimestamp() : null;
+    }
+
+    /**
      * The loaded entity a path points to, or null.
      *
      * @param string $path

@@ -338,4 +338,57 @@ final class ScopeTest extends TestCase {
             $template->render( 'Hi {{ order.customer.first_name | upper }}, order {{ order.number }}: {{ order.total }} at {{ site.name }}', $this->run_scope() )
         );
     }
+
+    /**
+     * A scope over one object with these date fields.
+     *
+     * @param array $fields
+     */
+    private function dated_scope( array $fields ): Scope {
+        $entity = new FakeEntity( 'thing', $fields );
+        return new Scope(
+            [ 'trigger' => [ 'thing' => new Ref( 'thing', '1' ) ] ],
+            new RefResolver( [ 'thing' => fn() => (object) [ 'at' => 1234 ] ] ),
+            [ 'thing' => $entity ]
+        );
+    }
+
+    public function test_timestamp_reads_the_fields_own_moment(): void {
+        $scope = $this->dated_scope(
+            [
+                'when' => [
+                    'label'     => 'When',
+                    'type'      => DataItem::TYPE_DATE,
+                    'value'     => fn() => '2026-01-02',
+                    'timestamp' => fn( $thing ) => $thing->at,
+                ],
+            ]
+        );
+        $this->assertSame( 1234, $scope->timestamp( 'thing.when' ) );
+    }
+
+    public function test_timestamp_without_the_prop_is_midnight_in_the_store_time_zone(): void {
+        $scope = $this->dated_scope(
+            [
+                'when'  => [
+                    'label' => 'When',
+                    'type'  => DataItem::TYPE_DATE,
+                    'value' => fn() => '2026-01-02',
+                ],
+                'never' => [
+                    'label' => 'Never',
+                    'type'  => DataItem::TYPE_DATE,
+                    'value' => fn() => '',
+                ],
+            ]
+        );
+        update_option( 'timezone_string', 'Asia/Ho_Chi_Minh' );
+        try {
+            $this->assertSame( gmmktime( 17, 0, 0, 1, 1, 2026 ), $scope->timestamp( 'thing.when' ) );
+        } finally {
+            update_option( 'timezone_string', 'UTC' );
+        }
+        $this->assertNull( $scope->timestamp( 'thing.never' ) );
+        $this->assertNull( $scope->timestamp( 'thing.missing' ) );
+    }
 }

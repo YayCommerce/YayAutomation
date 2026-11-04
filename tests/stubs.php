@@ -272,6 +272,12 @@ if ( ! function_exists( 'get_option' ) ) {
     }
 }
 
+if ( ! function_exists( 'wp_timezone' ) ) {
+    function wp_timezone() {
+        return new DateTimeZone( get_option( 'timezone_string', 'UTC' ) );
+    }
+}
+
 if ( ! function_exists( 'update_option' ) ) {
     function update_option( $option, $value, $autoload = null ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- same signature as WordPress.
         $GLOBALS['yaymatik_test_options'][ $option ] = $value;

@@ -68,6 +68,7 @@ Table names below omit the prefix: each is `{prefix}yaymatik_<name>`, e.g. `wp_y
 ## §4 Data layer · C6, C7
 
 - **Types:** string, number, boolean, date, money, enum, entity\<T\>, list\<T\>.
+- **Condition types** pick a rule's comparisons (`Operators::BY_TYPE`): number, string, enum, date, boolean, list, meta. List compares with `matches_any`, `matches_all`, `matches_none`, lowercased and trimmed; an empty list matches none only. An enum adds `is_any_of`. A date adds `in_last` / `not_in_last` (N hours or days, fixed lengths like Wait) and `is_set` / `is_not_set`. No date matches neither relative comparison. A date field's optional `timestamp` is the moment behind it; without one it counts as 00:00 store time on its date. Meta compares as numbers when both sides are numeric, else as text; a number comparison with a non-numeric side is false.
 - **Entity types** with relations: order (`customer`, `items`), order_item (`product`), customer, product, coupon, cart, site.
 - **Scope** paths: `trigger.*` (with `order` / `customer` shortcuts), `steps.<id>.*`, `loop.item` / `loop.index`, `run.*`, `site.*`.
 - **Refs, loaded lazily.** Entities are stored as `{type: 'order', id: 12}` and loaded on demand, cached per slice. Facts only true at trigger time (status from / to, cart contents, event payload) are snapshotted. Data is fresh after a long Wait, and rows stay small.

@@ -2209,15 +2209,39 @@
             ],
             "enum": [
                 "is",
-                "is_not"
+                "is_not",
+                "is_any_of"
             ],
             "date": [
                 "before",
-                "after"
+                "after",
+                "in_last",
+                "not_in_last",
+                "is_set",
+                "is_not_set"
             ],
             "boolean": [
                 "is_true",
                 "is_false"
+            ],
+            "list": [
+                "matches_any",
+                "matches_all",
+                "matches_none"
+            ],
+            "meta": [
+                "equal",
+                "not_equal",
+                "contains",
+                "not_contains",
+                "starts_with",
+                "ends_with",
+                "is_empty",
+                "is_not_empty",
+                "greater_than",
+                "greater_or_equal",
+                "less_than",
+                "less_or_equal"
             ]
         },
         "operatorLabels": {
@@ -2238,7 +2262,15 @@
             "before": "is before",
             "after": "is after",
             "is_true": "is true",
-            "is_false": "is false"
+            "is_false": "is false",
+            "matches_any": "matches any of",
+            "matches_all": "matches all of",
+            "matches_none": "matches none of",
+            "is_any_of": "is any of",
+            "in_last": "is in the last",
+            "not_in_last": "is not in the last",
+            "is_set": "is set",
+            "is_not_set": "is not set"
         },
         "always": [
             "site"
@@ -2271,7 +2303,9 @@
             "ruleBlankHint": "Or choose “%s” to check for a blank value.",
             "ruleNumber": "Enter a number.",
             "ruleDate": "Enter a date (YYYY-MM-DD).",
-            "ruleOption": "Choose a value from the list."
+            "ruleOption": "Choose a value from the list.",
+            "ruleListRequired": "Choose at least one value.",
+            "ruleAmount": "Enter a whole number, 1 or more."
         },
         "email": {
             "fromLine": "Example Store <store@example.test>",

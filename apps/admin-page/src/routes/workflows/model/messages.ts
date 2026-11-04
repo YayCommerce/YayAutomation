@@ -54,4 +54,6 @@ export const messages = {
   ruleNumber: __('Enter a number.', 'yaymatik'),
   ruleDate: __('Enter a date (YYYY-MM-DD).', 'yaymatik'),
   ruleOption: __('Choose a value from the list.', 'yaymatik'),
+  ruleListRequired: __('Choose at least one value.', 'yaymatik'),
+  ruleAmount: __('Enter a whole number, 1 or more.', 'yaymatik'),
 };

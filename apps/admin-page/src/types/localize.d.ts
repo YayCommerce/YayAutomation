@@ -93,7 +93,7 @@ export interface CatalogStepMeta extends StepMeta {
   outputs: StepOutputMeta[];
 }
 
-export type DataFieldType = 'number' | 'string' | 'enum' | 'date' | 'boolean';
+export type DataFieldType = 'number' | 'string' | 'enum' | 'date' | 'boolean' | 'list' | 'meta';
 
 /** PHP `DataRegistry::to_client()`: one data item and its fields. */
 export interface DataItemMeta {

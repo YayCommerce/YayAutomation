@@ -81,10 +81,11 @@ export function ValueInput({
 }) {
   const setValue = (value: string) => onChange({ ...rule, value, valueType: 'value' });
   const setVariable = (key: string) => onChange({ ...rule, value: key, valueType: 'variable' });
+  const text = typeof rule.value === 'string' ? rule.value : '';
 
   if (field?.type === 'enum' && field.options?.length) {
     return (
-      <Select value={rule.value} onValueChange={setValue}>
+      <Select value={text} onValueChange={setValue}>
         <SelectTrigger id={id} className="w-full" aria-invalid={invalid}>
           <SelectValue placeholder={__('Choose a value', 'yaymatik')} />
         </SelectTrigger>
@@ -108,12 +109,7 @@ export function ValueInput({
     return (
       <div className="flex min-w-0 items-center gap-1">
         <VariablePicker {...variables} onSelect={setVariable}>
-          <DataSelect
-            id={id}
-            field={fieldByKey(rule.value)}
-            placeholder={__('Choose data', 'yaymatik')}
-            invalid={invalid}
-          />
+          <DataSelect id={id} field={fieldByKey(text)} placeholder={__('Choose data', 'yaymatik')} invalid={invalid} />
         </VariablePicker>
         <Button
           variant="ghost"
@@ -135,7 +131,7 @@ export function ValueInput({
         aria-invalid={invalid}
         type={field?.type === 'number' ? 'number' : field?.type === 'date' ? 'date' : 'text'}
         step={field?.type === 'number' ? 'any' : undefined}
-        value={rule.value}
+        value={text}
         disabled={!field}
         onChange={(event) => setValue(event.target.value)}
       />

@@ -23,6 +23,8 @@ final class TypeTest extends TestCase {
             $this->assertSame( $type, Type::from_condition_type( $type )->to_string() );
         }
         $this->assertSame( 'string', Type::from_condition_type( 'unknown' )->to_string() );
+        $this->assertSame( 'list<string>', Type::from_condition_type( 'list' )->to_string() );
+        $this->assertSame( 'string', Type::from_condition_type( 'meta' )->to_string() );
     }
 
     public function test_fields_default_their_full_type_from_the_condition_type(): void {
