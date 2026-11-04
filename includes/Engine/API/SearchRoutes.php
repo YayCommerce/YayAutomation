@@ -97,18 +97,18 @@ class SearchRoutes {
     }
 
     /**
-     * @param string[] $include
+     * @param string[] $values
      */
-    private function included_products( array $include ): array {
+    private function included_products( array $values ): array {
         return array_map(
             [ $this, 'post_item' ],
             get_posts(
                 [
                     'post_type'      => 'product',
                     'post_status'    => 'any',
-                    'post__in'       => array_map( 'intval', $include ),
+                    'post__in'       => array_map( 'intval', $values ),
                     'orderby'        => 'post__in',
-                    'posts_per_page' => count( $include ),
+                    'posts_per_page' => count( $values ),
                 ] + self::TITLES_ONLY
             )
         );
@@ -130,10 +130,10 @@ class SearchRoutes {
     }
 
     /**
-     * @param string[] $include
+     * @param string[] $values
      */
-    private function included_categories( array $include ): array {
-        return $this->term_items( [ 'include' => array_map( 'intval', $include ) ] );
+    private function included_categories( array $values ): array {
+        return $this->term_items( [ 'include' => array_map( 'intval', $values ) ] );
     }
 
     /**
@@ -155,10 +155,10 @@ class SearchRoutes {
     }
 
     /**
-     * @param string[] $include Coupon codes.
+     * @param string[] $values Coupon codes.
      */
-    private function included_coupons( array $include ): array {
-        $found = array_filter( $include, fn( string $code ) => (bool) wc_get_coupon_id_by_code( $code ) );
+    private function included_coupons( array $values ): array {
+        $found = array_filter( $values, fn( string $code ) => (bool) wc_get_coupon_id_by_code( $code ) );
         return array_values( array_map( [ self::class, 'coupon_item' ], $found ) );
     }
 

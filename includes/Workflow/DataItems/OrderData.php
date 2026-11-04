@@ -237,7 +237,7 @@ final class OrderData extends DataItem {
      * A date with its real time, so "in the last 3 hours" works.
      *
      * @param string   $label
-     * @param callable $date fn( \WC_Order $order ): ?\WC_DateTime
+     * @param callable $date
      */
     private static function date_field( string $label, callable $date ): array {
         return [
@@ -251,7 +251,7 @@ final class OrderData extends DataItem {
 
     /**
      * @param string   $label
-     * @param callable $amount fn( \WC_Order $order ): float
+     * @param callable $amount
      */
     private static function money_field( string $label, callable $amount ): array {
         return [
@@ -265,7 +265,7 @@ final class OrderData extends DataItem {
 
     /**
      * @param string   $label
-     * @param callable $code fn( \WC_Order $order ): string
+     * @param callable $code
      */
     private static function country_field( string $label, callable $code ): array {
         return [
