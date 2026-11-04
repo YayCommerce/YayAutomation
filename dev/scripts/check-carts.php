@@ -60,6 +60,31 @@ $ok    = function ( bool $pass, string $what ) use ( &$fails ) {
 };
 
 $cleanup = function () use ( $wpdb, $table, $prefix, $domain, &$users, &$posts, &$runs, &$orders, &$flows ) {
+    // By workflow and by cart, not only `$runs`: a sweep also starts runs on carts the script never asks about. Before the carts go.
+    $runs_table = RunStore::table();
+    $flow_list  = $flows ? implode( ',', array_map( 'intval', $flows ) ) : '0';
+    $user_list  = "'" . implode( "','", array_map( 'intval', $users ) ) . "'";
+    $found      = $wpdb->get_col( $wpdb->prepare( "SELECT r.id FROM {$runs_table} r LEFT JOIN {$table} c ON r.subject = CONCAT('cart:', c.id) WHERE r.workflow_id IN ({$flow_list}) OR c.session_key LIKE %s OR c.session_key IN ({$user_list})", $wpdb->esc_like( $prefix ) . '%' ) );
+    $runs       = array_values( array_unique( array_merge( array_map( 'intval', $runs ), array_map( 'intval', $found ) ) ) );
+    foreach ( $runs as $run_id ) {
+        foreach ( [ ActionSchedulerQueue::HOOK, ActionSchedulerQueue::RECOVER_HOOK ] as $hook ) {
+            $jobs = as_get_scheduled_actions(
+                [
+                    'hook'     => $hook,
+                    'args'     => [ $run_id ],
+                    'group'    => ActionSchedulerQueue::GROUP,
+                    'status'   => '',
+                    'per_page' => -1,
+                ],
+                'ids'
+            );
+            foreach ( $jobs as $job_id ) {
+                ActionScheduler::store()->delete_action( $job_id );
+            }
+        }
+    }
+    $claims = Schema::table( Schema::TRIGGER_CLAIMS );
+    $wpdb->query( "DELETE FROM {$claims} WHERE workflow_id IN ({$flow_list})" );
     foreach ( $flows as $flow_id ) {
         WorkflowStore::deactivate( $flow_id );
         WorkflowStore::delete( $flow_id );
