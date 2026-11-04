@@ -444,7 +444,7 @@ Today errors only go to the WooCommerce log, which merchants never open.
 - An order placed between the sweep and the run still gets the email.
 - About 2 lookups per candidate, unindexed on posts stores, repeated daily while an order is in the window; the Dispatcher adds its per-event reads. 200 per 2 minutes is at most 144,000 candidates a day.
 - A crash between the claim and the run loses that order's start, and so does turning the workflow off in the instant between the Worker's check and the Executor's. Other runs that couldn't start are retried.
-- Both win-back versions active: one customer gets both, as a claim is per workflow.
+- Activating a second win-back version emails every customer still in the window again: claims are per workflow.
 - A person is an account plus a billing email: orders under another email as a guest count as someone else.
 - An on-hold order that is never paid counts as the last order: the customer gets win-back N days after it.
 - A pending order doesn't count as ordering: a customer who left a payment unfinished still gets win-back.
