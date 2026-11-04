@@ -64,6 +64,70 @@ describe('templates', () => {
     },
   );
 
+  describe('win-back', () => {
+    const node = (id: string, block: string) => findTemplate(id)!.graph.nodes.find((n) => n.data.block === block)!;
+    const ids = ['win-back-discount', 'win-back-free-shipping'];
+
+    it('links its two versions', () => {
+      expect(versionsOf(findTemplate(ids[0])!).map((t) => t.id)).toEqual([ids[1]]);
+      expect(versionsOf(findTemplate(ids[1])!).map((t) => t.id)).toEqual([ids[0]]);
+    });
+
+    it.each(ids)('%s waits 90 days, checks the unsubscribe, and hangs the coupon from Yes', (id) => {
+      const { graph } = findTemplate(id)!;
+      expect(graph.nodes.map((n) => n.data.block)).toEqual([
+        'customer_inactive',
+        'condition',
+        'generate_coupon',
+        'send_email',
+      ]);
+      expect(graph.nodes[0].data.config).toEqual({ days: 90 });
+      expect(graph.nodes[1].data.config).toEqual({
+        match: 'all',
+        rules: [{ field: 'customer.unsubscribed', operator: 'is_false', value: '', valueType: 'value' }],
+      });
+      expect(graph.edges.find((edge) => edge.target === 'coupon')).toMatchObject({
+        source: 'condition',
+        sourceHandle: 'then',
+      });
+    });
+
+    it('offers 15% off or free shipping, 14 days, limited to the customer', () => {
+      expect(node(ids[0], 'generate_coupon').data.config).toMatchObject({
+        discount_type: 'percent',
+        amount: 15,
+        expiry_days: 14,
+        limit_to_customer: true,
+      });
+      expect(node(ids[1], 'generate_coupon').data.config).toMatchObject({
+        discount_type: 'free_shipping',
+        amount: null,
+        expiry_days: 14,
+        limit_to_customer: true,
+      });
+    });
+
+    it.each([
+      [ids[0], 'Here’s {{ steps.coupon.amount }} off your next one:'],
+      [ids[1], 'Here’s free shipping on your next order:'],
+    ])('%s writes the email with each block on its own paragraph', (id, offer) => {
+      const { config } = node(id, 'send_email').data;
+      expect(sendsCustomerEmail(findTemplate(id)!.graph)).toBe(true);
+      expect(config.to).toBe('{{ customer.email }}');
+      expect(config.subject).toBe('We miss you at {{ site.name }}');
+      expect(config.heading).toBe('It’s been a while');
+      expect(config.message).toBe(
+        emailMessage([
+          'Hi {{ customer.first_name | default: "there" }},',
+          `It’s been a while since your last order. ${offer}`,
+          '{{ steps.coupon.box }}',
+          '{{ site.shop_button }}',
+          'See you soon,\n{{ site.name }}',
+        ]),
+      );
+    });
+  });
+
   it('staff-only templates send no customer email', () => {
     expect(sendsCustomerEmail(findTemplate('high-value-order-alert')!.graph)).toBe(false);
   });

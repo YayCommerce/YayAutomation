@@ -53,7 +53,7 @@ We chose these 8 because they cover what merchants install an automation plugin 
 
 ### Template Library
 
-**Today:** 16 templates (Recover carts, Post-purchase, Customer lifecycle, Alerts), with search, sort, a sidebar (categories with counts, plugins), cards with a strip of step icons, and a "Needs cart tracking" badge while cart tracking is off.
+**Today:** 18 templates (Recover carts, Post-purchase, Customer lifecycle, Alerts), with search, sort, a sidebar (categories with counts, plugins), cards with a strip of step icons, and a "Needs cart tracking" badge while cart tracking is off.
 
 **v1.0 adds:**
 - 18 templates, arriving with their milestones.
@@ -88,14 +88,14 @@ We chose these 8 because they cover what merchants install an automation plugin 
 
 ### Editor
 
-**Today:** a visual canvas that pans on wheel or trackpad and zooms on Ctrl/Cmd + wheel or pinch, with 2 order triggers, Cart abandoned, Checkout abandoned and Customer account created, 4 actions (staff email, change order status, order note, order custom field), conditions, "Insert variable", and "Needs setup" / error highlights.
+**Today:** a visual canvas that pans on wheel or trackpad and zooms on Ctrl/Cmd + wheel or pinch, with 2 order triggers, Cart abandoned, Checkout abandoned, Customer account created and Customer inactive, 4 actions (staff email, change order status, order note, order custom field), conditions, "Insert variable", and "Needs setup" / error highlights.
 
 **v1.0 adds:**
 - **Pickers:** WooCommerce gets new sections: Carts and Customers for triggers, Coupons for actions. A new YayMatik group holds Wait. *(M1, M2, M4, M6, M8)*
 - **Trigger panels:** *(M4, M6, M8)*
   - Checkout / Cart abandoned: no settings, a note on when a cart counts as abandoned (set in Settings), and a warning with a link while cart tracking is off. Each panel explains that a cart never starts both: "Carts that reached checkout start Checkout abandoned instead, never this trigger." / "Only carts that reached checkout with an email. They never start Cart abandoned."
   - Customer account created: no settings.
-  - Customer inactive: number of days (default 90), with "Checked once a day".
+  - Customer inactive: number of days, a whole number from 7 to 730 (default 90), with "Checked once a day".
 - **Wait:** a number and a unit (minutes, hours, days, weeks), up to a year; the card reads e.g. "Wait 1 hour" with a clock icon. *(M2)*
 - **Generate coupon:** discount type, amount, expires after N days, minimum spend, individual use, limited to the customer's email, code prefix. The card reads e.g. "10 % off, expires in 7 days". Later emails can include the coupon code. *(M1)*
 - **Send email:** To (the customer's email by default; editable, proposal), Subject, Heading, Message, each with "Insert variable". Note under the form: "An unsubscribe link is added automatically". *(M1)*
@@ -166,7 +166,7 @@ We chose these 8 because they cover what merchants install an automation plugin 
 
 ### Customer emails
 
-**Today:** every row below except Win-back.
+**Today:** every row below.
 
 **v1.0 adds:** every customer email uses the store's WooCommerce email look (logo, colors, footer) and has a subject, a heading and a message the store owner can edit. Ready-made blocks are added from "Insert variable":
 

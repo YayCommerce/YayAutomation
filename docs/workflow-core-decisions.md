@@ -32,6 +32,7 @@ Each note: **Decision** · **Why** · **Rejected** · **Cost** · **For devs** (
 | [M7](#m7-cart-tracking) | Cart tracking | Owner |
 | [M8](#m8-abandoned-carts) | Abandoned carts | Owner |
 | [M3–M5](#m3m5-lifecycle-workflows) | Lifecycle workflows | Owner |
+| [M6](#m6-win-back) | Win-back | Owner |
 
 "High" = recommended and accepted as-is. "Owner" = debated and decided by the product owner.
 
@@ -177,18 +178,20 @@ Today errors only go to the WooCommerce log, which merchants never open.
 
 ## C11. Scheduled and query triggers with claims
 
-**Decision.** A schedule fans out to one run per matching subject, in batches. Table `trigger_claims` records "this workflow already ran for this subject".
+**Decision.** A schedule fans out to one run per matching subject, in batches. Table `trigger_claims` records "this workflow already ran for this subject"; it has no end date, and a run that doesn't start gives its claim back.
 
 **Why.**
 - Inactive customer (M6) and abandoned cart (M8) aren't events. Something has to look for them on a schedule.
 - Without claims, the daily check would email the same customer every day.
 - It generalises today's trick in `OrderCreated::claim()` (an order meta flag).
 
-**For devs.** A query trigger defines "find subjects" and "subject key". Batching and dedupe come from the Scheduler.
+**For devs.** A query trigger opts in with `Trigger::claims_per_workflow()` and keeps its usual `subject()`. A daily job of its own finds the subjects in batches and fires the trigger's event; the Dispatcher takes the claim.
 
 **Note (M7).** Abandoned carts come from the `carts` table, not from pending orders: WooCommerce cancels unpaid orders after the hold-stock minutes.
 
 **Note (M8).** Claims are built in M6. Abandoned carts need none: see [M8](#m8-abandoned-carts).
+
+**Note (M6).** The claim is per workflow and order, not per customer with a time limit: see [M6](#m6-win-back).
 
 ---
 
@@ -420,3 +423,31 @@ Today errors only go to the WooCommerce log, which merchants never open.
 - A customer deleted during a wait: later emails are skipped and the run ends Completed. After the WP user is deleted, its runs stay until run retention, and the eraser finds them only by the email in their step output.
 - The second welcome email with no visible products sends its text and shop button without a grid. "New" means the store's newest, however old.
 - `customer.full_name` on an account with no billing details is the first name only, and `last_name` stays empty: the fill covers email and first name only.
+
+## M6. Win-back
+
+**Decision.** A daily job finds each person's last real order that is N to N+7 days old and starts the workflow once for that order. A claim in `trigger_claims` records it, per workflow and subject `order:<id>`, with no end date. A run that doesn't start gives its claim back.
+
+**Why.**
+- **A latest-order lookup, not a date filter.** Two lookups, by billing email and by account, read the person's newest order, and the candidate stays only if both return it. A "no newer order" filter costs the same, but fires twice for two orders in the same second; with `date ID` the higher id is the last.
+- **The last real order, one set for both sides.** Real means every status except pending, failed, cancelled and checkout draft, for the candidates and for the lookups alike. A customer with a newer on-hold, refunded or paid order must not get "we miss you" and a coupon. With two sets, a newest pending or refunded order could block win-back for good, as WooCommerce may never cancel a pending order. A status another plugin adds counts as real.
+- **Pending doesn't count as ordering.** Nothing was bought, and the order may sit there for ever.
+- **A window, not an exact day.** An order stays findable for 7 days, so a late job or a failed start gets another try. It's also why activating on a store never emails its whole history.
+- **Per workflow and last order, not per customer per period.** The subject is the order, so a later order that also goes quiet starts a new period by itself, with no time limit to tune. Two workflows each start once.
+- **Release when no run starts.** The claim has no end date, so a rate-limit pause, a turned-off workflow or a failed write would otherwise lose that customer for good. The next day's sweep retries inside the window.
+- **Anonymized orders are skipped.** WooCommerce's eraser and its "retain completed orders" setting replace the billing email with a placeholder, so a store that anonymizes after 3 months has those orders in the 90-day window.
+- **The sweep flushes per batch.** A long Action Scheduler process has one shutdown for many batches, which would start all their runs together.
+
+**Cost.**
+- A last order older than N+7 days at activation never starts it.
+- Cron late over 7 days loses those customers.
+- An order placed between the sweep and the run still gets the email.
+- About 2 lookups per candidate, unindexed on posts stores, repeated daily while an order is in the window; the Dispatcher adds its per-event reads. 200 per 2 minutes is at most 144,000 candidates a day.
+- A crash between the claim and the run loses that order's start, and so does turning the workflow off in the instant between the Worker's check and the Executor's. Other runs that couldn't start are retried.
+- Activating a second win-back version emails every customer still in the window again: claims are per workflow.
+- A person is an account plus a billing email: orders under another email as a guest count as someone else.
+- An on-hold order that is never paid counts as the last order: the customer gets win-back N days after it.
+- A pending order doesn't count as ordering: a customer who left a payment unfinished still gets win-back.
+- Claims of live workflows are never deleted: one small row per customer per last order.
+- Changing days on a live workflow doesn't restart orders it already claimed.
+- A run doesn't stop when the customer orders during a Wait (no `stop_reason`); the v1.0 templates have no Wait.

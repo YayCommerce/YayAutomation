@@ -16,7 +16,7 @@ import { useFixHealthCheck, useHealthQuery } from './api/health.query';
 import { SettingsErrorAlert } from './SettingsErrorAlert';
 
 /** Problems first, then the info row. */
-const ORDER: HealthCheckId[] = ['runs_queued', 'runs_running', 'cleanup_job', 'jobs_late'];
+const ORDER: HealthCheckId[] = ['runs_queued', 'runs_running', 'cleanup_job', 'inactive_sweep_job', 'jobs_late'];
 
 /** A capped scan's count is a lower bound: "1+" still takes the plural. */
 const countText = (check: HealthCheck) => (check.capped ? `${check.count}+` : String(check.count));
@@ -174,10 +174,19 @@ const fixRows: Record<
     fix: () => __('Fix: schedule it again.', 'yaymatik'),
     button: __('Schedule again', 'yaymatik'),
   },
+  inactive_sweep_job: {
+    icon: <TriangleAlert className="text-warning-soft-foreground" />,
+    title: () => __('The daily inactive-customer check isn’t running on time', 'yaymatik'),
+    help: () =>
+      __('It’s missing or more than a day late, so customers may start their win-back late or miss it.', 'yaymatik'),
+    fix: () => __('Fix: schedule it again.', 'yaymatik'),
+    button: __('Schedule again', 'yaymatik'),
+  },
 };
 
 function fixedMessage(id: FixableHealthCheckId, fixed: number) {
   if (id === 'cleanup_job') return __('The daily cleanup is scheduled again.', 'yaymatik');
+  if (id === 'inactive_sweep_job') return __('The daily inactive-customer check is scheduled again.', 'yaymatik');
   return id === 'runs_queued'
     ? /* translators: %d: number of runs */
       sprintf(_n('%d run queued again.', '%d runs queued again.', fixed, 'yaymatik'), fixed)

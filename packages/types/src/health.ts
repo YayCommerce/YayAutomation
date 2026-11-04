@@ -1,5 +1,5 @@
 /** PHP `HealthRoutes`: `GET /health/checks`, `POST /health/fix`. */
-export type HealthCheckId = 'runs_queued' | 'runs_running' | 'jobs_late' | 'cleanup_job';
+export type HealthCheckId = 'runs_queued' | 'runs_running' | 'jobs_late' | 'cleanup_job' | 'inactive_sweep_job';
 
 export type FixableHealthCheckId = Exclude<HealthCheckId, 'jobs_late'>;
 

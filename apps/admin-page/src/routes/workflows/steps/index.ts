@@ -13,6 +13,7 @@ import { createRegistry } from './core/registry';
 import { cartAbandonedStep } from './triggers/cart-abandoned';
 import { checkoutAbandonedStep } from './triggers/checkout-abandoned';
 import { customerAccountCreatedStep } from './triggers/customer-account-created';
+import { customerInactiveStep } from './triggers/customer-inactive';
 import { orderCreatedStep } from './triggers/order-created';
 import { orderStatusChangedStep } from './triggers/order-status-changed';
 
@@ -25,6 +26,7 @@ const coreSteps = [
   cartAbandonedStep,
   checkoutAbandonedStep,
   customerAccountCreatedStep,
+  customerInactiveStep,
   criteriaStep,
   sendEmailStep,
   sendInternalEmailStep,

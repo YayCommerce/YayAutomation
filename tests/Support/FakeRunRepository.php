@@ -23,6 +23,9 @@ class FakeRunRepository implements RunRepository {
     /** @var int How many save_run() calls were made. */
     public $saves = 0;
 
+    /** @var true[] `<workflow id>|<subject>` => held claim. */
+    public $claims = [];
+
     public function create_run( array $run ): int {
         $id                = count( $this->runs ) + 1;
         $this->runs[ $id ] = [
@@ -130,5 +133,18 @@ class FakeRunRepository implements RunRepository {
 
     public function steps( int $run_id ): array {
         return array_values( array_filter( $this->steps, fn( array $row ) => $row['run_id'] === $run_id ) );
+    }
+
+    public function claim_subject( int $workflow_id, string $subject ): bool {
+        $key = "{$workflow_id}|{$subject}";
+        if ( isset( $this->claims[ $key ] ) ) {
+            return false;
+        }
+        $this->claims[ $key ] = true;
+        return true;
+    }
+
+    public function release_subject( int $workflow_id, string $subject ): void {
+        unset( $this->claims[ "{$workflow_id}|{$subject}" ] );
     }
 }

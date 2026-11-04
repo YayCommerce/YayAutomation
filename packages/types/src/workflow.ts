@@ -15,6 +15,7 @@ export type StepId =
   | 'cart_abandoned'
   | 'checkout_abandoned'
   | 'customer_account_created'
+  | 'customer_inactive'
   | 'condition'
   | 'send_email'
   | 'send_internal_email'

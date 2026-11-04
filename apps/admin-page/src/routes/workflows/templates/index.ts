@@ -6,6 +6,7 @@ import { firstOrderDiscount, firstOrderFreeShipping } from './first-order-thank-
 import highValueOrderAlert from './high-value-order-alert';
 import { reviewRequest, reviewRequestReminder } from './review-request';
 import { welcomeEmail, welcomeSeries } from './welcome';
+import { winBackDiscount, winBackFreeShipping } from './win-back';
 
 export { categoryLabels, needsCartTracking, needsProductReviews, sendsCustomerEmail, workflowRank } from './core/meta';
 export { pluginsOf } from './core/plugins';
@@ -32,4 +33,6 @@ export const { templates, findTemplate, versionsOf } = createTemplateRegistry([
   reviewRequestReminder,
   welcomeEmail,
   welcomeSeries,
+  winBackDiscount,
+  winBackFreeShipping,
 ]);

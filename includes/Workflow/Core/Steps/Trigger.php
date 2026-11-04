@@ -95,6 +95,11 @@ abstract class Trigger extends Step {
         return true;
     }
 
+    /** Once per workflow per subject, recorded in `trigger_claims`. */
+    public function claims_per_workflow(): bool {
+        return false;
+    }
+
     /** Why this trigger can't start on this site, shown when activating; null when it can. */
     public function setup_issue(): ?string {
         return null;

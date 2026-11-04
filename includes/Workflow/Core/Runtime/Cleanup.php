@@ -5,10 +5,11 @@ use YayMatik\Workflow\Core\Cart\CartSweep;
 use YayMatik\Workflow\Core\Storage\CartStore;
 use YayMatik\Workflow\Core\Storage\RunStore;
 use YayMatik\Workflow\Core\Storage\Settings;
+use YayMatik\Workflow\Core\Storage\TriggerClaimStore;
 
 defined( 'ABSPATH' ) || exit;
 
-/** Daily job deleting finished runs and carts older than their retention settings. */
+/** Daily job deleting finished runs and carts older than their retention settings, and deleted workflows' claims. */
 final class Cleanup {
 
     public const HOOK = 'yaymatik_cleanup';
@@ -26,7 +27,7 @@ final class Cleanup {
         add_action( self::HOOK, [ self::class, 'run' ] );
     }
 
-    /** Schedules this job and the cart sweep when missing, checked at most hourly. */
+    /** Schedules this job, the cart sweep and the inactive sweep when missing, checked at most hourly. */
     public static function ensure(): void {
         if ( ! function_exists( 'as_has_scheduled_action' ) ) {
             return;
@@ -39,6 +40,9 @@ final class Cleanup {
         }
         if ( ! as_has_scheduled_action( CartSweep::HOOK, [], ActionSchedulerQueue::GROUP ) ) {
             CartSweep::schedule();
+        }
+        if ( ! as_has_scheduled_action( InactiveSweep::HOOK, [], ActionSchedulerQueue::GROUP ) ) {
+            InactiveSweep::schedule();
         }
         update_option( self::CHECKED_OPTION, time(), true );
     }
@@ -62,6 +66,10 @@ final class Cleanup {
             $ids = CartStore::inactive_ids_before( $carts, self::BATCH );
             Cancellation::carts( $ids, Cancellation::cart_gone() );
             $deleted = CartStore::delete_ids( $ids );
+        } while ( self::BATCH === $deleted && microtime( true ) < $deadline );
+
+        do {
+            $deleted = TriggerClaimStore::delete_orphans( self::BATCH );
         } while ( self::BATCH === $deleted && microtime( true ) < $deadline );
 
         $runs = gmdate( 'Y-m-d H:i:s', time() - (int) Settings::get( 'run_retention_days' ) * DAY_IN_SECONDS );

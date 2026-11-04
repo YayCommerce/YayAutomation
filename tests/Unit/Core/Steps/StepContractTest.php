@@ -14,6 +14,7 @@ use YayMatik\Workflow\Conditions\Criteria;
 use YayMatik\Workflow\Core\Steps\Field;
 use YayMatik\Workflow\Core\Steps\Step;
 use YayMatik\Workflow\Core\Steps\StepIcons;
+use YayMatik\Workflow\Triggers\CustomerInactive;
 use YayMatik\Workflow\Triggers\OrderCreated;
 use YayMatik\Workflow\Triggers\OrderStatusChanged;
 
@@ -25,7 +26,7 @@ final class StepContractTest extends TestCase {
     /** @return Step[] Keyed by id. */
     private static function steps(): array {
         $steps = [];
-        foreach ( [ new OrderCreated(), new OrderStatusChanged(), new Criteria(), new SendEmail(), new SendInternalEmail(), new ChangeOrderStatus(), new AddOrderNote(), new UpdateOrderMeta(), new GenerateCoupon(), new Wait() ] as $step ) {
+        foreach ( [ new OrderCreated(), new OrderStatusChanged(), new CustomerInactive(), new Criteria(), new SendEmail(), new SendInternalEmail(), new ChangeOrderStatus(), new AddOrderNote(), new UpdateOrderMeta(), new GenerateCoupon(), new Wait() ] as $step ) {
             $steps[ $step->id() ] = $step;
         }
         return $steps;
@@ -98,6 +99,7 @@ final class StepContractTest extends TestCase {
             [
                 'order_created'        => [],
                 'order_status_changed' => [],
+                'customer_inactive'    => [],
                 'condition'            => [ 'result' ],
                 'send_email'           => [ 'to' ],
                 'send_internal_email'  => [ 'to' ],
