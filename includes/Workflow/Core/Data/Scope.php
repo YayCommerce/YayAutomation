@@ -123,6 +123,18 @@ final class Scope implements Values {
     }
 
     /**
+     * A custom field of the entity behind a meta field; '' when there's none.
+     *
+     * @param string $path
+     * @param string $key
+     * @throws GoneEntity When an entity on the path no longer exists.
+     */
+    public function meta( string $path, string $key ): string {
+        $found = $this->resolve( $path );
+        return empty( $found['field']['meta'] ) ? '' : (string) ( $found['field']['meta'] )( $found['object'], $key );
+    }
+
+    /**
      * The loaded entity a path points to, or null.
      *
      * @param string $path

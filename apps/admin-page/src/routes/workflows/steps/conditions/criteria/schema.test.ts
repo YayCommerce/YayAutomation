@@ -32,6 +32,13 @@ describe('rule checks, same messages and order as PHP', () => {
     expect(error({ field: 'order.total', operator: 'in_last', value: 'abc' })).toBe(messages.ruleComparison);
   });
 
+  it('needs a custom field name on a custom field rule', () => {
+    const meta = { field: 'order.meta', operator: 'equal', value: 'x' };
+    expect(error(meta)).toBe(messages.ruleKeyRequired);
+    expect(error({ ...meta, key: ' ' })).toBe(messages.ruleKeyRequired);
+    expect(error({ ...meta, key: '_vip' })).toBeNull();
+  });
+
   it('needs no value for is set', () => {
     expect(needsValue('is_set')).toBe(false);
     expect(needsValue('is_not_set')).toBe(false);
@@ -49,6 +56,17 @@ describe('normalize, the shape PHP stores', () => {
       'value',
       'valueType',
     ]);
+  });
+
+  it('keeps a key on a custom field rule only, with no variable', () => {
+    expect(one({ field: 'order.meta', operator: 'equal', value: 'x', valueType: 'variable', key: ' _vip ' })).toEqual({
+      field: 'order.meta',
+      operator: 'equal',
+      value: 'x',
+      valueType: 'value',
+      key: '_vip',
+    });
+    expect(one({ field: 'order.total', operator: 'equal', value: '1', key: '_vip' }).key).toBeUndefined();
   });
 
   it('gives a relative date a unit, days when unknown', () => {

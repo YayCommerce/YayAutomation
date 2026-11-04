@@ -15,6 +15,18 @@ require_once dirname( __DIR__, 2 ) . '/Support/woocommerce-stubs.php';
 /** Rules: their stored shape, their checks and how they evaluate. */
 final class CriteriaTest extends TestCase {
 
+    /** @var mixed */
+    private $wpdb;
+
+    protected function setUp(): void {
+        $this->wpdb      = $GLOBALS['wpdb'] ?? null;
+        $GLOBALS['wpdb'] = (object) [ 'base_prefix' => 'wp_' ];
+    }
+
+    protected function tearDown(): void {
+        $GLOBALS['wpdb'] = $this->wpdb;
+    }
+
     /**
      * @param string       $field
      * @param string       $operator
@@ -165,5 +177,66 @@ final class CriteriaTest extends TestCase {
     public function test_is_set_evaluates(): void {
         $this->assertTrue( self::evaluate( '2026-01-02', self::rule( 'order.created_date', 'is_set' ) ) );
         $this->assertTrue( self::evaluate( '', self::rule( 'order.created_date', 'is_not_set' ) ) );
+    }
+
+    public function test_a_custom_field_rule_keeps_its_key_and_takes_no_variable(): void {
+        $clean = ( new Criteria() )->sanitize(
+            [
+                'rules' => [
+                    [
+                        'field'     => 'order.meta',
+                        'operator'  => 'equal',
+                        'value'     => 'x',
+                        'valueType' => 'variable',
+                        'key'       => ' _vip ',
+                    ],
+                ],
+            ]
+        );
+        $this->assertSame( self::rule( 'order.meta', 'equal', 'x', [ 'key' => '_vip' ] ), $clean['rules'][0] );
+    }
+
+    public function test_a_key_is_dropped_on_other_fields(): void {
+        $clean = ( new Criteria() )->sanitize( [ 'rules' => [ self::rule( 'order.total', 'equal', '1', [ 'key' => '_vip' ] ) ] ] );
+        $this->assertArrayNotHasKey( 'key', $clean['rules'][0] );
+    }
+
+    public function test_a_custom_field_rule_needs_a_key_it_can_read(): void {
+        $this->assertSame( Messages::get( 'ruleKeyRequired' ), self::check( self::rule( 'order.meta', 'equal', 'x' ) ) );
+        $this->assertSame( Messages::get( 'ruleMetaKey' ), self::check( self::rule( 'order.meta', 'equal', 'x', [ 'key' => '_order_total' ] ) ) );
+        $this->assertSame( Messages::get( 'ruleMetaKey' ), self::check( self::rule( 'customer.meta', 'equal', 'x', [ 'key' => 'session_tokens' ] ) ) );
+        $this->assertSame( Messages::get( 'ruleMetaKey' ), self::check( self::rule( 'customer.meta', 'is_empty', '', [ 'key' => 'WP_CAPABILITIES' ] ) ) );
+        $this->assertSame( Messages::get( 'ruleMetaKey' ), self::check( self::rule( 'customer.meta', 'equal', 'x', [ 'key' => 'wp_2_capabilities' ] ) ) );
+        $this->assertTrue( self::check( self::rule( 'customer.meta', 'equal', 'x', [ 'key' => 'tier' ] ) ) );
+    }
+
+    public function test_custom_field_comparisons_evaluate(): void {
+        $thing = new FakeEntity(
+            'order',
+            [
+                'meta' => [
+                    'label' => 'Custom',
+                    'type'  => DataItem::TYPE_META,
+                    'value' => fn() => '',
+                    'meta'  => fn( $order, string $key ) => 'tier' === $key ? '5.0' : '',
+                ],
+            ]
+        );
+        $scope = new Scope(
+            [ 'trigger' => [ 'order' => new Ref( 'order', '1' ) ] ],
+            new RefResolver( [ 'order' => fn() => (object) [] ] ),
+            [ 'order' => $thing ]
+        );
+        $check = fn( string $operator, string $value, string $key = 'tier' ) => ( new Criteria() )->evaluate(
+            $scope,
+            [
+                'match' => 'all',
+                'rules' => [ self::rule( 'order.meta', $operator, $value, [ 'key' => $key ] ) ],
+            ]
+        );
+        $this->assertTrue( $check( 'equal', '5' ) );
+        $this->assertTrue( $check( 'greater_than', '4' ) );
+        $this->assertFalse( $check( 'greater_than', 'abc' ) );
+        $this->assertTrue( $check( 'is_empty', '', 'other' ) );
     }
 }

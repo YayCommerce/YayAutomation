@@ -12,7 +12,7 @@ use YayMatik\Workflow\Core\Steps\Field;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * The one condition step. Rule: [ 'field', 'operator', 'value' (a list for list comparisons, a whole number with `unit` for relative dates), 'valueType' => 'value'|'variable' (`value` is another field's key), 'unit'? ].
+ * The one condition step. Rule: [ 'field', 'operator', 'value' (a list for list comparisons, a whole number with `unit` for relative dates), 'valueType' => 'value'|'variable' (`value` is another field's key), 'unit'?, 'key'? (a meta field's custom field) ].
  */
 class Criteria extends Condition {
 
@@ -118,6 +118,10 @@ class Criteria extends Condition {
      */
     private static function rule_matches( Scope $scope, array $rule ): bool {
         $operator = $rule['operator'];
+        $field    = DataRegistry::field( $rule['field'] );
+        if ( DataItem::TYPE_META === $field['type'] ) {
+            return Operators::compare( DataItem::TYPE_META, $operator, $scope->meta( $rule['field'], $rule['key'] ), $rule['value'] );
+        }
         if ( Operators::is_relative( $operator ) ) {
             $at = $scope->timestamp( $rule['field'] );
             return 'in_last' === $operator
@@ -129,7 +133,7 @@ class Criteria extends Condition {
             : $rule['value'];
         // Comparing with a variable that has no value (e.g. no paid date yet) never matches.
         return null !== $expected
-            && Operators::compare( DataRegistry::field( $rule['field'] )['type'], $operator, $scope->get( $rule['field'] ), $expected );
+            && Operators::compare( $field['type'], $operator, $scope->get( $rule['field'] ), $expected );
     }
 
     /**
@@ -138,12 +142,14 @@ class Criteria extends Condition {
      * @param array $rule
      */
     private static function sanitize_rule( array $rule ): array {
+        $key      = self::field_key( self::scalar( $rule['field'] ?? '' ) );
+        $meta     = DataItem::TYPE_META === ( DataRegistry::field( $key )['type'] ?? '' );
         $operator = sanitize_key( self::scalar( $rule['operator'] ?? '' ) );
-        $fixed    = Operators::takes_list( $operator ) || Operators::is_relative( $operator );
+        $fixed    = $meta || Operators::takes_list( $operator ) || Operators::is_relative( $operator );
         $variable = ! $fixed && 'variable' === ( $rule['valueType'] ?? '' );
         $value    = self::scalar( $rule['value'] ?? '' );
         $clean    = [
-            'field'     => self::field_key( self::scalar( $rule['field'] ?? '' ) ),
+            'field'     => $key,
             'operator'  => $operator,
             'value'     => $variable ? self::field_key( $value ) : sanitize_text_field( $value ),
             'valueType' => $variable ? 'variable' : 'value',
@@ -154,6 +160,9 @@ class Criteria extends Condition {
         }
         if ( Operators::is_relative( $operator ) ) {
             $clean['unit'] = in_array( $rule['unit'] ?? '', Operators::units(), true ) ? $rule['unit'] : 'days';
+        }
+        if ( $meta ) {
+            $clean['key'] = sanitize_text_field( self::scalar( $rule['key'] ?? '' ) );
         }
         return $clean;
     }
@@ -170,6 +179,14 @@ class Criteria extends Condition {
         }
         if ( ! Operators::supports( $field['type'], $rule['operator'] ) ) {
             return Messages::get( 'ruleComparison' );
+        }
+        if ( DataItem::TYPE_META === $field['type'] ) {
+            if ( '' === $rule['key'] ) {
+                return Messages::get( 'ruleKeyRequired' );
+            }
+            if ( $field['meta_blocked'] && ( $field['meta_blocked'] )( $rule['key'] ) ) {
+                return Messages::get( 'ruleMetaKey' );
+            }
         }
         if ( ! Operators::needs_value( $rule['operator'] ) ) {
             return null;

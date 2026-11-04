@@ -14,9 +14,11 @@
 use Automattic\WooCommerce\Utilities\OrderUtil;
 use YayMatik\Workflow\Actions\UpdateOrderMeta;
 use YayMatik\Workflow\Conditions\Criteria;
+use YayMatik\Workflow\Core\Data\CustomerStats;
 use YayMatik\Workflow\Core\Data\Ref;
 use YayMatik\Workflow\Core\Data\Scope;
 use YayMatik\Workflow\Core\Definition\GraphSchema;
+use YayMatik\Workflow\Core\Definition\Messages;
 use YayMatik\Workflow\Core\Runtime\ActionSchedulerQueue;
 use YayMatik\Workflow\Core\Runtime\Cleanup;
 use YayMatik\Workflow\Core\Runtime\Runtime;
@@ -24,6 +26,7 @@ use YayMatik\Workflow\Core\Steps\Trigger;
 use YayMatik\Workflow\Core\Steps\StepResult;
 use YayMatik\Workflow\Core\Storage\RunStore;
 use YayMatik\Workflow\Core\Storage\WorkflowStore;
+use YayMatik\Workflow\DataItems\CustomerData;
 
 if ( ! function_exists( 'WC' ) ) {
     WP_CLI::error( 'WooCommerce is not active.' );
@@ -45,6 +48,9 @@ $option = WorkflowStore::ACTIVE_TRIGGERS_OPTION;
 $domain = 'x' . wp_rand( 1000, 9999 ) . '.test';
 $flows  = [];
 $orders = [];
+$posts  = [];
+$terms  = [];
+$users  = [];
 
 $fails = 0;
 $ok    = function ( bool $pass, string $what ) use ( &$fails ) {
@@ -52,7 +58,17 @@ $ok    = function ( bool $pass, string $what ) use ( &$fails ) {
     $fails += $pass ? 0 : 1;
 };
 
-$cleanup = function () use ( $wpdb, &$flows, &$orders ) {
+$cleanup = function () use ( $wpdb, &$flows, &$orders, &$posts, &$terms, &$users ) {
+    foreach ( $posts as $post_id ) {
+        wp_delete_post( $post_id, true );
+    }
+    foreach ( $terms as $term_id ) {
+        wp_delete_term( $term_id, 'product_cat' );
+    }
+    require_once ABSPATH . 'wp-admin/includes/user.php';
+    foreach ( $users as $user_id ) {
+        wp_delete_user( $user_id );
+    }
     $runs_table = RunStore::table();
     foreach ( $flows as $flow_id ) {
         WorkflowStore::deactivate( $flow_id );
@@ -411,6 +427,243 @@ $ok(
     ),
     'rule: is any of reads its status'
 );
+
+// Customer stats and fields, on this order store.
+$email = 'stats@' . $domain;
+$user  = wp_create_user( 'stats_' . wp_rand( 100000, 999999 ), wp_generate_password(), $email );
+if ( ! is_int( $user ) ) {
+    WP_CLI::error( 'Could not create a temporary user.' );
+}
+$users[] = $user;
+$totals  = fn() => CustomerStats::totals( (int) $user, $email );
+$paid    = function ( string $total, array $props = [], string $status = 'processing' ) use ( $order, $email ): WC_Order {
+    $made = wc_get_order( $order( $props + [ 'billing_email' => $email ] ) );
+    $made->set_total( $total );
+    $made->set_status( $status );
+    $made->save();
+    return $made;
+};
+$ok( 0 === $totals()['count'] && 0.0 === $totals()['spent'] && null === $totals()['last_paid'], 'stats: nothing paid yet' );
+$paid( '100', [ 'customer_id' => (int) $user ] );
+$guest_paid = $paid( '50', [ 'date_created' => time() - DAY_IN_SECONDS ] );
+$ok( 2 === $totals()['count'] && 150.0 === $totals()['spent'], 'stats: an account order and a guest order with its email, each counted once' );
+$paid( '999', [], 'pending' );
+$paid( '999', [], 'failed' );
+$ok( 2 === $totals()['count'] && 150.0 === $totals()['spent'], 'stats: pending and failed don\'t count' );
+$refund = wc_create_refund(
+    [
+        'order_id' => $guest_paid->get_id(),
+        'amount'   => '20',
+    ]
+);
+$ok( ! is_wp_error( $refund ) && 130.0 === $totals()['spent'] && 2 === $totals()['count'], 'stats: a refund is subtracted, the order still counts' );
+$paid( '10', [ 'currency' => 'EUR' ] );
+$ok( 3 === $totals()['count'] && 140.0 === $totals()['spent'], 'stats: a second currency is summed as stored' );
+$ok( $totals()['last_paid'] > time() - HOUR_IN_SECONDS, 'stats: last_paid is the newest paid order' );
+$ok( 0 === CustomerStats::totals( 0, '' )['count'], 'stats: no account and no email is zeros' );
+
+$term_parent = wp_insert_term( 'check-catalog parent ' . $domain, 'product_cat' );
+$term_child  = wp_insert_term( 'check-catalog child ' . $domain, 'product_cat', [ 'parent' => $term_parent['term_id'] ] );
+$terms       = [ $term_child['term_id'], $term_parent['term_id'] ];
+$bought      = new WC_Product_Simple();
+$bought->set_name( 'check-catalog ' . $domain );
+$bought->set_category_ids( [ $term_child['term_id'] ] );
+$bought_id = $bought->save();
+$posts[]   = $bought_id;
+$coupon    = new WC_Coupon();
+$coupon->set_code( 'chk' . wp_rand( 100000, 999999 ) );
+$coupon->set_amount( 1 );
+$posts[] = $coupon->save();
+$rich    = $paid( '30', [ 'customer_id' => (int) $user ] );
+$rich->add_product( wc_get_product( $bought_id ), 1 );
+$rich->apply_coupon( $coupon->get_code() );
+$rich->set_billing_country( 'US' );
+$rich->update_meta_data( '_check_tier', '5.0' );
+$rich->save();
+update_user_meta( (int) $user, 'check_tier', 'gold' );
+
+$rich_scope = new Scope( [ 'trigger' => [ 'order' => new Ref( 'order', (string) $rich->get_id() ) ] ] );
+$rich_rule  = fn( array $rule ) => $criteria->evaluate(
+    $rich_scope,
+    $criteria->sanitize(
+        [
+            'match' => 'all',
+            'rules' => [ $rule + [ 'valueType' => 'value' ] ],
+        ]
+    )
+);
+$item_scan  = 0;
+$count_scan = function ( string $query ) use ( &$item_scan ) {
+    $item_scan += false !== strpos( $query, 'woocommerce_order_itemmeta' ) ? 1 : 0;
+    return $query;
+};
+add_filter( 'query', $count_scan );
+$customer_scope = new Scope( [ 'trigger' => [ 'customer' => new Ref( 'customer', 'order:' . $rich->get_id() ) ] ] );
+$customer_rule  = fn( array $rule ) => $criteria->evaluate(
+    $customer_scope,
+    $criteria->sanitize(
+        [
+            'match' => 'all',
+            'rules' => [ $rule + [ 'valueType' => 'value' ] ],
+        ]
+    )
+);
+$ok(
+    $customer_rule(
+        [
+            'field'    => 'customer.paid_order_count',
+            'operator' => 'equal',
+            'value'    => '4',
+        ]
+    ),
+    'rule: paid order count reads the stats'
+);
+$scan_before    = $item_scan;
+$ok(
+    $customer_rule(
+        [
+            'field'    => 'customer.purchased_product_ids',
+            'operator' => 'matches_any',
+            'value'    => [ (string) $bought_id ],
+        ]
+    ),
+    'rule: products purchased reads the bought product'
+);
+$ok( $item_scan > $scan_before, 'and only that field scans order items' );
+remove_filter( 'query', $count_scan );
+$ok( 0 === $scan_before, 'stats alone never scan order items' );
+
+$ok(
+    $rich_rule(
+        [
+            'field'    => 'order.product_ids',
+            'operator' => 'matches_all',
+            'value'    => [ (string) $bought_id ],
+        ]
+    ),
+    'rule: order products match'
+);
+$ok(
+    $rich_rule(
+        [
+            'field'    => 'order.category_ids',
+            'operator' => 'matches_any',
+            'value'    => [ (string) $term_parent['term_id'] ],
+        ]
+    ),
+    'rule: a parent category matches through its child'
+);
+$ok(
+    $rich_rule(
+        [
+            'field'    => 'order.coupon_codes',
+            'operator' => 'matches_any',
+            'value'    => [ strtoupper( $coupon->get_code() ) ],
+        ]
+    ),
+    'rule: a coupon matches, ignoring case'
+);
+$ok(
+    $rich_rule(
+        [
+            'field'    => 'order.billing_country',
+            'operator' => 'is_any_of',
+            'value'    => [ 'US', 'CA' ],
+        ]
+    ),
+    'rule: billing country is any of'
+);
+$ok(
+    $rich_rule(
+        [
+            'field'    => 'order.meta',
+            'key'      => '_check_tier',
+            'operator' => 'equal',
+            'value'    => '5',
+        ]
+    ),
+    'rule: order.meta compares "5.0" as the number 5'
+);
+$ok(
+    $customer_rule(
+        [
+            'field'    => 'customer.meta',
+            'key'      => 'check_tier',
+            'operator' => 'equal',
+            'value'    => 'gold',
+        ]
+    ),
+    'rule: customer.meta reads the account'
+);
+$ok(
+    $customer_rule(
+        [
+            'field'    => 'customer.role',
+            'operator' => 'matches_any',
+            'value'    => [ get_option( 'default_role', 'subscriber' ) ],
+        ]
+    ),
+    'rule: customer.role reads the account'
+);
+$ok(
+    $customer_rule(
+        [
+            'field'    => 'customer.registered_date',
+            'operator' => 'in_last',
+            'value'    => '1',
+            'unit'     => 'hours',
+        ]
+    ),
+    'rule: registered in the last hour, from its real time'
+);
+$ok(
+    $customer_rule(
+        [
+            'field'    => 'customer.last_order_date',
+            'operator' => 'in_last',
+            'value'    => '1',
+            'unit'     => 'hours',
+        ]
+    ),
+    'rule: last paid order in the last hour'
+);
+
+$refused = $criteria->validate(
+    $criteria->sanitize(
+        [
+            'match' => 'all',
+            'rules' => [
+                [
+                    'field'     => 'customer.meta',
+                    'key'       => 'session_tokens',
+                    'operator'  => 'is_not_empty',
+                    'value'     => '',
+                    'valueType' => 'value',
+                ],
+            ],
+        ]
+    )
+);
+$ok( is_wp_error( $refused ) && Messages::get( 'ruleMetaKey' ) === $refused->get_error_message(), 'rule: session_tokens is refused' );
+$ok( '' === CustomerData::custom_field( new WC_Customer( (int) $user ), 'session_tokens' ), 'and reads empty if a rule gets through' );
+$real_prefix = $wpdb->base_prefix . 'capabilities';
+$refused     = $criteria->validate(
+    $criteria->sanitize(
+        [
+            'match' => 'all',
+            'rules' => [
+                [
+                    'field'     => 'customer.meta',
+                    'key'       => strtoupper( $real_prefix ),
+                    'operator'  => 'is_not_empty',
+                    'value'     => '',
+                    'valueType' => 'value',
+                ],
+            ],
+        ]
+    )
+);
+$ok( is_wp_error( $refused ), 'rule: this site\'s capabilities key is refused, in any case' );
 
 if ( $fails ) {
     WP_CLI::error( "{$fails} check(s) failed." );

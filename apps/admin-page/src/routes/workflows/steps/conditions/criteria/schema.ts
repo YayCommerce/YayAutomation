@@ -25,6 +25,8 @@ export type Rule = {
   value: string | string[];
   valueType: 'value' | 'variable';
   unit?: RuleUnit;
+  /** A meta field's custom field. */
+  key?: string;
 };
 export type CriteriaConfig = { match: 'all' | 'any'; rules: Rule[] };
 
@@ -38,10 +40,12 @@ export const comparableWith = (field: DataField) => (other: DataField) =>
   other.conditional && other.type === field.type && VARIABLE_VALUE_TYPES.includes(field.type);
 
 /** Why one criteria can't run, or null. Same checks, order and messages as PHP `Criteria::rule_error()`. */
-function ruleError({ field: key, operator, value, valueType }: Rule): string | null {
-  const field = fieldByKey(key);
+function ruleError({ field: fieldKey, operator, value, valueType, key }: Rule): string | null {
+  const field = fieldByKey(fieldKey);
   if (!field?.conditional) return messages.ruleVariable;
   if (!operatorsFor(field.type).includes(operator)) return messages.ruleComparison;
+  // Which keys are blocked is the server's to say, `ruleMetaKey` after a save: they depend on the store.
+  if (field.type === 'meta' && !key?.trim()) return messages.ruleKeyRequired;
   if (!needsValue(operator)) return null;
 
   if (takesList(operator)) {
@@ -100,6 +104,7 @@ export const schema = v.pipe(
         value: v.union([v.string(), v.array(v.string())]),
         valueType: v.picklist(['value', 'variable']),
         unit: v.optional(v.picklist(['hours', 'days'])),
+        key: v.optional(v.string()),
       }),
     ),
   }),
@@ -120,17 +125,20 @@ export const normalize = (config: Record<string, unknown>): CriteriaConfig => ({
 
 /** One rule as PHP `Criteria::sanitize_rule()` stores it; a plain rule has exactly its four keys. */
 function normalizeRule(rule: Partial<Rule>): Rule {
+  const field = String(rule?.field ?? '');
+  const meta = fieldByKey(field)?.type === 'meta';
   const operator = String(rule?.operator ?? '');
   const raw = rule?.value;
   const text = Array.isArray(raw) ? '' : String(raw ?? '');
   const items = Array.isArray(raw) ? raw : [text];
   const list = [...new Set(items.map((item) => (typeof item === 'string' ? item.trim() : '')).filter(Boolean))];
-  const fixed = takesList(operator) || isRelative(operator);
+  const fixed = meta || takesList(operator) || isRelative(operator);
   return {
-    field: String(rule?.field ?? ''),
+    field,
     operator,
     value: takesList(operator) ? list : text,
     valueType: !fixed && rule?.valueType === 'variable' ? 'variable' : 'value',
     ...(isRelative(operator) ? { unit: rule?.unit === 'hours' ? 'hours' : 'days' } : {}),
+    ...(meta ? { key: String(rule?.key ?? '').trim() } : {}),
   };
 }

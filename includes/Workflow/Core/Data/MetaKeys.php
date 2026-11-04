@@ -23,4 +23,17 @@ final class MetaKeys {
             || 0 === strpos( $key, self::HIDDEN_PREFIX )
             || in_array( $key, array_map( 'strtolower', $order->get_data_store()->get_internal_meta_keys() ), true );
     }
+
+    /**
+     * What decides a user's access and sessions, and YayMatik's claims.
+     *
+     * @param string $key
+     */
+    public static function user_blocked( string $key ): bool {
+        global $wpdb;
+        $key = strtolower( $key );
+        return 'session_tokens' === $key
+            || 0 === strpos( $key, self::OWN_PREFIX )
+            || 1 === preg_match( '/^' . preg_quote( $wpdb->base_prefix, '/' ) . '(\d+_)?(capabilities|user_level|user-settings|user-settings-time)$/i', $key );
+    }
 }

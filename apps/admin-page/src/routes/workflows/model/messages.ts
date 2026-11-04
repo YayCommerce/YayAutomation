@@ -56,4 +56,6 @@ export const messages = {
   ruleOption: __('Choose a value from the list.', 'yaymatik'),
   ruleListRequired: __('Choose at least one value.', 'yaymatik'),
   ruleAmount: __('Enter a whole number, 1 or more.', 'yaymatik'),
+  ruleKeyRequired: __('Enter a custom field name.', 'yaymatik'),
+  ruleMetaKey: __('A workflow can’t read this custom field. Choose another.', 'yaymatik'),
 };

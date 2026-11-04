@@ -67,7 +67,8 @@ function resolvePath(path: string) {
     const relation = item.relations.find((r) => r.key === key);
     if (i === rest.length - 1) {
       const field = fieldByKey(key);
-      return field ? { field } : relation && { relation };
+      if (field) return field.mergeTag === false ? undefined : { field };
+      return relation && { relation };
     }
     item = relation && dataItems.find((target) => target.id === relation.item);
   }

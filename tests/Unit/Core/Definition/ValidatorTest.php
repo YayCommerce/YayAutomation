@@ -607,4 +607,23 @@ final class ValidatorTest extends TestCase {
         );
         $this->assertSame( [], Validator::warnings( $no_step ) );
     }
+
+    public function test_a_custom_field_is_not_a_known_merge_tag(): void {
+        $errors = self::issues(
+            [
+                self::trigger(),
+                self::node(
+                    'note',
+                    'action',
+                    'add_order_note',
+                    [
+                        'note' => 'Hi {{ order.meta }}',
+                        'type' => 'private',
+                    ]
+                ),
+            ],
+            [ self::edge( 't', 'note' ) ]
+        );
+        $this->assertSame( Messages::get( 'unknownVariable', '{{ order.meta }}' ), $errors[0]['message'] );
+    }
 }

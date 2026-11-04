@@ -278,6 +278,38 @@ if ( ! function_exists( 'wp_timezone' ) ) {
     }
 }
 
+if ( ! function_exists( 'wc_get_is_paid_statuses' ) ) {
+    function wc_get_is_paid_statuses() {
+        return [ 'processing', 'completed' ];
+    }
+}
+
+if ( ! function_exists( 'get_userdata' ) ) {
+    // Users a test set in `$GLOBALS['yaymatik_test_users']`, id => object with `roles`, `user_registered`, `meta`.
+    function get_userdata( $user_id ) {
+        return $GLOBALS['yaymatik_test_users'][ $user_id ] ?? false;
+    }
+}
+
+if ( ! function_exists( 'get_user_meta' ) ) {
+    function get_user_meta( $user_id, $key = '', $single = false ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- same signature as WordPress.
+        return $GLOBALS['yaymatik_test_users'][ $user_id ]->meta[ $key ] ?? '';
+    }
+}
+
+if ( ! function_exists( 'wc_get_product_cat_ids' ) ) {
+    // Categories a test set in `$GLOBALS['yaymatik_test_categories']`, product id => term ids.
+    function wc_get_product_cat_ids( $product_id ) {
+        return $GLOBALS['yaymatik_test_categories'][ $product_id ] ?? [];
+    }
+}
+
+if ( ! function_exists( 'get_term_field' ) ) {
+    function get_term_field( $field, $term, $taxonomy = '', $context = 'display' ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- same signature as WordPress.
+        return 'Category ' . $term;
+    }
+}
+
 if ( ! function_exists( 'update_option' ) ) {
     function update_option( $option, $value, $autoload = null ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- same signature as WordPress.
         $GLOBALS['yaymatik_test_options'][ $option ] = $value;

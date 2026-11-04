@@ -41,7 +41,7 @@ if ( ! class_exists( 'WC_Order' ) ) {
         }
 
         public function get_items() {
-            return [];
+            return $this->data['line_items'] ?? [];
         }
 
         public function get_order_item_totals() {

@@ -60,7 +60,16 @@ final class SampleValuesTest extends TestCase {
         $this->assertSame( 'Hi Jane, use YMSAMPLE', ( new Template() )->render( 'Hi {{ order.customer.first_name }}, use {{ steps.coupon.code }}', $values ) );
     }
 
-    public function test_every_customer_field_has_a_sample(): void {
-        $this->assertSame( array_keys( ( new CustomerData() )->fields() ), array_keys( ( new CustomerData() )->sample() ) );
+    public function test_every_customer_field_a_tag_can_read_has_a_sample(): void {
+        $fields = array_filter( ( new CustomerData() )->fields(), fn( array $field ) => $field['merge_tag'] );
+        $this->assertSame( array_keys( $fields ), array_keys( ( new CustomerData() )->sample() ) );
+    }
+
+    public function test_the_new_order_fields_read_their_samples(): void {
+        $values = $this->values();
+        $this->assertSame( [ '1', '2' ], $values->get( 'order.product_ids' ) );
+        $this->assertSame( 'Sample product, Another sample product', $values->text( 'order.product_ids', false ) );
+        $this->assertFalse( $values->get( 'order.is_guest' ) );
+        $this->assertSame( 54.0, $values->get( 'customer.total_spent' ) );
     }
 }

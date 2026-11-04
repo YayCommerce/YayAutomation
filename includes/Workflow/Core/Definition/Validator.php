@@ -314,6 +314,9 @@ final class Validator {
         foreach ( $entity->fields() as $key => $field ) {
             /** @var Type $type */
             $type = $field['value_type'];
+            if ( ! $field['merge_tag'] ) {
+                continue;
+            }
             if ( ! $type->is( Type::ENTITY ) ) {
                 $list[] = [
                     'key'   => "$prefix.$key",
@@ -484,7 +487,7 @@ final class Validator {
             return false;
         }
         if ( 1 === count( $segments ) ) {
-            return true;
+            return $field['merge_tag'];
         }
         /** @var Type $type */
         $type   = $field['value_type'];

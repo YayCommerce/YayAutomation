@@ -2,6 +2,7 @@
 namespace YayMatik\Workflow\DataItems;
 
 use YayMatik\Workflow\Core\Data\DataItem;
+use YayMatik\Workflow\Core\Data\MetaKeys;
 use YayMatik\Workflow\Core\Data\Ref;
 use YayMatik\Workflow\Core\Data\Type;
 use YayMatik\Workflow\Core\Email\ProductGrid;
@@ -104,6 +105,62 @@ final class OrderData extends DataItem {
                 'timestamp' => fn( \WC_Order $order ) => $order->get_date_created() ? $order->get_date_created()->getTimestamp() : null,
                 'display'   => fn( \WC_Order $order, bool $html ) => self::text( wc_format_datetime( $order->get_date_created() ), $html ),
             ],
+            'paid_date'                 => self::date_field( __( 'Paid date', 'yaymatik' ), fn( \WC_Order $order ) => $order->get_date_paid() ),
+            'completed_date'            => self::date_field( __( 'Completed date', 'yaymatik' ), fn( \WC_Order $order ) => $order->get_date_completed() ),
+            'product_ids'               => [
+                'label'   => __( 'Products in order', 'yaymatik' ),
+                'type'    => self::TYPE_LIST,
+                // Parents, so a variation matches a rule on its product.
+                'value'   => fn( \WC_Order $order ) => array_values( array_unique( array_map( fn( \WC_Order_Item $item ) => (string) $item->get_product_id(), $order->get_items() ) ) ),
+                'display' => fn( \WC_Order $order, bool $html ) => self::text( implode( ', ', array_map( fn( \WC_Order_Item $item ) => $item->get_name(), $order->get_items() ) ), $html ),
+            ],
+            'category_ids'              => [
+                'label'   => __( 'Product categories in order', 'yaymatik' ),
+                'type'    => self::TYPE_LIST,
+                'value'   => [ self::class, 'category_ids' ],
+                'display' => fn( \WC_Order $order, bool $html ) => self::text( implode( ', ', array_filter( array_map( fn( string $id ) => (string) get_term_field( 'name', (int) $id, 'product_cat', 'raw' ), self::category_ids( $order ) ) ) ), $html ),
+            ],
+            'coupon_codes'              => [
+                'label'   => __( 'Coupons used', 'yaymatik' ),
+                'type'    => self::TYPE_LIST,
+                'value'   => fn( \WC_Order $order ) => array_values( $order->get_coupon_codes() ),
+                'display' => fn( \WC_Order $order, bool $html ) => self::text( implode( ', ', $order->get_coupon_codes() ), $html ),
+            ],
+            'billing_country'           => self::country_field( __( 'Order billing country', 'yaymatik' ), fn( \WC_Order $order ) => $order->get_billing_country() ),
+            'shipping_country'          => self::country_field( __( 'Order shipping country', 'yaymatik' ), fn( \WC_Order $order ) => $order->get_shipping_country() ),
+            'created_via'               => [
+                'label'   => __( 'Created via', 'yaymatik' ),
+                'type'    => self::TYPE_ENUM,
+                'value'   => fn( \WC_Order $order ) => $order->get_created_via(),
+                'options' => [ self::class, 'created_via_options' ],
+            ],
+            'currency'                  => [
+                'label'   => __( 'Order currency', 'yaymatik' ),
+                'type'    => self::TYPE_ENUM,
+                'value'   => fn( \WC_Order $order ) => $order->get_currency(),
+                'options' => [ self::class, 'currencies' ],
+            ],
+            'customer_note'             => [
+                'label' => __( 'Customer note', 'yaymatik' ),
+                'type'  => self::TYPE_STRING,
+                'value' => fn( \WC_Order $order ) => $order->get_customer_note(),
+            ],
+            'discount_total'            => self::money_field( __( 'Discount total', 'yaymatik' ), fn( \WC_Order $order ) => (float) $order->get_discount_total() ),
+            'shipping_total'            => self::money_field( __( 'Shipping total', 'yaymatik' ), fn( \WC_Order $order ) => (float) $order->get_shipping_total() ),
+            'refunded_total'            => self::money_field( __( 'Refunded total', 'yaymatik' ), fn( \WC_Order $order ) => (float) $order->get_total_refunded() ),
+            'is_guest'                  => [
+                'label' => __( 'Placed by a guest', 'yaymatik' ),
+                'type'  => self::TYPE_BOOLEAN,
+                'value' => fn( \WC_Order $order ) => 0 === (int) $order->get_customer_id(),
+            ],
+            'meta'                      => [
+                'label'        => __( 'Order custom field', 'yaymatik' ),
+                'type'         => self::TYPE_META,
+                'value'        => fn() => '',
+                'merge_tag'    => false,
+                'meta'         => [ self::class, 'custom_field' ],
+                'meta_blocked' => fn( string $key ) => MetaKeys::order_blocked( new \WC_Order(), $key ),
+            ],
             'customer'                  => [
                 'label'       => __( 'Customer', 'yaymatik' ),
                 'type'        => self::TYPE_STRING,
@@ -171,6 +228,92 @@ final class OrderData extends DataItem {
             'conditional' => false,
             'block'       => true,
         ];
+    }
+
+    /**
+     * A date with its real time, so "in the last 3 hours" works.
+     *
+     * @param string   $label
+     * @param callable $date fn( \WC_Order $order ): ?\WC_DateTime
+     */
+    private static function date_field( string $label, callable $date ): array {
+        return [
+            'label'     => $label,
+            'type'      => self::TYPE_DATE,
+            'value'     => fn( \WC_Order $order ) => $date( $order ) ? $date( $order )->date( 'Y-m-d' ) : '',
+            'timestamp' => fn( \WC_Order $order ) => $date( $order ) ? $date( $order )->getTimestamp() : null,
+            'display'   => fn( \WC_Order $order, bool $html ) => self::text( wc_format_datetime( $date( $order ) ), $html ),
+        ];
+    }
+
+    /**
+     * @param string   $label
+     * @param callable $amount fn( \WC_Order $order ): float
+     */
+    private static function money_field( string $label, callable $amount ): array {
+        return [
+            'label'      => $label,
+            'type'       => self::TYPE_NUMBER,
+            'value_type' => Type::money(),
+            'value'      => $amount,
+            'display'    => fn( \WC_Order $order, bool $html ) => self::price( $order, $amount( $order ), $html ),
+        ];
+    }
+
+    /**
+     * @param string   $label
+     * @param callable $code fn( \WC_Order $order ): string
+     */
+    private static function country_field( string $label, callable $code ): array {
+        return [
+            'label'   => $label,
+            'type'    => self::TYPE_ENUM,
+            'value'   => $code,
+            'options' => [ CustomerData::class, 'countries' ],
+        ];
+    }
+
+    /**
+     * Term ids of the order's products, with their parent categories.
+     *
+     * @param \WC_Order $order
+     * @return string[]
+     */
+    public static function category_ids( \WC_Order $order ): array {
+        $ids = [];
+        foreach ( $order->get_items() as $item ) {
+            $ids = array_merge( $ids, wc_get_product_cat_ids( $item->get_product_id() ) );
+        }
+        return array_values( array_unique( array_map( 'strval', $ids ) ) );
+    }
+
+    /**
+     * A custom field as text; '' for a blocked key, or an array or object value.
+     *
+     * @param \WC_Order $order
+     * @param string    $key
+     */
+    public static function custom_field( \WC_Order $order, string $key ): string {
+        if ( MetaKeys::order_blocked( $order, $key ) ) {
+            return '';
+        }
+        $value = $order->get_meta( $key );
+        return is_scalar( $value ) ? (string) $value : '';
+    }
+
+    /** Where WooCommerce says an order came from, as value => label. */
+    public static function created_via_options(): array {
+        return [
+            'checkout'  => __( 'Classic checkout', 'yaymatik' ),
+            'store-api' => __( 'Block checkout', 'yaymatik' ),
+            'admin'     => __( 'Admin', 'yaymatik' ),
+            'rest-api'  => __( 'REST API', 'yaymatik' ),
+        ];
+    }
+
+    /** Code => name; empty without WooCommerce. */
+    public static function currencies(): array {
+        return function_exists( 'get_woocommerce_currencies' ) ? get_woocommerce_currencies() : [];
     }
 
     /** Enabled payment gateways as id => title. */
@@ -283,6 +426,47 @@ final class OrderData extends DataItem {
                 'value' => wp_date( 'Y-m-d' ),
                 'text'  => wp_date( (string) get_option( 'date_format', 'F j, Y' ) ),
             ],
+            'paid_date'                 => [
+                'value' => wp_date( 'Y-m-d' ),
+                'text'  => wp_date( (string) get_option( 'date_format', 'F j, Y' ) ),
+            ],
+            'completed_date'            => [
+                'value' => wp_date( 'Y-m-d' ),
+                'text'  => wp_date( (string) get_option( 'date_format', 'F j, Y' ) ),
+            ],
+            'product_ids'               => [
+                'value' => [ '1', '2' ],
+                'text'  => __( 'Sample product', 'yaymatik' ) . ', ' . __( 'Another sample product', 'yaymatik' ),
+            ],
+            'category_ids'              => [
+                'value' => [ '1' ],
+                'text'  => __( 'Sample category', 'yaymatik' ),
+            ],
+            'coupon_codes'              => [
+                'value' => [ 'ymsample' ],
+                'text'  => 'ymsample',
+            ],
+            'billing_country'           => [
+                'value' => 'US',
+                'text'  => CustomerData::countries()['US'] ?? 'United States (US)',
+            ],
+            'shipping_country'          => [
+                'value' => 'US',
+                'text'  => CustomerData::countries()['US'] ?? 'United States (US)',
+            ],
+            'created_via'               => [
+                'value' => 'checkout',
+                'text'  => self::created_via_options()['checkout'],
+            ],
+            'currency'                  => [
+                'value' => 'USD',
+                'text'  => self::currencies()['USD'] ?? 'United States (US) dollar',
+            ],
+            'customer_note'             => __( 'Please leave it at the door.', 'yaymatik' ),
+            'discount_total'            => $price( 0.0 ),
+            'shipping_total'            => $price( 5.0 ),
+            'refunded_total'            => $price( 0.0 ),
+            'is_guest'                  => false,
             'admin_url'                 => admin_url( 'admin.php?page=wc-orders' ),
             'items'                     => [
                 'value' => [],
@@ -334,9 +518,5 @@ final class OrderData extends DataItem {
     public static function price( \WC_Order $order, float $amount, bool $html ): string {
         $price = wc_price( $amount, [ 'currency' => $order->get_currency() ] );
         return $html ? $price : html_entity_decode( wp_strip_all_tags( $price ), ENT_QUOTES, 'UTF-8' );
-    }
-
-    private static function text( string $text, bool $html ): string {
-        return $html ? esc_html( $text ) : $text;
     }
 }

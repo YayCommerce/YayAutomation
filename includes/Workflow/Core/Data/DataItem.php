@@ -14,6 +14,9 @@ defined( 'ABSPATH' ) || exit;
  * - `display`     fn( $object, bool $html ): string; default the value (an enum's option label)
  * - `options`     fn(): array value => label, enum and list
  * - `timestamp`   fn( $object ): ?int, the moment behind a date, for "in the last N hours"; without it a date counts as 00:00 store time
+ * - `meta`        fn( $object, string $key ): string, a custom field; for `TYPE_META`, which compares key + value
+ * - `meta_blocked` fn( string $key ): bool, keys a rule can't read
+ * - `merge_tag`   bool, default true; false = not offered by "Insert variable" and not a known tag
  * - `conditional` bool, default true; false = display only
  * - `block`       bool, default false; a ready-made email block (HTML display), inserted on its own line
  */
@@ -73,16 +76,29 @@ abstract class DataItem {
             $this->fields = [];
             foreach ( $definitions as $key => $field ) {
                 $this->fields[ $key ] = $field + [
-                    'options'     => null,
-                    'conditional' => true,
-                    'block'       => false,
-                    'display'     => null,
-                    'timestamp'   => null,
-                    'value_type'  => Type::from_condition_type( $field['type'] ),
+                    'options'      => null,
+                    'conditional'  => true,
+                    'block'        => false,
+                    'display'      => null,
+                    'timestamp'    => null,
+                    'meta'         => null,
+                    'meta_blocked' => null,
+                    'merge_tag'    => true,
+                    'value_type'   => Type::from_condition_type( $field['type'] ),
                 ];
             }
         }
         return $this->fields;
+    }
+
+    /**
+     * Plain text, or the same escaped for HTML.
+     *
+     * @param string $text
+     * @param bool   $html
+     */
+    protected static function text( string $text, bool $html ): string {
+        return $html ? esc_html( $text ) : $text;
     }
 
     /**
