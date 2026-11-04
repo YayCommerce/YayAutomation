@@ -256,13 +256,14 @@ Risk scale: **1** = UI or template content, easy to undo · **2** = new feature 
 | M4 | Welcome series | Account created trigger; **Welcome series** (2) | Jack | Todo | 2 | M2 |
 | M5 | High-value order alert | Template moved to "order is paid"; **High-value order alert** (1) | Jack | Todo | 1 | — |
 | M6 | Win-back | Inactive customer trigger (checked daily); **Win-back 90 days** (2) | Jack | Todo | 2 | M2 |
+| CT | Custom workflow catalog | 6 triggers, about 25 condition fields, condition groups, 5 actions and a fix to Update order custom field, for workflows built from New Workflow | Jack | Todo | 3 | M6 |
 | M7 | Cart tracking + Settings | Tracks carts and guest emails at checkout, restore link, Settings page | Jack | Todo | 3 | — |
 | M8 | Abandoned cart + checkout | Both triggers; **Abandoned cart** (3), **Abandoned checkout** (2) | Jack | Todo | 2 | M1, M2, M7 |
 | M9 | Release hardening | End-to-end test of all 18 templates, translations, release build; plus items picked from the release checklist below | Jack | Todo | 2 | all |
 
 One developer (Jack) builds v1.0. Full v1.0 scope does not fit by Nov 30 with one developer. Estimates and the release date will be added after M1. M1 builds the core pieces (customer emails, coupons, unsubscribe), so it gives a real measure of pace. The developer also supports other plugins at times, which can shift dates.
 
-**Build order:** M1 → M2 → M7 → M8 → M3 → M4 → M5 → M6 → M9. Abandoned cart brings the most revenue, so it comes right after the foundations.
+**Build order:** M1 → M2 → M7 → M8 → M3 → M4 → M5 → M6 → CT → M9. Abandoned cart brings the most revenue, so it comes right after the foundations.
 "Depends on" lists what must exist first, not the order of work: M3, M4 and M6 only need M2; M5 needs nothing and can move earlier if useful.
 
 **Cut candidates if we run late (proposal):** M5 High-value order alert, the "Upsell after 30 days" template, the "Welcome 3-email series" template. If all 3 are cut, v1.0 ships 7 workflows / 16 templates.

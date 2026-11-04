@@ -61,6 +61,7 @@ Table names below omit the prefix: each is `{prefix}yaymatik_<name>`, e.g. `wp_y
 - **Cleanup.** A daily Action Scheduler job (`yaymatik_cleanup`, group `yaymatik`, `Runtime/Cleanup`) deletes carts last active more than `cart_retention_days` ago, then the `trigger_claims` rows of deleted workflows, then finished runs with their steps (deleted workflows' runs included) that finished more than `run_retention_days` ago. Carts go first: they hold emails, and the privacy text promises their deletion. Batches of 500 within ~20 s; what's left goes the next day. Queued, running and waiting runs are never deleted, nor any run of a chain (`root_run_id`) that still has one: the loop guard walks `parent_run_id`. `Cleanup::ensure()` on `action_scheduler_init` schedules the job when it's missing, checked at most hourly through the autoloaded option `yaymatik_cleanup_checked_at` (Unix time).
 - **Stop on order.** A cart run stops as soon as its shopper orders or the cart is gone. At once: paying an order (by its own cart or by email), emptying a cart and cleanup cancel the cart's waiting runs (`Cancellation::carts()`). For a queued or running run: `Trigger::stop_reason()`, read before the first step (`Worker`), before each step and after saving a wait (`Executor`). Such a run ends `cancelled` with "The shopper placed order #N." or "The cart was emptied or deleted." A shopper who returns and leaves again stays in the series.
 - **Stop on unsubscribe.** Unsubscribing cancels the waiting runs of that email's carts at once; `stop_reason()` stops queued and running ones ("The shopper unsubscribed from these emails."), so no coupon is made for an email that would be skipped.
+- **Planned (CT).** New triggers and an active-trigger list, see [ROADMAP-dev](ROADMAP-dev.md).
 - **Known limit.** Action Scheduler fails a job still running after its timeout (~5 min). If a step is still running then, a recovery job can take the run while the old worker is alive. Slices stay far below that (~20 s), so only a single very slow step can hit it.
 
 ## §4 Data layer · C6, C7
@@ -72,6 +73,7 @@ Table names below omit the prefix: each is `{prefix}yaymatik_<name>`, e.g. `wp_y
 - **Cart entity.** `cart` reads a saved row (`Cart/SavedCart`). A cart run's customer is `Cart/CartCustomer` (`cart:<id>`): email and first name from the row, the rest from the row's own account, never an account found by email. A cart run's subject is `cart:<id>`.
 - **Account customer.** A customer from an account (`user:<id>`, the subject of Customer account created) is a `WC_Customer` through `RefResolver::account()`. Billing details are empty until a first checkout, so the account's email and first name fill them in memory, never saved; billing values already there win. The label of such a run is the email `customer.email` reads, and the link goes to the user's edit page. Personal data lookups find `user:` runs by the account email and by the `billing_email` meta.
 - **Gone entity.** If an order or customer was deleted, the step is skipped and run history says why: "Order no longer exists.", and for an account "The customer was deleted."; once a queued run's subject is gone, the run ends Skipped with the same text.
+- **Planned (CT).** New condition fields and types, see [ROADMAP-dev](ROADMAP-dev.md).
 - **Available variables per step.** Each step declares outputs. The Validator walks the steps above each step to list what it can use. "Insert variable" and the template checks use the same list.
 
 ## §5 Step contract · L2
@@ -101,6 +103,7 @@ Step:   id() label() plugin() module()
   - Beside any form, `defineStep` takes `Footer` (under the form, with its latest config, e.g. Send email's unsubscribe note) and `Actions` (panel header, e.g. Send email's Preview / Send test). Send email and Generate coupon use the generic form plus these.
 - **Icons (L5).** A step's `icon()` is a name from a fixed list in core (lucide icons, about 40), never an SVG. The editor draws it in the step's tile, tinted by kind (trigger, condition, action), on the canvas, in the picker, the panel header, template cards and the preview. A missing icon is added to core's list, not shipped by the plugin.
 - The `rules` field type is ours: its checks are written in PHP (`Criteria`) and TS. Plugins never write validation in JS.
+- **Planned (CT).** New actions and condition groups, see [ROADMAP-dev](ROADMAP-dev.md).
 - **Output display.** An output may have its own display text, built from the step's other outputs when read and never stored (`display`), e.g. a coupon's expiry in the site's date format. `block: true` marks a ready-made email block (the coupon box). `Scope::set_output_display()`; the Executor and Preview wire it from the graph.
 
 ## §6 Templates · L3
@@ -171,7 +174,7 @@ Built: (a)–(e) in `Core/Runtime/HealthCheck.php`; REST `GET /health/checks` an
 
 ## §11 Decision log
 
-All confirmed 2026-10-07, except L5 (2026-10-08), M7 (2026-10-27), M8, M3–M5 and M6. Reasons, rejected options and costs: [workflow-core-decisions.md](workflow-core-decisions.md).
+All confirmed 2026-10-07, except L5 (2026-10-08), M7 (2026-10-27), M8, M3–M5, M6 and CT. Reasons, rejected options and costs: [workflow-core-decisions.md](workflow-core-decisions.md).
 
 | ID | Decision | Section |
 |---|---|---|
@@ -201,3 +204,4 @@ All confirmed 2026-10-07, except L5 (2026-10-08), M7 (2026-10-27), M8, M3–M5 a
 | M8 | Abandon sweep, a cart's cycle is its claim | §3 |
 | M3–M5 | High-value on a status change; reviews read when the step runs; account trigger refuses saved `WC_Customer`s; billing fill in memory | §4, §6 |
 | M6 | Win-back on a person's last real order, in a 7-day window, once per workflow and order through `trigger_claims` | §2, §3 |
+| CT | Custom workflow catalog: customer stats, Order paid, milestones, Review posted, guarded role change, condition groups | §3, §4, §5 |

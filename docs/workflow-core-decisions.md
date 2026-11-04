@@ -33,6 +33,7 @@ Each note: **Decision** · **Why** · **Rejected** · **Cost** · **For devs** (
 | [M8](#m8-abandoned-carts) | Abandoned carts | Owner |
 | [M3–M5](#m3m5-lifecycle-workflows) | Lifecycle workflows | Owner |
 | [M6](#m6-win-back) | Win-back | Owner |
+| [CT](#ct-custom-workflow-catalog) | Custom workflow catalog | Owner |
 
 "High" = recommended and accepted as-is. "Owner" = debated and decided by the product owner.
 
@@ -451,3 +452,18 @@ Today errors only go to the WooCommerce log, which merchants never open.
 - Claims of live workflows are never deleted: one small row per customer per last order.
 - Changing days on a live workflow doesn't restart orders it already claimed.
 - A run doesn't stop when the customer orders during a Wait (no `stop_reason`); the v1.0 templates have no Wait.
+
+## CT. Custom workflow catalog
+
+**Decision.** Six triggers, about 25 condition fields, one level of condition groups and five new actions, so shop owners can build workflows the templates don't cover.
+
+**Why.**
+- **D1 Scope.** This list only. HTTP and webhooks, Slack, tags, a stock trigger, product actions, a refund action, Change workflow status and YayMatik triggers stay out: each needs its own design, and connectors belong to v1.2.
+- **D3 One customer stat, paid statuses only.** Total spent and paid order count use `wc_get_is_paid_statuses()`; a person is a user id plus a billing email, guests by billing email. Total spent subtracts refunds, as a refund is money the store gave back. The query runs only when a rule reads it, because it can scan an unindexed column on posts stores.
+- **D4 Order paid fires once, on a real unpaid → paid change.** The claim sits in order meta, like Order created, so a status that goes back and forth doesn't start it twice.
+- **D5 Milestones cross a threshold.** Customer order count reaches and Customer total spend reaches fire on Order paid only when this order crosses the number. The run's subject stays the order, and the claim is per person (`user:<id>`, or a hash of the guest's email), so one person gets one start per workflow. The hash keeps a plain email out of the claims table and fits its column.
+- **D7 Review posted.** Approved product reviews only, top level only, claimed per review. A guest's customer is their email alone, never an account found by email: anyone can type someone else's email into a review form.
+- **D8 Change customer role is guarded at run time.** Write actions run as user 0, so the checks can't lean on the current user. It never assigns or touches a role with a protected capability, and never removes a person's last role. A filter opens it for stores that want it.
+- **D10 Groups, one level.** `match` + `rules` stay, and a rule may be `{ match, rules }`. Old configs and templates stay valid, and one level covers "A and (B or C)" without a tree editor.
+- **D11 Customer custom field.** An action and a `customer.meta` condition together: one writes what the other reads. The key input suggests keys other workflows use, so spelling stays the same.
+- **D15 Wait until, D16 Stop waiting runs.** Both live in the YayMatik module, which owns flow logic. Stop waiting runs finds a person's runs the way the personal data tools do, through one shared lookup, not a copy.
