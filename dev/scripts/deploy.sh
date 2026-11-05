@@ -19,7 +19,7 @@ scp_port=()
 [[ $host == *:* ]] && { ssh_port=(-p "${host##*:}"); scp_port=(-P "${host##*:}"); host=${host%:*}; }
 remote_dir=/tmp/yaymatik-deploy-$$
 
-# A clean worktree: the build ships only this commit, and it leaves this checkout's dev autoloader alone.
+# A clean worktree: no ignored local files reach the zip, and this checkout keeps its dev autoloader. admin-shell still floats to its latest release.
 tmp=$(mktemp -d)
 trap 'git worktree remove --force "$tmp/build" || true; rm -rf "$tmp"; ssh "${ssh_port[@]}" "$host" rm -rf "$remote_dir" || true' EXIT
 git worktree add -q --detach "$tmp/build" HEAD

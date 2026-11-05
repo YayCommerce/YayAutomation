@@ -10,7 +10,7 @@
     "lint:php:fix": "dev/tools/lintphp/vendor/bin/phpcbf",
     "test": "pnpm -r test",
     "test:php": "dev/tools/phpunit/vendor/bin/phpunit",
-    "e2e": "playwright test -c dev/e2e/playwright.config.ts",
+    "e2e": "pnpm build && playwright test -c dev/e2e/playwright.config.ts",
     "format": "pnpm -r format",
     "analyze": "pnpm -F @yaymatik/admin analyze"
   },

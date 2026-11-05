@@ -12,7 +12,7 @@ add_filter( 'pre_wp_mail', 'yay_mail_log_capture', PHP_INT_MAX, 2 );
 add_action( 'admin_menu', 'yay_mail_log_menu' );
 
 /**
- * Stores the mail and reports success, so wp_mail never sends and callers carry on as if it had.
+ * Stores the mail and reports whether that worked, so wp_mail never sends.
  *
  * @param mixed $short_circuit
  * @param array $atts
@@ -24,8 +24,10 @@ function yay_mail_log_capture( $short_circuit, $atts ) {
 
     // Cron and customer requests lack unfiltered_html, and kses would strip the email's styles and layout.
     kses_remove_filters();
-    wp_insert_post(
+    $stored = wp_insert_post(
         [
+            // A set slug: otherwise WordPress runs one query per earlier mail with this subject.
+            'post_name'      => wp_generate_uuid4(),
             'post_type'      => 'yay_mail_log',
             'post_status'    => 'private',
             'post_mime_type' => $is_html ? 'text/html' : 'text/plain',
@@ -49,7 +51,8 @@ function yay_mail_log_capture( $short_circuit, $atts ) {
     foreach ( $old as $id ) {
         wp_delete_post( $id, true );
     }
-    return true;
+    // False fails the step that sent it, so a mail the log lost never looks delivered.
+    return (bool) $stored;
 }
 
 /** Adds Tools > Mail log. */
