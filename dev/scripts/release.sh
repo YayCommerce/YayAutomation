@@ -1,5 +1,6 @@
 #!/bin/bash
 # Build the distribution zip: release/yaymatik.zip, or with `pro` release/yaymatik-pro.zip (includes/Pro kept). --rc stamps X.Y.Z-rcN in the zip copy.
+set -eo pipefail
 cd "$(dirname "$0")/../.." || exit 1
 [[ -f yaymatik.php ]] || { echo "Not the plugin root: $(pwd)"; exit 1; }
 
@@ -7,7 +8,7 @@ EDITION=free
 RC=false
 for arg in "$@"; do
     case $arg in
-        pro) EDITION=pro ;;
+        free | pro) EDITION=$arg ;;
         --rc) RC=true ;;
         *) echo "Usage: ./run.sh release [pro] [--rc]"; exit 1 ;;
     esac
