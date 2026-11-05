@@ -16,7 +16,8 @@ update_option( 'woocommerce_currency', 'USD' );
 update_option( 'woocommerce_default_country', 'US:CA' );
 update_option( 'woocommerce_enable_guest_checkout', 'yes' );
 update_option( 'woocommerce_cod_settings', array_merge( (array) get_option( 'woocommerce_cod_settings', [] ), [ 'enabled' => 'yes' ] ) );
-update_option( 'permalink_structure', '/%postname%/' );
+// Not update_option: $wp_rewrite keeps the old structure, and the flush would store its rules.
+$GLOBALS['wp_rewrite']->set_permalink_structure( '/%postname%/' );
 flush_rewrite_rules();
 \WC_Install::create_pages();
 

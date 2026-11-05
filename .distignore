@@ -2,7 +2,7 @@
 .claude
 .github
 .DS_Store
-.git/
+.git
 .gitignore
 .distignore
 .wp-env.json

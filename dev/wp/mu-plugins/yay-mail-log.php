@@ -18,15 +18,21 @@ add_action( 'admin_menu', 'yay_mail_log_menu' );
  * @param array $atts
  */
 function yay_mail_log_capture( $short_circuit, $atts ) {
+    $headers = implode( "\n", (array) $atts['headers'] );
+    // wp_mail applies this filter after pre_wp_mail, and WC_Email sets its type through it around the send.
+    $is_html = false !== stripos( $headers, 'text/html' ) || 'text/html' === apply_filters( 'wp_mail_content_type', 'text/plain' );
+
     // Cron and customer requests lack unfiltered_html, and kses would strip the email's styles and layout.
     kses_remove_filters();
     wp_insert_post(
         [
-            'post_type'    => 'yay_mail_log',
-            'post_status'  => 'private',
-            'post_title'   => wp_slash( (string) $atts['subject'] ),
-            'post_excerpt' => wp_slash( implode( ', ', (array) $atts['to'] ) ),
-            'post_content' => wp_slash( (string) $atts['message'] ),
+            'post_type'      => 'yay_mail_log',
+            'post_status'    => 'private',
+            'post_mime_type' => $is_html ? 'text/html' : 'text/plain',
+            'meta_input'     => [ 'headers' => wp_slash( $headers ) ],
+            'post_title'     => wp_slash( (string) $atts['subject'] ),
+            'post_excerpt'   => wp_slash( implode( ', ', (array) $atts['to'] ) ),
+            'post_content'   => wp_slash( (string) $atts['message'] ),
         ]
     );
     kses_init();
@@ -92,17 +98,17 @@ function yay_mail_log_list() {
  * @param WP_Post $mail
  */
 function yay_mail_log_show( $mail ) {
-    $body = wp_strip_all_tags( $mail->post_content ) === $mail->post_content
-        ? '<pre>' . esc_html( $mail->post_content ) . '</pre>'
-        : $mail->post_content;
+    $body = 'text/html' === $mail->post_mime_type ? $mail->post_content : '<pre>' . esc_html( $mail->post_content ) . '</pre>';
     printf(
-        '<p><a href="%s">&larr; All mail</a></p><p><strong>To:</strong> %s<br><strong>Subject:</strong> %s</p>',
+        '<p><a href="%s">&larr; All mail</a></p><p><strong>To:</strong> %s<br><strong>Subject:</strong> %s</p><pre>%s</pre>',
         esc_url( admin_url( 'tools.php?page=yay-mail-log' ) ),
         esc_html( $mail->post_excerpt ),
-        esc_html( $mail->post_title )
+        esc_html( $mail->post_title ),
+        esc_html( get_post_meta( $mail->ID, 'headers', true ) )
     );
     printf(
         '<iframe title="Mail body" sandbox="allow-popups allow-popups-to-escape-sandbox" style="width:100%%;height:70vh;background:#fff" srcdoc="%s"></iframe>',
-        esc_attr( '<base target="_blank">' . $body )
+        // Not esc_attr: it keeps existing entities, so srcdoc would decode the mail's &lt; back into a tag.
+        htmlspecialchars( '<base target="_blank">' . $body, ENT_QUOTES, 'UTF-8' ) // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
     );
 }
