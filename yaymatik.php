@@ -3,7 +3,7 @@
  * Plugin Name:       YayMatik - Automation for WooCommerce
  * Plugin URI:        https://yaycommerce.com/yaymatik/
  * Description:       Build automation workflows on a visual canvas, or start from a template.
- * Version:           0.1.0
+ * Version:           1.0.0
  * Author:            YayCommerce
  * Author URI:        https://yaycommerce.com
  * Text Domain:       yaymatik
@@ -29,7 +29,7 @@ if ( function_exists( 'YayMatik\\plugin_init' ) ) {
 }
 
 if ( ! defined( 'YAYMATIK_VERSION' ) ) {
-    define( 'YAYMATIK_VERSION', '0.1.0' );
+    define( 'YAYMATIK_VERSION', '1.0.0' );
     define( 'YAYMATIK_FILE', __FILE__ );
     define( 'YAYMATIK_PLUGIN_URL', plugin_dir_url( YAYMATIK_FILE ) );
     define( 'YAYMATIK_PLUGIN_DIR', plugin_dir_path( YAYMATIK_FILE ) );
