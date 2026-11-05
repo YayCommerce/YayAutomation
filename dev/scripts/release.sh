@@ -21,6 +21,8 @@ DEST_PATH="$BUILD_PATH/$PLUGIN_SLUG"
 
 if [[ ! -f vendor/autoload.php ]]; then
     echo "Installing Composer dependencies..."
+    # composer.json classmaps vendor-prefixed/src, so it must exist before install.
+    mkdir -p vendor-prefixed/src
     composer install || exit 1
 fi
 
