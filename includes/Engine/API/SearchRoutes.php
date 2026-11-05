@@ -2,10 +2,13 @@
 namespace YayMatik\Engine\API;
 
 use YayMatik\Utils\SingletonTrait;
+use YayMatik\Workflow\Conditions\Criteria;
+use YayMatik\Workflow\Core\Data\MetaKeys;
+use YayMatik\Workflow\Core\Storage\WorkflowStore;
 
 defined( 'ABSPATH' ) || exit;
 
-/** GET /search/products, /search/categories, /search/coupons: paged lists for rule values, never sent in `yayMatikMeta`. */
+/** GET /search/products, /search/categories, /search/coupons: paged lists for rule values, never sent in `yayMatikMeta`; GET /search/customer-meta-keys. */
 class SearchRoutes {
 
     use SingletonTrait;
@@ -51,10 +54,37 @@ class SearchRoutes {
                 ],
             ]
         );
+        register_rest_route(
+            RestAPI::REST_NAMESPACE,
+            '/search/customer-meta-keys',
+            [
+                'methods'             => \WP_REST_Server::READABLE,
+                'callback'            => [ $this, 'customer_meta_keys' ],
+                'permission_callback' => [ RestAPI::get_instance(), 'can_manage' ],
+            ]
+        );
+    }
+
+    /** Custom field names other workflows use, live and draft: `{ keys: string[] }`. */
+    public function customer_meta_keys() {
+        $keys = [];
+        foreach ( WorkflowStore::all() as $workflow ) {
+            foreach ( [ $workflow['graph'], $workflow['draft'] ?? [] ] as $graph ) {
+                foreach ( $graph['nodes'] ?? [] as $node ) {
+                    if ( Criteria::ID === ( $node['data']['block'] ?? '' ) ) {
+                        $keys = array_merge( $keys, Criteria::meta_keys( $node['data']['config'], 'customer.meta' ) );
+                    }
+                }
+            }
+        }
+        // A draft may hold a protected key: saves allow issues.
+        $keys = array_values( array_unique( array_filter( $keys, fn( string $key ) => ! MetaKeys::user_blocked( $key ) ) ) );
+        sort( $keys );
+        return rest_ensure_response( [ 'keys' => $keys ] );
     }
 
     /**
-     * One page: `{ items: [ { value, label } ], hasMore }`.
+     * One page: `{ items: [ { value, label, hint? } ], hasMore }`.
      *
      * @param \WP_REST_Request $request
      */
@@ -188,6 +218,8 @@ class SearchRoutes {
         return [
             'value' => (string) $post->ID,
             'label' => self::plain( $post->post_title ),
+            // Not every product on the list is on sale.
+            'hint'  => 'publish' === $post->post_status ? '#' . $post->ID : get_post_status_object( $post->post_status )->label,
         ];
     }
 
@@ -244,6 +276,7 @@ class SearchRoutes {
             fn( \WP_Term $term ) => [
                 'value' => (string) $term->term_id,
                 'label' => self::category_path( $term ),
+                'hint'  => '#' . $term->term_id,
             ],
             $terms
         );

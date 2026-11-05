@@ -8,8 +8,11 @@ export type SearchType = 'product' | 'category' | 'coupon';
 
 const routes: Record<SearchType, string> = { product: 'products', category: 'categories', coupon: 'coupons' };
 
+/** `hint`: small text beside a row, an id or a status. */
+type SearchItem = OptionMeta & { hint?: string };
+
 interface SearchPage {
-  items: OptionMeta[];
+  items: SearchItem[];
   hasMore: boolean;
 }
 
@@ -54,4 +57,14 @@ export const useSearchLabels = (type: SearchType, values: string[]) =>
       );
       return pages.flatMap((page) => page.items);
     },
+  });
+
+/** Custom field names other workflows use: suggestions, any other key can be typed. */
+export const useCustomerMetaKeys = (enabled: boolean) =>
+  useQuery({
+    queryKey: ['search', 'customer-meta-keys'],
+    enabled,
+    // Each read decodes every workflow, and hints needn't be fresh to the second.
+    staleTime: 60_000,
+    queryFn: () => api.get('search/customer-meta-keys').json<{ keys: string[] }>(),
   });

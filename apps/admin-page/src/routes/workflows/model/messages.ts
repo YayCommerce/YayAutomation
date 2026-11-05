@@ -55,7 +55,7 @@ export const messages = {
   ruleDate: __('Enter a date (YYYY-MM-DD).', 'yaymatik'),
   ruleOption: __('Choose a value from the list.', 'yaymatik'),
   ruleListRequired: __('Choose at least one value.', 'yaymatik'),
-  ruleAmount: __('Enter a whole number, 1 or more.', 'yaymatik'),
-  ruleKeyRequired: __('Enter a custom field name.', 'yaymatik'),
-  ruleMetaKey: __('A workflow can’t read this custom field. Choose another.', 'yaymatik'),
+  ruleAmount: __('Enter a whole number of 1 or more.', 'yaymatik'),
+  ruleKeyRequired: __('Enter the custom field name.', 'yaymatik'),
+  ruleMetaKey: __('This custom field is protected. Choose another one.', 'yaymatik'),
 };

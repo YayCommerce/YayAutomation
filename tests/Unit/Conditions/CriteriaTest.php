@@ -19,7 +19,7 @@ final class CriteriaTest extends TestCase {
     private $wpdb;
 
     protected function setUp(): void {
-        $this->wpdb      = $GLOBALS['wpdb'] ?? null;
+        $this->wpdb = $GLOBALS['wpdb'] ?? null;
         // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- no WordPress here; MetaKeys reads its prefix.
         $GLOBALS['wpdb'] = (object) [ 'base_prefix' => 'wp_' ];
     }
@@ -240,5 +240,21 @@ final class CriteriaTest extends TestCase {
         $this->assertTrue( $check( 'greater_than', '4' ) );
         $this->assertFalse( $check( 'greater_than', 'abc' ) );
         $this->assertTrue( $check( 'is_empty', '', 'other' ) );
+    }
+
+    public function test_a_blank_key_is_reported_before_a_blocked_one_and_before_the_value(): void {
+        $this->assertSame( Messages::get( 'ruleKeyRequired' ), self::check( self::rule( 'order.meta', 'equal', '' ) ) );
+    }
+
+    public function test_meta_keys_lists_the_names_on_that_field_only(): void {
+        $config = [
+            'rules' => [
+                self::rule( 'customer.meta', 'equal', 'x', [ 'key' => 'vip' ] ),
+                self::rule( 'order.meta', 'equal', 'x', [ 'key' => '_gift' ] ),
+                self::rule( 'customer.meta', 'equal', 'x', [ 'key' => '' ] ),
+                self::rule( 'order.total', 'equal', '1' ),
+            ],
+        ];
+        $this->assertSame( [ 'vip' ], Criteria::meta_keys( $config, 'customer.meta' ) );
     }
 }

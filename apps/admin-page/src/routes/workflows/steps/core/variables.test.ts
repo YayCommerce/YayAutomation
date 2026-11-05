@@ -6,7 +6,7 @@ import { sprintf } from '@wordpress/i18n';
 
 import { messages } from '../../model/messages';
 import { tagError } from './data';
-import { availableVariables, groupVariables } from './variables';
+import { availableVariables, groupVariables, ruleOnlyVariables } from './variables';
 
 /** Shared with PHP `ValidatorTest::test_variables_a_step_can_use`. */
 const { cases } = JSON.parse(
@@ -89,6 +89,20 @@ describe('custom fields', () => {
     expect(keys).not.toContain('customer.meta');
     expect(keys).toContain('order.total');
     expect(tagError(['{{ order.meta }}'])).toBe(sprintf(messages.unknownVariable, '{{ order.meta }}'));
+  });
+});
+
+describe('ruleOnlyVariables', () => {
+  const variable = (key: string) => ({ key, label: key, type: 'string', block: false });
+
+  it('offers the custom fields of the items a step has, for rules', () => {
+    const keys = ruleOnlyVariables([variable('order.total'), variable('customer.email')]).map((v) => v.key);
+    expect(keys).toEqual(['order.meta', 'customer.meta']);
+  });
+
+  it('none for an item the step does not have', () => {
+    expect(ruleOnlyVariables([variable('customer.email')]).map((v) => v.key)).toEqual(['customer.meta']);
+    expect(ruleOnlyVariables([variable('site.name')])).toEqual([]);
   });
 });
 

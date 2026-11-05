@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { messages } from '../../../model/messages';
 import { needsValue } from '../../core/data';
-import { criteriaErrors, normalize, type Rule } from './schema';
+import { criteriaErrors, normalize, ruleForField, withOperator, type Rule } from './schema';
 
 const rule = (over: Partial<Rule>): Rule => ({
   field: 'order.created_date',
@@ -83,5 +83,66 @@ describe('normalize, the shape PHP stores', () => {
     expect(one({ operator: 'is_any_of', value: 'a' }).value).toEqual(['a']);
     expect(one({ operator: 'is_any_of', value: ['', ' a ', 'a'] }).value).toEqual(['a']);
     expect(one({ operator: 'equal', value: ['a'] }).value).toBe('');
+  });
+});
+
+describe('changing a comparison', () => {
+  it('keeps the value while the shape is the same', () => {
+    expect(withOperator(rule({ operator: 'in_last', value: '3', unit: 'hours' }), 'not_in_last')).toMatchObject({
+      value: '3',
+      unit: 'hours',
+    });
+    expect(withOperator(rule({ operator: 'before', value: '2026-01-01' }), 'after').value).toBe('2026-01-01');
+  });
+
+  it('clears it when the shape changes', () => {
+    expect(withOperator(rule({ operator: 'before', value: '2026-01-01' }), 'in_last')).toMatchObject({
+      value: '',
+      unit: 'days',
+    });
+    const single = withOperator(rule({ operator: 'in_last', value: '3', unit: 'hours' }), 'before');
+    expect(single.value).toBe('');
+    expect(single.unit).toBeUndefined();
+    expect(withOperator(rule({ field: 'order.status', operator: 'is', value: 'x' }), 'is_any_of').value).toEqual([]);
+  });
+});
+
+describe('changing a rule’s field', () => {
+  it('keeps value and unit on a field of the same type', () => {
+    const next = ruleForField(rule({ operator: 'in_last', value: '3', unit: 'hours' }), 'order.paid_date');
+    expect(next).toMatchObject({ field: 'order.paid_date', operator: 'in_last', value: '3', unit: 'hours' });
+  });
+
+  it('clears a list moved to another kind of search', () => {
+    const next = ruleForField(
+      rule({ field: 'order.product_ids', operator: 'matches_any', value: ['4'] }),
+      'order.category_ids',
+    );
+    expect(next).toMatchObject({ operator: 'matches_any', value: [] });
+    const same = ruleForField(
+      rule({ field: 'order.product_ids', operator: 'matches_any', value: ['4'] }),
+      'customer.purchased_product_ids',
+    );
+    expect(same.value).toEqual(['4']);
+  });
+
+  it('clears a custom field name moved between order and customer', () => {
+    const next = ruleForField(
+      rule({ field: 'order.meta', operator: 'equal', value: 'yes', key: '_gift' }),
+      'customer.meta',
+    );
+    expect(next.key).toBe('');
+  });
+
+  it('starts another type with its first comparison, in its shape', () => {
+    const next = ruleForField(rule({ operator: 'in_last', value: '3', unit: 'hours' }), 'order.product_ids');
+    expect(next).toEqual({ field: 'order.product_ids', operator: 'matches_any', value: [], valueType: 'value' });
+    expect(ruleForField(rule({ field: 'order.total', operator: 'equal', value: '1' }), 'order.meta')).toEqual({
+      field: 'order.meta',
+      operator: 'equal',
+      value: '',
+      valueType: 'value',
+      key: '',
+    });
   });
 });

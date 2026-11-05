@@ -5,6 +5,9 @@ import { defineStep, PLACEHOLDER, value } from '../../core/defineStep';
 import { CriteriaForm } from './Form';
 import { defaults, normalize, schema, type CriteriaConfig, type Rule } from './schema';
 
+/** A card has room for this many; beyond it, the first and a count. */
+const MAX_SUMMARY_ITEMS = 3;
+
 const optionLabel = (field: DataField | undefined, value: string) =>
   field?.options?.find((option) => option.value === value)?.label ?? value;
 
@@ -18,7 +21,7 @@ function comparedText(field: DataField | undefined, { operator, value: compared,
         sprintf(__('%d selected', 'yaymatik'), compared.length);
   }
   if (isRelative(operator)) {
-    // The value of the comparison before it stays until it's retyped.
+    // Being typed: "0" isn't an amount yet.
     if (!/^[1-9]\d*$/.test(compared)) return '';
     const amount = Number(compared);
     return sprintf(
@@ -36,10 +39,12 @@ function describe(rule: Rule) {
   const { field: key, operator } = rule;
   const field = fieldByKey(key);
   const shown = needsValue(operator) ? comparedText(field, rule) : '';
+  // "Custom field vip is equal to yes".
+  const name = field?.type === 'meta' ? `${field.label} ${rule.key || PLACEHOLDER}` : field?.label;
   /* translators: 1: variable, 2: comparison, e.g. "is greater than", 3: value */
   return sprintf(
     __('%1$s %2$s %3$s', 'yaymatik'),
-    field?.label ?? PLACEHOLDER,
+    name ?? PLACEHOLDER,
     operatorLabels[operator] ?? PLACEHOLDER,
     shown ? value(shown) : needsValue(operator) ? PLACEHOLDER : '',
   ).trim();
@@ -62,10 +67,13 @@ export const criteriaStep = defineStep<CriteriaConfig>({
   summaryValues: {
     rules: ({ match, rules }) => {
       const joiner = match === 'any' ? __('or', 'yaymatik') : __('and', 'yaymatik');
-      return rules
-        .filter((rule) => rule.field)
-        .map(describe)
-        .join(` ${joiner} `);
+      const chosen = rules.filter((rule) => rule.field).map(describe);
+      if (chosen.length <= MAX_SUMMARY_ITEMS) return chosen.join(` ${joiner} `);
+      const more =
+        match === 'any'
+          ? /* translators: %d: how many more rules */ __('or %d more', 'yaymatik')
+          : /* translators: %d: how many more rules */ __('and %d more', 'yaymatik');
+      return `${chosen[0]} ${sprintf(more, chosen.length - 1)}`;
     },
   },
   Form: CriteriaForm,

@@ -48,7 +48,7 @@ const mount = async (value: string[], onChange = vi.fn()) => {
   act(() =>
     root.render(
       <QueryClientProvider client={client}>
-        <SearchSelect id="s" type="product" value={value} onChange={onChange} placeholder="Choose" invalid={false} />
+        <SearchSelect id="s" type="product" value={value} onChange={onChange} invalid={false} />
       </QueryClientProvider>,
     ),
   );
@@ -148,6 +148,31 @@ describe('SearchSelect', () => {
     await settle(300);
     expect(get.mock.calls.length).toBe(before + 1);
     expect(listRequests().at(-1)!.get('term')).toBe('mug');
+  });
+
+  it('names what it searches, and what it did not find', async () => {
+    answer(() => ({ items: [], hasMore: false }));
+    await mount([]);
+    expect(container.textContent).toContain('Search products');
+
+    await openList();
+    expect(document.body.textContent).toContain('No products found.');
+    expect(document.body.textContent).toContain('0 selected');
+  });
+
+  it('shows a row’s id or status beside it', async () => {
+    answer(() => ({
+      items: [
+        { value: '1', label: 'Mug', hint: '#1' },
+        { value: '2', label: 'Tea', hint: 'Draft' },
+      ],
+      hasMore: false,
+    }));
+    await mount([]);
+    await openList();
+
+    expect(document.body.textContent).toContain('#1');
+    expect(document.body.textContent).toContain('Draft');
   });
 
   it('adds and removes a value', async () => {

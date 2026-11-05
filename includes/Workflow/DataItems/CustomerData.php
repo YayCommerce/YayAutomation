@@ -123,13 +123,15 @@ final class CustomerData extends DataItem {
             ],
             'total_spent'           => [
                 'label'      => __( 'Total spent', 'yaymatik' ),
+                'help'       => __( 'Orders in other currencies are added as stored, not converted.', 'yaymatik' ),
                 'type'       => self::TYPE_NUMBER,
                 'value_type' => Type::money(),
                 'value'      => fn( $customer ) => (float) $this->stats_of( $customer )['spent'],
                 'display'    => fn( $customer, bool $html ) => self::money_text( (float) $this->stats_of( $customer )['spent'], $html ),
             ],
             'last_order_date'       => [
-                'label'     => __( 'Last paid order date', 'yaymatik' ),
+                'label'     => __( 'Last order date', 'yaymatik' ),
+                'help'      => __( 'The newest paid order; pending and failed orders don’t count.', 'yaymatik' ),
                 'type'      => self::TYPE_DATE,
                 'value'     => fn( $customer ) => self::day( $this->stats_of( $customer )['last_paid'] ),
                 'timestamp' => fn( $customer ) => $this->stats_of( $customer )['last_paid'],
@@ -143,7 +145,7 @@ final class CustomerData extends DataItem {
                 'display'   => fn( $customer, bool $html ) => self::date_text( self::registered_at( $customer ), $html ),
             ],
             'role'                  => [
-                'label'   => __( 'Customer role', 'yaymatik' ),
+                'label'   => __( 'Role', 'yaymatik' ),
                 'type'    => self::TYPE_LIST,
                 'value'   => [ self::class, 'roles_of' ],
                 'display' => fn( $customer, bool $html ) => self::text(
@@ -153,19 +155,19 @@ final class CustomerData extends DataItem {
                 'options' => [ self::class, 'roles' ],
             ],
             'is_guest'              => [
-                'label' => __( 'Customer is a guest', 'yaymatik' ),
+                'label' => __( 'Is guest', 'yaymatik' ),
                 'type'  => self::TYPE_BOOLEAN,
                 'value' => fn( $customer ) => 0 === self::user_id( $customer ),
             ],
             'purchased_product_ids' => [
-                'label'   => __( 'Products purchased', 'yaymatik' ),
+                'label'   => __( 'Products bought', 'yaymatik' ),
                 'type'    => self::TYPE_LIST,
                 'search'  => 'product',
                 'value'   => [ self::class, 'purchased' ],
                 'display' => fn( $customer, bool $html ) => self::text( implode( ', ', array_filter( array_map( fn( string $id ) => (string) get_post_field( 'post_title', (int) $id, 'raw' ), self::purchased( $customer ) ) ) ), $html ),
             ],
             'meta'                  => [
-                'label'        => __( 'Customer custom field', 'yaymatik' ),
+                'label'        => __( 'Custom field', 'yaymatik' ),
                 'type'         => self::TYPE_META,
                 'value'        => fn() => '',
                 'merge_tag'    => false,

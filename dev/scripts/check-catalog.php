@@ -374,7 +374,7 @@ if ( ! $posts_store ) {
         $last   = $second->get_data();
         $ok( 200 === $first->get_status() && 20 === count( $data['items'] ) && true === $data['hasMore'], "search {$type}: a full first page says there is more" );
         $ok( 1 === count( $last['items'] ) && false === $last['hasMore'], "search {$type}: the last page says there isn't" );
-        $ok( [ 'value', 'label' ] === array_keys( $data['items'][0] ) && is_string( $data['items'][0]['value'] ), "search {$type}: items hold value and label" );
+        $ok( is_string( $data['items'][0]['value'] ) && is_string( $data['items'][0]['label'] ), "search {$type}: items hold value and label" );
         $picked = (string) $values[3];
         $exact  = $search( $type, [ 'include' => [ $picked ] ] )->get_data();
         $ok( 1 === count( $exact['items'] ) && $picked === $exact['items'][0]['value'] && false === $exact['hasMore'], "search {$type}: include returns exactly that item" );
@@ -391,6 +391,84 @@ if ( ! $posts_store ) {
     $bad = $search( 'orders', [] );
     $ok( 404 === $bad->get_status(), 'search: an unknown type is a 404' );
 
+    $meta_key  = 'chkkey' . wp_rand( 1000, 9999 );
+    $meta_flow = WorkflowStore::create(
+        'check-catalog',
+        GraphSchema::prepare(
+            [
+                'nodes' => [
+                    [
+                        'id'       => 'trigger',
+                        'kind'     => 'trigger',
+                        'position' => [
+                            'x' => 0,
+                            'y' => 0,
+                        ],
+                        'data'     => [
+                            'block'  => 'order_created',
+                            'config' => [],
+                        ],
+                    ],
+                    [
+                        'id'       => 'rule',
+                        'kind'     => 'condition',
+                        'position' => [
+                            'x' => 0,
+                            'y' => 100,
+                        ],
+                        'data'     => [
+                            'block'  => 'condition',
+                            'config' => [
+                                'match' => 'all',
+                                'rules' => [
+                                    [
+                                        'field'     => 'customer.meta',
+                                        'key'       => $meta_key,
+                                        'operator'  => 'equal',
+                                        'value'     => 'yes',
+                                        'valueType' => 'value',
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+                'edges' => [
+                    [
+                        'id'     => 'e',
+                        'source' => 'trigger',
+                        'target' => 'rule',
+                    ],
+                ],
+            ]
+        )
+    );
+    $flows[]   = (int) $meta_flow['id'];
+    $meta_keys = rest_do_request( new WP_REST_Request( 'GET', '/yaymatik/v1/search/customer-meta-keys' ) );
+    $ok( 200 === $meta_keys->get_status() && in_array( $meta_key, $meta_keys->get_data()['keys'], true ), 'customer-meta-keys: returns a key used in a rule' );
+    $protected                     = $graph( 'order_created' );
+    $with_rule                     = $protected;
+    $with_rule['nodes'][1]['kind'] = 'condition';
+    $with_rule['nodes'][1]['data'] = [
+        'block'  => 'condition',
+        'config' => [
+            'match' => 'all',
+            'rules' => [
+                [
+                    'field'     => 'customer.meta',
+                    'key'       => 'session_tokens',
+                    'operator'  => 'is_empty',
+                    'value'     => '',
+                    'valueType' => 'value',
+                ],
+            ],
+        ],
+    ];
+    $blocked_flow                  = WorkflowStore::create( 'check-catalog', $with_rule );
+    $flows[]                       = (int) $blocked_flow['id'];
+    $meta_keys                     = rest_do_request( new WP_REST_Request( 'GET', '/yaymatik/v1/search/customer-meta-keys' ) );
+    $ok( ! in_array( 'session_tokens', $meta_keys->get_data()['keys'], true ), 'customer-meta-keys: a protected key saved in a draft is not suggested' );
+
     $shopper = wp_create_user( 'shopper_' . wp_rand( 100000, 999999 ), wp_generate_password(), 'shopper@' . $domain );
     $users[] = $shopper;
     ( new WP_User( $shopper ) )->set_role( 'customer' );
@@ -398,6 +476,7 @@ if ( ! $posts_store ) {
     foreach ( [ 'products', 'categories', 'coupons' ] as $type ) {
         $ok( 403 === $search( $type, [ 'term' => $word ] )->get_status(), "search {$type}: a customer gets a 403" );
     }
+    $ok( 403 === rest_do_request( new WP_REST_Request( 'GET', '/yaymatik/v1/search/customer-meta-keys' ) )->get_status(), 'customer-meta-keys: a customer gets a 403' );
     wp_set_current_user( 0 );
 }//end if
 

@@ -995,7 +995,7 @@
                     },
                     {
                         "key": "order.category_ids",
-                        "label": "Product categories in order",
+                        "label": "Categories in order",
                         "type": "list",
                         "valueType": "list<string>",
                         "conditional": true,
@@ -1011,7 +1011,7 @@
                     },
                     {
                         "key": "order.billing_country",
-                        "label": "Order billing country",
+                        "label": "Billing country",
                         "type": "enum",
                         "valueType": "enum",
                         "conditional": true,
@@ -2020,7 +2020,7 @@
                     },
                     {
                         "key": "order.shipping_country",
-                        "label": "Order shipping country",
+                        "label": "Shipping country",
                         "type": "enum",
                         "valueType": "enum",
                         "conditional": true,
@@ -3054,7 +3054,7 @@
                     },
                     {
                         "key": "order.currency",
-                        "label": "Order currency",
+                        "label": "Currency",
                         "type": "enum",
                         "valueType": "enum",
                         "conditional": true,
@@ -3747,14 +3747,14 @@
                     },
                     {
                         "key": "order.is_guest",
-                        "label": "Placed by a guest",
+                        "label": "Is guest",
                         "type": "boolean",
                         "valueType": "boolean",
                         "conditional": true
                     },
                     {
                         "key": "order.meta",
-                        "label": "Order custom field",
+                        "label": "Custom field",
                         "type": "meta",
                         "valueType": "string",
                         "conditional": true,
@@ -4971,14 +4971,16 @@
                         "label": "Total spent",
                         "type": "number",
                         "valueType": "money",
-                        "conditional": true
+                        "conditional": true,
+                        "help": "Orders in other currencies are added as stored, not converted."
                     },
                     {
                         "key": "customer.last_order_date",
-                        "label": "Last paid order date",
+                        "label": "Last order date",
                         "type": "date",
                         "valueType": "date",
-                        "conditional": true
+                        "conditional": true,
+                        "help": "The newest paid order; pending and failed orders don’t count."
                     },
                     {
                         "key": "customer.registered_date",
@@ -4989,7 +4991,7 @@
                     },
                     {
                         "key": "customer.role",
-                        "label": "Customer role",
+                        "label": "Role",
                         "type": "list",
                         "valueType": "list<string>",
                         "conditional": true,
@@ -5138,14 +5140,14 @@
                     },
                     {
                         "key": "customer.is_guest",
-                        "label": "Customer is a guest",
+                        "label": "Is guest",
                         "type": "boolean",
                         "valueType": "boolean",
                         "conditional": true
                     },
                     {
                         "key": "customer.purchased_product_ids",
-                        "label": "Products purchased",
+                        "label": "Products bought",
                         "type": "list",
                         "valueType": "list<string>",
                         "conditional": true,
@@ -5153,7 +5155,7 @@
                     },
                     {
                         "key": "customer.meta",
-                        "label": "Customer custom field",
+                        "label": "Custom field",
                         "type": "meta",
                         "valueType": "string",
                         "conditional": true,
@@ -5287,9 +5289,9 @@
             "ruleDate": "Enter a date (YYYY-MM-DD).",
             "ruleOption": "Choose a value from the list.",
             "ruleListRequired": "Choose at least one value.",
-            "ruleAmount": "Enter a whole number, 1 or more.",
-            "ruleKeyRequired": "Enter a custom field name.",
-            "ruleMetaKey": "A workflow can’t read this custom field. Choose another."
+            "ruleAmount": "Enter a whole number of 1 or more.",
+            "ruleKeyRequired": "Enter the custom field name.",
+            "ruleMetaKey": "This custom field is protected. Choose another one."
         },
         "email": {
             "fromLine": "Example Store <store@example.test>",

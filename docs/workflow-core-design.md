@@ -109,7 +109,7 @@ Trigger: fires_for_own_runs( config )   whether its workflow reacts to events it
   - A custom `Form` gets `{ config, onChange }` (`StepFormProps`).
   - Beside any form, `defineStep` takes `Footer` (under the form, with its latest config, e.g. Send email's unsubscribe note) and `Actions` (panel header, e.g. Send email's Preview / Send test). Send email and Generate coupon use the generic form plus these.
 - **Icons (L5).** A step's `icon()` is a name from a fixed list in core (lucide icons, about 40), never an SVG. The editor draws it in the step's tile, tinted by kind (trigger, condition, action), on the canvas, in the picker, the panel header, template cards and the preview. A missing icon is added to core's list, not shipped by the plugin.
-- The `rules` field type is ours: its checks are written in PHP (`Criteria`) and TS. Plugins never write validation in JS.
+- The `rules` field type is ours: its checks are written in PHP (`Criteria`) and TS. Plugins never write validation in JS. Which custom field names are protected only PHP knows, so that one shows at the top of the panel after a save. A comparison of another shape clears the value (`withOperator`); another field keeps it only if it still fits (`ruleForField`).
 - **Planned (CT).** New actions and condition groups, see [ROADMAP-dev](ROADMAP-dev.md).
 - **Output display.** An output may have its own display text, built from the step's other outputs when read and never stored (`display`), e.g. a coupon's expiry in the site's date format. `block: true` marks a ready-made email block (the coupon box). `Scope::set_output_display()`; the Executor and Preview wire it from the graph.
 

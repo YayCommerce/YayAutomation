@@ -99,6 +99,23 @@ class Criteria extends Condition {
         return array_values( array_diff( array_unique( $items ), DataRegistry::ALWAYS ) );
     }
 
+    /**
+     * Custom field names the config's rules on a meta field, e.g. `customer.meta`, read.
+     *
+     * @param array  $config
+     * @param string $field
+     * @return string[]
+     */
+    public static function meta_keys( array $config, string $field ): array {
+        $keys = [];
+        foreach ( $config['rules'] ?? [] as $rule ) {
+            if ( ( $rule['field'] ?? '' ) === $field && '' !== ( $rule['key'] ?? '' ) ) {
+                $keys[] = $rule['key'];
+            }
+        }
+        return $keys;
+    }
+
     public function evaluate( Scope $scope, array $config ): bool {
         foreach ( $config['rules'] as $rule ) {
             $result = self::rule_matches( $scope, $rule );

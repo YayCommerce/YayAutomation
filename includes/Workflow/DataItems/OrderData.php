@@ -116,7 +116,7 @@ final class OrderData extends DataItem {
                 'display' => fn( \WC_Order $order, bool $html ) => self::text( implode( ', ', array_map( fn( \WC_Order_Item $item ) => $item->get_name(), $order->get_items() ) ), $html ),
             ],
             'category_ids'              => [
-                'label'   => __( 'Product categories in order', 'yaymatik' ),
+                'label'   => __( 'Categories in order', 'yaymatik' ),
                 'type'    => self::TYPE_LIST,
                 'search'  => 'category',
                 'value'   => [ self::class, 'category_ids' ],
@@ -129,8 +129,8 @@ final class OrderData extends DataItem {
                 'value'   => fn( \WC_Order $order ) => array_values( $order->get_coupon_codes() ),
                 'display' => fn( \WC_Order $order, bool $html ) => self::text( implode( ', ', $order->get_coupon_codes() ), $html ),
             ],
-            'billing_country'           => self::country_field( __( 'Order billing country', 'yaymatik' ), fn( \WC_Order $order ) => $order->get_billing_country() ),
-            'shipping_country'          => self::country_field( __( 'Order shipping country', 'yaymatik' ), fn( \WC_Order $order ) => $order->get_shipping_country() ),
+            'billing_country'           => self::country_field( __( 'Billing country', 'yaymatik' ), fn( \WC_Order $order ) => $order->get_billing_country() ),
+            'shipping_country'          => self::country_field( __( 'Shipping country', 'yaymatik' ), fn( \WC_Order $order ) => $order->get_shipping_country() ),
             'created_via'               => [
                 'label'   => __( 'Created via', 'yaymatik' ),
                 'type'    => self::TYPE_ENUM,
@@ -138,7 +138,7 @@ final class OrderData extends DataItem {
                 'options' => [ self::class, 'created_via_options' ],
             ],
             'currency'                  => [
-                'label'   => __( 'Order currency', 'yaymatik' ),
+                'label'   => __( 'Currency', 'yaymatik' ),
                 'type'    => self::TYPE_ENUM,
                 'value'   => fn( \WC_Order $order ) => $order->get_currency(),
                 'options' => [ self::class, 'currencies' ],
@@ -152,12 +152,12 @@ final class OrderData extends DataItem {
             'shipping_total'            => self::money_field( __( 'Shipping total', 'yaymatik' ), fn( \WC_Order $order ) => (float) $order->get_shipping_total() ),
             'refunded_total'            => self::money_field( __( 'Refunded total', 'yaymatik' ), fn( \WC_Order $order ) => (float) $order->get_total_refunded() ),
             'is_guest'                  => [
-                'label' => __( 'Placed by a guest', 'yaymatik' ),
+                'label' => __( 'Is guest', 'yaymatik' ),
                 'type'  => self::TYPE_BOOLEAN,
                 'value' => fn( \WC_Order $order ) => 0 === (int) $order->get_customer_id(),
             ],
             'meta'                      => [
-                'label'        => __( 'Order custom field', 'yaymatik' ),
+                'label'        => __( 'Custom field', 'yaymatik' ),
                 'type'         => self::TYPE_META,
                 'value'        => fn() => '',
                 'merge_tag'    => false,

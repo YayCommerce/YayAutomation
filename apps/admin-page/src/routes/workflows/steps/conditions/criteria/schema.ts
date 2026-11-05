@@ -32,6 +32,46 @@ export type CriteriaConfig = { match: 'all' | 'any'; rules: Rule[] };
 
 export const emptyRule = (): Rule => ({ field: '', operator: '', value: '', valueType: 'value' });
 
+const shapeOf = (operator: string) => (takesList(operator) ? 'list' : isRelative(operator) ? 'relative' : 'single');
+
+const blankValue = (operator: string) => (takesList(operator) ? [] : '');
+
+/** The rule with another comparison; a value of another shape is cleared: a date doesn't become an amount. */
+export function withOperator(rule: Rule, operator: string): Rule {
+  if (shapeOf(rule.operator) === shapeOf(operator)) return { ...rule, operator };
+  const next: Rule = { ...rule, operator, value: blankValue(operator), valueType: 'value' };
+  if (isRelative(operator)) next.unit = 'days';
+  else delete next.unit;
+  return next;
+}
+
+/** Whether a rule's value still means something on another field of the same type. */
+function valueFits(rule: Rule, from: DataField | undefined, to: DataField) {
+  if (rule.valueType === 'variable') {
+    const other = fieldByKey(String(rule.value));
+    return !!other && comparableWith(to)(other);
+  }
+  // A product id means nothing as a category.
+  if (from?.search !== to.search) return false;
+  if (!to.options?.length) return true;
+  const known = (item: string) => to.options?.some((option) => option.value === item);
+  return Array.isArray(rule.value) ? rule.value.every(known) : known(rule.value);
+}
+
+/** The rule on another field: the same type keeps the comparison and any value that fits; another type starts over. */
+export function ruleForField(rule: Rule, key: string): Rule {
+  const from = fieldByKey(rule.field);
+  const to = fieldByKey(key)!;
+  const same = to.type === from?.type;
+  const base: Rule = { field: key, operator: rule.operator, value: rule.value, valueType: rule.valueType };
+  if (rule.unit) base.unit = rule.unit;
+  // Order and customer custom fields are different stores.
+  if (to.type === 'meta') base.key = rule.field === key ? (rule.key ?? '') : '';
+  const next = withOperator(base, same ? rule.operator : operatorsFor(to.type)[0]);
+  if (same && valueFits(rule, from, to)) return next;
+  return { ...next, value: blankValue(next.operator), valueType: 'value' };
+}
+
 /** Types whose value may be another variable. Option lists keep their own options. */
 export const VARIABLE_VALUE_TYPES: DataField['type'][] = ['number', 'string', 'date'];
 

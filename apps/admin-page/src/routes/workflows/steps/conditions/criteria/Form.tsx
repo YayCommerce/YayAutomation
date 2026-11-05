@@ -7,12 +7,12 @@ import { Button } from '@/components/ui/button';
 import { FieldError } from '@/components/ui/field';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { fieldByKey, needsValue, operatorLabels, operatorsFor } from '../../core/data';
+import { fieldByKey, isRelative, needsValue, operatorLabels, operatorsFor, takesList } from '../../core/data';
 import { errorStyles, useShowErrors } from '../../core/fields/feedback';
 import { spotlightTarget, VariablePicker } from '../../core/fields/VariablePicker';
 import type { StepFormProps } from '../../core/types';
-import { comparableWith, criteriaErrors, emptyRule, type CriteriaConfig, type Rule } from './schema';
-import { DataSelect, ValueInput } from './ValueInput';
+import { criteriaErrors, emptyRule, ruleForField, withOperator, type CriteriaConfig, type Rule } from './schema';
+import { DataSelect, MetaKeyInput, ValueInput } from './ValueInput';
 
 const joinerText = { all: __('and', 'yaymatik'), any: __('or', 'yaymatik') };
 
@@ -108,7 +108,7 @@ export function CriteriaForm({ config, onChange }: StepFormProps<CriteriaConfig>
         ))}
       </div>
 
-      <Button variant="ghost" size="sm" className="w-fit pl-1" onClick={addRule}>
+      <Button variant="outline" size="sm" className="w-fit" onClick={addRule}>
         <Plus />
         {__('Add rule', 'yaymatik')}
       </Button>
@@ -144,26 +144,31 @@ function RuleBox({
   const field = fieldByKey(rule.field);
   const tone = error ? errorStyles : null;
 
-  // Another field of the same type keeps the comparison (and the value, if it still fits);
-  // otherwise the new type's first comparison is picked and the value cleared.
-  const chooseField = (key: string) => {
-    const next = fieldByKey(key)!;
-    const keep = next.type === field?.type;
-    const text = typeof rule.value === 'string' ? rule.value : '';
-    const other = fieldByKey(text);
-    const fits =
-      keep &&
-      (rule.valueType === 'variable'
-        ? !!other && comparableWith(next)(other)
-        : !next.options?.length || next.options.some((o) => o.value === text));
-    onChange({
-      field: key,
-      operator: keep ? rule.operator : operatorsFor(next.type)[0],
-      value: fits ? rule.value : '',
-      valueType: fits ? rule.valueType : 'value',
-      ...(fits && rule.unit ? { unit: rule.unit } : {}),
-    });
-  };
+  const hasValue = needsValue(rule.operator);
+  const meta = field?.type === 'meta';
+  const keyMissing = meta && !rule.key?.trim();
+  // These take the whole width; a plain value sits beside its comparison.
+  const wide = !hasValue || takesList(rule.operator) || isRelative(rule.operator);
+
+  const operatorSelect = (className: string) => (
+    <Select
+      value={rule.operator}
+      onValueChange={(operator) => onChange(withOperator(rule, operator))}
+      disabled={!field}
+    >
+      <SelectTrigger id={`${id}-operator`} className={className} aria-label={__('Comparison', 'yaymatik')}>
+        <SelectValue placeholder={__('Choose a comparison', 'yaymatik')} />
+      </SelectTrigger>
+      <SelectContent>
+        {field &&
+          operatorsFor(field.type).map((operator) => (
+            <SelectItem key={operator} value={operator}>
+              {operatorLabels[operator]}
+            </SelectItem>
+          ))}
+      </SelectContent>
+    </Select>
+  );
 
   return (
     <div className="flex flex-col gap-1.5">
@@ -179,7 +184,7 @@ function RuleBox({
           <VariablePicker
             conditionalOnly
             autoOpen={autoOpen}
-            onSelect={chooseField}
+            onSelect={(key) => onChange(ruleForField(rule, key))}
             onDismiss={autoOpen ? onDismissNew : undefined}
           >
             <DataSelect
@@ -205,29 +210,37 @@ function RuleBox({
           <TooltipContent>{__('Remove rule', 'yaymatik')}</TooltipContent>
         </Tooltip>
 
-        <Select value={rule.operator} onValueChange={(operator) => onChange({ ...rule, operator })} disabled={!field}>
-          <SelectTrigger id={`${id}-operator`} className="w-full" aria-label={__('Comparison', 'yaymatik')}>
-            <SelectValue placeholder={__('Choose a comparison', 'yaymatik')} />
-          </SelectTrigger>
-          <SelectContent>
-            {field &&
-              operatorsFor(field.type).map((operator) => (
-                <SelectItem key={operator} value={operator}>
-                  {operatorLabels[operator]}
-                </SelectItem>
-              ))}
-          </SelectContent>
-        </Select>
+        {meta ? (
+          <div className="col-span-3 grid min-w-0 grid-cols-2 gap-2">
+            <MetaKeyInput
+              id={`${id}-key`}
+              invalid={!!error && keyMissing}
+              field={field}
+              rule={rule}
+              onChange={onChange}
+            />
+            {operatorSelect('w-full')}
+          </div>
+        ) : (
+          operatorSelect(wide ? 'col-span-3 w-full' : 'w-full')
+        )}
 
-        {needsValue(rule.operator) && (
-          <div data-spotlight className={cn('min-w-0', spotlightTarget)}>
+        {hasValue && (
+          <div data-spotlight className={cn('min-w-0', (wide || meta) && 'col-span-3', spotlightTarget)}>
             <label htmlFor={`${id}-value`} className="sr-only">
               {field?.label ?? __('Value', 'yaymatik')}
             </label>
-            <ValueInput id={`${id}-value`} invalid={!!error} field={field} rule={rule} onChange={onChange} />
+            <ValueInput
+              id={`${id}-value`}
+              invalid={!!error && !keyMissing}
+              field={field}
+              rule={rule}
+              onChange={onChange}
+            />
           </div>
         )}
       </div>
+      {field?.help && <p className="text-muted-foreground px-1 text-xs">{field.help}</p>}
       {error && tone && <ErrorLine className={tone.text}>{error}</ErrorLine>}
     </div>
   );

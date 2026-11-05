@@ -1,19 +1,20 @@
 import { useEffect, useState } from 'react';
-import { __ } from '@wordpress/i18n';
+import { Search } from 'lucide-react';
+import { __, sprintf } from '@wordpress/i18n';
 
 import { Button } from '@/components/ui/button';
-import {
-  ComboboxBadge,
-  ComboboxCheckbox,
-  ComboboxIcon,
-  ComboboxRemove,
-  ComboboxTrigger,
-} from '@/components/ui/combobox';
+import { ComboboxBadge, ComboboxCheckbox, ComboboxRemove, ComboboxTrigger } from '@/components/ui/combobox';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Popover, PopoverContent } from '@/components/ui/popover';
 import { useSearchLabels, useSearchOptions, type SearchType } from './searchSelect.query';
 
 const DEBOUNCE_MS = 250;
+
+const words: Record<SearchType, { placeholder: string; empty: string }> = {
+  product: { placeholder: __('Search products', 'yaymatik'), empty: __('No products found.', 'yaymatik') },
+  category: { placeholder: __('Search categories', 'yaymatik'), empty: __('No categories found.', 'yaymatik') },
+  coupon: { placeholder: __('Search coupons', 'yaymatik'), empty: __('No coupons found.', 'yaymatik') },
+};
 
 /** Any number of values, shown like `MultiSelect`, picked from a list the server searches and pages. */
 export function SearchSelect({
@@ -21,14 +22,12 @@ export function SearchSelect({
   type,
   value,
   onChange,
-  placeholder,
   invalid,
 }: {
   id: string;
   type: SearchType;
   value: string[];
   onChange: (value: string[]) => void;
-  placeholder: string;
   invalid: boolean;
 }) {
   const [open, setOpen] = useState(false);
@@ -68,17 +67,17 @@ export function SearchSelect({
               </ComboboxBadge>
             ))
           ) : (
-            <span className="text-muted-foreground px-1">{placeholder}</span>
+            <span className="text-muted-foreground px-1">{words[type].placeholder}</span>
           )}
         </span>
-        <ComboboxIcon />
+        <Search className="text-muted-foreground size-4 shrink-0" aria-hidden />
       </ComboboxTrigger>
       <PopoverContent className="w-(--radix-popover-trigger-width) p-0" align="start">
         {/* The server searches, so the list doesn't filter what it gets. */}
         <Command shouldFilter={false}>
-          <CommandInput placeholder={__('Search', 'yaymatik')} value={typed} onValueChange={setTyped} />
+          <CommandInput placeholder={words[type].placeholder} value={typed} onValueChange={setTyped} />
           <CommandList>
-            {!search.isPending && !search.isError && <CommandEmpty>{__('Nothing found.', 'yaymatik')}</CommandEmpty>}
+            {!search.isPending && !search.isError && <CommandEmpty>{words[type].empty}</CommandEmpty>}
             {search.isError && (
               <div className="flex flex-col items-center gap-1 p-3 text-sm">
                 {__('Couldn’t load the list.', 'yaymatik')}
@@ -91,22 +90,27 @@ export function SearchSelect({
               {options.map((option) => (
                 <CommandItem key={option.value} value={option.value} onSelect={() => toggle(option.value)}>
                   <ComboboxCheckbox selected={value.includes(option.value)} />
-                  {option.label}
+                  <span className="min-w-0 flex-1 truncate">{option.label}</span>
+                  {option.hint && <small className="text-muted-foreground shrink-0 text-xs">{option.hint}</small>}
                 </CommandItem>
               ))}
             </CommandGroup>
+          </CommandList>
+          <div className="text-muted-foreground flex items-center justify-between gap-2 border-t px-3 py-1.5 text-xs">
+            {/* translators: %d: how many values are chosen */}
+            <span>{sprintf(__('%d selected', 'yaymatik'), value.length)}</span>
             {search.hasNextPage && (
               <Button
-                variant="ghost"
+                variant="link"
                 size="sm"
-                className="w-full"
+                className="h-auto p-0 text-xs"
                 disabled={search.isFetchingNextPage}
                 onClick={() => void search.fetchNextPage()}
               >
                 {__('Load more', 'yaymatik')}
               </Button>
             )}
-          </CommandList>
+          </div>
         </Command>
       </PopoverContent>
     </Popover>

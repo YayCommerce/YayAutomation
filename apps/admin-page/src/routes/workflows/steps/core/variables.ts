@@ -54,6 +54,16 @@ export function availableVariables(graph: WorkflowGraph, nodeId: string): Variab
   return list;
 }
 
+/** Fields a rule can compare but a merge tag can't read (custom fields), of the items in `variables`. */
+export const ruleOnlyVariables = (variables: Variable[]): Variable[] =>
+  dataItems.flatMap((item) =>
+    variables.some((variable) => variable.key.startsWith(`${item.id}.`))
+      ? item.fields
+          .filter((field) => field.mergeTag === false)
+          .map((field) => ({ key: field.key, label: field.label, type: field.valueType, block: false }))
+      : [],
+  );
+
 /** Data items an action adds for the steps below it. */
 const providedByAction = (stepId: StepId | null) =>
   stepId && window.yayMatikMeta.automation.steps[stepId]?.kind === 'action'

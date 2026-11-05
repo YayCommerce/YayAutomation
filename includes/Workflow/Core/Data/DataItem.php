@@ -14,6 +14,7 @@ defined( 'ABSPATH' ) || exit;
  * - `display`     fn( $object, bool $html ): string; default the value (an enum's option label)
  * - `options`     fn(): array value => label, enum and list
  * - `timestamp`   fn( $object ): ?int, the moment behind a date, for "in the last N hours"; without it a date counts as 00:00 store time
+ * - `help`        string shown under a rule on this field
  * - `search`      `product`, `category` or `coupon`: a list searched through REST, its values never in `yayMatikMeta`
  * - `meta`        fn( $object, string $key ): string, a custom field; for `TYPE_META`, which compares key + value
  * - `meta_blocked` fn( string $key ): bool, keys a rule can't read
@@ -82,6 +83,7 @@ abstract class DataItem {
                     'block'        => false,
                     'display'      => null,
                     'timestamp'    => null,
+                    'help'         => null,
                     'search'       => null,
                     'meta'         => null,
                     'meta_blocked' => null,
