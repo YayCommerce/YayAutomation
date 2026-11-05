@@ -5,8 +5,11 @@ import { __ } from '@wordpress/i18n';
 const EMPTY_MARK = '⁠';
 const VALUE_MARK = '⁡';
 
+/** Text in a summary that says what's missing, shown italic. */
+export const missing = (text: string) => `${EMPTY_MARK}${text}${EMPTY_MARK}`;
+
 /** Shown in summaries where a required value is still missing: an italic "Not set". */
-export const PLACEHOLDER = `${EMPTY_MARK}${__('Not set', 'yaymatik')}${EMPTY_MARK}`;
+export const PLACEHOLDER = missing(__('Not set', 'yaymatik'));
 
 /** A configured value in a summary, shown bold; blank → the italic placeholder. */
 export const value = (text: string) => (text.trim() ? `${VALUE_MARK}${text}${VALUE_MARK}` : PLACEHOLDER);

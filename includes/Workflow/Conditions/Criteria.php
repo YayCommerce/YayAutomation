@@ -12,7 +12,7 @@ use YayMatik\Workflow\Core\Steps\Field;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * The one condition step. Rule: [ 'field', 'operator', 'value' (a list for list comparisons, a whole number with `unit` for relative dates), 'valueType' => 'value'|'variable' (`value` is another field's key), 'unit'?, 'key'? (a meta field's custom field) ].
+ * The one condition step. Rule: [ 'field', 'operator', 'value' (a list for list comparisons, a whole number with `unit` for relative dates), 'valueType' => 'value'|'variable' (`value` is another field's key), 'unit'?, 'key'? (a meta field's custom field) ]. A rule in `rules` may be a group, [ 'match', 'rules' ], one level deep.
  */
 class Criteria extends Condition {
 
@@ -66,7 +66,8 @@ class Criteria extends Condition {
         $config = is_array( $config ) ? $config : [];
         $rules  = [];
         foreach ( is_array( $config['rules'] ?? null ) ? $config['rules'] : [] as $rule ) {
-            $rules[] = self::sanitize_rule( is_array( $rule ) ? $rule : [] );
+            $rule    = is_array( $rule ) ? $rule : [];
+            $rules[] = self::is_group( $rule ) ? self::sanitize_group( $rule ) : self::sanitize_rule( $rule );
         }
         return [
             'match' => in_array( $config['match'] ?? '', self::MATCHES, true ) ? $config['match'] : 'all',
@@ -75,13 +76,19 @@ class Criteria extends Condition {
     }
 
     public function validate( array $config ) {
-        if ( ! array_filter( array_column( $config['rules'], 'field' ) ) ) {
+        if ( ! array_filter( array_column( self::flat_rules( $config['rules'] ), 'field' ) ) ) {
             return $this->invalid( Messages::get( 'rulesRequired' ), 'rules' );
         }
-        foreach ( $config['rules'] as $rule ) {
-            $error = $this->rule_error( $rule );
-            if ( $error ) {
-                return $this->invalid( $error, 'rules' );
+        foreach ( $config['rules'] as $item ) {
+            // A group with no rule chosen yet: the same as a condition with none.
+            if ( self::is_group( $item ) && ! array_filter( array_column( $item['rules'], 'field' ) ) ) {
+                return $this->invalid( Messages::get( 'rulesRequired' ), 'rules' );
+            }
+            foreach ( self::is_group( $item ) ? $item['rules'] : [ $item ] as $rule ) {
+                $error = $this->rule_error( $rule );
+                if ( $error ) {
+                    return $this->invalid( $error, 'rules' );
+                }
             }
         }
         return true;
@@ -89,7 +96,7 @@ class Criteria extends Condition {
 
     public function uses( array $config ): array {
         $keys = [];
-        foreach ( $config['rules'] as $rule ) {
+        foreach ( self::flat_rules( $config['rules'] ) as $rule ) {
             $keys[] = $rule['field'];
             if ( 'variable' === $rule['valueType'] && Operators::needs_value( $rule['operator'] ) ) {
                 $keys[] = $rule['value'];
@@ -108,7 +115,7 @@ class Criteria extends Condition {
      */
     public static function meta_keys( array $config, string $field ): array {
         $keys = [];
-        foreach ( $config['rules'] ?? [] as $rule ) {
+        foreach ( self::flat_rules( $config['rules'] ?? [] ) as $rule ) {
             if ( ( $rule['field'] ?? '' ) === $field && '' !== ( $rule['key'] ?? '' ) ) {
                 $keys[] = $rule['key'];
             }
@@ -117,8 +124,8 @@ class Criteria extends Condition {
     }
 
     public function evaluate( Scope $scope, array $config ): bool {
-        foreach ( $config['rules'] as $rule ) {
-            $result = self::rule_matches( $scope, $rule );
+        foreach ( $config['rules'] as $item ) {
+            $result = self::is_group( $item ) ? $this->evaluate( $scope, $item ) : self::rule_matches( $scope, $item );
             if ( 'any' === $config['match'] && $result ) {
                 return true;
             }
@@ -127,6 +134,39 @@ class Criteria extends Condition {
             }
         }
         return 'all' === $config['match'];
+    }
+
+    /**
+     * @param array $item
+     */
+    private static function is_group( array $item ): bool {
+        return is_array( $item['rules'] ?? null );
+    }
+
+    /**
+     * The rules themselves, those inside groups in their place.
+     *
+     * @param array[] $items
+     */
+    private static function flat_rules( array $items ): array {
+        $rules = [];
+        foreach ( $items as $item ) {
+            $rules = array_merge( $rules, self::is_group( $item ) ? $item['rules'] : [ $item ] );
+        }
+        return $rules;
+    }
+
+    /**
+     * One level deep: a group inside a group is dropped.
+     *
+     * @param array $group
+     */
+    private static function sanitize_group( array $group ): array {
+        $rules = array_filter( $group['rules'], fn( $rule ) => is_array( $rule ) && ! self::is_group( $rule ) );
+        return [
+            'match' => in_array( $group['match'] ?? '', self::MATCHES, true ) ? $group['match'] : 'all',
+            'rules' => array_values( array_map( [ self::class, 'sanitize_rule' ], $rules ) ),
+        ];
     }
 
     /**

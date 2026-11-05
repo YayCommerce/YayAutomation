@@ -372,4 +372,21 @@ final class FieldTest extends TestCase {
         $this->assertArrayNotHasKey( 'requiredMessage', Field::text( 'a', 'A' )->required()->to_array() );
         $this->assertSame( 'This field is required.', Field::text( 'a', 'A' )->required()->validate( '' ), 'without a message' );
     }
+
+    public function test_rules_of_only_groups_read_as_started_when_a_group_has_a_rule(): void {
+        $error = fn( array $rule ) => Field::first_error(
+            [ Field::rules( 'rules', 'Rules' )->required() ],
+            [
+                'rules' => [
+                    [
+                        'match' => 'all',
+                        'rules' => [ $rule ],
+                    ],
+                ],
+            ],
+            'Condition'
+        );
+        $this->assertNull( $error( [ 'field' => 'order.total' ] ) );
+        $this->assertNotNull( $error( [ 'field' => '' ] ) );
+    }
 }

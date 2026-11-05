@@ -31,7 +31,7 @@ Changes from the ROADMAP-v1.0 order:
 | M4 | Welcome series | S | 2 | M2 | ✅ Done |
 | M5 | High-value order alert | S | 1 | — | ✅ Done |
 | M6 | Win-back | M | 2 | M8 | ✅ Done |
-| CT | Custom workflow catalog | L | 3 | M6 | — |
+| CT | Custom workflow catalog | L | 3 | M6 | In progress |
 | M9 | Release hardening | M | 2 | all | — |
 | v1.1 | Control flow | L+ | 3 | v1.0 | — |
 | v1.2 | Yay ecosystem + Pro connectors | L+ | 3 | v1.1 | — |
@@ -261,13 +261,13 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 
 Shop owners build their own workflows from New Workflow. Why: [decisions CT](workflow-core-decisions.md#ct-custom-workflow-catalog).
 
-- **CT.0** Docs frame.
-- **CT.1** Hardening: order meta guard, active-trigger cache, `emits()` and the may-refire warning.
-- **CT.2** List type, new operators, relative dates, `is_set`.
-- **CT.3** New order and customer condition fields, meta conditions, customer stats.
-- **CT.4** Paged REST search for products, categories and coupons.
-- **CT.5** Condition form for the new rule kinds.
-- **CT.6** Condition groups, one level deep.
+- ⏳ **CT.0** Docs frame.
+- ⏳ **CT.1** Hardening: order meta guard, active-trigger cache, `emits()` and the may-refire warning.
+- ⏳ **CT.2** List type, new operators, relative dates, `is_set`.
+- ⏳ **CT.3** New order and customer condition fields, meta conditions, customer stats.
+- ⏳ **CT.4** Paged REST search for products, categories and coupons.
+- ⏳ **CT.5** Condition form for the new rule kinds.
+- ⏳ **CT.6** Condition groups, one level deep.
 - **CT.7** Triggers: Order paid, Order note added.
 - **CT.8** Trigger: Order refunded.
 - **CT.9** Triggers: Customer order count reaches, Customer total spend reaches.

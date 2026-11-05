@@ -8,12 +8,14 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { steps } from '../..';
 import { plainSummary } from '../../core/marks';
 import { CriteriaForm } from './Form';
-import type { CriteriaConfig, Rule } from './schema';
+import type { CriteriaConfig, CriteriaItem, Rule } from './schema';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
 vi.mock('@/lib/api/api', () => ({ api: { get: vi.fn() } }));
 
+const total = (): Rule => ({ field: 'order.total', operator: 'equal', value: '1', valueType: 'value' });
+const buttons = (name: string) => [...container.querySelectorAll('button')].filter((b) => b.textContent === name);
 const rule = (over: Partial<Rule>): Rule => ({ field: '', operator: '', value: '', valueType: 'value', ...over });
 
 let container: HTMLDivElement;
@@ -38,7 +40,7 @@ afterEach(() => {
 
 const settle = () => act(() => new Promise((done) => setTimeout(done, 5)));
 
-const mount = async (rules: Rule[], onChange = vi.fn()) => {
+const mount = async (rules: CriteriaItem[], onChange = vi.fn()) => {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   act(() =>
     root.render(
@@ -95,8 +97,54 @@ describe('each rule draws what its comparison takes', () => {
   });
 });
 
+describe('groups in the form', () => {
+  it('a condition with no group looks as it did, with Add group beside Add rule', async () => {
+    await mount([total()]);
+    expect(buttons('Add group')).toHaveLength(1);
+    expect(buttons('Add rule to group')).toHaveLength(0);
+  });
+
+  it('adds a group', async () => {
+    const onChange = vi.fn();
+    await mount([total()], onChange);
+    act(() => buttons('Add group')[0].click());
+    expect(onChange.mock.lastCall![0].rules).toEqual([
+      total(),
+      { match: 'all', rules: [{ field: '', operator: '', value: '', valueType: 'value' }] },
+    ]);
+  });
+
+  it('replaces the blank rule a new condition starts with', async () => {
+    const onChange = vi.fn();
+    await mount([rule({})], onChange);
+    act(() => buttons('Add group')[0].click());
+    expect(onChange.mock.lastCall![0].rules).toHaveLength(1);
+    expect(onChange.mock.lastCall![0].rules[0].match).toBe('all');
+  });
+
+  it('offers no Add group inside a group', async () => {
+    await mount([{ match: 'any', rules: [total()] }]);
+    expect(buttons('Add rule to group')).toHaveLength(1);
+    expect(buttons('Add group')).toHaveLength(1);
+  });
+
+  it('removes a group', async () => {
+    const onChange = vi.fn();
+    await mount([{ match: 'any', rules: [total()] }, total()], onChange);
+    act(() => container.querySelector<HTMLButtonElement>('[aria-label="Remove group"]')!.click());
+    expect(onChange.mock.lastCall![0].rules).toEqual([total()]);
+  });
+
+  it('its last rule can go, leaving an empty group', async () => {
+    const onChange = vi.fn();
+    await mount([{ match: 'any', rules: [total()] }, total()], onChange);
+    act(() => container.querySelector<HTMLButtonElement>('[aria-label="Remove rule"]')!.click());
+    expect(onChange.mock.lastCall![0].rules[0]).toEqual({ match: 'any', rules: [] });
+  });
+});
+
 describe('canvas summaries', () => {
-  const summary = (rules: Rule[]) => plainSummary(steps.condition.summary({ match: 'all', rules }));
+  const summary = (rules: CriteriaItem[], match = 'all') => plainSummary(steps.condition.summary({ match, rules }));
 
   it('reads a search list as a count', () => {
     expect(summary([rule({ field: 'order.product_ids', operator: 'matches_any', value: ['1', '2'] })])).toBe(
@@ -114,5 +162,22 @@ describe('canvas summaries', () => {
     const one = rule({ field: 'order.product_ids', operator: 'matches_any', value: ['1', '2'] });
     const other = rule({ field: 'order.total', operator: 'equal', value: '1' });
     expect(summary([one, other, other, other, other])).toBe('Products in order matches any of 2 selected and 4 more');
+  });
+
+  it('wraps a group in brackets, joined by its own match', () => {
+    const other = rule({ field: 'order.total', operator: 'less_than', value: '9' });
+    expect(summary([{ match: 'any', rules: [total(), other] }, total()])).toBe(
+      '(Order total is equal to 1 or Order total is less than 9) and Order total is equal to 1',
+    );
+  });
+
+  it('shortens a long group as it does a long condition', () => {
+    expect(summary([{ match: 'all', rules: [total(), total(), total(), total()] }])).toBe(
+      '(Order total is equal to 1 and 3 more)',
+    );
+  });
+
+  it('says when a group has no rules yet', () => {
+    expect(summary([total(), { match: 'all', rules: [] }])).toBe('A group has no rules yet');
   });
 });

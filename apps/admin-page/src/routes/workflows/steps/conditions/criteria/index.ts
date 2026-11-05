@@ -2,8 +2,19 @@ import { __, _n, sprintf } from '@wordpress/i18n';
 
 import { fieldByKey, isRelative, itemOf, needsValue, operatorLabels, type DataField } from '../../core/data';
 import { defineStep, PLACEHOLDER, value } from '../../core/defineStep';
+import { missing } from '../../core/marks';
 import { CriteriaForm } from './Form';
-import { defaults, normalize, schema, type CriteriaConfig, type Rule } from './schema';
+import {
+  defaults,
+  flatRules,
+  isGroup,
+  joinerText,
+  normalize,
+  schema,
+  type CriteriaConfig,
+  type CriteriaItem,
+  type Rule,
+} from './schema';
 
 /** A card has room for this many; beyond it, the first and a count. */
 const MAX_SUMMARY_ITEMS = 3;
@@ -50,6 +61,23 @@ function describe(rule: Rule) {
   ).trim();
 }
 
+/** Parts joined by "and" / "or"; past what a card has room for, the first and a count. */
+function joined(parts: string[], match: CriteriaConfig['match']) {
+  if (parts.length <= MAX_SUMMARY_ITEMS) return parts.join(` ${joinerText[match]} `);
+  const more =
+    match === 'any'
+      ? /* translators: %d: how many more rules */ __('or %d more', 'yaymatik')
+      : /* translators: %d: how many more rules */ __('and %d more', 'yaymatik');
+  return `${parts[0]} ${sprintf(more, parts.length - 1)}`;
+}
+
+/** A rule, or "(A or B)" for a group of more than one. */
+function describeItem(item: CriteriaItem) {
+  if (!isGroup(item)) return describe(item);
+  const inner = item.rules.filter((rule) => rule.field).map(describe);
+  return inner.length > 1 ? `(${joined(inner, item.match)})` : inner[0];
+}
+
 export const criteriaStep = defineStep<CriteriaConfig>({
   id: 'condition',
   kind: 'condition',
@@ -58,7 +86,7 @@ export const criteriaStep = defineStep<CriteriaConfig>({
   normalize,
   // The variable on the left, and the one on the right when comparing two.
   uses: ({ rules }) =>
-    rules.flatMap((rule) =>
+    flatRules(rules).flatMap((rule) =>
       [rule.field, rule.valueType === 'variable' && needsValue(rule.operator) ? String(rule.value) : '']
         .filter(Boolean)
         .map(itemOf),
@@ -66,14 +94,10 @@ export const criteriaStep = defineStep<CriteriaConfig>({
   // The rules on one line, joined by "and" / "or"; blank until a rule has its variable.
   summaryValues: {
     rules: ({ match, rules }) => {
-      const joiner = match === 'any' ? __('or', 'yaymatik') : __('and', 'yaymatik');
-      const chosen = rules.filter((rule) => rule.field).map(describe);
-      if (chosen.length <= MAX_SUMMARY_ITEMS) return chosen.join(` ${joiner} `);
-      const more =
-        match === 'any'
-          ? /* translators: %d: how many more rules */ __('or %d more', 'yaymatik')
-          : /* translators: %d: how many more rules */ __('and %d more', 'yaymatik');
-      return `${chosen[0]} ${sprintf(more, chosen.length - 1)}`;
+      if (rules.some((item) => isGroup(item) && !item.rules.some((rule) => rule.field))) {
+        return missing(__('A group has no rules yet', 'yaymatik'));
+      }
+      return joined(rules.filter((item) => isGroup(item) || item.field).map(describeItem), match);
     },
   },
   Form: CriteriaForm,

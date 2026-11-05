@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { messages } from '../../../model/messages';
 import { needsValue } from '../../core/data';
-import { criteriaErrors, normalize, ruleForField, withOperator, type Rule } from './schema';
+import { criteriaErrors, flatRules, normalize, ruleForField, withOperator, type Group, type Rule } from './schema';
 
 const rule = (over: Partial<Rule>): Rule => ({
   field: 'order.created_date',
@@ -47,7 +47,7 @@ describe('rule checks, same messages and order as PHP', () => {
 });
 
 describe('normalize, the shape PHP stores', () => {
-  const one = (input: Partial<Rule>) => normalize({ rules: [input] }).rules[0];
+  const one = (input: Partial<Rule>) => normalize({ rules: [input] }).rules[0] as Rule;
 
   it('leaves a plain rule its four keys', () => {
     expect(Object.keys(one({ field: 'order.total', operator: 'equal', value: '1' }))).toEqual([
@@ -144,5 +144,39 @@ describe('changing a rule’s field', () => {
       valueType: 'value',
       key: '',
     });
+  });
+});
+
+describe('groups', () => {
+  const good = rule({ field: 'order.total', operator: 'equal', value: '1' });
+  const group = (rules: Rule[], match: Group['match'] = 'all'): Group => ({ match, rules });
+
+  it('gives errors per rule inside a group', () => {
+    const bad = rule({ field: 'order.total', operator: 'equal', value: 'abc' });
+    expect(criteriaErrors([group([good, bad])])).toEqual([{ own: null, rules: [null, messages.ruleNumber] }]);
+  });
+
+  it('says an empty group needs a rule, as PHP does', () => {
+    expect(criteriaErrors([good, group([])])).toEqual([null, { own: messages.rulesRequired, rules: [] }]);
+    expect(criteriaErrors([good, group([rule({ field: '' })])])).toEqual([
+      null,
+      { own: messages.rulesRequired, rules: [null] },
+    ]);
+  });
+
+  it('puts the required message on the first item when nothing is chosen', () => {
+    expect(criteriaErrors([group([rule({ field: '' })])])).toEqual([{ own: messages.rulesRequired, rules: [null] }]);
+  });
+
+  it('flattens for what reads every rule', () => {
+    expect(flatRules([good, group([good, good])])).toHaveLength(3);
+  });
+
+  it('normalizes one level deep, and leaves a flat rule alone', () => {
+    const config = normalize({
+      rules: [{ match: 'any', rules: ['x', good, { match: 'all', rules: [good] }] }, good],
+    });
+    expect(config.rules[0]).toEqual({ match: 'any', rules: [good] });
+    expect(config.rules[1]).toEqual(good);
   });
 });

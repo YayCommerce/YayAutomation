@@ -11,16 +11,27 @@ import { fieldByKey, isRelative, needsValue, operatorLabels, operatorsFor, takes
 import { errorStyles, useShowErrors } from '../../core/fields/feedback';
 import { spotlightTarget, VariablePicker } from '../../core/fields/VariablePicker';
 import type { StepFormProps } from '../../core/types';
-import { criteriaErrors, emptyRule, ruleForField, withOperator, type CriteriaConfig, type Rule } from './schema';
+import {
+  criteriaErrors,
+  emptyGroup,
+  emptyRule,
+  isGroup,
+  joinerText,
+  ruleForField,
+  withOperator,
+  type CriteriaConfig,
+  type CriteriaItem,
+  type Group,
+  type GroupErrors,
+  type Rule,
+} from './schema';
 import { DataSelect, MetaKeyInput, ValueInput } from './ValueInput';
-
-const joinerText = { all: __('and', 'yaymatik'), any: __('or', 'yaymatik') };
 
 /**
  * The condition as a sentence: "Take the Yes path when [all / any] of these match:", one box per rule
- * (data, comparison, value) joined by "and" / "or", then "Otherwise the No path runs." A rule added
- * with "Add rule" opens its data picker at once and goes away if nothing is picked. The condition
- * always keeps one rule: deleting the last one empties it instead.
+ * (data, comparison, value) or group joined by "and" / "or", then "Otherwise the No path runs." A rule
+ * added with "Add rule" opens its data picker at once and goes away if nothing is picked. The condition
+ * always keeps one item: deleting the last one empties it instead.
  */
 export function CriteriaForm({ config, onChange }: StepFormProps<CriteriaConfig>) {
   const [value, setValue] = useState(config);
@@ -30,9 +41,9 @@ export function CriteriaForm({ config, onChange }: StepFormProps<CriteriaConfig>
     setValue(next);
     onChange(next);
   };
-  const setRule = (index: number, rule: Rule) =>
-    update({ ...value, rules: value.rules.map((r, i) => (i === index ? rule : r)) });
-  const removeRule = (index: number) =>
+  const setItem = (index: number, item: CriteriaItem) =>
+    update({ ...value, rules: value.rules.map((r, i) => (i === index ? item : r)) });
+  const removeItem = (index: number) =>
     update({
       ...value,
       rules: value.rules.length === 1 ? [emptyRule()] : value.rules.filter((_, i) => i !== index),
@@ -40,6 +51,12 @@ export function CriteriaForm({ config, onChange }: StepFormProps<CriteriaConfig>
   const addRule = () => {
     setPending(value.rules.length);
     update({ ...value, rules: [...value.rules, emptyRule()] });
+  };
+  // A condition starts with one blank rule; left beside the group, it would block Activate unseen.
+  const addGroup = () => {
+    const [only] = value.rules;
+    const blank = value.rules.length === 1 && !isGroup(only) && !only.field;
+    update({ ...value, rules: blank ? [emptyGroup()] : [...value.rules, emptyGroup()] });
   };
 
   const showErrors = useShowErrors();
@@ -62,19 +79,7 @@ export function CriteriaForm({ config, onChange }: StepFormProps<CriteriaConfig>
                 {__('Yes', 'yaymatik')}
               </span>
             ) : part === '%2$s' ? (
-              <Select
-                key={i}
-                value={value.match}
-                onValueChange={(match) => update({ ...value, match: match as 'all' | 'any' })}
-              >
-                <SelectTrigger size="sm" className="h-7.5 px-2.5" aria-label={__('Match', 'yaymatik')}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{__('all', 'yaymatik')}</SelectItem>
-                  <SelectItem value="any">{__('any', 'yaymatik')}</SelectItem>
-                </SelectContent>
-              </Select>
+              <MatchSelect key={i} match={value.match} onChange={(match) => update({ ...value, match })} />
             ) : (
               part.trim() && <span key={i}>{part.trim()}</span>
             ),
@@ -82,41 +87,147 @@ export function CriteriaForm({ config, onChange }: StepFormProps<CriteriaConfig>
       </div>
 
       <div className="flex flex-col gap-2">
-        {value.rules.map((rule, index) => (
+        {value.rules.map((item, index) => (
           <div key={index} className="flex flex-col gap-2">
-            {index > 0 && (
-              <span className="text-muted-foreground pl-2.5 text-[11.5px] font-semibold tracking-wider uppercase">
-                {joinerText[value.match]}
-              </span>
+            {index > 0 && <Joiner match={value.match} />}
+            {isGroup(item) ? (
+              <GroupBox
+                id={`group-${index}`}
+                group={item}
+                errors={errorFor(index) as GroupErrors | null}
+                onChange={(next) => setItem(index, next)}
+                onRemove={() => removeItem(index)}
+              />
+            ) : (
+              <RuleBox
+                id={`rule-${index}`}
+                rule={item}
+                error={errorFor(index) as string | null}
+                autoOpen={index === pending}
+                onChange={(next) => {
+                  setItem(index, next);
+                  if (index === pending) setPending(null);
+                }}
+                onDismissNew={() => {
+                  setPending(null);
+                  update({ ...value, rules: value.rules.filter((_, i) => i !== index) });
+                }}
+                onRemove={() => removeItem(index)}
+              />
             )}
-            <RuleBox
-              id={`rule-${index}`}
-              rule={rule}
-              error={errorFor(index)}
-              autoOpen={index === pending}
-              onChange={(next) => {
-                setRule(index, next);
-                if (index === pending) setPending(null);
-              }}
-              onDismissNew={() => {
-                setPending(null);
-                update({ ...value, rules: value.rules.filter((_, i) => i !== index) });
-              }}
-              onRemove={() => removeRule(index)}
-            />
           </div>
         ))}
       </div>
 
-      <Button variant="outline" size="sm" className="w-fit" onClick={addRule}>
-        <Plus />
-        {__('Add rule', 'yaymatik')}
-      </Button>
+      <div className="flex flex-wrap gap-2">
+        <Button variant="outline" size="sm" onClick={addRule}>
+          <Plus />
+          {__('Add rule', 'yaymatik')}
+        </Button>
+        <Button variant="outline" size="sm" onClick={addGroup}>
+          <Plus />
+          {__('Add group', 'yaymatik')}
+        </Button>
+      </div>
 
       <p className="text-muted-foreground flex items-center gap-1.5 text-[12.5px]">
         <Info className="size-3.25 shrink-0" aria-hidden />
         {__('Otherwise the No path runs.', 'yaymatik')}
       </p>
+    </div>
+  );
+}
+
+function MatchSelect({ match, onChange }: { match: Group['match']; onChange: (match: Group['match']) => void }) {
+  return (
+    <Select value={match} onValueChange={(next) => onChange(next as Group['match'])}>
+      <SelectTrigger size="sm" className="h-7.5 px-2.5" aria-label={__('Match', 'yaymatik')}>
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="all">{__('all', 'yaymatik')}</SelectItem>
+        <SelectItem value="any">{__('any', 'yaymatik')}</SelectItem>
+      </SelectContent>
+    </Select>
+  );
+}
+
+function Joiner({ match }: { match: Group['match'] }) {
+  return (
+    <span className="text-muted-foreground pl-2.5 text-[11.5px] font-semibold tracking-wider uppercase">
+      {joinerText[match]}
+    </span>
+  );
+}
+
+/** Rules joined by their own all / any. No "Add group" here: groups are one level deep. Its last rule can go: an empty group needs setup until it's removed. */
+function GroupBox({
+  id,
+  group,
+  errors,
+  onChange,
+  onRemove,
+}: {
+  id: string;
+  group: Group;
+  /** Null while the form shows no errors. */
+  errors: GroupErrors | null;
+  onChange: (group: Group) => void;
+  onRemove: () => void;
+}) {
+  const [pending, setPending] = useState<number | null>(null);
+  const setRules = (rules: Rule[]) => onChange({ ...group, rules });
+  const tone = errors?.own ? errorStyles : null;
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div className={cn('bg-card flex flex-col gap-2 rounded-[10px] border p-2.5', tone?.tint)}>
+        <div className="flex items-center gap-1.5 text-sm">
+          <MatchSelect match={group.match} onChange={(match) => onChange({ ...group, match })} />
+          <span className="flex-1">{__('of these', 'yaymatik')}</span>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon-sm" aria-label={__('Remove group', 'yaymatik')} onClick={onRemove}>
+                <Trash2 />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>{__('Remove group', 'yaymatik')}</TooltipContent>
+          </Tooltip>
+        </div>
+        {group.rules.map((rule, index) => (
+          <div key={index} className="flex flex-col gap-2">
+            {index > 0 && <Joiner match={group.match} />}
+            <RuleBox
+              id={`${id}-rule-${index}`}
+              rule={rule}
+              error={errors?.rules[index] ?? null}
+              autoOpen={index === pending}
+              onChange={(next) => {
+                setRules(group.rules.map((r, i) => (i === index ? next : r)));
+                if (index === pending) setPending(null);
+              }}
+              onDismissNew={() => {
+                setPending(null);
+                setRules(group.rules.filter((_, i) => i !== index));
+              }}
+              onRemove={() => setRules(group.rules.filter((_, i) => i !== index))}
+            />
+          </div>
+        ))}
+        <Button
+          variant="ghost"
+          size="sm"
+          className="w-fit pl-1"
+          onClick={() => {
+            setPending(group.rules.length);
+            setRules([...group.rules, emptyRule()]);
+          }}
+        >
+          <Plus />
+          {__('Add rule to group', 'yaymatik')}
+        </Button>
+      </div>
+      {errors?.own && tone && <ErrorLine className={tone.text}>{errors.own}</ErrorLine>}
     </div>
   );
 }

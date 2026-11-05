@@ -573,7 +573,13 @@ final class Field {
         }
         if ( self::RULES === $this->type ) {
             // Rules with no variable chosen yet don't count.
-            return ! array_filter( array_column( array_filter( (array) $value, 'is_array' ), 'field' ) );
+            foreach ( array_filter( (array) $value, 'is_array' ) as $rule ) {
+                $inner = is_array( $rule['rules'] ?? null ) ? array_filter( $rule['rules'], 'is_array' ) : [ $rule ];
+                if ( array_filter( array_column( $inner, 'field' ) ) ) {
+                    return false;
+                }
+            }
+            return true;
         }
         if ( self::TOGGLE === $this->type ) {
             return false;

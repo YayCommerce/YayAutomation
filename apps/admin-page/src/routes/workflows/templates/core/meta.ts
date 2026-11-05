@@ -2,7 +2,7 @@ import type { TemplateCategory, TemplateWorkflow, WorkflowGraph } from '@yaymati
 import { __ } from '@wordpress/i18n';
 
 import { stepOf } from '../../steps';
-import type { Rule } from '../../steps/conditions/criteria/schema';
+import { flatRules, type CriteriaItem } from '../../steps/conditions/criteria/schema';
 
 /** In library chip order. */
 export const categoryLabels: Record<TemplateCategory, string> = {
@@ -50,7 +50,9 @@ export const needsProductReviews = (graph: WorkflowGraph) => {
     graph.nodes.some(
       (node) =>
         node.kind === 'condition' &&
-        ((node.data.config.rules ?? []) as Rule[]).some((rule) => rule.field === 'order.has_products_not_reviewed'),
+        flatRules((node.data.config.rules ?? []) as CriteriaItem[]).some(
+          (rule) => rule.field === 'order.has_products_not_reviewed',
+        ),
     )
   );
 };

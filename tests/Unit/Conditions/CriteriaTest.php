@@ -257,4 +257,124 @@ final class CriteriaTest extends TestCase {
         ];
         $this->assertSame( [ 'vip' ], Criteria::meta_keys( $config, 'customer.meta' ) );
     }
+
+    /**
+     * @param string $match
+     * @param array  $rules
+     */
+    private static function group( string $match, array $rules ): array {
+        return [
+            'match' => $match,
+            'rules' => $rules,
+        ];
+    }
+
+    public function test_a_flat_old_config_stays_flat_beside_the_new_shape(): void {
+        $config = [
+            'match' => 'all',
+            'rules' => [ self::rule( 'order.total', 'equal', '1' ) ],
+        ];
+        $this->assertSame( $config, ( new Criteria() )->sanitize( $config ) );
+    }
+
+    public function test_a_group_keeps_its_match_and_clean_rules(): void {
+        $clean = ( new Criteria() )->sanitize(
+            [
+                'rules' => [
+                    self::group( 'any', [ self::rule( 'order.total', 'equal', ' 1 ' ) ] ),
+                    self::group( 'nope', [] ),
+                ],
+            ]
+        );
+        $this->assertSame( self::group( 'any', [ self::rule( 'order.total', 'equal', '1' ) ] ), $clean['rules'][0] );
+        $this->assertSame( self::group( 'all', [] ), $clean['rules'][1] );
+    }
+
+    public function test_a_group_inside_a_group_is_dropped(): void {
+        $clean = ( new Criteria() )->sanitize(
+            [
+                'rules' => [
+                    self::group(
+                        'all',
+                        [
+                            self::rule( 'order.total', 'equal', '1' ),
+                            self::group( 'any', [ self::rule( 'order.total', 'equal', '2' ) ] ),
+                        ]
+                    ),
+                ],
+            ]
+        );
+        $this->assertSame( [ self::rule( 'order.total', 'equal', '1' ) ], $clean['rules'][0]['rules'] );
+    }
+
+    /**
+     * The first issue of a config of these items, or true.
+     *
+     * @param array $items
+     * @return true|string
+     */
+    private static function check_items( array $items ) {
+        $criteria = new Criteria();
+        $valid    = $criteria->validate(
+            $criteria->sanitize(
+                [
+                    'match' => 'all',
+                    'rules' => $items,
+                ]
+            )
+        );
+        return true === $valid ? true : $valid->get_error_message();
+    }
+
+    public function test_group_checks(): void {
+        $good = self::rule( 'order.total', 'equal', '1' );
+        $this->assertTrue( self::check_items( [ self::group( 'any', [ $good ] ), $good ] ) );
+        $this->assertSame( Messages::get( 'rulesRequired' ), self::check_items( [ $good, self::group( 'all', [] ) ] ), 'an empty group' );
+        $this->assertSame( Messages::get( 'rulesRequired' ), self::check_items( [ self::group( 'all', [] ) ] ), 'only an empty group' );
+        $this->assertSame( Messages::get( 'ruleNumber' ), self::check_items( [ self::group( 'all', [ self::rule( 'order.total', 'equal', 'abc' ) ] ) ] ), 'a rule inside a group' );
+    }
+
+    public function test_uses_reads_through_groups(): void {
+        $criteria = new Criteria();
+        $config   = $criteria->sanitize( [ 'rules' => [ self::group( 'all', [ self::rule( 'customer.email', 'is_empty' ) ] ), self::rule( 'order.total', 'equal', '1' ) ] ] );
+        $uses     = $criteria->uses( $config );
+        sort( $uses );
+        $this->assertSame( [ 'customer', 'order' ], $uses );
+    }
+
+    public function test_meta_keys_read_through_groups(): void {
+        $config = [ 'rules' => [ self::group( 'all', [ self::rule( 'customer.meta', 'equal', 'x', [ 'key' => 'vip' ] ) ] ) ] ];
+        $this->assertSame( [ 'vip' ], Criteria::meta_keys( $config, 'customer.meta' ) );
+    }
+
+    public function test_groups_evaluate_with_their_own_match(): void {
+        $yes   = self::rule( 'order.created_date', 'is_not_set' );
+        $no    = self::rule( 'order.created_date', 'is_set' );
+        $scope = fn( array $items, string $match ) => ( new Criteria() )->evaluate(
+            new Scope(
+                [ 'trigger' => [ 'order' => new Ref( 'order', '1' ) ] ],
+                new RefResolver( [ 'order' => fn() => (object) [] ] ),
+                [
+                    'order' => new FakeEntity(
+                        'order',
+                        [
+                            'created_date' => [
+                                'label' => 'Date',
+                                'type'  => DataItem::TYPE_DATE,
+                                'value' => fn() => '',
+                            ],
+                        ]
+                    ),
+                ]
+            ),
+            [
+                'match' => $match,
+                'rules' => $items,
+            ]
+        );
+        $this->assertTrue( $scope( [ self::group( 'any', [ $no, $yes ] ), $yes ], 'all' ), 'any inside all' );
+        $this->assertFalse( $scope( [ self::group( 'all', [ $no, $yes ] ), $yes ], 'all' ), 'all inside all' );
+        $this->assertTrue( $scope( [ self::group( 'all', [ $no, $yes ] ), $yes ], 'any' ), 'the rule beside it' );
+        $this->assertFalse( $scope( [ self::group( 'all', [ $no, $yes ] ), $no ], 'any' ), 'neither' );
+    }
 }

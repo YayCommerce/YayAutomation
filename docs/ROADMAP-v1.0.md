@@ -103,7 +103,7 @@ We chose these 8 because they cover what merchants install an automation plugin 
   - **Send test** sends it to the admin who is logged in.
 - **Insert variable:** lists only what the step can use, e.g. the coupon only below a Generate coupon step. *(M1)*
 - **Condition:** yes/no checks (first order, unsubscribed, products not reviewed, …) need no value, only "Is true" or "Is false". *(M1)*
-- **Condition rule kinds:** each rule draws what its comparison takes: a list of options or a search (products, categories, coupons) with chips, an amount with hours or days, no value for "is set", or a custom field name with its comparison. Customer custom fields suggest names other workflows use. *(CT)*
+- **Condition rule kinds:** each rule draws what its comparison takes: a list of options or a search (products, categories, coupons) with chips, an amount with hours or days, no value for "is set", or a custom field name with its comparison. Customer custom fields suggest names other workflows use. A condition can hold groups, one level deep, each with its own all / any. *(CT)*
 - **Warnings before Activate:** a step uses a coupon with no Generate coupon above it; a cart trigger while cart tracking is off. *(M1, M8)*
 
 **States:**

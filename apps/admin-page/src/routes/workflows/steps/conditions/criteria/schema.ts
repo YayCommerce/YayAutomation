@@ -1,5 +1,5 @@
 import * as v from 'valibot';
-import { sprintf } from '@wordpress/i18n';
+import { __, sprintf } from '@wordpress/i18n';
 
 import { messages } from '../../../model/messages';
 import {
@@ -28,7 +28,24 @@ export type Rule = {
   /** A meta field's custom field. */
   key?: string;
 };
-export type CriteriaConfig = { match: 'all' | 'any'; rules: Rule[] };
+/** Rules joined by their own all / any, inside a condition's rules only. */
+export type Group = { match: 'all' | 'any'; rules: Rule[] };
+export type CriteriaItem = Rule | Group;
+export type CriteriaConfig = { match: 'all' | 'any'; rules: CriteriaItem[] };
+
+/** How items read between each other, under `all` and `any`. */
+export const joinerText = { all: __('and', 'yaymatik'), any: __('or', 'yaymatik') };
+
+export const isGroup = (item: CriteriaItem): item is Group => 'rules' in item;
+
+/** The rules themselves, those inside groups in their place. */
+export const flatRules = (items: CriteriaItem[]): Rule[] =>
+  items.flatMap((item) => (isGroup(item) ? item.rules : [item]));
+
+export const emptyGroup = (): Group => ({ match: 'all', rules: [emptyRule()] });
+
+/** A group's error of its own (no rule chosen yet), and each of its rules'. */
+export type GroupErrors = { own: string | null; rules: (string | null)[] };
 
 export const emptyRule = (): Rule => ({ field: '', operator: '', value: '', valueType: 'value' });
 
@@ -123,30 +140,50 @@ function ruleError({ field: fieldKey, operator, value, valueType, key }: Rule): 
 /** No criteria has a variable yet. */
 const criteriaRequired = messages.rulesRequired;
 
+/** A group's errors: an empty one needs a rule, as a condition with none does. */
+const groupErrors = ({ rules }: Group): GroupErrors =>
+  rules.some((rule) => rule.field)
+    ? { own: null, rules: rules.map(ruleError) }
+    : { own: criteriaRequired, rules: rules.map(() => null) };
+
 /**
- * The error of each criteria, in order (null when fine). With no variable chosen anywhere, the
- * first one carries `rulesRequired`. Same order as PHP `Criteria::validate()`.
+ * The error of each item, in order (null when fine). With no variable chosen anywhere, the first one
+ * carries `rulesRequired`. Same order as PHP `Criteria::validate()`.
  */
-export const criteriaErrors = (rules: Rule[]): (string | null)[] =>
-  rules.some((rule) => rule.field) ? rules.map(ruleError) : rules.map((_, i) => (i === 0 ? criteriaRequired : null));
+export function criteriaErrors(items: CriteriaItem[]): (string | GroupErrors | null)[] {
+  if (flatRules(items).some((rule) => rule.field)) {
+    return items.map((item) => (isGroup(item) ? groupErrors(item) : ruleError(item)));
+  }
+  return items.map((item, i) => {
+    const own = i === 0 ? criteriaRequired : null;
+    return isGroup(item) ? { own, rules: item.rules.map(() => null) } : own;
+  });
+}
 
 /** The condition's first error, or null. No criteria at all also needs one. */
-const criteriaError = (rules: Rule[]) =>
-  rules.length ? (criteriaErrors(rules).find(Boolean) ?? null) : criteriaRequired;
+function criteriaError(items: CriteriaItem[]) {
+  if (!items.length) return criteriaRequired;
+  for (const error of criteriaErrors(items)) {
+    if (typeof error === 'string') return error;
+    const inner = error && (error.own ?? error.rules.find(Boolean));
+    if (inner) return inner;
+  }
+  return null;
+}
+
+const ruleSchema = v.object({
+  field: v.string(),
+  operator: v.string(),
+  value: v.union([v.string(), v.array(v.string())]),
+  valueType: v.picklist(['value', 'variable']),
+  unit: v.optional(v.picklist(['hours', 'days'])),
+  key: v.optional(v.string()),
+});
 
 export const schema = v.pipe(
   v.object({
     match: v.picklist(['all', 'any']),
-    rules: v.array(
-      v.object({
-        field: v.string(),
-        operator: v.string(),
-        value: v.union([v.string(), v.array(v.string())]),
-        valueType: v.picklist(['value', 'variable']),
-        unit: v.optional(v.picklist(['hours', 'days'])),
-        key: v.optional(v.string()),
-      }),
-    ),
+    rules: v.array(v.union([ruleSchema, v.object({ match: v.picklist(['all', 'any']), rules: v.array(ruleSchema) })])),
   }),
   v.rawCheck(({ dataset, addIssue }) => {
     if (!dataset.typed) return;
@@ -160,7 +197,19 @@ export const defaults = (): CriteriaConfig => ({ match: 'all', rules: [emptyRule
 
 export const normalize = (config: Record<string, unknown>): CriteriaConfig => ({
   match: config.match === 'any' ? 'any' : 'all',
-  rules: Array.isArray(config.rules) ? config.rules.map((rule: Partial<Rule>) => normalizeRule(rule)) : [],
+  rules: Array.isArray(config.rules)
+    ? config.rules.map((item: Partial<Rule> & { match?: unknown; rules?: unknown }) =>
+        Array.isArray(item?.rules)
+          ? {
+              match: item.match === 'any' ? 'any' : 'all',
+              // One level deep, as PHP `Criteria::sanitize_group()`: a group inside a group is dropped.
+              rules: item.rules
+                .filter((inner) => inner && typeof inner === 'object' && !Array.isArray(inner.rules))
+                .map(normalizeRule),
+            }
+          : normalizeRule(item),
+      )
+    : [],
 });
 
 /** One rule as PHP `Criteria::sanitize_rule()` stores it; a plain rule has exactly its four keys. */

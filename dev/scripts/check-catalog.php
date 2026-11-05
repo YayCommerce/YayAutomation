@@ -1,7 +1,7 @@
 <?php
 /**
  * The custom workflow catalog on the real tables and real orders at a random `.test` domain, through the real Dispatcher.
- * Runs stay queued, their jobs removed. Two checks start a second wp-cli process, as GET_LOCK is re-entrant in one session.
+ * Runs stay queued, their jobs removed, except the group's, which go through the real Worker and write order notes. Two checks start a second wp-cli process, as GET_LOCK is re-entrant in one session.
  * Refuses to run while the site has an active workflow on the triggers it uses: they would start on its orders.
  * Cleanup::run() also deletes the site's own old runs and carts, and claims of its deleted workflows.
  * Prints PASS / FAIL lines; removes its rows. Run through check-catalog.sh.
@@ -590,6 +590,125 @@ $ok(
     ),
     'rule: is any of reads its status'
 );
+
+// A group, through the real Dispatcher and Worker, down each branch.
+$note_node   = fn( string $id, int $y ) => [
+    'id'       => $id,
+    'kind'     => 'action',
+    'position' => [
+        'x' => 0,
+        'y' => $y,
+    ],
+    'data'     => [
+        'block'  => 'add_order_note',
+        'config' => [
+            'note' => "check-catalog {$id}",
+            'type' => 'private',
+        ],
+    ],
+];
+$branch_flow = WorkflowStore::create(
+    'check-catalog',
+    GraphSchema::prepare(
+        [
+            'nodes' => [
+                [
+                    'id'       => 'trigger',
+                    'kind'     => 'trigger',
+                    'position' => [
+                        'x' => 0,
+                        'y' => 0,
+                    ],
+                    'data'     => [
+                        'block'  => 'order_created',
+                        'config' => [],
+                    ],
+                ],
+                [
+                    'id'       => 'rule',
+                    'kind'     => 'condition',
+                    'position' => [
+                        'x' => 0,
+                        'y' => 100,
+                    ],
+                    'data'     => [
+                        'block'  => 'condition',
+                        'config' => [
+                            'match' => 'any',
+                            'rules' => [
+                                [
+                                    'match' => 'all',
+                                    'rules' => [
+                                        [
+                                            'field'     => 'order.total',
+                                            'operator'  => 'greater_or_equal',
+                                            'value'     => '100',
+                                            'valueType' => 'value',
+                                        ],
+                                        [
+                                            'field'     => 'order.status',
+                                            'operator'  => 'is_any_of',
+                                            'value'     => [ 'pending', 'on-hold' ],
+                                            'valueType' => 'value',
+                                        ],
+                                    ],
+                                ],
+                                [
+                                    'field'     => 'order.total',
+                                    'operator'  => 'equal',
+                                    'value'     => '7',
+                                    'valueType' => 'value',
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+                $note_node( 'yes', 200 ),
+                $note_node( 'no', 300 ),
+            ],
+            'edges' => [
+                [
+                    'id'     => 'e1',
+                    'source' => 'trigger',
+                    'target' => 'rule',
+                ],
+                [
+                    'id'           => 'e2',
+                    'source'       => 'rule',
+                    'target'       => 'yes',
+                    'sourceHandle' => 'then',
+                ],
+                [
+                    'id'           => 'e3',
+                    'source'       => 'rule',
+                    'target'       => 'no',
+                    'sourceHandle' => 'otherwise',
+                ],
+            ],
+        ]
+    )
+);
+if ( ! is_array( $branch_flow ) ) {
+    WP_CLI::error( 'Could not create the group workflow.' );
+}
+$flows[] = (int) $branch_flow['id'];
+$ok( true === WorkflowStore::activate( (int) $branch_flow['id'] ), 'group: a condition with a group activates' );
+$path_of = function ( array $props ) use ( $order, $branch_flow, $wpdb ): string {
+    $before = (int) $wpdb->get_var( 'SELECT COALESCE(MAX(id), 0) FROM ' . RunStore::table() );
+    $made   = $order( $props );
+    Runtime::dispatcher()->flush();
+    $run_ids = $wpdb->get_col( $wpdb->prepare( 'SELECT id FROM ' . RunStore::table() . ' WHERE id > %d AND workflow_id = %d', $before, (int) $branch_flow['id'] ) );
+    foreach ( $run_ids as $run_id ) {
+        as_unschedule_all_actions( ActionSchedulerQueue::HOOK, [ (int) $run_id ], ActionSchedulerQueue::GROUP );
+        Runtime::worker()->run( (int) $run_id );
+    }
+    $notes = wp_list_pluck( wc_get_order_notes( [ 'order_id' => $made ] ), 'content' );
+    return implode( ',', array_filter( [ in_array( 'check-catalog yes', $notes, true ) ? 'yes' : '', in_array( 'check-catalog no', $notes, true ) ? 'no' : '' ] ) );
+};
+$ok( 'yes' === $path_of( [ 'total' => '150' ] ), 'group: both rules in the group match → Yes' );
+$ok( 'no' === $path_of( [ 'total' => '50' ] ), 'group: one rule in it fails, and the rule beside it too → No' );
+$ok( 'yes' === $path_of( [ 'total' => '7' ] ), 'group: the group fails, the rule beside it matches → Yes' );
+WorkflowStore::deactivate( (int) $branch_flow['id'] );
 
 // Customer stats and fields, on this order store.
 $email = 'stats@' . $domain;
