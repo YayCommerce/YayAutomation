@@ -11,7 +11,7 @@
 - `includes/YayMatikProLicenseAdapter.php` — license adapter, not registered (`TODO: EDD setup`)
 - `includes/Engine/API/RestAPI.php` — routes under `yaymatik/v1`; `POST /workflows/{id}/preview` and `/send-test` (`manage_woocommerce`, body `{ nodeId, config, graph? }`) → `Workflow/Core/Email/EmailPreview.php`. `SettingsRoutes` (`GET` / `PUT /settings`) and `HealthRoutes` (`GET /health/checks`, `POST /health/fix`) are their own singletons
 - `includes/Engine/FEPages/UnsubscribePage.php` — store-front unsubscribe page (own HTML, not the theme); `RestoreCart.php` — restore link handler (merge, notices, redirect to checkout)
-- `includes/Engine/Privacy/PersonalData.php` — personal data exporter, eraser and privacy policy text
+- `includes/Engine/Privacy/PersonalData.php` — personal data exporter, eraser and privacy policy text; a person's run subjects come from `Workflow/Core/Runtime/PersonSubjects.php`
 - `includes/Engine/Register/` — script loading; `RegisterDev.php` is stripped from the release zip
 - `includes/Engine/API/SearchRoutes.php` — `GET /search/products|categories|coupons` (`term`, `page`, `include[]`), `{ items: [ { value, label } ], hasMore }`, for rule values (`can_manage`).
 - `includes/Engine/` — WP/WC glue only: `BEPages/`, `FEPages/`, `API/`, `Register/`. REST controllers call Workflow Core and hold no workflow logic.

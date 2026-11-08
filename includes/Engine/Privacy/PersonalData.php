@@ -4,6 +4,7 @@ namespace YayMatik\Engine\Privacy;
 use YayMatik\Utils\Logger;
 use YayMatik\Utils\SingletonTrait;
 use YayMatik\Workflow\Core\Email\UnsubscribeLink;
+use YayMatik\Workflow\Core\Runtime\PersonSubjects;
 use YayMatik\Workflow\Core\Storage\CartStore;
 use YayMatik\Workflow\Core\Storage\RunStepStore;
 use YayMatik\Workflow\Core\Storage\RunStore;
@@ -98,7 +99,7 @@ class PersonalData {
                 ];
             }
         }
-        $runs = RunStore::for_export( $email, $this->subjects( $email ), self::PER_PAGE, ( $page - 1 ) * self::PER_PAGE );
+        $runs = RunStore::for_export( $email, PersonSubjects::for_email( $email ), self::PER_PAGE, ( $page - 1 ) * self::PER_PAGE );
         foreach ( $runs as $run ) {
             $data[] = $this->run_item( $run, $email );
         }
@@ -131,7 +132,7 @@ class PersonalData {
             $result['messages'][]     = __( 'The unsubscribe record is kept so this address gets no more workflow emails.', 'yaymatik' );
         }
         // Read on every page: the carts, whose ids are run subjects, stay until the last one.
-        $subjects  = $this->subjects( $email );
+        $subjects  = PersonSubjects::for_email( $email );
         $runs      = RunStore::ids_mentioning( $email, $subjects, self::PER_PAGE );
         $ids       = array_keys( $runs );
         $waiting   = array_keys( $runs, RunStore::STATUS_WAITING, true );
@@ -170,60 +171,6 @@ class PersonalData {
         }
         $result['items_removed'] = $claims > 0 || $result['items_removed'];
         return $result;
-    }
-
-    /**
-     * Run subjects of the person's orders, carts, accounts and reviews: by billing email too, as a welcome run sends there.
-     *
-     * @param string $email Normalized.
-     * @return string[]
-     */
-    private function subjects( string $email ): array {
-        $orders   = wc_get_orders(
-            [
-                'customer' => $email,
-                'return'   => 'ids',
-                'limit'    => -1,
-                'type'     => 'shop_order',
-            ]
-        );
-        $subjects = array_map( fn( $id ) => 'order:' . (int) $id, (array) $orders );
-        foreach ( CartStore::for_email( $email ) as $cart ) {
-            $subjects[] = 'cart:' . (int) $cart['id'];
-        }
-        $users = get_users(
-            [
-                'meta_key'   => 'billing_email', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
-                'meta_value' => $email, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
-                'fields'     => 'ID',
-            ]
-        );
-        $user  = get_user_by( 'email', $email );
-        if ( $user ) {
-            $users[] = $user->ID;
-        }
-        foreach ( array_unique( array_map( 'intval', $users ) ) as $user_id ) {
-            $subjects[] = 'user:' . $user_id;
-        }
-        // Reviews by the email typed, and by the accounts found above: a logged-in review stores the account's email at the time.
-        $reviews = [ [ 'author_email' => $email ] ];
-        foreach ( array_unique( array_map( 'intval', $users ) ) as $user_id ) {
-            $reviews[] = [ 'user_id' => $user_id ];
-        }
-        foreach ( $reviews as $query ) {
-            $ids = get_comments(
-                $query + [
-                    'type'   => 'review',
-                    // 'all' leaves out spam and trash, which still hold the email.
-                    'status' => [ 'approve', 'hold', 'spam', 'trash' ],
-                    'fields' => 'ids',
-                ]
-            );
-            foreach ( (array) $ids as $review_id ) {
-                $subjects[] = 'review:' . (int) $review_id;
-            }
-        }
-        return array_values( array_unique( $subjects ) );
     }
 
     public function policy_text(): void {

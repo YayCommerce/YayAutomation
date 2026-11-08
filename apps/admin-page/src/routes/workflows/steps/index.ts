@@ -7,6 +7,7 @@ import { generateCouponStep } from './actions/generate-coupon';
 import { resendWcEmailStep } from './actions/resend-wc-email';
 import { sendEmailStep } from './actions/send-email';
 import { sendInternalEmailStep } from './actions/send-internal-email';
+import { stopWaitingRunsStep } from './actions/stop-waiting-runs';
 import { updateCustomerMetaStep } from './actions/update-customer-meta';
 import { updateOrderMetaStep } from './actions/update-order-meta';
 import { waitStep } from './actions/wait';
@@ -55,6 +56,7 @@ const coreSteps = [
   generateCouponStep,
   waitStep,
   waitUntilStep,
+  stopWaitingRunsStep,
 ];
 
 /** Another plugin's triggers and actions: PHP only, so their form and checks come from their catalog fields. */

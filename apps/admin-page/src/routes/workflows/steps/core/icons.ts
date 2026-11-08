@@ -23,6 +23,7 @@ import {
   Package,
   PackageCheck,
   Pencil,
+  Power,
   Receipt,
   RefreshCw,
   Repeat,
@@ -95,4 +96,5 @@ export const stepIcons: Record<string, LucideIcon> = {
   timer: Timer,
   history: History,
   zap: Zap,
+  power: Power,
 };

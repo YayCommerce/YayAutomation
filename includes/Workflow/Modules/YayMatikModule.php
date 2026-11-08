@@ -1,6 +1,7 @@
 <?php
 namespace YayMatik\Workflow\Modules;
 
+use YayMatik\Workflow\Actions\StopWaitingRuns;
 use YayMatik\Workflow\Actions\Wait;
 use YayMatik\Workflow\Actions\WaitUntil;
 use YayMatik\Workflow\Conditions\Criteria;
@@ -22,7 +23,7 @@ class YayMatikModule extends Module {
     }
 
     public function description(): string {
-        return __( 'Workflow logic: conditions and waits.', 'yaymatik' );
+        return __( 'Workflow logic: conditions, waits and stopping waiting runs.', 'yaymatik' );
     }
 
     public function logo(): string {
@@ -34,7 +35,7 @@ class YayMatikModule extends Module {
     }
 
     public function actions(): array {
-        return [ Wait::class, WaitUntil::class ];
+        return [ Wait::class, WaitUntil::class, StopWaitingRuns::class ];
     }
 
     public function data_items(): array {

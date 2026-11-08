@@ -22,19 +22,6 @@ final class StepConfigsTest extends TestCase {
 
     private const SUBJECT = 'Send internal email needs a subject.';
 
-    /** @var mixed */
-    private $wpdb;
-
-    protected function setUp(): void {
-        $this->wpdb = $GLOBALS['wpdb'] ?? null;
-        // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- no WordPress here; MetaKeys reads its prefix.
-        $GLOBALS['wpdb'] = (object) [ 'base_prefix' => 'wp_' ];
-    }
-
-    protected function tearDown(): void {
-        // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- puts back what setUp() replaced.
-        $GLOBALS['wpdb'] = $this->wpdb;
-    }
 
     private static function step( string $id ): Step {
         $classes = [

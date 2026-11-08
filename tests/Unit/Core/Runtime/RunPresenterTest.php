@@ -126,7 +126,7 @@ final class RunPresenterTest extends TestCase {
 
     protected function tearDown(): void {
         global $wpdb;
-        $wpdb             = null; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- a test double.
+        $wpdb             = new FakeWpdb(); // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- the bootstrap's empty one.
         FakeOrder::$found = [];
     }
 
