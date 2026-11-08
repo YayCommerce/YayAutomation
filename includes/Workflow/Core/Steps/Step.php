@@ -113,8 +113,13 @@ abstract class Step {
         return $error ? $this->invalid( $error['message'], $error['field'] ) : null;
     }
 
-    protected function invalid( string $message, string $field = '' ): \WP_Error {
-        return new \WP_Error( 'yaymatik_invalid_config', $message, '' === $field ? '' : [ 'field' => $field ] );
+    /**
+     * @param string $message
+     * @param string $field
+     * @param array  $data More about where, e.g. `rule` => a rule's path in a condition.
+     */
+    protected function invalid( string $message, string $field = '', array $data = [] ): \WP_Error {
+        return new \WP_Error( 'yaymatik_invalid_config', $message, '' === $field ? '' : [ 'field' => $field ] + $data );
     }
 
     /**

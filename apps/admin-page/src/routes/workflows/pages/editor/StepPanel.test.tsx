@@ -297,4 +297,25 @@ describe('a step issue in its panel', () => {
     mount(live(), 'condition', 'review', [issue]);
     expect(notice()).toBe(issue.message);
   });
+
+  it('shows an issue that names its rule under that rule, not at the top', () => {
+    const graph = live();
+    graph.nodes.find((node) => node.id === 'condition')!.data.config = {
+      match: 'all',
+      rules: [
+        { field: 'order.total', operator: 'greater_than', value: '1', valueType: 'value' },
+        { field: 'order.meta', key: '_order_total', operator: 'is_not_empty', value: '', valueType: 'value' },
+      ],
+    };
+    const issue = {
+      code: 'invalid_config',
+      message: 'This custom field is protected. Choose another one.',
+      field: 'rules',
+      rule: [1] as number[],
+      nodeId: 'condition',
+    } as const;
+    mount(graph, 'condition', 'review', [issue]);
+    expect(notice()).toBeNull();
+    expect(container.textContent).toContain(issue.message);
+  });
 });

@@ -279,6 +279,32 @@ final class ValidatorTest extends TestCase {
             array_map( fn( array $issue ) => [ $issue['code'], $issue['message'], $issue['nodeId'] ], $issues )
         );
         $this->assertSame( [ 'to', 'rules', 'note', 'key' ], array_column( $issues, 'field' ), 'each step issue names its field' );
+        $this->assertArrayNotHasKey( 'rule', $issues[1], 'a condition with no rule names none' );
+    }
+
+    public function test_a_condition_rule_issue_names_its_rule(): void {
+        $rules = [
+            [
+                'field'    => 'order.total',
+                'operator' => 'greater_than',
+                'value'    => '1',
+            ],
+            [
+                'match' => 'any',
+                'rules' => [
+                    [
+                        'field'    => 'order.meta',
+                        'key'      => '_order_total',
+                        'operator' => 'is_empty',
+                        'value'    => '',
+                    ],
+                ],
+            ],
+        ];
+        $issue = self::issue_of( 'c', [], $rules );
+        $this->assertSame( 'This custom field is protected. Choose another one.', $issue['message'] );
+        $this->assertSame( 'rules', $issue['field'] );
+        $this->assertSame( [ 1, 0 ], $issue['rule'] );
     }
 
     /**
@@ -400,7 +426,7 @@ final class ValidatorTest extends TestCase {
                 ],
             ]
         );
-        $this->assertSame( self::expect( 'invalid_config', 'Choose data for each rule.', 'rules' ), $issue );
+        $this->assertSame( self::expect( 'invalid_config', 'Choose data for each rule.', 'rules' ) + [ 'rule' => [ 0 ] ], $issue );
     }
 
     public function test_issues_cover_live_and_draft(): void {

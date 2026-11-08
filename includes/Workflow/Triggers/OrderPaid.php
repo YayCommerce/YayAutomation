@@ -24,7 +24,7 @@ class OrderPaid extends OrderPaidTrigger {
     }
 
     public function icon(): string {
-        return 'credit-card';
+        return 'circle-check';
     }
 
     public function fields(): array {

@@ -23,7 +23,7 @@ class CustomerOrderCountReaches extends CustomerMilestone {
     }
 
     public function icon(): string {
-        return 'repeat';
+        return 'activity';
     }
 
     public function fields(): array {

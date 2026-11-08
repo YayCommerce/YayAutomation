@@ -379,7 +379,12 @@ final class Validator {
         $config = $node['data']['config'];
         $valid  = $step->validate( $config );
         if ( is_wp_error( $valid ) ) {
-            return self::issue( 'invalid_config', $valid->get_error_message(), $valid->get_error_data()['field'] ?? null );
+            $issue = self::issue( 'invalid_config', $valid->get_error_message(), $valid->get_error_data()['field'] ?? null );
+            $rule  = $valid->get_error_data()['rule'] ?? null;
+            if ( is_array( $rule ) ) {
+                $issue['rule'] = array_map( 'intval', $rule );
+            }
+            return $issue;
         }
 
         $tags = self::tag_error( $step, $config, $available, $by_id, $above );

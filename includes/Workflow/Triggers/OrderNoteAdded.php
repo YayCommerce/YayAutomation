@@ -24,7 +24,7 @@ class OrderNoteAdded extends OrderTrigger {
     }
 
     public function icon(): string {
-        return 'sticky-note';
+        return 'message-square';
     }
 
     public function fields(): array {

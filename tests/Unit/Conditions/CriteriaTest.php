@@ -212,6 +212,62 @@ final class CriteriaTest extends TestCase {
         $this->assertTrue( self::check( self::rule( 'customer.meta', 'equal', 'x', [ 'key' => 'tier' ] ) ) );
     }
 
+    public function test_a_rule_issue_names_the_rule_it_is_about(): void {
+        $criteria = new Criteria();
+        $path     = function ( array $rules ) use ( $criteria ) {
+            $error = $criteria->validate(
+                $criteria->sanitize(
+                    [
+                        'match' => 'all',
+                        'rules' => $rules,
+                    ]
+                )
+            );
+            return $error->get_error_data();
+        };
+        $ok       = self::rule( 'order.total', 'greater_than', '1' );
+        $blocked  = self::rule( 'customer.meta', 'is_empty', '', [ 'key' => 'wp_capabilities' ] );
+
+        $this->assertSame(
+            [
+                'field' => 'rules',
+                'rule'  => [ 1 ],
+            ],
+            $path( [ $ok, $blocked ] )
+        );
+        $this->assertSame(
+            [
+                'field' => 'rules',
+                'rule'  => [ 1, 1 ],
+            ],
+            $path(
+                [
+                    $ok,
+                    [
+                        'match' => 'any',
+                        'rules' => [ $ok, $blocked ],
+                    ],
+                ]
+            )
+        );
+        $this->assertSame(
+            [
+                'field' => 'rules',
+                'rule'  => [ 1 ],
+            ],
+            $path(
+                [
+                    $ok,
+                    [
+                        'match' => 'any',
+                        'rules' => [],
+                    ],
+                ]
+            ),
+            'an empty group is about the group'
+        );
+    }
+
     public function test_custom_field_comparisons_evaluate(): void {
         $thing = new FakeEntity(
             'order',

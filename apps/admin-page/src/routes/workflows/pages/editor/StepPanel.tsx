@@ -235,7 +235,8 @@ export function StepPanel({
   // or in a condition's rule); anything else goes under its field, or at the top.
   const shown =
     feedback !== 'none' && issue && issue.message !== stepDef.firstError(node.data.config) ? issue : undefined;
-  const underField = shown?.field && stepDef.drawsField(shown.field) ? shown : undefined;
+  // A condition draws its own rules: an issue that names its rule goes under that rule.
+  const underField = shown?.field && (stepDef.drawsField(shown.field) || shown.rule) ? shown : undefined;
   // The cart trigger's notes already warn about tracking, with a link to fix it.
   const notice = underField || shown?.code === 'cart_tracking_off' ? undefined : shown;
 

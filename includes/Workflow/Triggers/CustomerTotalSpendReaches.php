@@ -23,7 +23,7 @@ class CustomerTotalSpendReaches extends CustomerMilestone {
     }
 
     public function icon(): string {
-        return 'coins';
+        return 'heart-pulse';
     }
 
     public function fields(): array {

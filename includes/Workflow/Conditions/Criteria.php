@@ -79,14 +79,15 @@ class Criteria extends Condition {
         if ( ! array_filter( array_column( self::flat_rules( $config['rules'] ), 'field' ) ) ) {
             return $this->invalid( Messages::get( 'rulesRequired' ), 'rules' );
         }
-        foreach ( $config['rules'] as $item ) {
+        foreach ( $config['rules'] as $index => $item ) {
             if ( self::is_group( $item ) && ! array_filter( array_column( $item['rules'], 'field' ) ) ) {
-                return $this->invalid( Messages::get( 'groupRulesRequired' ), 'rules' );
+                return $this->invalid( Messages::get( 'groupRulesRequired' ), 'rules', [ 'rule' => [ $index ] ] );
             }
-            foreach ( self::is_group( $item ) ? $item['rules'] : [ $item ] as $rule ) {
+            foreach ( self::is_group( $item ) ? $item['rules'] : [ $item ] as $inner => $rule ) {
                 $error = $this->rule_error( $rule );
                 if ( $error ) {
-                    return $this->invalid( $error, 'rules' );
+                    // Where the form draws it: [ item ] at the top level, [ group, rule ] inside a group.
+                    return $this->invalid( $error, 'rules', [ 'rule' => self::is_group( $item ) ? [ $index, $inner ] : [ $index ] ] );
                 }
             }
         }

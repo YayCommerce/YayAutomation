@@ -24,7 +24,7 @@ class OrderRefunded extends OrderTrigger {
     }
 
     public function icon(): string {
-        return 'receipt';
+        return 'refresh-cw';
     }
 
     public function fields(): array {

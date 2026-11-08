@@ -10,10 +10,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { focusVariants } from '@/components/ui/variants/focus.variants';
 import { inputVariants } from '@/components/ui/variants/input.variants';
 import { fieldByKey, isRelative, itemLabel, itemOf, takesList, type DataField } from '../../core/data';
+import { KeySuggestInput } from '../../core/fields/KeySuggestInput';
 import { MultiSelect } from '../../core/fields/MultiSelect';
 import { SearchSelect } from '../../core/fields/SearchSelect';
 import { VariablePicker } from '../../core/fields/VariablePicker';
-import { CustomerMetaKeys } from '../../core/fields/widgets';
 import { comparableWith, VARIABLE_VALUE_TYPES, type Rule, type RuleUnit } from './schema';
 
 /** For the picker's "Types: …" line. */
@@ -207,20 +207,17 @@ export function MetaKeyInput({
   rule: Rule;
   onChange: (rule: Rule) => void;
 }) {
-  const suggests = field.key === 'customer.meta';
-  return (
-    <>
-      <Input
-        id={id}
-        aria-invalid={invalid}
-        aria-label={__('Field name', 'yaymatik')}
-        placeholder={__('Field name', 'yaymatik')}
-        className="font-mono text-xs"
-        list={suggests ? `${id}-keys` : undefined}
-        value={rule.key ?? ''}
-        onChange={(event) => onChange({ ...rule, key: event.target.value })}
-      />
-      {suggests && <CustomerMetaKeys id={`${id}-keys`} />}
-    </>
+  const control = {
+    id,
+    'aria-invalid': invalid,
+    'aria-label': __('Field name', 'yaymatik'),
+    placeholder: __('Field name', 'yaymatik'),
+    className: 'font-mono text-xs',
+    value: rule.key ?? '',
+  };
+  return field.key === 'customer.meta' ? (
+    <KeySuggestInput {...control} onChange={(key) => onChange({ ...rule, key })} />
+  ) : (
+    <Input {...control} onChange={(event) => onChange({ ...rule, key: event.target.value })} />
   );
 }

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useContext, useState } from 'react';
 import { Check, CircleAlert, Info, Plus, Trash2 } from 'lucide-react';
 import { __ } from '@wordpress/i18n';
 
@@ -8,7 +8,7 @@ import { FieldError } from '@/components/ui/field';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { fieldByKey, isRelative, needsValue, operatorLabels, operatorsFor, takesList } from '../../core/data';
-import { errorStyles, useShowErrors } from '../../core/fields/feedback';
+import { errorStyles, FieldIssueContext, useShowErrors } from '../../core/fields/feedback';
 import { spotlightTarget, VariablePicker } from '../../core/fields/VariablePicker';
 import type { StepFormProps } from '../../core/types';
 import {
@@ -60,7 +60,7 @@ export function CriteriaForm({ config, onChange }: StepFormProps<CriteriaConfig>
   };
 
   const showErrors = useShowErrors();
-  const errors = criteriaErrors(value.rules);
+  const errors = withRuleIssue(criteriaErrors(value.rules), useContext(FieldIssueContext));
   const errorFor = (index: number) => (showErrors ? errors[index] : null);
 
   return (
@@ -136,6 +136,25 @@ export function CriteriaForm({ config, onChange }: StepFormProps<CriteriaConfig>
       </p>
     </div>
   );
+}
+
+/**
+ * Puts a server issue under the rule it names (only PHP knows the protected custom fields), when the
+ * form has no error of its own there.
+ */
+function withRuleIssue(
+  errors: (string | GroupErrors | null)[],
+  issue: { field?: string; rule?: number[]; message: string } | undefined,
+) {
+  const [item, inner] = issue?.field === 'rules' && issue.rule ? issue.rule : [];
+  if (item === undefined || !(item in errors)) return errors;
+  const at = errors[item];
+  if (inner === undefined) {
+    return at === null ? errors.map((error, i) => (i === item ? issue!.message : error)) : errors;
+  }
+  if (!at || typeof at === 'string' || !(inner in at.rules) || at.rules[inner]) return errors;
+  const rules = at.rules.map((error, i) => (i === inner ? issue!.message : error));
+  return errors.map((error, i) => (i === item ? { ...at, rules } : error));
 }
 
 function MatchSelect({ match, onChange }: { match: Group['match']; onChange: (match: Group['match']) => void }) {

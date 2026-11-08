@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { api } from '@/lib/api/api';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { steps } from '../..';
+import { FieldIssueContext } from '../../core/fields/feedback';
 import { plainSummary } from '../../core/marks';
 import { CriteriaForm } from './Form';
 import type { CriteriaConfig, CriteriaItem, Rule } from './schema';
@@ -57,7 +58,7 @@ const mount = async (rules: CriteriaItem[], onChange = vi.fn()) => {
 describe('each rule draws what its comparison takes', () => {
   it('a search list: names what it searches', async () => {
     await mount([rule({ field: 'order.product_ids', operator: 'matches_any', value: [] })]);
-    expect(container.textContent).toContain('Search products');
+    expect(container.querySelector<HTMLInputElement>('input[role="combobox"]')?.placeholder).toBe('Search products');
   });
 
   it('a list with options: chips with their labels', async () => {
@@ -81,13 +82,15 @@ describe('each rule draws what its comparison takes', () => {
     await mount([rule({ field: 'order.meta', operator: 'equal', value: 'yes', key: '_gift' })]);
     const values = [...container.querySelectorAll('input')].map((input) => input.value);
     expect(values).toEqual(['_gift', 'yes']);
-    expect(container.querySelector('datalist')).toBeNull();
+    expect(container.querySelector('input[role="combobox"]')).toBeNull();
   });
 
   it('a customer custom field: suggests the names other workflows use', async () => {
     await mount([rule({ field: 'customer.meta', operator: 'equal', value: '', key: '' })]);
+    act(() => container.querySelector<HTMLInputElement>('input[role="combobox"]')!.focus());
     await settle();
-    const options = [...container.querySelectorAll('datalist option')].map((option) => option.getAttribute('value'));
+    expect(document.body.textContent).toContain('Used in your workflows');
+    const options = [...document.querySelectorAll('[role="option"]')].map((option) => option.textContent);
     expect(options).toEqual(['vip', 'vip_since']);
   });
 
@@ -179,5 +182,49 @@ describe('canvas summaries', () => {
 
   it('says when a group has no rules yet', () => {
     expect(summary([total(), { match: 'all', rules: [] }])).toBe('A group has no rules yet');
+  });
+});
+
+describe('a server issue that names its rule', () => {
+  const protectedKey = rule({ field: 'customer.meta', key: 'wp_capabilities', operator: 'is_not_empty' });
+  const message = 'This custom field is protected. Choose another one.';
+  const mountWith = async (rules: CriteriaItem[], path: number[]) => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    act(() =>
+      root.render(
+        <QueryClientProvider client={client}>
+          <TooltipProvider>
+            <FieldIssueContext.Provider value={{ field: 'rules', rule: path, message }}>
+              <CriteriaForm config={{ match: 'all', rules } as CriteriaConfig} onChange={vi.fn()} />
+            </FieldIssueContext.Provider>
+          </TooltipProvider>
+        </QueryClientProvider>,
+      ),
+    );
+    await settle();
+  };
+  /** The smallest box around this rule's key input that holds the message; it must not hold the other rule. */
+  const shownUnder = (keyId: string, otherId: string) => {
+    let box = document.getElementById(keyId)?.parentElement ?? null;
+    while (box && !box.textContent?.includes(message)) box = box.parentElement;
+    return !!box && !box.querySelector(`#${otherId}`);
+  };
+
+  it('shows under that rule at the top level, once', async () => {
+    await mountWith([total(), protectedKey], [1]);
+    expect(container.textContent?.split(message).length).toBe(2);
+    expect(shownUnder('rule-1-key', 'rule-0-value')).toBe(true);
+  });
+
+  it('shows under that rule inside a group', async () => {
+    await mountWith([total(), { match: 'any', rules: [total(), protectedKey] }], [1, 1]);
+    expect(container.textContent?.split(message).length).toBe(2);
+    expect(shownUnder('group-1-rule-1-key', 'group-1-rule-0-value')).toBe(true);
+  });
+
+  it('gives way to the form’s own error there', async () => {
+    await mountWith([rule({ field: 'customer.meta', key: '', operator: 'is_not_empty' })], [0]);
+    expect(container.textContent).toContain('Enter the custom field name.');
+    expect(container.textContent).not.toContain(message);
   });
 });

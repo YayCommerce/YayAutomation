@@ -180,6 +180,8 @@ export interface WorkflowIssue {
   nodeId?: string;
   /** `invalid_config`: the step's config key the issue is about, when PHP knows it. */
   field?: string;
+  /** `invalid_config` of a condition: the rule's place, `[item]` or `[group, rule]`. */
+  rule?: number[];
   /** `unlinked` only: every step not connected to the trigger. Workflow-level, so no `nodeId`. */
   nodeIds?: string[];
 }

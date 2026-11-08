@@ -1,11 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Search } from 'lucide-react';
 import { __, sprintf } from '@wordpress/i18n';
 
 import { Button } from '@/components/ui/button';
-import { ComboboxBadge, ComboboxCheckbox, ComboboxRemove, ComboboxTrigger } from '@/components/ui/combobox';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { Popover, PopoverContent } from '@/components/ui/popover';
+import { ComboboxBadge, ComboboxCheckbox, ComboboxRemove } from '@/components/ui/combobox';
+import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from '@/components/ui/command';
+import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
+import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover';
 import { useSearchLabels, useSearchOptions, type SearchType } from './searchSelect.query';
 
 const DEBOUNCE_MS = 250;
@@ -16,7 +17,7 @@ const words: Record<SearchType, { placeholder: string; empty: string }> = {
   coupon: { placeholder: __('Search coupons', 'yaymatik'), empty: __('No coupons found.', 'yaymatik') },
 };
 
-/** Any number of values, shown like `MultiSelect`, picked from a list the server searches and pages. */
+/** Any number of values as chips, picked from a list the server searches and pages: typed in the field beside the chips, the list opens below. */
 export function SearchSelect({
   id,
   type,
@@ -55,27 +56,64 @@ export function SearchSelect({
     return type === 'coupon' ? option : `#${option}`;
   };
 
+  const anchor = useRef<HTMLDivElement>(null);
+  const input = useRef<HTMLInputElement>(null);
+
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <ComboboxTrigger id={id} aria-expanded={open} aria-invalid={invalid} className="w-full min-w-0">
-        <span className="flex flex-wrap gap-1">
-          {value.length ? (
-            value.map((option) => (
-              <ComboboxBadge key={option}>
-                {labelOf(option)}
-                <ComboboxRemove onRemove={() => toggle(option)} />
-              </ComboboxBadge>
-            ))
-          ) : (
-            <span className="text-muted-foreground px-1">{words[type].placeholder}</span>
-          )}
-        </span>
-        <Search className="text-muted-foreground size-4 shrink-0" aria-hidden />
-      </ComboboxTrigger>
-      <PopoverContent className="w-(--radix-popover-trigger-width) p-0" align="start">
-        {/* The server searches, so the list doesn't filter what it gets. */}
-        <Command shouldFilter={false}>
-          <CommandInput placeholder={words[type].placeholder} value={typed} onValueChange={setTyped} />
+    // The list sits in a portal; cmdk's keys still reach it from the input inside this root.
+    <Command shouldFilter={false} loop className="overflow-visible bg-transparent">
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverAnchor asChild>
+          <InputGroup
+            ref={anchor}
+            aria-invalid={invalid}
+            className="h-auto min-h-9 cursor-text"
+            onClick={() => input.current?.focus()}
+          >
+            <div className="my-1 flex flex-1 flex-wrap items-center gap-1 ps-1">
+              {value.map((option) => (
+                <ComboboxBadge key={option}>
+                  {labelOf(option)}
+                  <ComboboxRemove className="cursor-pointer" onRemove={() => toggle(option)} />
+                </ComboboxBadge>
+              ))}
+              <InputGroupInput
+                ref={input}
+                id={id}
+                role="combobox"
+                aria-expanded={open}
+                aria-autocomplete="list"
+                aria-invalid={invalid}
+                className="min-w-20 pl-1"
+                placeholder={value.length ? '' : words[type].placeholder}
+                value={typed}
+                onChange={(event) => {
+                  setTyped(event.target.value);
+                  setOpen(true);
+                }}
+                onFocus={() => setOpen(true)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Escape') setOpen(false);
+                  else if (event.key === 'Backspace' && !typed && value.length) toggle(value[value.length - 1]);
+                  else if (!open && event.key === 'ArrowDown') setOpen(true);
+                }}
+              />
+            </div>
+            <InputGroupAddon align="inline-end">
+              <Search aria-hidden />
+            </InputGroupAddon>
+          </InputGroup>
+        </PopoverAnchor>
+        <PopoverContent
+          className="w-(--radix-popover-trigger-width) p-0"
+          align="start"
+          // Typing stays in the field; a click on the field isn't a click outside.
+          onOpenAutoFocus={(event) => event.preventDefault()}
+          onInteractOutside={(event) => {
+            if (anchor.current?.contains(event.target as Node)) event.preventDefault();
+          }}
+        >
+          {/* The server searches, so the list doesn't filter what it gets. */}
           <CommandList>
             {!search.isPending && !search.isError && <CommandEmpty>{words[type].empty}</CommandEmpty>}
             {search.isError && (
@@ -111,8 +149,8 @@ export function SearchSelect({
               </Button>
             )}
           </div>
-        </Command>
-      </PopoverContent>
-    </Popover>
+        </PopoverContent>
+      </Popover>
+    </Command>
   );
 }

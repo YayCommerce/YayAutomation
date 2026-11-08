@@ -77,7 +77,7 @@ const answered = async (asked: number) => {
 
 const openList = async () => {
   const asked = get.mock.calls.length;
-  act(() => document.getElementById('s')!.click());
+  act(() => document.getElementById('s')!.focus());
   await answered(asked);
 };
 
@@ -154,7 +154,7 @@ describe('SearchSelect', () => {
     await openList();
     const before = get.mock.calls.length;
 
-    const input = document.querySelector<HTMLInputElement>('input')!;
+    const input = document.querySelector<HTMLInputElement>('#s')!;
     const setValue = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!;
     for (const text of ['m', 'mu', 'mug']) {
       act(() => {
@@ -173,7 +173,7 @@ describe('SearchSelect', () => {
   it('names what it searches, and what it did not find', async () => {
     answer(() => ({ items: [], hasMore: false }));
     await mount([]);
-    expect(container.textContent).toContain('Search products');
+    expect(document.querySelector<HTMLInputElement>('#s')?.placeholder).toBe('Search products');
 
     await openList();
     expect(document.body.textContent).toContain('No products found.');
@@ -204,5 +204,31 @@ describe('SearchSelect', () => {
     act(() => (option as HTMLElement).click());
 
     expect(onChange).toHaveBeenCalledWith(['mug']);
+  });
+
+  it('types in the field beside the chips, the list below', async () => {
+    answer(() => ({ items: page('Mug'), hasMore: false }));
+    await mount(['4']);
+    const field = document.querySelector<HTMLInputElement>('#s')!;
+    expect(field.closest('[role="group"]')?.querySelectorAll('[data-slot="badge"]').length).toBe(1);
+    await openList();
+    expect(field.getAttribute('aria-expanded')).toBe('true');
+    expect(document.querySelector('[data-slot="popover-content"] input')).toBeNull();
+  });
+
+  it('picks with the arrow keys and Enter, and Backspace removes the last chip', async () => {
+    answer(() => ({ items: page('Mug', 'Tea'), hasMore: false }));
+    const onChange = await mount(['4']);
+    await openList();
+    const field = document.querySelector<HTMLInputElement>('#s')!;
+    const key = (name: string) =>
+      act(() => {
+        field.dispatchEvent(new KeyboardEvent('keydown', { key: name, bubbles: true }));
+      });
+    key('ArrowDown');
+    key('Enter');
+    expect(onChange).toHaveBeenLastCalledWith(['4', 'tea']);
+    key('Backspace');
+    expect(onChange).toHaveBeenLastCalledWith([]);
   });
 });

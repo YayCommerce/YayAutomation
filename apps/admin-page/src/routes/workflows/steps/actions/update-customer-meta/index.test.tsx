@@ -44,14 +44,13 @@ describe('Update customer custom field panel', () => {
     );
     await act(() => new Promise((done) => setTimeout(done, 5)));
 
-    const input = container.querySelector<HTMLInputElement>('#step-field-key');
-    const list = input?.getAttribute('list');
-    expect(list).toBeTruthy();
-    const options = [...container.querySelectorAll(`datalist[id="${list}"] option`)].map((o) =>
-      o.getAttribute('value'),
-    );
-    expect(options).toEqual(['vip', 'vip_since']);
-    expect(container.querySelector('#step-field-value')?.getAttribute('list')).toBeNull();
+    const input = container.querySelector<HTMLInputElement>('#step-field-key')!;
+    expect(input.getAttribute('role')).toBe('combobox');
+    act(() => input.focus());
+    await act(() => new Promise((done) => setTimeout(done, 5)));
+    expect(document.body.textContent).toContain('Used in your workflows');
+    expect([...document.querySelectorAll('[role="option"]')].map((o) => o.textContent)).toEqual(['vip', 'vip_since']);
+    expect(container.querySelector('#step-field-value')?.getAttribute('role')).toBeNull();
     expect(container.textContent).toContain('Customers without an account are skipped.');
   });
 });
