@@ -10,6 +10,7 @@ import { sendInternalEmailStep } from './actions/send-internal-email';
 import { updateCustomerMetaStep } from './actions/update-customer-meta';
 import { updateOrderMetaStep } from './actions/update-order-meta';
 import { waitStep } from './actions/wait';
+import { waitUntilStep } from './actions/wait-until';
 import { criteriaStep } from './conditions/criteria';
 import { defineStep } from './core/defineStep';
 import { createRegistry } from './core/registry';
@@ -53,6 +54,7 @@ const coreSteps = [
   changeCustomerRoleStep,
   generateCouponStep,
   waitStep,
+  waitUntilStep,
 ];
 
 /** Another plugin's triggers and actions: PHP only, so their form and checks come from their catalog fields. */

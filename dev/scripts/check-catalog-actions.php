@@ -11,9 +11,11 @@
 use YayMatik\Workflow\Actions\ChangeCustomerRole;
 use YayMatik\Workflow\Actions\ResendWcEmail;
 use YayMatik\Workflow\Actions\UpdateCustomerMeta;
+use YayMatik\Workflow\Actions\WaitUntil;
 use YayMatik\Workflow\Core\Data\Ref;
 use YayMatik\Workflow\Core\Data\Scope;
 use YayMatik\Workflow\Core\Steps\StepResult;
+use YayMatik\Workflow\Core\Storage\RunStore;
 use YayMatik\Workflow\Core\Storage\WorkflowStore;
 
 /** The scope of a run about this order, whose customer is its account or its billing email. */
@@ -253,6 +255,53 @@ $result = $resend->run( $order_scope( $no_email->get_id() ), [ 'email' => 'custo
 remove_filter( 'woocommerce_email_enabled_customer_completed_order', '__return_true', 20 );
 $ok( $result->is_skipped() && [] === $caught, 'resend_wc_email: an order with no billing email is skipped' );
 remove_filter( 'pre_wp_mail', $catch_resend );
+
+// Wait until, in a store time zone other than UTC, put back after.
+$zone_before = get_option( 'timezone_string' );
+update_option( 'timezone_string', 'Asia/Ho_Chi_Minh' );
+$until_hour  = (int) wp_date( 'G', time() + 2 * HOUR_IN_SECONDS );
+$until_steps = [
+    [
+        'until',
+        'wait_until',
+        [
+            'hour'     => (string) $until_hour,
+            'weekdays' => [],
+        ],
+    ],
+    [
+        'note',
+        'add_order_note',
+        [
+            'note' => 'check-catalog until {{ steps.until.until }}',
+            'type' => 'private',
+        ],
+    ],
+];
+$until_flow  = $activate_graph( $chain( 'order_paid', [], $until_steps ) );
+$until_order = $order();
+$started( [ $until_flow ], $move( $until_order, 'processing' ) );
+$until_runs = $runs_of( $until_flow );
+$work( $until_runs );
+$until_run = RunStore::find( $until_runs[0] );
+$expected  = WaitUntil::next_time( time(), $until_hour, [], wp_timezone() );
+$ok( 'waiting' === $until_run['status'] && abs( strtotime( $until_run['wait_until'] . ' UTC' ) - $expected ) <= 60, 'wait_until: the run waits until the hour in store time (' . $until_run['wait_until'] . ' UTC)' );
+$ok( wp_date( 'G:i', strtotime( $until_run['wait_until'] . ' UTC' ) ) === $until_hour . ':00', 'wait_until: that is ' . $until_hour . ':00 in Asia/Ho_Chi_Minh' );
+RunStore::save( $until_runs[0], [ 'wait_until' => gmdate( 'Y-m-d H:i:s', time() - 60 ) ] );
+$work( $until_runs );
+$until_note = array_values( array_filter( wc_get_order_notes( [ 'order_id' => $until_order ] ), fn( $note ) => 0 === strpos( $note->content, 'check-catalog until' ) ) );
+$shown      = wp_date( 'Y-m-d H:i', $expected );
+$ok( 'completed' === RunStore::find( $until_runs[0] )['status'] && $until_note && "check-catalog until {$shown}" === $until_note[0]->content, 'wait_until: the run goes on, and a later step reads steps.until.until (' . ( $until_note[0]->content ?? '' ) . ')' );
+
+$started( [ $until_flow ], $move( $order(), 'processing' ) );
+$second = array_values( array_diff( $runs_of( $until_flow ), $until_runs ) );
+$work( $second );
+WorkflowStore::deactivate( $until_flow );
+// REST Deactivate cancels waiting runs at once; one that wakes on an inactive workflow is cancelled then.
+RunStore::save( $second[0], [ 'wait_until' => gmdate( 'Y-m-d H:i:s', time() - 60 ) ] );
+$work( $second );
+$ok( 'cancelled' === RunStore::find( $second[0] )['status'], 'wait_until: a waiting run of a deactivated workflow is cancelled when it wakes' );
+update_option( 'timezone_string', $zone_before );
 
 wp_set_current_user( $previous_user );
 

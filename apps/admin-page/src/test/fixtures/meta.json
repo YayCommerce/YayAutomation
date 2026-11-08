@@ -134,6 +134,168 @@
                 ],
                 "outputs": []
             },
+            "wait_until": {
+                "kind": "action",
+                "plugin": "yaymatik",
+                "category": "flow",
+                "requires": [],
+                "label": "Wait until",
+                "description": "Pause until a time of day, on the days you choose.",
+                "icon": "history",
+                "summary": "Until %hour% · %weekdays%",
+                "onError": "stop",
+                "fields": [
+                    {
+                        "key": "hour",
+                        "type": "select",
+                        "label": "Time",
+                        "options": [
+                            {
+                                "value": "0",
+                                "label": "12:00 am"
+                            },
+                            {
+                                "value": "1",
+                                "label": "1:00 am"
+                            },
+                            {
+                                "value": "2",
+                                "label": "2:00 am"
+                            },
+                            {
+                                "value": "3",
+                                "label": "3:00 am"
+                            },
+                            {
+                                "value": "4",
+                                "label": "4:00 am"
+                            },
+                            {
+                                "value": "5",
+                                "label": "5:00 am"
+                            },
+                            {
+                                "value": "6",
+                                "label": "6:00 am"
+                            },
+                            {
+                                "value": "7",
+                                "label": "7:00 am"
+                            },
+                            {
+                                "value": "8",
+                                "label": "8:00 am"
+                            },
+                            {
+                                "value": "9",
+                                "label": "9:00 am"
+                            },
+                            {
+                                "value": "10",
+                                "label": "10:00 am"
+                            },
+                            {
+                                "value": "11",
+                                "label": "11:00 am"
+                            },
+                            {
+                                "value": "12",
+                                "label": "12:00 pm"
+                            },
+                            {
+                                "value": "13",
+                                "label": "1:00 pm"
+                            },
+                            {
+                                "value": "14",
+                                "label": "2:00 pm"
+                            },
+                            {
+                                "value": "15",
+                                "label": "3:00 pm"
+                            },
+                            {
+                                "value": "16",
+                                "label": "4:00 pm"
+                            },
+                            {
+                                "value": "17",
+                                "label": "5:00 pm"
+                            },
+                            {
+                                "value": "18",
+                                "label": "6:00 pm"
+                            },
+                            {
+                                "value": "19",
+                                "label": "7:00 pm"
+                            },
+                            {
+                                "value": "20",
+                                "label": "8:00 pm"
+                            },
+                            {
+                                "value": "21",
+                                "label": "9:00 pm"
+                            },
+                            {
+                                "value": "22",
+                                "label": "10:00 pm"
+                            },
+                            {
+                                "value": "23",
+                                "label": "11:00 pm"
+                            }
+                        ],
+                        "default": "9"
+                    },
+                    {
+                        "key": "weekdays",
+                        "type": "multiselect",
+                        "label": "Days",
+                        "placeholder": "Any day",
+                        "help": "Leave empty for any day.",
+                        "options": [
+                            {
+                                "value": "1",
+                                "label": "Mon"
+                            },
+                            {
+                                "value": "2",
+                                "label": "Tue"
+                            },
+                            {
+                                "value": "3",
+                                "label": "Wed"
+                            },
+                            {
+                                "value": "4",
+                                "label": "Thu"
+                            },
+                            {
+                                "value": "5",
+                                "label": "Fri"
+                            },
+                            {
+                                "value": "6",
+                                "label": "Sat"
+                            },
+                            {
+                                "value": "7",
+                                "label": "Sun"
+                            }
+                        ],
+                        "default": []
+                    }
+                ],
+                "outputs": [
+                    {
+                        "key": "until",
+                        "label": "Waited until",
+                        "type": "date"
+                    }
+                ]
+            },
             "order_created": {
                 "kind": "trigger",
                 "plugin": "woocommerce",

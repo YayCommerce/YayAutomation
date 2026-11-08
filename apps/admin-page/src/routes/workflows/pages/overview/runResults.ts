@@ -50,6 +50,14 @@ const results: Partial<Record<StepId, ResultText>> = {
         )
       : summary(step);
   },
+  wait_until: (step, run) => {
+    if (step.status === 'waiting') {
+      /* translators: %s: date and time, e.g. "Oct 9 at 3:00 PM" */
+      return run.waitUntil ? sprintf(__('until %s', 'yaymatik'), shortDayTime(run.waitUntil)) : '';
+    }
+    /* translators: %s: date and time, e.g. "Oct 9 at 3:00 PM" */
+    return step.finishedAt ? sprintf(__('Waited until %s', 'yaymatik'), shortDayTime(step.finishedAt)) : summary(step);
+  },
   send_email: (step) =>
     /* translators: %s: email address */
     sprintf(__('Sent to %s', 'yaymatik'), text(step.output.to)),

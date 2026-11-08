@@ -58,6 +58,7 @@ final class StepIcons {
         'hourglass',
         'calendar',
         'timer',
+        'history',
         // Other.
         'zap',
     ];

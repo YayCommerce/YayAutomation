@@ -13,6 +13,7 @@ import {
   GitBranch,
   Globe,
   Heart,
+  History,
   Hourglass,
   Link,
   List,
@@ -92,5 +93,6 @@ export const stepIcons: Record<string, LucideIcon> = {
   hourglass: Hourglass,
   calendar: Calendar,
   timer: Timer,
+  history: History,
   zap: Zap,
 };

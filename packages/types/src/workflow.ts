@@ -27,6 +27,7 @@ export type StepId =
   | 'send_internal_email'
   | 'generate_coupon'
   | 'wait'
+  | 'wait_until'
   | 'change_order_status'
   | 'add_order_note'
   | 'update_order_meta'

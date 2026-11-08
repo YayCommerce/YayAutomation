@@ -46,6 +46,7 @@ final class ModuleRegistryTest extends TestCase {
         'generate_coupon',
         'condition',
         'wait',
+        'wait_until',
     ];
 
     /** @var callable|null */
@@ -67,7 +68,7 @@ final class ModuleRegistryTest extends TestCase {
         $this->assertSame( 'yaymatik', $plugins['condition'] );
         $this->assertSame(
             [
-                'yaymatik'    => 2,
+                'yaymatik'    => 3,
                 'woocommerce' => 21,
             ],
             array_count_values( $plugins )

@@ -275,7 +275,7 @@ Shop owners build their own workflows from New Workflow. Why: [decisions CT](wor
 - ⏳ **CT.11** Action: Update customer custom field.
 - ⏳ **CT.12** Action: Change customer role.
 - ⏳ **CT.13** Action: Resend WooCommerce email.
-- **CT.14** Action: Wait until.
+- ⏳ **CT.14** Action: Wait until.
 - **CT.15** Action: Stop waiting runs.
 - **CT.16** End-to-end check on both order stores, docs pass.
 

@@ -51,11 +51,13 @@ final class StepResult {
     }
 
     /**
-     * @param int $until Unix time to resume at.
+     * @param int   $until   Unix time to resume at.
+     * @param array $outputs As the step's `outputs()` declares them.
      */
-    public static function wait( int $until ): self {
-        $result        = new self( self::WAIT );
-        $result->until = $until;
+    public static function wait( int $until, array $outputs = [] ): self {
+        $result          = new self( self::WAIT );
+        $result->until   = $until;
+        $result->outputs = $outputs;
         return $result;
     }
 
