@@ -212,9 +212,9 @@ final class Dispatcher {
                     || ! $trigger->matches( $context, $node['data']['config'] ) ) {
                     continue;
                 }
-                $claims  = $trigger->claims_per_workflow();
-                $subject = $trigger->subject( $args );
-                if ( $claims && ! $this->runs->claim_subject( (int) $workflow['id'], $subject ) ) {
+                $claims = $trigger->claims_per_workflow();
+                $key    = $claims ? $trigger->claim_key( $args ) : '';
+                if ( $claims && ! $this->runs->claim_subject( (int) $workflow['id'], $key ) ) {
                     continue;
                 }
                 $run_id = 0;
@@ -223,7 +223,7 @@ final class Dispatcher {
                 } finally {
                     // A run that never started must not use up the claim, which has no end date: the next check retries.
                     if ( $claims && ! $run_id ) {
-                        $this->runs->release_subject( (int) $workflow['id'], $subject );
+                        $this->runs->release_subject( (int) $workflow['id'], $key );
                     }
                 }
                 if ( $run_id ) {

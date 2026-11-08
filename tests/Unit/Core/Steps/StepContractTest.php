@@ -15,6 +15,8 @@ use YayMatik\Workflow\Core\Steps\Field;
 use YayMatik\Workflow\Core\Steps\Step;
 use YayMatik\Workflow\Core\Steps\StepIcons;
 use YayMatik\Workflow\Triggers\CustomerInactive;
+use YayMatik\Workflow\Triggers\CustomerOrderCountReaches;
+use YayMatik\Workflow\Triggers\CustomerTotalSpendReaches;
 use YayMatik\Workflow\Triggers\OrderCreated;
 use YayMatik\Workflow\Triggers\OrderNoteAdded;
 use YayMatik\Workflow\Triggers\OrderPaid;
@@ -29,7 +31,7 @@ final class StepContractTest extends TestCase {
     /** @return Step[] Keyed by id. */
     private static function steps(): array {
         $steps = [];
-        foreach ( [ new OrderCreated(), new OrderStatusChanged(), new OrderPaid(), new OrderRefunded(), new OrderNoteAdded(), new CustomerInactive(), new Criteria(), new SendEmail(), new SendInternalEmail(), new ChangeOrderStatus(), new AddOrderNote(), new UpdateOrderMeta(), new GenerateCoupon(), new Wait() ] as $step ) {
+        foreach ( [ new OrderCreated(), new OrderStatusChanged(), new OrderPaid(), new OrderRefunded(), new OrderNoteAdded(), new CustomerInactive(), new CustomerOrderCountReaches(), new CustomerTotalSpendReaches(), new Criteria(), new SendEmail(), new SendInternalEmail(), new ChangeOrderStatus(), new AddOrderNote(), new UpdateOrderMeta(), new GenerateCoupon(), new Wait() ] as $step ) {
             $steps[ $step->id() ] = $step;
         }
         return $steps;
@@ -100,20 +102,22 @@ final class StepContractTest extends TestCase {
 
         $this->assertSame(
             [
-                'order_created'        => [],
-                'order_status_changed' => [],
-                'order_paid'           => [],
-                'order_refunded'       => [],
-                'order_note_added'     => [],
-                'customer_inactive'    => [],
-                'condition'            => [ 'result' ],
-                'send_email'           => [ 'to' ],
-                'send_internal_email'  => [ 'to' ],
-                'change_order_status'  => [ 'from', 'to' ],
-                'add_order_note'       => [ 'type' ],
-                'update_order_meta'    => [ 'key', 'changed' ],
-                'generate_coupon'      => [ 'code', 'amount', 'expires_at', 'box' ],
-                'wait'                 => [],
+                'order_created'                => [],
+                'order_status_changed'         => [],
+                'order_paid'                   => [],
+                'order_refunded'               => [],
+                'order_note_added'             => [],
+                'customer_inactive'            => [],
+                'customer_order_count_reaches' => [],
+                'customer_total_spend_reaches' => [],
+                'condition'                    => [ 'result' ],
+                'send_email'                   => [ 'to' ],
+                'send_internal_email'          => [ 'to' ],
+                'change_order_status'          => [ 'from', 'to' ],
+                'add_order_note'               => [ 'type' ],
+                'update_order_meta'            => [ 'key', 'changed' ],
+                'generate_coupon'              => [ 'code', 'amount', 'expires_at', 'box' ],
+                'wait'                         => [],
             ],
             $outputs
         );
@@ -167,8 +171,8 @@ final class StepContractTest extends TestCase {
     public function test_errors_name_a_field_of_the_step( Step $step ): void {
         $keys = array_map( fn( Field $field ) => $field->key(), $step->fields() );
         $bad  = [
-            'order_status_changed' => [ 'to' => [ 'gone' ] ],
-            'condition'            => [
+            'order_status_changed'         => [ 'to' => [ 'gone' ] ],
+            'condition'                    => [
                 'rules' => [
                     [
                         'field'    => 'order.total',
@@ -176,12 +180,13 @@ final class StepContractTest extends TestCase {
                     ],
                 ],
             ],
-            'send_internal_email'  => [ 'recipients' => 'bad' ],
-            'send_email'           => [ 'to' => 'a@x.com, b@x.com' ],
-            'change_order_status'  => [],
-            'add_order_note'       => [ 'note' => '' ],
-            'update_order_meta'    => [ 'key' => '' ],
-            'wait'                 => [
+            'send_internal_email'          => [ 'recipients' => 'bad' ],
+            'send_email'                   => [ 'to' => 'a@x.com, b@x.com' ],
+            'change_order_status'          => [],
+            'customer_total_spend_reaches' => [],
+            'add_order_note'               => [ 'note' => '' ],
+            'update_order_meta'            => [ 'key' => '' ],
+            'wait'                         => [
                 'delay' => [
                     'value' => 0,
                     'unit'  => 'days',

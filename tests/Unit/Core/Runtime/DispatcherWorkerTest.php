@@ -305,6 +305,54 @@ final class DispatcherWorkerTest extends TestCase {
         $this->assertSame( [ '1|order:12' => true ], $this->runs->claims );
     }
 
+    /** A claiming trigger that counts by the person, like the milestones: its key isn't the subject. */
+    private function person_trigger(): OrderStatusChanged {
+        return new class() extends OrderStatusChanged {
+            public function claims_per_workflow(): bool {
+                return true;
+            }
+
+            public function claim_key( array $args ): string {
+                return 'user:7';
+            }
+
+            public function refs( array $args ): ?array {
+                return parent::refs( $args ) + [ 'claim_key' => 'user:7' ];
+            }
+        };
+    }
+
+    public function test_claims_by_its_key_and_keeps_the_order_as_subject(): void {
+        $trigger = $this->person_trigger();
+        $this->dispatcher->collect( $trigger, $this->event() );
+        $this->dispatcher->flush();
+        $this->dispatcher->collect( $trigger, [ 'order_id' => self::ORDER ] + $this->event() + [ 'other' => 1 ] );
+        $this->dispatcher->flush();
+
+        $this->assertCount( 1, $this->runs->runs, 'the same person, another event' );
+        $this->assertSame( 'order:12', $this->runs->runs[1]['subject'] );
+        $this->assertSame( [ '1|user:7' => true ], $this->runs->claims );
+    }
+
+    public function test_releases_its_key_when_the_run_could_not_start(): void {
+        $this->workflows->versions[1] = 0;
+        $this->dispatcher->collect( $this->person_trigger(), $this->event() );
+        $this->dispatcher->flush();
+
+        $this->assertSame( [], $this->runs->claims );
+    }
+
+    public function test_worker_releases_the_key_kept_in_the_run_scope(): void {
+        $trigger                               = $this->person_trigger();
+        $this->steps[ OrderStatusChanged::ID ] = $trigger;
+        $this->dispatcher->collect( $trigger, $this->event() );
+        $this->dispatcher->flush();
+        $this->workflows->deactivate( 1 );
+
+        $this->assertSame( 'cancelled', $this->worker->run( 1 ) );
+        $this->assertSame( [], $this->runs->claims );
+    }
+
     public function test_events_raised_by_a_run_carry_it_as_parent(): void {
         $this->add_workflow( 2 );
         $this->steps['raise']       = new FakeStep(

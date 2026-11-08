@@ -8,12 +8,15 @@
 
 // phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
+use YayMatik\Engine\Privacy\PersonalData;
+use YayMatik\Workflow\Core\Data\CustomerStats;
 use YayMatik\Workflow\Core\Definition\GraphSchema;
 use YayMatik\Workflow\Core\Email\EmailPreview;
 use YayMatik\Workflow\Core\Runtime\ActionSchedulerQueue;
 use YayMatik\Workflow\Core\Runtime\Runtime;
 use YayMatik\Workflow\Core\Storage\RunStepStore;
 use YayMatik\Workflow\Core\Storage\RunStore;
+use YayMatik\Workflow\Core\Storage\TriggerClaimStore;
 use YayMatik\Workflow\Core\Storage\WorkflowStore;
 
 /** An active workflow from this graph; its id. */
@@ -241,5 +244,108 @@ $mail_graph = $chain(
 $shown      = EmailPreview::render( $mail_graph, 'mail', $mail_graph['nodes'][1]['data']['config'], $refunded );
 $ok( is_array( $shown ) && $shown['sample'] && false !== strpos( $shown['html'], 'Damaged in transit' ), 'refunded: Preview on a real order shows the sample refund, with the Sample badge' );
 foreach ( [ $refund_flow, $wait_flow ] as $flow_id ) {
+    WorkflowStore::deactivate( $flow_id );
+}
+
+// Milestones.
+$claims_table = $wpdb->prefix . 'yaymatik_trigger_claims';
+$new_user     = function ( string $name ) use ( &$users, $domain ): array {
+    $email   = "{$name}@{$domain}";
+    $user_id = wp_create_user( $name . '_' . wp_rand( 100000, 999999 ), wp_generate_password(), $email );
+    if ( ! is_int( $user_id ) ) {
+        WP_CLI::error( 'Could not create a temporary user.' );
+    }
+    $users[] = $user_id;
+    return [ $user_id, $email ];
+};
+/** A new order for this person, then paid; its id. */
+$pay       = function ( int $user_id, string $email, string $total ) use ( $order ): int {
+    $paid_id = $order(
+        [
+            'customer_id'   => $user_id,
+            'billing_email' => $email,
+            'total'         => $total,
+        ]
+    );
+    wc_get_order( $paid_id )->update_status( 'processing' );
+    Runtime::dispatcher()->flush();
+    return $paid_id;
+};
+$runs_of   = fn( int $flow_id ) => $runs_after( $flow_id, 0 );
+$claimed   = fn( int $flow_id, string $key ) => (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$claims_table} WHERE workflow_id = %d AND subject = %s", $flow_id, $key ) );
+$count_two = $active_flow( 'customer_order_count_reaches', [ 'count' => 2 ] );
+$also_two  = $active_flow( 'customer_order_count_reaches', [ 'count' => 2 ] );
+$spend_100 = $active_flow( 'customer_total_spend_reaches', [ 'amount' => 100 ] );
+
+list( $buyer, $buyer_email ) = $new_user( 'milestone' );
+$pay( $buyer, $buyer_email, '60' );
+$ok( ! $runs_of( $count_two ) && ! $runs_of( $spend_100 ), 'milestones: a first paid order of 60 reaches neither 2 orders nor 100' );
+$second = $pay( $buyer, $buyer_email, '50' );
+$ok( 1 === count( $runs_of( $count_two ) ) && 1 === count( $runs_of( $spend_100 ) ), 'milestones: the second crosses 2 orders and 100 spent: one run each' );
+$ok( 1 === count( $runs_of( $also_two ) ), 'milestones: two workflows on the same number start one run each' );
+$ok( "order:{$second}" === RunStore::find( $runs_of( $count_two )[0] )['subject'] && 1 === $claimed( $count_two, "user:{$buyer}" ), 'milestones: the run is about the order, the claim about the account' );
+$pay( $buyer, $buyer_email, '10' );
+$ok( 1 === count( $runs_of( $count_two ) ), 'milestones: the third paid order doesn\'t start it again' );
+
+$count_five = $active_flow( 'customer_order_count_reaches', [ 'count' => 5 ] );
+$pay( $buyer, $buyer_email, '10' );
+$ok( ! $runs_of( $count_five ), 'milestones: activated with 3 orders of history, the 4th doesn\'t start "5"' );
+$pay( $buyer, $buyer_email, '10' );
+$ok( 1 === count( $runs_of( $count_five ) ), 'milestones: the 5th does' );
+WorkflowStore::deactivate( $count_five );
+
+// Spent: 60 + 50 + 10 + 10 + 10 = 140. A refund of 50 → 90, below 100; a new order of 30 crosses 100 again.
+wc_create_refund(
+    [
+        'order_id' => $second,
+        'amount'   => '50',
+        'reason'   => 'check-catalog',
+    ]
+);
+Runtime::dispatcher()->flush();
+$ok( CustomerStats::totals( $buyer, $buyer_email )['spent'] < 100, 'milestones: refunds take the buyer below 100 again' );
+$pay( $buyer, $buyer_email, '30' );
+$ok( 1 === count( $runs_of( $spend_100 ) ), 'milestones: crossing 100 again after a refund doesn\'t start it twice' );
+
+$guest_email = "Guest.Milestone@{$domain}";
+$guest_key   = TriggerClaimStore::email_key( $guest_email );
+$pay( 0, $guest_email, '20' );
+$guest_order = $pay( 0, strtolower( $guest_email ), '20' );
+$ok( 1 === count( array_filter( $runs_of( $count_two ), fn( int $run_id ) => "order:{$guest_order}" === RunStore::find( $run_id )['subject'] ) ), 'milestones: a guest\'s second paid order starts it, counted by billing email in any case' );
+$ok( 1 === $claimed( $count_two, $guest_key ), 'milestones: the guest\'s claim is the hash, the same for both cases' );
+
+list( $mixed, $mixed_email ) = $new_user( 'mixed' );
+$pay( $mixed, $mixed_email, '20' );
+$guest_paid = $pay( 0, $mixed_email, '20' );
+$ok( 1 === count( array_filter( $runs_of( $also_two ), fn( int $run_id ) => "order:{$guest_paid}" === RunStore::find( $run_id )['subject'] ) ), 'milestones: an account order and a guest order with the same email count as one person' );
+
+$flow_ids  = implode( ',', array_map( 'intval', [ $count_two, $also_two, $spend_100 ] ) );
+$at_claims = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$claims_table} WHERE workflow_id IN ({$flow_ids}) AND subject LIKE '%@%'" );
+$in_scope  = array_filter(
+    $wpdb->get_col( 'SELECT scope FROM ' . RunStore::table() . " WHERE workflow_id IN ({$flow_ids})" ),
+    fn( $scope ) => false !== strpos( (string) ( json_decode( (string) $scope, true )['trigger']['claim_key'] ?? '' ), '@' )
+);
+$ok( 0 === $at_claims && ! $in_scope, 'milestones: no plain email in trigger_claims or in a run\'s claim_key' );
+
+list( $off, $off_email ) = $new_user( 'turned-off' );
+$pay( $off, $off_email, '20' );
+$pay( $off, $off_email, '20' );
+$off_run = array_values( array_filter( $runs_of( $also_two ), fn( int $run_id ) => 'queued' === RunStore::find( $run_id )['status'] && "user:{$off}" === ( RunStore::find( $run_id )['scope']['trigger']['claim_key'] ?? '' ) ) );
+WorkflowStore::deactivate( $also_two );
+$work( $off_run );
+$ok( 1 === count( $off_run ) && 'cancelled' === RunStore::find( $off_run[0] )['status'] && 0 === $claimed( $also_two, "user:{$off}" ), 'milestones: turned off before the first step, the run is cancelled and the person\'s claim released' );
+
+// Erase waits while a run about the person is in progress, as for carts: finish them first.
+$work( array_values( array_filter( array_merge( $runs_of( $count_two ), $runs_of( $also_two ) ), fn( int $run_id ) => 'queued' === RunStore::find( $run_id )['status'] ) ) );
+$privacy  = PersonalData::get_instance();
+$exported = array_column( $privacy->export( strtolower( $guest_email ) )['data'], 'item_id' );
+$ok( TriggerClaimStore::find_keys( $guest_email ) && in_array( 'yaymatik-milestones', $exported, true ), 'milestones: find_keys finds the hashed key; the export lists Customer milestones' );
+$privacy->erase( strtolower( $guest_email ) );
+$ok( ! TriggerClaimStore::find_keys( $guest_email ), 'milestones: erasing the email deletes its claims' );
+$guest_scopes = array_map( fn( int $run_id ) => wp_json_encode( RunStore::find( $run_id )['scope'] ), $runs_of( $count_two ) );
+$ok( ! array_filter( $guest_scopes, fn( $scope ) => false !== strpos( (string) $scope, $guest_key ) ), 'milestones: erasing removes the email\'s claim key from its runs too' );
+$privacy->erase( $buyer_email );
+$ok( 1 === $claimed( $count_two, "user:{$buyer}" ), 'milestones: erasing keeps user: claims' );
+foreach ( [ $count_two, $spend_100 ] as $flow_id ) {
     WorkflowStore::deactivate( $flow_id );
 }

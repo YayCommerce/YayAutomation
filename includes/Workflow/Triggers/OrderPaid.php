@@ -36,15 +36,6 @@ class OrderPaid extends OrderPaidTrigger {
     }
 
     /**
-     * Its own runs act on the order that started them, which can't start it again.
-     *
-     * @param array $config
-     */
-    public function fires_for_own_runs( array $config ): bool { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- the contract every trigger shares.
-        return false;
-    }
-
-    /**
      * Never later either: an order saved already paid counts as started.
      *
      * @param \WC_Order $order

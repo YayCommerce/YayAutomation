@@ -16,6 +16,8 @@ use YayMatik\Workflow\Triggers\CartAbandoned;
 use YayMatik\Workflow\Triggers\CheckoutAbandoned;
 use YayMatik\Workflow\Triggers\CustomerAccountCreated;
 use YayMatik\Workflow\Triggers\CustomerInactive;
+use YayMatik\Workflow\Triggers\CustomerOrderCountReaches;
+use YayMatik\Workflow\Triggers\CustomerTotalSpendReaches;
 use YayMatik\Workflow\Triggers\OrderCreated;
 use YayMatik\Workflow\Triggers\OrderNoteAdded;
 use YayMatik\Workflow\Triggers\OrderPaid;
@@ -60,6 +62,8 @@ class WoocommerceModule extends Module {
             CheckoutAbandoned::class,
             CustomerAccountCreated::class,
             CustomerInactive::class,
+            CustomerOrderCountReaches::class,
+            CustomerTotalSpendReaches::class,
         ];
     }
 

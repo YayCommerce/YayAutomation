@@ -67,6 +67,15 @@ abstract class OrderPaidTrigger extends OrderTrigger {
     }
 
     /**
+     * Its runs act on the order that started them, which can't start it again (once per order or per person).
+     *
+     * @param array $config
+     */
+    public function fires_for_own_runs( array $config ): bool { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- the contract every trigger shares.
+        return false;
+    }
+
+    /**
      * Runs at the end of the request: the order must still be paid.
      *
      * @param array $args

@@ -32,6 +32,8 @@ final class ModuleRegistryTest extends TestCase {
         'checkout_abandoned',
         'customer_account_created',
         'customer_inactive',
+        'customer_order_count_reaches',
+        'customer_total_spend_reaches',
         'send_email',
         'send_internal_email',
         'change_order_status',
@@ -62,7 +64,7 @@ final class ModuleRegistryTest extends TestCase {
         $this->assertSame(
             [
                 'yaymatik'    => 2,
-                'woocommerce' => 15,
+                'woocommerce' => 17,
             ],
             array_count_values( $plugins )
         );

@@ -14,6 +14,8 @@ import { cartAbandonedStep } from './triggers/cart-abandoned';
 import { checkoutAbandonedStep } from './triggers/checkout-abandoned';
 import { customerAccountCreatedStep } from './triggers/customer-account-created';
 import { customerInactiveStep } from './triggers/customer-inactive';
+import { customerOrderCountReachesStep } from './triggers/customer-order-count-reaches';
+import { customerTotalSpendReachesStep } from './triggers/customer-total-spend-reaches';
 import { orderCreatedStep } from './triggers/order-created';
 import { orderNoteAddedStep } from './triggers/order-note-added';
 import { orderPaidStep } from './triggers/order-paid';
@@ -33,6 +35,8 @@ const coreSteps = [
   checkoutAbandonedStep,
   customerAccountCreatedStep,
   customerInactiveStep,
+  customerOrderCountReachesStep,
+  customerTotalSpendReachesStep,
   criteriaStep,
   sendEmailStep,
   sendInternalEmailStep,

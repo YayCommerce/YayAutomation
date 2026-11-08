@@ -194,6 +194,8 @@ Today errors only go to the WooCommerce log, which merchants never open.
 
 **Note (M6).** The claim is per workflow and order, not per customer with a time limit: see [M6](#m6-win-back).
 
+**Note (CT).** The claim column holds a key, not always the run's subject: the milestones claim per person while their runs stay about the order. See [CT](#ct-custom-workflow-catalog), D5.
+
 ---
 
 ## P7. Tree + container steps, no merge

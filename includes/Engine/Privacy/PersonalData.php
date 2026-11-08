@@ -8,6 +8,7 @@ use YayMatik\Workflow\Core\Storage\CartStore;
 use YayMatik\Workflow\Core\Storage\RunStepStore;
 use YayMatik\Workflow\Core\Storage\RunStore;
 use YayMatik\Workflow\Core\Storage\Settings;
+use YayMatik\Workflow\Core\Storage\TriggerClaimStore;
 use YayMatik\Workflow\Core\Storage\UnsubscribeStore;
 
 defined( 'ABSPATH' ) || exit;
@@ -83,6 +84,18 @@ class PersonalData {
                     ],
                 ];
             }
+            $milestones = TriggerClaimStore::find_keys( $email );
+            if ( $milestones ) {
+                $data[] = [
+                    'group_id'    => 'yaymatik-milestones',
+                    'group_label' => __( 'Customer milestones', 'yaymatik' ),
+                    'item_id'     => 'yaymatik-milestones',
+                    'data'        => [
+                        $this->value( __( 'Workflows started for this email', 'yaymatik' ), (string) count( $milestones ) ),
+                        $this->value( __( 'Last started', 'yaymatik' ), get_date_from_gmt( (string) end( $milestones )['claimed_at'] ) ),
+                    ],
+                ];
+            }
         }
         $runs = RunStore::for_export( $email, $this->subjects( $email ), self::PER_PAGE, ( $page - 1 ) * self::PER_PAGE );
         foreach ( $runs as $run ) {
@@ -149,6 +162,12 @@ class PersonalData {
             return $result;
         }
         $result['items_removed'] = CartStore::delete_for_email( $email ) > 0 || $result['items_removed'];
+        $claims                  = TriggerClaimStore::delete_keys( $email );
+        if ( false === $claims ) {
+            $result['items_retained'] = true;
+            $result['messages'][]     = __( 'Some customer milestone records could not be erased. See WooCommerce → Status → Logs (yaymatik).', 'yaymatik' );
+        }
+        $result['items_removed'] = $claims > 0 || $result['items_removed'];
         return $result;
     }
 
@@ -201,7 +220,8 @@ class PersonalData {
                 (int) Settings::get( 'cart_retention_days' ),
                 (int) Settings::get( 'run_retention_days' )
             ),
-            __( 'When you ask us to erase your personal data, your carts are deleted and your email address is removed from those records; the records stay without it. Automated emails still scheduled for you are cancelled. If you unsubscribed from our emails, that record is kept so you get no more emails from us.', 'yaymatik' ),
+            __( 'Some automated emails are sent once per customer, for example when your orders reach a number. To remember that one was sent to a guest, we keep a one-way hash of your email address, never the address itself.', 'yaymatik' ),
+            __( 'When you ask us to erase your personal data, your carts and those hashes are deleted, and your email address is removed from those records; the records stay without it. Automated emails still scheduled for you are cancelled. If you unsubscribed from our emails, that record is kept so you get no more emails from us.', 'yaymatik' ),
         ];
         $html       = implode( '', array_map( fn( string $text ) => '<p>' . esc_html( $text ) . '</p>', $paragraphs ) );
         wp_add_privacy_policy_content( 'YayMatik', wp_kses_post( $html ) );

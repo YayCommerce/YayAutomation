@@ -416,6 +416,58 @@
                 ],
                 "outputs": []
             },
+            "customer_order_count_reaches": {
+                "kind": "trigger",
+                "plugin": "woocommerce",
+                "provides": [
+                    "order",
+                    "customer"
+                ],
+                "category": "customer",
+                "label": "Customer order count reaches",
+                "description": "A customer’s paid orders reach a number",
+                "icon": "repeat",
+                "summary": "When a customer reaches %count% paid orders",
+                "onError": "stop",
+                "fields": [
+                    {
+                        "key": "count",
+                        "type": "number",
+                        "label": "Paid orders",
+                        "required": true,
+                        "help": "Starts once per customer, on the paid order that reaches this number. Guests count by billing email.",
+                        "default": 5,
+                        "min": 1
+                    }
+                ],
+                "outputs": []
+            },
+            "customer_total_spend_reaches": {
+                "kind": "trigger",
+                "plugin": "woocommerce",
+                "provides": [
+                    "order",
+                    "customer"
+                ],
+                "category": "customer",
+                "label": "Customer total spend reaches",
+                "description": "A customer’s total spent reaches an amount",
+                "icon": "coins",
+                "summary": "When a customer’s total spent reaches %amount%",
+                "onError": "stop",
+                "fields": [
+                    {
+                        "key": "amount",
+                        "type": "number",
+                        "label": "Total spent",
+                        "required": true,
+                        "help": "Paid orders minus refunds. Orders in other currencies are added as they are, without converting.",
+                        "default": null,
+                        "min": 0.01
+                    }
+                ],
+                "outputs": []
+            },
             "send_email": {
                 "kind": "action",
                 "plugin": "woocommerce",
