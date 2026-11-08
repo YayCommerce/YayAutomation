@@ -15,6 +15,8 @@ import { checkoutAbandonedStep } from './triggers/checkout-abandoned';
 import { customerAccountCreatedStep } from './triggers/customer-account-created';
 import { customerInactiveStep } from './triggers/customer-inactive';
 import { orderCreatedStep } from './triggers/order-created';
+import { orderNoteAddedStep } from './triggers/order-note-added';
+import { orderPaidStep } from './triggers/order-paid';
 import { orderStatusChangedStep } from './triggers/order-status-changed';
 
 export type { Step } from './core/types';
@@ -23,6 +25,8 @@ export { plainSummary, SummaryText } from './core/defineStep';
 const coreSteps = [
   orderCreatedStep,
   orderStatusChangedStep,
+  orderPaidStep,
+  orderNoteAddedStep,
   cartAbandonedStep,
   checkoutAbandonedStep,
   customerAccountCreatedStep,

@@ -153,9 +153,9 @@ $order = function ( array $props = [] ) use ( &$orders, $domain ): int {
     return end( $orders );
 };
 
-$own_flows = array_merge( WorkflowStore::active_for_trigger( 'order_created' ), WorkflowStore::active_for_trigger( 'order_status_changed' ) );
+$own_flows = array_merge( ...array_map( [ WorkflowStore::class, 'active_for_trigger' ], [ 'order_created', 'order_status_changed', 'order_paid', 'order_note_added' ] ) );
 if ( $own_flows ) {
-    WP_CLI::error( 'Deactivate this site\'s Order created and Order status changed workflows first: this check would start them on its orders. Ids: ' . implode( ', ', array_column( $own_flows, 'id' ) ) );
+    WP_CLI::error( 'Deactivate this site\'s order workflows first (Order created, status changed, paid, note added): this check would start them on its orders. Ids: ' . implode( ', ', array_column( $own_flows, 'id' ) ) );
 }
 
 if ( ! $posts_store ) {
@@ -946,6 +946,8 @@ $refused     = $criteria->validate(
     )
 );
 $ok( is_wp_error( $refused ), 'rule: this site\'s capabilities key is refused, in any case' );
+
+require __DIR__ . '/check-catalog-triggers.php';
 
 if ( $fails ) {
     WP_CLI::error( "{$fails} check(s) failed." );

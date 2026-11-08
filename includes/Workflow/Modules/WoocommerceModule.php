@@ -16,6 +16,8 @@ use YayMatik\Workflow\Triggers\CheckoutAbandoned;
 use YayMatik\Workflow\Triggers\CustomerAccountCreated;
 use YayMatik\Workflow\Triggers\CustomerInactive;
 use YayMatik\Workflow\Triggers\OrderCreated;
+use YayMatik\Workflow\Triggers\OrderNoteAdded;
+use YayMatik\Workflow\Triggers\OrderPaid;
 use YayMatik\Workflow\Triggers\OrderStatusChanged;
 
 defined( 'ABSPATH' ) || exit;
@@ -46,7 +48,16 @@ class WoocommerceModule extends Module {
     }
 
     public function triggers(): array {
-        return [ OrderCreated::class, OrderStatusChanged::class, CartAbandoned::class, CheckoutAbandoned::class, CustomerAccountCreated::class, CustomerInactive::class ];
+        return [
+            OrderCreated::class,
+            OrderStatusChanged::class,
+            OrderPaid::class,
+            OrderNoteAdded::class,
+            CartAbandoned::class,
+            CheckoutAbandoned::class,
+            CustomerAccountCreated::class,
+            CustomerInactive::class,
+        ];
     }
 
     public function actions(): array {

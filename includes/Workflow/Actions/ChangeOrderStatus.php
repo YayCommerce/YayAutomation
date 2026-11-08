@@ -7,6 +7,8 @@ use YayMatik\Workflow\Core\Data\Type;
 use YayMatik\Workflow\Core\Steps\Action;
 use YayMatik\Workflow\Core\Steps\Field;
 use YayMatik\Workflow\Core\Steps\StepResult;
+use YayMatik\Workflow\Triggers\OrderNoteAdded;
+use YayMatik\Workflow\Triggers\OrderPaid;
 use YayMatik\Workflow\Triggers\OrderStatusChanged;
 
 defined( 'ABSPATH' ) || exit;
@@ -41,7 +43,8 @@ class ChangeOrderStatus extends Action {
     }
 
     public function emits(): array {
-        return [ OrderStatusChanged::ID ];
+        // WooCommerce adds a note for each status change.
+        return [ OrderStatusChanged::ID, OrderPaid::ID, OrderNoteAdded::ID ];
     }
 
     public function fields(): array {

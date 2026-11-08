@@ -9,6 +9,8 @@ use YayMatik\Workflow\Core\Steps\Trigger;
 use YayMatik\Workflow\Triggers\CustomerAccountCreated;
 use YayMatik\Workflow\Triggers\CustomerInactive;
 use YayMatik\Workflow\Triggers\OrderCreated;
+use YayMatik\Workflow\Triggers\OrderNoteAdded;
+use YayMatik\Workflow\Triggers\OrderPaid;
 use YayMatik\Workflow\Triggers\OrderStatusChanged;
 
 require_once dirname( __DIR__, 2 ) . '/Support/woocommerce-stubs.php';
@@ -100,6 +102,21 @@ final class TriggerRefsTest extends TestCase {
         $this->assertSame( [ 'order', 'customer' ], array_keys( $refs ) );
         $this->assertSame( 'order:12', $refs['order']->key() );
         $this->assertSame( 'customer:order:12', $refs['customer']->key() );
+    }
+
+    public function test_paid_and_note_triggers_are_about_the_order_and_store_refs_only(): void {
+        foreach ( [ new OrderPaid(), new OrderNoteAdded() ] as $trigger ) {
+            $args = [
+                'order_id' => 12,
+                'note_id'  => 40,
+                'by_run'   => true,
+            ];
+            $this->assertSame( 'order:12', $trigger->subject( $args ) );
+            $this->assertSame( 'order', $trigger->category() );
+            $this->assertFalse( $trigger->claims_per_workflow() );
+            $this->assertSame( [ 'order', 'customer' ], array_keys( $trigger->refs( $args ) ), 'the note is not stored in the run' );
+            $this->assertNull( $trigger->refs( [ 'order_id' => 13 ] ) );
+        }
     }
 
     public function test_status_changed_adds_from_and_to(): void {

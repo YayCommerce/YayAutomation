@@ -268,7 +268,7 @@ Shop owners build their own workflows from New Workflow. Why: [decisions CT](wor
 - ⏳ **CT.4** Paged REST search for products, categories and coupons.
 - ⏳ **CT.5** Condition form for the new rule kinds.
 - ⏳ **CT.6** Condition groups, one level deep.
-- **CT.7** Triggers: Order paid, Order note added.
+- ⏳ **CT.7** Triggers: Order paid, Order note added.
 - **CT.8** Trigger: Order refunded.
 - **CT.9** Triggers: Customer order count reaches, Customer total spend reaches.
 - **CT.10** Trigger: Review posted.

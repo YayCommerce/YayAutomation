@@ -258,6 +258,74 @@
                 ],
                 "outputs": []
             },
+            "order_paid": {
+                "kind": "trigger",
+                "plugin": "woocommerce",
+                "provides": [
+                    "order",
+                    "customer"
+                ],
+                "category": "order",
+                "label": "Order paid",
+                "description": "Starts once when an order is paid.",
+                "icon": "credit-card",
+                "summary": "When an order is paid",
+                "onError": "stop",
+                "fields": [],
+                "outputs": []
+            },
+            "order_note_added": {
+                "kind": "trigger",
+                "plugin": "woocommerce",
+                "provides": [
+                    "order",
+                    "customer"
+                ],
+                "category": "order",
+                "label": "Order note added",
+                "description": "Starts when a note is added to an order.",
+                "icon": "sticky-note",
+                "summary": "%note_type% added to an order",
+                "onError": "stop",
+                "fields": [
+                    {
+                        "key": "note_type",
+                        "type": "select",
+                        "label": "Note type",
+                        "options": [
+                            {
+                                "value": "any",
+                                "label": "Any note"
+                            },
+                            {
+                                "value": "private",
+                                "label": "Private note"
+                            },
+                            {
+                                "value": "customer",
+                                "label": "Note to customer"
+                            }
+                        ],
+                        "default": "any"
+                    },
+                    {
+                        "key": "contains",
+                        "type": "text",
+                        "label": "Note contains",
+                        "placeholder": "Any text",
+                        "help": "Not case sensitive. Leave empty for any note.",
+                        "default": ""
+                    },
+                    {
+                        "key": "skip_yaymatik",
+                        "type": "toggle",
+                        "label": "Skip notes added by YayMatik workflows",
+                        "help": "Keeps a workflow from starting itself when a step adds a note or changes the order status.",
+                        "default": true
+                    }
+                ],
+                "outputs": []
+            },
             "cart_abandoned": {
                 "kind": "trigger",
                 "plugin": "woocommerce",

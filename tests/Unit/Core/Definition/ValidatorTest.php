@@ -589,6 +589,36 @@ final class ValidatorTest extends TestCase {
         $this->assertSame( [], array_values( array_filter( $errors, fn( array $error ) => 'may_refire' === $error['code'] ) ) );
     }
 
+    public function test_note_trigger_warns_only_with_skip_off(): void {
+        $graph = fn( bool $skip ) => GraphSchema::prepare(
+            [
+                'nodes' => [
+                    self::node( 't', 'trigger', 'order_note_added', [ 'skip_yaymatik' => $skip ] ),
+                    self::node( 'a', 'action', 'change_order_status', [ 'status' => 'completed' ] ),
+                    self::node( 'n', 'action', 'add_order_note', [ 'note' => 'Hi' ] ),
+                ],
+                'edges' => [ self::edge( 't', 'a' ), self::edge( 'a', 'n' ) ],
+            ]
+        );
+
+        $this->assertSame( [], Validator::warnings( $graph( true ) ) );
+        $this->assertSame( [ 'a', 'n' ], array_column( Validator::warnings( $graph( false ) ), 'nodeId' ) );
+    }
+
+    public function test_no_warning_on_order_paid_whose_order_cant_start_it_again(): void {
+        $graph = GraphSchema::prepare(
+            [
+                'nodes' => [
+                    self::node( 't', 'trigger', 'order_paid' ),
+                    self::node( 'a', 'action', 'change_order_status', [ 'status' => 'completed' ] ),
+                ],
+                'edges' => [ self::edge( 't', 'a' ) ],
+            ]
+        );
+
+        $this->assertSame( [], Validator::warnings( $graph ) );
+    }
+
     public function test_no_warning_on_another_trigger_or_a_graph_without_a_trigger(): void {
         $action = self::node( 'a', 'action', 'change_order_status', [ 'status' => 'completed' ] );
         $graph  = GraphSchema::prepare(

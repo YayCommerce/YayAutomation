@@ -8,6 +8,7 @@ use YayMatik\Workflow\Core\Data\Type;
 use YayMatik\Workflow\Core\Steps\Action;
 use YayMatik\Workflow\Core\Steps\Field;
 use YayMatik\Workflow\Core\Steps\StepResult;
+use YayMatik\Workflow\Triggers\OrderNoteAdded;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -38,6 +39,10 @@ class UpdateOrderMeta extends Action {
 
     public function requires(): array {
         return [ OrderData::ID ];
+    }
+
+    public function emits(): array {
+        return [ OrderNoteAdded::ID ];
     }
 
     public function fields(): array {

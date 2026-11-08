@@ -334,3 +334,37 @@ if ( ! function_exists( 'set_transient' ) ) {
         return true;
     }
 }
+
+if ( ! function_exists( 'add_action' ) ) {
+    // Same store as `add_filter()`; priority and argument count don't matter to the tests.
+    function add_action( $hook_name, $callback ) {
+        return add_filter( $hook_name, $callback );
+    }
+}
+
+if ( ! function_exists( 'do_action' ) ) {
+    function do_action( $hook_name, ...$args ) {
+        foreach ( $GLOBALS['yaymatik_test_filters'][ $hook_name ] ?? [] as $callback ) {
+            $callback( ...$args );
+        }
+    }
+}
+
+if ( ! function_exists( 'get_comment' ) ) {
+    // Comments a test set in `$GLOBALS['yaymatik_test_comment_rows']`, id => object with WP_Comment's fields and `meta`.
+    function get_comment( $comment_id ) {
+        return $GLOBALS['yaymatik_test_comment_rows'][ $comment_id ] ?? null;
+    }
+}
+
+if ( ! function_exists( 'get_comment_meta' ) ) {
+    function get_comment_meta( $comment_id, $key = '', $single = false ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- same signature as WordPress.
+        return $GLOBALS['yaymatik_test_comment_rows'][ $comment_id ]->meta[ $key ] ?? '';
+    }
+}
+
+if ( ! function_exists( 'wc_strtolower' ) ) {
+    function wc_strtolower( $text ) {
+        return mb_strtolower( $text );
+    }
+}

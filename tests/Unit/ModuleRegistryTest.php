@@ -25,6 +25,8 @@ final class ModuleRegistryTest extends TestCase {
     private const STEPS = [
         'order_created',
         'order_status_changed',
+        'order_paid',
+        'order_note_added',
         'cart_abandoned',
         'checkout_abandoned',
         'customer_account_created',
@@ -59,7 +61,7 @@ final class ModuleRegistryTest extends TestCase {
         $this->assertSame(
             [
                 'yaymatik'    => 2,
-                'woocommerce' => 12,
+                'woocommerce' => 14,
             ],
             array_count_values( $plugins )
         );
