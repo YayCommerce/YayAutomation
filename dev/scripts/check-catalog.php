@@ -384,7 +384,8 @@ if ( ! $posts_store ) {
     array_push( $terms, $child_cat['term_id'], $parent_cat['term_id'] );
     $path = $search( 'categories', [ 'include' => [ (string) $child_cat['term_id'] ] ] )->get_data();
     $ok( "{$word} Men & Boys › {$word} Shoes" === $path['items'][0]['label'], 'search categories: a label shows its parents, with no entities' );
-    $found = $search( 'categories', [ 'term' => 'Men & Boys' ] )->get_data();
+    // With this run's word: categories left by an earlier run that stopped halfway would push it off the first page.
+    $found = $search( 'categories', [ 'term' => "{$word} Men & Boys" ] )->get_data();
     $ok( in_array( (string) $parent_cat['term_id'], array_column( $found['items'], 'value' ), true ), 'search categories: a name with & is found' );
     $gone = $search( 'products', [ 'include' => [ '999999999' ] ] )->get_data();
     $ok( [] === $gone['items'], 'search products: include of a deleted id returns nothing, so the form shows #12' );
@@ -949,6 +950,7 @@ $ok( is_wp_error( $refused ), 'rule: this site\'s capabilities key is refused, i
 
 require __DIR__ . '/check-catalog-triggers.php';
 require __DIR__ . '/check-catalog-actions.php';
+require __DIR__ . '/check-catalog-e2e.php';
 
 if ( $fails ) {
     WP_CLI::error( "{$fails} check(s) failed." );
