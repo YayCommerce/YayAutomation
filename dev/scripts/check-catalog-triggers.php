@@ -85,7 +85,12 @@ $started = function ( array $flow_ids, callable $event ) use ( $last_run, $runs_
     Runtime::dispatcher()->flush();
     $counts = [];
     foreach ( $flow_ids as $flow_id ) {
-        $counts[ $flow_id ] = count( $runs_after( $flow_id, $before ) );
+        $new                = $runs_after( $flow_id, $before );
+        $counts[ $flow_id ] = count( $new );
+        // Their jobs go at once: the site's own Action Scheduler runner could take a run before `$work` does, and send its mail uncaught.
+        foreach ( $new as $run_id ) {
+            as_unschedule_all_actions( ActionSchedulerQueue::HOOK, [ $run_id ], ActionSchedulerQueue::GROUP );
+        }
     }
     return $counts;
 };
