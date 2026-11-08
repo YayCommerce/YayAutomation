@@ -32,6 +32,7 @@ export type StepId =
   | 'update_order_meta'
   | 'update_customer_meta'
   | 'change_customer_role'
+  | 'resend_wc_email'
   | (string & {});
 
 /** `type` (not `interface`) so it satisfies ReactFlow's `Record<string, unknown>` data constraint. */

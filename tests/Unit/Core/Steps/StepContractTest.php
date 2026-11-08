@@ -7,6 +7,7 @@ use YayMatik\Workflow\Actions\AddOrderNote;
 use YayMatik\Workflow\Actions\ChangeCustomerRole;
 use YayMatik\Workflow\Actions\ChangeOrderStatus;
 use YayMatik\Workflow\Actions\GenerateCoupon;
+use YayMatik\Workflow\Actions\ResendWcEmail;
 use YayMatik\Workflow\Actions\SendEmail;
 use YayMatik\Workflow\Actions\SendInternalEmail;
 use YayMatik\Workflow\Actions\UpdateCustomerMeta;
@@ -48,7 +49,7 @@ final class StepContractTest extends TestCase {
     /** @return Step[] Keyed by id. */
     private static function steps(): array {
         $steps = [];
-        foreach ( [ new OrderCreated(), new OrderStatusChanged(), new OrderPaid(), new OrderRefunded(), new OrderNoteAdded(), new CustomerInactive(), new CustomerOrderCountReaches(), new CustomerTotalSpendReaches(), new ReviewPosted(), new Criteria(), new SendEmail(), new SendInternalEmail(), new ChangeOrderStatus(), new AddOrderNote(), new UpdateOrderMeta(), new UpdateCustomerMeta(), new ChangeCustomerRole(), new GenerateCoupon(), new Wait() ] as $step ) {
+        foreach ( [ new OrderCreated(), new OrderStatusChanged(), new OrderPaid(), new OrderRefunded(), new OrderNoteAdded(), new CustomerInactive(), new CustomerOrderCountReaches(), new CustomerTotalSpendReaches(), new ReviewPosted(), new Criteria(), new SendEmail(), new SendInternalEmail(), new ResendWcEmail(), new ChangeOrderStatus(), new AddOrderNote(), new UpdateOrderMeta(), new UpdateCustomerMeta(), new ChangeCustomerRole(), new GenerateCoupon(), new Wait() ] as $step ) {
             $steps[ $step->id() ] = $step;
         }
         return $steps;
@@ -131,6 +132,7 @@ final class StepContractTest extends TestCase {
                 'condition'                    => [ 'result' ],
                 'send_email'                   => [ 'to' ],
                 'send_internal_email'          => [ 'to' ],
+                'resend_wc_email'              => [ 'email' ],
                 'change_order_status'          => [ 'from', 'to' ],
                 'add_order_note'               => [ 'type' ],
                 'update_order_meta'            => [ 'key', 'changed' ],
@@ -208,6 +210,7 @@ final class StepContractTest extends TestCase {
             'update_order_meta'            => [ 'key' => '' ],
             'update_customer_meta'         => [ 'key' => '' ],
             'change_customer_role'         => [ 'role' => '' ],
+            'resend_wc_email'              => [ 'email' => '' ],
             'wait'                         => [
                 'delay' => [
                     'value' => 0,

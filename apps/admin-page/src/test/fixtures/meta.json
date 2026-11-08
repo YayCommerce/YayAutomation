@@ -598,6 +598,62 @@
                     }
                 ]
             },
+            "resend_wc_email": {
+                "kind": "action",
+                "plugin": "woocommerce",
+                "category": "email",
+                "requires": [
+                    "order"
+                ],
+                "label": "Resend WooCommerce email",
+                "description": "Send one of WooCommerce’s order emails to the customer again.",
+                "icon": "refresh-cw",
+                "summary": "Resend %email%",
+                "onError": "stop",
+                "fields": [
+                    {
+                        "key": "email",
+                        "type": "select",
+                        "label": "Email",
+                        "required": true,
+                        "requiredMessage": "%s needs an email.",
+                        "options": [
+                            {
+                                "value": "customer_cancelled_order",
+                                "label": "Cancelled order"
+                            },
+                            {
+                                "value": "customer_failed_order",
+                                "label": "Failed order"
+                            },
+                            {
+                                "value": "customer_on_hold_order",
+                                "label": "Order on-hold"
+                            },
+                            {
+                                "value": "customer_processing_order",
+                                "label": "Processing order"
+                            },
+                            {
+                                "value": "customer_completed_order",
+                                "label": "Completed order"
+                            },
+                            {
+                                "value": "customer_invoice",
+                                "label": "Order details"
+                            }
+                        ],
+                        "default": ""
+                    }
+                ],
+                "outputs": [
+                    {
+                        "key": "email",
+                        "label": "Email",
+                        "type": "string"
+                    }
+                ]
+            },
             "change_order_status": {
                 "kind": "action",
                 "plugin": "woocommerce",

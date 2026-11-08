@@ -89,6 +89,12 @@ describe('stepResult', () => {
     ).toBe('Added gone');
   });
 
+  it('names the WooCommerce email it resent, never the address', () => {
+    expect(stepResult(row({ stepType: 'resend_wc_email', output: { email: 'customer_completed_order' } }), run)).toBe(
+      'Sent Completed order',
+    );
+  });
+
   it('falls back to the card summary, and to nothing for a removed step', () => {
     expect(stepResult(row({ stepType: 'add_order_note', input: { note: 'Thanks', type: 'private' } }), run)).not.toBe(
       '',

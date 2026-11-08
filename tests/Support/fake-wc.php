@@ -26,6 +26,7 @@ if ( ! function_exists( 'WC' ) ) {
                 }
 
                 public function mailer() {
+                    FakeMailer::$current = FakeMailer::$current ?? new FakeMailer();
                     return FakeMailer::$current;
                 }
 

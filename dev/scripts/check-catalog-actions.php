@@ -9,6 +9,7 @@
 // phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.WP.GlobalVariablesOverride.Prohibited
 
 use YayMatik\Workflow\Actions\ChangeCustomerRole;
+use YayMatik\Workflow\Actions\ResendWcEmail;
 use YayMatik\Workflow\Actions\UpdateCustomerMeta;
 use YayMatik\Workflow\Core\Data\Ref;
 use YayMatik\Workflow\Core\Data\Scope;
@@ -216,6 +217,42 @@ remove_filter( ChangeCustomerRole::ALLOW_ALL_FILTER, $allow );
 
 $ok( $change( $order_scope( $order() ), 'add', 'check_wholesale' )->is_skipped(), 'change_customer_role: a guest order is skipped' );
 $ok( 0 === get_current_user_id(), 'change_customer_role: all of this ran as user 0' );
+
+// Resend WooCommerce email. check-catalog turns WooCommerce's emails off; each one is turned on here while it's checked, and its mail caught.
+$resend   = new ResendWcEmail();
+$offered  = array_keys( ResendWcEmail::emails() );
+$on_store = array_values( array_intersect( ResendWcEmail::CORE_EMAILS, array_map( fn( $email ) => $email->id, WC()->mailer()->get_emails() ) ) );
+$ok( ! array_diff( $offered, $on_store ) && ! array_diff( $on_store, $offered ), 'resend_wc_email: the list is the allowlisted emails this WooCommerce has (' . implode( ', ', $offered ) . ')' );
+$ok( ! in_array( 'customer_refunded_order', $offered, true ) && ! in_array( 'new_order', $offered, true ), 'resend_wc_email: refunded and staff emails are not listed' );
+$resend_order = $order( [ 'status' => 'completed' ] );
+$resend_scope = $order_scope( $resend_order );
+$caught       = [];
+$catch_resend = function ( $sent, array $atts ) use ( &$caught ) {
+    $caught[] = $atts;
+    return true;
+};
+add_filter( 'pre_wp_mail', $catch_resend, 10, 2 );
+foreach ( $offered as $email_id ) {
+    $turn_on = '__return_true';
+    add_filter( 'woocommerce_email_enabled_' . $email_id, $turn_on, 20 );
+    $caught = [];
+    $result = $resend->run( $resend_scope, [ 'email' => $email_id ] );
+    remove_filter( 'woocommerce_email_enabled_' . $email_id, $turn_on, 20 );
+    $to      = (array) ( $caught[0]['to'] ?? [] );
+    $sent_to = array_values( array_map( 'trim', $to ) );
+    $ok( $result->is_ok() && 1 === count( $caught ) && [ 'buyer@' . $domain ] === $sent_to && [ 'email' => $email_id ] === $result->outputs(), "resend_wc_email: {$email_id} sends to the billing email" );
+}
+$result = $resend->run( $resend_scope, [ 'email' => 'customer_completed_order' ] );
+$ok( $result->is_skipped() && false !== strpos( $result->message(), 'turned off' ), 'resend_wc_email: an email turned off in WooCommerce is skipped (' . $result->message() . ')' );
+$no_email = wc_get_order( $order() );
+$no_email->set_billing_email( '' );
+$no_email->save();
+add_filter( 'woocommerce_email_enabled_customer_completed_order', '__return_true', 20 );
+$caught = [];
+$result = $resend->run( $order_scope( $no_email->get_id() ), [ 'email' => 'customer_completed_order' ] );
+remove_filter( 'woocommerce_email_enabled_customer_completed_order', '__return_true', 20 );
+$ok( $result->is_skipped() && [] === $caught, 'resend_wc_email: an order with no billing email is skipped' );
+remove_filter( 'pre_wp_mail', $catch_resend );
 
 wp_set_current_user( $previous_user );
 

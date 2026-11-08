@@ -21,10 +21,10 @@ const customFieldResult = (step: RunStepRow) =>
     text(step.output.key),
   );
 
-/** A role's name from the catalog's list; a role gone since reads as its slug. */
-const roleName = (slug: string) => {
-  const field = window.yayMatikMeta.automation.steps.change_customer_role?.fields.find(({ key }) => key === 'role');
-  return field ? optionLabel(field, slug) : slug;
+/** A select's label from the catalog, e.g. a role's name; a value gone since reads as itself. */
+const catalogLabel = (stepId: StepId, key: string, value: string) => {
+  const field = window.yayMatikMeta.automation.steps[stepId]?.fields.find((f) => f.key === key);
+  return field ? optionLabel(field, value) : value;
 };
 
 type ResultText = (step: RunStepRow, run: Pick<Run, 'waitUntil'>) => string;
@@ -57,10 +57,13 @@ const results: Partial<Record<StepId, ResultText>> = {
     /* translators: %s: email addresses, comma-separated */
     sprintf(__('Sent to %s', 'yaymatik'), Array.isArray(step.output.to) ? step.output.to.join(', ') : ''),
   generate_coupon: (step) => text(step.output.code),
+  resend_wc_email: (step) =>
+    /* translators: %s: a WooCommerce email's name, e.g. "Completed order" */
+    sprintf(__('Sent %s', 'yaymatik'), catalogLabel('resend_wc_email', 'email', text(step.output.email))),
   update_order_meta: (step) => customFieldResult(step),
   update_customer_meta: (step) => customFieldResult(step),
   change_customer_role: (step) => {
-    const role = roleName(text(step.input.role));
+    const role = catalogLabel('change_customer_role', 'role', text(step.input.role));
     if (step.output.from === step.output.to) return __('Roles unchanged', 'yaymatik');
     if (step.input.mode === 'remove')
       return /* translators: %s: role name */ sprintf(__('Removed %s', 'yaymatik'), role);

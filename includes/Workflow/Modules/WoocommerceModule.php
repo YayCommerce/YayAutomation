@@ -5,6 +5,7 @@ use YayMatik\Workflow\Actions\AddOrderNote;
 use YayMatik\Workflow\Actions\ChangeCustomerRole;
 use YayMatik\Workflow\Actions\ChangeOrderStatus;
 use YayMatik\Workflow\Actions\GenerateCoupon;
+use YayMatik\Workflow\Actions\ResendWcEmail;
 use YayMatik\Workflow\Actions\SendEmail;
 use YayMatik\Workflow\Actions\SendInternalEmail;
 use YayMatik\Workflow\Actions\UpdateCustomerMeta;
@@ -76,6 +77,7 @@ class WoocommerceModule extends Module {
         return [
             SendEmail::class,
             SendInternalEmail::class,
+            ResendWcEmail::class,
             ChangeOrderStatus::class,
             AddOrderNote::class,
             UpdateOrderMeta::class,
