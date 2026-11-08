@@ -66,6 +66,9 @@ describe('stepResult', () => {
       stepResult(row({ stepType: 'update_order_meta', output: { key: 'gift_wrap', changed } }), run);
     expect(meta(true)).toBe('Custom field gift_wrap updated');
     expect(meta(false)).toBe('Custom field gift_wrap unchanged');
+    expect(stepResult(row({ stepType: 'update_customer_meta', output: { key: 'vip', changed: true } }), run)).toBe(
+      'Custom field vip updated',
+    );
   });
 
   it('falls back to the card summary, and to nothing for a removed step', () => {

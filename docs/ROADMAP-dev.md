@@ -272,7 +272,7 @@ Shop owners build their own workflows from New Workflow. Why: [decisions CT](wor
 - ⏳ **CT.8** Trigger: Order refunded.
 - ⏳ **CT.9** Triggers: Customer order count reaches, Customer total spend reaches.
 - ⏳ **CT.10** Trigger: Review posted.
-- **CT.11** Action: Update customer custom field.
+- ⏳ **CT.11** Action: Update customer custom field.
 - **CT.12** Action: Change customer role.
 - **CT.13** Action: Resend WooCommerce email.
 - **CT.14** Action: Wait until.
@@ -301,7 +301,7 @@ Shop owners build their own workflows from New Workflow. Why: [decisions CT](wor
 - **V11.6 More control steps** — Switch, Set variable, Stop, A/B split.
 - **V11.7 Retries** — backoff; replay a failed run from the failed step (button in run detail).
 - **V11.8 Product items** — the v1.1 list in ROADMAP-v1.0: Branched post-purchase, Nth order reward, alerts, order tags.
-- **Backlog** — Opt-in mode (consent checkbox) + transactional-only workflows. "Run once per order" through M6's `trigger_claims`: today a status trigger starts again when an order returns to the status (duplicate email / coupon, a second high-value alert). Customer inactive: stop a run when the customer orders during a Wait (`stop_reason`); the v1.0 templates have no Wait. Warn on Activate when another version of the same template workflow is active, or claim per template workflow (e.g. win_back) instead of per workflow. Run limit per workflow. Customer tags. Stock triggers. Workflow run failed trigger. Random split. Multi-currency totals. Milestones: one claim key for a guest who later makes an account.
+- **Backlog** — Opt-in mode (consent checkbox) + transactional-only workflows. "Run once per order" through M6's `trigger_claims`: today a status trigger starts again when an order returns to the status (duplicate email / coupon, a second high-value alert). Customer inactive: stop a run when the customer orders during a Wait (`stop_reason`); the v1.0 templates have no Wait. Warn on Activate when another version of the same template workflow is active, or claim per template workflow (e.g. win_back) instead of per workflow. Run limit per workflow. Customer tags. Stock triggers. Workflow run failed trigger. Random split. Multi-currency totals. Milestones: one claim key for a guest who later makes an account. Order note added: a `note` data item (text, type), so emails can insert the note; today the trigger has none.
 
 ## v1.2 — Yay ecosystem + Pro connectors · L+
 

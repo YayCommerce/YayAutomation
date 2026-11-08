@@ -5,6 +5,7 @@ import { changeOrderStatusStep } from './actions/change-order-status';
 import { generateCouponStep } from './actions/generate-coupon';
 import { sendEmailStep } from './actions/send-email';
 import { sendInternalEmailStep } from './actions/send-internal-email';
+import { updateCustomerMetaStep } from './actions/update-customer-meta';
 import { updateOrderMetaStep } from './actions/update-order-meta';
 import { waitStep } from './actions/wait';
 import { criteriaStep } from './conditions/criteria';
@@ -45,6 +46,7 @@ const coreSteps = [
   changeOrderStatusStep,
   addOrderNoteStep,
   updateOrderMetaStep,
+  updateCustomerMetaStep,
   generateCouponStep,
   waitStep,
 ];

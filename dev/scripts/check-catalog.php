@@ -948,6 +948,7 @@ $refused     = $criteria->validate(
 $ok( is_wp_error( $refused ), 'rule: this site\'s capabilities key is refused, in any case' );
 
 require __DIR__ . '/check-catalog-triggers.php';
+require __DIR__ . '/check-catalog-actions.php';
 
 if ( $fails ) {
     WP_CLI::error( "{$fails} check(s) failed." );

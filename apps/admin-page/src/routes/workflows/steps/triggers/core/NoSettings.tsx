@@ -3,7 +3,7 @@ import { __ } from '@wordpress/i18n';
 
 import { Hint } from './CartTriggerNotes';
 
-/** What to know about when a trigger starts, one line each. */
+/** What to know about a step: when a trigger starts, what an action skips. One line each. */
 export function Hints({ hints }: { hints: string[] }) {
   return (
     <div className="flex flex-col gap-3">

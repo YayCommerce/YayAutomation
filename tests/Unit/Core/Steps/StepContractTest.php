@@ -8,6 +8,7 @@ use YayMatik\Workflow\Actions\ChangeOrderStatus;
 use YayMatik\Workflow\Actions\GenerateCoupon;
 use YayMatik\Workflow\Actions\SendEmail;
 use YayMatik\Workflow\Actions\SendInternalEmail;
+use YayMatik\Workflow\Actions\UpdateCustomerMeta;
 use YayMatik\Workflow\Actions\UpdateOrderMeta;
 use YayMatik\Workflow\Actions\Wait;
 use YayMatik\Workflow\Conditions\Criteria;
@@ -29,10 +30,24 @@ require_once dirname( __DIR__, 3 ) . '/Support/woocommerce-stubs.php';
 /** The declarative step contract, for each core step. */
 final class StepContractTest extends TestCase {
 
+    /** @var mixed */
+    private $wpdb;
+
+    protected function setUp(): void {
+        $this->wpdb = $GLOBALS['wpdb'] ?? null;
+        // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- no WordPress here; MetaKeys reads its prefix.
+        $GLOBALS['wpdb'] = (object) [ 'base_prefix' => 'wp_' ];
+    }
+
+    protected function tearDown(): void {
+        // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- puts back what setUp() replaced.
+        $GLOBALS['wpdb'] = $this->wpdb;
+    }
+
     /** @return Step[] Keyed by id. */
     private static function steps(): array {
         $steps = [];
-        foreach ( [ new OrderCreated(), new OrderStatusChanged(), new OrderPaid(), new OrderRefunded(), new OrderNoteAdded(), new CustomerInactive(), new CustomerOrderCountReaches(), new CustomerTotalSpendReaches(), new ReviewPosted(), new Criteria(), new SendEmail(), new SendInternalEmail(), new ChangeOrderStatus(), new AddOrderNote(), new UpdateOrderMeta(), new GenerateCoupon(), new Wait() ] as $step ) {
+        foreach ( [ new OrderCreated(), new OrderStatusChanged(), new OrderPaid(), new OrderRefunded(), new OrderNoteAdded(), new CustomerInactive(), new CustomerOrderCountReaches(), new CustomerTotalSpendReaches(), new ReviewPosted(), new Criteria(), new SendEmail(), new SendInternalEmail(), new ChangeOrderStatus(), new AddOrderNote(), new UpdateOrderMeta(), new UpdateCustomerMeta(), new GenerateCoupon(), new Wait() ] as $step ) {
             $steps[ $step->id() ] = $step;
         }
         return $steps;
@@ -118,6 +133,7 @@ final class StepContractTest extends TestCase {
                 'change_order_status'          => [ 'from', 'to' ],
                 'add_order_note'               => [ 'type' ],
                 'update_order_meta'            => [ 'key', 'changed' ],
+                'update_customer_meta'         => [ 'key', 'changed' ],
                 'generate_coupon'              => [ 'code', 'amount', 'expires_at', 'box' ],
                 'wait'                         => [],
             ],
@@ -188,6 +204,7 @@ final class StepContractTest extends TestCase {
             'customer_total_spend_reaches' => [],
             'add_order_note'               => [ 'note' => '' ],
             'update_order_meta'            => [ 'key' => '' ],
+            'update_customer_meta'         => [ 'key' => '' ],
             'wait'                         => [
                 'delay' => [
                     'value' => 0,

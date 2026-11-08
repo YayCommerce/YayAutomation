@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { tagError } from '../data';
 import { ConfigField } from './ConfigField';
 import { InsertVariable } from './InsertVariable';
+import { useCustomerMetaKeys } from './searchSelect.query';
 
 /** Field widgets shared by `StepForm` and custom step forms. */
 
@@ -35,6 +36,7 @@ export function TextField({
   inputMode,
   multiline = false,
   variables = false,
+  suggest,
   value,
   onChange,
   onBlur,
@@ -48,6 +50,8 @@ export function TextField({
   inputMode?: React.HTMLAttributes<HTMLInputElement>['inputMode'];
   multiline?: boolean;
   variables?: boolean;
+  /** One line only: a `<datalist>` of names to pick from. */
+  suggest?: 'customer-meta-keys';
   value: string;
   onChange: (value: string) => void;
   onBlur: () => void;
@@ -56,6 +60,7 @@ export function TextField({
 }) {
   const ref = useRef<HTMLInputElement & HTMLTextAreaElement>(null);
   const { tagIssue, setLeft } = useTagIssue(variables, value);
+  const suggestions = suggest && !multiline ? `${id}-suggestions` : undefined;
   useLayoutEffect(() => {
     if (multiline && ref.current) fitHeight(ref.current);
   }, [multiline, value]);
@@ -78,6 +83,7 @@ export function TextField({
     value,
     placeholder,
     inputMode,
+    list: suggestions,
     onChange: (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => onChange(event.target.value),
     onFocus: () => setLeft(false),
     onBlur: () => {
@@ -96,7 +102,20 @@ export function TextField({
       inlineError={tagIssue}
     >
       {multiline ? <Textarea rows={5} {...control} /> : <Input {...control} />}
+      {suggestions && <CustomerMetaKeys id={suggestions} />}
     </ConfigField>
+  );
+}
+
+/** Custom field names other workflows use, loaded only by a field that suggests them. */
+export function CustomerMetaKeys({ id }: { id: string }) {
+  const { data } = useCustomerMetaKeys(true);
+  return (
+    <datalist id={id}>
+      {data?.keys.map((key) => (
+        <option key={key} value={key} />
+      ))}
+    </datalist>
   );
 }
 

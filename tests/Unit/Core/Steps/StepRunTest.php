@@ -4,6 +4,7 @@ namespace YayMatik\Tests\Unit\Core\Steps;
 use PHPUnit\Framework\TestCase;
 use YayMatik\Tests\Support\FakeMailer;
 use YayMatik\Tests\Support\FakeOrder;
+use YayMatik\Tests\Support\FakeWpdb;
 use YayMatik\Workflow\Core\Data\GoneEntity;
 use YayMatik\Workflow\Core\Data\Ref;
 use YayMatik\Workflow\Core\Data\RefResolver;
@@ -11,6 +12,7 @@ use YayMatik\Workflow\Core\Data\Scope;
 use YayMatik\Workflow\Actions\AddOrderNote;
 use YayMatik\Workflow\Actions\ChangeOrderStatus;
 use YayMatik\Workflow\Actions\SendInternalEmail;
+use YayMatik\Workflow\Actions\UpdateCustomerMeta;
 use YayMatik\Workflow\Actions\UpdateOrderMeta;
 use YayMatik\Workflow\Actions\Wait;
 use YayMatik\Workflow\Conditions\Criteria;
@@ -28,7 +30,11 @@ final class StepRunTest extends TestCase {
     /** @var FakeOrder */
     private $order;
 
+    /** @var mixed */
+    private $wpdb;
+
     protected function setUp(): void {
+        $this->wpdb          = $GLOBALS['wpdb'] ?? null;
         $this->order         = new FakeOrder(
             [
                 'id'                 => 12,
@@ -41,6 +47,12 @@ final class StepRunTest extends TestCase {
             ]
         );
         FakeMailer::$current = new FakeMailer();
+    }
+
+    protected function tearDown(): void {
+        // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- puts back what setUp() replaced.
+        $GLOBALS['wpdb'] = $this->wpdb;
+        unset( $GLOBALS['yaymatik_test_users'], $GLOBALS['yaymatik_test_meta_write_fails'] );
     }
 
     /** The scope a run of order 12 has: trigger refs, as the Dispatcher stores them, and status facts. */
@@ -332,5 +344,122 @@ final class StepRunTest extends TestCase {
 
         $this->expectException( GoneEntity::class );
         ( new AddOrderNote() )->run( $scope, ( new AddOrderNote() )->sanitize( [ 'note' => 'n' ] ) );
+    }
+
+    /**
+     * A run whose customer is this order's account (0 = a guest), with user 7's meta.
+     *
+     * @param int   $user_id
+     * @param array $meta
+     */
+    private function customer_scope( int $user_id, array $meta = [] ): Scope {
+        // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- no WordPress here; MetaKeys reads its prefix.
+        $GLOBALS['wpdb']                = new FakeWpdb();
+        $GLOBALS['yaymatik_test_users'] = [ 7 => (object) [ 'meta' => $meta ] ];
+        $order                          = new FakeOrder(
+            [
+                'id'           => 12,
+                'order_number' => '1012',
+                'customer_id'  => $user_id,
+            ]
+        );
+        return new Scope(
+            [
+                'trigger' => [
+                    'order'    => new Ref( 'order', 12 ),
+                    'customer' => new Ref( 'customer', 'order:12' ),
+                ],
+            ],
+            new RefResolver(
+                [
+                    'customer' => fn() => $order,
+                    'order'    => fn() => $order,
+                ]
+            )
+        );
+    }
+
+    public function test_update_customer_meta_writes_and_outputs_no_values(): void {
+        $step   = new UpdateCustomerMeta();
+        $result = $this->run_step(
+            $step,
+            [
+                'key'   => 'vip',
+                'value' => "yes {{ order.number }} it's",
+            ],
+            $this->customer_scope( 7, [ 'vip' => 'no' ] )
+        );
+
+        $this->assert_ok_outputs( $step, $result );
+        $this->assertSame(
+            [
+                'key'     => 'vip',
+                'changed' => true,
+            ],
+            $result->outputs()
+        );
+        $this->assertSame( [ 'vip' => "yes 1012 it's" ], $GLOBALS['yaymatik_test_users'][7]->meta );
+    }
+
+    public function test_update_customer_meta_with_the_same_value_reads_unchanged(): void {
+        $result = $this->run_step(
+            new UpdateCustomerMeta(),
+            [
+                'key'   => 'vip',
+                'value' => 'yes',
+            ],
+            $this->customer_scope( 7, [ 'vip' => 'yes' ] )
+        );
+        $this->assertFalse( $result->outputs()['changed'] );
+        $result = $this->run_step( new UpdateCustomerMeta(), [ 'key' => 'new_key' ], $this->customer_scope( 7 ) );
+        $this->assertTrue( $result->outputs()['changed'], 'a new empty value is a change' );
+    }
+
+    public function test_update_customer_meta_skips_a_guest(): void {
+        $result = $this->run_step( new UpdateCustomerMeta(), [ 'key' => 'vip' ], $this->customer_scope( 0 ) );
+        $this->assertTrue( $result->is_skipped() );
+        $this->assertSame( 'This customer has no account.', $result->message() );
+        $this->assertTrue( $this->run_step( new UpdateCustomerMeta(), [ 'key' => 'vip' ], new Scope() )->is_skipped(), 'no customer at all' );
+    }
+
+    public function test_update_customer_meta_skips_a_deleted_account(): void {
+        $result = $this->run_step( new UpdateCustomerMeta(), [ 'key' => 'vip' ], $this->customer_scope( 9 ) );
+        $this->assertTrue( $result->is_skipped() );
+    }
+
+    public function test_update_customer_meta_fails_when_the_write_does(): void {
+        $scope                                     = $this->customer_scope( 7 );
+        $GLOBALS['yaymatik_test_meta_write_fails'] = true;
+        $result                                    = $this->run_step( new UpdateCustomerMeta(), [ 'key' => 'vip' ], $scope );
+        $this->assertTrue( $result->is_failed() );
+        $this->assertSame( 'Couldn’t save the custom field.', $result->message() );
+    }
+
+    public function test_update_customer_meta_refuses_a_blocked_key_at_run_time(): void {
+        // A stored config that never passed validate().
+        $result = ( new UpdateCustomerMeta() )->run(
+            $this->customer_scope( 7 ),
+            [
+                'key'   => 'wp_capabilities',
+                'value' => 'administrator',
+            ]
+        );
+        $this->assertTrue( $result->is_failed() );
+        $this->assertSame( [], $GLOBALS['yaymatik_test_users'][7]->meta );
+    }
+
+    public function test_update_customer_meta_refuses_a_key_the_collation_matches_to_a_blocked_row(): void {
+        $scope                   = $this->customer_scope( 7 );
+        $GLOBALS['wpdb']->result = [ 'wp_capabilities' ];
+        $result                  = ( new UpdateCustomerMeta() )->run(
+            $scope,
+            [
+                'key'   => 'wp_capabilitiés',
+                'value' => 'administrator',
+            ]
+        );
+        $this->assertTrue( $result->is_failed() );
+        $this->assertSame( 'This custom field is protected and can’t be changed.', $result->message() );
+        $this->assertSame( [], $GLOBALS['yaymatik_test_users'][7]->meta );
     }
 }

@@ -836,6 +836,49 @@
                     }
                 ]
             },
+            "update_customer_meta": {
+                "kind": "action",
+                "plugin": "woocommerce",
+                "category": "customer",
+                "requires": [
+                    "customer"
+                ],
+                "label": "Update customer custom field",
+                "description": "Set a custom field on the customer’s account.",
+                "icon": "list",
+                "summary": "Set %key% to %value%",
+                "onError": "stop",
+                "fields": [
+                    {
+                        "key": "key",
+                        "type": "text",
+                        "label": "Field name",
+                        "required": true,
+                        "requiredMessage": "%s needs a field name.",
+                        "suggest": "customer-meta-keys",
+                        "default": ""
+                    },
+                    {
+                        "key": "value",
+                        "type": "text",
+                        "label": "Value",
+                        "variables": true,
+                        "default": ""
+                    }
+                ],
+                "outputs": [
+                    {
+                        "key": "key",
+                        "label": "Field name",
+                        "type": "string"
+                    },
+                    {
+                        "key": "changed",
+                        "label": "Value changed",
+                        "type": "boolean"
+                    }
+                ]
+            },
             "generate_coupon": {
                 "kind": "action",
                 "plugin": "woocommerce",

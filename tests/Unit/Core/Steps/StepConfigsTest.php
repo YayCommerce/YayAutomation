@@ -5,6 +5,7 @@ use PHPUnit\Framework\TestCase;
 use YayMatik\Workflow\Actions\AddOrderNote;
 use YayMatik\Workflow\Actions\ChangeOrderStatus;
 use YayMatik\Workflow\Actions\SendInternalEmail;
+use YayMatik\Workflow\Actions\UpdateCustomerMeta;
 use YayMatik\Workflow\Actions\UpdateOrderMeta;
 use YayMatik\Workflow\Actions\Wait;
 use YayMatik\Workflow\Conditions\Criteria;
@@ -21,6 +22,20 @@ final class StepConfigsTest extends TestCase {
 
     private const SUBJECT = 'Send internal email needs a subject.';
 
+    /** @var mixed */
+    private $wpdb;
+
+    protected function setUp(): void {
+        $this->wpdb = $GLOBALS['wpdb'] ?? null;
+        // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- no WordPress here; MetaKeys reads its prefix.
+        $GLOBALS['wpdb'] = (object) [ 'base_prefix' => 'wp_' ];
+    }
+
+    protected function tearDown(): void {
+        // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- puts back what setUp() replaced.
+        $GLOBALS['wpdb'] = $this->wpdb;
+    }
+
     private static function step( string $id ): Step {
         $classes = [
             OrderCreated::ID       => OrderCreated::class,
@@ -30,6 +45,7 @@ final class StepConfigsTest extends TestCase {
             ChangeOrderStatus::ID  => ChangeOrderStatus::class,
             AddOrderNote::ID       => AddOrderNote::class,
             UpdateOrderMeta::ID    => UpdateOrderMeta::class,
+            UpdateCustomerMeta::ID => UpdateCustomerMeta::class,
             Wait::ID               => Wait::class,
         ];
         return new $classes[ $id ]();
@@ -65,11 +81,11 @@ final class StepConfigsTest extends TestCase {
     public function configs(): array {
         return [
             // Order created: nothing to configure.
-            'created: empty'               => [ 'order_created', null, [], self::OK ],
-            'created: junk dropped'        => [ 'order_created', [ 'x' => 1 ], [], self::OK ],
+            'created: empty'                => [ 'order_created', null, [], self::OK ],
+            'created: junk dropped'         => [ 'order_created', [ 'x' => 1 ], [], self::OK ],
 
             // Order status changed.
-            'status changed: empty'        => [
+            'status changed: empty'         => [
                 'order_status_changed',
                 [],
                 [
@@ -79,7 +95,7 @@ final class StepConfigsTest extends TestCase {
                 ],
                 self::OK,
             ],
-            'status changed: slugs'        => [
+            'status changed: slugs'         => [
                 'order_status_changed',
                 [
                     'from'          => [ 'wc-pending', 'pending', 'Processing', '', 3, [ 'x' ] ],
@@ -93,13 +109,13 @@ final class StepConfigsTest extends TestCase {
                 ],
                 self::OK,
             ],
-            'status changed: unknown to'   => [ 'order_status_changed', [ 'to' => [ 'gone' ] ], null, 'Choose options from the list.' ],
-            'status changed: unknown from' => [ 'order_status_changed', [ 'from' => [ 'completed', 'gone' ] ], null, 'Choose options from the list.' ],
+            'status changed: unknown to'    => [ 'order_status_changed', [ 'to' => [ 'gone' ] ], null, 'Choose options from the list.' ],
+            'status changed: unknown from'  => [ 'order_status_changed', [ 'from' => [ 'completed', 'gone' ] ], null, 'Choose options from the list.' ],
 
             // Condition.
-            'condition: empty'             => [ 'condition', 'junk', self::criteria( [] ), 'Add a rule, or remove this condition.' ],
-            'condition: blank rule'        => [ 'condition', self::criteria( [ self::rule( '', '' ) ] ), null, 'Add a rule, or remove this condition.' ],
-            'condition: match fallback'    => [
+            'condition: empty'              => [ 'condition', 'junk', self::criteria( [] ), 'Add a rule, or remove this condition.' ],
+            'condition: blank rule'         => [ 'condition', self::criteria( [ self::rule( '', '' ) ] ), null, 'Add a rule, or remove this condition.' ],
+            'condition: match fallback'     => [
                 'condition',
                 [
                     'match' => 'xx',
@@ -115,17 +131,17 @@ final class StepConfigsTest extends TestCase {
                 self::criteria( [ self::rule( 'rder.total', 'greater_than', '5' ), self::rule( '', '' ) ] ),
                 'Choose data for each rule.',
             ],
-            'condition: unknown field'     => [ 'condition', self::criteria( [ self::rule( 'order.foo', 'equal', 'x' ) ] ), null, 'Choose data for each rule.' ],
-            'condition: not conditional'   => [ 'condition', self::criteria( [ self::rule( 'order.customer', 'equal', 'x' ) ] ), null, 'Choose data for each rule.' ],
-            'condition: bad operator'      => [ 'condition', self::criteria( [ self::rule( 'order.total', 'contains', '5' ) ] ), null, 'Choose a comparison for each rule.' ],
-            'condition: number blank'      => [ 'condition', self::criteria( [ self::rule( 'order.total', 'greater_or_equal' ) ] ), null, 'Enter a value for Order total.' ],
-            'condition: text blank'        => [ 'condition', self::criteria( [ self::rule( 'order.shipping_method', 'equal' ) ] ), null, 'Enter a value for Shipping method. Or choose “is empty” to check for a blank value.' ],
-            'condition: not a number'      => [ 'condition', self::criteria( [ self::rule( 'order.total', 'greater_than', 'abc' ) ] ), null, 'Enter a number.' ],
-            'condition: not a date'        => [ 'condition', self::criteria( [ self::rule( 'order.created_date', 'before', '2026/01/01' ) ] ), null, 'Enter a date (YYYY-MM-DD).' ],
-            'condition: unknown option'    => [ 'condition', self::criteria( [ self::rule( 'order.status', 'is', 'gone' ) ] ), null, 'Choose a value from the list.' ],
-            'condition: bad variable'      => [ 'condition', self::criteria( [ self::rule( 'order.total', 'equal', 'order.status', 'variable' ) ] ), null, 'Choose data to compare with.' ],
-            'condition: later rule bad'    => [ 'condition', self::criteria( [ self::rule( 'order.status', 'is', 'processing' ), self::rule( 'order.total', 'less_than', 'x' ) ], 'any' ), null, 'Enter a number.' ],
-            'condition: valid'             => [
+            'condition: unknown field'      => [ 'condition', self::criteria( [ self::rule( 'order.foo', 'equal', 'x' ) ] ), null, 'Choose data for each rule.' ],
+            'condition: not conditional'    => [ 'condition', self::criteria( [ self::rule( 'order.customer', 'equal', 'x' ) ] ), null, 'Choose data for each rule.' ],
+            'condition: bad operator'       => [ 'condition', self::criteria( [ self::rule( 'order.total', 'contains', '5' ) ] ), null, 'Choose a comparison for each rule.' ],
+            'condition: number blank'       => [ 'condition', self::criteria( [ self::rule( 'order.total', 'greater_or_equal' ) ] ), null, 'Enter a value for Order total.' ],
+            'condition: text blank'         => [ 'condition', self::criteria( [ self::rule( 'order.shipping_method', 'equal' ) ] ), null, 'Enter a value for Shipping method. Or choose “is empty” to check for a blank value.' ],
+            'condition: not a number'       => [ 'condition', self::criteria( [ self::rule( 'order.total', 'greater_than', 'abc' ) ] ), null, 'Enter a number.' ],
+            'condition: not a date'         => [ 'condition', self::criteria( [ self::rule( 'order.created_date', 'before', '2026/01/01' ) ] ), null, 'Enter a date (YYYY-MM-DD).' ],
+            'condition: unknown option'     => [ 'condition', self::criteria( [ self::rule( 'order.status', 'is', 'gone' ) ] ), null, 'Choose a value from the list.' ],
+            'condition: bad variable'       => [ 'condition', self::criteria( [ self::rule( 'order.total', 'equal', 'order.status', 'variable' ) ] ), null, 'Choose data to compare with.' ],
+            'condition: later rule bad'     => [ 'condition', self::criteria( [ self::rule( 'order.status', 'is', 'processing' ), self::rule( 'order.total', 'less_than', 'x' ) ], 'any' ), null, 'Enter a number.' ],
+            'condition: valid'              => [
                 'condition',
                 self::criteria(
                     [
@@ -149,10 +165,10 @@ final class StepConfigsTest extends TestCase {
                 ),
                 self::OK,
             ],
-            'condition: no-value op'       => [ 'condition', self::criteria( [ self::rule( 'order.total', 'equal', 'order.subtotal', 'variable' ), self::rule( 'customer.email', 'is_not_empty', 'order.foo', 'variable' ) ] ), null, self::OK ],
+            'condition: no-value op'        => [ 'condition', self::criteria( [ self::rule( 'order.total', 'equal', 'order.subtotal', 'variable' ), self::rule( 'customer.email', 'is_not_empty', 'order.foo', 'variable' ) ] ), null, self::OK ],
 
             // Send internal email.
-            'email: empty'                 => [
+            'email: empty'                  => [
                 'send_internal_email',
                 null,
                 [
@@ -162,8 +178,8 @@ final class StepConfigsTest extends TestCase {
                 ],
                 self::SUBJECT,
             ],
-            'email: bad recipient'         => [ 'send_internal_email', [ 'recipients' => 'a@x.com, bad' ], null, 'bad isn’t a valid email address.' ],
-            'email: tag recipient'         => [
+            'email: bad recipient'          => [ 'send_internal_email', [ 'recipients' => 'a@x.com, bad' ], null, 'bad isn’t a valid email address.' ],
+            'email: tag recipient'          => [
                 'send_internal_email',
                 [
                     'recipients' => '{{ customer.email }}',
@@ -173,9 +189,9 @@ final class StepConfigsTest extends TestCase {
                 null,
                 '{{ customer.email }} isn’t a valid email address.',
             ],
-            'email: no message'            => [ 'send_internal_email', [ 'subject' => 's' ], null, 'Send internal email needs a message.' ],
+            'email: no message'             => [ 'send_internal_email', [ 'subject' => 's' ], null, 'Send internal email needs a message.' ],
             // Unknown merge tags pass here: the Validator reports them (see ValidatorTest).
-            'email: unknown tag subject'   => [
+            'email: unknown tag subject'    => [
                 'send_internal_email',
                 [
                     'subject' => 'Hi {{ order.foo }}',
@@ -184,7 +200,7 @@ final class StepConfigsTest extends TestCase {
                 null,
                 self::OK,
             ],
-            'email: unknown tag message'   => [
+            'email: unknown tag message'    => [
                 'send_internal_email',
                 [
                     'subject' => 's',
@@ -193,7 +209,7 @@ final class StepConfigsTest extends TestCase {
                 null,
                 self::OK,
             ],
-            'email: valid'                 => [
+            'email: valid'                  => [
                 'send_internal_email',
                 [
                     'recipients' => " a@x.com,\nb@x.com ",
@@ -207,7 +223,7 @@ final class StepConfigsTest extends TestCase {
                 ],
                 self::OK,
             ],
-            'email: blank recipients ok'   => [
+            'email: blank recipients ok'    => [
                 'send_internal_email',
                 [
                     'subject' => 's',
@@ -218,12 +234,12 @@ final class StepConfigsTest extends TestCase {
             ],
 
             // Change order status.
-            'status: empty'                => [ 'change_order_status', [], [ 'status' => '' ], 'Choose the new status.' ],
-            'status: unknown'              => [ 'change_order_status', [ 'status' => 'gone' ], [ 'status' => 'gone' ], 'Choose an option from the list.' ],
-            'status: wc- prefix'           => [ 'change_order_status', [ 'status' => 'wc-completed' ], [ 'status' => 'completed' ], self::OK ],
+            'status: empty'                 => [ 'change_order_status', [], [ 'status' => '' ], 'Choose the new status.' ],
+            'status: unknown'               => [ 'change_order_status', [ 'status' => 'gone' ], [ 'status' => 'gone' ], 'Choose an option from the list.' ],
+            'status: wc- prefix'            => [ 'change_order_status', [ 'status' => 'wc-completed' ], [ 'status' => 'completed' ], self::OK ],
 
             // Add order note.
-            'note: empty'                  => [
+            'note: empty'                   => [
                 'add_order_note',
                 null,
                 [
@@ -232,7 +248,7 @@ final class StepConfigsTest extends TestCase {
                 ],
                 'Add order note needs a note.',
             ],
-            'note: type fallback'          => [
+            'note: type fallback'           => [
                 'add_order_note',
                 [
                     'note' => " Hi\r\n<{{ order.number }}> ",
@@ -244,7 +260,7 @@ final class StepConfigsTest extends TestCase {
                 ],
                 self::OK,
             ],
-            'note: customer'               => [
+            'note: customer'                => [
                 'add_order_note',
                 [
                     'note' => 'Thanks',
@@ -256,10 +272,10 @@ final class StepConfigsTest extends TestCase {
                 ],
                 self::OK,
             ],
-            'note: unknown tag'            => [ 'add_order_note', [ 'note' => '{{ order.foo }}' ], null, self::OK ],
+            'note: unknown tag'             => [ 'add_order_note', [ 'note' => '{{ order.foo }}' ], null, self::OK ],
 
             // Update order meta.
-            'meta: empty'                  => [
+            'meta: empty'                   => [
                 'update_order_meta',
                 null,
                 [
@@ -268,7 +284,7 @@ final class StepConfigsTest extends TestCase {
                 ],
                 'Update order custom field needs a field name.',
             ],
-            'meta: clean key'              => [
+            'meta: clean key'               => [
                 'update_order_meta',
                 [
                     'key'   => ' <b>_vip</b> ',
@@ -280,11 +296,11 @@ final class StepConfigsTest extends TestCase {
                 ],
                 self::OK,
             ],
-            'meta: empty value ok'         => [ 'update_order_meta', [ 'key' => '_vip' ], null, self::OK ],
-            'meta: internal key'           => [ 'update_order_meta', [ 'key' => '_order_total' ], null, 'WooCommerce or YayMatik manages this field. Choose another field name.' ],
-            'meta: internal key, upper'    => [ 'update_order_meta', [ 'key' => '_ORDER_TOTAL' ], null, 'WooCommerce or YayMatik manages this field. Choose another field name.' ],
-            'meta: own prefix'             => [ 'update_order_meta', [ 'key' => '_yaymatik_x' ], null, 'WooCommerce or YayMatik manages this field. Choose another field name.' ],
-            'meta: unknown tag'            => [
+            'meta: empty value ok'          => [ 'update_order_meta', [ 'key' => '_vip' ], null, self::OK ],
+            'meta: internal key'            => [ 'update_order_meta', [ 'key' => '_order_total' ], null, 'WooCommerce or YayMatik manages this field. Choose another field name.' ],
+            'meta: internal key, upper'     => [ 'update_order_meta', [ 'key' => '_ORDER_TOTAL' ], null, 'WooCommerce or YayMatik manages this field. Choose another field name.' ],
+            'meta: own prefix'              => [ 'update_order_meta', [ 'key' => '_yaymatik_x' ], null, 'WooCommerce or YayMatik manages this field. Choose another field name.' ],
+            'meta: unknown tag'             => [
                 'update_order_meta',
                 [
                     'key'   => '_vip',
@@ -293,13 +309,28 @@ final class StepConfigsTest extends TestCase {
                 null,
                 self::OK,
             ],
-            'wait: default'                => [ 'wait', null, self::delay( 1, 'days' ), self::OK ],
-            'wait: unknown unit'           => [ 'wait', self::delay( 3, 'years' ), self::delay( 3, 'days' ), self::OK ],
-            'wait: blank value'            => [ 'wait', self::delay( '', 'hours' ), self::delay( 1, 'hours' ), self::OK ],
-            'wait: a year of weeks'        => [ 'wait', self::delay( 52, 'weeks' ), null, self::OK ],
-            'wait: zero'                   => [ 'wait', self::delay( 0, 'days' ), null, 'Enter a whole number, 1 or more.' ],
-            'wait: fraction'               => [ 'wait', self::delay( 1.5, 'days' ), null, 'Enter a whole number, 1 or more.' ],
-            'wait: over a year'            => [ 'wait', self::delay( 8761, 'hours' ), null, 'Wait at most a year.' ],
+            // Update customer meta.
+            'customer meta: empty'          => [
+                'update_customer_meta',
+                null,
+                [
+                    'key'   => '',
+                    'value' => '',
+                ],
+                'Update customer custom field needs a field name.',
+            ],
+            'customer meta: ok'             => [ 'update_customer_meta', [ 'key' => 'vip' ], null, self::OK ],
+            'customer meta: capabilities'   => [ 'update_customer_meta', [ 'key' => 'wp_capabilities' ], null, 'This custom field is protected and can’t be changed.' ],
+            'customer meta: a network site' => [ 'update_customer_meta', [ 'key' => 'WP_2_USER_LEVEL' ], null, 'This custom field is protected and can’t be changed.' ],
+            'customer meta: sessions'       => [ 'update_customer_meta', [ 'key' => 'session_tokens' ], null, 'This custom field is protected and can’t be changed.' ],
+            'customer meta: own prefix'     => [ 'update_customer_meta', [ 'key' => '_yaymatik_x' ], null, 'This custom field is protected and can’t be changed.' ],
+            'wait: default'                 => [ 'wait', null, self::delay( 1, 'days' ), self::OK ],
+            'wait: unknown unit'            => [ 'wait', self::delay( 3, 'years' ), self::delay( 3, 'days' ), self::OK ],
+            'wait: blank value'             => [ 'wait', self::delay( '', 'hours' ), self::delay( 1, 'hours' ), self::OK ],
+            'wait: a year of weeks'         => [ 'wait', self::delay( 52, 'weeks' ), null, self::OK ],
+            'wait: zero'                    => [ 'wait', self::delay( 0, 'days' ), null, 'Enter a whole number, 1 or more.' ],
+            'wait: fraction'                => [ 'wait', self::delay( 1.5, 'days' ), null, 'Enter a whole number, 1 or more.' ],
+            'wait: over a year'             => [ 'wait', self::delay( 8761, 'hours' ), null, 'Wait at most a year.' ],
         ];
     }
 

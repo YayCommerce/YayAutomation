@@ -12,8 +12,8 @@ import { inputVariants } from '@/components/ui/variants/input.variants';
 import { fieldByKey, isRelative, itemLabel, itemOf, takesList, type DataField } from '../../core/data';
 import { MultiSelect } from '../../core/fields/MultiSelect';
 import { SearchSelect } from '../../core/fields/SearchSelect';
-import { useCustomerMetaKeys } from '../../core/fields/searchSelect.query';
 import { VariablePicker } from '../../core/fields/VariablePicker';
+import { CustomerMetaKeys } from '../../core/fields/widgets';
 import { comparableWith, VARIABLE_VALUE_TYPES, type Rule, type RuleUnit } from './schema';
 
 /** For the picker's "Types: …" line. */
@@ -208,7 +208,6 @@ export function MetaKeyInput({
   onChange: (rule: Rule) => void;
 }) {
   const suggests = field.key === 'customer.meta';
-  const { data } = useCustomerMetaKeys(suggests);
   return (
     <>
       <Input
@@ -221,13 +220,7 @@ export function MetaKeyInput({
         value={rule.key ?? ''}
         onChange={(event) => onChange({ ...rule, key: event.target.value })}
       />
-      {suggests && (
-        <datalist id={`${id}-keys`}>
-          {data?.keys.map((key) => (
-            <option key={key} value={key} />
-          ))}
-        </datalist>
-      )}
+      {suggests && <CustomerMetaKeys id={`${id}-keys`} />}
     </>
   );
 }

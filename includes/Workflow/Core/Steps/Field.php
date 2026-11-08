@@ -44,6 +44,9 @@ final class Field {
     /** @var string */
     private $placeholder = '';
 
+    /** @var string Where the input's suggestions come from, e.g. `customer-meta-keys`. */
+    private $suggest = '';
+
     /** @var string */
     private $help = '';
 
@@ -212,6 +215,16 @@ final class Field {
 
     public function placeholder( string $placeholder ): self {
         $this->placeholder = $placeholder;
+        return $this;
+    }
+
+    /**
+     * Suggestions under a text input; any other text can still be typed.
+     *
+     * @param string $source
+     */
+    public function suggest( string $source ): self {
+        $this->suggest = $source;
         return $this;
     }
 
@@ -389,6 +402,9 @@ final class Field {
         }
         if ( '' !== $this->help ) {
             $data['help'] = $this->help;
+        }
+        if ( '' !== $this->suggest ) {
+            $data['suggest'] = $this->suggest;
         }
         if ( $this->show_if ) {
             $data['showIf'] = $this->show_if;

@@ -318,6 +318,13 @@ final class FieldTest extends TestCase {
         );
     }
 
+    public function test_suggest_names_the_list_and_keeps_any_text(): void {
+        $field = Field::text( 'key', 'Field name' )->suggest( 'customer-meta-keys' );
+        $this->assertSame( 'customer-meta-keys', $field->to_array()['suggest'] );
+        $this->assertSame( 'not_suggested', $field->sanitize( 'not_suggested' ) );
+        $this->assertNull( $field->validate( 'not_suggested' ) );
+    }
+
     public function test_to_array_sends_only_what_is_set(): void {
         $this->assertSame(
             [

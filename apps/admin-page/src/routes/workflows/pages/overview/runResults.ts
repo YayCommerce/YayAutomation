@@ -12,6 +12,14 @@ const text = (value: unknown) => (typeof value === 'string' ? value : '');
 const summary = (step: RunStepRow) =>
   step.stepType && steps[step.stepType] ? plainSummary(steps[step.stepType].summary(step.input)) : '';
 
+const customFieldResult = (step: RunStepRow) =>
+  sprintf(
+    step.output.changed
+      ? /* translators: %s: custom field name */ __('Custom field %s updated', 'yaymatik')
+      : /* translators: %s: custom field name */ __('Custom field %s unchanged', 'yaymatik'),
+    text(step.output.key),
+  );
+
 type ResultText = (step: RunStepRow, run: Pick<Run, 'waitUntil'>) => string;
 
 const results: Partial<Record<StepId, ResultText>> = {
@@ -42,13 +50,8 @@ const results: Partial<Record<StepId, ResultText>> = {
     /* translators: %s: email addresses, comma-separated */
     sprintf(__('Sent to %s', 'yaymatik'), Array.isArray(step.output.to) ? step.output.to.join(', ') : ''),
   generate_coupon: (step) => text(step.output.code),
-  update_order_meta: (step) =>
-    sprintf(
-      step.output.changed
-        ? /* translators: %s: custom field name */ __('Custom field %s updated', 'yaymatik')
-        : /* translators: %s: custom field name */ __('Custom field %s unchanged', 'yaymatik'),
-      text(step.output.key),
-    ),
+  update_order_meta: (step) => customFieldResult(step),
+  update_customer_meta: (step) => customFieldResult(step),
 };
 
 /** What a step did ("Yes", "Sent to a@b.com"), why it didn't, or else its card summary ("Set to Completed"). */

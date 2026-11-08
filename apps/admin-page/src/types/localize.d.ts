@@ -41,6 +41,8 @@ export interface StepFieldMeta {
   /** Accepts merge tags. */
   variables?: true;
   placeholder?: string;
+  /** text: suggestions the app loads; any other text can be typed. */
+  suggest?: 'customer-meta-keys';
   help?: string;
   /** Shown only while another field has this value (or one of these values). */
   showIf?: { field: string; value: unknown };

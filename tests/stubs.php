@@ -381,3 +381,26 @@ if ( ! function_exists( 'wc_get_product' ) ) {
         return $GLOBALS['yaymatik_test_products'][ $product_id ] ?? false;
     }
 }
+
+if ( ! function_exists( 'wp_slash' ) ) {
+    function wp_slash( $value ) {
+        return is_string( $value ) ? addslashes( $value ) : $value;
+    }
+}
+
+if ( ! function_exists( 'metadata_exists' ) ) {
+    function metadata_exists( $meta_type, $object_id, $meta_key ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundBeforeLastUsed -- same signature as WordPress.
+        return isset( $GLOBALS['yaymatik_test_users'][ $object_id ]->meta ) && array_key_exists( $meta_key, $GLOBALS['yaymatik_test_users'][ $object_id ]->meta );
+    }
+}
+
+if ( ! function_exists( 'update_user_meta' ) ) {
+    // Unslashes its key and value, as WordPress does.
+    function update_user_meta( $user_id, $meta_key, $meta_value ) {
+        if ( ! empty( $GLOBALS['yaymatik_test_meta_write_fails'] ) ) {
+            return false;
+        }
+        $GLOBALS['yaymatik_test_users'][ $user_id ]->meta[ stripslashes( $meta_key ) ] = stripslashes( $meta_value );
+        return true;
+    }
+}

@@ -36,4 +36,26 @@ final class MetaKeys {
             || 0 === strpos( $key, self::OWN_PREFIX )
             || 1 === preg_match( '/^' . preg_quote( $wpdb->base_prefix, '/' ) . '(\d+_)?(capabilities|user_level|user-settings|user-settings-time)$/i', $key );
     }
+
+    /**
+     * Whether writing this key on this user would reach a blocked row: the `meta_key` collation can match `WP_CAPABILITIES` or `wp_capabilitiés` to `wp_capabilities`. A failed query counts as a match.
+     *
+     * @param int    $user_id
+     * @param string $key
+     */
+    public static function user_collides( int $user_id, string $key ): bool {
+        global $wpdb;
+        // Every row the write can reach, as `update_user_meta()` finds them; DISTINCT would fold the spellings into one.
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- the collation's answer, past any cache.
+        $found = $wpdb->get_col( $wpdb->prepare( "SELECT meta_key FROM {$wpdb->usermeta} WHERE user_id = %d AND meta_key = %s", $user_id, $key ) );
+        if ( '' !== $wpdb->last_error ) {
+            return true;
+        }
+        foreach ( (array) $found as $stored ) {
+            if ( self::user_blocked( (string) $stored ) ) {
+                return true;
+            }
+        }
+        return false;
+    }
 }

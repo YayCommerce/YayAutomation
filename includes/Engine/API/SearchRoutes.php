@@ -2,6 +2,7 @@
 namespace YayMatik\Engine\API;
 
 use YayMatik\Utils\SingletonTrait;
+use YayMatik\Workflow\Actions\UpdateCustomerMeta;
 use YayMatik\Workflow\Conditions\Criteria;
 use YayMatik\Workflow\Core\Data\MetaKeys;
 use YayMatik\Workflow\Core\Storage\WorkflowStore;
@@ -65,14 +66,17 @@ class SearchRoutes {
         );
     }
 
-    /** Custom field names other workflows use, live and draft: `{ keys: string[] }`. */
+    /** Custom field names other workflows read in rules or write, live and draft: `{ keys: string[] }`. */
     public function customer_meta_keys() {
         $keys = [];
         foreach ( WorkflowStore::all() as $workflow ) {
             foreach ( [ $workflow['graph'], $workflow['draft'] ?? [] ] as $graph ) {
                 foreach ( $graph['nodes'] ?? [] as $node ) {
-                    if ( Criteria::ID === ( $node['data']['block'] ?? '' ) ) {
+                    $block = $node['data']['block'] ?? '';
+                    if ( Criteria::ID === $block ) {
                         $keys = array_merge( $keys, Criteria::meta_keys( $node['data']['config'], 'customer.meta' ) );
+                    } elseif ( UpdateCustomerMeta::ID === $block && is_string( $node['data']['config']['key'] ?? null ) && '' !== $node['data']['config']['key'] ) {
+                        $keys[] = $node['data']['config']['key'];
                     }
                 }
             }
