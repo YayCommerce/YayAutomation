@@ -33,6 +33,21 @@ final class ChangeCustomerRoleTest extends TestCase {
                     'name'         => 'Editor',
                     'capabilities' => [ 'unfiltered_html' => true ],
                 ],
+                'author'        => [
+                    'name'         => 'Author',
+                    'capabilities' => [
+                        'read'          => true,
+                        'publish_posts' => true,
+                        'upload_files'  => true,
+                    ],
+                ],
+                'contributor'   => [
+                    'name'         => 'Contributor',
+                    'capabilities' => [
+                        'read'       => true,
+                        'edit_posts' => true,
+                    ],
+                ],
                 'helper'        => [
                     'name'         => 'Helper',
                     'capabilities' => [
@@ -42,7 +57,10 @@ final class ChangeCustomerRoleTest extends TestCase {
                 ],
                 'was_staff'     => [
                     'name'         => 'Former staff',
-                    'capabilities' => [ 'edit_users' => false ],
+                    'capabilities' => [
+                        'read'       => true,
+                        'edit_users' => false,
+                    ],
                 ],
                 'customer'      => [
                     'name'         => 'Customer',
@@ -113,13 +131,16 @@ final class ChangeCustomerRoleTest extends TestCase {
             ],
             ChangeCustomerRole::assignable_roles()
         );
+        foreach ( [ 'author', 'editor', 'contributor' ] as $role ) {
+            $this->assertArrayNotHasKey( $role, ChangeCustomerRole::assignable_roles(), $role );
+        }
         $this->allow_all();
-        $this->assertCount( 7, ChangeCustomerRole::assignable_roles(), 'the filter lists every role' );
+        $this->assertCount( 9, ChangeCustomerRole::assignable_roles(), 'the filter lists every role' );
     }
 
     public function test_a_role_outside_the_list_is_an_issue_at_save(): void {
         $step = new ChangeCustomerRole();
-        foreach ( [ 'administrator', 'shop_manager', 'helper', 'gone' ] as $role ) {
+        foreach ( [ 'administrator', 'shop_manager', 'helper', 'author', 'contributor', 'gone' ] as $role ) {
             $this->assertInstanceOf( \WP_Error::class, $step->validate( $step->sanitize( [ 'role' => $role ] ) ), $role );
         }
         $this->assertTrue( $step->validate( $step->sanitize( [ 'role' => 'wholesale' ] ) ) );

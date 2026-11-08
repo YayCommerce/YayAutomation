@@ -1175,16 +1175,8 @@
                         "label": "Role",
                         "required": true,
                         "requiredMessage": "%s needs a role.",
-                        "help": "Administrator, Shop manager and roles that can manage the site aren’t listed.",
+                        "help": "Only roles with customer rights are listed: no staff, editing or publishing roles.",
                         "options": [
-                            {
-                                "value": "author",
-                                "label": "Author"
-                            },
-                            {
-                                "value": "contributor",
-                                "label": "Contributor"
-                            },
                             {
                                 "value": "subscriber",
                                 "label": "Subscriber"

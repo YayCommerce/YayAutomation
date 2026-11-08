@@ -18,7 +18,7 @@ class ChangeCustomerRole extends Action {
     /** Lifts the protected-role checks, never the last-role one: `apply_filters( 'yaymatik_change_role_allow_all', false )`. */
     public const ALLOW_ALL_FILTER = 'yaymatik_change_role_allow_all';
 
-    /** Capabilities that run the site or the store: a role with one is never assigned, a user with one never changed. */
+    /** Capabilities beyond a customer's: a role with one is never assigned, a user with one never changed. Triggers fire on public events, so any buyer could get the role. */
     public const PROTECTED_CAPS = [
         'manage_options',
         'manage_woocommerce',
@@ -44,6 +44,18 @@ class ChangeCustomerRole extends Action {
         'unfiltered_html',
         'unfiltered_upload',
         'edit_shop_orders',
+        'edit_posts',
+        'publish_posts',
+        'edit_others_posts',
+        'edit_pages',
+        'upload_files',
+        'moderate_comments',
+        'edit_products',
+        'edit_shop_coupons',
+        'manage_product_terms',
+        'view_woocommerce_reports',
+        'import',
+        'export',
     ];
 
     private const STAFF_ROLES = [ 'administrator', 'shop_manager' ];
@@ -86,7 +98,7 @@ class ChangeCustomerRole extends Action {
             Field::select( 'role', __( 'Role', 'yaymatik' ), [ self::class, 'assignable_roles' ] )
                 /* translators: %s: step name, e.g. "Change customer role" */
                 ->required( __( '%s needs a role.', 'yaymatik' ) )
-                ->help( __( 'Administrator, Shop manager and roles that can manage the site aren’t listed.', 'yaymatik' ) ),
+                ->help( __( 'Only roles with customer rights are listed: no staff, editing or publishing roles.', 'yaymatik' ) ),
         ];
     }
 

@@ -139,7 +139,7 @@ register_shutdown_function(
 );
 $role_step = new ChangeCustomerRole();
 $listed    = array_keys( ChangeCustomerRole::assignable_roles() );
-$ok( ! array_intersect( [ 'administrator', 'shop_manager', 'editor', 'check_helper' ], $listed ) && in_array( 'check_wholesale', $listed, true ) && in_array( 'customer', $listed, true ), 'change_customer_role: the list has no staff role and no role with a protected capability' );
+$ok( ! array_intersect( [ 'administrator', 'shop_manager', 'editor', 'author', 'contributor', 'check_helper' ], $listed ) && in_array( 'check_wholesale', $listed, true ) && in_array( 'customer', $listed, true ) && in_array( 'subscriber', $listed, true ), 'change_customer_role: the list has only read-only roles (' . implode( ', ', $listed ) . ')' );
 $ok( is_wp_error( $role_step->validate( $role_step->sanitize( [ 'role' => 'administrator' ] ) ) ), 'change_customer_role: Administrator is an issue at save' );
 /** A user with these roles and an order of theirs; [ user id, scope ]. */
 $role_user = function ( array $roles ) use ( $new_user, $order, $order_scope ): array {
