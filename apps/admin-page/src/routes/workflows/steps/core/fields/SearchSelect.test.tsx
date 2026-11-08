@@ -15,9 +15,18 @@ const get = vi.mocked(api.get);
 
 /** What the server answers, by a request's params. */
 function answer(reply: (params: URLSearchParams) => Page) {
-  get.mockImplementation(((_url: string, options: { searchParams: URLSearchParams }) => ({
-    json: () => Promise.resolve(reply(options.searchParams)),
-  })) as never);
+  respond((params) => Promise.resolve(reply(params)));
+}
+
+/** Each response marks itself `done` once its body has been read, for `answered()`. */
+function respond(body: (params: URLSearchParams) => Promise<Page>) {
+  get.mockImplementation(((_url: string, options: { searchParams: URLSearchParams }) => {
+    const response = {
+      done: false,
+      json: () => body(options.searchParams).finally(() => (response.done = true)),
+    };
+    return response;
+  }) as never);
 }
 
 const settle = (ms = 0) => act(() => new Promise((done) => setTimeout(done, ms)));
@@ -56,9 +65,20 @@ const mount = async (value: string[], onChange = vi.fn()) => {
   return onChange;
 };
 
+/** Settles until a request after the first `asked` has been made and all have answered, then once more to render. */
+const answered = async (asked: number) => {
+  for (let i = 0; i < 100; i++) {
+    await settle(i ? 5 : 0);
+    const replies = get.mock.results.map((result) => (result.value as { done?: boolean }).done);
+    if (replies.length > asked && replies.every(Boolean)) break;
+  }
+  await settle(5);
+};
+
 const openList = async () => {
+  const asked = get.mock.calls.length;
   act(() => document.getElementById('s')!.click());
-  await settle();
+  await answered(asked);
 };
 
 const page = (...labels: string[]) => labels.map((label) => ({ value: label.toLowerCase(), label }));
@@ -77,8 +97,9 @@ describe('SearchSelect', () => {
     expect(document.body.textContent).toContain('Mug');
 
     const more = [...document.querySelectorAll('button')].find((b) => b.textContent === 'Load more')!;
+    const asked = get.mock.calls.length;
     act(() => more.click());
-    await settle();
+    await answered(asked);
 
     expect(document.body.textContent).toContain('Mug');
     expect(document.body.textContent).toContain('Tea');
@@ -88,7 +109,7 @@ describe('SearchSelect', () => {
   it('loads a saved rule’s labels through include', async () => {
     answer(() => ({ items: [{ value: '4', label: 'Mug' }], hasMore: false }));
     await mount(['4']);
-    await settle(5);
+    await answered(0);
 
     expect(listRequests()[0].getAll('include[]')).toEqual(['4']);
     expect(container.textContent).toContain('Mug');
@@ -97,24 +118,23 @@ describe('SearchSelect', () => {
   it('asks for many saved values in batches the server accepts', async () => {
     answer(() => ({ items: [], hasMore: false }));
     await mount(Array.from({ length: 101 }, (_, i) => String(i + 1)));
-    await settle(5);
+    await answered(0);
 
     expect(listRequests().map((params) => params.getAll('include[]').length)).toEqual([100, 1]);
   });
 
   it('never shows a value as deleted when the request failed', async () => {
-    get.mockImplementation((() => ({ json: () => Promise.reject(new Error('down')) })) as never);
+    respond(() => Promise.reject(new Error('down')));
     await mount(['12']);
-    await settle(5);
+    await answered(0);
 
     expect(container.textContent).not.toContain('#12');
   });
 
   it('says the list failed, not that nothing was found', async () => {
-    get.mockImplementation((() => ({ json: () => Promise.reject(new Error('down')) })) as never);
+    respond(() => Promise.reject(new Error('down')));
     await mount([]);
     await openList();
-    await settle(5);
 
     expect(document.body.textContent).toContain('Couldn’t load the list.');
     expect(document.body.textContent).not.toContain('Nothing found.');
@@ -123,7 +143,7 @@ describe('SearchSelect', () => {
   it('shows a deleted id as #12', async () => {
     answer(() => ({ items: [], hasMore: false }));
     await mount(['12']);
-    await settle(5);
+    await answered(0);
 
     expect(container.textContent).toContain('#12');
   });
