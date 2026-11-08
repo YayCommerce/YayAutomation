@@ -26,6 +26,7 @@ final class ModuleRegistryTest extends TestCase {
         'order_created',
         'order_status_changed',
         'order_paid',
+        'order_refunded',
         'order_note_added',
         'cart_abandoned',
         'checkout_abandoned',
@@ -55,13 +56,13 @@ final class ModuleRegistryTest extends TestCase {
 
         $this->assertSame( [ 'yaymatik', 'woocommerce' ], array_keys( $modules ) );
         $this->assertEqualsCanonicalizing( self::STEPS, array_keys( ModuleRegistry::steps( $modules ) ) );
-        $this->assertSame( [ 'site', 'order', 'cart', 'customer', 'order_item' ], array_keys( ModuleRegistry::data( $modules ) ) );
+        $this->assertSame( [ 'site', 'order', 'cart', 'customer', 'refund', 'order_item' ], array_keys( ModuleRegistry::data( $modules ) ) );
         $plugins = ModuleRegistry::plugins( $modules );
         $this->assertSame( 'yaymatik', $plugins['condition'] );
         $this->assertSame(
             [
                 'yaymatik'    => 2,
-                'woocommerce' => 14,
+                'woocommerce' => 15,
             ],
             array_count_values( $plugins )
         );
@@ -78,7 +79,7 @@ final class ModuleRegistryTest extends TestCase {
     public function test_the_registries_read_the_loaded_modules(): void {
         $this->assertSame( ModuleRegistry::plugins( ModuleRegistry::modules() ), ModuleRegistry::plugins( ModuleRegistry::from( ModuleRegistry::classes() ) ) );
         $this->assertEqualsCanonicalizing( self::STEPS, array_keys( StepRegistry::all() ) );
-        $this->assertSame( [ 'site', 'order', 'cart', 'customer' ], array_keys( DataRegistry::items() ), 'order_item only through order.items' );
+        $this->assertSame( [ 'site', 'order', 'cart', 'customer', 'refund' ], array_keys( DataRegistry::items() ), 'order_item only through order.items' );
         $this->assertArrayHasKey( 'order_item', DataRegistry::entities() );
     }
 

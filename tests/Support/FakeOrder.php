@@ -4,7 +4,7 @@ namespace YayMatik\Tests\Support;
 /** A `WC_Order` that records what steps do to it. Load woocommerce-stubs.php first. */
 final class FakeOrder extends \WC_Order {
 
-    /** @var FakeOrder[] What `wc_get_order()` finds, by id. */
+    /** @var FakeOrder[]|\WC_Order_Refund[] What `wc_get_order()` finds, by id. */
     public static $found = [];
 
     /** @var array[] [ note, is_customer_note ]. */

@@ -274,6 +274,23 @@
                 "fields": [],
                 "outputs": []
             },
+            "order_refunded": {
+                "kind": "trigger",
+                "plugin": "woocommerce",
+                "provides": [
+                    "order",
+                    "customer",
+                    "refund"
+                ],
+                "category": "order",
+                "label": "Order refunded",
+                "description": "Starts for each refund, partial or full.",
+                "icon": "receipt",
+                "summary": "When an order is refunded",
+                "onError": "stop",
+                "fields": [],
+                "outputs": []
+            },
             "order_note_added": {
                 "kind": "trigger",
                 "plugin": "woocommerce",
@@ -5232,6 +5249,36 @@
                     {
                         "key": "customer.unsubscribed",
                         "label": "Customer unsubscribed",
+                        "type": "boolean",
+                        "valueType": "boolean",
+                        "conditional": true
+                    }
+                ],
+                "relations": []
+            },
+            {
+                "id": "refund",
+                "label": "Refund",
+                "description": "The refund that started the run: amount, reason and whether it was the full order.",
+                "icon": "receipt",
+                "fields": [
+                    {
+                        "key": "refund.amount",
+                        "label": "Refund amount",
+                        "type": "number",
+                        "valueType": "money",
+                        "conditional": true
+                    },
+                    {
+                        "key": "refund.reason",
+                        "label": "Refund reason",
+                        "type": "string",
+                        "valueType": "string",
+                        "conditional": true
+                    },
+                    {
+                        "key": "refund.is_full",
+                        "label": "Full refund",
                         "type": "boolean",
                         "valueType": "boolean",
                         "conditional": true

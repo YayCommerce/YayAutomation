@@ -18,6 +18,7 @@ use YayMatik\Workflow\Triggers\CustomerInactive;
 use YayMatik\Workflow\Triggers\OrderCreated;
 use YayMatik\Workflow\Triggers\OrderNoteAdded;
 use YayMatik\Workflow\Triggers\OrderPaid;
+use YayMatik\Workflow\Triggers\OrderRefunded;
 use YayMatik\Workflow\Triggers\OrderStatusChanged;
 
 require_once dirname( __DIR__, 3 ) . '/Support/woocommerce-stubs.php';
@@ -28,7 +29,7 @@ final class StepContractTest extends TestCase {
     /** @return Step[] Keyed by id. */
     private static function steps(): array {
         $steps = [];
-        foreach ( [ new OrderCreated(), new OrderStatusChanged(), new OrderPaid(), new OrderNoteAdded(), new CustomerInactive(), new Criteria(), new SendEmail(), new SendInternalEmail(), new ChangeOrderStatus(), new AddOrderNote(), new UpdateOrderMeta(), new GenerateCoupon(), new Wait() ] as $step ) {
+        foreach ( [ new OrderCreated(), new OrderStatusChanged(), new OrderPaid(), new OrderRefunded(), new OrderNoteAdded(), new CustomerInactive(), new Criteria(), new SendEmail(), new SendInternalEmail(), new ChangeOrderStatus(), new AddOrderNote(), new UpdateOrderMeta(), new GenerateCoupon(), new Wait() ] as $step ) {
             $steps[ $step->id() ] = $step;
         }
         return $steps;
@@ -102,6 +103,7 @@ final class StepContractTest extends TestCase {
                 'order_created'        => [],
                 'order_status_changed' => [],
                 'order_paid'           => [],
+                'order_refunded'       => [],
                 'order_note_added'     => [],
                 'customer_inactive'    => [],
                 'condition'            => [ 'result' ],

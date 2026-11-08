@@ -605,6 +605,20 @@ final class ValidatorTest extends TestCase {
         $this->assertSame( [ 'a', 'n' ], array_column( Validator::warnings( $graph( false ) ), 'nodeId' ) );
     }
 
+    public function test_change_order_status_can_set_off_order_refunded(): void {
+        $graph = GraphSchema::prepare(
+            [
+                'nodes' => [
+                    self::node( 't', 'trigger', 'order_refunded' ),
+                    self::node( 'a', 'action', 'change_order_status', [ 'status' => 'refunded' ] ),
+                ],
+                'edges' => [ self::edge( 't', 'a' ) ],
+            ]
+        );
+
+        $this->assertSame( [ 'a' ], array_column( Validator::warnings( $graph ), 'nodeId' ) );
+    }
+
     public function test_no_warning_on_order_paid_whose_order_cant_start_it_again(): void {
         $graph = GraphSchema::prepare(
             [

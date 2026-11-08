@@ -7,6 +7,7 @@ use YayMatik\Workflow\DataItems\CartData;
 use YayMatik\Workflow\DataItems\CustomerData;
 use YayMatik\Workflow\DataItems\OrderData;
 use YayMatik\Workflow\DataItems\OrderItemData;
+use YayMatik\Workflow\DataItems\RefundData;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -53,6 +54,10 @@ final class RefResolver {
             OrderItemData::ID => function ( string $id ) {
                 $item = function_exists( 'WC' ) ? \WC_Order_Factory::get_order_item( (int) $id ) : false;
                 return $item ? $item : null;
+            },
+            RefundData::ID    => function ( string $id ) {
+                $refund = function_exists( 'wc_get_order' ) ? wc_get_order( (int) $id ) : false;
+                return $refund instanceof \WC_Order_Refund ? $refund : null;
             },
             // `order:34` reads the order's billing details (guests too); `cart:5` the cart's shopper; `user:12` an account.
             CustomerData::ID  => function ( string $id ) {

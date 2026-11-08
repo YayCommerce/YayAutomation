@@ -39,6 +39,15 @@ final class SampleValuesTest extends TestCase {
         $this->assertSame( 'Processing', $values->text( 'order.status', false ) );
     }
 
+    public function test_refund_samples(): void {
+        $values = $this->values( [ 'refund' ] );
+
+        $this->assertSame( 20.0, $values->get( 'refund.amount' ) );
+        $this->assertSame( '$20.00', $values->text( 'refund.amount', false ) );
+        $this->assertSame( 'No', $values->text( 'refund.is_full', false ) );
+        $this->assertNotSame( '', $values->text( 'refund.reason', false ) );
+    }
+
     public function test_plain_samples_are_escaped_in_html(): void {
         $values = $this->values( [ 'customer' ] );
         $this->assertSame( 'jane.doe@example.com', $values->text( 'customer.email', true ) );

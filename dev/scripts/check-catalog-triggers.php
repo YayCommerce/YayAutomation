@@ -9,8 +9,10 @@
 // phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 use YayMatik\Workflow\Core\Definition\GraphSchema;
+use YayMatik\Workflow\Core\Email\EmailPreview;
 use YayMatik\Workflow\Core\Runtime\ActionSchedulerQueue;
 use YayMatik\Workflow\Core\Runtime\Runtime;
+use YayMatik\Workflow\Core\Storage\RunStepStore;
 use YayMatik\Workflow\Core\Storage\RunStore;
 use YayMatik\Workflow\Core\Storage\WorkflowStore;
 
@@ -28,6 +30,45 @@ $activate_graph = function ( array $graph ) use ( &$flows ): int {
 };
 /** Trigger → Add order note. */
 $active_flow = fn( string $trigger, array $config = [] ) => $activate_graph( $graph( $trigger, $config ) );
+/**
+ * A graph: this trigger, then each step in turn.
+ *
+ * @param array[] $steps [ id, step id, config ]
+ */
+$chain = function ( string $trigger, array $trigger_config, array $steps ): array {
+    $nodes = [];
+    $edges = [];
+    $last  = 'trigger';
+    foreach ( array_merge( [ [ 'trigger', $trigger, $trigger_config ] ], $steps ) as $y => $step ) {
+        list( $id, $block, $config ) = $step;
+        $nodes[]                     = [
+            'id'       => $id,
+            'kind'     => 'trigger' === $id ? 'trigger' : 'action',
+            'position' => [
+                'x' => 0,
+                'y' => 100 * $y,
+            ],
+            'data'     => [
+                'block'  => $block,
+                'config' => $config,
+            ],
+        ];
+        if ( 'trigger' !== $id ) {
+            $edges[] = [
+                'id'     => "e-{$id}",
+                'source' => $last,
+                'target' => $id,
+            ];
+        }
+        $last = $id;
+    }
+    return GraphSchema::prepare(
+        [
+            'nodes' => $nodes,
+            'edges' => $edges,
+        ]
+    );
+};
 
 $last_run   = fn() => (int) $wpdb->get_var( 'SELECT COALESCE(MAX(id), 0) FROM ' . RunStore::table() );
 $runs_after = fn( int $flow_id, int $after ) => array_map(
@@ -107,45 +148,7 @@ $counts = $started( $note_flows, fn() => wc_get_order( $noted )->add_order_note(
 $ok( [ 1, 1, 1, 1 ] === array_values( $counts ), 'note: a customer note with "shipped" in another case starts all four' );
 
 // A run changes the status: WooCommerce's status note is added while the run runs.
-$status_flow = $activate_graph(
-    GraphSchema::prepare(
-        [
-            'nodes' => [
-                [
-                    'id'       => 'trigger',
-                    'kind'     => 'trigger',
-                    'position' => [
-                        'x' => 0,
-                        'y' => 0,
-                    ],
-                    'data'     => [
-                        'block'  => 'order_paid',
-                        'config' => [],
-                    ],
-                ],
-                [
-                    'id'       => 'status',
-                    'kind'     => 'action',
-                    'position' => [
-                        'x' => 0,
-                        'y' => 100,
-                    ],
-                    'data'     => [
-                        'block'  => 'change_order_status',
-                        'config' => [ 'status' => 'completed' ],
-                    ],
-                ],
-            ],
-            'edges' => [
-                [
-                    'id'     => 'e',
-                    'source' => 'trigger',
-                    'target' => 'status',
-                ],
-            ],
-        ]
-    )
-);
+$status_flow = $activate_graph( $chain( 'order_paid', [], [ [ 'status', 'change_order_status', [ 'status' => 'completed' ] ] ] ) );
 $by_run      = $order();
 $before      = $last_run();
 wc_get_order( $by_run )->update_status( 'processing' );
@@ -162,5 +165,81 @@ $work( $loop_runs );
 $ok( ! $runs_after( $skip_off, $before ), 'note: its own run\'s note doesn\'t start it again (loop guard)' );
 $ok( ! $runs_after( $skip_on, $before ), 'note: a note an Add order note step adds doesn\'t start a workflow that skips them' );
 foreach ( array_merge( $note_flows, [ $status_flow ] ) as $flow_id ) {
+    WorkflowStore::deactivate( $flow_id );
+}
+
+// Order refunded.
+$plain_price = fn( float $amount ) => html_entity_decode( wp_strip_all_tags( wc_price( $amount ) ), ENT_QUOTES, 'UTF-8' );
+$refund_note = [
+    'type' => 'private',
+    'note' => 'refund {{ refund.amount }} full {{ refund.is_full }}',
+];
+$wait_hour   = [
+    'delay' => [
+        'value' => 1,
+        'unit'  => 'hours',
+    ],
+];
+$refund_flow = $activate_graph( $chain( 'order_refunded', [], [ [ 'note', 'add_order_note', $refund_note ] ] ) );
+$wait_flow   = $activate_graph( $chain( 'order_refunded', [], [ [ 'wait', 'wait', $wait_hour ], [ 'late', 'add_order_note', $refund_note ] ] ) );
+$refunded    = $order( [ 'total' => '50' ] );
+$refund      = function ( string $amount ) use ( $refunded ) {
+    $made = wc_create_refund(
+        [
+            'order_id' => $refunded,
+            'amount'   => $amount,
+            'reason'   => 'check-catalog',
+        ]
+    );
+    if ( is_wp_error( $made ) ) {
+        WP_CLI::error( 'Could not refund: ' . $made->get_error_message() );
+    }
+    Runtime::dispatcher()->flush();
+    return $made;
+};
+
+$before       = $last_run();
+$first_refund = $refund( '20' );
+$partial_runs = $runs_after( $refund_flow, $before );
+$waiting_runs = $runs_after( $wait_flow, $before );
+$before       = $last_run();
+$refund( '30' );
+$full_runs = $runs_after( $refund_flow, $before );
+$subjects  = array_unique( array_map( fn( int $run_id ) => RunStore::find( $run_id )['subject'], array_merge( $partial_runs, $full_runs ) ) );
+$ok( 1 === count( $partial_runs ) && 1 === count( $full_runs ), 'refunded: a partial refund, then the rest, start one run each' );
+$ok( [ "order:{$refunded}" ] === array_values( $subjects ), 'refunded: both runs are about the order' );
+
+$work( array_merge( $partial_runs, $full_runs ) );
+$notes = wp_list_pluck( wc_get_order_notes( [ 'order_id' => $refunded ] ), 'content' );
+$ok( in_array( 'refund ' . $plain_price( 20 ) . ' full No', $notes, true ), 'refunded: the first refund reads Full refund No, after the second landed' );
+$ok( in_array( 'refund ' . $plain_price( 30 ) . ' full Yes', $notes, true ), 'refunded: the second reads Full refund Yes; refund tags render' );
+
+$work( $waiting_runs );
+$ok( 'waiting' === RunStore::find( $waiting_runs[0] )['status'], 'refunded: a run waits before reading the refund' );
+$first_refund->delete( true );
+RunStore::save( $waiting_runs[0], [ 'wait_until' => gmdate( 'Y-m-d H:i:s', time() - 60 ) ] );
+$work( $waiting_runs );
+$late = array_values( array_filter( RunStepStore::for_run( $waiting_runs[0] ), fn( array $step ) => 'late' === $step['step_id'] ) )[0] ?? [];
+$ok( 'skipped' === ( $late['status'] ?? '' ) && 'Refund no longer exists.' === ( $late['error'] ?? '' ), 'refunded: the refund deleted during the Wait → the step is skipped, Refund no longer exists.' );
+
+$mail_graph = $chain(
+    'order_refunded',
+    [],
+    [
+        [
+            'mail',
+            'send_email',
+            [
+                'to'      => '{{ customer.email }}',
+                'subject' => 'Refund',
+                'heading' => 'Refund',
+                'message' => 'Refund {{ refund.amount }}: {{ refund.reason }}',
+            ],
+        ],
+    ]
+);
+$shown      = EmailPreview::render( $mail_graph, 'mail', $mail_graph['nodes'][1]['data']['config'], $refunded );
+$ok( is_array( $shown ) && $shown['sample'] && false !== strpos( $shown['html'], 'Damaged in transit' ), 'refunded: Preview on a real order shows the sample refund, with the Sample badge' );
+foreach ( [ $refund_flow, $wait_flow ] as $flow_id ) {
     WorkflowStore::deactivate( $flow_id );
 }

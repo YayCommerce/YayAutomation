@@ -13,6 +13,7 @@ export type StepId =
   | 'order_created'
   | 'order_status_changed'
   | 'order_paid'
+  | 'order_refunded'
   | 'order_note_added'
   | 'cart_abandoned'
   | 'checkout_abandoned'

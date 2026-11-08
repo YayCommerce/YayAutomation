@@ -11,6 +11,7 @@ use YayMatik\Workflow\Triggers\CustomerInactive;
 use YayMatik\Workflow\Triggers\OrderCreated;
 use YayMatik\Workflow\Triggers\OrderNoteAdded;
 use YayMatik\Workflow\Triggers\OrderPaid;
+use YayMatik\Workflow\Triggers\OrderRefunded;
 use YayMatik\Workflow\Triggers\OrderStatusChanged;
 
 require_once dirname( __DIR__, 2 ) . '/Support/woocommerce-stubs.php';
@@ -117,6 +118,42 @@ final class TriggerRefsTest extends TestCase {
             $this->assertSame( [ 'order', 'customer' ], array_keys( $trigger->refs( $args ) ), 'the note is not stored in the run' );
             $this->assertNull( $trigger->refs( [ 'order_id' => 13 ] ) );
         }
+    }
+
+    public function test_refunded_adds_the_refund_and_needs_it(): void {
+        FakeOrder::$found[30] = new \WC_Order_Refund(
+            [
+                'id'        => 30,
+                'parent_id' => 12,
+            ]
+        );
+        FakeOrder::$found[31] = new \WC_Order_Refund(
+            [
+                'id'        => 31,
+                'parent_id' => 99,
+            ]
+        );
+        $trigger              = new OrderRefunded();
+        $args                 = [
+            'order_id'  => 12,
+            'refund_id' => 30,
+        ];
+        $refs                 = $trigger->refs( $args );
+
+        $this->assertSame( [ 'order', 'customer', 'refund' ], $trigger->provides() );
+        $this->assertSame( 'order:12', $trigger->subject( $args ) );
+        $this->assertSame( 'refund:30', $refs['refund']->key() );
+        $this->assertSame( [ 'order', 'customer', 'refund' ], array_keys( $trigger->context( $args ) ) );
+        $this->assertNull( $trigger->refs( [ 'order_id' => 12 ] ), 'no refund_id' );
+        $this->assertNull(
+            $trigger->refs(
+                [
+                    'order_id'  => 12,
+                    'refund_id' => 31,
+                ]
+            ),
+            'another order\'s refund'
+        );
     }
 
     public function test_status_changed_adds_from_and_to(): void {
