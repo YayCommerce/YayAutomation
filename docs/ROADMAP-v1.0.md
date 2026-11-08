@@ -88,7 +88,7 @@ We chose these 8 because they cover what merchants install an automation plugin 
 
 ### Editor
 
-**Today:** a visual canvas that pans on wheel or trackpad and zooms on Ctrl/Cmd + wheel or pinch, with Order created, Order status changed, Order paid, Order refunded, Order note added, Cart abandoned, Checkout abandoned, Customer account created, Customer inactive, Customer order count reaches, Customer total spend reaches, Review posted (picker sections Order, Carts, Customers, Reviews), actions for staff email, order status, order note, order and customer custom fields (customer field names suggested from other workflows), conditions over order and customer data (products, categories, coupons, countries, totals spent, custom fields and more), "Insert variable", and "Needs setup" / error highlights.
+**Today:** a visual canvas that pans on wheel or trackpad and zooms on Ctrl/Cmd + wheel or pinch, with Order created, Order status changed, Order paid, Order refunded, Order note added, Cart abandoned, Checkout abandoned, Customer account created, Customer inactive, Customer order count reaches, Customer total spend reaches, Review posted (picker sections Order, Carts, Customers, Reviews), actions for staff email, order status, order note, order and customer custom fields (customer field names suggested from other workflows), customer role (add, remove or replace; staff roles never listed or changed), conditions over order and customer data (products, categories, coupons, countries, totals spent, custom fields and more), "Insert variable", and "Needs setup" / error highlights.
 
 **v1.0 adds:**
 - **Pickers:** WooCommerce gets new sections: Carts and Customers for triggers, Coupons for actions. A new YayMatik group holds Wait. *(M1, M2, M4, M6, M8)*

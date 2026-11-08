@@ -4,6 +4,7 @@ namespace YayMatik\Tests\Unit\Core\Steps;
 use PHPUnit\Framework\TestCase;
 use YayMatik\Workflow\Core\Data\Type;
 use YayMatik\Workflow\Actions\AddOrderNote;
+use YayMatik\Workflow\Actions\ChangeCustomerRole;
 use YayMatik\Workflow\Actions\ChangeOrderStatus;
 use YayMatik\Workflow\Actions\GenerateCoupon;
 use YayMatik\Workflow\Actions\SendEmail;
@@ -47,7 +48,7 @@ final class StepContractTest extends TestCase {
     /** @return Step[] Keyed by id. */
     private static function steps(): array {
         $steps = [];
-        foreach ( [ new OrderCreated(), new OrderStatusChanged(), new OrderPaid(), new OrderRefunded(), new OrderNoteAdded(), new CustomerInactive(), new CustomerOrderCountReaches(), new CustomerTotalSpendReaches(), new ReviewPosted(), new Criteria(), new SendEmail(), new SendInternalEmail(), new ChangeOrderStatus(), new AddOrderNote(), new UpdateOrderMeta(), new UpdateCustomerMeta(), new GenerateCoupon(), new Wait() ] as $step ) {
+        foreach ( [ new OrderCreated(), new OrderStatusChanged(), new OrderPaid(), new OrderRefunded(), new OrderNoteAdded(), new CustomerInactive(), new CustomerOrderCountReaches(), new CustomerTotalSpendReaches(), new ReviewPosted(), new Criteria(), new SendEmail(), new SendInternalEmail(), new ChangeOrderStatus(), new AddOrderNote(), new UpdateOrderMeta(), new UpdateCustomerMeta(), new ChangeCustomerRole(), new GenerateCoupon(), new Wait() ] as $step ) {
             $steps[ $step->id() ] = $step;
         }
         return $steps;
@@ -134,6 +135,7 @@ final class StepContractTest extends TestCase {
                 'add_order_note'               => [ 'type' ],
                 'update_order_meta'            => [ 'key', 'changed' ],
                 'update_customer_meta'         => [ 'key', 'changed' ],
+                'change_customer_role'         => [ 'from', 'to' ],
                 'generate_coupon'              => [ 'code', 'amount', 'expires_at', 'box' ],
                 'wait'                         => [],
             ],
@@ -205,6 +207,7 @@ final class StepContractTest extends TestCase {
             'add_order_note'               => [ 'note' => '' ],
             'update_order_meta'            => [ 'key' => '' ],
             'update_customer_meta'         => [ 'key' => '' ],
+            'change_customer_role'         => [ 'role' => '' ],
             'wait'                         => [
                 'delay' => [
                     'value' => 0,

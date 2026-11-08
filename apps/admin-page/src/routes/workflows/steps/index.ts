@@ -1,6 +1,7 @@
 import type { StepId } from '@yaymatik/types';
 
 import { addOrderNoteStep } from './actions/add-order-note';
+import { changeCustomerRoleStep } from './actions/change-customer-role';
 import { changeOrderStatusStep } from './actions/change-order-status';
 import { generateCouponStep } from './actions/generate-coupon';
 import { sendEmailStep } from './actions/send-email';
@@ -47,6 +48,7 @@ const coreSteps = [
   addOrderNoteStep,
   updateOrderMetaStep,
   updateCustomerMetaStep,
+  changeCustomerRoleStep,
   generateCouponStep,
   waitStep,
 ];

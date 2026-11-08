@@ -71,6 +71,24 @@ describe('stepResult', () => {
     );
   });
 
+  it('names the role a step gave or took, by its name', () => {
+    const role = (mode: string, from = 'Customer', to = 'Customer, Wholesale') =>
+      stepResult(
+        row({ stepType: 'change_customer_role', input: { mode, role: 'customer' }, output: { from, to } }),
+        run,
+      );
+    expect(role('add')).toBe('Added Customer');
+    expect(role('remove')).toBe('Removed Customer');
+    expect(role('replace')).toBe('Replaced roles with Customer');
+    expect(role('add', 'Customer', 'Customer')).toBe('Roles unchanged');
+    expect(
+      stepResult(
+        row({ stepType: 'change_customer_role', input: { mode: 'add', role: 'gone' }, output: { to: 'gone' } }),
+        run,
+      ),
+    ).toBe('Added gone');
+  });
+
   it('falls back to the card summary, and to nothing for a removed step', () => {
     expect(stepResult(row({ stepType: 'add_order_note', input: { note: 'Thanks', type: 'private' } }), run)).not.toBe(
       '',

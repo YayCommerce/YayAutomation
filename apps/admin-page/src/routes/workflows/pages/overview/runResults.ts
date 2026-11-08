@@ -3,6 +3,7 @@ import { __, sprintf } from '@wordpress/i18n';
 
 import { shortDayTime } from '@/lib/helpers/date.helper';
 import { plainSummary, steps } from '../../steps';
+import { optionLabel } from '../../steps/core/summary';
 
 type RunStepRow = RunDetail['steps'][number];
 
@@ -19,6 +20,12 @@ const customFieldResult = (step: RunStepRow) =>
       : /* translators: %s: custom field name */ __('Custom field %s unchanged', 'yaymatik'),
     text(step.output.key),
   );
+
+/** A role's name from the catalog's list; a role gone since reads as its slug. */
+const roleName = (slug: string) => {
+  const field = window.yayMatikMeta.automation.steps.change_customer_role?.fields.find(({ key }) => key === 'role');
+  return field ? optionLabel(field, slug) : slug;
+};
 
 type ResultText = (step: RunStepRow, run: Pick<Run, 'waitUntil'>) => string;
 
@@ -52,6 +59,16 @@ const results: Partial<Record<StepId, ResultText>> = {
   generate_coupon: (step) => text(step.output.code),
   update_order_meta: (step) => customFieldResult(step),
   update_customer_meta: (step) => customFieldResult(step),
+  change_customer_role: (step) => {
+    const role = roleName(text(step.input.role));
+    if (step.output.from === step.output.to) return __('Roles unchanged', 'yaymatik');
+    if (step.input.mode === 'remove')
+      return /* translators: %s: role name */ sprintf(__('Removed %s', 'yaymatik'), role);
+    if (step.input.mode === 'replace') {
+      return /* translators: %s: role name */ sprintf(__('Replaced roles with %s', 'yaymatik'), role);
+    }
+    return /* translators: %s: role name */ sprintf(__('Added %s', 'yaymatik'), role);
+  },
 };
 
 /** What a step did ("Yes", "Sent to a@b.com"), why it didn't, or else its card summary ("Set to Completed"). */

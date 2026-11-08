@@ -41,6 +41,7 @@ final class ModuleRegistryTest extends TestCase {
         'add_order_note',
         'update_order_meta',
         'update_customer_meta',
+        'change_customer_role',
         'generate_coupon',
         'condition',
         'wait',
@@ -66,7 +67,7 @@ final class ModuleRegistryTest extends TestCase {
         $this->assertSame(
             [
                 'yaymatik'    => 2,
-                'woocommerce' => 19,
+                'woocommerce' => 20,
             ],
             array_count_values( $plugins )
         );

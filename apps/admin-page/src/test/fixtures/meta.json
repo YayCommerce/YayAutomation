@@ -879,6 +879,80 @@
                     }
                 ]
             },
+            "change_customer_role": {
+                "kind": "action",
+                "plugin": "woocommerce",
+                "category": "customer",
+                "requires": [
+                    "customer"
+                ],
+                "label": "Change customer role",
+                "description": "Add, remove or replace a role on the customer’s account.",
+                "icon": "user",
+                "summary": "%mode%: %role%",
+                "onError": "stop",
+                "fields": [
+                    {
+                        "key": "mode",
+                        "type": "select",
+                        "label": "Change",
+                        "options": [
+                            {
+                                "value": "add",
+                                "label": "Add a role"
+                            },
+                            {
+                                "value": "remove",
+                                "label": "Remove a role"
+                            },
+                            {
+                                "value": "replace",
+                                "label": "Replace roles"
+                            }
+                        ],
+                        "default": "add"
+                    },
+                    {
+                        "key": "role",
+                        "type": "select",
+                        "label": "Role",
+                        "required": true,
+                        "requiredMessage": "%s needs a role.",
+                        "help": "Administrator, Shop manager and roles that can manage the site aren’t listed.",
+                        "options": [
+                            {
+                                "value": "author",
+                                "label": "Author"
+                            },
+                            {
+                                "value": "contributor",
+                                "label": "Contributor"
+                            },
+                            {
+                                "value": "subscriber",
+                                "label": "Subscriber"
+                            },
+                            {
+                                "value": "customer",
+                                "label": "Customer"
+                            }
+                        ],
+                        "default": ""
+                    }
+                ],
+                "outputs": [
+                    {
+                        "key": "from",
+                        "label": "Roles before",
+                        "type": "string"
+                    },
+                    {
+                        "key": "to",
+                        "label": "Roles after",
+                        "type": "string"
+                    }
+                ]
+            },
             "generate_coupon": {
                 "kind": "action",
                 "plugin": "woocommerce",

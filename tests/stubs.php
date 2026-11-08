@@ -404,3 +404,47 @@ if ( ! function_exists( 'update_user_meta' ) ) {
         return true;
     }
 }
+
+// phpcs:disable Generic.Files.OneObjectStructurePerFile.MultipleFound -- one file of stand-ins, like WP_Error above.
+if ( ! class_exists( 'WP_Roles' ) ) {
+    /** The roles a test sets: slug => [ 'name' => …, 'capabilities' => [ cap => bool ] ]. */
+    class WP_Roles {
+
+        /** @var array */
+        public $roles;
+
+        public function __construct( array $roles = [] ) {
+            $this->roles = $roles;
+        }
+
+        public function get_names() {
+            return array_map( fn( $role ) => $role['name'], $this->roles );
+        }
+    }
+}
+
+// phpcs:enable Generic.Files.OneObjectStructurePerFile.MultipleFound
+
+if ( ! function_exists( 'wp_roles' ) ) {
+    function wp_roles() {
+        return $GLOBALS['yaymatik_test_roles'] ?? new WP_Roles();
+    }
+}
+
+if ( ! function_exists( 'translate_user_role' ) ) {
+    function translate_user_role( $name ) {
+        return $name;
+    }
+}
+
+if ( ! function_exists( 'is_super_admin' ) ) {
+    function is_super_admin( $user_id = false ) {
+        return ! empty( $GLOBALS['yaymatik_test_super_admins'][ $user_id ] );
+    }
+}
+
+if ( ! function_exists( 'user_can' ) ) {
+    function user_can( $user, $capability ) {
+        return ! empty( $user->allcaps[ $capability ] );
+    }
+}

@@ -2,6 +2,7 @@
 namespace YayMatik\Workflow\Modules;
 
 use YayMatik\Workflow\Actions\AddOrderNote;
+use YayMatik\Workflow\Actions\ChangeCustomerRole;
 use YayMatik\Workflow\Actions\ChangeOrderStatus;
 use YayMatik\Workflow\Actions\GenerateCoupon;
 use YayMatik\Workflow\Actions\SendEmail;
@@ -79,6 +80,7 @@ class WoocommerceModule extends Module {
             AddOrderNote::class,
             UpdateOrderMeta::class,
             UpdateCustomerMeta::class,
+            ChangeCustomerRole::class,
             GenerateCoupon::class,
         ];
     }
