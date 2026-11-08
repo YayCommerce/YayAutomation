@@ -329,7 +329,8 @@ final class CriteriaTest extends TestCase {
     public function test_group_checks(): void {
         $good = self::rule( 'order.total', 'equal', '1' );
         $this->assertTrue( self::check_items( [ self::group( 'any', [ $good ] ), $good ] ) );
-        $this->assertSame( Messages::get( 'rulesRequired' ), self::check_items( [ $good, self::group( 'all', [] ) ] ), 'an empty group' );
+        $this->assertSame( Messages::get( 'groupRulesRequired' ), self::check_items( [ $good, self::group( 'all', [] ) ] ), 'an empty group' );
+        $this->assertSame( Messages::get( 'groupRulesRequired' ), self::check_items( [ $good, self::group( 'any', [ self::rule( '', '' ) ] ) ] ), 'a group with a blank rule' );
         $this->assertSame( Messages::get( 'rulesRequired' ), self::check_items( [ self::group( 'all', [] ) ] ), 'only an empty group' );
         $this->assertSame( Messages::get( 'ruleNumber' ), self::check_items( [ self::group( 'all', [ self::rule( 'order.total', 'equal', 'abc' ) ] ) ] ), 'a rule inside a group' );
     }

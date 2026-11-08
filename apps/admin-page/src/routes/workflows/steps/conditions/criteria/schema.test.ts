@@ -157,10 +157,10 @@ describe('groups', () => {
   });
 
   it('says an empty group needs a rule, as PHP does', () => {
-    expect(criteriaErrors([good, group([])])).toEqual([null, { own: messages.rulesRequired, rules: [] }]);
+    expect(criteriaErrors([good, group([])])).toEqual([null, { own: messages.groupRulesRequired, rules: [] }]);
     expect(criteriaErrors([good, group([rule({ field: '' })])])).toEqual([
       null,
-      { own: messages.rulesRequired, rules: [null] },
+      { own: messages.groupRulesRequired, rules: [null] },
     ]);
   });
 

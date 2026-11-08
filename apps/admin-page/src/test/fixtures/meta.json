@@ -5280,6 +5280,7 @@
             "numberMin": "Enter %s or more.",
             "numberMax": "Enter %s or less.",
             "rulesRequired": "Add a rule, or remove this condition.",
+            "groupRulesRequired": "Add a rule, or remove this group.",
             "ruleVariable": "Choose data for each rule.",
             "ruleComparison": "Choose a comparison for each rule.",
             "ruleCompareWith": "Choose data to compare with.",

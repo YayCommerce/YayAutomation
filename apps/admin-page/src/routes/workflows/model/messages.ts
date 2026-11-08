@@ -44,6 +44,7 @@ export const messages = {
   numberMax: __('Enter %s or less.', 'yaymatik'),
   // Condition rules.
   rulesRequired: __('Add a rule, or remove this condition.', 'yaymatik'),
+  groupRulesRequired: __('Add a rule, or remove this group.', 'yaymatik'),
   ruleVariable: __('Choose data for each rule.', 'yaymatik'),
   ruleComparison: __('Choose a comparison for each rule.', 'yaymatik'),
   ruleCompareWith: __('Choose data to compare with.', 'yaymatik'),

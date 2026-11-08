@@ -140,11 +140,11 @@ function ruleError({ field: fieldKey, operator, value, valueType, key }: Rule): 
 /** No criteria has a variable yet. */
 const criteriaRequired = messages.rulesRequired;
 
-/** A group's errors: an empty one needs a rule, as a condition with none does. */
+/** A group's errors: an empty one needs a rule. */
 const groupErrors = ({ rules }: Group): GroupErrors =>
   rules.some((rule) => rule.field)
     ? { own: null, rules: rules.map(ruleError) }
-    : { own: criteriaRequired, rules: rules.map(() => null) };
+    : { own: messages.groupRulesRequired, rules: rules.map(() => null) };
 
 /**
  * The error of each item, in order (null when fine). With no variable chosen anywhere, the first one

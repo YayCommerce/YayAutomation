@@ -80,9 +80,8 @@ class Criteria extends Condition {
             return $this->invalid( Messages::get( 'rulesRequired' ), 'rules' );
         }
         foreach ( $config['rules'] as $item ) {
-            // A group with no rule chosen yet: the same as a condition with none.
             if ( self::is_group( $item ) && ! array_filter( array_column( $item['rules'], 'field' ) ) ) {
-                return $this->invalid( Messages::get( 'rulesRequired' ), 'rules' );
+                return $this->invalid( Messages::get( 'groupRulesRequired' ), 'rules' );
             }
             foreach ( self::is_group( $item ) ? $item['rules'] : [ $item ] as $rule ) {
                 $error = $this->rule_error( $rule );
