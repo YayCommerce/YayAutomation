@@ -48,6 +48,14 @@ final class SampleValuesTest extends TestCase {
         $this->assertNotSame( '', $values->text( 'refund.reason', false ) );
     }
 
+    public function test_review_samples(): void {
+        $values = $this->values( [ 'review' ] );
+
+        $this->assertSame( 5.0, $values->get( 'review.rating' ) );
+        $this->assertSame( 'Yes', $values->text( 'review.is_verified', false ) );
+        $this->assertNotSame( '', $values->text( 'review.product_name', false ) );
+    }
+
     public function test_plain_samples_are_escaped_in_html(): void {
         $values = $this->values( [ 'customer' ] );
         $this->assertSame( 'jane.doe@example.com', $values->text( 'customer.email', true ) );

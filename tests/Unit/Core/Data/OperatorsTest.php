@@ -119,6 +119,13 @@ final class OperatorsTest extends TestCase {
         $this->assertFalse( Operators::not_in_last( null, 1, 'days', 1000000 ) );
     }
 
+    public function test_a_number_that_is_not_there_matches_nothing(): void {
+        foreach ( [ 'equal', 'not_equal', 'less_than', 'less_or_equal', 'greater_than', 'greater_or_equal' ] as $operator ) {
+            $this->assertFalse( Operators::compare( DataItem::TYPE_NUMBER, $operator, null, '3' ), $operator );
+        }
+        $this->assertTrue( Operators::compare( DataItem::TYPE_NUMBER, 'less_than', 0.0, '3' ), 'zero is a number' );
+    }
+
     public function test_meta_compares_as_numbers_when_both_sides_are(): void {
         $meta = DataItem::TYPE_META;
         $this->assertTrue( Operators::compare( $meta, 'equal', '5.0', '5' ) );

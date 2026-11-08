@@ -271,7 +271,7 @@ Shop owners build their own workflows from New Workflow. Why: [decisions CT](wor
 - ⏳ **CT.7** Triggers: Order paid, Order note added.
 - ⏳ **CT.8** Trigger: Order refunded.
 - ⏳ **CT.9** Triggers: Customer order count reaches, Customer total spend reaches.
-- **CT.10** Trigger: Review posted.
+- ⏳ **CT.10** Trigger: Review posted.
 - **CT.11** Action: Update customer custom field.
 - **CT.12** Action: Change customer role.
 - **CT.13** Action: Resend WooCommerce email.

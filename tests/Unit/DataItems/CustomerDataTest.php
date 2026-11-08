@@ -3,6 +3,7 @@ namespace YayMatik\Tests\Unit\DataItems;
 
 use PHPUnit\Framework\TestCase;
 use YayMatik\Workflow\Core\Cart\CartCustomer;
+use YayMatik\Workflow\Core\Data\EmailCustomer;
 use YayMatik\Workflow\Core\Cart\SavedCart;
 use YayMatik\Workflow\DataItems\CustomerData;
 
@@ -21,7 +22,7 @@ final class CustomerDataTest extends TestCase {
     private $wpdb;
 
     protected function setUp(): void {
-        $this->wpdb      = $GLOBALS['wpdb'] ?? null;
+        $this->wpdb = $GLOBALS['wpdb'] ?? null;
         // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- no WordPress here; MetaKeys reads its prefix.
         $GLOBALS['wpdb'] = (object) [ 'base_prefix' => 'wp_' ];
     }
@@ -70,6 +71,21 @@ final class CustomerDataTest extends TestCase {
 
     private function first( CustomerData $item, $customer ): bool {
         return ( $item->fields()['is_first_order']['value'] )( $customer );
+    }
+
+    public function test_an_email_customer_is_a_guest_with_only_an_email(): void {
+        $item     = $this->item( [], [ 'rev@x.com' => [ 3 ] ], [ 'rev@x.com' ] );
+        $customer = new EmailCustomer( 'Rev@x.com' );
+        $value    = fn( string $field ) => ( $item->fields()[ $field ]['value'] )( $customer );
+
+        $this->assertSame( 'Rev@x.com', $value( 'email' ) );
+        $this->assertSame( '', $value( 'first_name' ) );
+        $this->assertSame( '', $value( 'full_name' ) );
+        $this->assertTrue( $value( 'is_guest' ) );
+        $this->assertSame( [], $value( 'role' ) );
+        $this->assertSame( 4.0, $value( 'paid_order_count' ), 'stats by the email' );
+        $this->assertSame( [ [ 0, 'Rev@x.com' ] ], $this->stats_calls );
+        $this->assertTrue( $value( 'unsubscribed' ) );
     }
 
     public function test_a_guest_with_only_this_paid_order(): void {

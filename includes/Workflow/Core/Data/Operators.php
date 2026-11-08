@@ -139,8 +139,9 @@ final class Operators {
                 return self::compare_numbers( $operator, (float) $actual, (float) $expected );
             }
         }
+        // A number that isn't there (a review without stars) matches no comparison.
         if ( DataItem::TYPE_NUMBER === $type ) {
-            return self::compare_numbers( $operator, (float) $actual, (float) $expected );
+            return is_numeric( $actual ) && self::compare_numbers( $operator, (float) $actual, (float) $expected );
         }
         if ( DataItem::TYPE_BOOLEAN === $type ) {
             $true = self::is_true( $actual );

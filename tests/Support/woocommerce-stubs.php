@@ -55,6 +55,46 @@ if ( ! class_exists( 'WC_Order' ) ) {
     }
 }//end if
 
+if ( ! class_exists( 'WP_Comment' ) ) {
+    /** A comment from an array of fields; `meta` and `status` are the tests' own. */
+    class WP_Comment {
+ // phpcs:ignore Generic.Files.OneObjectStructurePerFile.MultipleFound -- one file of WordPress stand-ins.
+
+        /** @var string */
+        public $comment_ID = '0';
+
+        /** @var string */
+        public $comment_post_ID = '0';
+
+        /** @var string */
+        public $comment_type = 'comment';
+
+        /** @var string */
+        public $comment_parent = '0';
+
+        /** @var string */
+        public $comment_approved = '1';
+
+        /** @var string */
+        public $comment_content = '';
+
+        /** @var string */
+        public $comment_author_email = '';
+
+        /** @var string */
+        public $user_id = '0';
+
+        /** @var array */
+        public $meta = [];
+
+        public function __construct( array $fields ) {
+            foreach ( $fields as $key => $value ) {
+                $this->$key = $value;
+            }
+        }
+    }
+}
+
 if ( ! class_exists( 'WC_Order_Refund' ) ) {
     /** A refund from an array of getter values; `wc_get_order()` finds it in `FakeOrder::$found`. */
     class WC_Order_Refund {

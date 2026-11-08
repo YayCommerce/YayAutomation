@@ -22,6 +22,7 @@ use YayMatik\Workflow\Triggers\OrderNoteAdded;
 use YayMatik\Workflow\Triggers\OrderPaid;
 use YayMatik\Workflow\Triggers\OrderRefunded;
 use YayMatik\Workflow\Triggers\OrderStatusChanged;
+use YayMatik\Workflow\Triggers\ReviewPosted;
 
 require_once dirname( __DIR__, 3 ) . '/Support/woocommerce-stubs.php';
 
@@ -31,7 +32,7 @@ final class StepContractTest extends TestCase {
     /** @return Step[] Keyed by id. */
     private static function steps(): array {
         $steps = [];
-        foreach ( [ new OrderCreated(), new OrderStatusChanged(), new OrderPaid(), new OrderRefunded(), new OrderNoteAdded(), new CustomerInactive(), new CustomerOrderCountReaches(), new CustomerTotalSpendReaches(), new Criteria(), new SendEmail(), new SendInternalEmail(), new ChangeOrderStatus(), new AddOrderNote(), new UpdateOrderMeta(), new GenerateCoupon(), new Wait() ] as $step ) {
+        foreach ( [ new OrderCreated(), new OrderStatusChanged(), new OrderPaid(), new OrderRefunded(), new OrderNoteAdded(), new CustomerInactive(), new CustomerOrderCountReaches(), new CustomerTotalSpendReaches(), new ReviewPosted(), new Criteria(), new SendEmail(), new SendInternalEmail(), new ChangeOrderStatus(), new AddOrderNote(), new UpdateOrderMeta(), new GenerateCoupon(), new Wait() ] as $step ) {
             $steps[ $step->id() ] = $step;
         }
         return $steps;
@@ -110,6 +111,7 @@ final class StepContractTest extends TestCase {
                 'customer_inactive'            => [],
                 'customer_order_count_reaches' => [],
                 'customer_total_spend_reaches' => [],
+                'review_posted'                => [],
                 'condition'                    => [ 'result' ],
                 'send_email'                   => [ 'to' ],
                 'send_internal_email'          => [ 'to' ],

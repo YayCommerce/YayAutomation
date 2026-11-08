@@ -44,12 +44,13 @@ class PersonalData {
      * @param array $erasers
      */
     public function erasers( $erasers ): array {
-        $erasers              = (array) $erasers;
-        $erasers[ self::KEY ] = [
-            'eraser_friendly_name' => __( 'YayMatik', 'yaymatik' ),
-            'callback'             => [ $this, 'erase' ],
-        ];
-        return $erasers;
+        // First: WordPress's comments eraser blanks a review's email and user id, which is how this one finds review runs.
+        return [
+            self::KEY => [
+                'eraser_friendly_name' => __( 'YayMatik', 'yaymatik' ),
+                'callback'             => [ $this, 'erase' ],
+            ],
+        ] + (array) $erasers;
     }
 
     /**
@@ -172,7 +173,7 @@ class PersonalData {
     }
 
     /**
-     * Run subjects of the person's orders, carts and accounts: by billing email too, as a welcome run sends there.
+     * Run subjects of the person's orders, carts, accounts and reviews: by billing email too, as a welcome run sends there.
      *
      * @param string $email Normalized.
      * @return string[]
@@ -204,7 +205,25 @@ class PersonalData {
         foreach ( array_unique( array_map( 'intval', $users ) ) as $user_id ) {
             $subjects[] = 'user:' . $user_id;
         }
-        return $subjects;
+        // Reviews by the email typed, and by the accounts found above: a logged-in review stores the account's email at the time.
+        $reviews = [ [ 'author_email' => $email ] ];
+        foreach ( array_unique( array_map( 'intval', $users ) ) as $user_id ) {
+            $reviews[] = [ 'user_id' => $user_id ];
+        }
+        foreach ( $reviews as $query ) {
+            $ids = get_comments(
+                $query + [
+                    'type'   => 'review',
+                    // 'all' leaves out spam and trash, which still hold the email.
+                    'status' => [ 'approve', 'hold', 'spam', 'trash' ],
+                    'fields' => 'ids',
+                ]
+            );
+            foreach ( (array) $ids as $review_id ) {
+                $subjects[] = 'review:' . (int) $review_id;
+            }
+        }
+        return array_values( array_unique( $subjects ) );
     }
 
     public function policy_text(): void {

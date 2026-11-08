@@ -12,6 +12,7 @@ use YayMatik\Workflow\DataItems\CustomerData;
 use YayMatik\Workflow\DataItems\OrderData;
 use YayMatik\Workflow\DataItems\OrderItemData;
 use YayMatik\Workflow\DataItems\RefundData;
+use YayMatik\Workflow\DataItems\ReviewData;
 use YayMatik\Workflow\Triggers\CartAbandoned;
 use YayMatik\Workflow\Triggers\CheckoutAbandoned;
 use YayMatik\Workflow\Triggers\CustomerAccountCreated;
@@ -23,6 +24,7 @@ use YayMatik\Workflow\Triggers\OrderNoteAdded;
 use YayMatik\Workflow\Triggers\OrderPaid;
 use YayMatik\Workflow\Triggers\OrderRefunded;
 use YayMatik\Workflow\Triggers\OrderStatusChanged;
+use YayMatik\Workflow\Triggers\ReviewPosted;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -64,6 +66,7 @@ class WoocommerceModule extends Module {
             CustomerInactive::class,
             CustomerOrderCountReaches::class,
             CustomerTotalSpendReaches::class,
+            ReviewPosted::class,
         ];
     }
 
@@ -79,6 +82,6 @@ class WoocommerceModule extends Module {
     }
 
     public function data_items(): array {
-        return [ OrderData::class, CartData::class, CustomerData::class, RefundData::class, OrderItemData::class ];
+        return [ OrderData::class, CartData::class, CustomerData::class, RefundData::class, ReviewData::class, OrderItemData::class ];
     }
 }

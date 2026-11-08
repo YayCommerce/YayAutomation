@@ -468,6 +468,22 @@
                 ],
                 "outputs": []
             },
+            "review_posted": {
+                "kind": "trigger",
+                "plugin": "woocommerce",
+                "provides": [
+                    "review",
+                    "customer"
+                ],
+                "category": "review",
+                "label": "Review posted",
+                "description": "A product review is approved",
+                "icon": "star",
+                "summary": "When a product review is approved",
+                "onError": "stop",
+                "fields": [],
+                "outputs": []
+            },
             "send_email": {
                 "kind": "action",
                 "plugin": "woocommerce",
@@ -5333,6 +5349,43 @@
                         "label": "Full refund",
                         "type": "boolean",
                         "valueType": "boolean",
+                        "conditional": true
+                    }
+                ],
+                "relations": []
+            },
+            {
+                "id": "review",
+                "label": "Review",
+                "description": "The product review that started the run: rating, text and product.",
+                "icon": "star",
+                "fields": [
+                    {
+                        "key": "review.rating",
+                        "label": "Rating",
+                        "type": "number",
+                        "valueType": "number",
+                        "conditional": true
+                    },
+                    {
+                        "key": "review.content",
+                        "label": "Review text",
+                        "type": "string",
+                        "valueType": "string",
+                        "conditional": true
+                    },
+                    {
+                        "key": "review.is_verified",
+                        "label": "Verified owner",
+                        "type": "boolean",
+                        "valueType": "boolean",
+                        "conditional": true
+                    },
+                    {
+                        "key": "review.product_name",
+                        "label": "Reviewed product",
+                        "type": "string",
+                        "valueType": "string",
                         "conditional": true
                     }
                 ],

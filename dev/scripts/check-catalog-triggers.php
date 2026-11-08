@@ -6,7 +6,7 @@
  * @package YayMatik
  */
 
-// phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+// phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.WP.GlobalVariablesOverride.Prohibited
 
 use YayMatik\Engine\Privacy\PersonalData;
 use YayMatik\Workflow\Core\Data\CustomerStats;
@@ -347,5 +347,139 @@ $ok( ! array_filter( $guest_scopes, fn( $scope ) => false !== strpos( (string) $
 $privacy->erase( $buyer_email );
 $ok( 1 === $claimed( $count_two, "user:{$buyer}" ), 'milestones: erasing keeps user: claims' );
 foreach ( [ $count_two, $spend_100 ] as $flow_id ) {
+    WorkflowStore::deactivate( $flow_id );
+}
+
+// Review posted. Its emails go nowhere: wp_mail is caught here.
+$mails   = [];
+$catch   = function ( $sent, array $atts ) use ( &$mails ) {
+    $mails[] = $atts;
+    return true;
+};
+$product = new WC_Product_Simple();
+$product->set_name( 'check-catalog mug' );
+$product->set_status( 'publish' );
+$posts[]                           = $product->save();
+$review_on                         = function ( array $fields, array $meta = [] ) use ( $product, $domain ): int {
+    $review_id = (int) wp_insert_comment(
+        $fields + [
+            'comment_post_ID'      => $product->get_id(),
+            'comment_type'         => 'review',
+            'comment_content'      => 'check-catalog review',
+            'comment_author'       => 'Reviewer',
+            'comment_author_email' => "other@{$domain}",
+            'comment_approved'     => 1,
+        ]
+    );
+    // WooCommerce saves these after `wp_insert_comment`, in `comment_post`.
+    foreach ( $meta as $key => $value ) {
+        add_comment_meta( $review_id, $key, $value );
+    }
+    return $review_id;
+};
+$review_mail                       = [
+    'recipients' => 'staff@' . $domain,
+    'subject'    => 'rating {{ review.rating }} verified {{ review.is_verified }} name [{{ customer.first_name }}] role [{{ customer.role }}] product {{ review.product_name }}',
+    'message'    => 'check-catalog',
+];
+$review_flow                       = $activate_graph( $chain( 'review_posted', [], [ [ 'mail', 'send_internal_email', $review_mail ] ] ) );
+$review_wait                       = $activate_graph( $chain( 'review_posted', [], [ [ 'wait', 'wait', $wait_hour ], [ 'mail', 'send_internal_email', $review_mail ] ] ) );
+$reviewed                          = fn( callable $event ) => $started( [ $review_flow ], $event )[ $review_flow ];
+$guest_email                       = "reviewer@{$domain}";
+list( $reviewer, $reviewer_email ) = $new_user( 'reviewer' );
+wp_update_user(
+    [
+        'ID'         => $reviewer,
+        'first_name' => 'Ada',
+    ]
+);
+
+$held = 0;
+$ok(
+    0 === $reviewed(
+        function () use ( $review_on, &$held, $guest_email ) {
+            $held = $review_on(
+                [
+                    'comment_approved'     => 0,
+                    'comment_author_email' => $guest_email,
+                ]
+            );
+        }
+    ),
+    'review: held for moderation doesn\'t start it'
+);
+$ok( 0 === $reviewed( fn() => $review_on( [ 'comment_approved' => 'spam' ] ) ), 'review: spam doesn\'t' );
+$ok(
+    1 === $reviewed(
+        function () use ( $held ) {
+            wp_set_comment_status( $held, 'approve' );
+            add_comment_meta( $held, 'rating', 2 );
+            add_comment_meta( $held, 'verified', 1 );
+        }
+    ),
+    'review: approved later starts it once'
+);
+$ok(
+    0 === $reviewed(
+        function () use ( $held ) {
+            wp_set_comment_status( $held, 'hold' );
+            wp_set_comment_status( $held, 'approve' );
+        }
+    ),
+    'review: unapproved and approved again doesn\'t start it again'
+);
+$ok( 0 === $reviewed( fn() => $review_on( [ 'comment_parent' => $held ] ) ), 'review: a reply doesn\'t' );
+$ok( 0 === $reviewed( fn() => $review_on( [ 'comment_type' => 'comment' ] ) ), 'review: a plain comment doesn\'t' );
+$admin_review = 0;
+$ok(
+    1 === $reviewed(
+        function () use ( $review_on, &$admin_review, $reviewer, $reviewer_email ) {
+            $admin_review = $review_on(
+                [
+                    'user_id'              => $reviewer,
+                    'comment_author_email' => $reviewer_email,
+                ],
+                [ 'rating' => 5 ]
+            );
+        }
+    ),
+    'review: a review added approved (an admin\'s, or an account\'s) starts it'
+);
+// The guest typed an email an account has: still only the email.
+$account_email = $reviewer_email;
+$typed         = $review_on( [ 'comment_author_email' => $account_email ], [ 'rating' => 3 ] );
+Runtime::dispatcher()->flush();
+
+add_filter( 'pre_wp_mail', $catch, 10, 2 );
+$work( array_values( array_filter( $runs_of( $review_flow ), fn( int $run_id ) => 'queued' === RunStore::find( $run_id )['status'] ) ) );
+remove_filter( 'pre_wp_mail', $catch );
+$subjects     = array_column( $mails, 'subject' );
+$product_name = $product->get_name();
+$ok( in_array( "rating 2 verified Yes name [] role [] product {$product_name}", $subjects, true ), 'review: rating and verified read at shutdown; a guest has no name or role' );
+$ok( (bool) preg_grep( '/^rating 5 verified No name \[Ada\] role \[[^\]]+\] product /', $subjects ), 'review: a review with a user_id reads that account (name and role)' );
+$ok( in_array( "rating 3 verified No name [] role [] product {$product_name}", $subjects, true ), 'review: a guest who typed an account\'s email is still only that email' );
+$review_run = RunStore::find( $runs_of( $review_flow )[0] );
+$ok( "review:{$held}" === $review_run['subject'], 'review: the run is about the review' );
+
+$exported = array_column( PersonalData::get_instance()->export( $guest_email )['data'], 'item_id' );
+$ok( in_array( 'yaymatik-run-' . $review_run['id'], $exported, true ), 'review: the export finds the review run by the author email' );
+$by_account = array_column( PersonalData::get_instance()->export( $reviewer_email )['data'], 'item_id' );
+$admin_run  = array_values( array_filter( $runs_of( $review_flow ), fn( int $run_id ) => "review:{$admin_review}" === RunStore::find( $run_id )['subject'] ) );
+$ok( $admin_run && in_array( 'yaymatik-run-' . $admin_run[0], $by_account, true ), 'review: and by the account that has the email' );
+
+$waiting = array_values( array_filter( $runs_of( $review_wait ), fn( int $run_id ) => "review:{$typed}" === RunStore::find( $run_id )['subject'] ) );
+$work( $waiting );
+$ok( $waiting && 'waiting' === RunStore::find( $waiting[0] )['status'], 'review: a run waits before its email' );
+wp_delete_comment( $typed, true );
+RunStore::save( $waiting[0], [ 'wait_until' => gmdate( 'Y-m-d H:i:s', time() - 60 ) ] );
+add_filter( 'pre_wp_mail', $catch, 10, 2 );
+$work( $waiting );
+remove_filter( 'pre_wp_mail', $catch );
+$late = array_values( array_filter( RunStepStore::for_run( $waiting[0] ), fn( array $step ) => 'mail' === $step['step_id'] ) )[0] ?? [];
+$ok( 'skipped' === ( $late['status'] ?? '' ) && false !== strpos( (string) ( $late['error'] ?? '' ), 'no longer exists' ), 'review: deleted during the Wait → its email is skipped (' . ( $late['error'] ?? '' ) . ')' );
+
+$review_preview = EmailPreview::render( $chain( 'review_posted', [], [ [ 'mail', 'send_internal_email', $review_mail ] ] ), 'mail', $review_mail );
+$ok( is_array( $review_preview ) && $review_preview['sample'] && false !== strpos( (string) $review_preview['subject'], 'rating 5' ), 'review: Preview shows the sample review, with the Sample badge' );
+foreach ( [ $review_flow, $review_wait ] as $flow_id ) {
     WorkflowStore::deactivate( $flow_id );
 }

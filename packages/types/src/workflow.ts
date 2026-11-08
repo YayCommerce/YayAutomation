@@ -21,6 +21,7 @@ export type StepId =
   | 'customer_inactive'
   | 'customer_order_count_reaches'
   | 'customer_total_spend_reaches'
+  | 'review_posted'
   | 'condition'
   | 'send_email'
   | 'send_internal_email'

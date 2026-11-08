@@ -368,3 +368,16 @@ if ( ! function_exists( 'wc_strtolower' ) ) {
         return mb_strtolower( $text );
     }
 }
+
+if ( ! function_exists( 'wp_get_comment_status' ) ) {
+    function wp_get_comment_status( $comment ) {
+        return '1' === (string) $comment->comment_approved ? 'approved' : 'unapproved';
+    }
+}
+
+if ( ! function_exists( 'wc_get_product' ) ) {
+    // Products a test set in `$GLOBALS['yaymatik_test_products']`, by id.
+    function wc_get_product( $product_id ) {
+        return $GLOBALS['yaymatik_test_products'][ $product_id ] ?? false;
+    }
+}

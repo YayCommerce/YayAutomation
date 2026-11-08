@@ -21,6 +21,7 @@ import { orderNoteAddedStep } from './triggers/order-note-added';
 import { orderPaidStep } from './triggers/order-paid';
 import { orderRefundedStep } from './triggers/order-refunded';
 import { orderStatusChangedStep } from './triggers/order-status-changed';
+import { reviewPostedStep } from './triggers/review-posted';
 
 export type { Step } from './core/types';
 export { plainSummary, SummaryText } from './core/defineStep';
@@ -37,6 +38,7 @@ const coreSteps = [
   customerInactiveStep,
   customerOrderCountReachesStep,
   customerTotalSpendReachesStep,
+  reviewPostedStep,
   criteriaStep,
   sendEmailStep,
   sendInternalEmailStep,
