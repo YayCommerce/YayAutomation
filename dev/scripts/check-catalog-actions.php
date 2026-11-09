@@ -14,6 +14,7 @@ use YayMatik\Workflow\Actions\UpdateCustomerMeta;
 use YayMatik\Workflow\Actions\WaitUntil;
 use YayMatik\Workflow\Core\Data\Ref;
 use YayMatik\Workflow\Core\Data\Scope;
+use YayMatik\Workflow\Core\Definition\Validator;
 use YayMatik\Workflow\Core\Steps\StepResult;
 use YayMatik\Workflow\Core\Storage\RunStore;
 use YayMatik\Workflow\Core\Storage\WorkflowStore;
@@ -259,13 +260,17 @@ remove_filter( 'pre_wp_mail', $catch_resend );
 // Wait until, in a store time zone other than UTC, put back after.
 $zone_before = get_option( 'timezone_string' );
 update_option( 'timezone_string', 'Asia/Ho_Chi_Minh' );
-$until_hour  = (int) wp_date( 'G', time() + 2 * HOUR_IN_SECONDS );
+// Two hours ahead, down to its 15-minute step, so the minutes count too.
+$until_at    = time() + 2 * HOUR_IN_SECONDS;
+$until_hour  = (int) wp_date( 'G', $until_at );
+$until_min   = intdiv( (int) wp_date( 'i', $until_at ), 15 ) * 15;
+$until_time  = sprintf( '%02d:%02d', $until_hour, $until_min );
 $until_steps = [
     [
         'until',
         'wait_until',
         [
-            'hour'     => (string) $until_hour,
+            'time'     => $until_time,
             'weekdays' => [],
         ],
     ],
@@ -284,9 +289,9 @@ $started( [ $until_flow ], $move( $until_order, 'processing' ) );
 $until_runs = $runs_of( $until_flow );
 $work( $until_runs );
 $until_run = RunStore::find( $until_runs[0] );
-$expected  = WaitUntil::next_time( time(), $until_hour, [], wp_timezone() );
-$ok( 'waiting' === $until_run['status'] && abs( strtotime( $until_run['wait_until'] . ' UTC' ) - $expected ) <= 60, 'wait_until: the run waits until the hour in store time (' . $until_run['wait_until'] . ' UTC)' );
-$ok( wp_date( 'G:i', strtotime( $until_run['wait_until'] . ' UTC' ) ) === $until_hour . ':00', 'wait_until: that is ' . $until_hour . ':00 in Asia/Ho_Chi_Minh' );
+$expected  = WaitUntil::next_time( time(), $until_hour, $until_min, [], wp_timezone() );
+$ok( 'waiting' === $until_run['status'] && abs( strtotime( $until_run['wait_until'] . ' UTC' ) - $expected ) <= 60, 'wait_until: the run waits until the time in store time (' . $until_run['wait_until'] . ' UTC)' );
+$ok( wp_date( 'H:i', strtotime( $until_run['wait_until'] . ' UTC' ) ) === $until_time, 'wait_until: that is ' . $until_time . ' in Asia/Ho_Chi_Minh' );
 RunStore::save( $until_runs[0], [ 'wait_until' => gmdate( 'Y-m-d H:i:s', time() - 60 ) ] );
 $work( $until_runs );
 $until_note = array_values( array_filter( wc_get_order_notes( [ 'order_id' => $until_order ] ), fn( $note ) => 0 === strpos( $note->content, 'check-catalog until' ) ) );
@@ -302,6 +307,28 @@ RunStore::save( $second[0], [ 'wait_until' => gmdate( 'Y-m-d H:i:s', time() - 60
 $work( $second );
 $ok( 'cancelled' === RunStore::find( $second[0] )['status'], 'wait_until: a waiting run of a deactivated workflow is cancelled when it wakes' );
 update_option( 'timezone_string', $zone_before );
+
+// A config saved with the hour setting is a setup issue, never 09:00.
+$hour_flow  = WorkflowStore::create(
+    'check-catalog',
+    $chain(
+        'order_paid',
+        [],
+        [
+            [
+                'until',
+                'wait_until',
+                [
+                    'hour'     => '9',
+                    'weekdays' => [],
+                ],
+            ],
+        ]
+    )
+);
+$flows[]    = (int) $hour_flow['id'];
+$hour_issue = array_values( array_filter( Validator::issues( WorkflowStore::find( (int) $hour_flow['id'] ) )['live'], fn( array $issue ) => 'until' === ( $issue['nodeId'] ?? '' ) ) );
+$ok( 'Choose a time in 15-minute steps.' === ( $hour_issue[0]['message'] ?? '' ) && 'time' === ( $hour_issue[0]['field'] ?? '' ), 'wait_until: a config with the hour setting is a setup issue (' . ( $hour_issue[0]['message'] ?? 'none' ) . ')' );
 
 wp_set_current_user( $previous_user );
 

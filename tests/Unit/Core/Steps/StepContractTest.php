@@ -200,6 +200,7 @@ final class StepContractTest extends TestCase {
             'update_customer_meta'         => [ 'key' => '' ],
             'change_customer_role'         => [ 'role' => '' ],
             'resend_wc_email'              => [ 'email' => '' ],
+            'wait_until'                   => [ 'hour' => '9' ],
             'wait'                         => [
                 'delay' => [
                     'value' => 0,

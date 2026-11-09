@@ -1,6 +1,8 @@
+import * as v from 'valibot';
 import { __, sprintf } from '@wordpress/i18n';
 
 import { defineStep, value } from '../../core/defineStep';
+import { schemaFromFields } from '../../core/fields/catalogSchema';
 import type { Config } from '../../core/types';
 import { Hints } from '../../triggers/core/NoSettings';
 
@@ -29,10 +31,31 @@ function storeZone(): string {
   return `UTC${gmtOffset < 0 ? '−' : '+'}${Math.abs(gmtOffset)}`;
 }
 
-/** Form and checks come from includes/Workflow/Actions/WaitUntil.php `fields()`. */
+/** 'HH:MM' in 15-minute steps, 00:00–23:45. */
+const TIME = /^(?:[01]\d|2[0-3]):(?:00|15|30|45)$/;
+
+const catalog = window.yayMatikMeta.automation.steps.wait_until;
+
+/** PHP `WaitUntil::validate()`: a time off the list, blank included, gets its own message before the field checks. */
+const schema = v.pipe(
+  v.record(v.string(), v.unknown()),
+  v.rawCheck(({ dataset, addIssue }) => {
+    if (!dataset.typed || TIME.test(String(dataset.value.time ?? ''))) return;
+    addIssue({
+      message: __('Choose a time in 15-minute steps.', 'yaymatik'),
+      path: [{ type: 'object', origin: 'value', input: dataset.value, key: 'time', value: dataset.value.time }],
+    });
+  }),
+  schemaFromFields(catalog?.fields ?? [], catalog?.label ?? ''),
+);
+
+/** Form and field checks come from includes/Workflow/Actions/WaitUntil.php `fields()`. */
 export const waitUntilStep = defineStep({
   id: 'wait_until',
   kind: 'action',
+  schema,
+  // PHP's time field has no default, so a config without a time stays an issue.
+  defaults: () => ({ time: '09:00', weekdays: [] }),
   summaryValues: {
     weekdays: ({ weekdays }: Config) => value(weekdayText(weekdays) || __('Any day', 'yaymatik')),
   },
@@ -40,10 +63,10 @@ export const waitUntilStep = defineStep({
     <Hints
       hints={[
         sprintf(
-          /* translators: 1: time zone, e.g. "Asia/Ho_Chi_Minh"; 2: a time, e.g. "9:00 AM" */
+          /* translators: 1: time zone, e.g. "Asia/Ho_Chi_Minh"; 2: a time, e.g. "9:15 AM" */
           __('Store time (%1$s). Past %2$s, it waits for the next chosen day.', 'yaymatik'),
           storeZone(),
-          label('hour', config.hour),
+          label('time', config.time),
         ),
       ]}
     />

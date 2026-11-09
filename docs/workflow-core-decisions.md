@@ -472,7 +472,7 @@ Today errors only go to the WooCommerce log, which merchants never open.
 - **Write actions keep runs free of values.** Update order custom field outputs the key and whether the value changed, never the value: a rendered value could hold a name or an email, and runs keep refs only. Old → new goes in a private order note, which lives and goes with the order.
 - **A customer field write asks the database, not only the key's spelling.** `update_user_meta()` finds its row with the column's collation, which ignores case and, on many sites, accents. A key that reads harmless in PHP could then update `wp_capabilities` and make the customer an admin. So before writing, the step reads which stored keys the database matches to it, and refuses if any is protected; a failed read refuses too. Update customer custom field writes no note: there is no order to hold one, and runs keep no values.
 - **Resend WooCommerce email offers an allowlist.** Only customer emails whose `trigger()` takes just the order id: others take a fulfillment, a template, a note or a user, and calling them with an order id fails or sends the wrong email. A plugin adds its own through `yaymatik_resendable_emails`; one with another signature fails that step, not the run's process. An id this WooCommerce doesn't have (the review request is behind a feature) isn't offered. WooCommerce's `trigger()` reports nothing, so the step checks that the email is on and the order has a billing email first. Run history keeps the email's id, never the address. The refunded email is left out, as a resend would always use the full-refund text.
-- **D15 Wait until.** It lives in the YayMatik module, which owns flow logic.
+- **D15 Wait until.** It lives in the YayMatik module, which owns flow logic. Its time is a list in 15-minute steps, not a free time input, so a stored value is always one the list can label. A config from the earlier hour select isn't migrated: nothing has shipped, so it reads as a setup issue.
 - **D16 Stop waiting runs: dropped from v1.0.** It moves to the v1.1 backlog. `PersonSubjects` stays: the personal data tools read it.
 
 **Cost.**
@@ -483,5 +483,5 @@ Today errors only go to the WooCommerce log, which merchants never open.
 - The active-trigger list: if a writer waits more than 5 seconds for its lock, a trigger can be left out until the next change or the daily recompute. A process that started before an activation (a long Action Scheduler batch) misses that trigger's events until it ends.
 - A review's guest customer has only an email.
 - Resend WooCommerce email can't resend the refunded email.
-- Wait until's hour in a DST gap runs at the shifted hour.
+- Wait until's time in a DST gap runs at the shifted time.
 - Update customer custom field writes one text value, never a list. A key that differs from a stored one only in case reads as changed on every run.
