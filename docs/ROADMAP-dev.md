@@ -50,7 +50,7 @@ Risk scale as in ROADMAP-v1.0: 1 = easy to undo · 2 = new logic · 3 = stores d
 
 Do it when no feature branch is open: it touches every file, so it's cheapest as one quick PR that everyone rebases on once.
 
-- ✅ **F0.0 Verify baseline** *([plan-infra](plan-infra.md))*, the first checkpoint and commit of the F0 branch, before F0.1:
+- ✅ **F0.0 Verify baseline**, the first checkpoint and commit of the F0 branch, before F0.1:
   - phpcs inside the project (`dev/tools/lintphp`), `pnpm lint:php`, the 12 current errors fixed.
   - Vitest with first tests on `model/` and the template registry; `pnpm test`.
   - Stop hook adds tests; CI on `develop`: lint → lint:php → test → build.
@@ -63,7 +63,7 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 **Status:** ✅ Done — backend (PR A #13), identity phase 1 (PR B) and F1.9–F1.12 with identity phase 2 (PR C #15, merge `4ec1468`) merged into `develop`. Regression pass done (manual pass + code review fixes, Template Library and list per mock v2).
 
 **Backend**
-- ✅ **F1.0 PHPUnit** *([plan-infra](plan-infra.md))* — plain unit tests, no WordPress loaded (`dev/tools/phpunit`); CI step. First tests: template parser, Validator v2, Scope.
+- ✅ **F1.0 PHPUnit** — plain unit tests, no WordPress loaded (`dev/tools/phpunit`); CI step. First tests: template parser, Validator v2, Scope.
 - ✅ **F1.1 Storage** *(§2)*
   - `runs`, `run_steps` tables with upgrades.
   - A version's logic never changes (its layout may); runs pin their version.
@@ -77,7 +77,7 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 - ✅ **F1.4 Step contract** *(§5)*
   - `Step` base, `Field` builder, `outputs()`, `StepResult`, summary templates, `icon()` name *(L5)*.
   - Plugin logo: one one-colour SVG file per plugin, drawn as a CSS mask *(L5)*.
-  - Parity test: the PHP catalog and what TS expects can't drift *([plan-infra](plan-infra.md))*.
+  - Parity test: the PHP catalog and what TS expects can't drift.
   - Catalog in `yayMatikMeta`; update `apps/admin-page/src/types/localize.d.ts`.
 - ✅ **F1.5 Executor** *(§3)*
   - Dispatcher replaces `Runner` collect / flush. Worker: Action Scheduler hook + row lock.
@@ -136,7 +136,7 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 **Follow-ups**
 - Flaky `pnpm build` while `pnpm dev` runs (`vite-plugin-external` stand-ins): upgrade or replace the plugin.
 - Preview / Send test show to anyone who can open the editor, the REST routes need `manage_woocommerce`. Fine while the page needs `manage_options`; revisit if that changes.
-- Editor-level test for server issues (merged after autosave, "Needs setup", passed to the panel): in the e2e plan.
+- Editor-level test for server issues (merged after autosave, "Needs setup", passed to the panel): not covered by the e2e journeys.
 
 ## M2 — Wait + run history · L · risk 3
 
@@ -281,13 +281,10 @@ Shop owners build their own workflows from New Workflow. Why: [decisions CT](wor
 
 ## M9 — Release hardening · M
 
-- **M9.1** End-to-end test of all 18 templates; classic and block checkout; light and dark admin. Run `./run.sh check-carts` on a MySQL 8 site (erase `REGEXP` tested only on MariaDB 11.2).
+- **M9.1** Each of the 8 workflows once by hand on staging, plus one real inbox check on a dev site; `pnpm e2e` on the release commit; classic and block checkout; light and dark admin. Run `./run.sh check-carts` on a MySQL 8 site (erase `REGEXP` tested only on MariaDB 11.2).
 - **M9.2** Translations and release build.
 - **M9.3** Leave unfinished steps unregistered for the release; check plugin logos load (CSS mask) when assets come from a CDN. *(§8)*
 - **M9.4** Release checklist items picked in ROADMAP-v1.0.
-
-**Follow-ups**
-- Delete `dev/scripts/reset-data.sh` once every dev site has run it (F2).
 
 ---
 

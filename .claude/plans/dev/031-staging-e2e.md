@@ -26,14 +26,15 @@ One shared Yay staging site, a small deploy script and a 4–6 journey Playwrigh
    - Order: block checkout with cash on delivery, run the queue, run shows on the overview, email in the log.
    - Deactivated: same order, no new run.
    - Abandoned checkout: guest reaches checkout, email captured, time travel, email in the log, and its link restores the cart. Checkout template, not Cart reminder: a guest only gives an email at checkout, and that makes the abandon `checkout_abandoned`.
-5. **CI job** — Risk: 2 — Blocked on the deploy key. `e2e` job in `ci.yml`, plus `workflow_dispatch`, skipped on push. Key via ssh-agent, `./run.sh setup`, `pnpm build`, wp-env, seed, Playwright, report uploaded on failure. Test: green on the PR and on a manual run. **If the key isn't there by 2026-11-11:** leave this job out and run `pnpm e2e` locally on the release commit.
+5. ~~CI job~~ — Dropped (decision 8): e2e runs locally, before a release only. Devops request B isn't needed.
 6. **First staging run** — Risk: 3 — Blocked on SSH. Order matters: mail mu-plugin first, then WooCommerce and seed, then the first deploy. Test: `wp_mail` from wp-cli lands in the log and not an inbox; the rc shows in wp-admin; `main.js?ver=` carries the rc; a test order runs through real cron. **Fallback:** build with `--rc`, upload in wp-admin.
+   - Done 2026-11-09: `1.0.0-rc271` deployed by script; mail log catches `wp_mail`; seed runs after the deploy (it now refuses before YayMatik is active). No system cron, on purpose: staging tests a client site without one. Web PHP 8.5, wp-cli PHP 8.1. WooCommerce 11.2.2. admin-shell v2.10.0 admin page loads.
 7. **cw fixes and docs** — Risk: 1 — `claude-workflow.sh`: target windows by index (`win()`, including `attach`, `start_server`, `cleanup`) and restart a window whose Claude exited (`open_window`, `start_server`). Docs below. Test: two windows with one name, and a window whose Claude exited.
 
 **By hand before release, not a checkpoint:** install the free zip on a clean site and load the admin page.
 
 ## Docs (checkpoint 7)
-- `.claude/plans/dev` is gitignored, so the settled decisions need a committed home: new section in `docs/plan-infra.md`, and remove its "E2E" row from "Not in v1.0 infra".
+- Settled staging decisions: `.claude/docs/ops-release.md` (decision 9). `docs/plan-infra.md` is deleted.
 - `.claude/docs/ops-release.md`: deploy, `--rc`, staging rules for testers (fake data only; deactivate your workflows when done; check after each deploy).
 - `.claude/docs/context-dev-convention.md`: the bug-fix line, `pnpm e2e`.
 - `docs/ROADMAP-dev.md` M9.1, `docs/ROADMAP-v1.0.md` release criteria: per decision 1.
@@ -88,7 +89,10 @@ Confirmed:
 4. Deploy refuses if the site already has this exact rc.
 5. `reset-data.sh` can target staging. It wipes YayMatik's data only.
 6. Version goes to `1.0.0` on this branch, in checkpoint 2.
-7. Review effort: no review on checkpoint 5; one `medium` review of the whole branch before the PR, told that the rc number and floating admin-shell are decided.
+7. Review effort: one `medium` review of the whole branch before the PR, told that the rc number and floating admin-shell are decided.
+8. No CI e2e job: `pnpm e2e` runs locally, before a release only.
+9. Staging and release notes live in `.claude/docs/ops-release.md`; `docs/plan-infra.md` is deleted.
+10. Staging has no system cron, to test a client site without one.
 
 ## Out of Scope
 Monorepo, shared dev-kit repo, `addons/` folder, sibling zips in CI, nightly e2e, shared-safe suites, release boards, screenshot tool, screenshots and doc draft, Bookster's `-fixN`, DB export, `--restore`, `--dry-run`, `docker:` target, e2e on staging, site script, permanent test sites, the `RUN_CWD` fix for "Session here" (`docs/plan-infra.md`).

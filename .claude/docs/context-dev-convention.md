@@ -8,6 +8,8 @@
 
 Stay on current branch. If on `develop`, branch first: `feature/…`, `fix/…`, `refactor/…` off `develop`.
 
+Busy checkout (e.g. a bug fix mid-feature): `git worktree add`, then in it `./run.sh setup && pnpm install && pnpm build && WP_ENV_PORT=8920 pnpm wp-env start` and `./run.sh seed --wp-env`.
+
 Plans: `.claude/plans/dev/<NNN>-<slug>.md` (gitignored).
 
 ## Dev Server
@@ -22,6 +24,7 @@ Without it, WP loads the prod build in `assets/dist/admin-page/`.
 - `pnpm lint:fix` (skips ESLint fixes in `components/ui/`, the YayUiKits copies) and `pnpm lint:php:fix` before commit. CI: `.github/workflows/ci.yml`.
 - A change in behavior adds or updates a test: Vitest (`*.test.ts` next to the code) or PHPUnit (`tests/Unit/`, mirrors `includes/`, no WordPress loaded; WP-bound code is checked with wp-cli). Tests read PHP's meta from `apps/admin-page/src/test/fixtures/meta.json`; run `./run.sh meta-fixture` after changing what PHP sends.
 - UI change → `/wcheck`. REST change → `fetch('/wp-json/yaymatik/v1/…')` in console.
+- E2E: `pnpm e2e` (Playwright on wp-env, port 8910; specs in `dev/e2e/`). Local only, before a release; never on staging.
 
 ## Workflows folder (`apps/admin-page/src/routes/workflows/`)
 
