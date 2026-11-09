@@ -49,7 +49,7 @@ foreach ( [
 }
 
 $customer_email = 'customer@yay-seed.test';
-if ( ! email_exists( $customer_email ) ) {
+if ( ! email_exists( $customer_email ) && ! username_exists( 'yay-seed-customer' ) ) {
     $customer = wc_create_new_customer( $customer_email, 'yay-seed-customer', 'yay-seed-customer' );
     if ( is_wp_error( $customer ) ) {
         WP_CLI::error( $customer );

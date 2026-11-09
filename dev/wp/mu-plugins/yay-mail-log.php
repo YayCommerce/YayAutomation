@@ -8,7 +8,8 @@
 
 defined( 'ABSPATH' ) || exit;
 
-add_filter( 'pre_wp_mail', 'yay_mail_log_capture', PHP_INT_MAX, 2 );
+// First, so a mailer that sends from this filter sees the mail already handled. deploy.sh refuses a site with another callback here.
+add_filter( 'pre_wp_mail', 'yay_mail_log_capture', PHP_INT_MIN, 2 );
 add_action( 'admin_menu', 'yay_mail_log_menu' );
 
 /**

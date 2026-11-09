@@ -10,7 +10,7 @@ installed() { wpr plugin get yaymatik --field=version 2>/dev/null || true; }
 
 # Active workflows fire on everyone's orders: none of that mail may leave staging.
 wpr eval 'if ( false === has_filter( "pre_wp_mail", "yay_mail_log_capture" ) ) { WP_CLI::error( "Mail log mu-plugin is not active." ); }
-  if ( has_filter( "woocommerce_mail_callback" ) || realpath( ABSPATH . WPINC . "/pluggable.php" ) !== realpath( ( new ReflectionFunction( "wp_mail" ) )->getFileName() ) ) { WP_CLI::error( "Another plugin replaced wp_mail." ); }'
+  if ( array_sum( array_map( "count", $GLOBALS["wp_filter"]["pre_wp_mail"]->callbacks ) ) > 1 || has_filter( "woocommerce_mail_callback" ) || realpath( ABSPATH . WPINC . "/pluggable.php" ) !== realpath( ( new ReflectionFunction( "wp_mail" ) )->getFileName() ) ) { WP_CLI::error( "Another plugin sends or replaces mail (pre_wp_mail, woocommerce_mail_callback or wp_mail)." ); }'
 
 host=${STAGING_SSH%%/*}
 # Only a port named in STAGING_SSH: otherwise ~/.ssh/config decides, as it does for wp --ssh.

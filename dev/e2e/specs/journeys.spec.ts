@@ -40,7 +40,6 @@ test('activates a workflow', async ({ page }) => {
 test('an order runs the workflow and logs its email', async ({ page, browser, baseURL }) => {
   await useTemplate(page, FIRST_ORDER);
   await activate(page);
-  const overview = page.url();
 
   const email = uniqueEmail();
   const shopper = await guestPage(browser, baseURL);
@@ -49,7 +48,6 @@ test('an order runs the workflow and logs its email', async ({ page, browser, ba
   completeOrder(email);
   runQueue();
 
-  await page.goto(overview);
   await page.reload();
   await expect(page.getByRole('row').filter({ hasText: 'Completed' })).toHaveCount(1);
 
@@ -60,7 +58,6 @@ test('an order runs the workflow and logs its email', async ({ page, browser, ba
 test('a deactivated workflow does not run', async ({ page, browser, baseURL }) => {
   await useTemplate(page, FIRST_ORDER);
   await activate(page);
-  const overview = page.url();
   await page.getByRole('button', { name: 'Deactivate' }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Deactivate' }).click();
   await expect(page.getByText('Inactive').first()).toBeVisible();
@@ -72,7 +69,6 @@ test('a deactivated workflow does not run', async ({ page, browser, baseURL }) =
   completeOrder(email);
   runQueue();
 
-  await page.goto(overview);
   await page.reload();
   await expect(page.getByText('Each time this workflow starts')).toBeVisible();
   await openMailLog(page);

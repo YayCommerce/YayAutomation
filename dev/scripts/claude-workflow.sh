@@ -24,8 +24,9 @@ ensure_tmux() {
     ';' set-option -t "$TS" history-limit 50000 ';' set-option -t "$TS" mouse on
 }
 has_window() { tmux list-windows -t "$TS" -F '#W' 2>/dev/null | grep -qx "$1"; }
-# Window index for a name: tmux reads a "$TS:name" target as an index or a prefix match, so two windows can collide.
-win() { tmux list-windows -t "$TS" -F '#I #W' 2>/dev/null | awk -v n="$1" '$2==n{print $1; exit}'; }
+# Window id (@N) for a name: tmux reads a "$TS:name" target as an index or a prefix match, so two windows can collide.
+# Ids, unlike indexes, stay put when a window closes and renumber-windows is on.
+win() { tmux list-windows -t "$TS" -F '#{window_id} #W' 2>/dev/null | awk -v n="$1" '$2==n{print $1; exit}'; }
 # Each terminal gets its own session in a group with $TS: same windows,
 # independent current window. Auto-removed when the terminal detaches.
 attach() {
@@ -121,7 +122,7 @@ status() {
 cleanup() {
   local -a finished finished_ids
   local i w pid
-  tmux list-windows -t "$TS" -F '#I #W #{pane_pid}' 2>/dev/null | while read -r i w pid; do
+  tmux list-windows -t "$TS" -F '#{window_id} #W #{pane_pid}' 2>/dev/null | while read -r i w pid; do
     [[ $w == (home|awake|server) ]] && continue
     [[ $(window_state $pid) == done ]] && { finished+=($w); finished_ids+=($i); }
   done
