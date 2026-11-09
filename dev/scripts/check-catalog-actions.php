@@ -260,10 +260,10 @@ remove_filter( 'pre_wp_mail', $catch_resend );
 // Wait until, in a store time zone other than UTC, put back after.
 $zone_before = get_option( 'timezone_string' );
 update_option( 'timezone_string', 'Asia/Ho_Chi_Minh' );
-// Two hours ahead, down to its 15-minute step, so the minutes count too.
+// Two hours ahead, on an odd minute, so any minute counts.
 $until_at    = time() + 2 * HOUR_IN_SECONDS;
 $until_hour  = (int) wp_date( 'G', $until_at );
-$until_min   = intdiv( (int) wp_date( 'i', $until_at ), 15 ) * 15;
+$until_min   = (int) wp_date( 'i', $until_at ) | 1;
 $until_time  = sprintf( '%02d:%02d', $until_hour, $until_min );
 $until_steps = [
     [
@@ -328,7 +328,7 @@ $hour_flow  = WorkflowStore::create(
 );
 $flows[]    = (int) $hour_flow['id'];
 $hour_issue = array_values( array_filter( Validator::issues( WorkflowStore::find( (int) $hour_flow['id'] ) )['live'], fn( array $issue ) => 'until' === ( $issue['nodeId'] ?? '' ) ) );
-$ok( 'Choose a time in 15-minute steps.' === ( $hour_issue[0]['message'] ?? '' ) && 'time' === ( $hour_issue[0]['field'] ?? '' ), 'wait_until: a config with the hour setting is a setup issue (' . ( $hour_issue[0]['message'] ?? 'none' ) . ')' );
+$ok( 'Enter a time, e.g. 9:15 am.' === ( $hour_issue[0]['message'] ?? '' ) && 'time' === ( $hour_issue[0]['field'] ?? '' ), 'wait_until: a config with the hour setting is a setup issue (' . ( $hour_issue[0]['message'] ?? 'none' ) . ')' );
 
 wp_set_current_user( $previous_user );
 

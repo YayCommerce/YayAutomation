@@ -1,8 +1,14 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
+import { getSettings, setSettings } from '@wordpress/date';
 
 import { weekdayText } from '.';
 import { steps } from '../..';
 import { plainSummary } from '../../core/marks';
+
+const dateSettings = getSettings();
+const timeFormat = (time: string) => setSettings({ ...dateSettings, formats: { ...dateSettings.formats, time } });
+
+afterEach(() => setSettings(dateSettings));
 
 describe('Wait until', () => {
   it('reads runs of three days or more as a range', () => {
@@ -12,12 +18,18 @@ describe('Wait until', () => {
     expect(weekdayText([])).toBe('');
   });
 
-  it('summarizes the time and the days, any day when none', () => {
+  it('summarizes the time in the site’s 12-hour format, and the days, any day when none', () => {
+    timeFormat('g:i a');
     const step = steps.wait_until;
-    expect(plainSummary(step.summary({ time: '09:15', weekdays: ['1', '2', '3', '4', '5'] }))).toBe(
-      'Until 9:15 am · Mon–Fri',
+    expect(plainSummary(step.summary({ time: '11:10', weekdays: ['1', '2', '3', '4', '5'] }))).toBe(
+      'Until 11:10 am · Mon–Fri',
     );
-    expect(plainSummary(step.summary({ time: '00:00', weekdays: [] }))).toBe('Until 12:00 am · Any day');
+    expect(plainSummary(step.summary({ time: '00:07', weekdays: [] }))).toBe('Until 12:07 am · Any day');
+  });
+
+  it('summarizes the time in the site’s 24-hour format', () => {
+    timeFormat('H:i');
+    expect(plainSummary(steps.wait_until.summary({ time: '21:37', weekdays: [] }))).toBe('Until 21:37 · Any day');
   });
 
   it('starts a new step at 9:00', () => {
@@ -25,14 +37,23 @@ describe('Wait until', () => {
     expect(steps.wait_until.firstError(steps.wait_until.defaults())).toBeNull();
   });
 
-  it('takes times on the 15-minute list only, with PHP’s message', () => {
+  it('takes any minute, with PHP’s message for anything else', () => {
     const step = steps.wait_until;
-    for (const time of ['00:00', '09:15', '23:45']) expect(step.firstError({ time, weekdays: [] })).toBeNull();
-    for (const time of ['', '9:15', '09:10', '24:00', '09:15:00']) {
-      expect(step.firstIssue({ time, weekdays: [] })).toEqual({
-        message: 'Choose a time in 15-minute steps.',
+    for (const time of ['00:00', '11:10', '09:07', '23:59']) expect(step.firstError({ time, weekdays: [] })).toBeNull();
+    const bad = [
+      { time: '9:15' },
+      { time: '24:00' },
+      { time: '09:60' },
+      { time: '09:15:00' },
+      { time: '' },
+      { hour: '9' },
+    ];
+    for (const config of bad) {
+      expect(step.firstIssue({ ...config, weekdays: [] })).toEqual({
+        message: 'Enter a time, e.g. 9:15 am.',
         field: 'time',
       });
     }
+    expect(plainSummary(step.summary({ hour: '9', weekdays: [] }))).toBe('Until Not set · Any day');
   });
 });

@@ -14,8 +14,8 @@ class WaitUntil extends Action {
 
     public const ID = 'wait_until';
 
-    /** 'HH:MM' in 15-minute steps, 00:00–23:45. */
-    private const TIME = '/^(?:[01]\d|2[0-3]):(?:00|15|30|45)$/D';
+    /** 'HH:MM', 00:00–23:59. */
+    private const TIME = '/^(?:[01]\d|2[0-3]):[0-5]\d$/D';
 
     public function id(): string {
         return self::ID;
@@ -43,8 +43,9 @@ class WaitUntil extends Action {
 
     public function fields(): array {
         return [
-            // No default: a config without a valid time stays as it is, an issue to fix, never 09:00. The editor starts new steps at 09:00.
-            Field::select( 'time', __( 'Time', 'yaymatik' ), [ self::class, 'times' ] ),
+            // Blank by default: a config without a valid time stays an issue to fix, never 09:00. The editor starts new steps at 09:00.
+            Field::text( 'time', __( 'Time', 'yaymatik' ) )
+                ->help( __( 'Runs resume when WordPress next runs its scheduled tasks, so it can be a few minutes later on a quiet store.', 'yaymatik' ) ),
             Field::multiselect( 'weekdays', __( 'Days', 'yaymatik' ), [ self::class, 'weekdays' ] )
                 ->placeholder( __( 'Any day', 'yaymatik' ) )
                 ->help( __( 'Leave empty for any day.', 'yaymatik' ) ),
@@ -65,17 +66,6 @@ class WaitUntil extends Action {
         ];
     }
 
-    /** '00:00'–'23:45' every 15 minutes => the time in the site's time format, e.g. "9:15 AM". */
-    public static function times(): array {
-        $format = (string) get_option( 'time_format', 'g:i a' );
-        $utc    = new \DateTimeZone( 'UTC' );
-        $times  = [];
-        for ( $minutes = 0; $minutes < 24 * 60; $minutes += 15 ) {
-            $times[ sprintf( '%02d:%02d', intdiv( $minutes, 60 ), $minutes % 60 ) ] = wp_date( $format, $minutes * 60, $utc );
-        }
-        return $times;
-    }
-
     /** ISO day number '1' (Monday) – '7' => its short name. */
     public static function weekdays(): array {
         return [
@@ -90,13 +80,13 @@ class WaitUntil extends Action {
     }
 
     /**
-     * A time off the list, blank included, gets this message rather than the generic one.
+     * A time not in 'HH:MM', blank included, gets this message rather than the generic one.
      *
      * @param array $config
      */
     public function validate( array $config ) {
         if ( ! preg_match( self::TIME, $config['time'] ) ) {
-            return $this->invalid( __( 'Choose a time in 15-minute steps.', 'yaymatik' ), 'time' );
+            return $this->invalid( __( 'Enter a time, e.g. 9:15 am.', 'yaymatik' ), 'time' );
         }
         return $this->field_error( $config ) ?? true;
     }

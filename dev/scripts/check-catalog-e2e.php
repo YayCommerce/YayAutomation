@@ -193,7 +193,7 @@ $actions_flow  = $activate_graph(
                 'until',
                 'wait_until',
                 [
-                    'time'     => '03:15',
+                    'time'     => '03:07',
                     'weekdays' => [],
                 ],
             ],
