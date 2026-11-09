@@ -12,6 +12,11 @@ export default async function globalSetup(config: FullConfig) {
   await page.getByLabel('Password', { exact: true }).fill('password');
   await page.getByRole('button', { name: 'Log In' }).click();
   await page.waitForURL('**/wp-admin/**');
+  // The web container mounts mu-plugins apart from the cli one, so check it too.
+  const mailLog = await page.goto('/wp-admin/tools.php?page=yay-mail-log');
+  if (!mailLog?.ok()) {
+    throw new Error('Mail log mu-plugin is not loaded on the site. Run: pnpm wp-env stop && pnpm wp-env start');
+  }
   await page.context().storageState({ path: storageState as string });
   await browser.close();
 }

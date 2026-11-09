@@ -13,6 +13,8 @@ function wp(...args: string[]) {
 
 /** No workflows, runs or carts, and the store seeded. */
 export function resetSite() {
+  // A branch switch that removes dev/wp/mu-plugins leaves Docker mounting the deleted folder until a restart.
+  wp('eval', 'has_filter( "pre_wp_mail", "yay_mail_log_capture" ) || WP_CLI::error( "Mail log mu-plugin is not loaded. Run: pnpm wp-env stop && pnpm wp-env start" );');
   run('./run.sh', ['reset-data', '--wp-env', '--yes']);
   run('./run.sh', ['seed', '--wp-env']);
 }
