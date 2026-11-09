@@ -10,6 +10,9 @@ use YayMatik\Workflow\Core\Storage\Settings;
 if ( ! function_exists( 'WC' ) ) {
     WP_CLI::error( 'WooCommerce is not active.' );
 }
+if ( ! class_exists( Settings::class ) ) {
+    WP_CLI::error( 'YayMatik is not active. Install it first (on staging: ./run.sh deploy).' );
+}
 
 update_option( 'woocommerce_coming_soon', 'no' );
 update_option( 'woocommerce_currency', 'USD' );
