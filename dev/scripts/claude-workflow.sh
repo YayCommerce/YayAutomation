@@ -24,10 +24,12 @@ ensure_tmux() {
     ';' set-option -t "$TS" history-limit 50000 ';' set-option -t "$TS" mouse on
 }
 has_window() { tmux list-windows -t "$TS" -F '#W' 2>/dev/null | grep -qx "$1"; }
+# Window index for a name: tmux reads a "$TS:name" target as an index or a prefix match, so two windows can collide.
+win() { tmux list-windows -t "$TS" -F '#I #W' 2>/dev/null | awk -v n="$1" '$2==n{print $1; exit}'; }
 # Each terminal gets its own session in a group with $TS: same windows,
 # independent current window. Auto-removed when the terminal detaches.
 attach() {
-  local -a sel; [[ -n $1 ]] && sel=(';' select-window -t "$1")
+  local -a sel; [[ -n $1 ]] && sel=(';' select-window -t "$(win "$1")")
   # Grouped sessions take options from global defaults, not $TS, so set mouse here too.
   tmux new-session -t "$TS" -s "$TS-$$" ';' set-option destroy-unattached on ';' set-option mouse on $sel
 }
@@ -35,9 +37,14 @@ slug() { echo "$1" | sed -E 's#^(feature|fix|dev)/##; s#[^A-Za-z0-9]+#-#g' | tr 
 
 open_window() {   # name dir command
   ensure_tmux
-  if has_window "$1"; then echo "Window '$1' already exists."; else
+  if ! has_window "$1"; then
     tmux new-window -d -t "$TS" -n "$1" -c "$2" "$3; exec zsh"
     echo "Started '$1' in $2"
+  elif [[ $(window_state "$(tmux display -p -t "$TS:$(win "$1")" '#{pane_pid}')") == done ]]; then
+    tmux respawn-window -k -t "$TS:$(win "$1")" -c "$2" "$3; exec zsh"   # claude exited: restart it
+    echo "Restarted '$1' in $2"
+  else
+    echo "Window '$1' already exists."
   fi
   printf "Attach now? [Y/n] "; read -r a
   [[ $a == [nN]* ]] || attach "$1"
@@ -56,12 +63,12 @@ start_server() {
   local cmd="claude remote-control --name $SERVER --spawn worktree --permission-mode $MODE; exec zsh"
   if ! has_window server; then
     tmux new-window -d -t "$TS" -n server -c "$ROOT" "$cmd"
-  elif [[ $(window_state "$(tmux display -p -t "${TS}:server" '#{pane_pid}')") == done ]]; then
-    tmux respawn-window -k -t "${TS}:server" -c "$ROOT" "$cmd"   # claude exited: restart it
+  elif [[ $(window_state "$(tmux display -p -t "$TS:$(win server)" '#{pane_pid}')") == done ]]; then
+    tmux respawn-window -k -t "$TS:$(win server)" -c "$ROOT" "$cmd"   # claude exited: restart it
   fi
   sleep 3
-  if [[ $(window_state "$(tmux display -p -t "${TS}:server" '#{pane_pid}')") == done ]]; then
-    echo "Server failed to start:"; tmux capture-pane -p -t "${TS}:server" | grep -v '^$' | tail -5
+  if [[ $(window_state "$(tmux display -p -t "$TS:$(win server)" '#{pane_pid}')") == done ]]; then
+    echo "Server failed to start:"; tmux capture-pane -p -t "$TS:$(win server)" | grep -v '^$' | tail -5
     return 1
   fi
   echo "Server '$SERVER' running (tmux: $TS, window: server). Mac kept awake."
@@ -112,16 +119,16 @@ status() {
 }
 
 cleanup() {
-  local -a finished
-  local w pid
-  tmux list-windows -t "$TS" -F '#W #{pane_pid}' 2>/dev/null | while read -r w pid; do
+  local -a finished finished_ids
+  local i w pid
+  tmux list-windows -t "$TS" -F '#I #W #{pane_pid}' 2>/dev/null | while read -r i w pid; do
     [[ $w == (home|awake|server) ]] && continue
-    [[ $(window_state $pid) == done ]] && finished+=($w)
+    [[ $(window_state $pid) == done ]] && { finished+=($w); finished_ids+=($i); }
   done
   if (( $#finished )); then
     echo "Finished windows:"; printf "  %s\n" $finished
     printf "Close them? [Y/n] "; read -r a
-    [[ $a == [nN]* ]] || for w in $finished; do tmux kill-window -t "$TS:$w"; done
+    [[ $a == [nN]* ]] || for i in $finished_ids; do tmux kill-window -t "$TS:$i"; done
   else
     echo "No finished windows."
   fi
