@@ -6,6 +6,7 @@
 !.vscode/extensions.json
 !.vscode/settings.json
 .claude/settings.local.json
+.claude/local
 .claude/worktrees
 .claude/plans/dev
 

@@ -6,7 +6,7 @@ description: Interactive dev workflow — develop an agreed plan checkpoint by c
 
 Workflow - Interactive development. Use this once a plan is agreed (from `/wplan`).
 
-**Read `.claude/docs/context-dev-convention.md` before starting.**
+**Read `.claude/docs/context-dev-convention.md` before starting.** If `.claude/local/wdev.md` exists, it is this dev's change to this skill: apply it on top.
 
 ---
 

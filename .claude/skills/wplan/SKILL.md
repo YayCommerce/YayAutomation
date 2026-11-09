@@ -8,7 +8,7 @@ Workflow - Planning only. Use this to define a task before developing it.
 
 **Do not write any code or implement any solution. This skill ends by saving the confirmed plan and immediately starting `/wdev`.**
 
-**Read `.claude/docs/context-dev-convention.md` before starting.**
+**Read `.claude/docs/context-dev-convention.md` before starting.** If `.claude/local/wplan.md` exists, it is this dev's change to this skill: apply it on top.
 
 ---
 
