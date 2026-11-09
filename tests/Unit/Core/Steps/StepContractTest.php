@@ -10,7 +10,6 @@ use YayMatik\Workflow\Actions\GenerateCoupon;
 use YayMatik\Workflow\Actions\ResendWcEmail;
 use YayMatik\Workflow\Actions\SendEmail;
 use YayMatik\Workflow\Actions\SendInternalEmail;
-use YayMatik\Workflow\Actions\StopWaitingRuns;
 use YayMatik\Workflow\Actions\UpdateCustomerMeta;
 use YayMatik\Workflow\Actions\UpdateOrderMeta;
 use YayMatik\Workflow\Actions\Wait;
@@ -38,7 +37,7 @@ final class StepContractTest extends TestCase {
     /** @return Step[] Keyed by id. */
     private static function steps(): array {
         $steps = [];
-        foreach ( [ new OrderCreated(), new OrderStatusChanged(), new OrderPaid(), new OrderRefunded(), new OrderNoteAdded(), new CustomerInactive(), new CustomerOrderCountReaches(), new CustomerTotalSpendReaches(), new ReviewPosted(), new Criteria(), new SendEmail(), new SendInternalEmail(), new ResendWcEmail(), new ChangeOrderStatus(), new AddOrderNote(), new UpdateOrderMeta(), new UpdateCustomerMeta(), new ChangeCustomerRole(), new GenerateCoupon(), new Wait(), new WaitUntil(), new StopWaitingRuns() ] as $step ) {
+        foreach ( [ new OrderCreated(), new OrderStatusChanged(), new OrderPaid(), new OrderRefunded(), new OrderNoteAdded(), new CustomerInactive(), new CustomerOrderCountReaches(), new CustomerTotalSpendReaches(), new ReviewPosted(), new Criteria(), new SendEmail(), new SendInternalEmail(), new ResendWcEmail(), new ChangeOrderStatus(), new AddOrderNote(), new UpdateOrderMeta(), new UpdateCustomerMeta(), new ChangeCustomerRole(), new GenerateCoupon(), new Wait(), new WaitUntil() ] as $step ) {
             $steps[ $step->id() ] = $step;
         }
         return $steps;
@@ -130,7 +129,6 @@ final class StepContractTest extends TestCase {
                 'generate_coupon'              => [ 'code', 'amount', 'expires_at', 'box' ],
                 'wait'                         => [],
                 'wait_until'                   => [ 'until' ],
-                'stop_waiting_runs'            => [ 'stopped' ],
             ],
             $outputs
         );
@@ -202,7 +200,6 @@ final class StepContractTest extends TestCase {
             'update_customer_meta'         => [ 'key' => '' ],
             'change_customer_role'         => [ 'role' => '' ],
             'resend_wc_email'              => [ 'email' => '' ],
-            'stop_waiting_runs'            => [ 'workflows' => [] ],
             'wait'                         => [
                 'delay' => [
                     'value' => 0,

@@ -64,6 +64,5 @@ final class StepIcons {
         'history',
         // Other.
         'zap',
-        'power',
     ];
 }

@@ -28,7 +28,6 @@ export type StepId =
   | 'generate_coupon'
   | 'wait'
   | 'wait_until'
-  | 'stop_waiting_runs'
   | 'change_order_status'
   | 'add_order_note'
   | 'update_order_meta'

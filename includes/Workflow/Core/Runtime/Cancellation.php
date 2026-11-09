@@ -6,7 +6,7 @@ use YayMatik\Workflow\Core\Storage\RunStore;
 
 defined( 'ABSPATH' ) || exit;
 
-/** Cancels waiting runs: a workflow's when it is turned off or updated, a cart's when it is ordered or gone or its shopper unsubscribes, a person's when a Stop waiting runs step says so. */
+/** Cancels waiting runs: a workflow's when it is turned off or updated, a cart's when it is ordered or gone or its shopper unsubscribes. */
 final class Cancellation {
 
     /** Why a run stopped: its workflow was deactivated. */
@@ -58,18 +58,6 @@ final class Cancellation {
      */
     public static function carts( array $cart_ids, string $reason ): int {
         return self::cancel( RunStore::waiting_ids_for_subjects( array_map( fn( int $id ) => 'cart:' . $id, $cart_ids ) ), $reason );
-    }
-
-    /**
-     * Waiting runs about these subjects, of these workflows only.
-     *
-     * @param string[] $subjects
-     * @param int[]    $workflow_ids
-     * @param string   $reason
-     * @return int How many runs were cancelled.
-     */
-    public static function for_subjects( array $subjects, array $workflow_ids, string $reason ): int {
-        return $workflow_ids ? self::cancel( RunStore::waiting_ids_for_subjects( $subjects, $workflow_ids ), $reason ) : 0;
     }
 
     /**

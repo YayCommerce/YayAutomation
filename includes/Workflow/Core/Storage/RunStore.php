@@ -246,27 +246,20 @@ final class RunStore {
     }
 
     /**
-     * Waiting runs about these subjects; of these workflows only, when given.
+     * Waiting runs about these subjects.
      *
      * @param string[] $subjects
-     * @param int[]    $workflow_ids
      * @return int[]
      */
-    public static function waiting_ids_for_subjects( array $subjects, array $workflow_ids = [] ): array {
+    public static function waiting_ids_for_subjects( array $subjects ): array {
         global $wpdb;
         if ( ! $subjects ) {
             return [];
         }
         $table = self::table();
         $in    = implode( ',', array_fill( 0, count( $subjects ), '%s' ) );
-        $args  = array_merge( [ self::STATUS_WAITING ], $subjects );
-        $only  = '';
-        if ( $workflow_ids ) {
-            $only = ' AND workflow_id IN (' . implode( ',', array_fill( 0, count( $workflow_ids ), '%d' ) ) . ')';
-            $args = array_merge( $args, array_map( 'intval', $workflow_ids ) );
-        }
-        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared -- $in and $only are placeholders.
-        $ids = $wpdb->get_col( $wpdb->prepare( "SELECT id FROM {$table} WHERE status = %s AND subject IN ({$in}){$only}", $args ) );
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared -- $in is placeholders.
+        $ids = $wpdb->get_col( $wpdb->prepare( "SELECT id FROM {$table} WHERE status = %s AND subject IN ({$in})", array_merge( [ self::STATUS_WAITING ], $subjects ) ) );
         return array_map( 'intval', (array) $ids );
     }
 

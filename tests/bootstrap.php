@@ -34,6 +34,6 @@ spl_autoload_register(
 
 require_once __DIR__ . '/stubs.php';
 
-// Code that reads the database (e.g. a step's list of workflows) gets empty answers unless a test sets its own.
+// Code that reads the database gets empty answers unless a test sets its own.
 // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- no WordPress here.
 $GLOBALS['wpdb'] = new YayMatik\Tests\Support\FakeWpdb();

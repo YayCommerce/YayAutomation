@@ -28,7 +28,7 @@
             {
                 "id": "yaymatik",
                 "label": "YayMatik",
-                "description": "Workflow logic: conditions, waits and stopping waiting runs.",
+                "description": "Workflow logic: conditions and waits.",
                 "active": true,
                 "logo": "https://example.test/wp-content/plugins/yaymatik/assets/logos/yaymatik.svg"
             },
@@ -293,45 +293,6 @@
                         "key": "until",
                         "label": "Waited until",
                         "type": "date"
-                    }
-                ]
-            },
-            "stop_waiting_runs": {
-                "kind": "action",
-                "plugin": "yaymatik",
-                "category": "flow",
-                "requires": [],
-                "label": "Stop waiting runs",
-                "description": "Stop this customer’s waiting runs of other workflows.",
-                "icon": "power",
-                "summary": "Stop %workflows%",
-                "onError": "continue",
-                "fields": [
-                    {
-                        "key": "workflows",
-                        "type": "multiselect",
-                        "label": "Workflows",
-                        "required": true,
-                        "requiredMessage": "%s needs a workflow.",
-                        "placeholder": "Choose workflows",
-                        "options": [],
-                        "default": []
-                    },
-                    {
-                        "key": "email",
-                        "type": "text",
-                        "label": "Customer email",
-                        "required": true,
-                        "requiredMessage": "%s needs the customer’s email.",
-                        "variables": true,
-                        "default": "{{ customer.email }}"
-                    }
-                ],
-                "outputs": [
-                    {
-                        "key": "stopped",
-                        "label": "Runs stopped",
-                        "type": "number"
                     }
                 ]
             },

@@ -190,14 +190,6 @@ $actions_flow  = $activate_graph(
                 [ 'email' => 'customer_processing_order' ],
             ],
             [
-                'stop',
-                'stop_waiting_runs',
-                [
-                    'workflows' => [ (string) $e2e_flows['order_paid'] ],
-                    'email'     => '{{ customer.email }}',
-                ],
-            ],
-            [
                 'until',
                 'wait_until',
                 [
@@ -227,7 +219,7 @@ $actor_steps = array_column( RunStepStore::for_run( $actor_runs[0] ), 'status', 
 clean_user_cache( $actor );
 $ok(
     'waiting' === $waited && 'completed' === RunStore::find( $actor_runs[0] )['status']
-        && [ 'completed' ] === array_values( array_unique( array_intersect_key( $actor_steps, array_flip( [ 'meta', 'role', 'resend', 'stop', 'until' ] ) ) ) )
+        && [ 'completed' ] === array_values( array_unique( array_intersect_key( $actor_steps, array_flip( [ 'meta', 'role', 'resend', 'until' ] ) ) ) )
         && 'yes' === get_user_meta( $actor, 'check_e2e', true ) && in_array( 'check_wholesale', ( new WP_User( $actor ) )->roles, true ) && 1 === count( $mails ),
     'e2e actions: a run goes through every new action, waits, then completes (' . wp_json_encode( $actor_steps ) . ')'
 );

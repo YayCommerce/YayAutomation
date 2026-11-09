@@ -38,10 +38,6 @@ final class Type {
         return new self( self::STRING );
     }
 
-    public static function number(): self {
-        return new self( self::NUMBER );
-    }
-
     public static function boolean(): self {
         return new self( self::BOOLEAN );
     }

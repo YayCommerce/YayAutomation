@@ -47,7 +47,6 @@ final class ModuleRegistryTest extends TestCase {
         'condition',
         'wait',
         'wait_until',
-        'stop_waiting_runs',
     ];
 
     /** @var callable|null */
@@ -69,7 +68,7 @@ final class ModuleRegistryTest extends TestCase {
         $this->assertSame( 'yaymatik', $plugins['condition'] );
         $this->assertSame(
             [
-                'yaymatik'    => 4,
+                'yaymatik'    => 3,
                 'woocommerce' => 21,
             ],
             array_count_values( $plugins )

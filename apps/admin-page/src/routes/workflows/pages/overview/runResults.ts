@@ -1,5 +1,5 @@
 import type { Run, RunDetail, StepId } from '@yaymatik/types';
-import { __, _n, sprintf } from '@wordpress/i18n';
+import { __, sprintf } from '@wordpress/i18n';
 
 import { shortDayTime } from '@/lib/helpers/date.helper';
 import { plainSummary, steps } from '../../steps';
@@ -57,11 +57,6 @@ const results: Partial<Record<StepId, ResultText>> = {
     }
     /* translators: %s: date and time, e.g. "Oct 9 at 3:00 PM" */
     return step.finishedAt ? sprintf(__('Waited until %s', 'yaymatik'), shortDayTime(step.finishedAt)) : summary(step);
-  },
-  stop_waiting_runs: (step) => {
-    const stopped = Number(step.output.stopped ?? 0);
-    /* translators: %d: number of runs */
-    return sprintf(_n('Stopped %d run', 'Stopped %d runs', stopped, 'yaymatik'), stopped);
   },
   send_email: (step) =>
     /* translators: %s: email address */

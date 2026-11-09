@@ -98,7 +98,6 @@ We chose these 8 because they cover what merchants install an automation plugin 
   - Customer inactive: number of days, a whole number from 7 to 730 (default 90), with "Checked once a day".
 - **Wait:** a number and a unit (minutes, hours, days, weeks), up to a year; the card reads e.g. "Wait 1 hour" with a clock icon. *(M2)*
 - **Wait until:** an hour of the day in store time and, optionally, weekdays; the card reads e.g. "Until 9:00 AM · Mon–Fri". *(CT)*
-- **Stop waiting runs:** the workflows to stop and the customer's email (`{{ customer.email }}` by default); their runs waiting for that customer, about orders, carts, the account or reviews, end Cancelled with "Stopped by workflow “X”.". *(CT)*
 - **Generate coupon:** discount type, amount, expires after N days, minimum spend, individual use, limited to the customer's email, code prefix. The card reads e.g. "10 % off, expires in 7 days". Later emails can include the coupon code. *(M1)*
 - **Send email:** To (the customer's email by default; editable, proposal), Subject, Heading, Message, each with "Insert variable". Note under the form: "An unsubscribe link is added automatically". *(M1)*
   - **Preview** shows the email as the customer sees it, with sample data from a recent order or cart.
@@ -312,7 +311,7 @@ These are missing today. They are **not** in scope until picked:
 
 ## Out of scope
 
-- **v1.1:** Branched post-purchase, Nth order reward, Negative review alert, Unusual quantity alert, Slack message, order tags.
+- **v1.1:** Branched post-purchase, Nth order reward, Negative review alert, Unusual quantity alert, Slack message, order tags, the Stop waiting runs action.
 - **v1.2:** Lifetime spend tiers, Review reward.
 - Later: admin lists of unsubscribed customers and tracked carts (in v1.0, run history shows when an email was skipped and why), AI workflow assistant, import, abandoned-cart revenue reports, drag-and-drop email designer, A/B tests, SMS.
 

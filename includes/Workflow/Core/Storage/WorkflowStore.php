@@ -21,19 +21,6 @@ final class WorkflowStore {
         return $workflows;
     }
 
-    /** Id => name of every workflow, newest first: one small query, no graphs. */
-    public static function names(): array {
-        global $wpdb;
-        $table = self::table();
-        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- the table name.
-        $rows  = (array) $wpdb->get_results( "SELECT id, name FROM {$table} ORDER BY updated_at DESC, id DESC", ARRAY_A );
-        $names = [];
-        foreach ( $rows as $row ) {
-            $names[ (string) $row['id'] ] = (string) $row['name'];
-        }
-        return $names;
-    }
-
     public static function find( int $id ): ?array {
         $rows = self::select( 'WHERE w.id = %d', [ $id ], true );
         return $rows ? self::to_array( $rows[0] ) : null;

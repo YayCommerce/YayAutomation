@@ -15,8 +15,6 @@ use YayMatik\Workflow\Actions\WaitUntil;
 use YayMatik\Workflow\Core\Data\Ref;
 use YayMatik\Workflow\Core\Data\Scope;
 use YayMatik\Workflow\Core\Steps\StepResult;
-use YayMatik\Workflow\Core\Storage\CartStore;
-use YayMatik\Workflow\Core\Storage\RunStepStore;
 use YayMatik\Workflow\Core\Storage\RunStore;
 use YayMatik\Workflow\Core\Storage\WorkflowStore;
 
@@ -304,129 +302,6 @@ RunStore::save( $second[0], [ 'wait_until' => gmdate( 'Y-m-d H:i:s', time() - 60
 $work( $second );
 $ok( 'cancelled' === RunStore::find( $second[0] )['status'], 'wait_until: a waiting run of a deactivated workflow is cancelled when it wakes' );
 update_option( 'timezone_string', $zone_before );
-
-// Stop waiting runs: one person's runs about an order, a cart, an account and a review, all waiting.
-$stop_email        = 'stopme' . wp_rand( 1000, 9999 ) . '@' . $domain;
-$target_a          = $flow( 'order_created' );
-$target_b          = $flow( 'order_created' );
-$not_chosen        = $flow( 'order_created' );
-$cart_key          = 'check-catalog-' . wp_rand( 100000, 999999 );
-list( $stop_user ) = $new_user( 'stopme' . wp_rand( 1000, 9999 ) );
-wp_update_user(
-    [
-        'ID'         => $stop_user,
-        'user_email' => $stop_email,
-    ]
-);
-CartStore::upsert( $cart_key, [ 'email' => $stop_email ] );
-register_shutdown_function( fn() => CartStore::delete_by_session( $cart_key ) );
-$stop_cart   = (int) CartStore::find_by_session( $cart_key )['id'];
-$stop_order  = $order( [ 'billing_email' => $stop_email ] );
-$stop_review = $review_on( [ 'comment_author_email' => $stop_email ] );
-$other_order = $order( [ 'billing_email' => 'someone-else@' . $domain ] );
-/** A waiting run of this workflow about this subject, with its waiting step; its id. */
-$waiting_run = function ( int $flow_id, string $subject ): int {
-    $run_id = RunStore::create(
-        [
-            'workflow_id' => $flow_id,
-            'version_id'  => 0,
-            'trigger_id'  => 'order_created',
-            'subject'     => $subject,
-        ]
-    );
-    RunStore::save(
-        $run_id,
-        [
-            'status'     => RunStore::STATUS_WAITING,
-            'wait_until' => gmdate( 'Y-m-d H:i:s', time() + DAY_IN_SECONDS ),
-        ]
-    );
-    RunStepStore::finish( RunStepStore::start( $run_id, 'wait', [] ), RunStepStore::STATUS_WAITING );
-    return $run_id;
-};
-$theirs      = [
-    'order'   => $waiting_run( $target_a, 'order:' . $stop_order ),
-    'cart'    => $waiting_run( $target_b, 'cart:' . $stop_cart ),
-    'account' => $waiting_run( $target_a, 'user:' . $stop_user ),
-    'review'  => $waiting_run( $target_b, 'review:' . $stop_review ),
-];
-$kept        = [
-    'another person\'s run' => $waiting_run( $target_a, 'order:' . $other_order ),
-    'a workflow not chosen' => $waiting_run( $not_chosen, 'order:' . $stop_order ),
-];
-
-$stop_steps = function ( array $workflow_ids ): array {
-    return [
-        [
-            'stop',
-            'stop_waiting_runs',
-            [
-                'workflows' => array_map( 'strval', $workflow_ids ),
-                'email'     => '{{ customer.email }}',
-            ],
-        ],
-        [
-            'note',
-            'add_order_note',
-            [
-                'note' => 'check-catalog after stop',
-                'type' => 'private',
-            ],
-        ],
-    ];
-};
-$stopper    = $activate_graph( $chain( 'order_paid', [], $stop_steps( [ $target_a, $target_b ] ) ) );
-$pay_order  = $order( [ 'billing_email' => $stop_email ] );
-$started( [ $stopper ], $move( $pay_order, 'processing' ) );
-$stop_runs = $runs_of( $stopper );
-$work( $stop_runs );
-$stopper_name = WorkflowStore::find( $stopper )['name'];
-foreach ( $theirs as $what => $run_id ) {
-    $run   = RunStore::find( $run_id );
-    $steps = RunStepStore::for_run( $run_id );
-    $ok( 'cancelled' === $run['status'] && "Stopped by workflow “{$stopper_name}”." === $run['error'] && 'cancelled' === ( $steps[0]['status'] ?? '' ), "stop_waiting_runs: the {$what} run is cancelled, its step too ({$run['error']})" );
-}
-foreach ( $kept as $what => $run_id ) {
-    $ok( 'waiting' === RunStore::find( $run_id )['status'], "stop_waiting_runs: {$what} keeps waiting" );
-}
-$stop_step = array_values( array_filter( RunStepStore::for_run( $stop_runs[0] ), fn( array $step ) => 'stop' === $step['step_id'] ) )[0] ?? [];
-$ok( 'completed' === ( $stop_step['status'] ?? '' ) && 4 === (int) ( $stop_step['output']['stopped'] ?? -1 ), 'stop_waiting_runs: the step outputs how many it stopped' );
-WorkflowStore::deactivate( $stopper );
-
-$bad_email = $activate_graph(
-    $chain(
-        'order_paid',
-        [],
-        [
-            [
-                'stop',
-                'stop_waiting_runs',
-                [
-                    'workflows' => [ (string) $target_a ],
-                    'email'     => '{{ order.customer_note }}',
-                ],
-            ],
-        ]
-    )
-);
-$started( [ $bad_email ], $move( $order( [ 'billing_email' => $stop_email ] ), 'processing' ) );
-$bad_runs = $runs_of( $bad_email );
-$work( $bad_runs );
-$bad_step = RunStepStore::for_run( $bad_runs[0] )[0] ?? [];
-$ok( 'skipped' === ( $bad_step['status'] ?? '' ) && 'waiting' === RunStore::find( $kept['another person\'s run'] )['status'], 'stop_waiting_runs: no valid email → skipped (' . ( $bad_step['error'] ?? '' ) . ')' );
-WorkflowStore::deactivate( $bad_email );
-
-$doomed    = $flow( 'order_created' );
-$with_gone = $activate_graph( $chain( 'order_paid', [], $stop_steps( [ $target_a, $doomed ] ) ) );
-WorkflowStore::delete( $doomed );
-$issues     = rest_do_request( new WP_REST_Request( 'GET', '/yaymatik/v1/workflows/' . $with_gone ) );
-$gone_order = $order( [ 'billing_email' => $stop_email ] );
-$started( [ $with_gone ], $move( $gone_order, 'processing' ) );
-$gone_runs = $runs_of( $with_gone );
-$work( $gone_runs );
-$gone_steps = array_column( RunStepStore::for_run( $gone_runs[0] ), 'status', 'step_id' );
-$ok( 'failed' === ( $gone_steps['stop'] ?? '' ) && 'completed' === ( $gone_steps['note'] ?? '' ) && 'completed' === RunStore::find( $gone_runs[0] )['status'], 'stop_waiting_runs: a deleted target fails the step and the run goes on (' . wp_json_encode( $gone_steps ) . ')' );
-WorkflowStore::deactivate( $with_gone );
 
 wp_set_current_user( $previous_user );
 

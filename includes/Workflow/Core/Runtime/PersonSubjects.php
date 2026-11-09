@@ -5,7 +5,7 @@ use YayMatik\Workflow\Core\Storage\CartStore;
 
 defined( 'ABSPATH' ) || exit;
 
-/** The run subjects that are about one person, found by email: the personal data tools and Stop waiting runs read the same list. */
+/** The run subjects that are about one person, found by email, for the personal data tools. */
 final class PersonSubjects {
 
     /**
