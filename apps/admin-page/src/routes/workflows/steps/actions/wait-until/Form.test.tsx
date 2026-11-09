@@ -38,6 +38,37 @@ describe('Wait until form', () => {
     expect(container.textContent).toContain('Past 11:10 am, it waits for the next chosen day.');
   });
 
+  it('keeps the time control 160px inside a wrapper the field can size', () => {
+    const Form = steps.wait_until.Form!;
+    act(() => root.render(<Form config={{ time: '11:10', weekdays: [] }} onChange={() => {}} />));
+    const group = input().closest('[data-slot="input-group"]')!;
+    expect(group.classList).toContain('w-40');
+    expect(group.parentElement!.parentElement!.dataset.slot).toBe('field');
+  });
+
+  it('opens the browser picker from the clock button, and survives a browser without one', () => {
+    const Form = steps.wait_until.Form!;
+    act(() => root.render(<Form config={{ time: '11:10', weekdays: [] }} onChange={() => {}} />));
+    const button = container.querySelector('button[aria-label="Choose a time"]') as HTMLButtonElement;
+    const showPicker = vi.fn();
+    input().showPicker = showPicker;
+    act(() => button.click());
+    expect(showPicker).toHaveBeenCalledOnce();
+    expect(document.activeElement).toBe(input());
+    input().showPicker = () => {
+      throw new DOMException('Not allowed', 'NotAllowedError');
+    };
+    expect(() => act(() => button.click())).not.toThrow();
+  });
+
+  it('shows the store-time hint with a clock, and only the zone while the time is blank', () => {
+    const Form = steps.wait_until.Form!;
+    act(() => root.render(<Form config={{ time: '', weekdays: [] }} onChange={() => {}} />));
+    const hint = [...container.querySelectorAll('p')].find((p) => p.textContent?.startsWith('Store time'))!;
+    expect(hint.textContent).toBe('Store time (UTC).');
+    expect(hint.querySelector('svg')!.classList).toContain('lucide-clock');
+  });
+
   it('writes the typed time as HH:MM, and blank when cleared', () => {
     const Form = steps.wait_until.Form!;
     const onChange = vi.fn();

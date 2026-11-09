@@ -1,3 +1,4 @@
+import { Clock } from 'lucide-react';
 import { __, sprintf } from '@wordpress/i18n';
 
 import { defineStep, value } from '../../core/defineStep';
@@ -46,12 +47,18 @@ export const waitUntilStep = defineStep<WaitUntilConfig>({
   Footer: ({ config }) => (
     <Hints
       hints={[
-        sprintf(
-          /* translators: 1: time zone, e.g. "Asia/Ho_Chi_Minh"; 2: a time, e.g. "9:15 AM" */
-          __('Store time (%1$s). Past %2$s, it waits for the next chosen day.', 'yaymatik'),
-          storeZone(),
-          timeText(config.time),
-        ),
+        {
+          text: config.time
+            ? sprintf(
+                /* translators: 1: time zone, e.g. "Asia/Ho_Chi_Minh"; 2: a time, e.g. "9:15 AM" */
+                __('Store time (%1$s). Past %2$s, it waits for the next chosen day.', 'yaymatik'),
+                storeZone(),
+                timeText(config.time),
+              )
+            : /* translators: %s: time zone, e.g. "Asia/Ho_Chi_Minh" */
+              sprintf(__('Store time (%s).', 'yaymatik'), storeZone()),
+          icon: <Clock aria-hidden />,
+        },
       ]}
     />
   ),

@@ -1,7 +1,10 @@
+import { useRef } from 'react';
 import { useForm } from '@tanstack/react-form';
+import { Clock } from 'lucide-react';
+import { __ } from '@wordpress/i18n';
 
 import { FieldGroup } from '@/components/ui/field';
-import { Input } from '@/components/ui/input';
+import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from '@/components/ui/input-group';
 import { ConfigField } from '../../core/fields/ConfigField';
 import { useMarkInvalid } from '../../core/fields/feedback';
 import { MultiSelect } from '../../core/fields/MultiSelect';
@@ -11,7 +14,7 @@ import { schema, type WaitUntilConfig } from './schema';
 
 const field = (key: string) => window.yayMatikMeta.automation.steps.wait_until?.fields.find((f) => f.key === key);
 
-/** Labels and help come from includes/Workflow/Actions/WaitUntil.php `fields()`; the time is a native time input. */
+/** Labels and help come from includes/Workflow/Actions/WaitUntil.php `fields()`; the time is a native time input with the kit's clock button. */
 export function WaitUntilForm({ config, onChange }: StepFormProps<WaitUntilConfig>) {
   const form = useForm({
     defaultValues: config,
@@ -20,6 +23,17 @@ export function WaitUntilForm({ config, onChange }: StepFormProps<WaitUntilConfi
   });
   useValidateOnMount(form);
   const markInvalid = useMarkInvalid();
+  const timeInput = useRef<HTMLInputElement>(null);
+  const openPicker = () => {
+    const input = timeInput.current;
+    input?.focus();
+    // showPicker() is missing in older browsers and throws where the browser refuses it: the focused input still takes typing.
+    try {
+      input?.showPicker?.();
+    } catch {
+      return;
+    }
+  };
   const timeField = field('time');
   const daysField = field('weekdays');
 
@@ -33,16 +47,32 @@ export function WaitUntilForm({ config, onChange }: StepFormProps<WaitUntilConfi
             description={timeField?.help}
             errors={time.state.meta.errors}
           >
-            <Input
-              id="step-field-time"
-              type="time"
-              step={60}
-              className="w-40"
-              value={time.state.value}
-              onChange={(event) => time.handleChange(event.target.value)}
-              onBlur={time.handleBlur}
-              aria-invalid={markInvalid(time.state.meta)}
-            />
+            {/* A wrapper, so the Field's child width rule sizes it, not the 160px control. */}
+            <div>
+              <InputGroup className="w-40">
+                <InputGroupInput
+                  ref={timeInput}
+                  id="step-field-time"
+                  type="time"
+                  step={60}
+                  className="min-w-0 flex-1 [&::-webkit-calendar-picker-indicator]:hidden"
+                  value={time.state.value}
+                  onChange={(event) => time.handleChange(event.target.value)}
+                  onBlur={time.handleBlur}
+                  aria-invalid={markInvalid(time.state.meta)}
+                />
+                <InputGroupAddon align="inline-end">
+                  <InputGroupButton
+                    size="icon-md"
+                    className="text-muted-foreground"
+                    aria-label={__('Choose a time', 'yaymatik')}
+                    onClick={openPicker}
+                  >
+                    <Clock aria-hidden />
+                  </InputGroupButton>
+                </InputGroupAddon>
+              </InputGroup>
+            </div>
           </ConfigField>
         )}
       </form.Field>
