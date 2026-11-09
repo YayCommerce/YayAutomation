@@ -79,7 +79,7 @@ Present the plan to the user and ask for a single confirmation:
 
 **Wait for approval.** On confirmation:
 
-1. Save the plan to `.claude/plans/dev/<NNN>-<slug>.md` (gitignored; never commit it):
+1. Save the plan to `.claude/plans/dev/<NNN>-<slug>.md` (next free number) and commit it: `plan <NNN>: <slug>`. Only when the user asks for a private plan, save it in `.claude/local/plans/` instead:
 
 ```markdown
 # Plan: <title>
@@ -94,6 +94,9 @@ Present the plan to the user and ask for a single confirmation:
 1. <name> — Risk: <1|2|3> — ...
 
 ## Out of Scope
+...
+
+## Decisions
 ...
 
 ## Meta

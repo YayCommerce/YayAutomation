@@ -8,7 +8,7 @@
 
 Stay on current branch. If on `develop`, branch first: `feature/…`, `fix/…`, `refactor/…` off `develop`.
 
-Plans: `.claude/plans/dev/<NNN>-<slug>.md` (gitignored).
+Plans: `.claude/plans/dev/<NNN>-<slug>.md`, committed. Team practice: `.claude/README.md`.
 
 ## Dev Server
 
