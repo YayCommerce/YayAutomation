@@ -52,9 +52,11 @@ Work through the plan's checkpoints one at a time:
 > Ready for review. Should I continue to checkpoint 2?
 
 5. **Review depth follows the checkpoint's Risk tier:**
-   - **Risk 1** (UI, refactor): show diff map. Auto-continue when build is clean.
-   - **Risk 2** (feature, new component, form): run `/code-review high`. Fix findings or note each skipped one. Auto-continue when nothing open.
-   - **Risk 3** (hard to reverse): always stop for manual review. Run `/wcheck` before marking done.
+   - **Risk 1** (UI, refactor): show diff map and run `/code-review low`. Auto-continue when build is clean.
+   - **Risk 2** (feature, new component, form): run `/code-review medium`. Fix findings or note each skipped one. Auto-continue when nothing open.
+   - **Risk 3** (hard to reverse): run `/code-review high`, then stop for manual review. Run `/wcheck` before marking done.
+
+Put decisions to the user with `/wdecide`.
 
 ---
 

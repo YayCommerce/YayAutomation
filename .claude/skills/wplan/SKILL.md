@@ -23,7 +23,7 @@ Ask the user clarifying questions until the task is unambiguous:
 - Are there constraints: performance, scope limits?
 - Any edge cases to handle or explicitly exclude?
 
-Do not proceed until you have a clear, concrete picture of what needs to be built.
+Do not proceed until you have a clear, concrete picture of what needs to be built. Put open decisions to the user with `/wdecide`.
 
 ---
 
