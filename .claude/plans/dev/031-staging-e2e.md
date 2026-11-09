@@ -95,7 +95,7 @@ Confirmed:
 10. Staging has no system cron, to test a client site without one.
 
 ## Out of Scope
-Monorepo, shared dev-kit repo, `addons/` folder, sibling zips in CI, nightly e2e, shared-safe suites, release boards, screenshot tool, screenshots and doc draft, Bookster's `-fixN`, DB export, `--restore`, `--dry-run`, `docker:` target, e2e on staging, site script, permanent test sites, the `RUN_CWD` fix for "Session here" (`docs/plan-infra.md`).
+Monorepo, shared dev-kit repo, `addons/` folder, sibling zips in CI, nightly e2e, shared-safe suites, release boards, screenshot tool, screenshots and doc draft, Bookster's `-fixN`, DB export, `--restore`, `--dry-run`, `docker:` target, e2e on staging, site script, permanent test sites, the `RUN_CWD` fix for "Session here".
 
 ## Meta
 - Target branch: feature/staging-e2e
