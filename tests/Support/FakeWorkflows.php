@@ -15,7 +15,29 @@ class FakeWorkflows implements Workflows {
     /** @var int[] Ids turned off. */
     public $deactivated = [];
 
+    /** @var int Calls to `active_for_trigger()`. */
+    public $lookups = 0;
+
+    /** @var bool `active_trigger_ids()` reads as a query error. */
+    public $list_fails = false;
+
+    public function active_trigger_ids(): ?array {
+        if ( $this->list_fails ) {
+            return null;
+        }
+        $ids = [];
+        foreach ( $this->workflows as $workflow ) {
+            foreach ( $workflow['graph']['nodes'] as $node ) {
+                if ( 'active' === $workflow['status'] && 'trigger' === $node['kind'] ) {
+                    $ids[] = $node['data']['block'];
+                }
+            }
+        }
+        return array_values( array_unique( $ids ) );
+    }
+
     public function active_for_trigger( string $trigger_id ): array {
+        ++$this->lookups;
         $found = [];
         foreach ( $this->workflows as $workflow ) {
             foreach ( $workflow['graph']['nodes'] as $node ) {

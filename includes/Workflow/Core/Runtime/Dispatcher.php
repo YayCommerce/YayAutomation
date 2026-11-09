@@ -4,7 +4,6 @@ namespace YayMatik\Workflow\Core\Runtime;
 use YayMatik\Utils\Logger;
 use YayMatik\Workflow\Core\Data\Scope;
 use YayMatik\Workflow\Core\Definition\GraphSchema;
-use YayMatik\Workflow\Core\Steps\StepRegistry;
 use YayMatik\Workflow\Core\Steps\Trigger;
 
 defined( 'ABSPATH' ) || exit;
@@ -40,31 +39,54 @@ final class Dispatcher {
     /** @var true[] Workflow ids the rate limit turned off in this request. */
     private $paused = [];
 
+    /** @var callable fn(): Trigger[] */
+    private $triggers;
+
+    /** @var true[] Trigger ids with a listener. */
+    private $listening = [];
+
+    /** @var array[] Trigger id => its active workflows, for one `flush()`. */
+    private $active = [];
+
     /**
      * @param RunRepository $runs
      * @param Queue         $queue
      * @param Workflows     $workflows
      * @param callable      $run_inline Runs a run now, when there is no queue.
      * @param callable      $current
+     * @param callable      $triggers Returns the registered triggers.
      */
-    public function __construct( RunRepository $runs, Queue $queue, Workflows $workflows, callable $run_inline, callable $current ) {
+    public function __construct( RunRepository $runs, Queue $queue, Workflows $workflows, callable $run_inline, callable $current, callable $triggers ) {
         $this->runs       = $runs;
         $this->queue      = $queue;
         $this->workflows  = $workflows;
         $this->run_inline = $run_inline;
         $this->current    = $current;
+        $this->triggers   = $triggers;
     }
 
-    /** Listens to every trigger and flushes at shutdown. */
+    /** Listens to the active triggers, and to those a change adds, and flushes at shutdown. */
     public function register(): void {
-        foreach ( StepRegistry::triggers() as $trigger ) {
+        add_action( 'yaymatik_active_triggers_changed', [ $this, 'listen_active' ] );
+        $this->listen_active();
+        add_action( 'shutdown', [ $this, 'flush' ] );
+    }
+
+    /** Adds the listeners still missing; all of them when the list can't be read. One stays until the process ends: `dispatch()` then finds no workflow. */
+    public function listen_active(): void {
+        $active = $this->workflows->active_trigger_ids();
+        foreach ( ( $this->triggers )() as $trigger ) {
+            $id = $trigger->id();
+            if ( isset( $this->listening[ $id ] ) || ( null !== $active && ! in_array( $id, $active, true ) ) ) {
+                continue;
+            }
+            $this->listening[ $id ] = true;
             $trigger->listen(
                 function ( array $args ) use ( $trigger ) {
                     $this->collect( $trigger, $args );
                 }
             );
         }
-        add_action( 'shutdown', [ $this, 'flush' ] );
     }
 
     /**
@@ -99,6 +121,8 @@ final class Dispatcher {
                 $this->dispatch( $event['trigger'], $event['args'], $event['parent'] );
             }
         }
+        // Per flush, not per process: one long Action Scheduler process would miss a workflow activated meanwhile.
+        $this->active = [];
     }
 
     /**
@@ -170,7 +194,9 @@ final class Dispatcher {
     private function dispatch( Trigger $trigger, array $args, ?array $parent_run ): void {
         try {
             // Cheapest check first: most events have no workflow, so skip claiming (a write) and loading.
-            $workflows = $this->workflows->active_for_trigger( $trigger->id() );
+            $this->active[ $trigger->id() ] ??= $this->workflows->active_for_trigger( $trigger->id() );
+
+            $workflows = $this->active[ $trigger->id() ];
             if ( ! $workflows || ! $trigger->claim( $args ) ) {
                 return;
             }
@@ -186,9 +212,9 @@ final class Dispatcher {
                     || ! $trigger->matches( $context, $node['data']['config'] ) ) {
                     continue;
                 }
-                $claims  = $trigger->claims_per_workflow();
-                $subject = $trigger->subject( $args );
-                if ( $claims && ! $this->runs->claim_subject( (int) $workflow['id'], $subject ) ) {
+                $claims = $trigger->claims_per_workflow();
+                $key    = $claims ? $trigger->claim_key( $args ) : '';
+                if ( $claims && ! $this->runs->claim_subject( (int) $workflow['id'], $key ) ) {
                     continue;
                 }
                 $run_id = 0;
@@ -197,7 +223,7 @@ final class Dispatcher {
                 } finally {
                     // A run that never started must not use up the claim, which has no end date: the next check retries.
                     if ( $claims && ! $run_id ) {
-                        $this->runs->release_subject( (int) $workflow['id'], $subject );
+                        $this->runs->release_subject( (int) $workflow['id'], $key );
                     }
                 }
                 if ( $run_id ) {

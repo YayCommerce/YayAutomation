@@ -4,7 +4,7 @@ namespace YayMatik\Tests\Support;
 /** A `WC_Order` that records what steps do to it. Load woocommerce-stubs.php first. */
 final class FakeOrder extends \WC_Order {
 
-    /** @var FakeOrder[] What `wc_get_order()` finds, by id. */
+    /** @var FakeOrder[]|\WC_Order_Refund[] What `wc_get_order()` finds, by id. */
     public static $found = [];
 
     /** @var array[] [ note, is_customer_note ]. */
@@ -32,6 +32,14 @@ final class FakeOrder extends \WC_Order {
         $this->status_changes[] = [ $to, $note ];
         $this->data['status']   = $to;
         return true;
+    }
+
+    public function get_meta( $key = '', $single = true, $context = 'view' ) {
+        return $this->meta[ $key ] ?? '';
+    }
+
+    public function meta_exists( $key = '' ) {
+        return isset( $this->meta[ $key ] );
     }
 
     public function update_meta_data( $key, $value ) {

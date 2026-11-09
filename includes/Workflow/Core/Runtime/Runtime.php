@@ -1,6 +1,8 @@
 <?php
 namespace YayMatik\Workflow\Core\Runtime;
 
+use YayMatik\Workflow\Core\Steps\StepRegistry;
+
 defined( 'ABSPATH' ) || exit;
 
 /** Builds the Dispatcher and the Worker over the real stores and Action Scheduler, and hooks them. */
@@ -29,7 +31,8 @@ final class Runtime {
             function ( int $run_id ) use ( $worker ): void {
                 $worker->run( $run_id );
             },
-            [ $worker, 'current' ]
+            [ $worker, 'current' ],
+            [ StepRegistry::class, 'triggers' ]
         );
         $worker->register();
         // Not on plugins_loaded: the trigger list reads the modules, and a plugin loaded after this one adds its own then.

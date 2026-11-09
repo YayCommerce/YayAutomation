@@ -54,6 +54,16 @@ export function availableVariables(graph: WorkflowGraph, nodeId: string): Variab
   return list;
 }
 
+/** Fields a rule can compare but a merge tag can't read (custom fields), of the items in `variables`. */
+export const ruleOnlyVariables = (variables: Variable[]): Variable[] =>
+  dataItems.flatMap((item) =>
+    variables.some((variable) => variable.key.startsWith(`${item.id}.`))
+      ? item.fields
+          .filter((field) => field.mergeTag === false)
+          .map((field) => ({ key: field.key, label: field.label, type: field.valueType, block: false }))
+      : [],
+  );
+
 /** Data items an action adds for the steps below it. */
 const providedByAction = (stepId: StepId | null) =>
   stepId && window.yayMatikMeta.automation.steps[stepId]?.kind === 'action'
@@ -62,12 +72,14 @@ const providedByAction = (stepId: StepId | null) =>
 
 /** An item's fields under a path prefix, then its relations' (a relation back to an item on the path isn't followed). */
 function itemVariables(item: DataItemMeta, prefix: string, seen: Set<string>): Variable[] {
-  const own = item.fields.map((field) => ({
-    key: `${prefix}.${field.key.slice(item.id.length + 1)}`,
-    label: field.label,
-    type: field.valueType,
-    block: !!field.block,
-  }));
+  const own = item.fields
+    .filter((field) => field.mergeTag !== false)
+    .map((field) => ({
+      key: `${prefix}.${field.key.slice(item.id.length + 1)}`,
+      label: field.label,
+      type: field.valueType,
+      block: !!field.block,
+    }));
   const related = item.relations.flatMap((relation) => {
     const target = dataItems.find((i) => i.id === relation.item);
     if (!target || seen.has(target.id)) return [];

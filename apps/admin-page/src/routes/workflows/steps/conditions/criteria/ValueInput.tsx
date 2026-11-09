@@ -4,13 +4,17 @@ import { __ } from '@wordpress/i18n';
 
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from '@/components/ui/input-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { focusVariants } from '@/components/ui/variants/focus.variants';
 import { inputVariants } from '@/components/ui/variants/input.variants';
-import { fieldByKey, itemLabel, itemOf, type DataField } from '../../core/data';
+import { fieldByKey, isRelative, itemLabel, itemOf, takesList, type DataField } from '../../core/data';
+import { KeySuggestInput } from '../../core/fields/KeySuggestInput';
+import { MultiSelect } from '../../core/fields/MultiSelect';
+import { SearchSelect } from '../../core/fields/SearchSelect';
 import { VariablePicker } from '../../core/fields/VariablePicker';
-import { comparableWith, VARIABLE_VALUE_TYPES, type Rule } from './schema';
+import { comparableWith, VARIABLE_VALUE_TYPES, type Rule, type RuleUnit } from './schema';
 
 /** For the picker's "Types: …" line. */
 const typeLabels: Partial<Record<DataField['type'], string>> = {
@@ -62,9 +66,7 @@ export const DataSelect = forwardRef<
 ));
 
 /**
- * The value to compare with: options for enums, a date field for dates, text otherwise. Number, text
- * and date values may instead be another data field of the same type (`</>`), shown like the rule's
- * data select, with × back to a typed value.
+ * The value to compare with, by comparison and field type; number, text and date values may instead be another field (`</>`, × goes back).
  */
 export function ValueInput({
   id,
@@ -81,10 +83,54 @@ export function ValueInput({
 }) {
   const setValue = (value: string) => onChange({ ...rule, value, valueType: 'value' });
   const setVariable = (key: string) => onChange({ ...rule, value: key, valueType: 'variable' });
+  const text = typeof rule.value === 'string' ? rule.value : '';
+  const list = Array.isArray(rule.value) ? rule.value : [];
+
+  if (takesList(rule.operator)) {
+    const setList = (value: string[]) => onChange({ ...rule, value, valueType: 'value' });
+    return field?.search ? (
+      // Keyed: a rule moved to another search list starts with an empty search.
+      <SearchSelect key={field.search} id={id} type={field.search} value={list} onChange={setList} invalid={invalid} />
+    ) : (
+      <MultiSelect
+        id={id}
+        options={field?.options ?? []}
+        value={list}
+        onChange={setList}
+        placeholder={__('Choose values', 'yaymatik')}
+        invalid={invalid}
+      />
+    );
+  }
+
+  if (isRelative(rule.operator)) {
+    return (
+      <div className="grid grid-cols-2 gap-2">
+        <Input
+          id={id}
+          type="number"
+          min={1}
+          step={1}
+          aria-invalid={invalid}
+          value={text}
+          onChange={(event) => setValue(event.target.value)}
+        />
+        <Select value={rule.unit ?? 'days'} onValueChange={(unit) => onChange({ ...rule, unit: unit as RuleUnit })}>
+          <SelectTrigger className="w-full" aria-label={__('Unit', 'yaymatik')}>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="hours">{__('hours', 'yaymatik')}</SelectItem>
+            <SelectItem value="days">{__('days', 'yaymatik')}</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+    );
+  }
 
   if (field?.type === 'enum' && field.options?.length) {
     return (
-      <Select value={rule.value} onValueChange={setValue}>
+      <Select value={text} onValueChange={setValue}>
         <SelectTrigger id={id} className="w-full" aria-invalid={invalid}>
           <SelectValue placeholder={__('Choose a value', 'yaymatik')} />
         </SelectTrigger>
@@ -108,12 +154,7 @@ export function ValueInput({
     return (
       <div className="flex min-w-0 items-center gap-1">
         <VariablePicker {...variables} onSelect={setVariable}>
-          <DataSelect
-            id={id}
-            field={fieldByKey(rule.value)}
-            placeholder={__('Choose data', 'yaymatik')}
-            invalid={invalid}
-          />
+          <DataSelect id={id} field={fieldByKey(text)} placeholder={__('Choose data', 'yaymatik')} invalid={invalid} />
         </VariablePicker>
         <Button
           variant="ghost"
@@ -135,7 +176,7 @@ export function ValueInput({
         aria-invalid={invalid}
         type={field?.type === 'number' ? 'number' : field?.type === 'date' ? 'date' : 'text'}
         step={field?.type === 'number' ? 'any' : undefined}
-        value={rule.value}
+        value={text}
         disabled={!field}
         onChange={(event) => setValue(event.target.value)}
       />
@@ -149,5 +190,34 @@ export function ValueInput({
         </InputGroupAddon>
       )}
     </InputGroup>
+  );
+}
+
+/** A custom field's name. Customer fields suggest the names other workflows use; any other can be typed. */
+export function MetaKeyInput({
+  id,
+  invalid,
+  field,
+  rule,
+  onChange,
+}: {
+  id: string;
+  invalid: boolean;
+  field: DataField;
+  rule: Rule;
+  onChange: (rule: Rule) => void;
+}) {
+  const control = {
+    id,
+    'aria-invalid': invalid,
+    'aria-label': __('Field name', 'yaymatik'),
+    placeholder: __('Field name', 'yaymatik'),
+    className: 'font-mono text-xs',
+    value: rule.key ?? '',
+  };
+  return field.key === 'customer.meta' ? (
+    <KeySuggestInput {...control} onChange={(key) => onChange({ ...rule, key })} />
+  ) : (
+    <Input {...control} onChange={(event) => onChange({ ...rule, key: event.target.value })} />
   );
 }

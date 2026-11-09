@@ -235,7 +235,10 @@ class RestAPI {
         $stats     = RunStore::stats( array_column( $workflows, 'id' ) );
         return rest_ensure_response(
             array_map(
-                fn( array $workflow ) => $workflow + [ 'issues' => Validator::list_issues( $workflow ) ] + RunPresenter::stats( $stats[ (int) $workflow['id'] ] ?? null ),
+                fn( array $workflow ) => $workflow + [
+                    'issues'   => Validator::list_issues( $workflow ),
+                    'warnings' => Validator::list_warnings( $workflow ),
+                ] + RunPresenter::stats( $stats[ (int) $workflow['id'] ] ?? null ),
                 $workflows
             )
         );
@@ -248,7 +251,10 @@ class RestAPI {
      */
     public function get_workflow( \WP_REST_Request $request ) {
         $workflow = WorkflowStore::find( (int) $request['id'] );
-        return $workflow ? $workflow + [ 'issues' => Validator::list_issues( $workflow ) ] + self::stats( $workflow ) : $this->not_found();
+        return $workflow ? $workflow + [
+            'issues'   => Validator::list_issues( $workflow ),
+            'warnings' => Validator::list_warnings( $workflow ),
+        ] + self::stats( $workflow ) : $this->not_found();
     }
 
     /**
@@ -529,13 +535,16 @@ class RestAPI {
     }
 
     /**
-     * Adds `issues: { live, draft }` and the run stats to a workflow; anything else passes through.
+     * Adds `issues` and `warnings`, each `{ live, draft }`, and the run stats to a workflow; anything else passes through.
      *
      * @param array|\WP_Error|\WP_REST_Response $workflow
      * @return array|\WP_Error|\WP_REST_Response
      */
     private static function with_issues( $workflow ) {
-        return is_array( $workflow ) ? $workflow + [ 'issues' => Validator::issues( $workflow ) ] + self::stats( $workflow ) : $workflow;
+        return is_array( $workflow ) ? $workflow + [
+            'issues'   => Validator::issues( $workflow ),
+            'warnings' => Validator::list_warnings( $workflow ),
+        ] + self::stats( $workflow ) : $workflow;
     }
 
     /**

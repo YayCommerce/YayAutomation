@@ -12,6 +12,13 @@ interface Workflows {
      */
     public function active_for_trigger( string $trigger_id ): array;
 
+    /**
+     * Trigger ids with an active workflow; null when they can't be read.
+     *
+     * @return string[]|null
+     */
+    public function active_trigger_ids(): ?array;
+
     public function find( int $id ): ?array;
 
     /**

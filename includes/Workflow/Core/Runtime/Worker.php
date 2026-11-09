@@ -216,7 +216,8 @@ final class Worker {
         $trigger = ( $this->steps ?? [ StepRegistry::class, 'get' ] )( (string) $run['trigger_id'] );
         // A recovered run has no position yet even if a first step already ran.
         if ( $trigger instanceof Trigger && $trigger->claims_per_workflow() && ! $this->runs->steps( (int) $run['id'] ) ) {
-            $this->runs->release_subject( (int) $run['workflow_id'], (string) $run['subject'] );
+            // A trigger that claims by another key than the subject keeps it in the run's trigger scope.
+            $this->runs->release_subject( (int) $run['workflow_id'], (string) ( $run['scope']['trigger']['claim_key'] ?? $run['subject'] ) );
         }
     }
 

@@ -30,7 +30,7 @@ final class RunStepStoreTest extends TestCase {
 
     protected function tearDown(): void {
         global $wpdb;
-        $wpdb = null; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
+        $wpdb = new FakeWpdb(); // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- the bootstrap's empty one.
     }
 
     public function test_start_inserts_a_running_row_with_json_input(): void {

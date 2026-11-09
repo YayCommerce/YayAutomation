@@ -52,7 +52,10 @@ $ok    = function ( $pass, $what ) use ( &$fails ) {
 };
 $ok( isset( ModuleRegistry::modules()["late_check"] ), "module added on plugins_loaded 20 is loaded" );
 $ok( "late_check" === ( ModuleRegistry::plugins( ModuleRegistry::modules() )["late_check"] ?? null ), "its trigger is registered under it" );
-$ok( (bool) has_action( "yaymatik_late_check" ), "the dispatcher listens to its trigger" );
+// The dispatcher listens only to active triggers.
+add_filter( "pre_option_yaymatik_active_triggers", fn() => [ "late_check", "order_created" ] );
+\YayMatik\Workflow\Core\Runtime\Runtime::dispatcher()->listen_active();
+$ok( (bool) has_action( "yaymatik_late_check" ), "once active, the dispatcher listens to its trigger" );
 $ok( (bool) has_action( "woocommerce_new_order" ), "core triggers still listen" );
 exit( $fails ? 1 : 0 );
 '

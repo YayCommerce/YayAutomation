@@ -61,6 +61,40 @@ describe('stepResult', () => {
     }
   });
 
+  it('says whether a custom field changed, without its value', () => {
+    const meta = (changed: boolean) =>
+      stepResult(row({ stepType: 'update_order_meta', output: { key: 'gift_wrap', changed } }), run);
+    expect(meta(true)).toBe('Custom field gift_wrap updated');
+    expect(meta(false)).toBe('Custom field gift_wrap unchanged');
+    expect(stepResult(row({ stepType: 'update_customer_meta', output: { key: 'vip', changed: true } }), run)).toBe(
+      'Custom field vip updated',
+    );
+  });
+
+  it('names the role a step gave or took, by its name', () => {
+    const role = (mode: string, from = 'Customer', to = 'Customer, Wholesale') =>
+      stepResult(
+        row({ stepType: 'change_customer_role', input: { mode, role: 'customer' }, output: { from, to } }),
+        run,
+      );
+    expect(role('add')).toBe('Added Customer');
+    expect(role('remove')).toBe('Removed Customer');
+    expect(role('replace')).toBe('Replaced roles with Customer');
+    expect(role('add', 'Customer', 'Customer')).toBe('Roles unchanged');
+    expect(
+      stepResult(
+        row({ stepType: 'change_customer_role', input: { mode: 'add', role: 'gone' }, output: { to: 'gone' } }),
+        run,
+      ),
+    ).toBe('Added gone');
+  });
+
+  it('names the WooCommerce email it resent, never the address', () => {
+    expect(stepResult(row({ stepType: 'resend_wc_email', output: { email: 'customer_completed_order' } }), run)).toBe(
+      'Sent Completed order',
+    );
+  });
+
   it('falls back to the card summary, and to nothing for a removed step', () => {
     expect(stepResult(row({ stepType: 'add_order_note', input: { note: 'Thanks', type: 'private' } }), run)).not.toBe(
       '',

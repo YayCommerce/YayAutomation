@@ -60,10 +60,11 @@ final class CartData extends DataItem {
                 'value' => fn( SavedCart $cart ) => self::names( $cart->lines() ),
             ],
             'last_activity'  => [
-                'label'   => __( 'Last activity', 'yaymatik' ),
-                'type'    => self::TYPE_DATE,
-                'value'   => fn( SavedCart $cart ) => wp_date( 'Y-m-d', strtotime( $cart->last_activity() . ' UTC' ) ),
-                'display' => fn( SavedCart $cart, bool $html ) => $html ? esc_html( self::activity_text( $cart ) ) : self::activity_text( $cart ),
+                'label'     => __( 'Last activity', 'yaymatik' ),
+                'type'      => self::TYPE_DATE,
+                'value'     => fn( SavedCart $cart ) => wp_date( 'Y-m-d', strtotime( $cart->last_activity() . ' UTC' ) ),
+                'timestamp' => fn( SavedCart $cart ) => (int) strtotime( $cart->last_activity() . ' UTC' ),
+                'display'   => fn( SavedCart $cart, bool $html ) => $html ? esc_html( self::activity_text( $cart ) ) : self::activity_text( $cart ),
             ],
             'restore_url'    => [
                 'label'       => __( 'Restore link', 'yaymatik' ),

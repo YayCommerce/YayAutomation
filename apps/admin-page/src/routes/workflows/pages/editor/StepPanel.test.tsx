@@ -26,12 +26,14 @@ function Harness({
   editor,
   feedback = 'none',
   serverIssues = [],
+  warning,
 }: {
   graph: WorkflowGraph;
   editor: Partial<Editor>;
   feedback?: Feedback;
   /** What the server found in `graph`. */
   serverIssues?: WorkflowIssue[];
+  warning?: string;
 }) {
   const form = useWorkflowForm({ draft: graph, graph } as Workflow);
   const panel = useStepPanel(form, () => {});
@@ -59,6 +61,7 @@ function Harness({
             picking={open.picking}
             feedback={feedback}
             issue={issues.find((issue) => issue.nodeId === open.nodeId)}
+            warning={warning}
             closable
             onPick={() => {}}
             onSwap={() => {}}
@@ -94,13 +97,19 @@ afterEach(() => {
   container.remove();
 });
 
-const mount = (graph: WorkflowGraph, nodeId: string, feedback?: Feedback, serverIssues?: WorkflowIssue[]) => {
+const mount = (
+  graph: WorkflowGraph,
+  nodeId: string,
+  feedback?: Feedback,
+  serverIssues?: WorkflowIssue[],
+  warning?: string,
+) => {
   const editor: Partial<Editor> = {};
   act(() =>
     root.render(
       // The cart trigger's notes link to Settings.
       <MemoryRouter>
-        <Harness graph={graph} editor={editor} feedback={feedback} serverIssues={serverIssues} />
+        <Harness graph={graph} editor={editor} feedback={feedback} serverIssues={serverIssues} warning={warning} />
       </MemoryRouter>,
     ),
   );
@@ -213,6 +222,13 @@ describe('an issue only the server found', () => {
   });
 });
 
+describe('a warning from the server', () => {
+  it('shows a line in the step’s panel', () => {
+    mount(live(), 'email', 'none', [], 'This step can set off this workflow’s own trigger.');
+    expect(container.textContent).toContain('This step can set off this workflow’s own trigger.');
+  });
+});
+
 describe('cart tracking being off', () => {
   it('leaves the warning to the trigger notes, without a red notice', () => {
     const graph = live();
@@ -280,5 +296,26 @@ describe('a step issue in its panel', () => {
     } as const;
     mount(live(), 'condition', 'review', [issue]);
     expect(notice()).toBe(issue.message);
+  });
+
+  it('shows an issue that names its rule under that rule, not at the top', () => {
+    const graph = live();
+    graph.nodes.find((node) => node.id === 'condition')!.data.config = {
+      match: 'all',
+      rules: [
+        { field: 'order.total', operator: 'greater_than', value: '1', valueType: 'value' },
+        { field: 'order.meta', key: '_order_total', operator: 'is_not_empty', value: '', valueType: 'value' },
+      ],
+    };
+    const issue = {
+      code: 'invalid_config',
+      message: 'This custom field is protected. Choose another one.',
+      field: 'rules',
+      rule: [1] as number[],
+      nodeId: 'condition',
+    } as const;
+    mount(graph, 'condition', 'review', [issue]);
+    expect(notice()).toBeNull();
+    expect(container.textContent).toContain(issue.message);
   });
 });

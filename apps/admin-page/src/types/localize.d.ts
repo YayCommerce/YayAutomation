@@ -41,6 +41,8 @@ export interface StepFieldMeta {
   /** Accepts merge tags. */
   variables?: true;
   placeholder?: string;
+  /** text: suggestions the app loads; any other text can be typed. */
+  suggest?: 'customer-meta-keys';
   help?: string;
   /** Shown only while another field has this value (or one of these values). */
   showIf?: { field: string; value: unknown };
@@ -73,7 +75,7 @@ export interface StepMeta {
   /** Data items the step adds: a trigger's for every run, an action's for the steps below it. */
   provides?: string[];
   /** Picker section. */
-  category?: 'email' | 'order' | 'coupon' | 'flow' | 'cart' | 'customer';
+  category?: 'email' | 'order' | 'coupon' | 'flow' | 'cart' | 'customer' | 'review';
   /** Actions: data items needed whatever the config. */
   requires?: string[];
 }
@@ -93,7 +95,7 @@ export interface CatalogStepMeta extends StepMeta {
   outputs: StepOutputMeta[];
 }
 
-export type DataFieldType = 'number' | 'string' | 'enum' | 'date' | 'boolean';
+export type DataFieldType = 'number' | 'string' | 'enum' | 'date' | 'boolean' | 'list' | 'meta';
 
 /** PHP `DataRegistry::to_client()`: one data item and its fields. */
 export interface DataItemMeta {
@@ -114,6 +116,12 @@ export interface DataItemMeta {
     /** False: merge tag only, not offered in conditions. */
     conditional: boolean;
     options?: { value: string; label: string }[];
+    /** Shown under a rule on this field. */
+    help?: string;
+    /** A list searched through REST; its values are never sent here. */
+    search?: 'product' | 'category' | 'coupon';
+    /** False: not offered by "Insert variable" and not a known merge tag. */
+    mergeTag?: false;
     /** A ready-made email block (e.g. a product grid), rendered on the server; inserted on its own line. */
     block?: boolean;
   }[];

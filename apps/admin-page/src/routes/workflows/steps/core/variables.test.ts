@@ -2,8 +2,11 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import type { StepId, WorkflowGraph } from '@yaymatik/types';
 import { describe, expect, it } from 'vitest';
+import { sprintf } from '@wordpress/i18n';
 
-import { availableVariables, groupVariables } from './variables';
+import { messages } from '../../model/messages';
+import { tagError } from './data';
+import { availableVariables, groupVariables, ruleOnlyVariables } from './variables';
 
 /** Shared with PHP `ValidatorTest::test_variables_a_step_can_use`. */
 const { cases } = JSON.parse(
@@ -63,6 +66,43 @@ describe('availableVariables', () => {
     ]);
     expect(variables.find((variable) => variable.key === 'steps.c.code')?.block).toBe(false);
     expect(variables.find((variable) => variable.key === 'order.has_cross_sells')?.block).toBe(false);
+  });
+});
+
+describe('custom fields', () => {
+  it('are not offered by Insert variable, and are not a known tag', () => {
+    const keys = availableVariables(
+      {
+        nodes: [
+          {
+            id: 't',
+            kind: 'trigger',
+            position: { x: 0, y: 0 },
+            data: { block: 'order_created', config: {} },
+          },
+        ],
+        edges: [],
+      },
+      't',
+    ).map((variable) => variable.key);
+    expect(keys).not.toContain('order.meta');
+    expect(keys).not.toContain('customer.meta');
+    expect(keys).toContain('order.total');
+    expect(tagError(['{{ order.meta }}'])).toBe(sprintf(messages.unknownVariable, '{{ order.meta }}'));
+  });
+});
+
+describe('ruleOnlyVariables', () => {
+  const variable = (key: string) => ({ key, label: key, type: 'string', block: false });
+
+  it('offers the custom fields of the items a step has, for rules', () => {
+    const keys = ruleOnlyVariables([variable('order.total'), variable('customer.email')]).map((v) => v.key);
+    expect(keys).toEqual(['order.meta', 'customer.meta']);
+  });
+
+  it('none for an item the step does not have', () => {
+    expect(ruleOnlyVariables([variable('customer.email')]).map((v) => v.key)).toEqual(['customer.meta']);
+    expect(ruleOnlyVariables([variable('site.name')])).toEqual([]);
   });
 });
 

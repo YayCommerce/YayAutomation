@@ -39,6 +39,23 @@ final class SampleValuesTest extends TestCase {
         $this->assertSame( 'Processing', $values->text( 'order.status', false ) );
     }
 
+    public function test_refund_samples(): void {
+        $values = $this->values( [ 'refund' ] );
+
+        $this->assertSame( 20.0, $values->get( 'refund.amount' ) );
+        $this->assertSame( '$20.00', $values->text( 'refund.amount', false ) );
+        $this->assertSame( 'No', $values->text( 'refund.is_full', false ) );
+        $this->assertNotSame( '', $values->text( 'refund.reason', false ) );
+    }
+
+    public function test_review_samples(): void {
+        $values = $this->values( [ 'review' ] );
+
+        $this->assertSame( 5.0, $values->get( 'review.rating' ) );
+        $this->assertSame( 'Yes', $values->text( 'review.is_verified', false ) );
+        $this->assertNotSame( '', $values->text( 'review.product_name', false ) );
+    }
+
     public function test_plain_samples_are_escaped_in_html(): void {
         $values = $this->values( [ 'customer' ] );
         $this->assertSame( 'jane.doe@example.com', $values->text( 'customer.email', true ) );
@@ -60,7 +77,16 @@ final class SampleValuesTest extends TestCase {
         $this->assertSame( 'Hi Jane, use YMSAMPLE', ( new Template() )->render( 'Hi {{ order.customer.first_name }}, use {{ steps.coupon.code }}', $values ) );
     }
 
-    public function test_every_customer_field_has_a_sample(): void {
-        $this->assertSame( array_keys( ( new CustomerData() )->fields() ), array_keys( ( new CustomerData() )->sample() ) );
+    public function test_every_customer_field_a_tag_can_read_has_a_sample(): void {
+        $fields = array_filter( ( new CustomerData() )->fields(), fn( array $field ) => $field['merge_tag'] );
+        $this->assertSame( array_keys( $fields ), array_keys( ( new CustomerData() )->sample() ) );
+    }
+
+    public function test_the_new_order_fields_read_their_samples(): void {
+        $values = $this->values();
+        $this->assertSame( [ '1', '2' ], $values->get( 'order.product_ids' ) );
+        $this->assertSame( 'Sample product, Another sample product', $values->text( 'order.product_ids', false ) );
+        $this->assertFalse( $values->get( 'order.is_guest' ) );
+        $this->assertSame( 54.0, $values->get( 'customer.total_spent' ) );
     }
 }

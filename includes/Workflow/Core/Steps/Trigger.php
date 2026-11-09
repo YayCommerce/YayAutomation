@@ -95,9 +95,27 @@ abstract class Trigger extends Step {
         return true;
     }
 
-    /** Once per workflow per subject, recorded in `trigger_claims`. */
+    /** Once per workflow per claim key, recorded in `trigger_claims`. */
     public function claims_per_workflow(): bool {
         return false;
+    }
+
+    /**
+     * What `claims_per_workflow()` claims once: the subject, or another key a trigger counts by.
+     *
+     * @param array $args
+     */
+    public function claim_key( array $args ): string {
+        return $this->subject( $args );
+    }
+
+    /**
+     * Whether a workflow with this config reacts to events its own runs cause.
+     *
+     * @param array $config
+     */
+    public function fires_for_own_runs( array $config ): bool { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- for triggers with a setting for it.
+        return true;
     }
 
     /** Why this trigger can't start on this site, shown when activating; null when it can. */

@@ -33,6 +33,7 @@ Each note: **Decision** · **Why** · **Rejected** · **Cost** · **For devs** (
 | [M8](#m8-abandoned-carts) | Abandoned carts | Owner |
 | [M3–M5](#m3m5-lifecycle-workflows) | Lifecycle workflows | Owner |
 | [M6](#m6-win-back) | Win-back | Owner |
+| [CT](#ct-custom-workflow-catalog) | Custom workflow catalog | Owner |
 
 "High" = recommended and accepted as-is. "Owner" = debated and decided by the product owner.
 
@@ -192,6 +193,8 @@ Today errors only go to the WooCommerce log, which merchants never open.
 **Note (M8).** Claims are built in M6. Abandoned carts need none: see [M8](#m8-abandoned-carts).
 
 **Note (M6).** The claim is per workflow and order, not per customer with a time limit: see [M6](#m6-win-back).
+
+**Note (CT).** The claim column holds a key, not always the run's subject: the milestones claim per person while their runs stay about the order. See [CT](#ct-custom-workflow-catalog), D5.
 
 ---
 
@@ -451,3 +454,34 @@ Today errors only go to the WooCommerce log, which merchants never open.
 - Claims of live workflows are never deleted: one small row per customer per last order.
 - Changing days on a live workflow doesn't restart orders it already claimed.
 - A run doesn't stop when the customer orders during a Wait (no `stop_reason`); the v1.0 templates have no Wait.
+
+## CT. Custom workflow catalog
+
+**Decision.** Six triggers, about 25 condition fields, one level of condition groups and five new actions, so shop owners can build workflows the templates don't cover.
+
+**Why.**
+- **D1 Scope.** This list only. HTTP and webhooks, Slack, tags, a stock trigger, product actions, a refund action, Change workflow status and YayMatik triggers stay out: each needs its own design, and connectors belong to v1.2.
+- **D3 One customer stat, paid statuses only.** Total spent and paid order count use `wc_get_is_paid_statuses()`; a person is a user id plus a billing email, guests by billing email. Total spent subtracts refunds, as a refund is money the store gave back. The query runs only when a rule reads it, because it can scan an unindexed column on posts stores.
+- **The existing `customer.paid_order_count` stays.** It already meant the same person and the same statuses, so a second `order_count` field would be two names for one fact. Its key, and so the templates, don't change; `CustomerStats` now computes it.
+- **D4 Order paid fires once, on a real unpaid → paid change.** The claim sits in order meta, like Order created, so a status that goes back and forth doesn't start it twice.
+- **D5 Milestones cross a threshold.** Customer order count reaches and Customer total spend reaches fire on Order paid only when this order crosses the number. The run's subject stays the order, and the claim is per person (`user:<id>`, or a hash of the guest's email), so one person gets one start per workflow. The hash keeps a plain email out of the claims table and fits its column.
+- **D7 Review posted.** Approved product reviews only, top level only, claimed per review. A guest's customer is their email alone, never an account found by email: anyone can type someone else's email into a review form.
+- **D8 Change customer role is guarded at run time.** Write actions run as user 0, so the checks can't lean on the current user. It never assigns or touches a role with a protected capability, and never removes a person's last role. Protected means anything beyond a customer's `read`: staff and site capabilities, and also posting, uploading, moderating, product and coupon editing, reports, import and export. Triggers fire on public events (an order, a review), so any buyer could be given the role. A filter opens it for stores that want it. Everything is checked again at run time, in order: no account, a protected user (super admin, staff role, or a protected capability by role or given directly), the role gone or made protected since the save, the last role. Replace adds the new role before dropping the others, so the account never has none. Run history keeps role names only, which are labels, not customer data.
+- **D10 Groups, one level.** `match` + `rules` stay, and a rule may be `{ match, rules }`. Old configs and templates stay valid, and one level covers "A and (B or C)" without a tree editor. It's also how a rule says "not in the last 30 days, or never": no date matches neither relative comparison, so a group adds `is_not_set`.
+- **D11 Customer custom field.** An action and a `customer.meta` condition together: one writes what the other reads. The key input suggests keys other workflows use, so spelling stays the same.
+- **Write actions keep runs free of values.** Update order custom field outputs the key and whether the value changed, never the value: a rendered value could hold a name or an email, and runs keep refs only. Old → new goes in a private order note, which lives and goes with the order.
+- **A customer field write asks the database, not only the key's spelling.** `update_user_meta()` finds its row with the column's collation, which ignores case and, on many sites, accents. A key that reads harmless in PHP could then update `wp_capabilities` and make the customer an admin. So before writing, the step reads which stored keys the database matches to it, and refuses if any is protected; a failed read refuses too. Update customer custom field writes no note: there is no order to hold one, and runs keep no values.
+- **Resend WooCommerce email offers an allowlist.** Only customer emails whose `trigger()` takes just the order id: others take a fulfillment, a template, a note or a user, and calling them with an order id fails or sends the wrong email. A plugin adds its own through `yaymatik_resendable_emails`; one with another signature fails that step, not the run's process. An id this WooCommerce doesn't have (the review request is behind a feature) isn't offered. WooCommerce's `trigger()` reports nothing, so the step checks that the email is on and the order has a billing email first. Run history keeps the email's id, never the address. The refunded email is left out, as a resend would always use the full-refund text.
+- **D15 Wait until.** It lives in the YayMatik module, which owns flow logic. Its time is any minute, `HH:MM`, typed in a time input: a 96-item list was too long, 15-minute steps confused merchants, and WP-Cron's delay is the same for any minute. A config from the earlier hour select isn't migrated: nothing has shipped, so it reads as a setup issue.
+- **D16 Stop waiting runs: dropped from v1.0.** It moves to the v1.1 backlog. `PersonSubjects` stays: the personal data tools read it.
+
+**Cost.**
+- Order paid can't see the time before it was listening: an order paid before its workflow was active, then unpaid and paid again, starts it once. An order saved already paid in its first save (imports, `wc_create_order()` with a paid status) never starts it.
+- Milestones: two paid orders of one person in one request read the same totals, so a threshold between them can be missed (bulk edits). A guest who later makes an account is the same person in the totals but has two claim keys, so a threshold can start twice if refunds took them back below it.
+- Customer totals sum currencies as stored, and scan the unindexed `_billing_email` on posts stores, only when a rule or a milestone reads them.
+- `refund.is_full` reads amounts only: a filter that changes WooCommerce's own partial-or-full decision isn't followed.
+- The active-trigger list: if a writer waits more than 5 seconds for its lock, a trigger can be left out until the next change or the daily recompute. A process that started before an activation (a long Action Scheduler batch) misses that trigger's events until it ends.
+- A review's guest customer has only an email.
+- Resend WooCommerce email can't resend the refunded email.
+- Wait until's time in a DST gap runs at the shifted time.
+- Update customer custom field writes one text value, never a list. A key that differs from a stored one only in case reads as changed on every run.

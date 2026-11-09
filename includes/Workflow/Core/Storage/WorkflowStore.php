@@ -12,6 +12,8 @@ defined( 'ABSPATH' ) || exit;
 /** Workflows over the `workflows` table, input prepared by `Validator`; arrays match the TS `Workflow` type. */
 final class WorkflowStore {
 
+    public const ACTIVE_TRIGGERS_OPTION = 'yaymatik_active_triggers';
+
     public static function all(): array {
         $workflows = array_map( [ self::class, 'to_array' ], self::select( '', [], true ) );
         // Newest "Last updated" first, the date the list shows. ISO dates in UTC sort as strings.
@@ -103,6 +105,76 @@ final class WorkflowStore {
      */
     public static function active_for_trigger( string $step_id ): array {
         return array_map( [ self::class, 'to_array' ], self::select( "WHERE w.status = 'active' AND w.trigger_id = %s", [ $step_id ], false ) );
+    }
+
+    /**
+     * Trigger ids with an active workflow, from an autoloaded option built on first read.
+     *
+     * @return string[]|null Null on a query error, which isn't stored.
+     */
+    public static function active_trigger_ids(): ?array {
+        global $wpdb;
+        $ids = get_option( self::ACTIVE_TRIGGERS_OPTION );
+        if ( is_array( $ids ) ) {
+            return $ids;
+        }
+        $ids = self::query_active_trigger_ids();
+        if ( null === $ids ) {
+            return null;
+        }
+        // Not add_option(): after a missed read it ends in ON DUPLICATE KEY UPDATE, so a list computed
+        // before an Activate would overwrite the fresh one that Activate just wrote.
+        $wpdb->query(
+            $wpdb->prepare(
+                "INSERT IGNORE INTO {$wpdb->options} (option_name, option_value, autoload) VALUES (%s, %s, 'yes')",
+                self::ACTIVE_TRIGGERS_OPTION,
+                maybe_serialize( $ids )
+            )
+        );
+        self::forget_cached_option();
+        return $ids;
+    }
+
+    /** Rewrites the list after a change, under a lock so two writers can't cross; if that fails, the next reader rebuilds it. */
+    public static function refresh_active_triggers(): void {
+        global $wpdb;
+        $lock  = $wpdb->prefix . self::ACTIVE_TRIGGERS_OPTION;
+        $taken = $wpdb->get_var( $wpdb->prepare( 'SELECT GET_LOCK( %s, 5 )', $lock ) );
+        $ids   = null;
+        if ( '1' === (string) $taken ) {
+            try {
+                $ids = self::query_active_trigger_ids();
+                if ( null !== $ids ) {
+                    // update_option() skips the write when the value matches this request's cached copy, which another request may have outdated.
+                    self::forget_cached_option();
+                    update_option( self::ACTIVE_TRIGGERS_OPTION, $ids, true );
+                    // update_option() also returns false when nothing changed, so only the error tells.
+                    $ids = '' === $wpdb->last_error ? $ids : null;
+                }
+            } finally {
+                $wpdb->query( $wpdb->prepare( 'SELECT RELEASE_LOCK( %s )', $lock ) );
+            }
+        }
+        if ( null === $ids ) {
+            Logger::error( 'Could not rewrite the active trigger list: ' . ( '1' === (string) $taken ? 'a database error.' : 'its lock was not taken.' ) );
+            delete_option( self::ACTIVE_TRIGGERS_OPTION );
+        }
+        do_action( 'yaymatik_active_triggers_changed' );
+    }
+
+    /** @return string[]|null Null on a query error. */
+    private static function query_active_trigger_ids(): ?array {
+        global $wpdb;
+        $table = self::table();
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        $ids = $wpdb->get_col( "SELECT DISTINCT trigger_id FROM {$table} WHERE status = 'active' ORDER BY trigger_id" );
+        return '' === $wpdb->last_error ? $ids : null;
+    }
+
+    private static function forget_cached_option(): void {
+        wp_cache_delete( 'alloptions', 'options' );
+        wp_cache_delete( 'notoptions', 'options' );
+        wp_cache_delete( self::ACTIVE_TRIGGERS_OPTION, 'options' );
     }
 
     /**
@@ -225,18 +297,20 @@ final class WorkflowStore {
      * @return true|\WP_Error
      */
     public static function activate( int $id ) {
-        return self::transaction(
-            function () use ( $id ) {
-                $version = self::copy_live( $id, VersionStore::ACTION_ACTIVATED );
-                return $version && self::touch(
-                    $id,
-                    [
-                        'status'          => 'active',
-                        'activated_at'    => current_time( 'mysql', true ),
-                        'live_version_id' => $version,
-                    ]
-                );
-            }
+        return self::refreshing_triggers(
+            self::transaction(
+                function () use ( $id ) {
+                    $version = self::copy_live( $id, VersionStore::ACTION_ACTIVATED );
+                    return $version && self::touch(
+                        $id,
+                        [
+                            'status'          => 'active',
+                            'activated_at'    => current_time( 'mysql', true ),
+                            'live_version_id' => $version,
+                        ]
+                    );
+                }
+            )
         );
     }
 
@@ -247,17 +321,19 @@ final class WorkflowStore {
      * @return true|\WP_Error
      */
     public static function deactivate( int $id ) {
-        return self::transaction(
-            function () use ( $id ) {
-                $version = self::copy_live( $id, VersionStore::ACTION_DEACTIVATED );
-                return $version && self::touch(
-                    $id,
-                    [
-                        'status'          => 'inactive',
-                        'live_version_id' => $version,
-                    ]
-                );
-            }
+        return self::refreshing_triggers(
+            self::transaction(
+                function () use ( $id ) {
+                    $version = self::copy_live( $id, VersionStore::ACTION_DEACTIVATED );
+                    return $version && self::touch(
+                        $id,
+                        [
+                            'status'          => 'inactive',
+                            'live_version_id' => $version,
+                        ]
+                    );
+                }
+            )
         );
     }
 
@@ -269,18 +345,20 @@ final class WorkflowStore {
      * @return true|\WP_Error
      */
     public static function apply_draft( int $id, array $draft ) {
-        return self::transaction(
-            function () use ( $id, $draft ) {
-                $version = (int) ( self::row( $id )['draft_version_id'] ?? 0 );
-                return $version && VersionStore::touch( $version ) && self::touch(
-                    $id,
-                    [
-                        'trigger_id'       => self::trigger_id( $draft ),
-                        'live_version_id'  => $version,
-                        'draft_version_id' => 0,
-                    ]
-                );
-            }
+        return self::refreshing_triggers(
+            self::transaction(
+                function () use ( $id, $draft ) {
+                    $version = (int) ( self::row( $id )['draft_version_id'] ?? 0 );
+                    return $version && VersionStore::touch( $version ) && self::touch(
+                        $id,
+                        [
+                            'trigger_id'       => self::trigger_id( $draft ),
+                            'live_version_id'  => $version,
+                            'draft_version_id' => 0,
+                        ]
+                    );
+                }
+            )
         );
     }
 
@@ -291,12 +369,27 @@ final class WorkflowStore {
      * @return true|\WP_Error
      */
     public static function delete( int $id ) {
-        return self::transaction(
-            function () use ( $id ) {
-                global $wpdb;
-                return VersionStore::delete_for_workflow( $id ) && false !== $wpdb->delete( self::table(), [ 'id' => $id ], [ '%d' ] );
-            }
+        return self::refreshing_triggers(
+            self::transaction(
+                function () use ( $id ) {
+                    global $wpdb;
+                    return VersionStore::delete_for_workflow( $id ) && false !== $wpdb->delete( self::table(), [ 'id' => $id ], [ '%d' ] );
+                }
+            )
         );
+    }
+
+    /**
+     * Passes a transaction's result through, refreshing the active trigger list after a commit.
+     *
+     * @param true|\WP_Error $result
+     * @return true|\WP_Error
+     */
+    private static function refreshing_triggers( $result ) {
+        if ( true === $result ) {
+            self::refresh_active_triggers();
+        }
+        return $result;
     }
 
     /**

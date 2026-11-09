@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { tagError } from '../data';
 import { ConfigField } from './ConfigField';
 import { InsertVariable } from './InsertVariable';
+import { KeySuggestInput } from './KeySuggestInput';
 
 /** Field widgets shared by `StepForm` and custom step forms. */
 
@@ -35,6 +36,7 @@ export function TextField({
   inputMode,
   multiline = false,
   variables = false,
+  suggest,
   value,
   onChange,
   onBlur,
@@ -48,6 +50,8 @@ export function TextField({
   inputMode?: React.HTMLAttributes<HTMLInputElement>['inputMode'];
   multiline?: boolean;
   variables?: boolean;
+  /** One line only: names to pick from, listed under the input. */
+  suggest?: 'customer-meta-keys';
   value: string;
   onChange: (value: string) => void;
   onBlur: () => void;
@@ -95,7 +99,13 @@ export function TextField({
       errors={errors}
       inlineError={tagIssue}
     >
-      {multiline ? <Textarea rows={5} {...control} /> : <Input {...control} />}
+      {multiline ? (
+        <Textarea rows={5} {...control} />
+      ) : suggest ? (
+        <KeySuggestInput {...control} onChange={onChange} />
+      ) : (
+        <Input {...control} />
+      )}
     </ConfigField>
   );
 }

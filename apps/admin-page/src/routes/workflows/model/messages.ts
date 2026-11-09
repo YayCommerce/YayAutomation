@@ -14,6 +14,10 @@ export const messages = {
   deleteActive: __('Deactivate this workflow before you delete it.', 'yaymatik'),
   /* translators: %s: data item or step, e.g. "Order" */
   missingData: __('%s data isn’t available at this step.', 'yaymatik'),
+  mayRefire: __(
+    'This step can set off this workflow’s own trigger. The workflow won’t start again from it.',
+    'yaymatik',
+  ),
   // Merge tags.
   /* translators: %s: merge tag, e.g. {{ order.foo }} */
   unknownVariable: __('%s isn’t an available variable.', 'yaymatik'),
@@ -40,6 +44,7 @@ export const messages = {
   numberMax: __('Enter %s or less.', 'yaymatik'),
   // Condition rules.
   rulesRequired: __('Add a rule, or remove this condition.', 'yaymatik'),
+  groupRulesRequired: __('Add a rule, or remove this group.', 'yaymatik'),
   ruleVariable: __('Choose data for each rule.', 'yaymatik'),
   ruleComparison: __('Choose a comparison for each rule.', 'yaymatik'),
   ruleCompareWith: __('Choose data to compare with.', 'yaymatik'),
@@ -50,4 +55,8 @@ export const messages = {
   ruleNumber: __('Enter a number.', 'yaymatik'),
   ruleDate: __('Enter a date (YYYY-MM-DD).', 'yaymatik'),
   ruleOption: __('Choose a value from the list.', 'yaymatik'),
+  ruleListRequired: __('Choose at least one value.', 'yaymatik'),
+  ruleAmount: __('Enter a whole number of 1 or more.', 'yaymatik'),
+  ruleKeyRequired: __('Enter the custom field name.', 'yaymatik'),
+  ruleMetaKey: __('This custom field is protected. Choose another one.', 'yaymatik'),
 };

@@ -13,6 +13,10 @@ final class RepositoryWorkflows implements Workflows {
         return WorkflowStore::active_for_trigger( $trigger_id );
     }
 
+    public function active_trigger_ids(): ?array {
+        return WorkflowStore::active_trigger_ids();
+    }
+
     public function find( int $id ): ?array {
         return WorkflowStore::find( $id );
     }

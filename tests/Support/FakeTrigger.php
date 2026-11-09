@@ -3,14 +3,25 @@ namespace YayMatik\Tests\Support;
 
 use YayMatik\Workflow\Core\Steps\Trigger;
 
-/** A trigger whose `stop_reason()` a test sets. */
+/** A trigger whose id and `stop_reason()` a test sets; counts its `listen()` calls. */
 final class FakeTrigger extends Trigger {
 
     /** @var string|null */
     public $reason = null;
 
+    /** @var string */
+    public $trigger_id;
+
+    /** @var int */
+    public $listens = 0;
+
+    /** @param string $trigger_id */
+    public function __construct( string $trigger_id = 'fake_trigger' ) {
+        $this->trigger_id = $trigger_id;
+    }
+
     public function id(): string {
-        return 'fake_trigger';
+        return $this->trigger_id;
     }
 
     public function label(): string {
@@ -37,7 +48,9 @@ final class FakeTrigger extends Trigger {
         return [];
     }
 
-    public function listen( callable $emit ): void {}
+    public function listen( callable $emit ): void {
+        ++$this->listens;
+    }
 
     public function context( array $args ): ?array {
         return [];

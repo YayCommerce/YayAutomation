@@ -28,7 +28,14 @@ function isBlank(field: StepFieldMeta, value: unknown) {
   if (field.type === 'number_unit') return numberUnitValue(value) === null;
   // Rules with no variable chosen yet don't count.
   if (field.type === 'rules') {
-    return !Array.isArray(value) || !value.some((rule) => !!(rule as { field?: unknown } | null)?.field);
+    type Started = { field?: unknown; rules?: unknown } | null;
+    const started = (rule: Started) => !!rule?.field;
+    return (
+      !Array.isArray(value) ||
+      !value.some((rule: Started) =>
+        Array.isArray(rule?.rules) ? rule.rules.some((inner: Started) => started(inner)) : started(rule),
+      )
+    );
   }
   if (field.type === 'html') return isBlankHtml(String(value ?? ''));
   if (typeof value === 'string') return value.trim() === '';

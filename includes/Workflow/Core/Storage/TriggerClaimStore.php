@@ -45,6 +45,44 @@ final class TriggerClaimStore {
     }
 
     /**
+     * A guest's claim key: a hash, so no plain email is kept, and short enough for the subject column.
+     *
+     * @param string $email
+     */
+    public static function email_key( string $email ): string {
+        return 'email:' . hash( 'sha256', strtolower( trim( $email ) ) );
+    }
+
+    /**
+     * The claims kept for this email, for a personal data export.
+     *
+     * @param string $email
+     * @return array[] [ 'workflow_id', 'claimed_at' ]
+     */
+    public static function find_keys( string $email ): array {
+        global $wpdb;
+        $table = self::table();
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- own table, a privacy export.
+        return (array) $wpdb->get_results( $wpdb->prepare( "SELECT workflow_id, claimed_at FROM {$table} WHERE subject = %s ORDER BY claimed_at", self::email_key( $email ) ), ARRAY_A );
+    }
+
+    /**
+     * Deletes the claims kept for this email.
+     *
+     * @param string $email
+     * @return int|false How many went; false when the delete failed.
+     */
+    public static function delete_keys( string $email ) {
+        global $wpdb;
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own table, a privacy erase.
+        $done = $wpdb->delete( self::table(), [ 'subject' => self::email_key( $email ) ], [ '%s' ] );
+        if ( false === $done ) {
+            Logger::error( 'Could not delete the trigger claims of an erased email: ' . $wpdb->last_error );
+        }
+        return $done;
+    }
+
+    /**
      * Claims of deleted workflows. Selected first, as MySQL has no LIMIT on a multi-table delete.
      *
      * @param int $limit

@@ -69,6 +69,18 @@ final class RunPresenterTest extends TestCase {
         $this->assertNull( $item['subjectUrl'] );
     }
 
+    public function test_a_review_run_links_the_review_until_it_is_gone(): void {
+        $GLOBALS['yaymatik_test_comment_rows'][8] = new \WP_Comment( [ 'comment_ID' => '8' ] );
+        $found                                    = RunPresenter::item( [ 'subject' => 'review:8' ] + self::run_row(), 0 );
+        unset( $GLOBALS['yaymatik_test_comment_rows'] );
+        $gone = RunPresenter::item( [ 'subject' => 'review:8' ] + self::run_row(), 0 );
+
+        $this->assertSame( 'Review #8', $found['subjectLabel'] );
+        $this->assertStringEndsWith( 'comment.php?action=editcomment&c=8', (string) $found['subjectUrl'] );
+        $this->assertSame( 'Review #8', $gone['subjectLabel'] );
+        $this->assertNull( $gone['subjectUrl'] );
+    }
+
     public function test_dates_are_iso_utc_and_missing_dates_null(): void {
         $run = RunPresenter::detail( self::run_row(), [], null );
 
@@ -114,7 +126,7 @@ final class RunPresenterTest extends TestCase {
 
     protected function tearDown(): void {
         global $wpdb;
-        $wpdb             = null; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- a test double.
+        $wpdb             = new FakeWpdb(); // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- the bootstrap's empty one.
         FakeOrder::$found = [];
     }
 

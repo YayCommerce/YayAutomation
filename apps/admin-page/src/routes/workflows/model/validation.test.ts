@@ -10,8 +10,10 @@ import {
   availableData,
   canActivate,
   editedIssues,
+  editedWarnings,
   issueText,
   newStepIssues,
+  serverWarning,
   stepsNeedingSetup,
   validateWorkflow,
   withServerIssues,
@@ -306,5 +308,27 @@ describe('withServerIssues', () => {
       percent,
     ]);
     expect(editedIssues({ draft: null, issues: { live: [...issues.live], draft: null } })).toEqual(issues.live);
+  });
+});
+
+describe('warnings', () => {
+  const warning = { code: 'may_refire', nodeId: 'a', message: 'x' } as const;
+  const graph: WorkflowGraph = {
+    nodes: [{ id: 'a', kind: 'action', position: { x: 0, y: 0 }, data: { block: 'change_order_status', config: {} } }],
+    edges: [],
+  };
+
+  it("reads the draft's warnings while there is a draft, else the live graph's", () => {
+    expect(editedWarnings({ draft: graph, warnings: { live: [], draft: [warning] } })).toEqual([warning]);
+    expect(editedWarnings({ draft: graph, warnings: { live: [warning], draft: null } })).toEqual([]);
+    expect(editedWarnings({ draft: null, warnings: { live: [warning], draft: null } })).toEqual([warning]);
+  });
+
+  it('counts while the step is the one the server checked', () => {
+    const server = { graph, issues: [], warnings: [warning] };
+    expect(serverWarning(server, graph, 'a')).toEqual(warning);
+    expect(serverWarning(server, graph, 'b')).toBeUndefined();
+    const edited = { ...graph, nodes: [{ ...graph.nodes[0], data: { ...graph.nodes[0].data } }] };
+    expect(serverWarning(server, edited, 'a')).toBeUndefined();
   });
 });

@@ -40,5 +40,12 @@ final class StepResultTest extends TestCase {
         $this->assertSame( StepResult::WAIT, $result->status() );
         $this->assertSame( 1760000000, $result->until() );
         $this->assertSame( 0, StepResult::ok()->until() );
+        $this->assertSame( [], $result->outputs() );
+    }
+
+    public function test_wait_can_carry_outputs(): void {
+        $result = StepResult::wait( 1760000000, [ 'until' => '2025-10-09 09:00' ] );
+
+        $this->assertSame( [ 'until' => '2025-10-09 09:00' ], $result->outputs() );
     }
 }

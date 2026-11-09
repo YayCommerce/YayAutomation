@@ -10,7 +10,7 @@ Sizes are proposals until Jack estimates after M1, as ROADMAP-v1.0 says. **S** �
 
 ## Build order
 
-**F0 → F1 (+ identity phases 1–2) → M1 → M2 → F2 → M7 → M8 → M3 → M4 → M5 → M6 → M9** → v1.1 → v1.2 → v2.0 → Public API
+**F0 → F1 (+ identity phases 1–2) → M1 → M2 → F2 → M7 → M8 → M3 → M4 → M5 → M6 → CT → M9** → v1.1 → v1.2 → v2.0 → Public API
 
 Changes from the ROADMAP-v1.0 order:
 - **F0 and F1 come first.** M1 needs step outputs, templates and the new step contract. M2 needs stored runs. Building M1/M2 on the v0.1 runner means building them twice.
@@ -30,7 +30,8 @@ Changes from the ROADMAP-v1.0 order:
 | M3 | Review request | M | 2 | M2 | ✅ Done |
 | M4 | Welcome series | S | 2 | M2 | ✅ Done |
 | M5 | High-value order alert | S | 1 | — | ✅ Done |
-| M6 | Win-back | M | 2 | M8 | ⏳ |
+| M6 | Win-back | M | 2 | M8 | ✅ Done |
+| CT | Custom workflow catalog | L | 3 | M6 | In progress |
 | M9 | Release hardening | M | 2 | all | — |
 | v1.1 | Control flow | L+ | 3 | v1.0 | — |
 | v1.2 | Yay ecosystem + Pro connectors | L+ | 3 | v1.1 | — |
@@ -250,9 +251,33 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 
 ## M6 — Win-back · M · risk 2
 
-- ⏳ **M6.1 BE** — Customer inactive trigger: a person's last real order N days old (up to 7 days late), found by a daily job in batches of 200, plus the `trigger_claims` table (workflow_id, subject, claimed_at; unique per workflow and subject) and its store. Once per workflow and order: a later order starts a new period.
-- ⏳ **M6.2 UI** — trigger panel: days (whole number, 7–730, default 90), "Checked once a day". Health check row for the daily job.
-- ⏳ **Templates:** Win-back ×2.
+**Status:** ✅ Done. Merged into `develop` (PR #35, `f747ff8`).
+
+- ✅ **M6.1 BE** — Customer inactive trigger: a person's last real order N days old (up to 7 days late), found by a daily job in batches of 200, plus the `trigger_claims` table (workflow_id, subject, claimed_at; unique per workflow and subject) and its store. Once per workflow and order: a later order starts a new period.
+- ✅ **M6.2 UI** — trigger panel: days (whole number, 7–730, default 90), "Checked once a day". Health check row for the daily job.
+- ✅ **Templates:** Win-back ×2.
+
+## CT — Custom workflow catalog · L · risk 3
+
+Shop owners build their own workflows from New Workflow. Why: [decisions CT](workflow-core-decisions.md#ct-custom-workflow-catalog).
+
+- ⏳ **CT.0** Docs frame.
+- ⏳ **CT.1** Hardening: order meta guard, active-trigger cache, `emits()` and the may-refire warning.
+- ⏳ **CT.2** List type, new operators, relative dates, `is_set`.
+- ⏳ **CT.3** New order and customer condition fields, meta conditions, customer stats.
+- ⏳ **CT.4** Paged REST search for products, categories and coupons.
+- ⏳ **CT.5** Condition form for the new rule kinds.
+- ⏳ **CT.6** Condition groups, one level deep.
+- ⏳ **CT.7** Triggers: Order paid, Order note added.
+- ⏳ **CT.8** Trigger: Order refunded.
+- ⏳ **CT.9** Triggers: Customer order count reaches, Customer total spend reaches.
+- ⏳ **CT.10** Trigger: Review posted.
+- ⏳ **CT.11** Action: Update customer custom field.
+- ⏳ **CT.12** Action: Change customer role.
+- ⏳ **CT.13** Action: Resend WooCommerce email.
+- ⏳ **CT.14** Action: Wait until.
+- **CT.15** Action: Stop waiting runs. Dropped from v1.0, moved to the v1.1 backlog.
+- ⏳ **CT.16** End-to-end check on both order stores, docs pass.
 
 ## M9 — Release hardening · M
 
@@ -276,7 +301,7 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 - **V11.6 More control steps** — Switch, Set variable, Stop, A/B split.
 - **V11.7 Retries** — backoff; replay a failed run from the failed step (button in run detail).
 - **V11.8 Product items** — the v1.1 list in ROADMAP-v1.0: Branched post-purchase, Nth order reward, alerts, order tags.
-- **Backlog** — Opt-in mode (consent checkbox) + transactional-only workflows. "Run once per order" through M6's `trigger_claims`: today a status trigger starts again when an order returns to the status (duplicate email / coupon, a second high-value alert). Customer inactive: stop a run when the customer orders during a Wait (`stop_reason`); the v1.0 templates have no Wait. Warn on Activate when another version of the same template workflow is active, or claim per template workflow (e.g. win_back) instead of per workflow.
+- **Backlog** — Opt-in mode (consent checkbox) + transactional-only workflows. "Run once per order" through M6's `trigger_claims`: today a status trigger starts again when an order returns to the status (duplicate email / coupon, a second high-value alert). Customer inactive: stop a run when the customer orders during a Wait (`stop_reason`); the v1.0 templates have no Wait. Warn on Activate when another version of the same template workflow is active, or claim per template workflow (e.g. win_back) instead of per workflow. Run limit per workflow. Customer tags. Stock triggers. Workflow run failed trigger. Random split. Multi-currency totals. Milestones: one claim key for a guest who later makes an account. Order note added: a `note` data item (text, type), so emails can insert the note; today the trigger has none. Stop waiting runs (dropped from v1.0 in CT): cancel one person's waiting runs of the chosen workflows; its workflow list loads with the editor, so a workflow made since shows only after a reload.
 
 ## v1.2 — Yay ecosystem + Pro connectors · L+
 

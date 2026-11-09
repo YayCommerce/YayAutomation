@@ -9,7 +9,7 @@ import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/in
 import { alwaysAvailable, dataItems, fieldByKey, itemLabel, type DataField } from '../data';
 import { stepIcons } from '../icons';
 import { StepTile } from '../StepTile';
-import { groupVariables, type Variable, type VariableGroup } from '../variables';
+import { groupVariables, ruleOnlyVariables, type Variable, type VariableGroup } from '../variables';
 import { useVariableScope, type VariableScope } from './variableScope';
 
 const MODAL_WIDTH = 440;
@@ -113,7 +113,9 @@ export function VariablePicker({
     return !!field && (!conditionalOnly || field.conditional) && (!filter || filter(field));
   };
   // Built only while open: a criteria box holds several closed pickers.
-  const offered = open ? scope.variables.filter(accepts) : [];
+  const offered = open
+    ? [...scope.variables, ...(conditionalOnly ? ruleOnlyVariables(scope.variables) : [])].filter(accepts)
+    : [];
   // One section per data item (its label) and per step (its card summary: two coupons tell apart).
   const blockSections = groupVariables(offered.filter((variable) => variable.block)).map((g) => ({
     path: g.id,

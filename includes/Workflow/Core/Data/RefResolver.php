@@ -7,6 +7,8 @@ use YayMatik\Workflow\DataItems\CartData;
 use YayMatik\Workflow\DataItems\CustomerData;
 use YayMatik\Workflow\DataItems\OrderData;
 use YayMatik\Workflow\DataItems\OrderItemData;
+use YayMatik\Workflow\DataItems\RefundData;
+use YayMatik\Workflow\DataItems\ReviewData;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -54,7 +56,12 @@ final class RefResolver {
                 $item = function_exists( 'WC' ) ? \WC_Order_Factory::get_order_item( (int) $id ) : false;
                 return $item ? $item : null;
             },
-            // `order:34` reads the order's billing details (guests too); `cart:5` the cart's shopper; `user:12` an account.
+            RefundData::ID    => function ( string $id ) {
+                $refund = function_exists( 'wc_get_order' ) ? wc_get_order( (int) $id ) : false;
+                return $refund instanceof \WC_Order_Refund ? $refund : null;
+            },
+            ReviewData::ID    => fn( string $id ) => ReviewData::find( (int) $id ),
+            // `order:34` reads the order's billing details (guests too); `cart:5` the cart's shopper; `user:12` an account; `review:8` the reviewer.
             CustomerData::ID  => function ( string $id ) {
                 list( $kind, $number ) = array_pad( explode( ':', $id, 2 ), 2, '' );
                 if ( 'order' === $kind ) {
@@ -63,6 +70,10 @@ final class RefResolver {
                 if ( 'cart' === $kind ) {
                     $cart = SavedCart::find( (int) $number );
                     return $cart ? CartCustomer::of( $cart ) : null;
+                }
+                if ( 'review' === $kind ) {
+                    $review = ReviewData::find( (int) $number );
+                    return $review ? self::reviewer( $review ) : null;
                 }
                 return 'user' === $kind ? self::account( (int) $number ) : null;
             },
@@ -88,6 +99,17 @@ final class RefResolver {
             $customer->set_billing_first_name( $user->first_name );
         }
         return $customer;
+    }
+
+    /**
+     * A review's author: their account when they were logged in, else only the email they typed, never an account found by it.
+     *
+     * @param \WP_Comment $review
+     * @return \WC_Customer|EmailCustomer|null
+     */
+    public static function reviewer( \WP_Comment $review ) {
+        $user_id = (int) $review->user_id;
+        return $user_id > 0 ? self::account( $user_id ) : new EmailCustomer( (string) $review->comment_author_email );
     }
 
     private static function order( string $id ) {

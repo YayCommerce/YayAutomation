@@ -1,4 +1,4 @@
-import type { Workflow, WorkflowGraph, WorkflowIssue, WorkflowNode } from '@yaymatik/types';
+import type { Workflow, WorkflowGraph, WorkflowIssue, WorkflowNode, WorkflowWarning } from '@yaymatik/types';
 import { __, sprintf } from '@wordpress/i18n';
 
 import { stepOf } from '../steps';
@@ -213,18 +213,35 @@ function reachProblem(
 export interface ServerCheck {
   graph: WorkflowGraph;
   issues: WorkflowIssue[];
+  warnings: WorkflowWarning[];
 }
 
 /** The server's issues for the graph the editor edits: the draft's while there is one, else the live graph's. */
 export const editedIssues = (workflow: Pick<Workflow, 'draft' | 'issues'>) =>
   workflow.draft !== null ? (workflow.issues.draft ?? []) : workflow.issues.live;
 
+/** The server's warnings for the graph the editor edits, like `editedIssues`. */
+export const editedWarnings = (workflow: Pick<Workflow, 'draft' | 'warnings'>) =>
+  workflow.draft !== null ? (workflow.warnings.draft ?? []) : workflow.warnings.live;
+
+/** A step's warning from the server's last check, while its data is the object that was checked. */
+export function serverWarning(server: ServerCheck, graph: WorkflowGraph, nodeId: string): WorkflowWarning | undefined {
+  const checked = server.graph.nodes.find((node) => node.id === nodeId);
+  const current = graph.nodes.find((node) => node.id === nodeId);
+  if (!checked || checked.data !== current?.data) return undefined;
+  return server.warnings.find((warning) => warning.nodeId === nodeId);
+}
+
 /**
  * The editor's issues plus the ones only PHP finds (a percentage over 100, cart tracking off), from
  * the server's last check. A server issue counts while its step's data is the same object as in the
  * graph that was checked and the editor has no issue of its own for it.
  */
-export function withServerIssues(issues: WorkflowIssue[], server: ServerCheck, graph: WorkflowGraph): WorkflowIssue[] {
+export function withServerIssues(
+  issues: WorkflowIssue[],
+  server: Omit<ServerCheck, 'warnings'>,
+  graph: WorkflowGraph,
+): WorkflowIssue[] {
   const checked = new Map(server.graph.nodes.map((node) => [node.id, node.data]));
   const own = new Set(issues.map((issue) => issue.nodeId));
   const extra = server.issues.filter(
