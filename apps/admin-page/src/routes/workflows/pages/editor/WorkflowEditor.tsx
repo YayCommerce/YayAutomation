@@ -3,6 +3,7 @@ import { useStore } from '@tanstack/react-form';
 import { useQueryClient } from '@tanstack/react-query';
 import type { StepId, Workflow, WorkflowIssue } from '@yaymatik/types';
 import { AnimatePresence } from 'motion/react';
+import { createPortal } from 'react-dom';
 import { useLocation, useNavigate } from 'react-router';
 import { __ } from '@wordpress/i18n';
 
@@ -20,6 +21,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/sonner';
+import { useHeaderSlot } from '@/routes/layout/useHeaderSlot';
 import { ApiError, errorMessage } from '../../api/workflow.api';
 import { useWorkflowActionMutation, workflowKeys } from '../../api/workflow.query';
 import { removeNode, sameLogic, setNodeStep } from '../../model/graph';
@@ -44,6 +46,7 @@ import {
   RenameWorkflowDialog,
   UpdateDialog,
 } from '../../shared/actions/WorkflowActions';
+import { CreateWorkflowButton } from '../../shared/create/CreateWorkflowButton';
 import { EditorLayout } from '../../shared/layout/EditorLayout';
 import { type EditorNavState } from '../../shared/nav/editor.nav';
 import { WarningBadge } from '../../shared/ui/WarningBadge';
@@ -259,6 +262,7 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
   // Leaving waits for a pending save; only a failed save asks before leaving.
   const leaveGuard = useRouteLeaveGuard(() => autosave.statusRef.current !== 'saved', autosave.flush);
   useBeforeUnloadWarning(autosave.status !== 'saved');
+  const headerSlot = useHeaderSlot();
 
   const lastChanged = (hasDraft && workflow.draftUpdatedAt) || workflow.updatedAt;
 
@@ -398,6 +402,8 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
         />
 
         {renaming && <RenameWorkflowDialog workflow={workflow} onClose={() => setRenaming(false)} />}
+        {/* Saves first: a failed save leaves no new workflow behind a "Leave without saving?" Stay. */}
+        {headerSlot && createPortal(<CreateWorkflowButton beforeCreate={autosave.flush} />, headerSlot)}
 
         <AlertDialog open={leaveGuard.showDialog} onOpenChange={(open) => !open && leaveGuard.cancelLeave()}>
           <AlertDialogContent>

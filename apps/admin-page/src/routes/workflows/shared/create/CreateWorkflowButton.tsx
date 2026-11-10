@@ -9,11 +9,13 @@ import { useCreateWorkflowMutation } from '../../api/workflow.query';
 import { LIBRARY_PATH } from '../nav/library.nav';
 import { CreateWorkflowDialog } from './CreateWorkflowDialog';
 
-/**
- * The app header's Create button and its dialog. Leaving the editor goes through its leave guard, so a
- * pending autosave settles before the new workflow opens.
- */
-export function CreateWorkflowButton() {
+/** The app header's Create button and its dialog. */
+export function CreateWorkflowButton({
+  beforeCreate,
+}: {
+  /** Runs before the workflow is created; false creates nothing (the editor's failed autosave). */
+  beforeCreate?: () => Promise<boolean>;
+}) {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const createMutation = useCreateWorkflowMutation({
@@ -24,9 +26,23 @@ export function CreateWorkflowButton() {
     onFailed: (error) => toast.error(error.message),
   });
 
+  const [preparing, setPreparing] = useState(false);
+  const create = async () => {
+    if (beforeCreate) {
+      setPreparing(true);
+      const ready = await beforeCreate();
+      setPreparing(false);
+      if (!ready) {
+        toast.error(__('Your latest changes couldn’t be saved, so no workflow was created.', 'yaymatik'));
+        return;
+      }
+    }
+    createMutation.mutate({});
+  };
+
   return (
     <>
-      <Button variant="outline" className="ml-2" onClick={() => setOpen(true)}>
+      <Button variant="outline" onClick={() => setOpen(true)}>
         <Plus />
         <span className="hidden sm:inline">{__('Create workflow', 'yaymatik')}</span>
         <span className="sm:hidden">{__('Create', 'yaymatik')}</span>
@@ -34,8 +50,8 @@ export function CreateWorkflowButton() {
       <CreateWorkflowDialog
         open={open}
         onOpenChange={setOpen}
-        creating={createMutation.isPending}
-        onSelectTrigger={() => createMutation.mutate({})}
+        creating={preparing || createMutation.isPending}
+        onSelectTrigger={() => void create()}
         onBrowseTemplates={() => {
           setOpen(false);
           navigate(LIBRARY_PATH);

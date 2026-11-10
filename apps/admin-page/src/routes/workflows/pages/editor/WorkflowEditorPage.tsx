@@ -14,8 +14,14 @@ export default function WorkflowEditorPage() {
 
   return (
     <>
-      {workflow ? <WorkflowEditor key={workflow.id} workflow={workflow} /> : <EditorPlaceholder error={error} />}
-      {headerSlot && createPortal(<CreateWorkflowButton />, headerSlot)}
+      {workflow ? (
+        <WorkflowEditor key={workflow.id} workflow={workflow} />
+      ) : (
+        <>
+          <EditorPlaceholder error={error} />
+          {headerSlot && createPortal(<CreateWorkflowButton />, headerSlot)}
+        </>
+      )}
     </>
   );
 }

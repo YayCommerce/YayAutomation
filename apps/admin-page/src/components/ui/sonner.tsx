@@ -6,7 +6,6 @@ const Toaster = ({ ...props }: ToasterProps) => {
   return (
     <Sonner
       position="top-center"
-      theme="light"
       className={clsx(
         'yay-toaster group flex flex-col data-[x-position=center]:items-center data-[x-position=left]:items-start data-[x-position=right]:items-end',
       )}

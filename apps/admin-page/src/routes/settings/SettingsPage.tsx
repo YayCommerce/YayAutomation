@@ -161,7 +161,7 @@ function SettingsEditor({ settings }: { settings: SettingsResponse }) {
 
       {headerSlot &&
         createPortal(
-          <LoadingButton className="ml-2" loading={submitting} onClick={submit}>
+          <LoadingButton loading={submitting} onClick={submit}>
             <span className="hidden sm:inline">{__('Save changes', 'yaymatik')}</span>
             <span className="sm:hidden">{__('Save', 'yaymatik')}</span>
           </LoadingButton>,

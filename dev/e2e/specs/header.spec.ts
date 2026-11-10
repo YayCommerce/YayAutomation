@@ -12,6 +12,8 @@ async function createFromHeader(page: Page, from: number) {
   await page.locator('#yay-header-actions').getByRole('button', { name: /Create/ }).click();
   await page.getByRole('dialog').getByRole('button', { name: /Choose a trigger/ }).click();
   await page.waitForURL((url) => /#\/workflows\/\d+\/edit$/.test(url.hash) && !url.hash.includes(`/${from}/`));
+  // The dialog's title is also "New workflow": the editor's header only counts once it has closed.
+  await expect(page.getByRole('dialog', { name: 'New workflow' })).toHaveCount(0);
   await expect(page.getByText('New workflow').first()).toBeVisible();
 }
 
