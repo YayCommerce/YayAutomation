@@ -2,8 +2,11 @@ body.yay-ui {
   @apply bg-muted;
 }
 
-.yay-ui {
-  @apply text-foreground bg-muted text-sm;
+/* The app root and what Radix portals to <body>, as for Tailwind's preflight (main.css): WordPress's menu and bar keep
+   their own text. Same specificity as the unscoped rules before, so the cascade is unchanged. No background here:
+   Radix popper wrappers sit directly in <body>. */
+.yay-ui :where(#yaymatik, body > :not(#wpwrap)) {
+  @apply text-foreground text-sm;
 
   /* Chrome, Safari, Edge, Opera */
   input::-webkit-outer-spin-button,
@@ -43,7 +46,8 @@ body.yay-ui {
   }
 }
 
-* {
+:where(.yay-ui) :where(#yaymatik, body > :not(#wpwrap)),
+:where(.yay-ui) :where(#yaymatik, body > :not(#wpwrap)) * {
   @apply border-border outline-ring/50 hover:ring-primary-accent ring-primary font-sans;
 
   &:focus-visible,
