@@ -96,7 +96,8 @@ This rebuilds `assets/dist/`. The PHP in `vendor-prefixed/` is the YayCommerce a
 
 **Third-party libraries in the admin app**
 
-* React 18.3.1, https://react.dev (MIT)
+React, ReactDOM and the JSX runtime come from WordPress (the `react`, `react-dom` and `react-jsx-runtime` scripts). Bundled:
+
 * React Router 7.18.4, https://reactrouter.com (MIT)
 * TanStack Query 5.103.2 and TanStack Form 1.33.5, https://tanstack.com (MIT)
 * Radix UI primitives, https://www.radix-ui.com (MIT)

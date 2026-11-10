@@ -75,6 +75,11 @@ else
     echo "Skipping lint: run ./run.sh setup to install the PHP lint tools."
 fi
 
+# The translation template from the built files: WordPress.org builds the language packs from it. Written into the
+# build folder only, as its creation date would leave the checkout changed after every release.
+command -v wp >/dev/null || { echo "Missing: wp-cli (wp i18n make-pot)"; exit 1; }
+wp i18n make-pot "$DEST_PATH" "$DEST_PATH/languages/yaymatik.pot" --include=yaymatik.php,includes,assets/dist --domain=yaymatik
+
 # Remove development code
 rm -f "$DEST_PATH/includes/Engine/Register/RegisterDev.php"
 

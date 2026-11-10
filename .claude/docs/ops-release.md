@@ -2,7 +2,7 @@
 
 Use `/wdist`.
 
-- Zip: `./run.sh release` (`dev/scripts/release.sh`) → `release/yaymatik.zip` (free: `.distignore` leaves out `includes/Pro/`; `release.sh` removes admin-shell's `src/License`, as YayBulkOrder's lite build does, and `dev/scripts/lib/free-admin-shell.php` adds `class_exists` guards and ABSPATH guards to the rest of the scoped copy, failing the build when admin-shell changes under it). `composer.json` ships beside `vendor/`. `./run.sh release pro` → `release/yaymatik-pro.zip`, the same with `includes/Pro/`. Exclusions: `.distignore`. It runs `./vendor/bin/yaycommerce-prerelease` first and ships only `vendor/autoload.php` + `vendor/composer/` + `vendor-prefixed/`.
+- Zip: `./run.sh release` (`dev/scripts/release.sh`) → `release/yaymatik.zip` (free: `.distignore` leaves out `includes/Pro/`; `release.sh` removes admin-shell's `src/License`, as YayBulkOrder's lite build does, and `dev/scripts/lib/free-admin-shell.php` adds `class_exists` guards and ABSPATH guards to the rest of the scoped copy, failing the build when admin-shell changes under it). `composer.json` ships beside `vendor/`. `languages/yaymatik.pot` is made from the built files into the zip (`wp i18n make-pot`, so wp-cli is needed); `pnpm makepot` updates the committed copy. `./run.sh release pro` → `release/yaymatik-pro.zip`, the same with `includes/Pro/`. Exclusions: `.distignore`. It runs `./vendor/bin/yaycommerce-prerelease` first and ships only `vendor/autoload.php` + `vendor/composer/` + `vendor-prefixed/`.
 - WordPress.org review: `/wp-review` checks the free zip against `.claude/docs/context-wporg-release-checklist.md` (IDs S, G, B, Q, R, T, U).
 - Versions: `Version:` and `YAYMATIK_VERSION` in `yaymatik.php` and `Stable tag:` in `readme.txt` are equal.
 

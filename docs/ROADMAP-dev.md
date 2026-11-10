@@ -283,12 +283,12 @@ Shop owners build their own workflows from New Workflow. Why: [decisions CT](wor
 
 ## M9 — Release hardening · M
 
-**Status:** In progress, plan 032 on `jack/feature/032-m9-release`. Acceptance list: `.claude/docs/context-wporg-release-checklist.md`.
+**Status:** In progress. Plan 032 built on `jack/feature/032-m9-release`, merge pending; the checks by hand and the public source repo are still open. Acceptance list: `.claude/docs/context-wporg-release-checklist.md`; release gate: `.claude/docs/ops-release.md`.
 
-- **M9.1** Each of the 8 workflows once by hand on staging, plus one real inbox check on a dev site; `pnpm e2e` on the release commit; classic and block checkout; light admin only (dark mode is not in v1.0). Every check and e2e journey on both wp-env targets: latest (`--wp-env`) and minimum versions (`--wp-env-min`: WordPress 6.9, PHP 7.4, WooCommerce 11.0). MySQL 8: a read-only probe on staging (erase `REGEXP`, `GET_LOCK`, the meta-key collation check).
-- **M9.2** Translations and release build: no `load_plugin_textdomain`, kit strings translatable, a `.pot`; the free zip has no license client.
-- **M9.3** Leave unfinished steps unregistered for the release; core logos inline, so they load when assets come from a CDN. *(§8)*
-- **M9.4** Release checklist items picked in ROADMAP-v1.0: requirements checked at runtime, clean deactivation and uninstall, readme, Plugin Check on the zip.
+- **M9.1** Each of the 8 workflows once by hand on staging, plus one real inbox check on a dev site (by hand, open). ⏳ `pnpm e2e` (header Create, settings, Health check fix, classic checkout, unsubscribe added); light admin only (dark mode is not in v1.0). ⏳ Every check on both wp-env targets: latest (`--wp-env`) and minimum versions (`--wp-env-min`: WordPress 6.9, PHP 7.4, WooCommerce 11.0), through `check-all`. ⏳ MySQL 8: `probe-mysql --staging` (read only).
+- ⏳ **M9.2** Translations and release build: no text-domain loader, kit strings translatable, `languages/yaymatik.pot` (rebuilt into each release zip); the free zip ships no license client or updater (admin-shell's `src/License` removed and its uses guarded at build time).
+- ⏳ **M9.3** Unfinished steps stay unregistered; core logos inline, so they load when assets come from a CDN. *(§8)*
+- ⏳ **M9.4** Release checklist items picked in ROADMAP-v1.0: requirements checked at runtime, clean deactivation and uninstall, readme, `%i` for table names, bounded product queries, Plugin Check on the zip. The source repo `YayCommerce/YayMatik` goes public at submission (open).
 
 ---
 

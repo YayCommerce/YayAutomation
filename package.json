@@ -11,6 +11,7 @@
     "test": "pnpm -r test",
     "test:php": "dev/tools/phpunit/vendor/bin/phpunit",
     "e2e": "pnpm build && playwright test -c dev/e2e/playwright.config.ts",
+    "makepot": "wp i18n make-pot . languages/yaymatik.pot --include=yaymatik.php,includes,assets/dist --domain=yaymatik",
     "format": "pnpm -r format",
     "analyze": "pnpm -F @yaymatik/admin analyze"
   },
