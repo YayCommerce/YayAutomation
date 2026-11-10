@@ -3,8 +3,8 @@ body.yay-ui {
 }
 
 /* The app root and what Radix portals to <body>, as for Tailwind's preflight (main.css): WordPress's menu and bar keep
-   their own text. Same specificity as the unscoped rules before, so the cascade is unchanged. No background here:
-   Radix popper wrappers sit directly in <body>. */
+   their own text. :where() keeps the specificity at .yay-ui's. No background here: Radix popper wrappers sit
+   directly in <body>. */
 .yay-ui :where(#yaymatik, body > :not(#wpwrap)) {
   @apply text-foreground text-sm;
 

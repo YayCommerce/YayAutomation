@@ -236,14 +236,14 @@ final class ExecutorTest extends TestCase {
         $this->steps['boom'] = new FakeStep(
             'boom',
             function () {
-                throw new \RuntimeException( 'Oops.' );
+                throw new \RuntimeException( esc_html( "Table 'x' doesn't exist." ) );
             }
         );
         $this->graph( [ 'a' => [ 'boom', [] ] ], [ [ 't', 'a' ] ] );
         $id = $this->new_run();
 
         $this->assertSame( 'failed', $this->slice( $id ) );
-        $this->assertSame( 'Oops.', $this->run_of( $id )['error'] );
+        $this->assertSame( "Table 'x' doesn't exist.", $this->run_of( $id )['error'], 'stored as plain text, not escaped' );
     }
 
     public function test_a_gone_account_says_the_customer_was_deleted_and_other_customers_keep_their_text(): void {

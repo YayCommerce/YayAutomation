@@ -83,12 +83,12 @@ final class Executor {
         try {
             return $this->slice( $run );
         } catch ( \Throwable $e ) {
-            Logger::error( "Run {$id} failed: " . $e->getMessage(), [ 'run_id' => $id ] );
+            Logger::error( "Run {$id} failed: " . self::message( $e ), [ 'run_id' => $id ] );
             $this->runs->save_run(
                 $id,
                 [
                     'status' => RunStore::STATUS_FAILED,
-                    'error'  => $e->getMessage(),
+                    'error'  => self::message( $e ),
                 ]
             );
             return RunStore::STATUS_FAILED;
@@ -250,7 +250,7 @@ final class Executor {
         try {
             $config = $step ? $step->sanitize( $config ) : $config;
         } catch ( \Throwable $e ) {
-            $broken = StepResult::failed( $e->getMessage() );
+            $broken = StepResult::failed( self::message( $e ) );
         }
         $row_id = $this->runs->start_step( $run_id, $step_id, $config );
         if ( ! $row_id ) {
@@ -291,8 +291,18 @@ final class Executor {
         } catch ( GoneEntity $gone ) {
             return StepResult::skipped( self::gone_message( $gone ) );
         } catch ( \Throwable $e ) {
-            return StepResult::failed( $e->getMessage() );
+            return StepResult::failed( self::message( $e ) );
         }
+    }
+
+    /**
+     * An exception's message as plain text: messages are escaped where they are thrown, and the run history
+     * escapes what it shows.
+     *
+     * @param \Throwable $e
+     */
+    private static function message( \Throwable $e ): string {
+        return htmlspecialchars_decode( $e->getMessage(), ENT_QUOTES );
     }
 
     /**

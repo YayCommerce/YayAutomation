@@ -89,7 +89,7 @@ A free zip that passes the WordPress.org checklist, a light-only admin with a he
 8d. ✅ **Q3 text rules scope; Q6 / Q11 clean-site run** (b856879) — Risk: 2
 
 8. **Fixes** — Risk: 2 — from run 1's results and Jack's checks. Closes whatever is still open from T1, T2, S1–S13, Q1–Q13.
-9. ✅ **Translation file, final docs, PR text** (CP9HASH) — Risk: 1
+9. ✅ **Translation file, final docs, PR text** (7964845) — Risk: 1
    - Files: `package.json` (`makepot`: `wp i18n make-pot . languages/yaymatik.pot --include=yaymatik.php,includes,assets/dist --domain=yaymatik`; locations kept, see open 7), `dev/scripts/release.sh` (makepot after the build, as YayBulkOrder does), `languages/yaymatik.pot`, docs, `.claude/plans/dev/032-pr.md`.
    - Tests: the JS string count from `assets/dist` vs from `apps/admin-page/src` (make-pot on the source); report the missing ones.
    - Closes: Q5.

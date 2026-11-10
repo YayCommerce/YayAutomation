@@ -38,7 +38,12 @@ final class ProductGrid {
         $in_order  = [];
         $suggested = [];
         $lines     = array_filter( $order->get_items(), fn( $item ) => $item instanceof \WC_Order_Item_Product );
-        _prime_post_caches( array_values( array_unique( array_filter( array_merge( ...array_map( fn( $item ) => [ (int) $item->get_product_id(), (int) $item->get_variation_id() ], $lines ) ) ) ) ) );
+        $line_ids  = [];
+        foreach ( $lines as $item ) {
+            $line_ids[] = (int) $item->get_product_id();
+            $line_ids[] = (int) $item->get_variation_id();
+        }
+        _prime_post_caches( array_values( array_unique( array_filter( $line_ids ) ) ) );
         foreach ( $lines as $item ) {
             $product = $item->get_product();
             if ( ! $product ) {

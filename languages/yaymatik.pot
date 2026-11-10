@@ -3,13 +3,13 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: YayMatik - Automation for WooCommerce 1.0.0\n"
-"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/YayAutomation\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/yaymatik\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-10T08:50:20+00:00\n"
+"POT-Creation-Date: 2026-11-10T09:02:52+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.8.1\n"
 "X-Domain: yaymatik\n"
@@ -948,7 +948,7 @@ msgstr ""
 #. translators: %s: entity, e.g. order:12
 #. translators: %s: what was deleted, e.g. "Order"
 #: includes/Workflow/Core/Data/GoneEntity.php:17
-#: includes/Workflow/Core/Runtime/Executor.php:309
+#: includes/Workflow/Core/Runtime/Executor.php:319
 msgid "%s no longer exists."
 msgstr ""
 
@@ -1361,11 +1361,11 @@ msgstr ""
 msgid "Invalid settings: %s"
 msgstr ""
 
-#: includes/Workflow/Core/Runtime/Executor.php:305
+#: includes/Workflow/Core/Runtime/Executor.php:315
 msgid "The customer was deleted."
 msgstr ""
 
-#: includes/Workflow/Core/Runtime/Executor.php:324
+#: includes/Workflow/Core/Runtime/Executor.php:334
 msgid "This run can't wait: Action Scheduler is not available."
 msgstr ""
 

@@ -13,13 +13,13 @@
 // admin-shell update that moves or adds a use fails the build.
 // Usage: php free-admin-shell.php <build>/vendor-prefixed [--abspath-only]
 
-$dir           = rtrim( $argv[1] ?? '', '/' );
-$abspath_only  = in_array( '--abspath-only', $argv, true );
-$fail          = function ( string $message ) {
+$dir          = rtrim( $argv[1] ?? '', '/' );
+$abspath_only = in_array( '--abspath-only', $argv, true );
+$fail         = function ( string $message ) {
     fwrite( STDERR, "admin-shell build patch: {$message}\n" );
     exit( 1 );
 };
-$php_files     = function () use ( $dir ) {
+$php_files    = function () use ( $dir ) {
     $found = [];
     foreach ( new RecursiveIteratorIterator( new RecursiveDirectoryIterator( $dir, FilesystemIterator::SKIP_DOTS ) ) as $file ) {
         if ( 'php' === $file->getExtension() ) {
@@ -29,7 +29,8 @@ $php_files     = function () use ( $dir ) {
     ksort( $found );
     return $found;
 };
-$abspath_guard = '/defined\(\s*[\'"]ABSPATH[\'"]\s*\)/';
+// The guard itself, at the start of a line: `defined('ABSPATH') || exit;` or `if (!defined('ABSPATH')) {`.
+$abspath_guard = '/^\s*(?:\\?defined\(\s*[\'"]ABSPATH[\'"]\s*\)\s*(?:\|\||or)\s*(?:exit|die)|if\s*\(\s*!\s*\\?defined\(\s*[\'"]ABSPATH[\'"]\s*\)\s*\))/m';
 
 if ( '' === $dir || ! is_dir( $dir . '/src' ) ) {
     $fail( 'usage: php free-admin-shell.php <build>/vendor-prefixed [--abspath-only]' );
@@ -155,8 +156,11 @@ foreach ( $sources as $short => $code ) {
     foreach ( $returning as $method ) {
         $patterns[] = '(?:->|::)' . $method . '\(';
     }
-    // A guard counts only when it asks for a License class.
-    $guard = '/class_exists\(\s*\\\\?(?:[\w\\\\]*\\\\)?(?:' . implode( '|', array_merge( $imported, [ 'License\w*', 'RestAPI', 'PluginInfoFactory' ] ) ) . ')::class/';
+    // A guard asks for a License class, and covers a use on its own line, in the block it opens on the line just
+    // above, or after it as an early `continue` / `return`.
+    $asks  = 'class_exists\(\s*\\\\?(?:[\w\\\\]*\\\\)?(?:' . implode( '|', array_merge( $imported, [ 'License\w*' ] ) ) . ')::class\)';
+    $opens = '/^\s*(?:\}\s*else)?\s*if\s*\(.*' . $asks . '.*\)\s*\{\s*$/';
+    $exits = '/if\s*\(\s*!\s*\\\\?' . $asks . '\s*\)\s*\{\s*\n\s*(?:continue|return);\s*\n\s*\}/';
     $lines = explode( "\n", $code );
     // Inside a method that returns a dependent class: its callers are checked instead.
     $in_returning = false;
@@ -172,7 +176,8 @@ foreach ( $sources as $short => $code ) {
         if ( preg_match( '/^(use |\*|\/\/|\/\*|(public |private |protected )?(static )?function |(final |abstract )?class |interface )/', $trim ) ) {
             continue;
         }
-        if ( ! preg_match( $guard, implode( "\n", array_slice( $lines, max( 0, $i - 4 ), min( 5, $i + 1 ) ) ) ) ) {
+        $above = $i > 0 ? $lines[ $i - 1 ] : '';
+        if ( ! preg_match( '/' . $asks . '/', $line ) && ! preg_match( $opens, $above ) && ! preg_match( $exits, implode( "\n", array_slice( $lines, max( 0, $i - 5 ), min( 5, $i ) ) ) ) ) {
             $bad[] = $short . ':' . ( $i + 1 ) . ': ' . $trim;
         }
     }
