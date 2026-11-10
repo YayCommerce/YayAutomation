@@ -1,5 +1,6 @@
 #!/bin/bash
 # Check the storage (wp-cli): runs, versions, the workflow lifecycle. Removes its test rows.
+#   ./run.sh check-storage [--wp-env|--wp-env-min]
 cd "$(dirname "$0")/../.." || exit 1
 [[ -f yaymatik.php ]] || { echo "Not the plugin root: $(pwd)"; exit 1; }
 . dev/scripts/lib/wp-target.sh "$1" check || exit 1

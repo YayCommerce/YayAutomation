@@ -1,12 +1,13 @@
 #!/bin/bash
 # Check that a module added on plugins_loaded (priority 20, as a plugin loaded after YayMatik would) is registered, trigger included (wp-cli).
+#   ./run.sh check-late-module [--wp-env|--wp-env-min]
 cd "$(dirname "$0")/../.." || exit 1
 [[ -f yaymatik.php ]] || { echo "Not the plugin root: $(pwd)"; exit 1; }
 . dev/scripts/lib/wp-target.sh "$1" check || exit 1
 
 # --require runs before WordPress loads, so the filter goes in on a WordPress hook like a real plugin's would.
 # The file sits inside the checkout, so the wp-env container sees it.
-early=$(mktemp dev/.late-module.XXXXXX)
+early=$(mktemp dev/.late-module.XXXXXX) && chmod 644 "$early" || exit 1
 trap 'rm -f "$early"' EXIT
 cat > "$early" <<'PHP'
 <?php

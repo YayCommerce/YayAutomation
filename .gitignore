@@ -18,6 +18,8 @@ composer.lock
 /dev/e2e/test-results
 /dev/e2e/report
 /dev/e2e/.auth
+# check-late-module's temp file, if the script is killed before it removes it.
+/dev/.late-module.*
 
 # Logs
 logs

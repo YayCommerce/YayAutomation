@@ -7,7 +7,7 @@ cd "$(dirname "$0")/../.." || exit 1
 
 # check-orders and check-status-flow print JSON to diff before / after a change, so they are not here.
 checks=(storage runs late-module carts lifecycle winback catalog)
-logs=$(mktemp -d -t yaymatik-check-all)
+logs=$(mktemp -d -t yaymatik-check-all.XXXXXX) || exit 1
 results=()
 failed=0
 for name in "${checks[@]}"; do
