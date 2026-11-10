@@ -125,7 +125,7 @@ A free zip that passes the WordPress.org checklist, a light-only admin with a he
 - `develop` is at `5000114` ("added plan", after `bfaf1a4`); the branch starts there.
 - The memory note "plans are private" is stale: plans are committed since `5000114`.
 
-## Open decisions (/wdecide)
+## Open decisions (answered Nov 10, see Decisions)
 1. Free menu adapter: rename `YayMatikLicenseAdapter` → `YayMatikMenuAdapter` and keep it in free; `release.sh` drops `YayMatikProLicenseAdapter` from the free zip **(recommended)** · or move the Pro adapter to `includes/Pro/` (namespace `YayMatik\Pro\`).
 2. I18n: delete `I18n.php` and its call; WordPress loads its packs just in time, and `wp_set_script_translations` stays **(recommended)** · or only remove `load_plugin_textdomain` (keeps the unload bug).
 3. Source code (B1): make a public repo for the free plugin (no `includes/Pro`), readme links there **(recommended)** · or ship `apps/` + `packages/` source in the free zip · or make this repo public (Pro code exposed).
@@ -146,6 +146,19 @@ A free zip that passes the WordPress.org checklist, a light-only admin with a he
 
 ## Decisions
 Final (Jack, Nov 9–10): D1–D20 as in the brief, with the resolutions above. 031 decisions 1–10 stand.
+
+Opens answered (Jack, Nov 10); these override the Approach and checkpoints where they differ:
+1. Rename `YayMatikLicenseAdapter` → `YayMatikMenuAdapter`, kept in free; `release.sh` drops `YayMatikProLicenseAdapter` from the free zip (CP4).
+2. Delete `I18n.php` and its call. `wp_set_script_translations( ScriptName::PAGE_ADMIN, 'yaymatik' )` stays, without the languages path argument (no JSON shipped) (CP4).
+3. Source: public repo `YayCommerce/YayMatik`, free code only (no `includes/Pro`), made public at submission; its default branch holds the zip's code. readme Source Code: `pnpm install && pnpm build` rebuilds `assets/dist` from that repo; `vendor-prefixed/` ships prebuilt PHP (CP7). `/wp-review` B1 checks that link once the repo is public.
+4. MySQL 8: a read-only probe on staging: RunStore's `REGEXP` pattern on sample strings, `GET_LOCK` / `RELEASE_LOCK`, and the collation `SELECT` that `MetaKeys::user_collides()` (`MetaKeys.php:46`) relies on. No writes. In CP1 as `dev/scripts/probe-mysql.sh`, which only ever targets `--staging` and runs only `SELECT`s.
+5. `check-orders` and `check-status-flow` get the target option and stay out of check-all.
+6. Runs empty-state icon: the HealthPanel look (`HealthPanel.tsx:70`: `size-11 rounded-full`), with a token that contrasts on the grey runs section (CP5).
+7. Translations: a `.pot` with file locations; no shipped JSON, `.mo` or inline locale data; WordPress.org builds the packs (CP9).
+
+Additions (Jack, Nov 10):
+- CP3: register the deactivation hook at top level in `yaymatik.php`, with a callback that needs no autoloaded class: `function_exists( 'as_unschedule_all_actions' )`, then unschedule the three hooks and `delete_option( 'yaymatik_cleanup_checked_at' )` directly. Deactivation must work on a site where Requirements failed and `vendor/autoload.php` never loaded. That replaces `Cleanup::unschedule()`. Before `plugins_loaded`, only the `require` of `vendor/autoload.php` needs the autoloader (no CLI commands or file-load hooks use it; `Fallback.php` needs none), and it moves into `plugin_init()` after the check. check-plugin-lifecycle covers "deactivate while requirements fail": force WP 6.8, schedule the jobs first, deactivate, no recurring jobs left.
+- CP5 preflight: scope with `:where( #yaymatik, body > :not(#wpwrap) )` inside `@layer base`, so specificity and cascade order stay as today and utilities still win.
 
 ## Deviations
 (none yet)
