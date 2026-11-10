@@ -8,7 +8,7 @@ import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTi
 import { toast } from '@/components/ui/sonner';
 import { PageCard, PageTitle } from '@/components/widget/PageWidget';
 import { useCreateWorkflowMutation, useWorkflowsQuery } from '../../api/workflow.query';
-import { CreateWorkflowDialog } from './CreateWorkflowDialog';
+import { CreateWorkflowDialog } from '../../shared/create/CreateWorkflowDialog';
 import { TemplatesDialog } from './library/TemplatesDialog';
 import { WorkflowsEmptyIllustration } from './WorkflowIllustrations';
 import { WorkflowsTable, WorkflowsTableSkeleton } from './WorkflowsTable';

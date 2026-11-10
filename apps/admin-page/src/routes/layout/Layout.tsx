@@ -5,7 +5,6 @@ import { cn } from '@/lib/utils';
 import { Toaster } from '@/components/ui/sonner';
 import HeaderLogo from './HeaderLogo';
 import HeaderMenu from './HeaderMenu';
-import ThemeToggle from './ThemeToggle';
 
 export default function Layout() {
   const [scrolled, setScrolled] = useState(false);
@@ -28,10 +27,7 @@ export default function Layout() {
       >
         <HeaderLogo />
         <HeaderMenu />
-        <div className="flex items-center">
-          <ThemeToggle />
-          <div id="yay-header-actions" />
-        </div>
+        <div id="yay-header-actions" className="flex items-center" />
       </div>
       <div className="@container/main">
         <Outlet />

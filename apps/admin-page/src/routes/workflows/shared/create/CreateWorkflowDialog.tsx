@@ -3,9 +3,9 @@ import { ArrowUp, ChevronRight, LayoutTemplate, Loader2, Sparkles } from 'lucide
 import { __ } from '@wordpress/i18n';
 
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
-import { WorkflowAppIcon } from '../../shared/layout/EditorLayout';
-import { ComingSoonChip } from '../../shared/ui/ComingSoonChip';
 import { StepTile } from '../../steps/core/StepTile';
+import { WorkflowAppIcon } from '../layout/EditorLayout';
+import { ComingSoonChip } from '../ui/ComingSoonChip';
 
 /** Example prompts for the describe box; shown, not usable, until the assistant ships (v2.0). */
 const ideas = [

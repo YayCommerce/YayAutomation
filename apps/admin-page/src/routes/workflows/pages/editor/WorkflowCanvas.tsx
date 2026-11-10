@@ -12,7 +12,6 @@ import {
   type NodeChange,
 } from '@xyflow/react';
 
-import { useTheme } from '@/components/ui/theme-provider';
 import { moveNode } from '../../model/graph';
 import { edgeTypes } from '../../shared/canvas/CurvedEdge';
 import { EdgeArrowDefs } from '../../shared/canvas/EdgeArrow';
@@ -38,7 +37,6 @@ const fitOptions = (inset: number): FitViewOptions => ({
  * `onPaneClick`: a click on empty canvas, which closes the step panel.
  */
 export function WorkflowCanvas({ panelInset, onPaneClick }: { panelInset: number; onPaneClick: () => void }) {
-  const { theme } = useTheme();
   const form = useWorkflowFormContext();
   const { openNodeId, openPanel, requestDelete } = useEditorContext();
   // The first fit; later ones come from `ViewKeeper`.
@@ -96,7 +94,6 @@ export function WorkflowCanvas({ panelInset, onPaneClick }: { panelInset: number
         if (nodes.length) requestDelete(nodes.map((node) => node.id));
         return false;
       }}
-      colorMode={theme}
       style={canvasStyle}
       nodesConnectable={false}
       // Wheel and trackpad move around a long workflow; Ctrl/Cmd + wheel and pinch zoom.

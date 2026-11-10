@@ -26,7 +26,7 @@ A free zip that passes the WordPress.org checklist, a light-only admin with a he
    - D15: nothing left to drop. 031 removed the "delete reset-data.sh" line; grep finds it only in old plan files.
    - Tests: `pnpm lint:php`; `/wp-review` dry read of the skill.
    - Closes: none; sets up all IDs.
-1. **Test targets** — Risk: 2
+1. ✅ **Test targets** (856c522, fix ba62f7f) — Risk: 2
    - Files: `dev/scripts/lib/wp-target.sh`, all `dev/scripts/check-*.sh`, `check-late-module.sh` (temp file inside the checkout, under `dev/`, so the container sees it), `.wp-env.json` (WooCommerce 11.2.2), new `dev/wp-env-min/.wp-env.json`, new `dev/scripts/check-all.sh`, `dev/README.md`, `.gitignore` if wp-env writes there, MySQL per open 4.
    - Risk: a `dev/scripts/check-*.php` that uses PHP 8 syntax fails on PHP 7.4. Fix the script, unless it shows a plugin bug. A plugin bug is fixed in this CP and logged.
    - Tests: `./run.sh check-all`, `check-all --wp-env`, `check-all --wp-env-min` all PASS; `check-all --staging` refused.
@@ -162,6 +162,8 @@ Additions (Jack, Nov 10):
 
 ## Deviations
 - CP1: `--wp-env-min` runs `../../node_modules/.bin/wp-env` from `dev/wp-env-min` (a shell function in `wp-target.sh`), not `pnpm --dir dev/wp-env-min exec wp-env`: pnpm refuses a folder without a `package.json`.
+- CP1: `856c522` also took CP2's staged moves and deletes (`git mv` / `git rm`), so it doesn't build alone; the CP2 commit completes it. Not amended (commit rules).
+- CP2: e2e ran with the installed Chrome (`channel: 'chrome'`, a scratchpad config): Playwright 1.64 ships no Chromium for macOS 12.
 - CP1: MySQL 8 probe ran on staging (8.0.46): REGEXP 8/8, GET_LOCK / RELEASE_LOCK, collation `utf8mb4_unicode_520_ci` folds case and accents, as `user_collides()` expects.
 
 ## Meta

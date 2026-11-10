@@ -2,15 +2,11 @@ import clsx from 'clsx';
 import { Check, X } from 'lucide-react';
 import { Toaster as Sonner, toast, ToasterProps } from 'sonner';
 
-import { useTheme } from './theme-provider';
-
 const Toaster = ({ ...props }: ToasterProps) => {
-  const { theme = 'system' } = useTheme();
-
   return (
     <Sonner
       position="top-center"
-      theme={theme}
+      theme="light"
       className={clsx(
         'yay-toaster group flex flex-col data-[x-position=center]:items-center data-[x-position=left]:items-start data-[x-position=right]:items-end',
       )}
