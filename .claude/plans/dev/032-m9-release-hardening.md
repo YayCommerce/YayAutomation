@@ -81,6 +81,10 @@ A free zip that passes the WordPress.org checklist, a light-only admin with a he
 
 **End of run 1:** `check-all --wp-env`, `check-all --wp-env-min`, `pnpm e2e`, `/wp-review` on the zip. Report only.
 
+### Run 3
+
+10. **UI fixes from Jack's browser check** — Risk: 2
+
 ### Run 2 (after Jack's checks: 8 workflows on staging, inbox check, screens of D1, D9, D20)
 
 8a. ✅ **Build: free admin-shell patch, composer.json, adapter, sed line, boot, S9, jsx-runtime, exceptions** (ca35c23, fixes 423e552, e9c1575, d12c4f2) — Risk: 2
@@ -184,6 +188,11 @@ Run 2 answers (Jack, Nov 10; these replace the G1 study line above):
 - Q6 + Q11: on `--wp-env-min` after `wp-env clean all`: `WP_DEBUG` and `WP_DEBUG_LOG` on, mapped checkout deactivated, free zip installed, `wp plugin activate` prints nothing; every screen and one order through a workflow; `debug.log` has no YayMatik entries. Site restored after.
 - U3 reply notes in `032-pr.md` under "WordPress.org review notes": S1 origin check instead of a nonce, the remaining hook-name warnings, `woocommerce_add_to_cart_validation`, the admin-shell build patch.
 - Run 2 checkpoints: CP8a build · CP8b `%i` (Risk 3) · CP8c Q12/Q13 · CP8d Q3 + Q6/Q11 · CP9 translation file, final docs, PR text.
+
+Run 3 decisions (Jack, Nov 10, after the browser check); CP10 builds them:
+- D1 extended: the header "Create workflow" button also shows on the template preview page (`TemplatePreviewPage`), same button and dialog. Mock #header updated.
+- Health check "Check again": the button shows its loading state at least 600 ms per click; after each scan a toast, "No problems found." or "Found N problem(s)." (`_n`); the summary line keeps its time.
+- Cross-sell / upsell preview: diagnose the empty grid first (order #4584: no cross-sells, or CP8c's filters?); a CP8c filter that drops valid products is a bug, fixed with a test. Then, when the email uses `order.cross_sell_products` or `order.upsell_products`, Preview picks the newest paid order whose grid isn't empty; with none, the store's 4 newest visible products, as the sample-data preview does (plan 023 D8), and the header says "Sample products: no recent order has cross-sells". Send test uses the same choice. The seed gives its products cross-sells and upsells.
 
 ## Deviations
 - CP1: `--wp-env-min` runs `../../node_modules/.bin/wp-env` from `dev/wp-env-min` (a shell function in `wp-target.sh`), not `pnpm --dir dev/wp-env-min exec wp-env`: pnpm refuses a folder without a `package.json`.
