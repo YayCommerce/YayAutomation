@@ -10,7 +10,7 @@ Stay on current branch. If on `develop`, branch first: `feature/…`, `fix/…`,
 
 Busy checkout (e.g. a bug fix mid-feature): `git worktree add`, then in it `./run.sh setup && pnpm install && pnpm build && WP_ENV_PORT=8920 pnpm wp-env start` and `./run.sh seed --wp-env`.
 
-Plans: `.claude/plans/dev/<NNN>-<slug>.md` (gitignored).
+Plans: `.claude/plans/dev/<NNN>-<slug>.md`, committed. Team practice: `.claude/README.md`.
 
 ## Dev Server
 

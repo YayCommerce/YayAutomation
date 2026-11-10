@@ -8,7 +8,7 @@ Workflow - Planning only. Use this to define a task before developing it.
 
 **Do not write any code or implement any solution. This skill ends by saving the confirmed plan and immediately starting `/wdev`.**
 
-**Read `.claude/docs/context-dev-convention.md` before starting.**
+**Read `.claude/docs/context-dev-convention.md` before starting.** If `.claude/local/wplan.md` exists, it is this dev's change to this skill: apply it on top.
 
 ---
 
@@ -23,7 +23,7 @@ Ask the user clarifying questions until the task is unambiguous:
 - Are there constraints: performance, scope limits?
 - Any edge cases to handle or explicitly exclude?
 
-Do not proceed until you have a clear, concrete picture of what needs to be built.
+Do not proceed until you have a clear, concrete picture of what needs to be built. Put open decisions to the user with `/wdecide`.
 
 ---
 
@@ -79,7 +79,7 @@ Present the plan to the user and ask for a single confirmation:
 
 **Wait for approval.** On confirmation:
 
-1. Save the plan to `.claude/plans/dev/<NNN>-<slug>.md` (gitignored; never commit it):
+1. Save the plan to `.claude/plans/dev/<NNN>-<slug>.md` (next free number) and commit it: `plan <NNN>: <slug>`. Only when the user asks for a private plan, save it in `.claude/local/plans/` instead:
 
 ```markdown
 # Plan: <title>
@@ -94,6 +94,9 @@ Present the plan to the user and ask for a single confirmation:
 1. <name> — Risk: <1|2|3> — ...
 
 ## Out of Scope
+...
+
+## Decisions
 ...
 
 ## Meta
