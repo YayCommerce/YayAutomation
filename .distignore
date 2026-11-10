@@ -29,6 +29,7 @@ README.md
 scoper.inc.php
 
 /includes/Pro
+/includes/YayMatikProLicenseAdapter.php
 /apps
 /packages
 /release
