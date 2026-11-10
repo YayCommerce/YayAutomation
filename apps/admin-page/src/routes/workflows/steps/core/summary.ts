@@ -28,7 +28,8 @@ export const variableNames = (text: string) =>
     })
     .join('');
 
-const optionLabel = (field: StepFieldMeta, raw: unknown) =>
+/** An option's label; a value no longer in the list reads as itself. */
+export const optionLabel = (field: StepFieldMeta, raw: unknown) =>
   field.options?.find((option) => option.value === raw)?.label ?? String(raw);
 
 /** A field's value as plain card text: option labels, lists joined, whitespace collapsed, merge tags by name. */

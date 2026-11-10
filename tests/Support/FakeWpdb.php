@@ -11,6 +11,12 @@ final class FakeWpdb {
     /** @var string */
     public $prefix = 'wp_';
 
+    /** @var string */
+    public $base_prefix = 'wp_';
+
+    /** @var string */
+    public $usermeta = 'wp_usermeta';
+
     /** @var int */
     public $insert_id = 0;
 

@@ -4,29 +4,40 @@ namespace YayMatik\Tests\Unit\Core\Steps;
 use PHPUnit\Framework\TestCase;
 use YayMatik\Workflow\Core\Data\Type;
 use YayMatik\Workflow\Actions\AddOrderNote;
+use YayMatik\Workflow\Actions\ChangeCustomerRole;
 use YayMatik\Workflow\Actions\ChangeOrderStatus;
 use YayMatik\Workflow\Actions\GenerateCoupon;
+use YayMatik\Workflow\Actions\ResendWcEmail;
 use YayMatik\Workflow\Actions\SendEmail;
 use YayMatik\Workflow\Actions\SendInternalEmail;
+use YayMatik\Workflow\Actions\UpdateCustomerMeta;
 use YayMatik\Workflow\Actions\UpdateOrderMeta;
 use YayMatik\Workflow\Actions\Wait;
+use YayMatik\Workflow\Actions\WaitUntil;
 use YayMatik\Workflow\Conditions\Criteria;
 use YayMatik\Workflow\Core\Steps\Field;
 use YayMatik\Workflow\Core\Steps\Step;
 use YayMatik\Workflow\Core\Steps\StepIcons;
 use YayMatik\Workflow\Triggers\CustomerInactive;
+use YayMatik\Workflow\Triggers\CustomerOrderCountReaches;
+use YayMatik\Workflow\Triggers\CustomerTotalSpendReaches;
 use YayMatik\Workflow\Triggers\OrderCreated;
+use YayMatik\Workflow\Triggers\OrderNoteAdded;
+use YayMatik\Workflow\Triggers\OrderPaid;
+use YayMatik\Workflow\Triggers\OrderRefunded;
 use YayMatik\Workflow\Triggers\OrderStatusChanged;
+use YayMatik\Workflow\Triggers\ReviewPosted;
 
 require_once dirname( __DIR__, 3 ) . '/Support/woocommerce-stubs.php';
 
 /** The declarative step contract, for each core step. */
 final class StepContractTest extends TestCase {
 
+
     /** @return Step[] Keyed by id. */
     private static function steps(): array {
         $steps = [];
-        foreach ( [ new OrderCreated(), new OrderStatusChanged(), new CustomerInactive(), new Criteria(), new SendEmail(), new SendInternalEmail(), new ChangeOrderStatus(), new AddOrderNote(), new UpdateOrderMeta(), new GenerateCoupon(), new Wait() ] as $step ) {
+        foreach ( [ new OrderCreated(), new OrderStatusChanged(), new OrderPaid(), new OrderRefunded(), new OrderNoteAdded(), new CustomerInactive(), new CustomerOrderCountReaches(), new CustomerTotalSpendReaches(), new ReviewPosted(), new Criteria(), new SendEmail(), new SendInternalEmail(), new ResendWcEmail(), new ChangeOrderStatus(), new AddOrderNote(), new UpdateOrderMeta(), new UpdateCustomerMeta(), new ChangeCustomerRole(), new GenerateCoupon(), new Wait(), new WaitUntil() ] as $step ) {
             $steps[ $step->id() ] = $step;
         }
         return $steps;
@@ -97,17 +108,27 @@ final class StepContractTest extends TestCase {
 
         $this->assertSame(
             [
-                'order_created'        => [],
-                'order_status_changed' => [],
-                'customer_inactive'    => [],
-                'condition'            => [ 'result' ],
-                'send_email'           => [ 'to' ],
-                'send_internal_email'  => [ 'to' ],
-                'change_order_status'  => [ 'from', 'to' ],
-                'add_order_note'       => [ 'type' ],
-                'update_order_meta'    => [ 'key' ],
-                'generate_coupon'      => [ 'code', 'amount', 'expires_at', 'box' ],
-                'wait'                 => [],
+                'order_created'                => [],
+                'order_status_changed'         => [],
+                'order_paid'                   => [],
+                'order_refunded'               => [],
+                'order_note_added'             => [],
+                'customer_inactive'            => [],
+                'customer_order_count_reaches' => [],
+                'customer_total_spend_reaches' => [],
+                'review_posted'                => [],
+                'condition'                    => [ 'result' ],
+                'send_email'                   => [ 'to' ],
+                'send_internal_email'          => [ 'to' ],
+                'resend_wc_email'              => [ 'email' ],
+                'change_order_status'          => [ 'from', 'to' ],
+                'add_order_note'               => [ 'type' ],
+                'update_order_meta'            => [ 'key', 'changed' ],
+                'update_customer_meta'         => [ 'key', 'changed' ],
+                'change_customer_role'         => [ 'from', 'to' ],
+                'generate_coupon'              => [ 'code', 'amount', 'expires_at', 'box' ],
+                'wait'                         => [],
+                'wait_until'                   => [ 'until' ],
             ],
             $outputs
         );
@@ -161,8 +182,8 @@ final class StepContractTest extends TestCase {
     public function test_errors_name_a_field_of_the_step( Step $step ): void {
         $keys = array_map( fn( Field $field ) => $field->key(), $step->fields() );
         $bad  = [
-            'order_status_changed' => [ 'to' => [ 'gone' ] ],
-            'condition'            => [
+            'order_status_changed'         => [ 'to' => [ 'gone' ] ],
+            'condition'                    => [
                 'rules' => [
                     [
                         'field'    => 'order.total',
@@ -170,12 +191,17 @@ final class StepContractTest extends TestCase {
                     ],
                 ],
             ],
-            'send_internal_email'  => [ 'recipients' => 'bad' ],
-            'send_email'           => [ 'to' => 'a@x.com, b@x.com' ],
-            'change_order_status'  => [],
-            'add_order_note'       => [ 'note' => '' ],
-            'update_order_meta'    => [ 'key' => '' ],
-            'wait'                 => [
+            'send_internal_email'          => [ 'recipients' => 'bad' ],
+            'send_email'                   => [ 'to' => 'a@x.com, b@x.com' ],
+            'change_order_status'          => [],
+            'customer_total_spend_reaches' => [],
+            'add_order_note'               => [ 'note' => '' ],
+            'update_order_meta'            => [ 'key' => '' ],
+            'update_customer_meta'         => [ 'key' => '' ],
+            'change_customer_role'         => [ 'role' => '' ],
+            'resend_wc_email'              => [ 'email' => '' ],
+            'wait_until'                   => [ 'hour' => '9' ],
+            'wait'                         => [
                 'delay' => [
                     'value' => 0,
                     'unit'  => 'days',

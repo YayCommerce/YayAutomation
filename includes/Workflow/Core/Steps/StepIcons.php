@@ -14,6 +14,7 @@ final class StepIcons {
         'shopping-bag',
         'package',
         'package-check',
+        'circle-check',
         'receipt',
         'credit-card',
         'truck',
@@ -49,6 +50,8 @@ final class StepIcons {
         'coins',
         'star',
         'heart',
+        'heart-pulse',
+        'activity',
         // People.
         'user',
         'user-plus',
@@ -58,6 +61,7 @@ final class StepIcons {
         'hourglass',
         'calendar',
         'timer',
+        'history',
         // Other.
         'zap',
     ];

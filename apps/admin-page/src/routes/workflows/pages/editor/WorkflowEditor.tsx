@@ -26,9 +26,11 @@ import { removeNode, sameLogic, setNodeStep } from '../../model/graph';
 import {
   createIssuesSelector,
   editedIssues,
+  editedWarnings,
   issueText,
   newStepIssues,
   sameIssues,
+  serverWarning,
   withServerIssues,
 } from '../../model/validation';
 import { useActivateWorkflow } from '../../shared/actions/useActivateWorkflow';
@@ -64,7 +66,10 @@ type ConfirmAction = 'activate' | 'deactivate' | 'update' | 'discard';
  */
 export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
   const form = useWorkflowForm(workflow);
-  const autosave = useAutosave(form, workflow.id, editedIssues(workflow));
+  const autosave = useAutosave(form, workflow.id, {
+    issues: editedIssues(workflow),
+    warnings: editedWarnings(workflow),
+  });
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const location = useLocation();
@@ -113,6 +118,9 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
     reset: resetPanel,
   } = useStepPanel(form, markVisited);
   const openNodeId = panel?.nodeId ?? null;
+  const panelWarning = useStore(form.store, (state) =>
+    openNodeId ? serverWarning(autosave.server, state.values.graph, openNodeId)?.message : undefined,
+  );
 
   // An issue only the server finds arrives after the save, maybe once the step's panel is closed:
   // its card says "Needs setup" then, like a step left with an issue.
@@ -225,7 +233,7 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
     await autosave.settle();
     try {
       const saved = await discard.mutateAsync({ id: workflow.id });
-      autosave.reset(saved.graph, editedIssues(saved));
+      autosave.reset(saved.graph, { issues: editedIssues(saved), warnings: editedWarnings(saved) });
       resetPanel(saved.graph);
       setErrorMode(false);
       toast.success(__('Changes discarded', 'yaymatik'));
@@ -323,6 +331,7 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
                     picking={panel.picking}
                     feedback={feedbackFor(panel.nodeId)}
                     issue={issues.find((issue) => issue.nodeId === panel.nodeId)}
+                    warning={panelWarning}
                     closable={!panelLocked}
                     onPick={(stepId) => pickStep(panel.nodeId, stepId)}
                     onSwap={(picking) => setPanel({ nodeId: panel.nodeId, picking })}

@@ -16,6 +16,13 @@ final class FakeMailer {
     /** @var string[] Headers of each send, in order; '' when none were passed. */
     public $headers = [];
 
+    /** @var FakeWcEmail[] WooCommerce's emails, keyed by class name. */
+    public $emails = [];
+
+    public function get_emails() {
+        return $this->emails;
+    }
+
     public function wrap_message( $heading, $message ) {
         // WooCommerce's email-header.php escapes the heading.
         return '<h1>' . esc_html( $heading ) . "</h1>{$message}";

@@ -20,7 +20,7 @@ use YayMatik\Workflow\Core\Steps\StepRegistry;
 use YayMatik\Workflow\Core\Storage\RunStepStore;
 use YayMatik\Workflow\Core\Storage\RunStore;
 
-const CHECK_META  = '_yaymatik_check_runs';
+const CHECK_META  = '_check_runs';
 const CHECK_STAFF = 'staff-check@example.test';
 
 global $wpdb;

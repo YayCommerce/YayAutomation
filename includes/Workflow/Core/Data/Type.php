@@ -38,6 +38,10 @@ final class Type {
         return new self( self::STRING );
     }
 
+    public static function boolean(): self {
+        return new self( self::BOOLEAN );
+    }
+
     public static function date(): self {
         return new self( self::DATE );
     }
@@ -94,6 +98,9 @@ final class Type {
      * @param string $type One of `DataItem::TYPE_*`.
      */
     public static function from_condition_type( string $type ): self {
+        if ( DataItem::TYPE_LIST === $type ) {
+            return self::list_of( self::string() );
+        }
         $map = [
             DataItem::TYPE_NUMBER  => self::NUMBER,
             DataItem::TYPE_DATE    => self::DATE,

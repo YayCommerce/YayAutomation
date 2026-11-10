@@ -95,7 +95,8 @@ final class DispatcherWorkerTest extends TestCase {
             function ( int $run_id ) {
                 $this->worker->run( $run_id );
             },
-            [ $this->worker, 'current' ]
+            [ $this->worker, 'current' ],
+            fn() => []
         );
     }
 
@@ -273,7 +274,7 @@ final class DispatcherWorkerTest extends TestCase {
                 throw new \RuntimeException( 'write failed' );
             }
         };
-        $dispatcher = new Dispatcher( $runs, $this->queue, $this->workflows, function (): void {}, fn() => null );
+        $dispatcher = new Dispatcher( $runs, $this->queue, $this->workflows, function (): void {}, fn() => null, fn() => [] );
         $dispatcher->collect( $this->claiming_trigger(), $this->event() );
         $dispatcher->flush();
 
@@ -302,6 +303,54 @@ final class DispatcherWorkerTest extends TestCase {
 
         $this->assertSame( 'cancelled', $this->worker->run( 1 ) );
         $this->assertSame( [ '1|order:12' => true ], $this->runs->claims );
+    }
+
+    /** A claiming trigger that counts by the person, like the milestones: its key isn't the subject. */
+    private function person_trigger(): OrderStatusChanged {
+        return new class() extends OrderStatusChanged {
+            public function claims_per_workflow(): bool {
+                return true;
+            }
+
+            public function claim_key( array $args ): string {
+                return 'user:7';
+            }
+
+            public function refs( array $args ): ?array {
+                return parent::refs( $args ) + [ 'claim_key' => 'user:7' ];
+            }
+        };
+    }
+
+    public function test_claims_by_its_key_and_keeps_the_order_as_subject(): void {
+        $trigger = $this->person_trigger();
+        $this->dispatcher->collect( $trigger, $this->event() );
+        $this->dispatcher->flush();
+        $this->dispatcher->collect( $trigger, [ 'order_id' => self::ORDER ] + $this->event() + [ 'other' => 1 ] );
+        $this->dispatcher->flush();
+
+        $this->assertCount( 1, $this->runs->runs, 'the same person, another event' );
+        $this->assertSame( 'order:12', $this->runs->runs[1]['subject'] );
+        $this->assertSame( [ '1|user:7' => true ], $this->runs->claims );
+    }
+
+    public function test_releases_its_key_when_the_run_could_not_start(): void {
+        $this->workflows->versions[1] = 0;
+        $this->dispatcher->collect( $this->person_trigger(), $this->event() );
+        $this->dispatcher->flush();
+
+        $this->assertSame( [], $this->runs->claims );
+    }
+
+    public function test_worker_releases_the_key_kept_in_the_run_scope(): void {
+        $trigger                               = $this->person_trigger();
+        $this->steps[ OrderStatusChanged::ID ] = $trigger;
+        $this->dispatcher->collect( $trigger, $this->event() );
+        $this->dispatcher->flush();
+        $this->workflows->deactivate( 1 );
+
+        $this->assertSame( 'cancelled', $this->worker->run( 1 ) );
+        $this->assertSame( [], $this->runs->claims );
     }
 
     public function test_events_raised_by_a_run_carry_it_as_parent(): void {
@@ -593,5 +642,80 @@ final class DispatcherWorkerTest extends TestCase {
         $this->assertSame( 'completed', $this->worker->run( $id ) );
         $this->assertNull( $this->runs->runs[ $id ]['wait_until'] );
         $this->assertSame( [], $this->queue->jobs );
+    }
+
+    /**
+     * A Dispatcher over these triggers and the test's workflows.
+     *
+     * @param FakeTrigger[] $triggers
+     */
+    private function dispatcher_with( array $triggers ): Dispatcher {
+        return new Dispatcher( $this->runs, $this->queue, $this->workflows, function (): void {}, fn() => null, fn() => $triggers );
+    }
+
+    public function test_listens_only_to_triggers_with_an_active_workflow(): void {
+        $active = new FakeTrigger( OrderStatusChanged::ID );
+        $idle   = new FakeTrigger( 'idle' );
+        $this->dispatcher_with( [ $active, $idle ] )->listen_active();
+
+        $this->assertSame( 1, $active->listens );
+        $this->assertSame( 0, $idle->listens );
+    }
+
+    public function test_a_change_adds_a_new_trigger_once(): void {
+        $active     = new FakeTrigger( OrderStatusChanged::ID );
+        $later      = new FakeTrigger( 'later' );
+        $dispatcher = $this->dispatcher_with( [ $active, $later ] );
+        $dispatcher->listen_active();
+
+        $this->workflows->workflows[2] = [
+            'id'     => 2,
+            'status' => 'active',
+            'graph'  => [
+                'nodes' => [
+                    [
+                        'kind' => 'trigger',
+                        'data' => [ 'block' => 'later' ],
+                    ],
+                ],
+            ],
+        ];
+        $dispatcher->listen_active();
+        $dispatcher->listen_active();
+
+        $this->assertSame( 1, $active->listens );
+        $this->assertSame( 1, $later->listens );
+    }
+
+    public function test_an_unreadable_list_listens_to_every_trigger(): void {
+        $this->workflows->list_fails = true;
+        $idle                        = new FakeTrigger( 'idle' );
+        $this->dispatcher_with( [ $idle ] )->listen_active();
+
+        $this->assertSame( 1, $idle->listens );
+    }
+
+    public function test_active_workflows_are_read_once_per_flush(): void {
+        $this->dispatcher->collect( $this->trigger, self::paid( 12 ) );
+        $this->dispatcher->collect( $this->trigger, self::paid( 13 ) );
+        $this->dispatcher->flush();
+        $this->assertSame( 1, $this->workflows->lookups );
+
+        $this->dispatcher->collect( $this->trigger, self::paid( 14 ) );
+        $this->dispatcher->flush();
+        $this->assertSame( 2, $this->workflows->lookups );
+    }
+
+    /**
+     * A status event for an order.
+     *
+     * @param int $order_id
+     */
+    private static function paid( int $order_id ): array {
+        return [
+            'order_id' => $order_id,
+            'from'     => 'pending',
+            'to'       => 'processing',
+        ];
     }
 }

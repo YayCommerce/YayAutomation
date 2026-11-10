@@ -53,4 +53,10 @@ final class DataItemExtensionTest extends TestCase {
         $this->assertFalse( $fields['second_plugin_field']['conditional'] );
         $this->assertArrayNotHasKey( 'first_plugin_field', ( new OrderData() )->fields(), 'the dynamic hook is scoped to Site' );
     }
+
+    public function test_a_field_is_a_merge_tag_by_default(): void {
+        $fields = ( new OrderData() )->fields();
+        $this->assertTrue( $fields['total']['merge_tag'] );
+        $this->assertFalse( $fields['meta']['merge_tag'] );
+    }
 }

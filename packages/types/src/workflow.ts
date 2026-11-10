@@ -12,18 +12,28 @@ export type WorkflowBranch = 'then' | 'otherwise';
 export type StepId =
   | 'order_created'
   | 'order_status_changed'
+  | 'order_paid'
+  | 'order_refunded'
+  | 'order_note_added'
   | 'cart_abandoned'
   | 'checkout_abandoned'
   | 'customer_account_created'
   | 'customer_inactive'
+  | 'customer_order_count_reaches'
+  | 'customer_total_spend_reaches'
+  | 'review_posted'
   | 'condition'
   | 'send_email'
   | 'send_internal_email'
   | 'generate_coupon'
   | 'wait'
+  | 'wait_until'
   | 'change_order_status'
   | 'add_order_note'
   | 'update_order_meta'
+  | 'update_customer_meta'
+  | 'change_customer_role'
+  | 'resend_wc_email'
   | (string & {});
 
 /** `type` (not `interface`) so it satisfies ReactFlow's `Record<string, unknown>` data constraint. */
@@ -56,6 +66,12 @@ export interface WorkflowGraph {
 
 export type WorkflowStatus = 'inactive' | 'active';
 
+export interface WorkflowWarning {
+  code: 'may_refire';
+  nodeId: string;
+  message: string;
+}
+
 /** A saved workflow, as returned by the REST API. */
 export interface Workflow {
   id: string;
@@ -77,6 +93,8 @@ export interface Workflow {
   lastVersionAt: string;
   /** What blocks Activate / Update, found by the server: the live graph's, and the draft's (null without one). */
   issues: { live: WorkflowIssue[]; draft: WorkflowIssue[] | null };
+  /** What the server wants known but never blocks anything: the live graph's, and the draft's (null without one). */
+  warnings: { live: WorkflowWarning[]; draft: WorkflowWarning[] | null };
   /** Runs started in the last 30 days, any status. */
   runs30d: number;
   /** ISO date the newest run started; null when it never ran. */
@@ -161,6 +179,8 @@ export interface WorkflowIssue {
   nodeId?: string;
   /** `invalid_config`: the step's config key the issue is about, when PHP knows it. */
   field?: string;
+  /** `invalid_config` of a condition: the rule's place, `[item]` or `[group, rule]`. */
+  rule?: number[];
   /** `unlinked` only: every step not connected to the trigger. Workflow-level, so no `nodeId`. */
   nodeIds?: string[];
 }

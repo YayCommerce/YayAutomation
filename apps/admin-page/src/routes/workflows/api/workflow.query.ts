@@ -115,6 +115,8 @@ function useWorkflowMutation<V extends { id?: string }>(
       void queryClient.invalidateQueries({ queryKey: workflowKeys.list() });
       // Every save can add or change a version.
       void queryClient.invalidateQueries({ queryKey: workflowKeys.versions(saved.id) });
+      // Custom field names the saved graph reads or writes: fetched again by the next field that suggests them, not on each autosave.
+      void queryClient.invalidateQueries({ queryKey: ['search', 'customer-meta-keys'], refetchType: 'none' });
       onSaved?.(saved);
     },
     onError: (error) => onFailed?.(error),

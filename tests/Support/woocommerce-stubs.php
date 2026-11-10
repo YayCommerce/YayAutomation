@@ -19,7 +19,7 @@ if ( ! class_exists( 'WC_Order' ) ) {
         /** @var array */
         public $data;
 
-        public function __construct( array $data ) {
+        public function __construct( array $data = [] ) {
             $this->data = $data;
         }
 
@@ -28,12 +28,20 @@ if ( ! class_exists( 'WC_Order' ) ) {
             return array_key_exists( $key, $this->data ) ? $this->data[ $key ] : '';
         }
 
+        public function get_data_store() {
+            return new class() {
+                public function get_internal_meta_keys() {
+                    return [ '_order_total', '_billing_email' ];
+                }
+            };
+        }
+
         public function get_date_created() {
             return $this->data['date_created'] ?? null;
         }
 
         public function get_items() {
-            return [];
+            return $this->data['line_items'] ?? [];
         }
 
         public function get_order_item_totals() {
@@ -46,6 +54,70 @@ if ( ! class_exists( 'WC_Order' ) ) {
         }
     }
 }//end if
+
+if ( ! class_exists( 'WP_Comment' ) ) {
+    /** A comment from an array of fields; `meta` and `status` are the tests' own. */
+    class WP_Comment {
+ // phpcs:ignore Generic.Files.OneObjectStructurePerFile.MultipleFound -- one file of WordPress stand-ins.
+
+        /** @var string */
+        public $comment_ID = '0';
+
+        /** @var string */
+        public $comment_post_ID = '0';
+
+        /** @var string */
+        public $comment_type = 'comment';
+
+        /** @var string */
+        public $comment_parent = '0';
+
+        /** @var string */
+        public $comment_approved = '1';
+
+        /** @var string */
+        public $comment_content = '';
+
+        /** @var string */
+        public $comment_author_email = '';
+
+        /** @var string */
+        public $user_id = '0';
+
+        /** @var array */
+        public $meta = [];
+
+        public function __construct( array $fields ) {
+            foreach ( $fields as $key => $value ) {
+                $this->$key = $value;
+            }
+        }
+    }
+}
+
+if ( ! class_exists( 'WC_Order_Refund' ) ) {
+    /** A refund from an array of getter values; `wc_get_order()` finds it in `FakeOrder::$found`. */
+    class WC_Order_Refund {
+
+        /** @var array */
+        public $data;
+
+        public function __construct( array $data = [] ) {
+            $this->data = $data;
+        }
+
+        public function __call( $name, $args ) {
+            $key = substr( $name, 4 );
+            return array_key_exists( $key, $this->data ) ? $this->data[ $key ] : '';
+        }
+    }
+}
+
+if ( ! function_exists( 'wc_get_price_decimals' ) ) {
+    function wc_get_price_decimals() {
+        return 2;
+    }
+}
 
 if ( ! class_exists( 'WC_Customer' ) ) {
     /** An account from an array of getter values. */

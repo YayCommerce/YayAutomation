@@ -25,5 +25,7 @@ export function useMarkInvalid() {
 /** Error tint and text color, shared by the condition rule boxes. */
 export const errorStyles = { tint: 'border-destructive bg-destructive/5', text: 'text-destructive' } as const;
 
-/** A server issue of the open step about one of its fields (`WorkflowIssue.field`), shown under that field. */
-export const FieldIssueContext = createContext<{ field?: string; message: string } | undefined>(undefined);
+/** A server issue of the open step about one of its fields (`WorkflowIssue.field`), shown under that field; a condition's names its rule (`rule`). */
+export const FieldIssueContext = createContext<{ field?: string; rule?: number[]; message: string } | undefined>(
+  undefined,
+);

@@ -68,6 +68,15 @@ final class RunPresenter {
                 'subjectUrl'   => $customer ? admin_url( 'user-edit.php?user_id=' . (int) $id ) : null,
             ];
         }
+        if ( 'review' === $type && (int) $id > 0 ) {
+            $review = get_comment( (int) $id );
+            return [
+                /* translators: %d: review (comment) id */
+                'subjectLabel' => sprintf( __( 'Review #%d', 'yaymatik' ), (int) $id ),
+                // Not get_edit_comment_link(): empty when this user can't edit it. The page checks access itself.
+                'subjectUrl'   => $review ? admin_url( 'comment.php?action=editcomment&c=' . (int) $id ) : null,
+            ];
+        }
         if ( 'order' !== $type || (int) $id <= 0 ) {
             return [
                 'subjectLabel' => $subject,

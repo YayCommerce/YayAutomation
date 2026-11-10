@@ -105,3 +105,17 @@ describe('schemaFromFields', () => {
     expect(issues({ ...badTag, type: 'c' })).toEqual(['type: Choose an option from the list.']);
   });
 });
+
+describe('a rules field', () => {
+  const rulesSchema = schemaFromFields(
+    [{ key: 'rules', type: 'rules', label: 'Rules', required: true } as StepFieldMeta],
+    'Condition',
+  );
+  const passes = (rules: unknown[]) => v.safeParse(rulesSchema, { rules }).success;
+
+  it('holding only groups is not blank while a group has a started rule', () => {
+    expect(passes([{ match: 'all', rules: [{ field: 'order.total' }] }])).toBe(true);
+    expect(passes([{ match: 'all', rules: [{ field: '' }] }])).toBe(false);
+    expect(passes([{ field: '' }])).toBe(false);
+  });
+});

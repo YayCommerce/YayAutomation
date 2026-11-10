@@ -10,7 +10,7 @@ Sizes are proposals until Jack estimates after M1, as ROADMAP-v1.0 says. **S** �
 
 ## Build order
 
-**F0 → F1 (+ identity phases 1–2) → M1 → M2 → F2 → M7 → M8 → M3 → M4 → M5 → M6 → M9** → v1.1 → v1.2 → v2.0 → Public API
+**F0 → F1 (+ identity phases 1–2) → M1 → M2 → F2 → M7 → M8 → M3 → M4 → M5 → M6 → CT → M9** → v1.1 → v1.2 → v2.0 → Public API
 
 Changes from the ROADMAP-v1.0 order:
 - **F0 and F1 come first.** M1 needs step outputs, templates and the new step contract. M2 needs stored runs. Building M1/M2 on the v0.1 runner means building them twice.
@@ -30,7 +30,8 @@ Changes from the ROADMAP-v1.0 order:
 | M3 | Review request | M | 2 | M2 | ✅ Done |
 | M4 | Welcome series | S | 2 | M2 | ✅ Done |
 | M5 | High-value order alert | S | 1 | — | ✅ Done |
-| M6 | Win-back | M | 2 | M8 | ⏳ |
+| M6 | Win-back | M | 2 | M8 | ✅ Done |
+| CT | Custom workflow catalog | L | 3 | M6 | In progress |
 | M9 | Release hardening | M | 2 | all | — |
 | v1.1 | Control flow | L+ | 3 | v1.0 | — |
 | v1.2 | Yay ecosystem + Pro connectors | L+ | 3 | v1.1 | — |
@@ -49,7 +50,7 @@ Risk scale as in ROADMAP-v1.0: 1 = easy to undo · 2 = new logic · 3 = stores d
 
 Do it when no feature branch is open: it touches every file, so it's cheapest as one quick PR that everyone rebases on once.
 
-- ✅ **F0.0 Verify baseline** *([plan-infra](plan-infra.md))*, the first checkpoint and commit of the F0 branch, before F0.1:
+- ✅ **F0.0 Verify baseline**, the first checkpoint and commit of the F0 branch, before F0.1:
   - phpcs inside the project (`dev/tools/lintphp`), `pnpm lint:php`, the 12 current errors fixed.
   - Vitest with first tests on `model/` and the template registry; `pnpm test`.
   - Stop hook adds tests; CI on `develop`: lint → lint:php → test → build.
@@ -62,7 +63,7 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 **Status:** ✅ Done — backend (PR A #13), identity phase 1 (PR B) and F1.9–F1.12 with identity phase 2 (PR C #15, merge `4ec1468`) merged into `develop`. Regression pass done (manual pass + code review fixes, Template Library and list per mock v2).
 
 **Backend**
-- ✅ **F1.0 PHPUnit** *([plan-infra](plan-infra.md))* — plain unit tests, no WordPress loaded (`dev/tools/phpunit`); CI step. First tests: template parser, Validator v2, Scope.
+- ✅ **F1.0 PHPUnit** — plain unit tests, no WordPress loaded (`dev/tools/phpunit`); CI step. First tests: template parser, Validator v2, Scope.
 - ✅ **F1.1 Storage** *(§2)*
   - `runs`, `run_steps` tables with upgrades.
   - A version's logic never changes (its layout may); runs pin their version.
@@ -76,7 +77,7 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 - ✅ **F1.4 Step contract** *(§5)*
   - `Step` base, `Field` builder, `outputs()`, `StepResult`, summary templates, `icon()` name *(L5)*.
   - Plugin logo: one one-colour SVG file per plugin, drawn as a CSS mask *(L5)*.
-  - Parity test: the PHP catalog and what TS expects can't drift *([plan-infra](plan-infra.md))*.
+  - Parity test: the PHP catalog and what TS expects can't drift.
   - Catalog in `yayMatikMeta`; update `apps/admin-page/src/types/localize.d.ts`.
 - ✅ **F1.5 Executor** *(§3)*
   - Dispatcher replaces `Runner` collect / flush. Worker: Action Scheduler hook + row lock.
@@ -135,7 +136,7 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 **Follow-ups**
 - Flaky `pnpm build` while `pnpm dev` runs (`vite-plugin-external` stand-ins): upgrade or replace the plugin.
 - Preview / Send test show to anyone who can open the editor, the REST routes need `manage_woocommerce`. Fine while the page needs `manage_options`; revisit if that changes.
-- Editor-level test for server issues (merged after autosave, "Needs setup", passed to the panel): in the e2e plan.
+- Editor-level test for server issues (merged after autosave, "Needs setup", passed to the panel): not covered by the e2e journeys.
 
 ## M2 — Wait + run history · L · risk 3
 
@@ -250,19 +251,40 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 
 ## M6 — Win-back · M · risk 2
 
-- ⏳ **M6.1 BE** — Customer inactive trigger: a person's last real order N days old (up to 7 days late), found by a daily job in batches of 200, plus the `trigger_claims` table (workflow_id, subject, claimed_at; unique per workflow and subject) and its store. Once per workflow and order: a later order starts a new period.
-- ⏳ **M6.2 UI** — trigger panel: days (whole number, 7–730, default 90), "Checked once a day". Health check row for the daily job.
-- ⏳ **Templates:** Win-back ×2.
+**Status:** ✅ Done. Merged into `develop` (PR #35, `f747ff8`).
+
+- ✅ **M6.1 BE** — Customer inactive trigger: a person's last real order N days old (up to 7 days late), found by a daily job in batches of 200, plus the `trigger_claims` table (workflow_id, subject, claimed_at; unique per workflow and subject) and its store. Once per workflow and order: a later order starts a new period.
+- ✅ **M6.2 UI** — trigger panel: days (whole number, 7–730, default 90), "Checked once a day". Health check row for the daily job.
+- ✅ **Templates:** Win-back ×2.
+
+## CT — Custom workflow catalog · L · risk 3
+
+Shop owners build their own workflows from New Workflow. Why: [decisions CT](workflow-core-decisions.md#ct-custom-workflow-catalog).
+
+- ⏳ **CT.0** Docs frame.
+- ⏳ **CT.1** Hardening: order meta guard, active-trigger cache, `emits()` and the may-refire warning.
+- ⏳ **CT.2** List type, new operators, relative dates, `is_set`.
+- ⏳ **CT.3** New order and customer condition fields, meta conditions, customer stats.
+- ⏳ **CT.4** Paged REST search for products, categories and coupons.
+- ⏳ **CT.5** Condition form for the new rule kinds.
+- ⏳ **CT.6** Condition groups, one level deep.
+- ⏳ **CT.7** Triggers: Order paid, Order note added.
+- ⏳ **CT.8** Trigger: Order refunded.
+- ⏳ **CT.9** Triggers: Customer order count reaches, Customer total spend reaches.
+- ⏳ **CT.10** Trigger: Review posted.
+- ⏳ **CT.11** Action: Update customer custom field.
+- ⏳ **CT.12** Action: Change customer role.
+- ⏳ **CT.13** Action: Resend WooCommerce email.
+- ⏳ **CT.14** Action: Wait until.
+- **CT.15** Action: Stop waiting runs. Dropped from v1.0, moved to the v1.1 backlog.
+- ⏳ **CT.16** End-to-end check on both order stores, docs pass.
 
 ## M9 — Release hardening · M
 
-- **M9.1** End-to-end test of all 18 templates; classic and block checkout; light and dark admin. Run `./run.sh check-carts` on a MySQL 8 site (erase `REGEXP` tested only on MariaDB 11.2).
+- **M9.1** Each of the 8 workflows once by hand on staging, plus one real inbox check on a dev site; `pnpm e2e` on the release commit; classic and block checkout; light and dark admin. Run `./run.sh check-carts` on a MySQL 8 site (erase `REGEXP` tested only on MariaDB 11.2).
 - **M9.2** Translations and release build.
 - **M9.3** Leave unfinished steps unregistered for the release; check plugin logos load (CSS mask) when assets come from a CDN. *(§8)*
 - **M9.4** Release checklist items picked in ROADMAP-v1.0.
-
-**Follow-ups**
-- Delete `dev/scripts/reset-data.sh` once every dev site has run it (F2).
 
 ---
 
@@ -276,7 +298,7 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 - **V11.6 More control steps** — Switch, Set variable, Stop, A/B split.
 - **V11.7 Retries** — backoff; replay a failed run from the failed step (button in run detail).
 - **V11.8 Product items** — the v1.1 list in ROADMAP-v1.0: Branched post-purchase, Nth order reward, alerts, order tags.
-- **Backlog** — Opt-in mode (consent checkbox) + transactional-only workflows. "Run once per order" through M6's `trigger_claims`: today a status trigger starts again when an order returns to the status (duplicate email / coupon, a second high-value alert). Customer inactive: stop a run when the customer orders during a Wait (`stop_reason`); the v1.0 templates have no Wait. Warn on Activate when another version of the same template workflow is active, or claim per template workflow (e.g. win_back) instead of per workflow.
+- **Backlog** — Opt-in mode (consent checkbox) + transactional-only workflows. "Run once per order" through M6's `trigger_claims`: today a status trigger starts again when an order returns to the status (duplicate email / coupon, a second high-value alert). Customer inactive: stop a run when the customer orders during a Wait (`stop_reason`); the v1.0 templates have no Wait. Warn on Activate when another version of the same template workflow is active, or claim per template workflow (e.g. win_back) instead of per workflow. Run limit per workflow. Customer tags. Stock triggers. Workflow run failed trigger. Random split. Multi-currency totals. Milestones: one claim key for a guest who later makes an account. Order note added: a `note` data item (text, type), so emails can insert the note; today the trigger has none. Stop waiting runs (dropped from v1.0 in CT): cancel one person's waiting runs of the chosen workflows; its workflow list loads with the editor, so a workflow made since shows only after a reload.
 
 ## v1.2 — Yay ecosystem + Pro connectors · L+
 

@@ -110,6 +110,7 @@ function Widget({ errors, ...props }: WidgetProps & { errors: ({ message?: strin
           placeholder={field.placeholder}
           multiline={field.type === 'textarea'}
           variables={!!field.variables}
+          suggest={field.suggest}
           value={String(value ?? '')}
           onChange={onChange}
           onBlur={onBlur}

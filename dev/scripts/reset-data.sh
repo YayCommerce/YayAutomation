@@ -1,17 +1,23 @@
 #!/bin/bash
-# Delete all workflows, versions, runs, carts, trigger claims and settings on the local site (wp-cli); keeps unsubscribes. --yes skips the prompt.
+# Delete all workflows, versions, runs, carts, trigger claims and settings; keeps unsubscribes. --yes skips the prompt. Target: local site, --wp-env or --staging.
 cd "$(dirname "$0")/../.." || exit 1
 [[ -f yaymatik.php ]] || { echo "Not the plugin root: $(pwd)"; exit 1; }
-command -v wp >/dev/null || { echo "Missing: wp-cli"; exit 1; }
 
-if [[ $1 != --yes ]]; then
-  read -r -p "Delete every YayMatik workflow, version, run, cart and setting on this site? Type yes: " answer
+yes=false
+target=
+for arg in "$@"; do
+  if [[ $arg == --yes ]]; then yes=true; else target=$arg; fi
+done
+. dev/scripts/lib/wp-target.sh "$target" || exit 1
+
+if ! $yes; then
+  read -r -p "Delete every YayMatik workflow, version, run, cart and setting on ${target:-the local site}? Type yes: " answer
   [[ $answer == yes ]] || { echo "Cancelled."; exit 1; }
 fi
 
 # The plugin stays unloaded, or its installer would recreate the tables first. Also clears what dev builds
 # before the workflows table left behind: the yaymatik_wf posts and the versions table.
-wp ${WP_PATH:+--path="$WP_PATH"} --skip-plugins="$(basename "$PWD")" eval '
+"${WP[@]}" --skip-plugins="$PLUGIN_FOLDER" eval '
 global $wpdb;
 $meta = $wpdb->query( "DELETE pm FROM {$wpdb->postmeta} pm JOIN {$wpdb->posts} p ON p.ID = pm.post_id WHERE p.post_type = '\''yaymatik_wf'\''" );
 $posts = $wpdb->query( "DELETE FROM {$wpdb->posts} WHERE post_type = '\''yaymatik_wf'\''" );
@@ -23,7 +29,7 @@ foreach ( [ "workflows", "versions", "workflow_versions", "runs", "run_steps", "
         echo "Dropped {$table}\n";
     }
 }
-foreach ( [ "yaymatik_db_version", "yaymatik_settings", "yaymatik_cart_secret", "yaymatik_cleanup_checked_at" ] as $option ) {
+foreach ( [ "yaymatik_db_version", "yaymatik_settings", "yaymatik_cart_secret", "yaymatik_cleanup_checked_at", "yaymatik_active_triggers" ] as $option ) {
     echo delete_option( $option ) ? "Deleted option {$option}\n" : "";
 }
 if ( function_exists( "as_unschedule_all_actions" ) ) {

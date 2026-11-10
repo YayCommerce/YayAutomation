@@ -94,6 +94,15 @@ final class DataRegistry {
                 if ( $field['block'] ) {
                     $client['block'] = true;
                 }
+                if ( $field['help'] ) {
+                    $client['help'] = $field['help'];
+                }
+                if ( $field['search'] ) {
+                    $client['search'] = $field['search'];
+                }
+                if ( ! $field['merge_tag'] ) {
+                    $client['mergeTag'] = false;
+                }
                 $fields[] = $client;
             }
             $items[] = [

@@ -29,6 +29,7 @@ const categoryLabels: Record<NonNullable<Step['category']>, string> = {
   flow: __('Flow', 'yaymatik'),
   cart: __('Carts', 'yaymatik'),
   customer: __('Customers', 'yaymatik'),
+  review: __('Reviews', 'yaymatik'),
 };
 
 const searchLabels: Record<PickableKind, string> = {

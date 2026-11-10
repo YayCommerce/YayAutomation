@@ -4,10 +4,12 @@ namespace YayMatik\Engine\Privacy;
 use YayMatik\Utils\Logger;
 use YayMatik\Utils\SingletonTrait;
 use YayMatik\Workflow\Core\Email\UnsubscribeLink;
+use YayMatik\Workflow\Core\Runtime\PersonSubjects;
 use YayMatik\Workflow\Core\Storage\CartStore;
 use YayMatik\Workflow\Core\Storage\RunStepStore;
 use YayMatik\Workflow\Core\Storage\RunStore;
 use YayMatik\Workflow\Core\Storage\Settings;
+use YayMatik\Workflow\Core\Storage\TriggerClaimStore;
 use YayMatik\Workflow\Core\Storage\UnsubscribeStore;
 
 defined( 'ABSPATH' ) || exit;
@@ -43,12 +45,13 @@ class PersonalData {
      * @param array $erasers
      */
     public function erasers( $erasers ): array {
-        $erasers              = (array) $erasers;
-        $erasers[ self::KEY ] = [
-            'eraser_friendly_name' => __( 'YayMatik', 'yaymatik' ),
-            'callback'             => [ $this, 'erase' ],
-        ];
-        return $erasers;
+        // First: WordPress's comments eraser blanks a review's email and user id, which is how this one finds review runs.
+        return [
+            self::KEY => [
+                'eraser_friendly_name' => __( 'YayMatik', 'yaymatik' ),
+                'callback'             => [ $this, 'erase' ],
+            ],
+        ] + (array) $erasers;
     }
 
     /**
@@ -83,8 +86,20 @@ class PersonalData {
                     ],
                 ];
             }
+            $milestones = TriggerClaimStore::find_keys( $email );
+            if ( $milestones ) {
+                $data[] = [
+                    'group_id'    => 'yaymatik-milestones',
+                    'group_label' => __( 'Customer milestones', 'yaymatik' ),
+                    'item_id'     => 'yaymatik-milestones',
+                    'data'        => [
+                        $this->value( __( 'Workflows started for this email', 'yaymatik' ), (string) count( $milestones ) ),
+                        $this->value( __( 'Last started', 'yaymatik' ), get_date_from_gmt( (string) end( $milestones )['claimed_at'] ) ),
+                    ],
+                ];
+            }
         }
-        $runs = RunStore::for_export( $email, $this->subjects( $email ), self::PER_PAGE, ( $page - 1 ) * self::PER_PAGE );
+        $runs = RunStore::for_export( $email, PersonSubjects::for_email( $email ), self::PER_PAGE, ( $page - 1 ) * self::PER_PAGE );
         foreach ( $runs as $run ) {
             $data[] = $this->run_item( $run, $email );
         }
@@ -117,7 +132,7 @@ class PersonalData {
             $result['messages'][]     = __( 'The unsubscribe record is kept so this address gets no more workflow emails.', 'yaymatik' );
         }
         // Read on every page: the carts, whose ids are run subjects, stay until the last one.
-        $subjects  = $this->subjects( $email );
+        $subjects  = PersonSubjects::for_email( $email );
         $runs      = RunStore::ids_mentioning( $email, $subjects, self::PER_PAGE );
         $ids       = array_keys( $runs );
         $waiting   = array_keys( $runs, RunStore::STATUS_WAITING, true );
@@ -149,43 +164,13 @@ class PersonalData {
             return $result;
         }
         $result['items_removed'] = CartStore::delete_for_email( $email ) > 0 || $result['items_removed'];
+        $claims                  = TriggerClaimStore::delete_keys( $email );
+        if ( false === $claims ) {
+            $result['items_retained'] = true;
+            $result['messages'][]     = __( 'Some customer milestone records could not be erased. See WooCommerce → Status → Logs (yaymatik).', 'yaymatik' );
+        }
+        $result['items_removed'] = $claims > 0 || $result['items_removed'];
         return $result;
-    }
-
-    /**
-     * Run subjects of the person's orders, carts and accounts: by billing email too, as a welcome run sends there.
-     *
-     * @param string $email Normalized.
-     * @return string[]
-     */
-    private function subjects( string $email ): array {
-        $orders   = wc_get_orders(
-            [
-                'customer' => $email,
-                'return'   => 'ids',
-                'limit'    => -1,
-                'type'     => 'shop_order',
-            ]
-        );
-        $subjects = array_map( fn( $id ) => 'order:' . (int) $id, (array) $orders );
-        foreach ( CartStore::for_email( $email ) as $cart ) {
-            $subjects[] = 'cart:' . (int) $cart['id'];
-        }
-        $users = get_users(
-            [
-                'meta_key'   => 'billing_email', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
-                'meta_value' => $email, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
-                'fields'     => 'ID',
-            ]
-        );
-        $user  = get_user_by( 'email', $email );
-        if ( $user ) {
-            $users[] = $user->ID;
-        }
-        foreach ( array_unique( array_map( 'intval', $users ) ) as $user_id ) {
-            $subjects[] = 'user:' . $user_id;
-        }
-        return $subjects;
     }
 
     public function policy_text(): void {
@@ -201,7 +186,8 @@ class PersonalData {
                 (int) Settings::get( 'cart_retention_days' ),
                 (int) Settings::get( 'run_retention_days' )
             ),
-            __( 'When you ask us to erase your personal data, your carts are deleted and your email address is removed from those records; the records stay without it. Automated emails still scheduled for you are cancelled. If you unsubscribed from our emails, that record is kept so you get no more emails from us.', 'yaymatik' ),
+            __( 'Some automated emails are sent once per customer, for example when your orders reach a number. To remember that one was sent to a guest, we keep a one-way hash of your email address, never the address itself.', 'yaymatik' ),
+            __( 'When you ask us to erase your personal data, your carts and those hashes are deleted, and your email address is removed from those records; the records stay without it. Automated emails still scheduled for you are cancelled. If you unsubscribed from our emails, that record is kept so you get no more emails from us.', 'yaymatik' ),
         ];
         $html       = implode( '', array_map( fn( string $text ) => '<p>' . esc_html( $text ) . '</p>', $paragraphs ) );
         wp_add_privacy_policy_content( 'YayMatik', wp_kses_post( $html ) );

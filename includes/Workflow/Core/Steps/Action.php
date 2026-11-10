@@ -13,10 +13,11 @@ defined( 'ABSPATH' ) || exit;
  */
 abstract class Action extends Step {
 
-    public const CATEGORY_EMAIL  = 'email';
-    public const CATEGORY_ORDER  = 'order';
-    public const CATEGORY_COUPON = 'coupon';
-    public const CATEGORY_FLOW   = 'flow';
+    public const CATEGORY_EMAIL    = 'email';
+    public const CATEGORY_ORDER    = 'order';
+    public const CATEGORY_COUPON   = 'coupon';
+    public const CATEGORY_CUSTOMER = 'customer';
+    public const CATEGORY_FLOW     = 'flow';
 
     public function kind(): string {
         return self::KIND_ACTION;
@@ -27,6 +28,15 @@ abstract class Action extends Step {
 
     /** Data items the action needs whatever its config, e.g. `order` to change an order's status. */
     abstract public function requires(): array;
+
+    /**
+     * Trigger ids this action can set off.
+     *
+     * @return string[]
+     */
+    public function emits(): array {
+        return [];
+    }
 
     /**
      * The data items in `requires()`; the Validator checks what merge tags read.

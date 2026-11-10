@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 import { structureErrors } from '../model/structure';
 import { validateWorkflow } from '../model/validation';
+import { steps } from '../steps';
 import type { WaitConfig } from '../steps/actions/wait/schema';
 import { emailMessage } from './core/email';
 import {
@@ -20,6 +21,20 @@ describe('templates', () => {
     expect(templates.length).toBeGreaterThan(0);
     expect(new Set(templates.map((template) => template.id)).size).toBe(templates.length);
   });
+
+  it.each(templates.map((template) => [template.id, template] as const))(
+    '%s keeps its conditions exactly as written',
+    (_id, template) => {
+      for (const node of template.graph.nodes.filter((n) => n.kind === 'condition')) {
+        const { match, rules } = node.data.config as { match: string; rules: object[] };
+        // A template may leave out `valueType`: it reads as `value`.
+        expect(steps.condition.normalize(node.data.config)).toEqual({
+          match,
+          rules: rules.map((rule) => ({ valueType: 'value', ...rule })),
+        });
+      }
+    },
+  );
 
   it.each(templates.map((template) => [template.id, template] as const))(
     '%s saves and can be activated as is',

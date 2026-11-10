@@ -318,6 +318,13 @@ final class FieldTest extends TestCase {
         );
     }
 
+    public function test_suggest_names_the_list_and_keeps_any_text(): void {
+        $field = Field::text( 'key', 'Field name' )->suggest( 'customer-meta-keys' );
+        $this->assertSame( 'customer-meta-keys', $field->to_array()['suggest'] );
+        $this->assertSame( 'not_suggested', $field->sanitize( 'not_suggested' ) );
+        $this->assertNull( $field->validate( 'not_suggested' ) );
+    }
+
     public function test_to_array_sends_only_what_is_set(): void {
         $this->assertSame(
             [
@@ -371,5 +378,22 @@ final class FieldTest extends TestCase {
         $this->assertSame( '%s needs a note.', $field->to_array()['requiredMessage'], 'the catalog gets the template' );
         $this->assertArrayNotHasKey( 'requiredMessage', Field::text( 'a', 'A' )->required()->to_array() );
         $this->assertSame( 'This field is required.', Field::text( 'a', 'A' )->required()->validate( '' ), 'without a message' );
+    }
+
+    public function test_rules_of_only_groups_read_as_started_when_a_group_has_a_rule(): void {
+        $error = fn( array $rule ) => Field::first_error(
+            [ Field::rules( 'rules', 'Rules' )->required() ],
+            [
+                'rules' => [
+                    [
+                        'match' => 'all',
+                        'rules' => [ $rule ],
+                    ],
+                ],
+            ],
+            'Condition'
+        );
+        $this->assertNull( $error( [ 'field' => 'order.total' ] ) );
+        $this->assertNotNull( $error( [ 'field' => '' ] ) );
     }
 }

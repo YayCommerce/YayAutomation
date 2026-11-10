@@ -246,6 +246,8 @@ final class RunStore {
     }
 
     /**
+     * Waiting runs about these subjects.
+     *
      * @param string[] $subjects
      * @return int[]
      */
@@ -489,8 +491,9 @@ final class RunStore {
         $steps  = RunStepStore::table();
         $like   = self::json_like( $email );
         $regexp = self::text_regexp( $email );
-        $sql    = "r.scope LIKE %s OR r.error REGEXP %s OR EXISTS (SELECT 1 FROM {$steps} s WHERE s.run_id = r.id AND (s.input LIKE %s OR s.output LIKE %s OR s.error REGEXP %s))";
-        $params = [ $like, $regexp, $like, $like, $regexp ];
+        // A guest's milestone run holds only the claim key made from the email.
+        $sql    = "r.scope LIKE %s OR r.scope LIKE %s OR r.error REGEXP %s OR EXISTS (SELECT 1 FROM {$steps} s WHERE s.run_id = r.id AND (s.input LIKE %s OR s.output LIKE %s OR s.error REGEXP %s))";
+        $params = [ $like, self::json_like( TriggerClaimStore::email_key( $email ) ), $regexp, $like, $like, $regexp ];
         if ( $subjects ) {
             $sql   .= ' OR (r.subject IN (' . implode( ',', array_fill( 0, count( $subjects ), '%s' ) ) . ')' . ( $waiting_subjects ? ' AND r.status = %s' : '' ) . ')';
             $params = array_merge( $params, array_values( $subjects ), $waiting_subjects ? [ self::STATUS_WAITING ] : [] );
@@ -584,7 +587,9 @@ final class RunStore {
      * @param string $email
      */
     private static function replace_json( string $json, string $email ): string {
-        return str_ireplace( (string) wp_json_encode( $email ), '"[deleted]"', $json );
+        // A guest's milestone run keeps the claim key made from the email.
+        $found = [ (string) wp_json_encode( $email ), (string) wp_json_encode( TriggerClaimStore::email_key( $email ) ) ];
+        return str_ireplace( $found, '"[deleted]"', $json );
     }
 
     /**

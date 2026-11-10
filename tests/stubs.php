@@ -272,6 +272,44 @@ if ( ! function_exists( 'get_option' ) ) {
     }
 }
 
+if ( ! function_exists( 'wp_timezone' ) ) {
+    function wp_timezone() {
+        return new DateTimeZone( get_option( 'timezone_string', 'UTC' ) );
+    }
+}
+
+if ( ! function_exists( 'wc_get_is_paid_statuses' ) ) {
+    function wc_get_is_paid_statuses() {
+        return [ 'processing', 'completed' ];
+    }
+}
+
+if ( ! function_exists( 'get_userdata' ) ) {
+    // Users a test set in `$GLOBALS['yaymatik_test_users']`, id => object with `roles`, `user_registered`, `meta`.
+    function get_userdata( $user_id ) {
+        return $GLOBALS['yaymatik_test_users'][ $user_id ] ?? false;
+    }
+}
+
+if ( ! function_exists( 'get_user_meta' ) ) {
+    function get_user_meta( $user_id, $key = '', $single = false ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- same signature as WordPress.
+        return $GLOBALS['yaymatik_test_users'][ $user_id ]->meta[ $key ] ?? '';
+    }
+}
+
+if ( ! function_exists( 'wc_get_product_cat_ids' ) ) {
+    // Categories a test set in `$GLOBALS['yaymatik_test_categories']`, product id => term ids.
+    function wc_get_product_cat_ids( $product_id ) {
+        return $GLOBALS['yaymatik_test_categories'][ $product_id ] ?? [];
+    }
+}
+
+if ( ! function_exists( 'get_term_field' ) ) {
+    function get_term_field( $field, $term, $taxonomy = '', $context = 'display' ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- same signature as WordPress.
+        return 'Category ' . $term;
+    }
+}
+
 if ( ! function_exists( 'update_option' ) ) {
     function update_option( $option, $value, $autoload = null ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- same signature as WordPress.
         $GLOBALS['yaymatik_test_options'][ $option ] = $value;
@@ -294,5 +332,119 @@ if ( ! function_exists( 'set_transient' ) ) {
     function set_transient( $transient, $value, $expiration = 0 ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- same signature as WordPress.
         $GLOBALS['yaymatik_test_transients'][ $transient ] = $value;
         return true;
+    }
+}
+
+if ( ! function_exists( 'add_action' ) ) {
+    // Same store as `add_filter()`; priority and argument count don't matter to the tests.
+    function add_action( $hook_name, $callback ) {
+        return add_filter( $hook_name, $callback );
+    }
+}
+
+if ( ! function_exists( 'do_action' ) ) {
+    function do_action( $hook_name, ...$args ) {
+        foreach ( $GLOBALS['yaymatik_test_filters'][ $hook_name ] ?? [] as $callback ) {
+            $callback( ...$args );
+        }
+    }
+}
+
+if ( ! function_exists( 'get_comment' ) ) {
+    // Comments a test set in `$GLOBALS['yaymatik_test_comment_rows']`, id => object with WP_Comment's fields and `meta`.
+    function get_comment( $comment_id ) {
+        return $GLOBALS['yaymatik_test_comment_rows'][ $comment_id ] ?? null;
+    }
+}
+
+if ( ! function_exists( 'get_comment_meta' ) ) {
+    function get_comment_meta( $comment_id, $key = '', $single = false ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- same signature as WordPress.
+        return $GLOBALS['yaymatik_test_comment_rows'][ $comment_id ]->meta[ $key ] ?? '';
+    }
+}
+
+if ( ! function_exists( 'wc_strtolower' ) ) {
+    function wc_strtolower( $text ) {
+        return mb_strtolower( $text );
+    }
+}
+
+if ( ! function_exists( 'wp_get_comment_status' ) ) {
+    function wp_get_comment_status( $comment ) {
+        return '1' === (string) $comment->comment_approved ? 'approved' : 'unapproved';
+    }
+}
+
+if ( ! function_exists( 'wc_get_product' ) ) {
+    // Products a test set in `$GLOBALS['yaymatik_test_products']`, by id.
+    function wc_get_product( $product_id ) {
+        return $GLOBALS['yaymatik_test_products'][ $product_id ] ?? false;
+    }
+}
+
+if ( ! function_exists( 'wp_slash' ) ) {
+    function wp_slash( $value ) {
+        return is_string( $value ) ? addslashes( $value ) : $value;
+    }
+}
+
+if ( ! function_exists( 'metadata_exists' ) ) {
+    function metadata_exists( $meta_type, $object_id, $meta_key ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundBeforeLastUsed -- same signature as WordPress.
+        return isset( $GLOBALS['yaymatik_test_users'][ $object_id ]->meta ) && array_key_exists( $meta_key, $GLOBALS['yaymatik_test_users'][ $object_id ]->meta );
+    }
+}
+
+if ( ! function_exists( 'update_user_meta' ) ) {
+    // Unslashes its key and value, as WordPress does.
+    function update_user_meta( $user_id, $meta_key, $meta_value ) {
+        if ( ! empty( $GLOBALS['yaymatik_test_meta_write_fails'] ) ) {
+            return false;
+        }
+        $GLOBALS['yaymatik_test_users'][ $user_id ]->meta[ stripslashes( $meta_key ) ] = stripslashes( $meta_value );
+        return true;
+    }
+}
+
+// phpcs:disable Generic.Files.OneObjectStructurePerFile.MultipleFound -- one file of stand-ins, like WP_Error above.
+if ( ! class_exists( 'WP_Roles' ) ) {
+    /** The roles a test sets: slug => [ 'name' => …, 'capabilities' => [ cap => bool ] ]. */
+    class WP_Roles {
+
+        /** @var array */
+        public $roles;
+
+        public function __construct( array $roles = [] ) {
+            $this->roles = $roles;
+        }
+
+        public function get_names() {
+            return array_map( fn( $role ) => $role['name'], $this->roles );
+        }
+    }
+}
+
+// phpcs:enable Generic.Files.OneObjectStructurePerFile.MultipleFound
+
+if ( ! function_exists( 'wp_roles' ) ) {
+    function wp_roles() {
+        return $GLOBALS['yaymatik_test_roles'] ?? new WP_Roles();
+    }
+}
+
+if ( ! function_exists( 'translate_user_role' ) ) {
+    function translate_user_role( $name ) {
+        return $name;
+    }
+}
+
+if ( ! function_exists( 'is_super_admin' ) ) {
+    function is_super_admin( $user_id = false ) {
+        return ! empty( $GLOBALS['yaymatik_test_super_admins'][ $user_id ] );
+    }
+}
+
+if ( ! function_exists( 'user_can' ) ) {
+    function user_can( $user, $capability ) {
+        return ! empty( $user->allcaps[ $capability ] );
     }
 }

@@ -15,6 +15,9 @@ composer.lock
 # Pinned dev tools: CI and every machine lint with the same versions.
 !/dev/tools/*/composer.lock
 /dev/tools/phpunit/.phpunit.result.cache
+/dev/e2e/test-results
+/dev/e2e/report
+/dev/e2e/.auth
 
 # Logs
 logs

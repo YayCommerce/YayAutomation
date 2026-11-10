@@ -10,9 +10,15 @@ defined( 'ABSPATH' ) || exit;
  * - `label`       string
  * - `type`        TYPE_*: picks the condition operators
  * - `value_type`  Type, default from `type`; `entity` or `list<entity>` holds Refs (a relation)
- * - `value`       fn( $object ): mixed: float, `Y-m-d`, slug, bool, string, or Ref(s)
+ * - `value`       fn( $object ): mixed: float, `Y-m-d`, slug, bool, string, string[] (list), or Ref(s)
  * - `display`     fn( $object, bool $html ): string; default the value (an enum's option label)
- * - `options`     fn(): array value => label, enum only
+ * - `options`     fn(): array value => label, enum and list
+ * - `timestamp`   fn( $object ): ?int, the moment behind a date, for "in the last N hours"; without it a date counts as 00:00 store time
+ * - `help`        string shown under a rule on this field
+ * - `search`      `product`, `category` or `coupon`: a list searched through REST, its values never in `yayMatikMeta`
+ * - `meta`        fn( $object, string $key ): string, a custom field; for `TYPE_META`, which compares key + value
+ * - `meta_blocked` fn( string $key ): bool, keys a rule can't read
+ * - `merge_tag`   bool, default true; false = not offered by "Insert variable" and not a known tag
  * - `conditional` bool, default true; false = display only
  * - `block`       bool, default false; a ready-made email block (HTML display), inserted on its own line
  */
@@ -23,6 +29,8 @@ abstract class DataItem {
     public const TYPE_ENUM    = 'enum';
     public const TYPE_DATE    = 'date';
     public const TYPE_BOOLEAN = 'boolean';
+    public const TYPE_LIST    = 'list';
+    public const TYPE_META    = 'meta';
 
     /** @var array[]|null */
     private $fields = null;
@@ -70,15 +78,31 @@ abstract class DataItem {
             $this->fields = [];
             foreach ( $definitions as $key => $field ) {
                 $this->fields[ $key ] = $field + [
-                    'options'     => null,
-                    'conditional' => true,
-                    'block'       => false,
-                    'display'     => null,
-                    'value_type'  => Type::from_condition_type( $field['type'] ),
+                    'options'      => null,
+                    'conditional'  => true,
+                    'block'        => false,
+                    'display'      => null,
+                    'timestamp'    => null,
+                    'help'         => null,
+                    'search'       => null,
+                    'meta'         => null,
+                    'meta_blocked' => null,
+                    'merge_tag'    => true,
+                    'value_type'   => Type::from_condition_type( $field['type'] ),
                 ];
             }
         }
         return $this->fields;
+    }
+
+    /**
+     * Plain text, or the same escaped for HTML.
+     *
+     * @param string $text
+     * @param bool   $html
+     */
+    protected static function text( string $text, bool $html ): string {
+        return $html ? esc_html( $text ) : $text;
     }
 
     /**

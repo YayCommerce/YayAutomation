@@ -88,7 +88,7 @@ We chose these 8 because they cover what merchants install an automation plugin 
 
 ### Editor
 
-**Today:** a visual canvas that pans on wheel or trackpad and zooms on Ctrl/Cmd + wheel or pinch, with 2 order triggers, Cart abandoned, Checkout abandoned, Customer account created and Customer inactive, 4 actions (staff email, change order status, order note, order custom field), conditions, "Insert variable", and "Needs setup" / error highlights.
+**Today:** a visual canvas that pans on wheel or trackpad and zooms on Ctrl/Cmd + wheel or pinch, with Order created, Order status changed, Order paid, Order refunded, Order note added, Cart abandoned, Checkout abandoned, Customer account created, Customer inactive, Customer order count reaches, Customer total spend reaches, Review posted (picker sections Order, Carts, Customers, Reviews), actions for staff email, order status, order note, order and customer custom fields (customer field names suggested from other workflows), customer role (add, remove or replace; only roles with customer rights are listed, staff never changed), resending one of WooCommerce's customer order emails (processing, completed, on-hold, order details, cancelled, failed, review request when WooCommerce has it), conditions over order and customer data (products, categories, coupons, countries, totals spent, custom fields and more), "Insert variable", and "Needs setup" / error highlights.
 
 **v1.0 adds:**
 - **Pickers:** WooCommerce gets new sections: Carts and Customers for triggers, Coupons for actions. A new YayMatik group holds Wait. *(M1, M2, M4, M6, M8)*
@@ -97,12 +97,14 @@ We chose these 8 because they cover what merchants install an automation plugin 
   - Customer account created: no settings.
   - Customer inactive: number of days, a whole number from 7 to 730 (default 90), with "Checked once a day".
 - **Wait:** a number and a unit (minutes, hours, days, weeks), up to a year; the card reads e.g. "Wait 1 hour" with a clock icon. *(M2)*
+- **Wait until:** a time of day in store time, any minute, and, optionally, weekdays; the card reads e.g. "Until 11:10 AM · Mon–Fri". Help under the time: runs resume when WordPress next runs its scheduled tasks, so a few minutes later on a quiet store. *(CT)*
 - **Generate coupon:** discount type, amount, expires after N days, minimum spend, individual use, limited to the customer's email, code prefix. The card reads e.g. "10 % off, expires in 7 days". Later emails can include the coupon code. *(M1)*
 - **Send email:** To (the customer's email by default; editable, proposal), Subject, Heading, Message, each with "Insert variable". Note under the form: "An unsubscribe link is added automatically". *(M1)*
   - **Preview** shows the email as the customer sees it, with sample data from a recent order or cart.
   - **Send test** sends it to the admin who is logged in.
 - **Insert variable:** lists only what the step can use, e.g. the coupon only below a Generate coupon step. *(M1)*
 - **Condition:** yes/no checks (first order, unsubscribed, products not reviewed, …) need no value, only "Is true" or "Is false". *(M1)*
+- **Condition rule kinds:** each rule draws what its comparison takes: a list of options or a search (products, categories, coupons) with chips, an amount with hours or days, no value for "is set", or a custom field name with its comparison. Customer custom fields suggest names other workflows use. A condition can hold groups, one level deep, each with its own all / any. *(CT)*
 - **Warnings before Activate:** a step uses a coupon with no Generate coupon above it; a cart trigger while cart tracking is off. *(M1, M8)*
 
 **States:**
@@ -256,13 +258,14 @@ Risk scale: **1** = UI or template content, easy to undo · **2** = new feature 
 | M4 | Welcome series | Account created trigger; **Welcome series** (2) | Jack | Todo | 2 | M2 |
 | M5 | High-value order alert | Template moved to "order is paid"; **High-value order alert** (1) | Jack | Todo | 1 | — |
 | M6 | Win-back | Inactive customer trigger (checked daily); **Win-back 90 days** (2) | Jack | Todo | 2 | M2 |
+| CT | Custom workflow catalog | 6 triggers, about 25 condition fields, condition groups, 5 actions and a fix to Update order custom field, for workflows built from New Workflow | Jack | Todo | 3 | M6 |
 | M7 | Cart tracking + Settings | Tracks carts and guest emails at checkout, restore link, Settings page | Jack | Todo | 3 | — |
 | M8 | Abandoned cart + checkout | Both triggers; **Abandoned cart** (3), **Abandoned checkout** (2) | Jack | Todo | 2 | M1, M2, M7 |
-| M9 | Release hardening | End-to-end test of all 18 templates, translations, release build; plus items picked from the release checklist below | Jack | Todo | 2 | all |
+| M9 | Release hardening | Each of the 8 workflows tested on staging, e2e journeys, translations, release build; plus items picked from the release checklist below | Jack | Todo | 2 | all |
 
 One developer (Jack) builds v1.0. Full v1.0 scope does not fit by Nov 30 with one developer. Estimates and the release date will be added after M1. M1 builds the core pieces (customer emails, coupons, unsubscribe), so it gives a real measure of pace. The developer also supports other plugins at times, which can shift dates.
 
-**Build order:** M1 → M2 → M7 → M8 → M3 → M4 → M5 → M6 → M9. Abandoned cart brings the most revenue, so it comes right after the foundations.
+**Build order:** M1 → M2 → M7 → M8 → M3 → M4 → M5 → M6 → CT → M9. Abandoned cart brings the most revenue, so it comes right after the foundations.
 "Depends on" lists what must exist first, not the order of work: M3, M4 and M6 only need M2; M5 needs nothing and can move earlier if useful.
 
 **Cut candidates if we run late (proposal):** M5 High-value order alert, the "Upsell after 30 days" template, the "Welcome 3-email series" template. If all 3 are cut, v1.0 ships 7 workflows / 16 templates.
@@ -271,7 +274,7 @@ One developer (Jack) builds v1.0. Full v1.0 scope does not fit by Nov 30 with on
 
 v1.0 can ship when all of these are true:
 
-1. **Every one of the 18 templates** installs, turns on, starts from a real store event, runs end to end (including waits), and the email arrives in the inbox with correct content.
+1. **Each of the 8 workflows**, tested once by hand on staging, installs, turns on, starts from a real store event, runs end to end (including waits), and its email in the staging mail log has the correct content. One email also arrives in a real inbox from a dev site. The e2e journeys (`pnpm e2e`) pass on the release commit.
 2. Unsubscribe works: the link unsubscribes, and that customer gets no more workflow emails.
 3. Coupons from templates work at checkout and expire as set.
 4. Deactivating a workflow stops it right away, including runs that are waiting.
@@ -292,7 +295,6 @@ These are missing today. They are **not** in scope until picked:
 | WordPress.org-style readme | Missing |
 | Data cleanup on uninstall | Not handled |
 | "Requires WooCommerce" in plugin header | Missing |
-| Version number to 1.0.0 | Still 0.1.0 |
 
 ## Main risks
 
@@ -304,11 +306,11 @@ These are missing today. They are **not** in scope until picked:
 | Privacy (tracking carts and emails) | Legal complaints | Cart tracking off until turned on (proposal), personal data export/erase, data deleted after a set time |
 | Many coupons created | Clutter, misuse | Coupons expire and are limited to the customer's email by default |
 | Large stores: daily inactive-customer check and cart tracking load | Slow site | Process in small batches in the background |
-| 18 templates to test end to end | Release slips | Test each template as its milestone lands, not only in M9 |
+| 8 workflows to test end to end | Release slips | Test each workflow on staging as its milestone lands, not only in M9 |
 
 ## Out of scope
 
-- **v1.1:** Branched post-purchase, Nth order reward, Negative review alert, Unusual quantity alert, Slack message, order tags.
+- **v1.1:** Branched post-purchase, Nth order reward, Negative review alert, Unusual quantity alert, Slack message, order tags, the Stop waiting runs action.
 - **v1.2:** Lifetime spend tiers, Review reward.
 - Later: admin lists of unsubscribed customers and tracked carts (in v1.0, run history shows when an email was skipped and why), AI workflow assistant, import, abandoned-cart revenue reports, drag-and-drop email designer, A/B tests, SMS.
 

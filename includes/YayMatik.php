@@ -25,6 +25,7 @@ final class YayMatik {
             \YayMatik\Workflow\Core\Runtime\InactiveSweep::boot();
             \YayMatik\Engine\Privacy\PersonalData::get_instance();
             \YayMatik\Engine\API\HealthRoutes::get_instance();
+            \YayMatik\Engine\API\SearchRoutes::get_instance();
         }
 
         $this->register_admin_menu();

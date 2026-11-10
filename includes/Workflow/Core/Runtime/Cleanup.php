@@ -6,6 +6,7 @@ use YayMatik\Workflow\Core\Storage\CartStore;
 use YayMatik\Workflow\Core\Storage\RunStore;
 use YayMatik\Workflow\Core\Storage\Settings;
 use YayMatik\Workflow\Core\Storage\TriggerClaimStore;
+use YayMatik\Workflow\Core\Storage\WorkflowStore;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -59,6 +60,8 @@ final class Cleanup {
     }
 
     public static function run(): void {
+        // Repairs a list a lost race or a lock timeout left wrong.
+        WorkflowStore::refresh_active_triggers();
         $deadline = microtime( true ) + self::BUDGET;
         // Carts first: they hold emails, and the privacy text promises their deletion; runs get what's left.
         $carts = gmdate( 'Y-m-d H:i:s', time() - (int) Settings::get( 'cart_retention_days' ) * DAY_IN_SECONDS );

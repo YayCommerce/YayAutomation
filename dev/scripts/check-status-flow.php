@@ -15,7 +15,7 @@
 
 require_once __DIR__ . '/check-run.php';
 
-const META_KEY      = '_yaymatik_check';
+const META_KEY      = '_check_status_flow';
 const TARGET_STATUS = 'failed';
 // From on-hold and back: no paid / completed dates, no stock change.
 

@@ -159,6 +159,23 @@ final class CatalogTest extends TestCase {
         $this->assertSame( 'number', $fields['customer.paid_order_count']['type'] );
     }
 
+    public function test_search_lists_send_their_kind_and_no_values(): void {
+        $fields = [];
+        foreach ( DataRegistry::to_client() as $item ) {
+            $fields += array_column( $item['fields'], null, 'key' );
+        }
+        foreach ( [
+            'order.product_ids'              => 'product',
+            'order.category_ids'             => 'category',
+            'order.coupon_codes'             => 'coupon',
+            'customer.purchased_product_ids' => 'product',
+        ] as $key => $search ) {
+            $this->assertSame( $search, $fields[ $key ]['search'], $key );
+            $this->assertArrayNotHasKey( 'options', $fields[ $key ], $key );
+        }
+        $this->assertArrayNotHasKey( 'search', $fields['order.total'] );
+    }
+
     public function test_data_items_name_a_step_icon(): void {
         foreach ( DataRegistry::to_client() as $item ) {
             $this->assertContains( $item['icon'], StepIcons::NAMES, $item['id'] );

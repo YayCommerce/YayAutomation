@@ -29,7 +29,7 @@ use YayMatik\Workflow\Core\Storage\UnsubscribeStore;
 use YayMatik\Workflow\Core\Storage\WorkflowStore;
 
 const CHECK_ORDERS_PREFIX = 'Check orders:';
-const CHECK_ORDERS_META   = '_yaymatik_check_orders';
+const CHECK_ORDERS_META   = '_check_orders';
 const CHECK_ORDERS_STAFF  = 'staff-check@example.test';
 const CHECK_ORDERS_UNSUB  = 'zed.unsubscribed@example.test';
 
