@@ -83,7 +83,7 @@ A free zip that passes the WordPress.org checklist, a light-only admin with a he
 
 ### Run 2 (after Jack's checks: 8 workflows on staging, inbox check, screens of D1, D9, D20)
 
-8a. **Build: free admin-shell patch, composer.json, adapter, sed line, boot, S9, jsx-runtime, exceptions** (CP8AHASH) — Risk: 2
+8a. ✅ **Build: free admin-shell patch, composer.json, adapter, sed line, boot, S9, jsx-runtime, exceptions** (ca35c23) — Risk: 2
 8b. **`%i` for table and column names** — Risk: 3
 8c. **Q12 / Q13: query limits and catalog visibility** — Risk: 2
 8d. **Q3 text rules scope; Q6 / Q11 clean-site run** — Risk: 2

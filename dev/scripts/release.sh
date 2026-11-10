@@ -51,15 +51,18 @@ rsync -rc --exclude-from="$EXCLUDES" "$PROJECT_PATH/" "$DEST_PATH/" --delete --d
 
 # WordPress.org allows no license client or updater in the free plugin: admin-shell's src/License goes, as in
 # YayBulkOrder's lite build, and the rest of admin-shell gets class_exists guards (checked, see the script).
+# Both editions get the ABSPATH guard in every admin-shell file.
 if [[ $EDITION == free ]]; then
     rm -rf "$DEST_PATH/vendor-prefixed/src/License"
     php "$PROJECT_PATH/dev/scripts/lib/free-admin-shell.php" "$DEST_PATH/vendor-prefixed" || exit 1
+else
+    php "$PROJECT_PATH/dev/scripts/lib/free-admin-shell.php" "$DEST_PATH/vendor-prefixed" --abspath-only || exit 1
 fi
 
 # Ship only the runtime autoloader: drop dev packages + unscoped admin-shell, rebuild a no-dev classmap.
-# composer.json ships too: Plugin Check asks for it next to vendor/.
+# composer.json ships (Plugin Check asks for it next to vendor/); the lock is only for the dump.
 find "$DEST_PATH/vendor" -mindepth 1 -maxdepth 1 ! -name autoload.php ! -name composer -exec rm -rf {} +
-cp "$PROJECT_PATH/composer.json" "$PROJECT_PATH/composer.lock" "$DEST_PATH/"
+cp "$PROJECT_PATH/composer.lock" "$DEST_PATH/"
 composer dump-autoload --optimize --classmap-authoritative --no-dev --working-dir="$DEST_PATH" || exit 1
 rm -f "$DEST_PATH/composer.lock"
 
