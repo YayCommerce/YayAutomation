@@ -4,6 +4,7 @@ import type { LucideIcon } from 'lucide-react';
 import { __, sprintf } from '@wordpress/i18n';
 
 import { shortDayTime } from '@/lib/helpers/date.helper';
+import { cn } from '@/lib/utils';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/components/ui/sonner';
@@ -156,7 +157,8 @@ function StepLine({
   time: string | null;
 }) {
   return (
-    <li className="flex items-start gap-3">
+    // A row with no detail line centres its title on the tile; with one, both lines start at its top.
+    <li className={cn('flex gap-3', result ? 'items-start' : 'items-center')}>
       <StepTile kind={kind} icon={icon} empty={empty} />
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline justify-between gap-3">

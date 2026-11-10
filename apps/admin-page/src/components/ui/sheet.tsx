@@ -4,6 +4,7 @@ import * as React from 'react';
 import { forwardRef } from 'react';
 import * as SheetPrimitive from '@radix-ui/react-dialog';
 import { XIcon } from 'lucide-react';
+import { __ } from '@wordpress/i18n';
 
 import { cn } from '@/lib/utils';
 
@@ -27,6 +28,7 @@ function SheetCloseIcon({ className, ...props }: React.ComponentProps<typeof She
       {...props}
     >
       <XIcon className="size-5" />
+      <span className="sr-only">{__('Close', 'yaymatik')}</span>
     </SheetPrimitive.Close>
   );
 }

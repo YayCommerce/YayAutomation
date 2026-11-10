@@ -1,6 +1,7 @@
 import * as React from 'react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { XIcon } from 'lucide-react';
+import { __ } from '@wordpress/i18n';
 
 import { cn } from '@/lib/utils';
 
@@ -34,7 +35,7 @@ function DialogCloseIcon({ className, ...props }: React.ComponentProps<typeof Di
       {...props}
     >
       <XIcon className="size-5" />
-      <span className="sr-only">Close</span>
+      <span className="sr-only">{__('Close', 'yaymatik')}</span>
     </DialogPrimitive.Close>
   );
 }

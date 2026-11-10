@@ -96,9 +96,6 @@ class AdminPage {
                 'reviewsEnabled'     => 'yes' === get_option( 'woocommerce_enable_reviews', 'yes' ),
             ],
             'automation' => Catalog::to_client() + [ 'email' => SendInternalEmail::sender() ],
-            'docs'       => [
-                'workflowRuns' => 'https://docs.yaycommerce.com/',
-            ],
         ];
     }
 

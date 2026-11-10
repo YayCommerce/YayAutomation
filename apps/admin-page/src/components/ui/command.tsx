@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { Command as CommandPrimitive } from 'cmdk';
 import { SearchIcon } from 'lucide-react';
+import { __ } from '@wordpress/i18n';
 
 import { cn } from '@/lib/utils';
 import {
@@ -25,8 +26,8 @@ function Command({ className, ...props }: React.ComponentProps<typeof CommandPri
 }
 
 function CommandDialog({
-  title = 'Command Palette',
-  description = 'Search for a command to run...',
+  title = __('Command Palette', 'yaymatik'),
+  description = __('Search for a command to run...', 'yaymatik'),
   children,
   ...props
 }: React.ComponentProps<typeof Dialog> & {

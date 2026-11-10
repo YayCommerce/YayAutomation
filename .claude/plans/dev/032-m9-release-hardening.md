@@ -47,7 +47,7 @@ A free zip that passes the WordPress.org checklist, a light-only admin with a he
    - Multisite: PHPUnit only (each site); not on wp-env.
    - Tests: PHPUnit for the requirements matrix, unschedule calls, uninstall lists vs Schema; check-plugin-lifecycle on both wp-env targets.
    - Closes: Q7, Q10, G5.
-4. **Header fields, I18n, free build** — Risk: 2
+4. ✅ **Header fields, I18n, free build** (ebc598b, fix ab2c412) — Risk: 2
    - Files: `yaymatik.php` header (Requires at least 6.9, Requires PHP 7.4, Requires Plugins: woocommerce, WC requires at least 11.0, WC tested up to 11.2, License GPLv2 or later, License URI), `phpcs.xml` (6.9), `includes/I18n.php` and its call in `yaymatik.php` (open 2), `dev/scripts/release.sh`, `includes/YayMatikLicenseAdapter.php` / `YayMatikProLicenseAdapter.php` (open 1), `.claude/docs/ops-release.md`.
    - Tests:
      - Free zip: the G1 grep finds no License client, updater or Pro adapter; `vendor-prefixed/src/License` is missing; the admin page loads on `--wp-env-min` with the zip installed.
@@ -55,7 +55,7 @@ A free zip that passes the WordPress.org checklist, a light-only admin with a he
      - `--rc` stamps both lines.
      - The `release.sh` sed lines run in a Debian container (GNU sed).
    - Closes: G1, B4, Q4, R2, R4.
-5. **UI** — Risk: 1
+5. ✅ **UI** (CP5HASH) — Risk: 1
    - Files:
      - Kit strings: `components/ui/pagination.tsx`, `dialog.tsx` (sr-only Close), `breadcrumb.tsx` (More), `command.tsx` defaults, the rest of the sweep.
      - AI box: `shared/create/CreateWorkflowDialog.tsx`.
@@ -164,6 +164,11 @@ Additions (Jack, Nov 10):
 - CP1: `--wp-env-min` runs `../../node_modules/.bin/wp-env` from `dev/wp-env-min` (a shell function in `wp-target.sh`), not `pnpm --dir dev/wp-env-min exec wp-env`: pnpm refuses a folder without a `package.json`.
 - CP1: `856c522` also took CP2's staged moves and deletes (`git mv` / `git rm`), so it doesn't build alone; the CP2 commit completes it. Not amended (commit rules).
 - CP2: e2e ran with the installed Chrome (`channel: 'chrome'`, a scratchpad config): Playwright 1.64 ships no Chromium for macOS 12.
+- CP4 (contradicts the release-build decision; open for Jack): the free zip keeps admin-shell's `vendor-prefixed/src/License` and license views. admin-shell 2.10.0's `LegacyBridge` runs in every copy and calls `License\LicenseState` (a fatal on a site where an older YayCommerce Pro plugin has a saved key), and its shared Licenses page includes the views and builds `License` / `RestAPI`. YayBulkOrder's lite drop works because its admin-shell 2.8.5 has no such call. G1 stays open until admin-shell has a free build mode or `class_exists` guards. Only `YayMatikProLicenseAdapter.php` leaves the free zip, through `.distignore`.
+- CP5 (contradicts the decision's premise): the preflight is scoped with `:where( #yaymatik, body > :not(#wpwrap) )` but not put in `@layer base`. Today the whole app CSS, preflight included, is unlayered; in a layer it would lose to WordPress's unlayered admin CSS inside the app. Unlayered with `:where()`, specificity and order stay as before. Measured on wp-env (computed styles of the 361 elements of `#adminmenumain` and `#wpadminbar`, app sheet on vs off): before, box-sizing, border, width and height changed on up to 269 of them; after, none of those. What still differs is inherited font size, line height, colour and font family from `body.yay-ui` (`styles/preflight.css`), which predates this plan.
+- CP5: D9 also drops the describe box's primary glow (a disabled control doesn't glow). The "Coming soon" chip stays at full opacity.
+- CP5: the sheet's close button had no label; it gets the same translated sr-only "Close" as the dialog's.
+- CP5: `ModuleRegistry::to_client()` passes `data` to `esc_url_raw()`, which otherwise drops the core logos' `data:` URIs.
 - CP1: MySQL 8 probe ran on staging (8.0.46): REGEXP 8/8, GET_LOCK / RELEASE_LOCK, collation `utf8mb4_unicode_520_ci` folds case and accents, as `user_collides()` expects.
 
 ## Meta

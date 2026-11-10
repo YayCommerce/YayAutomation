@@ -105,7 +105,8 @@ final class ModuleRegistry {
                     'label'       => $module->label(),
                     'description' => $module->description(),
                     'active'      => $module->active(),
-                    'logo'        => esc_url_raw( $module->logo() ),
+                    // Core's logos are `data:` SVGs (see Module::logo()); others are http(s) URLs.
+                    'logo'        => esc_url_raw( $module->logo(), [ 'http', 'https', 'data' ] ),
                 ],
                 self::modules()
             )

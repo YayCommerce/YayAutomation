@@ -99,11 +99,11 @@ describe('PHP ↔ TS parity', () => {
     expect(Object.keys(stepIcons)).toEqual(names);
   });
 
-  it('plugins match: PHP sends every plugin TS knows, each with a one-colour SVG logo file', () => {
+  it('plugins match: PHP sends every plugin TS knows, each with an inline one-colour SVG logo', () => {
     expect(php.plugins.map((plugin) => plugin.id).sort()).toEqual(Object.keys(workflowPlugins).sort());
     for (const plugin of php.plugins) {
-      expect(plugin.logo, plugin.id).toMatch(new RegExp(`/assets/logos/${plugin.id}\\.svg$`));
-      const svg = readFileSync(resolve(__dirname, `../../../../assets/logos/${plugin.id}.svg`), 'utf8');
+      expect(plugin.logo, plugin.id).toMatch(/^data:image\/svg\+xml,/);
+      const svg = decodeURIComponent(plugin.logo.slice('data:image/svg+xml,'.length));
       expect(svg, plugin.id).toMatch(/^<svg [^>]*viewBox="0 0 24 24"[^>]*stroke="currentColor"/);
     }
     for (const meta of Object.values(php.steps)) {

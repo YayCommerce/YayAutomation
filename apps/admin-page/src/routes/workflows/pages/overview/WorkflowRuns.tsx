@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import type { RunListItem, RunStatus } from '@yaymatik/types';
 import { Activity } from 'lucide-react';
-import { __, sprintf } from '@wordpress/i18n';
+import { __ } from '@wordpress/i18n';
 
 import { shortDayTime } from '@/lib/helpers/date.helper';
 import { cn } from '@/lib/utils';
-import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
 import { Pagination } from '@/components/ui/pagination';
 import { Segmented, SegmentedItem } from '@/components/ui/segmented';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -13,9 +13,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useWorkflowRunsQuery } from '../../api/workflow.query';
 import { RunStatusBadge } from '../../shared/ui/RunStatus';
 import { tabBarClass, tabClass } from '../../shared/ui/tabs';
-
-// Stands in for the link while splitting the sentence, so translations may use `%s` or `%1$s`.
-const LINK_SLOT = '\u0000';
 
 const filters: { value: string; label: string; statuses: RunStatus[] }[] = [
   { value: 'all', label: __('All', 'yaymatik'), statuses: [] },
@@ -45,7 +42,8 @@ export function WorkflowRuns({ workflowId, onOpen }: { workflowId: string; onOpe
 
   return (
     <section className="flex flex-col gap-2">
-      <h2 className="text-sm font-semibold">{__('Workflow runs', 'yaymatik')}</h2>
+      {/* The cards' p-3, so the title lines up with their content. */}
+      <h2 className="px-3 text-sm font-semibold">{__('Workflow runs', 'yaymatik')}</h2>
       {neverRan ? (
         <NoRuns />
       ) : (
@@ -160,32 +158,18 @@ function RunRow({ run, onOpen }: { run: RunListItem; onOpen: () => void }) {
 }
 
 function NoRuns() {
-  const [before, after = ''] = sprintf(
-    /* translators: %s: link text, "monitoring workflow runs" */
-    __('Learn more about %s', 'yaymatik'),
-    LINK_SLOT,
-  ).split(LINK_SLOT);
-
   return (
     <Empty className="gap-3 border-0 py-8">
       <EmptyHeader className="max-w-lg">
-        <EmptyMedia className="bg-muted text-muted-foreground mb-1 flex h-13 w-18 items-center justify-center rounded-xl">
-          <Activity className="size-6" strokeWidth={1.6} aria-hidden />
+        {/* The Health check panel's circle; a card tile, so it shows on the section's grey. */}
+        <EmptyMedia className="bg-card text-muted-foreground mb-0 size-11 rounded-full border shadow-xs">
+          <Activity className="size-5" aria-hidden />
         </EmptyMedia>
         <EmptyTitle className="text-base font-semibold">{__('No runs yet', 'yaymatik')}</EmptyTitle>
         <EmptyDescription className="text-[13px]">
           {__('Each time this workflow starts, the run shows up here with every step’s result.', 'yaymatik')}
         </EmptyDescription>
       </EmptyHeader>
-      <EmptyContent>
-        <EmptyDescription className="text-[13px]">
-          {before}
-          <a href={window.yayMatikMeta.docs.workflowRuns} target="_blank" rel="noreferrer">
-            {__('monitoring workflow runs', 'yaymatik')}
-          </a>
-          {after}
-        </EmptyDescription>
-      </EmptyContent>
     </Empty>
   );
 }

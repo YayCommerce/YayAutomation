@@ -23,10 +23,6 @@ $meta["wc"]["cartTracking"]     = false;
 $meta["wc"]["abandonMinutes"]   = 60;
 $meta["wc"]["reviewsEnabled"]   = true;
 $meta["plugin"]["pluginUrl"]  = "https://example.test/wp-content/plugins/yaymatik/";
-foreach ( $meta["automation"]["plugins"] as &$plugin ) {
-    $plugin["logo"] = str_replace( YAYMATIK_PLUGIN_URL, "https://example.test/wp-content/plugins/yaymatik/", $plugin["logo"] );
-}
-unset( $plugin );
 $meta["wp"]["restRoot"]       = "https://example.test/wp-json/";
 $meta["wp"]["restNonce"]      = "test-nonce";
 $meta["wp"]["siteUrl"]        = "https://example.test";

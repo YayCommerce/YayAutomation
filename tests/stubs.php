@@ -50,14 +50,14 @@ if ( ! function_exists( 'esc_attr' ) ) {
 if ( ! function_exists( 'esc_url' ) ) {
     // Like WordPress: spaces encoded, other unsafe characters dropped, only known protocols kept,
     // `http://` added to a bare host, `&` and `'` as entities.
-    function esc_url( $url ) {
+    function esc_url( $url, $protocols = null ) {
         $url = str_replace( ' ', '%20', ltrim( (string) $url ) );
         $url = (string) preg_replace( '|[^a-z0-9-~+_.?#=!&;,/:%@$\|*\'()\[\]\x80-\xff]|i', '', $url );
         if ( '' === $url ) {
             return '';
         }
         if ( preg_match( '/^([a-z][a-z0-9+.-]*):/i', $url, $match ) ) {
-            if ( ! in_array( strtolower( $match[1] ), [ 'http', 'https', 'mailto', 'tel' ], true ) ) {
+            if ( ! in_array( strtolower( $match[1] ), $protocols ?? [ 'http', 'https', 'mailto', 'tel' ], true ) ) {
                 return '';
             }
         } elseif ( ! in_array( $url[0], [ '/', '#', '?' ], true ) ) {
@@ -243,8 +243,8 @@ if ( ! function_exists( 'date_i18n' ) ) {
 }
 
 if ( ! function_exists( 'esc_url_raw' ) ) {
-    function esc_url_raw( $url ) {
-        return str_replace( [ '&#038;', '&#039;' ], [ '&', "'" ], esc_url( $url ) );
+    function esc_url_raw( $url, $protocols = null ) {
+        return str_replace( [ '&#038;', '&#039;' ], [ '&', "'" ], esc_url( $url, $protocols ) );
     }
 }
 

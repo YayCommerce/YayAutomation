@@ -5,7 +5,11 @@
 
 @import 'tailwindcss/theme.css' layer(theme);
 @import './styles/theme.css';
-@import 'tailwindcss/preflight.css';
+/* Unscoped, the reset reached WordPress's admin menu and bar. Scoped to the app root and what Radix portals to
+   <body>; :where() adds no specificity, and it stays unlayered like the rest, so the cascade is as before. */
+:where(#yaymatik, body > :not(#wpwrap)) {
+  @import 'tailwindcss/preflight.css';
+}
 @import './styles/preflight.css';
 
 @import './styles/utility.css';

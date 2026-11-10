@@ -37,7 +37,7 @@ Review the **free release zip** against `.claude/docs/context-wporg-release-chec
 
 ## Project specifics
 
-- **G1:** the zip has no `vendor-prefixed/src/License/`, no `includes/Pro/`, no `YayMatikProLicenseAdapter.php` and no license views (`license-card.php`, `license-activate-card.php`, `licenses-page.php`). `YayMatikMenuAdapter` is the free menu, not a license client.
+- **G1:** the zip has no `includes/Pro/` and no `YayMatikProLicenseAdapter.php`. `YayMatikMenuAdapter` is the free menu, not a license client. admin-shell's `vendor-prefixed/src/License/` and license views still ship (its `LegacyBridge` and shared Licenses page need them): report them under G1, fix in admin-shell.
 - **B1:** every GitHub link in `readme.txt` must return HTTP 200 (`curl -s -o /dev/null -w '%{http_code}' <url>`). A 404 means `YayCommerce/YayMatik` is still private: a blocker at submission. Once public, compare its default branch with the reviewed commit and report it if behind; it must not hold `includes/Pro`.
 - **Q2:** PHP names (options, meta, transients, tables, hooks, constants) use `yaymatik` / `YAYMATIK_` / `YayMatik\`. `yay-*` CSS classes and `yayMatikMeta` are the admin app's.
 - **Q7, Q10:** `./run.sh check-plugin-lifecycle --wp-env` (and `--wp-env-min`) covers deactivate, uninstall and the forced old WordPress; report its result.
