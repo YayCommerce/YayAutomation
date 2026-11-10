@@ -131,7 +131,7 @@ $sources   = array_map( 'file_get_contents', $php_files() );
 $ns_any    = preg_quote( $ns, '/' ) . '|' . preg_quote( str_replace( '\\', '\\\\', $ns ), '/' ) . '|(?<![\\\\\w])License\\\\\w';
 $imports   = function ( string $code ) use ( $ns ) {
     preg_match_all( '/^use ' . preg_quote( $ns, '/' ) . '\\\\(?:\w+\\\\)*(\w+)(?: as (\w+))?;/m', $code, $found, PREG_SET_ORDER );
-    return array_map( fn( $match ) => $match[2] ?? $match[1], $found );
+    return array_map( fn( $found_use ) => $found_use[2] ?? $found_use[1], $found );
 };
 $dependent = [];
 $returning = [];
