@@ -67,6 +67,8 @@ export async function placeClassicOrder(page: Page, email: string) {
   await page.locator('#billing_city').fill('San Jose');
   await page.locator('#billing_postcode').fill('95112');
   await page.locator('#billing_phone').fill('4085550100');
+  // The address fields refresh the order review, which covers the form and replaces the button.
+  await expect(page.locator('.blockUI')).toHaveCount(0);
   await page.locator('#place_order').click();
   await page.waitForURL(/order-received/);
 }

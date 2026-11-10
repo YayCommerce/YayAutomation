@@ -133,18 +133,22 @@ test('an unsubscribe link stops the next email', async ({ page, browser, baseURL
   await useTemplate(page, REVIEW_REQUEST);
   await activate(page);
 
-  const email = uniqueEmail();
-  const shopper = await guestPage(browser, baseURL);
-  await addToCart(shopper);
-  await placeOrder(shopper, email);
-  completeOrder(email);
+  // Two shoppers; only the first unsubscribes, so the second shows the review email does go out.
+  const leaving = uniqueEmail();
+  const staying = `stays-${leaving}`;
+  for (const email of [leaving, staying]) {
+    const shopper = await guestPage(browser, baseURL);
+    await addToCart(shopper);
+    await placeOrder(shopper, email);
+    completeOrder(email);
+  }
   runQueue();
 
-  // The review request waits for its email; the thank-you is already sent.
+  // Each review request waits for its email; the thank-yous are already sent.
   await page.reload();
-  await expect(page.getByRole('row').filter({ hasText: 'Waiting' })).toHaveCount(1);
+  await expect(page.getByRole('row').filter({ hasText: 'Waiting' })).toHaveCount(2);
   await openMailLog(page);
-  await mailRow(page, email, FIRST_ORDER_SUBJECT).getByRole('link').click();
+  await mailRow(page, leaving, FIRST_ORDER_SUBJECT).getByRole('link').click();
   const link = page.frameLocator('iframe[title="Mail body"]').locator('a[href*="yaymatik_unsub"]').first();
   const unsubscribeUrl = await link.getAttribute('href');
 
@@ -156,6 +160,6 @@ test('an unsubscribe link stops the next email', async ({ page, browser, baseURL
   endWaits();
   runQueue();
   await openMailLog(page);
-  await expect(mailRow(page, email, FIRST_ORDER_SUBJECT)).toHaveCount(1);
-  await expect(mailRow(page, email, REVIEW_SUBJECT)).toHaveCount(0);
+  await expect(mailRow(page, staying, REVIEW_SUBJECT)).toHaveCount(1);
+  await expect(mailRow(page, leaving, REVIEW_SUBJECT)).toHaveCount(0);
 });

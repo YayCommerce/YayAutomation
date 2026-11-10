@@ -1,8 +1,6 @@
 <?php
 /**
- * Settings and Health check through REST, as the Settings page calls them: GET / PUT /settings (each range, types,
- * all-or-nothing, one 400 entry per field), GET /health/checks and each fix, with test runs on a workflow id no real
- * workflow has. Restores the settings and the daily jobs, removes its runs. Run through check-settings.sh.
+ * Settings and Health check REST, as the Settings page calls them; run through check-settings.sh.
  *
  * @package YayMatik
  */
@@ -13,6 +11,8 @@ use YayMatik\Workflow\Core\Runtime\ActionSchedulerQueue;
 use YayMatik\Workflow\Core\Runtime\Cleanup;
 use YayMatik\Workflow\Core\Runtime\InactiveSweep;
 use YayMatik\Workflow\Core\Storage\RunStore;
+
+require_once __DIR__ . '/check-run.php';
 
 global $wpdb;
 $fails = 0;
@@ -39,18 +39,30 @@ $call = function ( string $method, string $route, $body = null ) {
 };
 $fields = fn( $res ) => array_column( $res->get_data()['data']['errors'] ?? [], 'field' );
 
+// Test runs use a workflow id no real workflow has. The daily jobs keep their times: the fixes below reschedule them.
 $w       = 999998;
 $stored  = get_option( 'yaymatik_settings', null );
-$cleanup = function () use ( $wpdb, $w, $stored ) {
-    null === $stored ? delete_option( 'yaymatik_settings' ) : update_option( 'yaymatik_settings', $stored, true );
-    foreach ( $wpdb->get_col( $wpdb->prepare( 'SELECT id FROM ' . RunStore::table() . ' WHERE workflow_id = %d', $w ) ) as $id ) {
-        as_unschedule_all_actions( ActionSchedulerQueue::HOOK, [ (int) $id ], ActionSchedulerQueue::GROUP );
-        as_unschedule_all_actions( ActionSchedulerQueue::RECOVER_HOOK, [ (int) $id ], ActionSchedulerQueue::GROUP );
+$checked = get_option( Cleanup::CHECKED_OPTION, null );
+$daily   = [];
+foreach ( [ Cleanup::HOOK, InactiveSweep::HOOK ] as $hook ) {
+    $daily[ $hook ] = as_next_scheduled_action( $hook, [], ActionSchedulerQueue::GROUP );
+}
+$cleaned = false;
+$cleanup = function () use ( $w, $stored, $checked, $daily, &$cleaned ) {
+    if ( $cleaned ) {
+        return;
     }
-    $wpdb->delete( RunStore::table(), [ 'workflow_id' => $w ] );
+    $cleaned = true;
+    null === $stored ? delete_option( 'yaymatik_settings' ) : update_option( 'yaymatik_settings', $stored, true );
+    yaymatik_check_remove_runs( 0, [ $w ] );
     as_unschedule_all_actions( 'yaymatik_check_settings_late', [], ActionSchedulerQueue::GROUP );
-    delete_option( Cleanup::CHECKED_OPTION );
-    Cleanup::ensure();
+    foreach ( $daily as $hook => $next ) {
+        if ( is_int( $next ) ) {
+            as_unschedule_all_actions( $hook, [], ActionSchedulerQueue::GROUP );
+            as_schedule_recurring_action( $next, DAY_IN_SECONDS, $hook, [], ActionSchedulerQueue::GROUP, true );
+        }
+    }
+    null === $checked ? delete_option( Cleanup::CHECKED_OPTION ) : update_option( Cleanup::CHECKED_OPTION, $checked, true );
 };
 // Runs even when a check throws or PHP dies, so the site keeps its settings and jobs.
 register_shutdown_function( $cleanup );
@@ -163,6 +175,12 @@ foreach ( [
     'runs_queued'  => [ 'queued', 'enqueue', ActionSchedulerQueue::HOOK ],
     'runs_running' => [ 'running', 'recover', ActionSchedulerQueue::RECOVER_HOOK ],
 ] as $id => list( $status, $fix, $hook ) ) {
+    // The fix takes every stuck run: with the site's own, it would resume them too.
+    $own = $check( $id )['count'];
+    if ( $own ) {
+        echo "SKIP {$id}: the site has {$own} stuck run(s) of its own\n"; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+        continue;
+    }
     $run   = $stuck( $status );
     $found = $check( $id );
     $ok( 'problem' === $found['status'] && $fix === $found['fix'] && in_array( $run, $found['runIds'], true ), "{$id}: a {$status} run with no job → problem, fix {$fix}" );
@@ -174,11 +192,11 @@ foreach ( [
     $wpdb->delete( RunStore::table(), [ 'id' => $run ] );
 }
 
+$late_before = $check( 'jobs_late' )['count'];
 as_schedule_single_action( time() - HOUR_IN_SECONDS, 'yaymatik_check_settings_late', [], ActionSchedulerQueue::GROUP );
 $found = $check( 'jobs_late' );
-$ok( 'info' === $found['status'] && $found['count'] >= 1 && null === $found['fix'] && ! empty( $found['guide'] ), 'jobs_late: a job an hour late → info, no fix, a cron guide' );
+$ok( 'info' === $found['status'] && $late_before + 1 === $found['count'] && null === $found['fix'] && ! empty( $found['guide'] ), 'jobs_late: a job an hour late is counted → info, no fix, a cron guide' );
 
-$cleanup();
 echo $fails ? "{$fails} failed\n" : "All passed\n"; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 if ( $fails ) {
     WP_CLI::halt( 1 );
