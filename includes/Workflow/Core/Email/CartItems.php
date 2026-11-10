@@ -25,8 +25,8 @@ final class CartItems {
             return '';
         }
         $lines = array_slice( $all, 0, self::MAX_LINES );
-        $more  = count( $all ) - count( $lines );
-        /* translators: %d: number of cart lines not listed */
+        $more  = (int) array_sum( array_map( fn( array $line ) => max( 1, (int) ( $line['quantity'] ?? 1 ) ), array_slice( $all, self::MAX_LINES ) ) );
+        /* translators: %d: number of items in the cart lines not listed */
         $more_text = $more ? sprintf( _n( 'and %d more item', 'and %d more items', $more, 'yaymatik' ), $more ) : '';
         _prime_post_caches( self::product_ids( $lines ) );
         $total = __( 'Cart total', 'yaymatik' );

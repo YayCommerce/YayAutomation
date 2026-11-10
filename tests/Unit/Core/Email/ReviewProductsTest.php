@@ -17,7 +17,7 @@ final class ReviewProductsTest extends TestCase {
         unset( $GLOBALS['yaymatik_test_comment_queries'], $GLOBALS['yaymatik_test_products'], $GLOBALS['yaymatik_test_primed'] );
     }
 
-    public function test_for_order_primes_the_lines_once_and_leaves_out_products_hidden_from_the_catalog(): void {
+    public function test_for_order_primes_the_lines_once_and_leaves_out_products_not_in_the_catalog(): void {
         foreach ( [ 1 => 'visible', 2 => 'hidden', 3 => 'search' ] as $id => $visibility ) {
             $GLOBALS['yaymatik_test_products'][ $id ] = new \WC_Product(
                 [
@@ -50,7 +50,7 @@ final class ReviewProductsTest extends TestCase {
         $products = ReviewProducts::for_order( $order );
 
         $this->assertSame( [ [ 1, 2, 3 ] ], $GLOBALS['yaymatik_test_primed'] );
-        $this->assertSame( [ 1, 3 ], array_map( fn( $product ) => $product->get_id(), $products ) );
+        $this->assertSame( [ 1 ], array_map( fn( $product ) => $product->get_id(), $products ), "'hidden' and 'search' only are not in the catalog" );
     }
 
     private static function product(): \WC_Product {

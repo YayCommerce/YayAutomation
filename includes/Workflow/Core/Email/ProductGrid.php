@@ -12,6 +12,12 @@ final class ProductGrid {
     /** At most this many products, 2 per row. */
     public const MAX = 4;
 
+    /** Products loaded per query: some may be hidden or out of stock. */
+    private const FETCH = self::MAX * 3;
+
+    /** Suggestions looked at in all, in FETCH-sized queries until MAX can be shown. */
+    private const SCAN = self::FETCH * 3;
+
     /** Each image sits in a square this many pixels wide. */
     private const IMAGE_BOX = 160;
 
@@ -31,8 +37,10 @@ final class ProductGrid {
     public static function for_order( \WC_Order $order, string $kind ): array {
         $in_order  = [];
         $suggested = [];
-        foreach ( $order->get_items() as $item ) {
-            $product = $item instanceof \WC_Order_Item_Product ? $item->get_product() : null;
+        $lines     = array_filter( $order->get_items(), fn( $item ) => $item instanceof \WC_Order_Item_Product );
+        _prime_post_caches( array_values( array_unique( array_filter( array_merge( ...array_map( fn( $item ) => [ (int) $item->get_product_id(), (int) $item->get_variation_id() ], $lines ) ) ) ) ) );
+        foreach ( $lines as $item ) {
+            $product = $item->get_product();
             if ( ! $product ) {
                 continue;
             }
@@ -45,10 +53,16 @@ final class ProductGrid {
             $suggested  = array_merge( $suggested, self::CROSS_SELLS === $kind ? $parent->get_cross_sell_ids() : $parent->get_upsell_ids() );
         }
 
-        // A few extra, as some may be hidden or out of stock; loaded together, not one query each.
-        $ids = array_slice( array_values( array_diff( array_unique( array_map( 'intval', $suggested ) ), $in_order ) ), 0, self::MAX * 3 );
-        _prime_post_caches( $ids );
-        return self::shown( array_filter( array_map( 'wc_get_product', $ids ) ) );
+        $ids   = array_slice( array_values( array_diff( array_unique( array_map( 'intval', $suggested ) ), $in_order ) ), 0, self::SCAN );
+        $shown = [];
+        foreach ( array_chunk( $ids, self::FETCH ) as $chunk ) {
+            _prime_post_caches( $chunk );
+            $shown = self::shown( array_merge( $shown, array_filter( array_map( 'wc_get_product', $chunk ) ) ) );
+            if ( count( $shown ) >= self::MAX ) {
+                break;
+            }
+        }
+        return $shown;
     }
 
     /**
@@ -69,14 +83,13 @@ final class ProductGrid {
      */
     public static function newest(): array {
         if ( null === self::$newest ) {
-            // A few extra, as some may be hidden or out of stock.
             $products     = function_exists( 'wc_get_products' )
                 ? (array) wc_get_products(
                     [
                         'status'       => 'publish',
                         'visibility'   => 'catalog',
-                        'stock_status' => 'instock',
-                        'limit'        => self::MAX * 3,
+                        'stock_status' => [ 'instock', 'onbackorder' ],
+                        'limit'        => self::FETCH,
                         'orderby'      => 'date',
                         'order'        => 'DESC',
                     ]

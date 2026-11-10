@@ -17,12 +17,12 @@ final class CartItemsTest extends TestCase {
     /**
      * @param int $count
      */
-    private static function cart( int $count ): SavedCart {
+    private static function cart( int $count, int $last_quantity = 1 ): SavedCart {
         $lines = array_map(
             fn( $i ) => [
                 'product_id' => $i,
                 'name'       => "Item {$i}",
-                'quantity'   => 1,
+                'quantity'   => $i === $count ? $last_quantity : 1,
                 'line_total' => 1,
             ],
             range( 1, $count )
@@ -45,6 +45,8 @@ final class CartItemsTest extends TestCase {
 
         $html = CartItems::render( self::cart( CartItems::MAX_LINES + 1 ), true );
         $this->assertStringContainsString( '>and 1 more item</td>', $html );
+
+        $this->assertStringContainsString( "\nand 3 more items\n", CartItems::render( self::cart( CartItems::MAX_LINES + 1, 3 ), false ), 'items, not lines' );
     }
 
     public function test_a_short_cart_lists_every_line_without_a_count(): void {
