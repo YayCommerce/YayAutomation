@@ -2,10 +2,19 @@
 
 Use `/wdist`.
 
-- Version: `yaymatik.php` header `Version:` + `YAYMATIK_VERSION` — keep in sync.
 - Zip: `./run.sh release` (`dev/scripts/release.sh`) → `release/yaymatik.zip` (free: `.distignore` leaves out `includes/Pro/` and `YayMatikProLicenseAdapter.php`; admin-shell ships whole, since its `LegacyBridge` and shared Licenses page need `src/License`). `./run.sh release pro` → `release/yaymatik-pro.zip`, the same with `includes/Pro/`. Exclusions: `.distignore`. It runs `./vendor/bin/yaycommerce-prerelease` first and ships only `vendor/autoload.php` + `vendor/composer/` + `vendor-prefixed/`.
 - WordPress.org review: `/wp-review` checks the free zip against `.claude/docs/context-wporg-release-checklist.md` (IDs S, G, B, Q, R, T, U).
-- Before release: build passes, clean working tree, `pnpm e2e` passes on the release commit (local wp-env only; CI doesn't run it), the free zip loads the admin page on a clean site.
+- Versions: `Version:` and `YAYMATIK_VERSION` in `yaymatik.php` and `Stable tag:` in `readme.txt` are equal.
+
+## Release gate
+
+On the release commit, clean working tree, in this order; stop at the first failure:
+
+1. `pnpm lint`, `pnpm lint:php`, `pnpm test`, `pnpm test:php`, `pnpm build`.
+2. `./run.sh check-all --wp-env` and `./run.sh check-all --wp-env-min`; `./run.sh probe-mysql --staging` (MySQL 8).
+3. `pnpm e2e` (wp-env only; CI doesn't run it).
+4. `/wp-review` on the free zip.
+5. By hand: each of the 8 workflows once on staging, one email in a real inbox from a dev site, the free zip uploaded and smoke-tested on a clean site.
 
 ## Staging
 

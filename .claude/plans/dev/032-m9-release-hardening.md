@@ -67,13 +67,13 @@ A free zip that passes the WordPress.org checklist, a light-only admin with a he
    - D20c reference: open 6.
    - Tests: Vitest for D9 (no focusable element in the box, chips `aria-disabled`, a click does nothing) and for the runs empty state (no link); the meta parity test; screenshots of the admin menu before and after the preflight scope, and of every dialog, popover, sheet and toast still styled.
    - Closes: Q3, Q5 (JS part).
-6. **check-settings, other journeys** — Risk: 2
+6. ✅ **check-settings, other journeys** (f20f235, fix 16e6c54) — Risk: 2
    - Files: new `dev/scripts/check-settings.{sh,php}`, `dev/scripts/seed.php` (a "Classic checkout" page with `[woocommerce_checkout]`), `dev/e2e/specs/journeys.spec.ts` or new spec files, `dev/e2e/support/*`.
    - check-settings: GET/PUT, each range, all-or-nothing save, 400 per field, Health check checks and each fix. "Cart tracking off blocks Activate" is already in check-carts, so it is not added twice.
    - e2e: Settings save + Health check panel; an order through classic checkout; an unsubscribe link stops the next email. 031 rules apply.
    - Tests: check-settings on all three targets; `pnpm e2e` green three runs in a row.
    - Closes: criteria 2, 6 (classic checkout).
-7. **readme, release gate** — Risk: 1
+7. ✅ **readme, release gate** (CP7HASH) — Risk: 1
    - Files: new `readme.txt`, `.claude/docs/ops-release.md` (gate, D19f order), `.distignore` if needed.
    - readme per D13: ≤ 5 tags, Stable tag 1.0.0, Tested up to 7.1, Source Code per open 3. Third-party libraries bundled in `main.js` (TanStack Query, Radix, motion, lucide, react-router …) are credited with name, version and URL.
    - Tests: readme validator (by hand, link in report), R2 versions equal.
