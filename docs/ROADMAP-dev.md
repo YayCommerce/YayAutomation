@@ -31,8 +31,8 @@ Changes from the ROADMAP-v1.0 order:
 | M4 | Welcome series | S | 2 | M2 | ✅ Done |
 | M5 | High-value order alert | S | 1 | — | ✅ Done |
 | M6 | Win-back | M | 2 | M8 | ✅ Done |
-| CT | Custom workflow catalog | L | 3 | M6 | In progress |
-| M9 | Release hardening | M | 2 | all | — |
+| CT | Custom workflow catalog | L | 3 | M6 | ✅ Done |
+| M9 | Release hardening | M | 2 | all | In progress |
 | v1.1 | Control flow | L+ | 3 | v1.0 | — |
 | v1.2 | Yay ecosystem + Pro connectors | L+ | 3 | v1.1 | — |
 | v2.0 | AI | L+ | 3 | v1.2 | — |
@@ -259,32 +259,36 @@ Do it when no feature branch is open: it touches every file, so it's cheapest as
 
 ## CT — Custom workflow catalog · L · risk 3
 
+**Status:** ✅ Done. Merged into `develop` (PR #37, `8b5c7f5`).
+
 Shop owners build their own workflows from New Workflow. Why: [decisions CT](workflow-core-decisions.md#ct-custom-workflow-catalog).
 
-- ⏳ **CT.0** Docs frame.
-- ⏳ **CT.1** Hardening: order meta guard, active-trigger cache, `emits()` and the may-refire warning.
-- ⏳ **CT.2** List type, new operators, relative dates, `is_set`.
-- ⏳ **CT.3** New order and customer condition fields, meta conditions, customer stats.
-- ⏳ **CT.4** Paged REST search for products, categories and coupons.
-- ⏳ **CT.5** Condition form for the new rule kinds.
-- ⏳ **CT.6** Condition groups, one level deep.
-- ⏳ **CT.7** Triggers: Order paid, Order note added.
-- ⏳ **CT.8** Trigger: Order refunded.
-- ⏳ **CT.9** Triggers: Customer order count reaches, Customer total spend reaches.
-- ⏳ **CT.10** Trigger: Review posted.
-- ⏳ **CT.11** Action: Update customer custom field.
-- ⏳ **CT.12** Action: Change customer role.
-- ⏳ **CT.13** Action: Resend WooCommerce email.
-- ⏳ **CT.14** Action: Wait until.
+- ✅ **CT.0** Docs frame.
+- ✅ **CT.1** Hardening: order meta guard, active-trigger cache, `emits()` and the may-refire warning.
+- ✅ **CT.2** List type, new operators, relative dates, `is_set`.
+- ✅ **CT.3** New order and customer condition fields, meta conditions, customer stats.
+- ✅ **CT.4** Paged REST search for products, categories and coupons.
+- ✅ **CT.5** Condition form for the new rule kinds.
+- ✅ **CT.6** Condition groups, one level deep.
+- ✅ **CT.7** Triggers: Order paid, Order note added.
+- ✅ **CT.8** Trigger: Order refunded.
+- ✅ **CT.9** Triggers: Customer order count reaches, Customer total spend reaches.
+- ✅ **CT.10** Trigger: Review posted.
+- ✅ **CT.11** Action: Update customer custom field.
+- ✅ **CT.12** Action: Change customer role.
+- ✅ **CT.13** Action: Resend WooCommerce email.
+- ✅ **CT.14** Action: Wait until.
 - **CT.15** Action: Stop waiting runs. Dropped from v1.0, moved to the v1.1 backlog.
-- ⏳ **CT.16** End-to-end check on both order stores, docs pass.
+- ✅ **CT.16** End-to-end check on both order stores, docs pass.
 
 ## M9 — Release hardening · M
 
-- **M9.1** Each of the 8 workflows once by hand on staging, plus one real inbox check on a dev site; `pnpm e2e` on the release commit; classic and block checkout; light and dark admin. Run `./run.sh check-carts` on a MySQL 8 site (erase `REGEXP` tested only on MariaDB 11.2).
-- **M9.2** Translations and release build.
-- **M9.3** Leave unfinished steps unregistered for the release; check plugin logos load (CSS mask) when assets come from a CDN. *(§8)*
-- **M9.4** Release checklist items picked in ROADMAP-v1.0.
+**Status:** In progress, plan 032 on `jack/feature/032-m9-release`. Acceptance list: `.claude/docs/context-wporg-release-checklist.md`.
+
+- **M9.1** Each of the 8 workflows once by hand on staging, plus one real inbox check on a dev site; `pnpm e2e` on the release commit; classic and block checkout; light admin only (dark mode is not in v1.0). Every check and e2e journey on both wp-env targets: latest (`--wp-env`) and minimum versions (`--wp-env-min`: WordPress 6.9, PHP 7.4, WooCommerce 11.0). MySQL 8: a read-only probe on staging (erase `REGEXP`, `GET_LOCK`, the meta-key collation check).
+- **M9.2** Translations and release build: no `load_plugin_textdomain`, kit strings translatable, a `.pot`; the free zip has no license client.
+- **M9.3** Leave unfinished steps unregistered for the release; core logos inline, so they load when assets come from a CDN. *(§8)*
+- **M9.4** Release checklist items picked in ROADMAP-v1.0: requirements checked at runtime, clean deactivation and uninstall, readme, Plugin Check on the zip.
 
 ---
 

@@ -1,6 +1,6 @@
 # Workflow page UI Roadmap — YayMatik v1.0
 
-**Release date:** estimated after M1 · **Status:** Planning · **Technical plan:** [ROADMAP-dev.md](ROADMAP-dev.md) · [workflow-core-design.md](workflow-core-design.md)
+**Release date:** set by Jack · **Status:** M1–M8 and CT done; M9 release hardening in progress (Nov 10) · **Technical plan:** [ROADMAP-dev.md](ROADMAP-dev.md) · [workflow-core-design.md](workflow-core-design.md)
 
 ## Goal
 
@@ -203,7 +203,7 @@ Every customer email includes an unsubscribe link. Unsubscribed customers never 
 | Review request | Review request · Request + reminder | An order is completed |
 | Welcome series | Welcome email · 3-email series | A customer creates an account |
 | Win-back 90 days | Win-back + discount · Win-back + free shipping | A customer has not ordered for 90 days |
-| High-value order alert | High-value order alert (email to staff) | A large order is paid (starts processing, or is completed at once for downloads) |
+| High-value order alert | High-value order alert (email to staff) | Order status changes from pending, on-hold or failed to processing or completed, total ≥ 500 |
 
 Template names, timings and coupon values are proposals until confirmed: see [Template details](#template-details-proposals).
 
@@ -252,18 +252,18 @@ Risk scale: **1** = UI or template content, easy to undo · **2** = new feature 
 | # | Milestone | Delivers | Owner | Status | Risk | Depends on |
 |---|---|---|---|---|---|---|
 | M0 | Editor + engine foundation | Visual editor, pickers, conditions, version history, High-value order alert v0 | Jack | Done | — | — |
-| M1 | Customer emails + coupons | Send email, Generate coupon, unsubscribe, first-order conditions; **First-order thank-you** (2) | Jack | Todo | 3 | — |
-| M2 | Wait + run history | Wait step, run history on the overview page; **Cross-sell / upsell** (4) | Jack | Todo | 3 | M1 |
-| M3 | Review request | Review conditions and review links; **Review request** (2) | Jack | Todo | 2 | M2 |
-| M4 | Welcome series | Account created trigger; **Welcome series** (2) | Jack | Todo | 2 | M2 |
-| M5 | High-value order alert | Template moved to "order is paid"; **High-value order alert** (1) | Jack | Todo | 1 | — |
-| M6 | Win-back | Inactive customer trigger (checked daily); **Win-back 90 days** (2) | Jack | Todo | 2 | M2 |
-| CT | Custom workflow catalog | 6 triggers, about 25 condition fields, condition groups, 5 actions and a fix to Update order custom field, for workflows built from New Workflow | Jack | Todo | 3 | M6 |
-| M7 | Cart tracking + Settings | Tracks carts and guest emails at checkout, restore link, Settings page | Jack | Todo | 3 | — |
-| M8 | Abandoned cart + checkout | Both triggers; **Abandoned cart** (3), **Abandoned checkout** (2) | Jack | Todo | 2 | M1, M2, M7 |
-| M9 | Release hardening | Each of the 8 workflows tested on staging, e2e journeys, translations, release build; plus items picked from the release checklist below | Jack | Todo | 2 | all |
+| M1 | Customer emails + coupons | Send email, Generate coupon, unsubscribe, first-order conditions; **First-order thank-you** (2) | Jack | Done | 3 | — |
+| M2 | Wait + run history | Wait step, run history on the overview page; **Cross-sell / upsell** (4) | Jack | Done | 3 | M1 |
+| M3 | Review request | Review conditions and review links; **Review request** (2) | Jack | Done | 2 | M2 |
+| M4 | Welcome series | Account created trigger; **Welcome series** (2) | Jack | Done | 2 | M2 |
+| M5 | High-value order alert | Starts when the order status changes from pending, on-hold or failed to processing or completed, total ≥ 500; **High-value order alert** (1) | Jack | Done | 1 | — |
+| M6 | Win-back | Inactive customer trigger (checked daily); **Win-back 90 days** (2) | Jack | Done | 2 | M2 |
+| CT | Custom workflow catalog | 6 triggers, about 25 condition fields, condition groups, 5 actions and a fix to Update order custom field, for workflows built from New Workflow | Jack | Done | 3 | M6 |
+| M7 | Cart tracking + Settings | Tracks carts and guest emails at checkout, restore link, Settings page | Jack | Done | 3 | — |
+| M8 | Abandoned cart + checkout | Both triggers; **Abandoned cart** (3), **Abandoned checkout** (2) | Jack | Done | 2 | M1, M2, M7 |
+| M9 | Release hardening | Each of the 8 workflows tested on staging, e2e journeys, translations, release build; plus items picked from the release checklist below | Jack | In progress | 2 | all |
 
-One developer (Jack) builds v1.0. Full v1.0 scope does not fit by Nov 30 with one developer. Estimates and the release date will be added after M1. M1 builds the core pieces (customer emails, coupons, unsubscribe), so it gives a real measure of pace. The developer also supports other plugins at times, which can shift dates.
+One developer (Jack) builds v1.0; Jack sets the release date. The developer also supports other plugins at times.
 
 **Build order:** M1 → M2 → M7 → M8 → M3 → M4 → M5 → M6 → CT → M9. Abandoned cart brings the most revenue, so it comes right after the foundations.
 "Depends on" lists what must exist first, not the order of work: M3, M4 and M6 only need M2; M5 needs nothing and can move earlier if useful.
@@ -279,22 +279,27 @@ v1.0 can ship when all of these are true:
 3. Coupons from templates work at checkout and expire as set.
 4. Deactivating a workflow stops it right away, including runs that are waiting.
 5. Restore-cart links refill the cart, and a recovered order stops the reminder series.
-6. Works with classic and block checkout, light and dark admin themes; all text translatable.
+6. Works with classic and block checkout; the admin is light only (no dark mode in v1.0); all text translatable.
 7. Release checklist items picked for v1.0 (below) are done.
 
-## Release checklist — to decide
+## Release checklist
 
-These are missing today. They are **not** in scope until picked:
+Picked Oct 26 and Nov 9 (WordPress.org submission). The acceptance list is `.claude/docs/context-wporg-release-checklist.md`.
 
-| Item | Today |
+| Item | v1.0 |
 |---|---|
-| License activation + automatic updates | Not set up yet |
-| First-run onboarding | None; first visit shows the empty workflow list |
-| User documentation | Help links point to a placeholder page |
-| Translation file | Not generated yet |
-| WordPress.org-style readme | Missing |
-| Data cleanup on uninstall | Not handled |
-| "Requires WooCommerce" in plugin header | Missing |
+| Version 1.0.0 | Yes |
+| Plugin header: "Requires Plugins: woocommerce", minimum versions, license | Yes |
+| Translation file | Yes |
+| WordPress.org readme | Yes |
+| Requirements checked at runtime (WordPress, PHP, WooCommerce) | Yes |
+| Clean deactivation and uninstall; all data removed only when `YAYMATIK_REMOVE_ALL_DATA` is set | Yes |
+| Free zip with no license client or updater | Yes |
+| License activation + automatic updates | No (Pro) |
+| First-run onboarding | No |
+| User documentation | No |
+
+**API freeze:** v1.0 ships its hooks and actions as experimental; they freeze with Extension API v1 in v1.1. Classes under `YayMatik\Workflow\` are internal. See [workflow-core-design.md §8](workflow-core-design.md).
 
 ## Main risks
 
@@ -326,5 +331,5 @@ Each has a proposed answer, used until confirmed.
 | 4 | Can Wait be set in minutes? | Yes (also useful for testing); hours, days and weeks too |
 | 5 | Runs / Last run columns and status filter on the list page in v1.0? | Yes, in M2 |
 | 6 | "Most popular" sort before we track installs | Fixed order based on expected demand |
-| 7 | Which release checklist items go into v1.0? | None until picked |
-| 8 | Release date and estimates | After M1 |
+| 7 | Which release checklist items go into v1.0? | Answered Oct 26 and Nov 9: see [Release checklist](#release-checklist) |
+| 8 | Release date and estimates | Set by Jack |

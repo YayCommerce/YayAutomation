@@ -3,7 +3,11 @@ namespace YayMatik\Workflow\Modules;
 
 defined( 'ABSPATH' ) || exit;
 
-/** One plugin's part of Workflow Core: its logo, steps and data items. */
+/**
+ * One plugin's part of Workflow Core: its logo, steps and data items.
+ *
+ * @internal Experimental: may change before Extension API v1.
+ */
 abstract class Module {
 
     /** Plugin id, e.g. `woocommerce`; the `plugin` of every step it registers. */
