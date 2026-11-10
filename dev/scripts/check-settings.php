@@ -37,6 +37,7 @@ $call = function ( string $method, string $route, $body = null ) {
     }
     return rest_do_request( $request );
 };
+
 $fields = fn( $res ) => array_column( $res->get_data()['data']['errors'] ?? [], 'field' );
 
 // Test runs use a workflow id no real workflow has. The daily jobs keep their times: the fixes below reschedule them.
@@ -133,27 +134,28 @@ $check = function ( string $id ) use ( $call ) {
     }
     return null;
 };
+
 $res = $call( 'GET', 'health/checks' );
 $ok( 200 === $res->get_status() && [ 'runs_queued', 'runs_running', 'jobs_late', 'cleanup_job', 'inactive_sweep_job' ] === array_column( $res->get_data()['checks'], 'id' ) && false !== strtotime( $res->get_data()['checkedAt'] ), 'GET /health/checks: the 5 checks and checkedAt' );
-foreach ( [ 'jobs_late', 'nope', '' ] as $id ) {
-    $ok( 400 === $call( 'POST', 'health/fix', [ 'check' => $id ] )->get_status(), "fix \"{$id}\" → 400" );
+foreach ( [ 'jobs_late', 'nope', '' ] as $check_id ) {
+    $ok( 400 === $call( 'POST', 'health/fix', [ 'check' => $check_id ] )->get_status(), "fix \"{$check_id}\" → 400" );
 }
 
 foreach ( [
     'cleanup_job'        => Cleanup::HOOK,
     'inactive_sweep_job' => InactiveSweep::HOOK,
-] as $id => $hook ) {
+] as $check_id => $hook ) {
     as_unschedule_all_actions( $hook, [], ActionSchedulerQueue::GROUP );
-    $found = $check( $id );
-    $ok( 'problem' === $found['status'] && 'schedule' === $found['fix'], "{$id}: job missing → problem, fix schedule" );
-    $res = $call( 'POST', 'health/fix', [ 'check' => $id ] );
-    $ok( 200 === $res->get_status() && 1 === $res->get_data()['fixed'] && as_has_scheduled_action( $hook, [], ActionSchedulerQueue::GROUP ), "{$id}: fix schedules it again" );
-    $ok( 'ok' === $check( $id )['status'] && 0 === $call( 'POST', 'health/fix', [ 'check' => $id ] )->get_data()['fixed'], "{$id}: ok after the fix; fixing again does nothing" );
+    $found = $check( $check_id );
+    $ok( 'problem' === $found['status'] && 'schedule' === $found['fix'], "{$check_id}: job missing → problem, fix schedule" );
+    $res = $call( 'POST', 'health/fix', [ 'check' => $check_id ] );
+    $ok( 200 === $res->get_status() && 1 === $res->get_data()['fixed'] && as_has_scheduled_action( $hook, [], ActionSchedulerQueue::GROUP ), "{$check_id}: fix schedules it again" );
+    $ok( 'ok' === $check( $check_id )['status'] && 0 === $call( 'POST', 'health/fix', [ 'check' => $check_id ] )->get_data()['fixed'], "{$check_id}: ok after the fix; fixing again does nothing" );
 }
 
 $past  = gmdate( 'Y-m-d H:i:s', time() - HOUR_IN_SECONDS );
 $stuck = function ( string $status ) use ( $wpdb, $w, $past ) {
-    $id = RunStore::create(
+    $run_id = RunStore::create(
         [
             'workflow_id' => $w,
             'version_id'  => 1,
@@ -167,28 +169,28 @@ $stuck = function ( string $status ) use ( $wpdb, $w, $past ) {
             'status'     => $status,
             'started_at' => $past,
         ],
-        [ 'id' => $id ]
+        [ 'id' => $run_id ]
     );
-    return $id;
+    return $run_id;
 };
 foreach ( [
     'runs_queued'  => [ 'queued', 'enqueue', ActionSchedulerQueue::HOOK ],
     'runs_running' => [ 'running', 'recover', ActionSchedulerQueue::RECOVER_HOOK ],
-] as $id => list( $status, $fix, $hook ) ) {
+] as $check_id => list( $run_status, $fix, $hook ) ) {
     // The fix takes every stuck run: with the site's own, it would resume them too.
-    $own = $check( $id )['count'];
+    $own = $check( $check_id )['count'];
     if ( $own ) {
-        echo "SKIP {$id}: the site has {$own} stuck run(s) of its own\n"; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+        echo "SKIP {$check_id}: the site has {$own} stuck run(s) of its own\n"; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
         continue;
     }
-    $run   = $stuck( $status );
-    $found = $check( $id );
-    $ok( 'problem' === $found['status'] && $fix === $found['fix'] && in_array( $run, $found['runIds'], true ), "{$id}: a {$status} run with no job → problem, fix {$fix}" );
-    $res = $call( 'POST', 'health/fix', [ 'check' => $id ] );
+    $run   = $stuck( $run_status );
+    $found = $check( $check_id );
+    $ok( 'problem' === $found['status'] && $fix === $found['fix'] && in_array( $run, $found['runIds'], true ), "{$check_id}: a {$run_status} run with no job → problem, fix {$fix}" );
+    $res = $call( 'POST', 'health/fix', [ 'check' => $check_id ] );
     $has = as_has_scheduled_action( $hook, [ $run ], ActionSchedulerQueue::GROUP );
     // The job is removed at once, so the site's runner never takes this test run.
     as_unschedule_all_actions( $hook, [ $run ], ActionSchedulerQueue::GROUP );
-    $ok( 200 === $res->get_status() && $res->get_data()['fixed'] >= 1 && $has, "{$id}: fix gives the run a {$hook} job" );
+    $ok( 200 === $res->get_status() && $res->get_data()['fixed'] >= 1 && $has, "{$check_id}: fix gives the run a {$hook} job" );
     $wpdb->delete( RunStore::table(), [ 'id' => $run ] );
 }
 

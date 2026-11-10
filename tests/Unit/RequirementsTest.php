@@ -24,15 +24,15 @@ final class RequirementsTest extends TestCase {
 
     public function versions(): array {
         return [
-            'all at the minimum'       => [ '6.9', '7.4.0', '11.0.0', [] ],
-            'all newer'                => [ '7.1', '8.5.1', '11.2.2', [] ],
-            'an RC of the minimums'    => [ '6.9-RC1', '7.4.0', '11.0.0-rc.1', [] ],
+            'all at the minimum'        => [ '6.9', '7.4.0', '11.0.0', [] ],
+            'all newer'                 => [ '7.1', '8.5.1', '11.2.2', [] ],
+            'an RC of the minimums'     => [ '6.9-RC1', '7.4.0', '11.0.0-rc.1', [] ],
             'a WordPress beta is newer' => [ '7.1-beta1', '7.4.33', '11.0', [] ],
-            'old WordPress'            => [ '6.8.3', '8.1.0', '11.2.2', [ 'WordPress 6.9' ] ],
-            'old PHP'                  => [ '6.9', '7.3.33', '11.2.2', [ 'PHP 7.4' ] ],
-            'old WooCommerce'          => [ '6.9', '8.1.0', '10.9.1', [ 'WooCommerce 11.0' ] ],
-            'WooCommerce not active'   => [ '6.9', '8.1.0', null, [ 'WooCommerce 11.0' ] ],
-            'all three'                => [ '6.5', '7.2.0', null, [ 'WordPress 6.9', 'PHP 7.4', 'WooCommerce 11.0' ] ],
+            'old WordPress'             => [ '6.8.3', '8.1.0', '11.2.2', [ 'WordPress 6.9' ] ],
+            'old PHP'                   => [ '6.9', '7.3.33', '11.2.2', [ 'PHP 7.4' ] ],
+            'old WooCommerce'           => [ '6.9', '8.1.0', '10.9.1', [ 'WooCommerce 11.0' ] ],
+            'WooCommerce not active'    => [ '6.9', '8.1.0', null, [ 'WooCommerce 11.0' ] ],
+            'all three'                 => [ '6.5', '7.2.0', null, [ 'WordPress 6.9', 'PHP 7.4', 'WooCommerce 11.0' ] ],
         ];
     }
 
@@ -51,11 +51,11 @@ final class RequirementsTest extends TestCase {
         if ( ! defined( 'WC_VERSION' ) ) {
             define( 'WC_VERSION', '11.2.2' );
         }
-        $GLOBALS['wp_version'] = '6.9';
+        $GLOBALS['wp_version'] = '6.9'; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- no WordPress here.
         $this->assertTrue( Requirements::met() );
         $this->assertArrayNotHasKey( 'admin_notices', $GLOBALS['yaymatik_test_filters'] ?? [] );
 
-        $GLOBALS['wp_version'] = '6.8';
+        $GLOBALS['wp_version'] = '6.8'; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- no WordPress here.
         $this->assertFalse( Requirements::met() );
         $this->assertCount( 1, $GLOBALS['yaymatik_test_filters']['admin_notices'] ?? [] );
         $this->assertCount( 1, $GLOBALS['yaymatik_test_filters']['network_admin_notices'] ?? [] );

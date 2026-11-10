@@ -43,7 +43,7 @@ $tables    = function () use ( $wpdb ) {
 $coupon_id = function () {
     return wc_get_coupon_id_by_code( 'yaymatik-lifecycle-check' );
 };
-$order     = function () {
+$the_order = function () {
     return wc_get_orders(
         [
             'billing_email' => 'lifecycle@yay-seed.test',
@@ -51,6 +51,7 @@ $order     = function () {
         ]
     )[0] ?? null;
 };
+
 $orders_meta = $wpdb->prefix . 'wc_orders_meta';
 $hpos        = $orders_meta === $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $orders_meta ) );
 
@@ -103,7 +104,7 @@ switch ( $args[0] ?? '' ) {
             $coupon->update_meta_data( '_yaymatik_generated', '1' );
             $coupon->save();
         }
-        if ( ! $order() ) {
+        if ( ! $the_order() ) {
             $new = wc_create_order();
             $new->set_billing_email( 'lifecycle@yay-seed.test' );
             $new->update_meta_data( '_yaymatik_lifecycle_check', '1' );
@@ -111,7 +112,7 @@ switch ( $args[0] ?? '' ) {
         }
         $ok( $in_group() > 0 && $like( $wpdb->options, 'option_name', '\_transient\_yaymatik\_%' ) > 0, 'prepared: a job in the group and a transient' );
         $ok( 7 === $tables() && false !== get_option( 'yaymatik_db_version' ), 'prepared: 7 tables and the options' );
-        $ok( $coupon_id() && '1' === get_post_meta( $coupon_id(), '_yaymatik_generated', true ) && $order(), 'prepared: a generated coupon and an order with YayMatik meta' );
+        $ok( $coupon_id() && '1' === get_post_meta( $coupon_id(), '_yaymatik_generated', true ) && $the_order(), 'prepared: a generated coupon and an order with YayMatik meta' );
         break;
 
     case 'uninstalled-kept':
@@ -120,7 +121,7 @@ switch ( $args[0] ?? '' ) {
         $ok( 7 === $tables(), 'without the constant: the 7 tables stay' );
         $ok( false !== get_option( 'yaymatik_db_version' ) && $like( $wpdb->options, 'option_name', 'yaymatik\_%' ) > 0, 'without the constant: options stay' );
         $ok( '1' === get_post_meta( $coupon_id(), '_yaymatik_generated', true ), 'without the constant: coupon meta stays' );
-        $ok( '1' === $order()->get_meta( '_yaymatik_lifecycle_check' ), 'without the constant: order meta stays' );
+        $ok( '1' === $the_order()->get_meta( '_yaymatik_lifecycle_check' ), 'without the constant: order meta stays' );
         break;
 
     case 'uninstalled-all':
@@ -136,7 +137,7 @@ switch ( $args[0] ?? '' ) {
     case 'cleanup':
         // By id afterwards: WooCommerce caches the coupon id of a code for the rest of the process.
         $coupon   = $coupon_id();
-        $order_id = $order() ? $order()->get_id() : 0;
+        $order_id = $the_order() ? $the_order()->get_id() : 0;
         if ( $coupon ) {
             wp_delete_post( $coupon, true );
         }
