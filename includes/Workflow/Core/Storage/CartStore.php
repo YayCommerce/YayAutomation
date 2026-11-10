@@ -91,8 +91,7 @@ final class CartStore {
             $data
         );
         $updated = array_merge( array_keys( $fields ), [ 'updated_at' ] );
-        // Columns and the updated ones as %i, values with their formats.
-        $args = array_merge(
+        $args    = array_merge(
             [ self::table() ],
             array_keys( $data ),
             array_values( $data ),

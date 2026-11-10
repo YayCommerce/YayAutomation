@@ -80,8 +80,7 @@ final class RunStore {
     public static function find( int $id ): ?array {
         global $wpdb;
         $table = self::table();
-
-        $row = $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM %i WHERE id = %d', $table, $id ), ARRAY_A );
+        $row   = $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM %i WHERE id = %d', $table, $id ), ARRAY_A );
         return $row ? self::decode( $row ) : null;
     }
 
@@ -167,7 +166,7 @@ final class RunStore {
         }
         $statuses = array_values( array_intersect( (array) ( $args['status'] ?? [] ), self::STATUSES ) );
         if ( $statuses ) {
-            $where[] = 'status IN (' . implode( ',', array_fill( 0, count( $statuses ), '%s' ) ) . ')';
+            $where[] = 'status IN (' . Schema::in( count( $statuses ), '%s' ) . ')';
             $params  = array_merge( $params, $statuses );
         }
         return [ $where ? 'WHERE ' . implode( ' AND ', $where ) : '', $params ];
@@ -184,8 +183,7 @@ final class RunStore {
         global $wpdb;
         $table  = self::table();
         $cutoff = gmdate( 'Y-m-d H:i:s', time() - $seconds );
-
-        $row = $wpdb->get_row( $wpdb->prepare( 'SELECT COUNT(*) AS total, COALESCE(SUM(depth > 0), 0) AS chained FROM %i WHERE workflow_id = %d AND started_at >= %s', $table, $workflow_id, $cutoff ), ARRAY_A );
+        $row    = $wpdb->get_row( $wpdb->prepare( 'SELECT COUNT(*) AS total, COALESCE(SUM(depth > 0), 0) AS chained FROM %i WHERE workflow_id = %d AND started_at >= %s', $table, $workflow_id, $cutoff ), ARRAY_A );
         return [
             'all'     => (int) ( $row['total'] ?? 0 ),
             'chained' => (int) ( $row['chained'] ?? 0 ),
@@ -207,7 +205,6 @@ final class RunStore {
         $table = self::table();
         if ( in_array( self::STATUS_RUNNING, $from, true ) ) {
             // Back to `queued` first: an UPDATE that leaves a row as it was counts 0 rows in MySQL.
-
             $wpdb->query( $wpdb->prepare( 'UPDATE %i SET status = %s WHERE id = %d AND status = %s', $table, self::STATUS_QUEUED, $id, self::STATUS_RUNNING ) );
             $from = array_values( array_unique( array_merge( array_diff( $from, [ self::STATUS_RUNNING ] ), [ self::STATUS_QUEUED ] ) ) );
         }
@@ -233,8 +230,7 @@ final class RunStore {
     public static function waiting_ids( int $workflow_id ): array {
         global $wpdb;
         $table = self::table();
-
-        $ids = $wpdb->get_col( $wpdb->prepare( 'SELECT id FROM %i WHERE workflow_id = %d AND status = %s', $table, $workflow_id, self::STATUS_WAITING ) );
+        $ids   = $wpdb->get_col( $wpdb->prepare( 'SELECT id FROM %i WHERE workflow_id = %d AND status = %s', $table, $workflow_id, self::STATUS_WAITING ) );
         return array_map( 'intval', (array) $ids );
     }
 

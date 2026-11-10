@@ -29,34 +29,16 @@ final class CustomerStats {
                 'last_paid' => null,
             ];
         }
-        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- $set has placeholders for $params.
         $row = $wpdb->get_row( $wpdb->prepare( "SELECT COUNT(*) AS paid, COALESCE(SUM(s.total), 0) AS total, MAX(s.created) AS newest FROM ({$set}) s", $params ), ARRAY_A );
         self::check();
         // Refund totals are stored negative.
-        if ( OrderUtil::custom_orders_table_usage_is_enabled() ) {
-            $refunds = $wpdb->get_var(
-                // phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- $set has placeholders for $params.
-                $wpdb->prepare(
-                    // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
-                    "SELECT COALESCE(SUM(r.total_amount), 0) FROM %i r WHERE r.type = 'shop_order_refund' AND r.parent_order_id IN (SELECT s.id FROM ({$set}) s)",
-                    array_merge( [ $wpdb->prefix . 'wc_orders' ], $params )
-                )
-            );
-        } else {
-            $refunds = $wpdb->get_var(
-                // phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- $set has placeholders for $params.
-                $wpdb->prepare(
-                    // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
-                    "SELECT COALESCE(SUM(CAST(t.meta_value AS DECIMAL(26,8))), 0) FROM %i r LEFT JOIN %i t ON t.post_id = r.ID AND t.meta_key = '_order_total' WHERE r.post_type = 'shop_order_refund' AND r.post_parent IN (SELECT s.id FROM ({$set}) s)",
-                    array_merge( [ $wpdb->posts, $wpdb->postmeta ], $params )
-                )
-            );
-        }
+        list( $refunds_sql, $refunds_params ) = self::refunds_sql( $set, $params );
+        $refunds                              = (float) $wpdb->get_var( $wpdb->prepare( $refunds_sql, $refunds_params ) );
         self::check();
         return [
             'count'     => (int) ( $row['paid'] ?? 0 ),
             // Two floats: 150.7 - 50.7 would miss "total spent is 100".
-            'spent'     => round( (float) ( $row['total'] ?? 0 ) + (float) $refunds, 8 ),
+            'spent'     => round( (float) ( $row['total'] ?? 0 ) + $refunds, 8 ),
             'last_paid' => empty( $row['newest'] ) ? null : (int) strtotime( $row['newest'] . ' UTC' ),
         ];
     }
@@ -76,9 +58,7 @@ final class CustomerStats {
             return [];
         }
         $ids = $wpdb->get_col(
-            // phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- $set has placeholders for $params.
             $wpdb->prepare(
-                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
                 "SELECT DISTINCT m.meta_value FROM %i m JOIN %i i ON i.order_item_id = m.order_item_id WHERE m.meta_key = '_product_id' AND i.order_item_type = 'line_item' AND i.order_id IN (SELECT s.id FROM ({$set}) s)",
                 array_merge( [ $wpdb->prefix . 'woocommerce_order_itemmeta', $wpdb->prefix . 'woocommerce_order_items' ], $params )
             )
@@ -102,9 +82,12 @@ final class CustomerStats {
             return [ '', [] ];
         }
         $statuses = array_map( fn( string $status ) => 'wc-' . $status, wc_get_is_paid_statuses() );
-        $hpos     = OrderUtil::custom_orders_table_usage_is_enabled();
-        $person   = [];
-        $values   = [];
+        if ( ! $statuses ) {
+            return [ '', [] ];
+        }
+        $hpos   = OrderUtil::custom_orders_table_usage_is_enabled();
+        $person = [];
+        $values = [];
         if ( $user_id > 0 ) {
             $person[] = $hpos ? 'o.customer_id = %d' : 'u.meta_value = %d';
             $values[] = $user_id;
@@ -128,6 +111,27 @@ final class CustomerStats {
             LEFT JOIN %i t ON t.post_id = p.ID AND t.meta_key = '_order_total'
             WHERE p.post_type = 'shop_order' AND p.post_status IN ({$in}) AND ({$person})",
             array_merge( [ $wpdb->posts, $wpdb->postmeta, $wpdb->postmeta, $wpdb->postmeta ], $statuses, $values ),
+        ];
+    }
+
+    /**
+     * The sum of the refunds of a set of orders: SQL with placeholders and their values.
+     *
+     * @param string $set From `paid_set()`.
+     * @param array  $params Its values.
+     * @return array [ string $sql, array $params ]
+     */
+    private static function refunds_sql( string $set, array $params ): array {
+        global $wpdb;
+        if ( OrderUtil::custom_orders_table_usage_is_enabled() ) {
+            return [
+                "SELECT COALESCE(SUM(r.total_amount), 0) FROM %i r WHERE r.type = 'shop_order_refund' AND r.parent_order_id IN (SELECT s.id FROM ({$set}) s)",
+                array_merge( [ $wpdb->prefix . 'wc_orders' ], $params ),
+            ];
+        }
+        return [
+            "SELECT COALESCE(SUM(CAST(t.meta_value AS DECIMAL(26,8))), 0) FROM %i r LEFT JOIN %i t ON t.post_id = r.ID AND t.meta_key = '_order_total' WHERE r.post_type = 'shop_order_refund' AND r.post_parent IN (SELECT s.id FROM ({$set}) s)",
+            array_merge( [ $wpdb->posts, $wpdb->postmeta ], $params ),
         ];
     }
 
