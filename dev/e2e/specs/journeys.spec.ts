@@ -135,7 +135,8 @@ test('an unsubscribe link stops the next email', async ({ page, browser, baseURL
 
   // Two shoppers; only the first unsubscribes, so the second shows the review email does go out.
   const leaving = uniqueEmail();
-  const staying = `stays-${leaving}`;
+  // Not `stays-${leaving}`: a row filter by text would then match both addresses.
+  const staying = leaving.replace('shopper-', 'stays-');
   for (const email of [leaving, staying]) {
     const shopper = await guestPage(browser, baseURL);
     await addToCart(shopper);

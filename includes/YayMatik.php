@@ -14,19 +14,17 @@ final class YayMatik {
         \YayMatik\Engine\API\SettingsRoutes::get_instance();
         \YayMatik\Engine\FEPages\UnsubscribePage::get_instance();
         \YayMatik\Workflow\Core\Storage\Schema::maybe_install();
-        if ( class_exists( 'WooCommerce' ) ) {
-            \YayMatik\Workflow\Core\Runtime\Runtime::boot();
-            \YayMatik\Workflow\Core\Cart\CartTracker::boot();
-            // Not in CartTracker::boot(): links in emails already sent work while tracking is off.
-            \YayMatik\Engine\FEPages\RestoreCart::get_instance();
-            // Not behind cart tracking either: carts saved before it was turned off still expire and can be erased.
-            \YayMatik\Workflow\Core\Runtime\Cleanup::boot();
-            \YayMatik\Workflow\Core\Cart\CartSweep::boot();
-            \YayMatik\Workflow\Core\Runtime\InactiveSweep::boot();
-            \YayMatik\Engine\Privacy\PersonalData::get_instance();
-            \YayMatik\Engine\API\HealthRoutes::get_instance();
-            \YayMatik\Engine\API\SearchRoutes::get_instance();
-        }
+        \YayMatik\Workflow\Core\Runtime\Runtime::boot();
+        \YayMatik\Workflow\Core\Cart\CartTracker::boot();
+        // Not in CartTracker::boot(): links in emails already sent work while tracking is off.
+        \YayMatik\Engine\FEPages\RestoreCart::get_instance();
+        // Not behind cart tracking either: carts saved before it was turned off still expire and can be erased.
+        \YayMatik\Workflow\Core\Runtime\Cleanup::boot();
+        \YayMatik\Workflow\Core\Cart\CartSweep::boot();
+        \YayMatik\Workflow\Core\Runtime\InactiveSweep::boot();
+        \YayMatik\Engine\Privacy\PersonalData::get_instance();
+        \YayMatik\Engine\API\HealthRoutes::get_instance();
+        \YayMatik\Engine\API\SearchRoutes::get_instance();
 
         $this->register_admin_menu();
         // Orders are only read through WC_Order, so HPOS (custom order tables) is safe.

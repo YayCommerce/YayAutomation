@@ -73,7 +73,7 @@ A free zip that passes the WordPress.org checklist, a light-only admin with a he
    - e2e: Settings save + Health check panel; an order through classic checkout; an unsubscribe link stops the next email. 031 rules apply.
    - Tests: check-settings on all three targets; `pnpm e2e` green three runs in a row.
    - Closes: criteria 2, 6 (classic checkout).
-7. ✅ **readme, release gate** (CP7HASH) — Risk: 1
+7. ✅ **readme, release gate** (4373e0f) — Risk: 1
    - Files: new `readme.txt`, `.claude/docs/ops-release.md` (gate, D19f order), `.distignore` if needed.
    - readme per D13: ≤ 5 tags, Stable tag 1.0.0, Tested up to 7.1, Source Code per open 3. Third-party libraries bundled in `main.js` (TanStack Query, Radix, motion, lucide, react-router …) are credited with name, version and URL.
    - Tests: readme validator (by hand, link in report), R2 versions equal.

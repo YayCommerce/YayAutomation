@@ -60,7 +60,7 @@ Yes. Cart tracking and guest email capture work with both.
 
 = What happens to my data when I delete the plugin? =
 
-Deleting the plugin removes its scheduled jobs and temporary data. Your workflows, run history, carts, settings and unsubscribes stay, so a reinstall picks up where you left off. To remove all of them, add this line to `wp-config.php` before you delete the plugin:
+Deleting the plugin removes its scheduled jobs and temporary data. Your workflows, run history, carts, settings and unsubscribes stay for a reinstall. Runs that were waiting then don't resume on their own: the Health check in Settings queues them again. To remove all of them, add this line to `wp-config.php` before you delete the plugin:
 
 `define( 'YAYMATIK_REMOVE_ALL_DATA', true );`
 
