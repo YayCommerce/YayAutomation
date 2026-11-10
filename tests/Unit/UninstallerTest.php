@@ -44,11 +44,11 @@ final class UninstallerTest extends TestCase {
         $sql = $this->queries();
 
         $this->assertCount( 4, $sql );
-        $this->assertStringStartsWith( 'DELETE l FROM wp_actionscheduler_logs l JOIN wp_actionscheduler_actions a', $sql[0] );
+        $this->assertStringStartsWith( 'DELETE l FROM `wp_actionscheduler_logs` l JOIN `wp_actionscheduler_actions` a', $sql[0] );
         $this->assertStringContainsString( "g.slug = 'yaymatik'", $sql[0] );
-        $this->assertStringStartsWith( 'DELETE a FROM wp_actionscheduler_actions a JOIN wp_actionscheduler_groups g', $sql[1] );
-        $this->assertSame( "DELETE FROM wp_actionscheduler_groups WHERE slug = 'yaymatik'", $sql[2] );
-        $this->assertSame( "DELETE FROM wp_options WHERE option_name LIKE '\\_transient\\_yaymatik\\_%' OR option_name LIKE '\\_transient\\_timeout\\_yaymatik\\_%'", $sql[3] );
+        $this->assertStringStartsWith( 'DELETE a FROM `wp_actionscheduler_actions` a JOIN `wp_actionscheduler_groups` g', $sql[1] );
+        $this->assertSame( "DELETE FROM `wp_actionscheduler_groups` WHERE slug = 'yaymatik'", $sql[2] );
+        $this->assertSame( "DELETE FROM `wp_options` WHERE option_name LIKE '\\\\_transient\\\\_yaymatik\\\\_%' OR option_name LIKE '\\\\_transient\\\\_timeout\\\\_yaymatik\\\\_%'", $sql[3] );
     }
 
     public function test_without_action_scheduler_tables_only_transients_go(): void {
@@ -63,13 +63,13 @@ final class UninstallerTest extends TestCase {
         Uninstaller::site( true );
         $sql = array_slice( $this->queries(), 4 );
 
-        $drops = array_map( fn( $name ) => "DROP TABLE IF EXISTS wp_yaymatik_{$name}", Uninstaller::TABLES );
+        $drops = array_map( fn( $name ) => "DROP TABLE IF EXISTS `wp_yaymatik_{$name}`", Uninstaller::TABLES );
         $this->assertSame( $drops, array_slice( $sql, 0, 7 ) );
         $this->assertSame(
             [
-                "DELETE FROM wp_options WHERE option_name LIKE 'yaymatik\\_%'",
-                "DELETE FROM wp_postmeta WHERE meta_key LIKE '\\_yaymatik\\_%'",
-                "DELETE FROM wp_wc_orders_meta WHERE meta_key LIKE '\\_yaymatik\\_%'",
+                "DELETE FROM `wp_options` WHERE option_name LIKE 'yaymatik\\\\_%'",
+                "DELETE FROM `wp_postmeta` WHERE meta_key LIKE '\\\\_yaymatik\\\\_%'",
+                "DELETE FROM `wp_wc_orders_meta` WHERE meta_key LIKE '\\\\_yaymatik\\\\_%'",
             ],
             array_slice( $sql, 7 )
         );

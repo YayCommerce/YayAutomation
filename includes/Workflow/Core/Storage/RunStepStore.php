@@ -97,14 +97,12 @@ final class RunStepStore {
         if ( ! in_array( $status, array_diff( self::STATUSES, self::OPEN ), true ) ) {
             return false;
         }
-        $table = self::table();
-        $open  = implode( ',', array_fill( 0, count( self::OPEN ), '%s' ) );
-        $done  = $wpdb->query(
+        $done = $wpdb->query(
             // phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- placeholders are built to match the array.
             $wpdb->prepare(
-                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
-                "UPDATE {$table} SET status = %s, error = %s, finished_at = %s WHERE run_id = %d AND status IN ({$open})",
-                array_merge( [ $status, $error, current_time( 'mysql', true ), $run_id ], self::OPEN )
+                // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- Schema::in() gives one %s per status.
+                'UPDATE %i SET status = %s, error = %s, finished_at = %s WHERE run_id = %d AND status IN (' . Schema::in( count( self::OPEN ), '%s' ) . ')',
+                array_merge( [ self::table(), $status, $error, current_time( 'mysql', true ), $run_id ], self::OPEN )
             )
         );
         if ( false === $done ) {
@@ -122,18 +120,13 @@ final class RunStepStore {
      */
     public static function cancel_waiting( array $run_ids, string $reason ): void {
         global $wpdb;
-        $table = self::table();
-        $runs  = RunStore::table();
-        $in    = implode( ',', array_map( 'intval', $run_ids ) );
-        $done  = $wpdb->query(
+        $ids  = array_map( 'intval', $run_ids );
+        $done = $wpdb->query(
+            // phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- placeholders are built to match the array.
             $wpdb->prepare(
-                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $in is a list of ints.
-                "UPDATE {$table} s INNER JOIN {$runs} r ON r.id = s.run_id SET s.status = %s, s.error = %s, s.finished_at = %s WHERE s.run_id IN ({$in}) AND r.status = %s AND s.status = %s",
-                self::STATUS_CANCELLED,
-                $reason,
-                current_time( 'mysql', true ),
-                RunStore::STATUS_CANCELLED,
-                self::STATUS_WAITING
+                // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- Schema::in() gives one %d per run.
+                'UPDATE %i s INNER JOIN %i r ON r.id = s.run_id SET s.status = %s, s.error = %s, s.finished_at = %s WHERE s.run_id IN (' . Schema::in( count( $ids ) ) . ') AND r.status = %s AND s.status = %s',
+                array_merge( [ self::table(), RunStore::table(), self::STATUS_CANCELLED, $reason, current_time( 'mysql', true ) ], $ids, [ RunStore::STATUS_CANCELLED, self::STATUS_WAITING ] )
             )
         );
         if ( false === $done ) {
@@ -149,9 +142,7 @@ final class RunStepStore {
      */
     public static function for_run( int $run_id ): array {
         global $wpdb;
-        $table = self::table();
-        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-        $rows = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$table} WHERE run_id = %d ORDER BY id ASC", $run_id ), ARRAY_A );
+        $rows = $wpdb->get_results( $wpdb->prepare( 'SELECT * FROM %i WHERE run_id = %d ORDER BY id ASC', self::table(), $run_id ), ARRAY_A );
         return array_map( [ self::class, 'decode' ], (array) $rows );
     }
 
@@ -167,10 +158,8 @@ final class RunStepStore {
         if ( ! $ids ) {
             return [];
         }
-        $table = self::table();
-        $in    = implode( ',', $ids );
-        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $in is a list of ints.
-        $rows = $wpdb->get_results( "SELECT run_id, COUNT(*) AS steps FROM {$table} WHERE run_id IN ({$in}) GROUP BY run_id", ARRAY_A );
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- Schema::in() gives one %d per run.
+        $rows = $wpdb->get_results( $wpdb->prepare( 'SELECT run_id, COUNT(*) AS steps FROM %i WHERE run_id IN (' . Schema::in( count( $ids ) ) . ') GROUP BY run_id', array_merge( [ self::table() ], array_values( $ids ) ) ), ARRAY_A );
         return array_map( 'intval', array_column( (array) $rows, 'steps', 'run_id' ) );
     }
 

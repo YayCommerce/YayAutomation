@@ -17,9 +17,8 @@ final class UnsubscribeStore {
             return false;
         }
         global $wpdb;
-        $table = self::table();
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- own table, read before each customer email.
-        return null !== $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$table} WHERE email = %s", $email ) );
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own table, read before each customer email.
+        return null !== $wpdb->get_var( $wpdb->prepare( 'SELECT id FROM %i WHERE email = %s', self::table(), $email ) );
     }
 
     /**
@@ -28,9 +27,8 @@ final class UnsubscribeStore {
      */
     public static function find( string $email ): ?array {
         global $wpdb;
-        $table = self::table();
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- own table, one row by its unique key.
-        $row = $wpdb->get_row( $wpdb->prepare( "SELECT email, created_at FROM {$table} WHERE email = %s", $email ), ARRAY_A );
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own table, one row by its unique key.
+        $row = $wpdb->get_row( $wpdb->prepare( 'SELECT email, created_at FROM %i WHERE email = %s', self::table(), $email ), ARRAY_A );
         return $row ? $row : null;
     }
 
@@ -46,9 +44,8 @@ final class UnsubscribeStore {
             return false;
         }
         global $wpdb;
-        $table = self::table();
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- own table, a write; IGNORE keeps the first date.
-        $done = $wpdb->query( $wpdb->prepare( "INSERT IGNORE INTO {$table} (email, created_at) VALUES (%s, %s)", $email, current_time( 'mysql', true ) ) );
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own table, a write; IGNORE keeps the first date.
+        $done = $wpdb->query( $wpdb->prepare( 'INSERT IGNORE INTO %i (email, created_at) VALUES (%s, %s)', self::table(), $email, current_time( 'mysql', true ) ) );
         return false !== $done;
     }
 

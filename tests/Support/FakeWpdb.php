@@ -42,9 +42,12 @@ final class FakeWpdb {
         $args = isset( $args[0] ) && is_array( $args[0] ) ? $args[0] : $args;
         $i    = 0;
         return preg_replace_callback(
-            '/%[ds]/',
+            '/%[dsi]/',
             function ( $m ) use ( $args, &$i ) {
                 $value = $args[ $i++ ] ?? '';
+                if ( '%i' === $m[0] ) {
+                    return '`' . str_replace( '`', '``', (string) $value ) . '`';
+                }
                 return '%d' === $m[0] ? (string) (int) $value : "'" . addslashes( (string) $value ) . "'";
             },
             $query

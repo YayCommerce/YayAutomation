@@ -80,8 +80,8 @@ final class RunStore {
     public static function find( int $id ): ?array {
         global $wpdb;
         $table = self::table();
-        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-        $row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE id = %d", $id ), ARRAY_A );
+
+        $row = $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM %i WHERE id = %d', $table, $id ), ARRAY_A );
         return $row ? self::decode( $row ) : null;
     }
 
@@ -97,11 +97,9 @@ final class RunStore {
         $params[]                = self::PER_PAGE;
         $params[]                = ( max( 1, (int) ( $args['page'] ?? 1 ) ) - 1 ) * self::PER_PAGE;
 
-        $table   = self::table();
-        $columns = 'id, workflow_id, version_id, trigger_id, subject, status, position, wait_until, error, parent_run_id, root_run_id, depth, started_at, finished_at';
-        $rows    = $wpdb->get_results(
-            // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- placeholders are built to match the array.
-            $wpdb->prepare( "SELECT {$columns} FROM {$table} {$filter} ORDER BY id DESC LIMIT %d OFFSET %d", $params ),
+        $rows = $wpdb->get_results(
+            // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- $filter has placeholders for $params.
+            $wpdb->prepare( "SELECT id, workflow_id, version_id, trigger_id, subject, status, position, wait_until, error, parent_run_id, root_run_id, depth, started_at, finished_at FROM %i {$filter} ORDER BY id DESC LIMIT %d OFFSET %d", array_merge( [ self::table() ], $params ) ),
             ARRAY_A
         );
         return array_map( [ self::class, 'decode' ], (array) $rows );
@@ -115,10 +113,8 @@ final class RunStore {
     public static function count( array $args = [] ): int {
         global $wpdb;
         list( $filter, $params ) = self::filter( $args );
-        $table                   = self::table();
-        $sql                     = "SELECT COUNT(*) FROM {$table} {$filter}";
-        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- placeholders are built to match the array; no filter, no placeholders.
-        return (int) $wpdb->get_var( $params ? $wpdb->prepare( $sql, $params ) : $sql );
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- $filter has placeholders for $params.
+        return (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM %i {$filter}", array_merge( [ self::table() ], $params ) ) );
     }
 
     /**
@@ -134,14 +130,12 @@ final class RunStore {
         if ( ! $ids ) {
             return [];
         }
-        $table = self::table();
-        $in    = implode( ',', $ids );
-        $rows  = $wpdb->get_results(
+        $rows = $wpdb->get_results(
+            // phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- Schema::in() gives one %d per workflow.
             $wpdb->prepare(
-                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $in is a list of ints.
-                "SELECT s.workflow_id, s.recent, s.waiting, s.last_id, r.started_at AS last_run, r.status AS last_status FROM (SELECT workflow_id, SUM(started_at >= %s) AS recent, SUM(status = %s) AS waiting, MAX(id) AS last_id FROM {$table} WHERE workflow_id IN ({$in}) GROUP BY workflow_id) s INNER JOIN {$table} r ON r.id = s.last_id",
-                gmdate( 'Y-m-d H:i:s', time() - 30 * 86400 ),
-                self::STATUS_WAITING
+                // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
+                'SELECT s.workflow_id, s.recent, s.waiting, s.last_id, r.started_at AS last_run, r.status AS last_status FROM (SELECT workflow_id, SUM(started_at >= %s) AS recent, SUM(status = %s) AS waiting, MAX(id) AS last_id FROM %i WHERE workflow_id IN (' . Schema::in( count( $ids ) ) . ') GROUP BY workflow_id) s INNER JOIN %i r ON r.id = s.last_id',
+                array_merge( [ gmdate( 'Y-m-d H:i:s', time() - 30 * 86400 ), self::STATUS_WAITING, self::table() ], array_values( $ids ), [ self::table() ] )
             ),
             ARRAY_A
         );
@@ -190,8 +184,8 @@ final class RunStore {
         global $wpdb;
         $table  = self::table();
         $cutoff = gmdate( 'Y-m-d H:i:s', time() - $seconds );
-        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-        $row = $wpdb->get_row( $wpdb->prepare( "SELECT COUNT(*) AS total, COALESCE(SUM(depth > 0), 0) AS chained FROM {$table} WHERE workflow_id = %d AND started_at >= %s", $workflow_id, $cutoff ), ARRAY_A );
+
+        $row = $wpdb->get_row( $wpdb->prepare( 'SELECT COUNT(*) AS total, COALESCE(SUM(depth > 0), 0) AS chained FROM %i WHERE workflow_id = %d AND started_at >= %s', $table, $workflow_id, $cutoff ), ARRAY_A );
         return [
             'all'     => (int) ( $row['total'] ?? 0 ),
             'chained' => (int) ( $row['chained'] ?? 0 ),
@@ -213,19 +207,18 @@ final class RunStore {
         $table = self::table();
         if ( in_array( self::STATUS_RUNNING, $from, true ) ) {
             // Back to `queued` first: an UPDATE that leaves a row as it was counts 0 rows in MySQL.
-            // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-            $wpdb->query( $wpdb->prepare( "UPDATE {$table} SET status = %s WHERE id = %d AND status = %s", self::STATUS_QUEUED, $id, self::STATUS_RUNNING ) );
+
+            $wpdb->query( $wpdb->prepare( 'UPDATE %i SET status = %s WHERE id = %d AND status = %s', $table, self::STATUS_QUEUED, $id, self::STATUS_RUNNING ) );
             $from = array_values( array_unique( array_merge( array_diff( $from, [ self::STATUS_RUNNING ] ), [ self::STATUS_QUEUED ] ) ) );
         }
         // A waiting run only once its wait is over; `wait_until` stays, so the Executor can tell a woken
         // wait from an interrupted one.
-        $in   = implode( ',', array_fill( 0, count( $from ), '%s' ) );
         $done = $wpdb->query(
             // phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- placeholders are built to match the array.
             $wpdb->prepare(
-                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
-                "UPDATE {$table} SET status = %s WHERE id = %d AND status IN ({$in}) AND ( status <> %s OR wait_until IS NULL OR wait_until <= %s )",
-                array_merge( [ self::STATUS_RUNNING, $id ], $from, [ self::STATUS_WAITING, current_time( 'mysql', true ) ] )
+                // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- Schema::in() gives the list placeholders.
+                'UPDATE %i SET status = %s WHERE id = %d AND status IN (' . Schema::in( count( $from ), '%s' ) . ') AND ( status <> %s OR wait_until IS NULL OR wait_until <= %s )',
+                array_merge( [ $table, self::STATUS_RUNNING, $id ], $from, [ self::STATUS_WAITING, current_time( 'mysql', true ) ] )
             )
         );
         return 1 === $done;
@@ -240,8 +233,8 @@ final class RunStore {
     public static function waiting_ids( int $workflow_id ): array {
         global $wpdb;
         $table = self::table();
-        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-        $ids = $wpdb->get_col( $wpdb->prepare( "SELECT id FROM {$table} WHERE workflow_id = %d AND status = %s", $workflow_id, self::STATUS_WAITING ) );
+
+        $ids = $wpdb->get_col( $wpdb->prepare( 'SELECT id FROM %i WHERE workflow_id = %d AND status = %s', $table, $workflow_id, self::STATUS_WAITING ) );
         return array_map( 'intval', (array) $ids );
     }
 
@@ -256,10 +249,8 @@ final class RunStore {
         if ( ! $subjects ) {
             return [];
         }
-        $table = self::table();
-        $in    = implode( ',', array_fill( 0, count( $subjects ), '%s' ) );
-        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared -- $in is placeholders.
-        $ids = $wpdb->get_col( $wpdb->prepare( "SELECT id FROM {$table} WHERE status = %s AND subject IN ({$in})", array_merge( [ self::STATUS_WAITING ], $subjects ) ) );
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- Schema::in() gives one %s per subject.
+        $ids = $wpdb->get_col( $wpdb->prepare( 'SELECT id FROM %i WHERE status = %s AND subject IN (' . Schema::in( count( $subjects ), '%s' ) . ')', array_merge( [ self::table(), self::STATUS_WAITING ], array_values( $subjects ) ) ) );
         return array_map( 'intval', (array) $ids );
     }
 
@@ -276,8 +267,8 @@ final class RunStore {
         $table = self::table();
         return (array) $wpdb->get_results(
             $wpdb->prepare(
-                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-                "SELECT id, status, started_at, wait_until FROM {$table} WHERE (status = %s AND started_at < %s) OR (status = %s AND wait_until < %s) OR status = %s ORDER BY id LIMIT %d",
+                'SELECT id, status, started_at, wait_until FROM %i WHERE (status = %s AND started_at < %s) OR (status = %s AND wait_until < %s) OR status = %s ORDER BY id LIMIT %d',
+                $table,
                 self::STATUS_QUEUED,
                 $queued_before,
                 self::STATUS_WAITING,
@@ -301,16 +292,13 @@ final class RunStore {
         if ( ! $ids ) {
             return 0;
         }
-        $table = self::table();
-        $in    = implode( ',', array_map( 'intval', $ids ) );
-        $done  = $wpdb->query(
+        $ids  = array_map( 'intval', array_values( $ids ) );
+        $done = $wpdb->query(
+            // phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- Schema::in() gives one %d per run.
             $wpdb->prepare(
-                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $in is a list of ints.
-                "UPDATE {$table} SET status = %s, error = %s, wait_until = NULL, finished_at = %s WHERE id IN ({$in}) AND status = %s",
-                self::STATUS_CANCELLED,
-                $reason,
-                current_time( 'mysql', true ),
-                self::STATUS_WAITING
+                // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- Schema::in() gives the list placeholders.
+                'UPDATE %i SET status = %s, error = %s, wait_until = NULL, finished_at = %s WHERE id IN (' . Schema::in( count( $ids ) ) . ') AND status = %s',
+                array_merge( [ self::table(), self::STATUS_CANCELLED, $reason, current_time( 'mysql', true ) ], $ids, [ self::STATUS_WAITING ] )
             )
         );
         if ( false === $done ) {
@@ -367,17 +355,15 @@ final class RunStore {
      */
     public static function finished_before( string $before, int $limit ): array {
         global $wpdb;
-        $table    = self::table();
-        $open     = array_diff( self::STATUSES, self::FINISHED );
-        $finished = implode( ',', array_fill( 0, count( self::FINISHED ), '%s' ) );
-        $unended  = implode( ',', array_fill( 0, count( $open ), '%s' ) );
+        $table = self::table();
+        $open  = array_values( array_diff( self::STATUSES, self::FINISHED ) );
         // A chain with an open run keeps all its runs: the loop guard walks parent_run_id and stops at a missing row.
         $ids = $wpdb->get_col(
             // phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- placeholders are built to match the array.
             $wpdb->prepare(
-                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
-                "SELECT r.id FROM {$table} r WHERE r.status IN ({$finished}) AND r.finished_at < %s AND NOT EXISTS (SELECT 1 FROM {$table} o WHERE o.root_run_id = r.root_run_id AND o.status IN ({$unended})) ORDER BY r.id LIMIT %d",
-                array_merge( self::FINISHED, [ $before ], array_values( $open ), [ $limit ] )
+                // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- Schema::in() gives the list placeholders.
+                'SELECT r.id FROM %i r WHERE r.status IN (' . Schema::in( count( self::FINISHED ), '%s' ) . ') AND r.finished_at < %s AND NOT EXISTS (SELECT 1 FROM %i o WHERE o.root_run_id = r.root_run_id AND o.status IN (' . Schema::in( count( $open ), '%s' ) . ')) ORDER BY r.id LIMIT %d',
+                array_merge( [ $table ], self::FINISHED, [ $before, $table ], $open, [ $limit ] )
             )
         );
         return array_map( 'intval', (array) $ids );
@@ -390,14 +376,13 @@ final class RunStore {
      */
     public static function delete_with_steps( array $ids ): bool {
         global $wpdb;
-        $in = implode( ',', array_map( 'intval', $ids ) );
-        if ( '' === $in ) {
+        $ids = array_map( 'intval', array_values( $ids ) );
+        if ( ! $ids ) {
             return true;
         }
-        $steps = RunStepStore::table();
-        $table = self::table();
-        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $in is a list of ints.
-        if ( false === $wpdb->query( "DELETE FROM {$steps} WHERE run_id IN ({$in})" ) || false === $wpdb->query( "DELETE FROM {$table} WHERE id IN ({$in})" ) ) {
+        $in = Schema::in( count( $ids ) );
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- Schema::in() gives one %d per run.
+        if ( false === $wpdb->query( $wpdb->prepare( "DELETE FROM %i WHERE run_id IN ({$in})", array_merge( [ RunStepStore::table() ], $ids ) ) ) || false === $wpdb->query( $wpdb->prepare( "DELETE FROM %i WHERE id IN ({$in})", array_merge( [ self::table() ], $ids ) ) ) ) {
             Logger::error( 'Could not delete old runs: ' . $wpdb->last_error );
             return false;
         }
@@ -415,15 +400,13 @@ final class RunStore {
      */
     public static function for_export( string $email, array $subjects, int $limit, int $offset ): array {
         global $wpdb;
-        $table                  = self::table();
-        $workflows              = Schema::table( Schema::WORKFLOWS );
         list( $about, $params ) = self::about( $email, $subjects, false );
         $rows                   = $wpdb->get_results(
             // phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- placeholders are built to match the array.
             $wpdb->prepare(
-                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
-                "SELECT r.id, r.status, r.started_at, w.name AS workflow_name FROM {$table} r LEFT JOIN {$workflows} w ON w.id = r.workflow_id WHERE {$about} ORDER BY r.id LIMIT %d OFFSET %d",
-                array_merge( $params, [ $limit, $offset ] )
+                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- $about has placeholders for $params.
+                "SELECT r.id, r.status, r.started_at, w.name AS workflow_name FROM %i r LEFT JOIN %i w ON w.id = r.workflow_id WHERE {$about} ORDER BY r.id LIMIT %d OFFSET %d",
+                array_merge( [ self::table(), Schema::table( Schema::WORKFLOWS ) ], $params, [ $limit, $offset ] )
             ),
             ARRAY_A
         );
@@ -441,15 +424,14 @@ final class RunStore {
      */
     public static function ids_mentioning( string $email, array $subjects, int $limit ): array {
         global $wpdb;
-        $table                  = self::table();
-        $busy                   = implode( ',', array_fill( 0, count( self::IN_PROGRESS ), '%s' ) );
+        $busy                   = Schema::in( count( self::IN_PROGRESS ), '%s' );
         list( $about, $params ) = self::about( $email, $subjects, true );
         $rows                   = $wpdb->get_results(
             // phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- placeholders are built to match the array.
             $wpdb->prepare(
-                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
-                "SELECT r.id, r.status FROM {$table} r WHERE r.status NOT IN ({$busy}) AND ({$about}) ORDER BY r.id LIMIT %d",
-                array_merge( self::IN_PROGRESS, $params, [ $limit ] )
+                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- $busy and $about are placeholders.
+                "SELECT r.id, r.status FROM %i r WHERE r.status NOT IN ({$busy}) AND ({$about}) ORDER BY r.id LIMIT %d",
+                array_merge( [ self::table() ], self::IN_PROGRESS, $params, [ $limit ] )
             ),
             ARRAY_A
         );
@@ -464,15 +446,14 @@ final class RunStore {
      */
     public static function in_progress_mentioning( string $email, array $subjects ): bool {
         global $wpdb;
-        $table                  = self::table();
-        $busy                   = implode( ',', array_fill( 0, count( self::IN_PROGRESS ), '%s' ) );
+        $busy                   = Schema::in( count( self::IN_PROGRESS ), '%s' );
         list( $about, $params ) = self::about( $email, $subjects, false );
         $found                  = $wpdb->get_var(
             // phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- placeholders are built to match the array.
             $wpdb->prepare(
-                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
-                "SELECT r.id FROM {$table} r WHERE r.status IN ({$busy}) AND ({$about}) LIMIT 1",
-                array_merge( self::IN_PROGRESS, $params )
+                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- $busy and $about are placeholders.
+                "SELECT r.id FROM %i r WHERE r.status IN ({$busy}) AND ({$about}) LIMIT 1",
+                array_merge( [ self::table() ], self::IN_PROGRESS, $params )
             )
         );
         return null !== $found;
@@ -488,14 +469,13 @@ final class RunStore {
      * @return array [ string $sql, array $params ]
      */
     private static function about( string $email, array $subjects, bool $waiting_subjects ): array {
-        $steps  = RunStepStore::table();
         $like   = self::json_like( $email );
         $regexp = self::text_regexp( $email );
         // A guest's milestone run holds only the claim key made from the email.
-        $sql    = "r.scope LIKE %s OR r.scope LIKE %s OR r.error REGEXP %s OR EXISTS (SELECT 1 FROM {$steps} s WHERE s.run_id = r.id AND (s.input LIKE %s OR s.output LIKE %s OR s.error REGEXP %s))";
-        $params = [ $like, self::json_like( TriggerClaimStore::email_key( $email ) ), $regexp, $like, $like, $regexp ];
+        $sql    = 'r.scope LIKE %s OR r.scope LIKE %s OR r.error REGEXP %s OR EXISTS (SELECT 1 FROM %i s WHERE s.run_id = r.id AND (s.input LIKE %s OR s.output LIKE %s OR s.error REGEXP %s))';
+        $params = [ $like, self::json_like( TriggerClaimStore::email_key( $email ) ), $regexp, RunStepStore::table(), $like, $like, $regexp ];
         if ( $subjects ) {
-            $sql   .= ' OR (r.subject IN (' . implode( ',', array_fill( 0, count( $subjects ), '%s' ) ) . ')' . ( $waiting_subjects ? ' AND r.status = %s' : '' ) . ')';
+            $sql   .= ' OR (r.subject IN (' . Schema::in( count( $subjects ), '%s' ) . ')' . ( $waiting_subjects ? ' AND r.status = %s' : '' ) . ')';
             $params = array_merge( $params, array_values( $subjects ), $waiting_subjects ? [ self::STATUS_WAITING ] : [] );
         }
         return [ $sql, $params ];
@@ -510,23 +490,21 @@ final class RunStore {
      */
     public static function anonymize( array $ids, string $email ): int {
         global $wpdb;
-        $in = implode( ',', array_map( 'intval', $ids ) );
-        if ( '' === $in ) {
+        $ids = array_map( 'intval', array_values( $ids ) );
+        if ( ! $ids ) {
             return 0;
         }
-        $table = self::table();
-        $busy  = implode( ',', array_fill( 0, count( self::IN_PROGRESS ), '%s' ) );
         // A waiting run its job took meanwhile is running now.
         $ids = $wpdb->get_col(
             // phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- placeholders are built to match the array.
             $wpdb->prepare(
-                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- $in is a list of ints.
-                "SELECT id FROM {$table} WHERE id IN ({$in}) AND status NOT IN ({$busy})",
-                self::IN_PROGRESS
+                // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- Schema::in() gives the list placeholders.
+                'SELECT id FROM %i WHERE id IN (' . Schema::in( count( $ids ) ) . ') AND status NOT IN (' . Schema::in( count( self::IN_PROGRESS ), '%s' ) . ')',
+                array_merge( [ self::table() ], $ids, self::IN_PROGRESS )
             )
         );
-        $in = implode( ',', array_map( 'intval', (array) $ids ) );
-        if ( '' === $in ) {
+        $ids = array_map( 'intval', (array) $ids );
+        if ( ! $ids ) {
             return 0;
         }
         $changed = [];
@@ -535,9 +513,16 @@ final class RunStore {
             RunStepStore::table() => [ 'run_id', [ 'input', 'output' ], [ 'error' ] ],
         ];
         foreach ( $tables as $table => list( $run_column, $json_columns, $text_columns ) ) {
-            $columns = implode( ', ', array_merge( [ 'id', $run_column ], $json_columns, $text_columns ) );
-            // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- columns are ours, $in is a list of ints.
-            $rows = (array) $wpdb->get_results( "SELECT {$columns} FROM {$table} WHERE {$run_column} IN ({$in})", ARRAY_A );
+            $columns = array_merge( [ 'id', $run_column ], $json_columns, $text_columns );
+            $rows    = (array) $wpdb->get_results(
+                // phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- one value per %i and %d.
+                $wpdb->prepare(
+                    // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- Schema::in() gives the list placeholders.
+                    'SELECT ' . Schema::in( count( $columns ), '%i' ) . ' FROM %i WHERE %i IN (' . Schema::in( count( $ids ) ) . ')',
+                    array_merge( $columns, [ $table, $run_column ], $ids )
+                ),
+                ARRAY_A
+            );
             foreach ( $rows as $row ) {
                 $update = [];
                 foreach ( $json_columns as $column ) {

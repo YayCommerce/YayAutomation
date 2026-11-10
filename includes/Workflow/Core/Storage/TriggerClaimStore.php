@@ -15,9 +15,8 @@ final class TriggerClaimStore {
      */
     public static function claim( int $workflow_id, string $subject ): bool {
         global $wpdb;
-        $table = self::table();
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- own table, a write; the unique key decides who wins.
-        $done = $wpdb->query( $wpdb->prepare( "INSERT IGNORE INTO {$table} (workflow_id, subject, claimed_at) VALUES (%d, %s, %s)", $workflow_id, $subject, current_time( 'mysql', true ) ) );
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own table, a write; the unique key decides who wins.
+        $done = $wpdb->query( $wpdb->prepare( 'INSERT IGNORE INTO %i (workflow_id, subject, claimed_at) VALUES (%d, %s, %s)', self::table(), $workflow_id, $subject, current_time( 'mysql', true ) ) );
         if ( false === $done ) {
             Logger::error( 'Could not claim a trigger subject: ' . $wpdb->last_error, [ 'workflow_id' => $workflow_id, 'subject' => $subject ] ); // phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound
         }
@@ -61,9 +60,8 @@ final class TriggerClaimStore {
      */
     public static function find_keys( string $email ): array {
         global $wpdb;
-        $table = self::table();
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- own table, a privacy export.
-        return (array) $wpdb->get_results( $wpdb->prepare( "SELECT workflow_id, claimed_at FROM {$table} WHERE subject = %s ORDER BY claimed_at", self::email_key( $email ) ), ARRAY_A );
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own table, a privacy export.
+        return (array) $wpdb->get_results( $wpdb->prepare( 'SELECT workflow_id, claimed_at FROM %i WHERE subject = %s ORDER BY claimed_at', self::table(), self::email_key( $email ) ), ARRAY_A );
     }
 
     /**
@@ -90,16 +88,13 @@ final class TriggerClaimStore {
      */
     public static function delete_orphans( int $limit ): int {
         global $wpdb;
-        $table     = self::table();
-        $workflows = Schema::table( Schema::WORKFLOWS );
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- own tables, daily cleanup.
-        $ids = array_map( 'intval', $wpdb->get_col( $wpdb->prepare( "SELECT c.id FROM {$table} c LEFT JOIN {$workflows} w ON w.id = c.workflow_id WHERE w.id IS NULL LIMIT %d", $limit ) ) );
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own tables, daily cleanup.
+        $ids = array_map( 'intval', $wpdb->get_col( $wpdb->prepare( 'SELECT c.id FROM %i c LEFT JOIN %i w ON w.id = c.workflow_id WHERE w.id IS NULL LIMIT %d', self::table(), Schema::table( Schema::WORKFLOWS ), $limit ) ) );
         if ( ! $ids ) {
             return 0;
         }
-        $list = implode( ',', $ids );
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- own table, ids cast to int above.
-        $done = $wpdb->query( "DELETE FROM {$table} WHERE id IN ({$list})" );
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- own table; Schema::in() gives one %d per id.
+        $done = $wpdb->query( $wpdb->prepare( 'DELETE FROM %i WHERE id IN (' . Schema::in( count( $ids ) ) . ')', array_merge( [ self::table() ], $ids ) ) );
         if ( false === $done ) {
             Logger::error( 'Could not delete claims of deleted workflows: ' . $wpdb->last_error );
         }

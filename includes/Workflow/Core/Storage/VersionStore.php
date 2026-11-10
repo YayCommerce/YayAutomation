@@ -28,9 +28,7 @@ final class VersionStore {
      */
     public static function find( int $id ): ?array {
         global $wpdb;
-        $table = self::table();
-        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-        $row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE id = %d", $id ), ARRAY_A );
+        $row = $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM %i WHERE id = %d', self::table(), $id ), ARRAY_A );
         if ( ! $row ) {
             return null;
         }
@@ -133,11 +131,10 @@ final class VersionStore {
      */
     public static function page( int $workflow_id, int $page ): array {
         global $wpdb;
-        $table = self::table();
         return $wpdb->get_results(
             $wpdb->prepare(
-                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-                "SELECT id, action, graph, layout, user_id, updated_at FROM {$table} WHERE workflow_id = %d ORDER BY updated_at DESC, id DESC LIMIT %d OFFSET %d",
+                'SELECT id, action, graph, layout, user_id, updated_at FROM %i WHERE workflow_id = %d ORDER BY updated_at DESC, id DESC LIMIT %d OFFSET %d',
+                self::table(),
                 $workflow_id,
                 self::PER_PAGE + 1,
                 ( max( 1, $page ) - 1 ) * self::PER_PAGE

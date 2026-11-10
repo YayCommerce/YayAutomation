@@ -19,8 +19,8 @@ final class CartStore {
     public static function find_by_session( string $session_key ): ?array {
         global $wpdb;
         $table = self::table();
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- own table, one row by its unique key.
-        $row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE session_key = %s", $session_key ), ARRAY_A );
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own table, one row by its unique key.
+        $row = $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM %i WHERE session_key = %s', $table, $session_key ), ARRAY_A );
         return $row ? $row : null;
     }
 
@@ -31,8 +31,8 @@ final class CartStore {
     public static function find( int $id ): ?array {
         global $wpdb;
         $table = self::table();
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- own table, one row by id.
-        $row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE id = %d", $id ), ARRAY_A );
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own table, one row by id.
+        $row = $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM %i WHERE id = %d', $table, $id ), ARRAY_A );
         return $row ? $row : null;
     }
 
@@ -48,12 +48,13 @@ final class CartStore {
         $table = self::table();
         $now   = current_time( 'mysql', true );
         // Only while the restored row is still open, so an order placed meanwhile doesn't cost this session its row.
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- own table, a write.
-        $wpdb->query( $wpdb->prepare( "DELETE own FROM {$table} own JOIN {$table} restored ON restored.id = %d AND restored.status <> %s WHERE own.session_key = %s AND own.id <> %d", $id, self::ORDERED, $session_key, $id ) );
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- own table, a write.
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own table, a write.
+        $wpdb->query( $wpdb->prepare( 'DELETE own FROM %i own JOIN %i restored ON restored.id = %d AND restored.status <> %s WHERE own.session_key = %s AND own.id <> %d', $table, $table, $id, self::ORDERED, $session_key, $id ) );
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own table, a write.
         $wpdb->query(
             $wpdb->prepare(
-                "UPDATE {$table} SET session_key = %s, user_id = IF(%d > 0, %d, user_id), restored_at = %s, updated_at = %s WHERE id = %d AND status <> %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+                'UPDATE %i SET session_key = %s, user_id = IF(%d > 0, %d, user_id), restored_at = %s, updated_at = %s WHERE id = %d AND status <> %s',
+                $table,
                 $session_key,
                 $user_id,
                 $user_id,
@@ -89,12 +90,23 @@ final class CartStore {
             },
             $data
         );
-        $columns = implode( ', ', array_map( fn( $column ) => "`{$column}`", array_keys( $data ) ) );
-        $updates = implode( ', ', array_map( fn( $column ) => "`{$column}` = VALUES(`{$column}`)", array_merge( array_keys( $fields ), [ 'updated_at' ] ) ) );
-        $table   = self::table();
-        $sql     = "INSERT INTO {$table} ({$columns}) VALUES (" . implode( ', ', $formats ) . ") ON DUPLICATE KEY UPDATE {$updates}";
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- own table; columns are ours, values prepared.
-        return false !== $wpdb->query( $wpdb->prepare( $sql, array_values( $data ) ) );
+        $updated = array_merge( array_keys( $fields ), [ 'updated_at' ] );
+        // Columns and the updated ones as %i, values with their formats.
+        $args = array_merge(
+            [ self::table() ],
+            array_keys( $data ),
+            array_values( $data ),
+            ...array_map( fn( $column ) => [ $column, $column ], $updated )
+        );
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own table.
+        return false !== $wpdb->query(
+            // phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- one value per placeholder.
+            $wpdb->prepare(
+                // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- only placeholders are built here.
+                'INSERT INTO %i (' . Schema::in( count( $data ), '%i' ) . ') VALUES (' . implode( ', ', $formats ) . ') ON DUPLICATE KEY UPDATE ' . implode( ', ', array_fill( 0, count( $updated ), '%i = VALUES(%i)' ) ),
+                $args
+            )
+        );
     }
 
     /**
@@ -127,8 +139,8 @@ final class CartStore {
     public static function sessions_with_email( string $email, string $since ): int {
         global $wpdb;
         $table = self::table();
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- own table, indexed by email.
-        return (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$table} WHERE email = %s AND updated_at >= %s", $email, $since ) );
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own table, indexed by email.
+        return (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i WHERE email = %s AND updated_at >= %s', $table, $email, $since ) );
     }
 
     /**
@@ -146,8 +158,8 @@ final class CartStore {
         }
         global $wpdb;
         $table = self::table();
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- own table, a write.
-        $wpdb->query( $wpdb->prepare( "DELETE FROM {$table} WHERE session_key = %s AND id <> %d", (string) $user_id, (int) $guest['id'] ) );
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own table, a write.
+        $wpdb->query( $wpdb->prepare( 'DELETE FROM %i WHERE session_key = %s AND id <> %d', $table, (string) $user_id, (int) $guest['id'] ) );
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own table, a write.
         return (bool) $wpdb->update(
             $table,
@@ -174,10 +186,11 @@ final class CartStore {
         global $wpdb;
         $table = self::table();
         $now   = current_time( 'mysql', true );
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- own table, a write.
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own table, a write.
         $done = $wpdb->query(
             $wpdb->prepare(
-                "UPDATE {$table} SET status = IF(status = 'abandoned', 'active', status), order_id = %d, checkout_at = COALESCE(checkout_at, %s), email = IF(email = '', %s, email), first_name = IF(first_name = '', %s, first_name), last_activity_at = %s, updated_at = %s WHERE session_key = %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+                "UPDATE %i SET status = IF(status = 'abandoned', 'active', status), order_id = %d, checkout_at = COALESCE(checkout_at, %s), email = IF(email = '', %s, email), first_name = IF(first_name = '', %s, first_name), last_activity_at = %s, updated_at = %s WHERE session_key = %s",
+                $table,
                 $order_id,
                 $now,
                 $email,
@@ -197,12 +210,11 @@ final class CartStore {
     public static function mark_ordered_by_order( int $order_id ): array {
         global $wpdb;
         $table = self::table();
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- own table, uses KEY order_id.
-        $ids = array_map( 'intval', (array) $wpdb->get_col( $wpdb->prepare( "SELECT id FROM {$table} WHERE order_id = %d AND status <> %s", $order_id, self::ORDERED ) ) );
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own table, uses KEY order_id.
+        $ids = array_map( 'intval', (array) $wpdb->get_col( $wpdb->prepare( 'SELECT id FROM %i WHERE order_id = %d AND status <> %s', $table, $order_id, self::ORDERED ) ) );
         if ( $ids ) {
-            $in = implode( ',', $ids );
-            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- own table, a write; $in is a list of ints.
-            $wpdb->query( $wpdb->prepare( "UPDATE {$table} SET status = %s, updated_at = %s WHERE id IN ({$in}) AND status <> %s", self::ORDERED, current_time( 'mysql', true ), self::ORDERED ) );
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- own table, a write; Schema::in() gives one %d per id.
+            $wpdb->query( $wpdb->prepare( 'UPDATE %i SET status = %s, updated_at = %s WHERE id IN (' . Schema::in( count( $ids ) ) . ') AND status <> %s', array_merge( [ $table, self::ORDERED, current_time( 'mysql', true ) ], $ids, [ self::ORDERED ] ) ) );
         }
         return $ids;
     }
@@ -218,12 +230,11 @@ final class CartStore {
     public static function mark_ordered_by_email( string $email, string $before, int $order_id ): array {
         global $wpdb;
         $table = self::table();
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- own table, indexed by email.
-        $ids = array_map( 'intval', (array) $wpdb->get_col( $wpdb->prepare( "SELECT id FROM {$table} WHERE email = %s AND status IN (%s, %s) AND last_activity_at <= %s", $email, self::ACTIVE, self::ABANDONED, $before ) ) );
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own table, indexed by email.
+        $ids = array_map( 'intval', (array) $wpdb->get_col( $wpdb->prepare( 'SELECT id FROM %i WHERE email = %s AND status IN (%s, %s) AND last_activity_at <= %s', $table, $email, self::ACTIVE, self::ABANDONED, $before ) ) );
         if ( $ids ) {
-            $in = implode( ',', $ids );
-            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- own table, a write; $in is a list of ints.
-            $wpdb->query( $wpdb->prepare( "UPDATE {$table} SET status = %s, order_id = %d, updated_at = %s WHERE id IN ({$in}) AND status <> %s", self::ORDERED, $order_id, current_time( 'mysql', true ), self::ORDERED ) );
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- own table, a write; Schema::in() gives one %d per id.
+            $wpdb->query( $wpdb->prepare( 'UPDATE %i SET status = %s, order_id = %d, updated_at = %s WHERE id IN (' . Schema::in( count( $ids ) ) . ') AND status <> %s', array_merge( [ $table, self::ORDERED, $order_id, current_time( 'mysql', true ) ], $ids, [ self::ORDERED ] ) ) );
         }
         return $ids;
     }
@@ -265,8 +276,8 @@ final class CartStore {
     public static function due( string $before, string $after, int $limit ): array {
         global $wpdb;
         $table = self::table();
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- own table, uses KEY status.
-        return (array) $wpdb->get_results( $wpdb->prepare( "SELECT id, last_activity_at, checkout_at, abandoned_at FROM {$table} WHERE status = %s AND email <> '' AND items NOT IN ('', '[]') AND last_activity_at <= %s AND last_activity_at > %s ORDER BY last_activity_at, id LIMIT %d", self::ACTIVE, $before, $after, $limit ), ARRAY_A );
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own table, uses KEY status.
+        return (array) $wpdb->get_results( $wpdb->prepare( "SELECT id, last_activity_at, checkout_at, abandoned_at FROM %i WHERE status = %s AND email <> '' AND items NOT IN ('', '[]') AND last_activity_at <= %s AND last_activity_at > %s ORDER BY last_activity_at, id LIMIT %d", $table, self::ACTIVE, $before, $after, $limit ), ARRAY_A );
     }
 
     /**
@@ -303,8 +314,8 @@ final class CartStore {
     public static function newest_for_preview(): int {
         global $wpdb;
         $table = self::table();
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- own table, an admin action.
-        return (int) $wpdb->get_var( "SELECT id FROM {$table} WHERE email <> '' AND items NOT IN ('', '[]') ORDER BY id DESC LIMIT 1" );
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own table, an admin action.
+        return (int) $wpdb->get_var( $wpdb->prepare( "SELECT id FROM %i WHERE email <> '' AND items NOT IN ('', '[]') ORDER BY id DESC LIMIT 1", $table ) );
     }
 
     /**
@@ -317,8 +328,8 @@ final class CartStore {
     public static function series_taken( string $email, int $id, string $since ): bool {
         global $wpdb;
         $table = self::table();
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- own table, indexed by email.
-        return (bool) $wpdb->get_var( $wpdb->prepare( "SELECT 1 FROM {$table} WHERE email = %s AND id <> %d AND status <> %s AND series_at >= %s LIMIT 1", $email, $id, self::ORDERED, $since ) );
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own table, indexed by email.
+        return (bool) $wpdb->get_var( $wpdb->prepare( 'SELECT 1 FROM %i WHERE email = %s AND id <> %d AND status <> %s AND series_at >= %s LIMIT 1', $table, $email, $id, self::ORDERED, $since ) );
     }
 
     /**
@@ -340,8 +351,8 @@ final class CartStore {
     public static function inactive_ids_before( string $before, int $limit ): array {
         global $wpdb;
         $table = self::table();
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- own table.
-        return array_map( 'intval', (array) $wpdb->get_col( $wpdb->prepare( "SELECT id FROM {$table} WHERE last_activity_at < %s ORDER BY id LIMIT %d", $before, $limit ) ) );
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own table.
+        return array_map( 'intval', (array) $wpdb->get_col( $wpdb->prepare( 'SELECT id FROM %i WHERE last_activity_at < %s ORDER BY id LIMIT %d', $table, $before, $limit ) ) );
     }
 
     /**
@@ -354,9 +365,9 @@ final class CartStore {
             return 0;
         }
         $table = self::table();
-        $in    = implode( ',', array_map( 'intval', $ids ) );
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- own table, a write; $in is a list of ints.
-        $done = $wpdb->query( "DELETE FROM {$table} WHERE id IN ({$in})" );
+        $ids   = array_map( 'intval', $ids );
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- own table, a write; Schema::in() gives one %d per id.
+        $done = $wpdb->query( $wpdb->prepare( 'DELETE FROM %i WHERE id IN (' . Schema::in( count( $ids ) ) . ')', array_merge( [ $table ], array_values( $ids ) ) ) );
         if ( false === $done ) {
             Logger::error( 'Could not delete old carts: ' . $wpdb->last_error );
             return false;
@@ -371,8 +382,8 @@ final class CartStore {
     public static function for_email( string $email ): array {
         global $wpdb;
         $table = self::table();
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- own table, indexed by email.
-        return (array) $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$table} WHERE email = %s ORDER BY id", $email ), ARRAY_A );
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own table, indexed by email.
+        return (array) $wpdb->get_results( $wpdb->prepare( 'SELECT * FROM %i WHERE email = %s ORDER BY id', $table, $email ), ARRAY_A );
     }
 
     /**

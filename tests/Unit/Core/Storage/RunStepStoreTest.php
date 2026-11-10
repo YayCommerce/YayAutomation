@@ -80,7 +80,7 @@ final class RunStepStoreTest extends TestCase {
 
         $rows = RunStepStore::for_run( 7 );
 
-        $this->assertSame( 'SELECT * FROM wp_yaymatik_run_steps WHERE run_id = 7 ORDER BY id ASC', $this->db->last_sql() );
+        $this->assertSame( 'SELECT * FROM `wp_yaymatik_run_steps` WHERE run_id = 7 ORDER BY id ASC', $this->db->last_sql() );
         $this->assertSame( 1, $rows[0]['id'] );
         $this->assertSame( [ 'note' => 'x' ], $rows[0]['input'] );
         $this->assertSame( [], $rows[0]['output'] );
@@ -100,7 +100,7 @@ final class RunStepStoreTest extends TestCase {
             RunStore::recent_counts( 5, 60 )
         );
         $this->assertMatchesRegularExpression(
-            "/^SELECT COUNT\(\*\) AS total, COALESCE\(SUM\(depth > 0\), 0\) AS chained FROM wp_yaymatik_runs WHERE workflow_id = 5 AND started_at >= '\d{4}-\d\d-\d\d \d\d:\d\d:\d\d'$/",
+            "/^SELECT COUNT\(\*\) AS total, COALESCE\(SUM\(depth > 0\), 0\) AS chained FROM `wp_yaymatik_runs` WHERE workflow_id = 5 AND started_at >= '\d{4}-\d\d-\d\d \d\d:\d\d:\d\d'$/",
             $this->db->last_sql()
         );
     }
@@ -221,7 +221,7 @@ final class RunStepStoreTest extends TestCase {
         $this->assertTrue( RunStore::claim( 7 ) );
         $this->assertCount( 1, $this->db->calls );
         $this->assertMatchesRegularExpression(
-            "/^UPDATE wp_yaymatik_runs SET status = 'running' WHERE id = 7 AND status IN \('queued','waiting'\) AND \( status <> 'waiting' OR wait_until IS NULL OR wait_until <= '[0-9: -]+' \)$/",
+            "/^UPDATE `wp_yaymatik_runs` SET status = 'running' WHERE id = 7 AND status IN \('queued','waiting'\) AND \( status <> 'waiting' OR wait_until IS NULL OR wait_until <= '[0-9: -]+' \)$/",
             $this->db->last_sql()
         );
     }
@@ -230,7 +230,7 @@ final class RunStepStoreTest extends TestCase {
         $this->db->result = 1;
 
         $this->assertTrue( RunStore::claim( 7, [ 'queued', 'waiting', 'running' ] ) );
-        $this->assertSame( "UPDATE wp_yaymatik_runs SET status = 'queued' WHERE id = 7 AND status = 'running'", $this->db->calls[0][1] );
+        $this->assertSame( "UPDATE `wp_yaymatik_runs` SET status = 'queued' WHERE id = 7 AND status = 'running'", $this->db->calls[0][1] );
         $this->assertStringContainsString( "status IN ('queued','waiting')", $this->db->calls[1][1] );
     }
 
@@ -241,7 +241,7 @@ final class RunStepStoreTest extends TestCase {
         $this->db->result = 2;
         $this->assertSame( 2, RunStore::cancel_waiting( [ 4, 5 ], 'Off.' ) );
         $this->assertMatchesRegularExpression(
-            "/^UPDATE wp_yaymatik_runs SET status = 'cancelled', error = 'Off.', wait_until = NULL, finished_at = '[0-9: -]+' WHERE id IN \\(4,5\\) AND status = 'waiting'$/",
+            "/^UPDATE `wp_yaymatik_runs` SET status = 'cancelled', error = 'Off.', wait_until = NULL, finished_at = '[0-9: -]+' WHERE id IN \\(4,5\\) AND status = 'waiting'$/",
             $this->db->last_sql()
         );
     }
@@ -249,7 +249,7 @@ final class RunStepStoreTest extends TestCase {
     public function test_cancellation_cancels_the_waiting_runs_then_their_waiting_rows(): void {
         $this->db->results = [ [] ];
         $this->assertSame( 0, Cancellation::waiting( 9, 'Off.' ) );
-        $this->assertSame( "SELECT id FROM wp_yaymatik_runs WHERE workflow_id = 9 AND status = 'waiting'", $this->db->last_sql() );
+        $this->assertSame( "SELECT id FROM `wp_yaymatik_runs` WHERE workflow_id = 9 AND status = 'waiting'", $this->db->last_sql() );
         $this->assertCount( 1, $this->db->calls );
 
         $this->db->calls   = [];
@@ -257,7 +257,7 @@ final class RunStepStoreTest extends TestCase {
         $this->assertSame( 1, Cancellation::waiting( 9, 'Off.' ) );
         $this->assertCount( 3, $this->db->calls );
         $this->assertMatchesRegularExpression(
-            "/^UPDATE wp_yaymatik_run_steps s INNER JOIN wp_yaymatik_runs r ON r.id = s.run_id SET s.status = 'cancelled', s.error = 'Off.', s.finished_at = '[0-9: -]+' WHERE s.run_id IN \\(4,5\\) AND r.status = 'cancelled' AND s.status = 'waiting'$/",
+            "/^UPDATE `wp_yaymatik_run_steps` s INNER JOIN `wp_yaymatik_runs` r ON r.id = s.run_id SET s.status = 'cancelled', s.error = 'Off.', s.finished_at = '[0-9: -]+' WHERE s.run_id IN \\(4,5\\) AND r.status = 'cancelled' AND s.status = 'waiting'$/",
             $this->db->last_sql()
         );
     }
@@ -267,7 +267,7 @@ final class RunStepStoreTest extends TestCase {
 
         $this->assertTrue( RunStepStore::close_open( 7, RunStepStore::STATUS_CANCELLED, 'Off.' ) );
         $this->assertMatchesRegularExpression(
-            "/^UPDATE wp_yaymatik_run_steps SET status = 'cancelled', error = 'Off.', finished_at = '[0-9: -]+' WHERE run_id = 7 AND status IN \('running','waiting'\)$/",
+            "/^UPDATE `wp_yaymatik_run_steps` SET status = 'cancelled', error = 'Off.', finished_at = '[0-9: -]+' WHERE run_id = 7 AND status IN \('running','waiting'\)$/",
             $this->db->last_sql()
         );
         $this->assertFalse( RunStepStore::close_open( 7, RunStepStore::STATUS_WAITING, 'Off.' ) );
@@ -283,7 +283,7 @@ final class RunStepStoreTest extends TestCase {
                 'page'        => 2,
             ]
         );
-        $this->assertStringEndsWith( "FROM wp_yaymatik_runs WHERE workflow_id = 9 AND status IN ('waiting','failed') ORDER BY id DESC LIMIT 20 OFFSET 20", $this->db->last_sql() );
+        $this->assertStringEndsWith( "FROM `wp_yaymatik_runs` WHERE workflow_id = 9 AND status IN ('waiting','failed') ORDER BY id DESC LIMIT 20 OFFSET 20", $this->db->last_sql() );
 
         $this->db->result = '42';
         $this->assertSame(
@@ -295,7 +295,7 @@ final class RunStepStoreTest extends TestCase {
                 ]
             )
         );
-        $this->assertSame( "SELECT COUNT(*) FROM wp_yaymatik_runs WHERE workflow_id = 9 AND status IN ('waiting','failed')", $this->db->last_sql() );
+        $this->assertSame( "SELECT COUNT(*) FROM `wp_yaymatik_runs` WHERE workflow_id = 9 AND status IN ('waiting','failed')", $this->db->last_sql() );
     }
 
     public function test_stats_and_step_counts_are_one_grouped_query_each(): void {
@@ -326,7 +326,7 @@ final class RunStepStoreTest extends TestCase {
             RunStore::stats( [ '9', 12 ] )
         );
         $this->assertMatchesRegularExpression(
-            "/^SELECT s.workflow_id, s.recent, s.waiting, s.last_id, r.started_at AS last_run, r.status AS last_status FROM \\(SELECT workflow_id, SUM\\(started_at >= '[0-9: -]+'\\) AS recent, SUM\\(status = 'waiting'\\) AS waiting, MAX\\(id\\) AS last_id FROM wp_yaymatik_runs WHERE workflow_id IN \\(9,12\\) GROUP BY workflow_id\\) s INNER JOIN wp_yaymatik_runs r ON r.id = s.last_id$/",
+            "/^SELECT s.workflow_id, s.recent, s.waiting, s.last_id, r.started_at AS last_run, r.status AS last_status FROM \\(SELECT workflow_id, SUM\\(started_at >= '[0-9: -]+'\\) AS recent, SUM\\(status = 'waiting'\\) AS waiting, MAX\\(id\\) AS last_id FROM `wp_yaymatik_runs` WHERE workflow_id IN \\(9,12\\) GROUP BY workflow_id\\) s INNER JOIN `wp_yaymatik_runs` r ON r.id = s.last_id$/",
             $this->db->last_sql()
         );
 
@@ -337,6 +337,6 @@ final class RunStepStoreTest extends TestCase {
             ],
         ];
         $this->assertSame( [ 4 => 2 ], RunStepStore::counts( [ 4, 5 ] ) );
-        $this->assertSame( 'SELECT run_id, COUNT(*) AS steps FROM wp_yaymatik_run_steps WHERE run_id IN (4,5) GROUP BY run_id', $this->db->last_sql() );
+        $this->assertSame( 'SELECT run_id, COUNT(*) AS steps FROM `wp_yaymatik_run_steps` WHERE run_id IN (4,5) GROUP BY run_id', $this->db->last_sql() );
     }
 }
