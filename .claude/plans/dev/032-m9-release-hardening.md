@@ -167,6 +167,19 @@ Run 2 decisions (Jack, Nov 10; CP8 builds them):
 - Drop the `YAYMATIK_IS_DEVELOPMENT` sed line in `release.sh`.
 - `AdminShell::boot()` runs once: keep the call in `plugin_init`, after checking a second call has no side effect.
 
+Run 2 answers (Jack, Nov 10; these replace the G1 study line above):
+- G1, option b (no admin-shell repo change): the free build removes `vendor-prefixed/src/License` before `composer dump-autoload`, as YayBulkOrder does, then patches the scoped copy in the build folder only: a `class_exists` guard around every use of the License namespace in `src/Registry/LegacyBridge.php`, `src/Registry/AddonBridge.php` (incl. `new RestAPI`, `new License`) and `src/Menu/PluginSubmenu.php` (`new License`). Each patch is checked: a pattern not found exactly, or any file left in `vendor-prefixed` that still references the License namespace without a guard, fails the free build with file and line. Pro zip unchanged. Test: free zip on `--wp-env-min` alone and with the stand-in older Pro plugin with a saved key: wp-admin and WP-CLI load, no fatal.
+- UnescapedDBParameter: every flagged query uses `%i` for table and column names, including `Uninstaller` and the dev scripts Plugin Check scans. No string-built table names left in `includes/`. Values stay `%d` / `%s`.
+- T1 jsx-runtime: externalize `react/jsx-runtime` in `vite.config.ts`; `react-jsx-runtime` in `ScriptName::ADMIN_DEPS`; the motion chunk no longer inlines it.
+- T1 ExceptionNotEscaped: `esc_html()` on the 4 messages.
+- S9: the ABSPATH guard in `SingletonTrait.php`, `YayMatik.php`, `ScriptName.php`, `RegisterFacade.php`, `RegisterProd.php`; the 4 admin-shell files get it in the G1 build patch step, checked the same way.
+- `composer.json` ships in the zip (out of `.distignore`).
+- Q3, deleting `YayMatikProLicenseAdapter.php`, the `YAYMATIK_IS_DEVELOPMENT` sed line, one `AdminShell::boot()`: as decided above.
+- Q12 + Q13: every product / order / customer query (product grids, review products, `site.new_products`, cart items, search REST, sweeps) has a server-side upper limit and respects catalog visibility (`exclude-from-catalog`; `exclude-from-search` for search). Fix what is missing, with tests.
+- Q6 + Q11: on `--wp-env-min` after `wp-env clean all`: `WP_DEBUG` and `WP_DEBUG_LOG` on, mapped checkout deactivated, free zip installed, `wp plugin activate` prints nothing; every screen and one order through a workflow; `debug.log` has no YayMatik entries. Site restored after.
+- U3 reply notes in `032-pr.md` under "WordPress.org review notes": S1 origin check instead of a nonce, the remaining hook-name warnings, `woocommerce_add_to_cart_validation`, the admin-shell build patch.
+- Run 2 checkpoints: CP8a build · CP8b `%i` (Risk 3) · CP8c Q12/Q13 · CP8d Q3 + Q6/Q11 · CP9 translation file, final docs, PR text.
+
 ## Deviations
 - CP1: `--wp-env-min` runs `../../node_modules/.bin/wp-env` from `dev/wp-env-min` (a shell function in `wp-target.sh`), not `pnpm --dir dev/wp-env-min exec wp-env`: pnpm refuses a folder without a `package.json`.
 - CP1: `856c522` also took CP2's staged moves and deletes (`git mv` / `git rm`), so it doesn't build alone; the CP2 commit completes it. Not amended (commit rules).
