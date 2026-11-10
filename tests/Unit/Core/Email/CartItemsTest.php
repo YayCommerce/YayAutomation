@@ -16,6 +16,7 @@ final class CartItemsTest extends TestCase {
 
     /**
      * @param int $count
+     * @param int $last_quantity
      */
     private static function cart( int $count, int $last_quantity = 1 ): SavedCart {
         $lines = array_map(

@@ -18,7 +18,12 @@ final class ReviewProductsTest extends TestCase {
     }
 
     public function test_for_order_primes_the_lines_once_and_leaves_out_products_not_in_the_catalog(): void {
-        foreach ( [ 1 => 'visible', 2 => 'hidden', 3 => 'search' ] as $id => $visibility ) {
+        $visibilities = [
+            1 => 'visible',
+            2 => 'hidden',
+            3 => 'search',
+        ];
+        foreach ( $visibilities as $id => $visibility ) {
             $GLOBALS['yaymatik_test_products'][ $id ] = new \WC_Product(
                 [
                     'id'                 => $id,
