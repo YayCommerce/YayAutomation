@@ -42,7 +42,7 @@ final class YayMatik {
     private function register_admin_menu() {
         \YayMatikScoped\YayCommerce\AdminShell\AdminShell::boot();
         \YayMatikScoped\YayCommerce\AdminShell\AdminShell::register_plugin(
-            new YayMatikLicenseAdapter()
+            new YayMatikMenuAdapter()
         );
     }
 

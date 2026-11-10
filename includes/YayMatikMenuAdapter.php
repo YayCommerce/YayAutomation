@@ -6,8 +6,8 @@ use YayMatik\Engine\BEPages\AdminPage;
 
 defined( 'ABSPATH' ) || exit;
 
-/** Plugin adapter for YayMatik (Lite): the submenu under YayCommerce. */
-class YayMatikLicenseAdapter implements \YayMatikScoped\YayCommerce\AdminShell\Contracts\PluginMenuAdapter {
+/** The free plugin's menu adapter: the submenu under YayCommerce. */
+class YayMatikMenuAdapter implements \YayMatikScoped\YayCommerce\AdminShell\Contracts\PluginMenuAdapter {
     public function get_menu_title(): string {
         return 'YayMatik'; }
     public function get_page_title(): string {

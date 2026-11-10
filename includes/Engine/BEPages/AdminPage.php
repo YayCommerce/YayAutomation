@@ -25,7 +25,7 @@ class AdminPage {
     public $hook_suffix = null;
 
     protected function __construct() {
-        // The submenu itself is registered by AdminShell (see YayMatikLicenseAdapter).
+        // The submenu itself is registered by AdminShell (see YayMatikMenuAdapter).
         add_action( 'admin_menu', [ $this, 'admin_menu' ], 99 );
         add_filter( 'admin_body_class', [ $this, 'admin_body_class' ] );
         add_action( 'admin_enqueue_scripts', [ $this, 'admin_enqueue_scripts' ] );
@@ -53,7 +53,7 @@ class AdminPage {
         }
 
         wp_localize_script( ScriptName::PAGE_ADMIN, 'yayMatikMeta', self::client_meta() );
-        wp_set_script_translations( ScriptName::PAGE_ADMIN, 'yaymatik', YAYMATIK_PLUGIN_DIR . 'languages' );
+        wp_set_script_translations( ScriptName::PAGE_ADMIN, 'yaymatik' );
 
         // TinyMCE + Quicktags for `html` step fields (apps/admin-page …/fields/classicEditor.ts).
         wp_enqueue_editor();

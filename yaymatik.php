@@ -8,8 +8,13 @@
  * Author URI:        https://yaycommerce.com
  * Text Domain:       yaymatik
  * Domain Path:       /languages
- * Requires at least: 6.5
+ * Requires at least: 6.9
  * Requires PHP:      7.4
+ * Requires Plugins:  woocommerce
+ * WC requires at least: 11.0
+ * WC tested up to:   11.2
+ * License:           GPLv2 or later
+ * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
  *
  * @package yaycommerce/yaymatik
  */
@@ -50,7 +55,6 @@ if ( ! function_exists( 'YayMatik\\plugin_init' ) ) {
         require_once YAYMATIK_PLUGIN_DIR . 'vendor/autoload.php';
         \YayMatikScoped\YayCommerce\AdminShell\AdminShell::boot();
         YayMatik::initialize();
-        I18n::get_instance();
     }
 
     // Loads no class: it also runs on a site where the requirements failed and the autoloader never loaded.

@@ -36,7 +36,7 @@ A free zip that passes the WordPress.org checklist, a light-only admin with a he
    - Risk: the editor autosaves. Creating from the editor must not drop a pending save: the new workflow opens only after the current save settles.
    - Tests: Vitest: button on overview and editor, none on list, Save changes on settings; `<html>` has `yay-light` and never `yay-dark`, also with `localStorage['yay-ui-theme'] = 'dark'` and a dark `prefers-color-scheme`. e2e: Create workflow from the header on Overview and on the Editor → editor of a new workflow.
    - Closes: criterion 6 (light only).
-3. **Lifecycle** — Risk: 3
+3. ✅ **Lifecycle** (d6d4269, fix e79cfa3) — Risk: 3
    - Files: `yaymatik.php`, new `includes/Requirements.php`, `includes/Fallback.php` (Plugins screen only, G5), `includes/Workflow/Core/Runtime/Cleanup.php` (`unschedule()`), new `uninstall.php`, new `includes/Uninstaller.php`, `tests/Unit/RequirementsTest.php`, `tests/Unit/UninstallerTest.php`, `tests/Unit/Core/Runtime/CleanupTest.php` (or the existing file), new `dev/scripts/check-plugin-lifecycle.{sh,php}`.
    - check-plugin-lifecycle runs on wp-env targets only and refuses local and staging. The steps:
      - Force WP 6.8 in memory (`WP_CLI::add_wp_hook( 'muplugins_loaded', … )`): the notice is registered and `class_exists( 'YayMatik\YayMatik', false )` is false.

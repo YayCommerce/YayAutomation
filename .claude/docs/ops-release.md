@@ -3,7 +3,7 @@
 Use `/wdist`.
 
 - Version: `yaymatik.php` header `Version:` + `YAYMATIK_VERSION` — keep in sync.
-- Zip: `./run.sh release` (`dev/scripts/release.sh`) → `release/yaymatik.zip` (free: `.distignore` leaves out `includes/Pro/`). `./run.sh release pro` → `release/yaymatik-pro.zip`, the same with `includes/Pro/`. Exclusions: `.distignore`. It runs `./vendor/bin/yaycommerce-prerelease` first and ships only `vendor/autoload.php` + `vendor/composer/` + `vendor-prefixed/`.
+- Zip: `./run.sh release` (`dev/scripts/release.sh`) → `release/yaymatik.zip` (free: `.distignore` leaves out `includes/Pro/`; `release.sh` also drops admin-shell's license client and views and `YayMatikProLicenseAdapter.php`, as WordPress.org allows no license client or updater). `./run.sh release pro` → `release/yaymatik-pro.zip`, the same with `includes/Pro/`. Exclusions: `.distignore`. It runs `./vendor/bin/yaycommerce-prerelease` first and ships only `vendor/autoload.php` + `vendor/composer/` + `vendor-prefixed/`.
 - WordPress.org review: `/wp-review` checks the free zip against `.claude/docs/context-wporg-release-checklist.md` (IDs S, G, B, Q, R, T, U).
 - Before release: build passes, clean working tree, `pnpm e2e` passes on the release commit (local wp-env only; CI doesn't run it), the free zip loads the admin page on a clean site.
 

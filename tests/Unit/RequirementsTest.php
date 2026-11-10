@@ -36,6 +36,17 @@ final class RequirementsTest extends TestCase {
         ];
     }
 
+    public function test_the_plugin_header_states_the_same_minimums(): void {
+        // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a local file.
+        $header = (string) file_get_contents( __DIR__ . '/../../yaymatik.php' );
+        $field  = fn( string $name ) => preg_match( '/^ \* ' . preg_quote( $name, '/' ) . ': *(.+)$/m', $header, $m ) ? trim( $m[1] ) : null;
+
+        $this->assertSame( Requirements::WP, $field( 'Requires at least' ) );
+        $this->assertSame( Requirements::PHP, $field( 'Requires PHP' ) );
+        $this->assertSame( Requirements::WC, $field( 'WC requires at least' ) );
+        $this->assertSame( 'woocommerce', $field( 'Requires Plugins' ) );
+    }
+
     public function test_met_reads_the_site_and_an_unmet_site_gets_a_notice(): void {
         if ( ! defined( 'WC_VERSION' ) ) {
             define( 'WC_VERSION', '11.2.2' );
