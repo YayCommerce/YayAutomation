@@ -31,7 +31,7 @@ A free zip that passes the WordPress.org checklist, a light-only admin with a he
    - Risk: a `dev/scripts/check-*.php` that uses PHP 8 syntax fails on PHP 7.4. Fix the script, unless it shows a plugin bug. A plugin bug is fixed in this CP and logged.
    - Tests: `./run.sh check-all`, `check-all --wp-env`, `check-all --wp-env-min` all PASS; `check-all --staging` refused.
    - Closes: R3 (minimum versions run), T3 in part.
-2. **Header, light only** — Risk: 2
+2. ✅ **Header, light only** (be92a92, fix 326ef09) — Risk: 2
    - Files: `routes/layout/Layout.tsx`, new `routes/layout/useHeaderSlot.ts`, delete `routes/layout/ThemeToggle.tsx`, `App.tsx`, `main.tsx`, delete `components/ui/theme-provider.tsx`, move `pages/list/CreateWorkflowDialog.tsx` → `shared/create/`, new `shared/create/CreateWorkflowButton.tsx`, `pages/list/WorkflowListPage.tsx`, `pages/overview/WorkflowOverviewPage.tsx`, `pages/editor/WorkflowEditorPage.tsx`, `settings/SettingsPage.tsx`, `.claude/docs/context-dev-convention.md` (app shell line). Built to section #header of YayMatik Pages v3: outline, plus icon, "Create" below 640px.
    - Risk: the editor autosaves. Creating from the editor must not drop a pending save: the new workflow opens only after the current save settles.
    - Tests: Vitest: button on overview and editor, none on list, Save changes on settings; `<html>` has `yay-light` and never `yay-dark`, also with `localStorage['yay-ui-theme'] = 'dark'` and a dark `prefers-color-scheme`. e2e: Create workflow from the header on Overview and on the Editor → editor of a new workflow.

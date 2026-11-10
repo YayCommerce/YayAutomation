@@ -4,7 +4,8 @@ defined( 'ABSPATH' ) || exit;
 add_action(
     'admin_notices',
     function () {
-        if ( current_user_can( 'activate_plugins' ) ) {
+        $screen = get_current_screen();
+        if ( $screen && in_array( $screen->id, [ 'plugins', 'plugins-network' ], true ) && current_user_can( 'activate_plugins' ) ) {
             ?>
                 <div class="notice notice-error is-dismissible">
                 <p>

@@ -38,26 +38,32 @@ if ( ! defined( 'YAYMATIK_VERSION' ) ) {
 }
 
 if ( ! function_exists( 'YayMatik\\plugin_init' ) ) {
-    // Composer: YayMatik\ (PSR-4, includes/) + scoped admin-shell (vendor-prefixed/).
-    // Missing? Run ./run.sh setup.
-    require_once YAYMATIK_PLUGIN_DIR . 'vendor/autoload.php';
-    function plugin_init() {
-        \YayMatikScoped\YayCommerce\AdminShell\AdminShell::boot();
+    require_once YAYMATIK_PLUGIN_DIR . 'includes/Requirements.php';
 
-        if ( ! function_exists( 'WC' ) ) {
-            add_action(
-                'admin_notices',
-                function () {
-                    /* translators: %s: Woocommerce link */
-                    echo '<div class="error"><p><strong>' . sprintf( esc_html__( 'YayMatik is enabled but not effective. It requires %s in order to work', 'yaymatik' ), '<a href="' . esc_url( admin_url( 'plugin-install.php?s=woocommerce&tab=search&type=term' ) ) . '">WooCommerce</a>' ) . '</strong></p></div>';
-                }
-            );
+    function plugin_init() {
+        // The WooCommerce version is known only once plugins load, so the check, and the autoloader after it, wait until now.
+        if ( ! Requirements::met() ) {
             return;
         }
-
+        // Composer: YayMatik\ (PSR-4, includes/) + scoped admin-shell (vendor-prefixed/).
+        // Missing? Run ./run.sh setup.
+        require_once YAYMATIK_PLUGIN_DIR . 'vendor/autoload.php';
+        \YayMatikScoped\YayCommerce\AdminShell\AdminShell::boot();
         YayMatik::initialize();
         I18n::get_instance();
     }
+
+    // Loads no class: it also runs on a site where the requirements failed and the autoloader never loaded.
+    // The hooks, the group and the option are Cleanup's, CartSweep's and InactiveSweep's (CleanupTest keeps them equal).
+    function deactivate() {
+        if ( function_exists( 'as_unschedule_all_actions' ) ) {
+            foreach ( [ 'yaymatik_cleanup', 'yaymatik_cart_sweep', 'yaymatik_inactive_sweep' ] as $hook ) {
+                as_unschedule_all_actions( $hook, [], 'yaymatik' );
+            }
+        }
+        delete_option( 'yaymatik_cleanup_checked_at' );
+    }
+    register_deactivation_hook( __FILE__, 'YayMatik\\deactivate' );
 }
 
 if ( ! wp_installing() ) {

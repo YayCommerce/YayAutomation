@@ -17,6 +17,12 @@ final class FakeWpdb {
     /** @var string */
     public $usermeta = 'wp_usermeta';
 
+    /** @var string */
+    public $options = 'wp_options';
+
+    /** @var string */
+    public $postmeta = 'wp_postmeta';
+
     /** @var int */
     public $insert_id = 0;
 
@@ -43,6 +49,10 @@ final class FakeWpdb {
             },
             $query
         );
+    }
+
+    public function esc_like( $text ) {
+        return addcslashes( $text, '_%\\' );
     }
 
     public function insert( $table, $data, $format = null ) {

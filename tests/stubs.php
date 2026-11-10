@@ -448,3 +448,37 @@ if ( ! function_exists( 'user_can' ) ) {
         return ! empty( $user->allcaps[ $capability ] );
     }
 }
+
+if ( ! function_exists( 'is_multisite' ) ) {
+    // A network when a test sets `$GLOBALS['yaymatik_test_sites']` (site ids).
+    function is_multisite() {
+        return isset( $GLOBALS['yaymatik_test_sites'] );
+    }
+}
+
+if ( ! function_exists( 'get_sites' ) ) {
+    function get_sites( $args = [] ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- same signature as WordPress.
+        return $GLOBALS['yaymatik_test_sites'] ?? [];
+    }
+}
+
+if ( ! function_exists( 'switch_to_blog' ) ) {
+    // Site 1 keeps the base prefix, as in WordPress.
+    function switch_to_blog( $site_id ) {
+        $GLOBALS['wpdb']->prefix = 1 === (int) $site_id ? $GLOBALS['wpdb']->base_prefix : $GLOBALS['wpdb']->base_prefix . $site_id . '_';
+        return true;
+    }
+}
+
+if ( ! function_exists( 'restore_current_blog' ) ) {
+    function restore_current_blog() {
+        $GLOBALS['wpdb']->prefix = $GLOBALS['wpdb']->base_prefix;
+        return true;
+    }
+}
+
+if ( ! function_exists( 'wp_cache_flush' ) ) {
+    function wp_cache_flush() {
+        return true;
+    }
+}
