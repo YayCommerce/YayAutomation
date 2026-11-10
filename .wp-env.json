@@ -1,0 +1,10 @@
+{
+  "core": null,
+  "phpVersion": "8.1",
+  "port": 8910,
+  "testsEnvironment": false,
+  "plugins": ["https://downloads.wordpress.org/plugin/woocommerce.11.1.2.zip", "."],
+  "mappings": {
+    "wp-content/mu-plugins": "./dev/wp/mu-plugins"
+  }
+}

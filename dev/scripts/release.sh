@@ -1,10 +1,18 @@
 #!/bin/bash
-# Build the distribution zip: release/yaymatik.zip, or with `pro` release/yaymatik-pro.zip (includes/Pro kept).
+# Build the distribution zip: release/yaymatik.zip, or with `pro` release/yaymatik-pro.zip (includes/Pro kept). --rc stamps X.Y.Z-rcN in the zip copy.
+set -eo pipefail
 cd "$(dirname "$0")/../.." || exit 1
 [[ -f yaymatik.php ]] || { echo "Not the plugin root: $(pwd)"; exit 1; }
 
-EDITION=${1:-free}
-[[ $EDITION == free || $EDITION == pro ]] || { echo "Usage: ./run.sh release [pro]"; exit 1; }
+EDITION=free
+RC=false
+for arg in "$@"; do
+    case $arg in
+        free | pro) EDITION=$arg ;;
+        --rc) RC=true ;;
+        *) echo "Usage: ./run.sh release [pro] [--rc]"; exit 1 ;;
+    esac
+done
 PLUGIN_SLUG="yaymatik"
 ZIP_NAME=$PLUGIN_SLUG
 [[ $EDITION == pro ]] && ZIP_NAME="$PLUGIN_SLUG-pro"
@@ -14,6 +22,8 @@ DEST_PATH="$BUILD_PATH/$PLUGIN_SLUG"
 
 if [[ ! -f vendor/autoload.php ]]; then
     echo "Installing Composer dependencies..."
+    # composer.json classmaps vendor-prefixed/src, so it must exist before install.
+    mkdir -p vendor-prefixed/src
     composer install || exit 1
 fi
 
@@ -57,6 +67,14 @@ fi
 # Remove development code
 sed -i "" "/'YAYMATIK_IS_DEVELOPMENT', true/d" "$DEST_PATH/yaymatik.php"
 rm -f "$DEST_PATH/includes/Engine/Register/RegisterDev.php"
+
+# main.js has a fixed name, so only a new ?ver=YAYMATIK_VERSION makes browsers load a new build.
+if $RC; then
+    STAMP="$(sed -n "s/.*'YAYMATIK_VERSION', '\([^']*\)'.*/\1/p" yaymatik.php)-rc$(git rev-list --count HEAD)"
+    sed -i "" -E "s/^( \* Version: +).*/\1$STAMP/; s/('YAYMATIK_VERSION', ')[^']*/\1$STAMP/" "$DEST_PATH/yaymatik.php"
+    [[ $(grep -c -F -- "$STAMP" "$DEST_PATH/yaymatik.php") == 2 ]] || { echo "Could not stamp $STAMP in yaymatik.php"; exit 1; }
+    echo "Stamped $STAMP"
+fi
 
 echo "Generating zip file..."
 cd "$BUILD_PATH" || exit

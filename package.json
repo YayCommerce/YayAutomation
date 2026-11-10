@@ -10,11 +10,16 @@
     "lint:php:fix": "dev/tools/lintphp/vendor/bin/phpcbf",
     "test": "pnpm -r test",
     "test:php": "dev/tools/phpunit/vendor/bin/phpunit",
+    "e2e": "pnpm build && playwright test -c dev/e2e/playwright.config.ts",
     "format": "pnpm -r format",
     "analyze": "pnpm -F @yaymatik/admin analyze"
   },
   "engines": {
-    "node": ">=18",
+    "node": ">=22.13",
     "pnpm": ">=9"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.1",
+    "@wordpress/env": "12.1.0"
   }
 }

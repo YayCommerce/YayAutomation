@@ -261,7 +261,7 @@ Risk scale: **1** = UI or template content, easy to undo · **2** = new feature 
 | CT | Custom workflow catalog | 6 triggers, about 25 condition fields, condition groups, 5 actions and a fix to Update order custom field, for workflows built from New Workflow | Jack | Todo | 3 | M6 |
 | M7 | Cart tracking + Settings | Tracks carts and guest emails at checkout, restore link, Settings page | Jack | Todo | 3 | — |
 | M8 | Abandoned cart + checkout | Both triggers; **Abandoned cart** (3), **Abandoned checkout** (2) | Jack | Todo | 2 | M1, M2, M7 |
-| M9 | Release hardening | End-to-end test of all 18 templates, translations, release build; plus items picked from the release checklist below | Jack | Todo | 2 | all |
+| M9 | Release hardening | Each of the 8 workflows tested on staging, e2e journeys, translations, release build; plus items picked from the release checklist below | Jack | Todo | 2 | all |
 
 One developer (Jack) builds v1.0. Full v1.0 scope does not fit by Nov 30 with one developer. Estimates and the release date will be added after M1. M1 builds the core pieces (customer emails, coupons, unsubscribe), so it gives a real measure of pace. The developer also supports other plugins at times, which can shift dates.
 
@@ -274,7 +274,7 @@ One developer (Jack) builds v1.0. Full v1.0 scope does not fit by Nov 30 with on
 
 v1.0 can ship when all of these are true:
 
-1. **Every one of the 18 templates** installs, turns on, starts from a real store event, runs end to end (including waits), and the email arrives in the inbox with correct content.
+1. **Each of the 8 workflows**, tested once by hand on staging, installs, turns on, starts from a real store event, runs end to end (including waits), and its email in the staging mail log has the correct content. One email also arrives in a real inbox from a dev site. The e2e journeys (`pnpm e2e`) pass on the release commit.
 2. Unsubscribe works: the link unsubscribes, and that customer gets no more workflow emails.
 3. Coupons from templates work at checkout and expire as set.
 4. Deactivating a workflow stops it right away, including runs that are waiting.
@@ -295,7 +295,6 @@ These are missing today. They are **not** in scope until picked:
 | WordPress.org-style readme | Missing |
 | Data cleanup on uninstall | Not handled |
 | "Requires WooCommerce" in plugin header | Missing |
-| Version number to 1.0.0 | Still 0.1.0 |
 
 ## Main risks
 
@@ -307,7 +306,7 @@ These are missing today. They are **not** in scope until picked:
 | Privacy (tracking carts and emails) | Legal complaints | Cart tracking off until turned on (proposal), personal data export/erase, data deleted after a set time |
 | Many coupons created | Clutter, misuse | Coupons expire and are limited to the customer's email by default |
 | Large stores: daily inactive-customer check and cart tracking load | Slow site | Process in small batches in the background |
-| 18 templates to test end to end | Release slips | Test each template as its milestone lands, not only in M9 |
+| 8 workflows to test end to end | Release slips | Test each workflow on staging as its milestone lands, not only in M9 |
 
 ## Out of scope
 
