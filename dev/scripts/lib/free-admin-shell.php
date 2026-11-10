@@ -11,7 +11,7 @@
 // license client or updater on WordPress.org); the rest of admin-shell still names those classes on paths that run on
 // any site with another YayCommerce plugin, so each use gets a class_exists guard here, and the copy is checked: an
 // admin-shell update that moves or adds a use fails the build.
-//   php free-admin-shell.php <build>/vendor-prefixed [--abspath-only]
+// Usage: php free-admin-shell.php <build>/vendor-prefixed [--abspath-only]
 
 $dir           = rtrim( $argv[1] ?? '', '/' );
 $abspath_only  = in_array( '--abspath-only', $argv, true );
@@ -131,13 +131,13 @@ $sources   = array_map( 'file_get_contents', $php_files() );
 $ns_any    = preg_quote( $ns, '/' ) . '|' . preg_quote( str_replace( '\\', '\\\\', $ns ), '/' ) . '|(?<![\\\\\w])License\\\\\w';
 $imports   = function ( string $code ) use ( $ns ) {
     preg_match_all( '/^use ' . preg_quote( $ns, '/' ) . '\\\\(?:\w+\\\\)*(\w+)(?: as (\w+))?;/m', $code, $found, PREG_SET_ORDER );
-    return array_map( fn( $use ) => $use[2] ?? $use[1], $found );
+    return array_map( fn( $match ) => $match[2] ?? $match[1], $found );
 };
 $dependent = [];
 $returning = [];
 foreach ( $sources as $code ) {
-    $names = $imports( $code );
-    $named = $names ? '(?:' . implode( '|', $names ) . ')\b|' . $ns_any : $ns_any;
+    $imported = $imports( $code );
+    $named    = $imported ? '(?:' . implode( '|', $imported ) . ')\b|' . $ns_any : $ns_any;
     if ( preg_match_all( '/^\s*(?:final |abstract )?class (\w+)[^{]*\b(?:implements|extends)\b[^{]*(?:' . $named . ')/m', $code, $classes ) ) {
         $dependent = array_merge( $dependent, $classes[1] );
     }
@@ -150,13 +150,13 @@ foreach ( $sources as $code ) {
 
 $bad = [];
 foreach ( $sources as $short => $code ) {
-    $names    = $imports( $code );
-    $patterns = array_merge( array_map( fn( $name ) => '\b' . $name . '\b', array_merge( $names, $dependent ) ), [ $ns_any ] );
+    $imported = $imports( $code );
+    $patterns = array_merge( array_map( fn( $name ) => '\b' . $name . '\b', array_merge( $imported, $dependent ) ), [ $ns_any ] );
     foreach ( $returning as $method ) {
         $patterns[] = '(?:->|::)' . $method . '\(';
     }
     // A guard counts only when it asks for a License class.
-    $guard = '/class_exists\(\s*\\\\?(?:[\w\\\\]*\\\\)?(?:' . implode( '|', array_merge( $names, [ 'License\w*', 'RestAPI', 'PluginInfoFactory' ] ) ) . ')::class/';
+    $guard = '/class_exists\(\s*\\\\?(?:[\w\\\\]*\\\\)?(?:' . implode( '|', array_merge( $imported, [ 'License\w*', 'RestAPI', 'PluginInfoFactory' ] ) ) . ')::class/';
     $lines = explode( "\n", $code );
     // Inside a method that returns a dependent class: its callers are checked instead.
     $in_returning = false;
