@@ -54,8 +54,25 @@ if ( ! function_exists( 'YayMatik\\plugin_init' ) ) {
     }
 
     // Loads no class: it also runs on a site where the requirements failed and the autoloader never loaded.
+    function deactivate( $network_wide = false ) {
+        if ( ! $network_wide || ! is_multisite() ) {
+            deactivate_site();
+            return;
+        }
+        foreach ( get_sites(
+            [
+                'fields' => 'ids',
+                'number' => 0,
+            ]
+        ) as $site_id ) {
+            switch_to_blog( $site_id );
+            deactivate_site();
+            restore_current_blog();
+        }
+    }
+
     // The hooks, the group and the option are Cleanup's, CartSweep's and InactiveSweep's (CleanupTest keeps them equal).
-    function deactivate() {
+    function deactivate_site() {
         if ( function_exists( 'as_unschedule_all_actions' ) ) {
             foreach ( [ 'yaymatik_cleanup', 'yaymatik_cart_sweep', 'yaymatik_inactive_sweep' ] as $hook ) {
                 as_unschedule_all_actions( $hook, [], 'yaymatik' );

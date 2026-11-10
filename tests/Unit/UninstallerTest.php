@@ -58,8 +58,8 @@ final class UninstallerTest extends TestCase {
     }
 
     public function test_with_the_constant_tables_options_and_meta_go_but_coupons_stay(): void {
-        // Every read takes the next result: the Action Scheduler check, 13 queries, then the wc_orders_meta check.
-        $this->wpdb->results = array_merge( [ 'wp_actionscheduler_actions' ], array_fill( 0, 13, 1 ), [ 'wp_wc_orders_meta' ] );
+        // Every read takes the next result: the Action Scheduler check, 11 queries, the option names, 2 queries, then the wc_orders_meta check.
+        $this->wpdb->results = array_merge( [ 'wp_actionscheduler_actions' ], array_fill( 0, 11, 1 ), [ [ 'yaymatik_settings' ] ], [ 1, 1, 'wp_wc_orders_meta' ] );
         Uninstaller::site( true );
         $sql = array_slice( $this->queries(), 4 );
 

@@ -31,8 +31,6 @@ final class Uninstaller {
                 restore_current_blog();
             }
         }
-        // Options were deleted by SQL, so cached copies (alloptions) would bring them back.
-        wp_cache_flush();
     }
 
     /**
@@ -45,25 +43,30 @@ final class Uninstaller {
         $p = $wpdb->prefix;
         // phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- uninstall: table names from $wpdb->prefix, no user input.
         if ( self::table_exists( "{$p}actionscheduler_actions" ) ) {
-            $group = $wpdb->prepare( 'g.slug = %s', self::GROUP );
-            $wpdb->query( "DELETE l FROM {$p}actionscheduler_logs l JOIN {$p}actionscheduler_actions a ON a.action_id = l.action_id JOIN {$p}actionscheduler_groups g ON g.group_id = a.group_id WHERE {$group}" );
-            $wpdb->query( "DELETE a FROM {$p}actionscheduler_actions a JOIN {$p}actionscheduler_groups g ON g.group_id = a.group_id WHERE {$group}" );
+            $wpdb->query( $wpdb->prepare( "DELETE l FROM {$p}actionscheduler_logs l JOIN {$p}actionscheduler_actions a ON a.action_id = l.action_id JOIN {$p}actionscheduler_groups g ON g.group_id = a.group_id WHERE g.slug = %s", self::GROUP ) );
+            $wpdb->query( $wpdb->prepare( "DELETE a FROM {$p}actionscheduler_actions a JOIN {$p}actionscheduler_groups g ON g.group_id = a.group_id WHERE g.slug = %s", self::GROUP ) );
             $wpdb->query( $wpdb->prepare( "DELETE FROM {$p}actionscheduler_groups WHERE slug = %s", self::GROUP ) );
         }
         $wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE '\\_transient\\_yaymatik\\_%' OR option_name LIKE '\\_transient\\_timeout\\_yaymatik\\_%'" );
-        if ( ! $all ) {
-            return;
+        if ( $all ) {
+            foreach ( self::TABLES as $name ) {
+                // phpcs:ignore WordPress.DB.DirectDatabaseQuery.SchemaChange -- uninstall drops the plugin's own tables.
+                $wpdb->query( "DROP TABLE IF EXISTS {$p}yaymatik_{$name}" );
+            }
+            // Options not autoloaded are cached one by one, by name.
+            foreach ( (array) $wpdb->get_col( "SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE 'yaymatik\\_%'" ) as $option ) {
+                wp_cache_delete( $option, 'options' );
+            }
+            $wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE 'yaymatik\\_%'" );
+            // Coupons stay: they may be in a shopper's inbox or used on orders. Only YayMatik's meta on them goes.
+            $wpdb->query( "DELETE FROM {$wpdb->postmeta} WHERE meta_key LIKE '\\_yaymatik\\_%'" );
+            if ( self::table_exists( "{$p}wc_orders_meta" ) ) {
+                $wpdb->query( "DELETE FROM {$p}wc_orders_meta WHERE meta_key LIKE '\\_yaymatik\\_%'" );
+            }
         }
-        foreach ( self::TABLES as $name ) {
-            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.SchemaChange -- uninstall drops the plugin's own tables.
-            $wpdb->query( "DROP TABLE IF EXISTS {$p}yaymatik_{$name}" );
-        }
-        $wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE 'yaymatik\\_%'" );
-        // Coupons stay: they may be in a shopper's inbox or used on orders. Only YayMatik's meta on them goes.
-        $wpdb->query( "DELETE FROM {$wpdb->postmeta} WHERE meta_key LIKE '\\_yaymatik\\_%'" );
-        if ( self::table_exists( "{$p}wc_orders_meta" ) ) {
-            $wpdb->query( "DELETE FROM {$p}wc_orders_meta WHERE meta_key LIKE '\\_yaymatik\\_%'" );
-        }
+        // Options went by SQL: the cached option lists would bring them back on this request.
+        wp_cache_delete( 'alloptions', 'options' );
+        wp_cache_delete( 'notoptions', 'options' );
         // phpcs:enable
     }
 

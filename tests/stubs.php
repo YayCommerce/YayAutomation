@@ -477,8 +477,8 @@ if ( ! function_exists( 'restore_current_blog' ) ) {
     }
 }
 
-if ( ! function_exists( 'wp_cache_flush' ) ) {
-    function wp_cache_flush() {
+if ( ! function_exists( 'wp_cache_delete' ) ) {
+    function wp_cache_delete( $key, $group = '' ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- same signature as WordPress.
         return true;
     }
 }

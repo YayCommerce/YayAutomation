@@ -13,7 +13,7 @@ final class CleanupTest extends TestCase {
     public function test_deactivate_unschedules_every_recurring_job_and_forgets_the_check(): void {
         // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a local file.
         $bootstrap = (string) file_get_contents( __DIR__ . '/../../../../yaymatik.php' );
-        $this->assertSame( 1, preg_match( '/function deactivate\(\) \{(.*?)\n    \}/s', $bootstrap, $match ) );
+        $this->assertSame( 1, preg_match( '/function deactivate_site\(\) \{(.*?)\n    \}/s', $bootstrap, $match ) );
         $body = $match[1];
 
         $this->assertStringContainsString( sprintf( "[ '%s', '%s', '%s' ]", Cleanup::HOOK, CartSweep::HOOK, InactiveSweep::HOOK ), $body );
