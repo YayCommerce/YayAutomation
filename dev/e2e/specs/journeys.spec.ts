@@ -11,7 +11,10 @@ import {
   guestPage,
   mailRow,
   openMailLog,
+  placeClassicOrder,
   placeOrder,
+  REVIEW_REQUEST,
+  REVIEW_SUBJECT,
   uniqueEmail,
   useTemplate,
 } from '../support/journey';
@@ -107,4 +110,52 @@ test('an abandoned checkout gets a reminder that restores the cart', async ({ pa
   await returning.goto('/cart/');
   // Inside the items table: an empty cart also lists Seed Tee, under "New in store".
   await expect(returning.locator('.wc-block-cart-items').getByText('Seed Tee').first()).toBeVisible();
+});
+
+test('an order through classic checkout runs the workflow', async ({ page, browser, baseURL }) => {
+  await useTemplate(page, FIRST_ORDER);
+  await activate(page);
+
+  const email = uniqueEmail();
+  const shopper = await guestPage(browser, baseURL);
+  await addToCart(shopper);
+  await placeClassicOrder(shopper, email);
+  completeOrder(email);
+  runQueue();
+
+  await openMailLog(page);
+  await expect(mailRow(page, email, FIRST_ORDER_SUBJECT)).toBeVisible();
+});
+
+test('an unsubscribe link stops the next email', async ({ page, browser, baseURL }) => {
+  await useTemplate(page, FIRST_ORDER);
+  await activate(page);
+  await useTemplate(page, REVIEW_REQUEST);
+  await activate(page);
+
+  const email = uniqueEmail();
+  const shopper = await guestPage(browser, baseURL);
+  await addToCart(shopper);
+  await placeOrder(shopper, email);
+  completeOrder(email);
+  runQueue();
+
+  // The review request waits for its email; the thank-you is already sent.
+  await page.reload();
+  await expect(page.getByRole('row').filter({ hasText: 'Waiting' })).toHaveCount(1);
+  await openMailLog(page);
+  await mailRow(page, email, FIRST_ORDER_SUBJECT).getByRole('link').click();
+  const link = page.frameLocator('iframe[title="Mail body"]').locator('a[href*="yaymatik_unsub"]').first();
+  const unsubscribeUrl = await link.getAttribute('href');
+
+  const reader = await guestPage(browser, baseURL);
+  await reader.goto(unsubscribeUrl as string);
+  await reader.getByRole('button', { name: 'Unsubscribe' }).click();
+  await expect(reader.getByText('You’re unsubscribed')).toBeVisible();
+
+  endWaits();
+  runQueue();
+  await openMailLog(page);
+  await expect(mailRow(page, email, FIRST_ORDER_SUBJECT)).toHaveCount(1);
+  await expect(mailRow(page, email, REVIEW_SUBJECT)).toHaveCount(0);
 });

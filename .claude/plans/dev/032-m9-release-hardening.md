@@ -55,7 +55,7 @@ A free zip that passes the WordPress.org checklist, a light-only admin with a he
      - `--rc` stamps both lines.
      - The `release.sh` sed lines run in a Debian container (GNU sed).
    - Closes: G1, B4, Q4, R2, R4.
-5. ✅ **UI** (CP5HASH) — Risk: 1
+5. ✅ **UI** (02cd472) — Risk: 1
    - Files:
      - Kit strings: `components/ui/pagination.tsx`, `dialog.tsx` (sr-only Close), `breadcrumb.tsx` (More), `command.tsx` defaults, the rest of the sweep.
      - AI box: `shared/create/CreateWorkflowDialog.tsx`.

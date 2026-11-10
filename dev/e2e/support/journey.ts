@@ -4,6 +4,8 @@ export const FIRST_ORDER = 'first-order-thank-you-discount';
 export const FIRST_ORDER_SUBJECT = 'Thanks for your first order';
 export const CHECKOUT_REMINDER = 'checkout-reminder';
 export const CHECKOUT_SUBJECT = 'Did something go wrong at checkout?';
+export const REVIEW_REQUEST = 'review-request';
+export const REVIEW_SUBJECT = 'How did your order go?';
 
 export const uniqueEmail = () => `shopper-${Date.now()}@yay-seed.test`;
 
@@ -52,6 +54,20 @@ export async function placeOrder(page: Page, email: string) {
   await page.getByLabel('City').fill('San Jose');
   await page.getByLabel('ZIP Code').fill('95112');
   await page.getByRole('button', { name: 'Place order' }).click();
+  await page.waitForURL(/order-received/);
+}
+
+/** The seed's "Classic checkout" page: WooCommerce's shortcode form, not the block. */
+export async function placeClassicOrder(page: Page, email: string) {
+  await page.goto('/classic-checkout/');
+  await page.locator('#billing_email').fill(email);
+  await page.locator('#billing_first_name').fill('Seed');
+  await page.locator('#billing_last_name').fill('Shopper');
+  await page.locator('#billing_address_1').fill('1 Seed St');
+  await page.locator('#billing_city').fill('San Jose');
+  await page.locator('#billing_postcode').fill('95112');
+  await page.locator('#billing_phone').fill('4085550100');
+  await page.locator('#place_order').click();
   await page.waitForURL(/order-received/);
 }
 

@@ -26,6 +26,18 @@ require_once ABSPATH . 'wp-admin/includes/misc.php';
 $GLOBALS['wp_rewrite']->set_permalink_structure( '/%postname%/' );
 flush_rewrite_rules();
 \WC_Install::create_pages();
+// WooCommerce's own Checkout page uses the block; this one keeps the classic form for testing both.
+if ( ! get_page_by_path( 'classic-checkout' ) ) {
+    wp_insert_post(
+        [
+            'post_type'    => 'page',
+            'post_status'  => 'publish',
+            'post_title'   => 'Classic checkout',
+            'post_name'    => 'classic-checkout',
+            'post_content' => '<!-- wp:shortcode -->[woocommerce_checkout]<!-- /wp:shortcode -->',
+        ]
+    );
+}
 
 foreach ( [
     'yay-seed-tee'   => [ 'Seed Tee', '20' ],
