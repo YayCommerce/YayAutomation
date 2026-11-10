@@ -83,6 +83,11 @@ A free zip that passes the WordPress.org checklist, a light-only admin with a he
 
 ### Run 2 (after Jack's checks: 8 workflows on staging, inbox check, screens of D1, D9, D20)
 
+8a. **Build: free admin-shell patch, composer.json, adapter, sed line, boot, S9, jsx-runtime, exceptions** (CP8AHASH) — Risk: 2
+8b. **`%i` for table and column names** — Risk: 3
+8c. **Q12 / Q13: query limits and catalog visibility** — Risk: 2
+8d. **Q3 text rules scope; Q6 / Q11 clean-site run** — Risk: 2
+
 8. **Fixes** — Risk: 2 — from run 1's results and Jack's checks. Closes whatever is still open from T1, T2, S1–S13, Q1–Q13.
 9. **Translation file, final docs, PR text** — Risk: 1
    - Files: `package.json` (`makepot`: `wp i18n make-pot . languages/yaymatik.pot --include=yaymatik.php,includes,assets/dist --domain=yaymatik`; locations kept, see open 7), `dev/scripts/release.sh` (makepot after the build, as YayBulkOrder does), `languages/yaymatik.pot`, docs, `.claude/plans/dev/032-pr.md`.
@@ -189,6 +194,9 @@ Run 2 answers (Jack, Nov 10; these replace the G1 study line above):
 - CP5: D9 also drops the describe box's primary glow (a disabled control doesn't glow). The "Coming soon" chip stays at full opacity.
 - CP5: the sheet's close button had no label; it gets the same translated sr-only "Close" as the dialog's.
 - CP5: `ModuleRegistry::to_client()` passes `data` to `esc_url_raw()`, which otherwise drops the core logos' `data:` URIs.
+- CP8a: 14 admin-shell files lacked the ABSPATH guard, not 4 (the run-1 listing was cut short); the patch step guards every shipped `vendor-prefixed` PHP file without one.
+- CP8a: escaping the exception messages can show entities (e.g. `&#039;`) in run history, which React escapes already; only rare database-failure messages are affected. `RefResolver` passes an object, so its line has a targeted `phpcs:ignore`; `GoneEntity` escapes its own message.
+- CP8a: without `src/License`, a free copy elected as the highest admin-shell renders the shared Licenses page but can't show or manage another plugin's license (same as YayBulkOrder's approved zip).
 - CP1: MySQL 8 probe ran on staging (8.0.46): REGEXP 8/8, GET_LOCK / RELEASE_LOCK, collation `utf8mb4_unicode_520_ci` folds case and accents, as `user_collides()` expects.
 
 ## Meta

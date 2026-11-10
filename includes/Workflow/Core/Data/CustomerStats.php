@@ -123,7 +123,7 @@ final class CustomerStats {
     private static function check(): void {
         global $wpdb;
         if ( '' !== $wpdb->last_error ) {
-            throw new \RuntimeException( 'Could not read the customer\'s orders: ' . $wpdb->last_error );
+            throw new \RuntimeException( esc_html( 'Could not read the orders of the customer: ' . $wpdb->last_error ) );
         }
     }
 }

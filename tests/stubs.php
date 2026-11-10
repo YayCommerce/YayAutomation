@@ -482,3 +482,9 @@ if ( ! function_exists( 'wp_cache_delete' ) ) {
         return true;
     }
 }
+
+if ( ! function_exists( 'esc_html__' ) ) {
+    function esc_html__( $text, $domain = 'default' ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- same signature as WordPress.
+        return esc_html( $text );
+    }
+}

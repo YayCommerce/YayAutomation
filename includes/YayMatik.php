@@ -3,6 +3,8 @@ namespace YayMatik;
 
 use YayMatik\Utils\SingletonTrait;
 
+defined( 'ABSPATH' ) || exit;
+
 /** Boots the plugin. */
 final class YayMatik {
     use SingletonTrait;
@@ -38,7 +40,6 @@ final class YayMatik {
     }
 
     private function register_admin_menu() {
-        \YayMatikScoped\YayCommerce\AdminShell\AdminShell::boot();
         \YayMatikScoped\YayCommerce\AdminShell\AdminShell::register_plugin(
             new YayMatikMenuAdapter()
         );

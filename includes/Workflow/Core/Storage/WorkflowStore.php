@@ -38,7 +38,7 @@ final class WorkflowStore {
         // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
         $status = $wpdb->get_var( $wpdb->prepare( "SELECT status FROM {$table} WHERE id = %d", $id ) );
         if ( null === $status && '' !== $wpdb->last_error ) {
-            throw new \RuntimeException( 'Could not read the workflow status: ' . $wpdb->last_error );
+            throw new \RuntimeException( esc_html( 'Could not read the workflow status: ' . $wpdb->last_error ) );
         }
         return 'active' === $status;
     }

@@ -3,6 +3,8 @@ namespace YayMatik\Engine\Register;
 
 use YayMatik\Utils\SingletonTrait;
 
+defined( 'ABSPATH' ) || exit;
+
 /** Loads the built admin app. */
 class RegisterProd {
     use SingletonTrait;

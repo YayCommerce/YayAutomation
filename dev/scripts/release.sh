@@ -45,15 +45,23 @@ EXCLUDES="$PROJECT_PATH/.distignore"
 if [[ $EDITION == pro ]]; then
     EXCLUDES=$(mktemp)
     trap 'rm -f "$EXCLUDES"' EXIT
-    grep -vx -e '/includes/Pro' -e '/includes/YayMatikProLicenseAdapter.php' "$PROJECT_PATH/.distignore" > "$EXCLUDES"
+    grep -vx '/includes/Pro' "$PROJECT_PATH/.distignore" > "$EXCLUDES"
 fi
 rsync -rc --exclude-from="$EXCLUDES" "$PROJECT_PATH/" "$DEST_PATH/" --delete --delete-excluded
 
+# WordPress.org allows no license client or updater in the free plugin: admin-shell's src/License goes, as in
+# YayBulkOrder's lite build, and the rest of admin-shell gets class_exists guards (checked, see the script).
+if [[ $EDITION == free ]]; then
+    rm -rf "$DEST_PATH/vendor-prefixed/src/License"
+    php "$PROJECT_PATH/dev/scripts/lib/free-admin-shell.php" "$DEST_PATH/vendor-prefixed" || exit 1
+fi
+
 # Ship only the runtime autoloader: drop dev packages + unscoped admin-shell, rebuild a no-dev classmap.
+# composer.json ships too: Plugin Check asks for it next to vendor/.
 find "$DEST_PATH/vendor" -mindepth 1 -maxdepth 1 ! -name autoload.php ! -name composer -exec rm -rf {} +
 cp "$PROJECT_PATH/composer.json" "$PROJECT_PATH/composer.lock" "$DEST_PATH/"
 composer dump-autoload --optimize --classmap-authoritative --no-dev --working-dir="$DEST_PATH" || exit 1
-rm -f "$DEST_PATH/composer.json" "$DEST_PATH/composer.lock"
+rm -f "$DEST_PATH/composer.lock"
 
 # Same pinned tools as `pnpm lint:php` (installed by ./run.sh setup).
 PHPCBF="$PROJECT_PATH/dev/tools/lintphp/vendor/bin/phpcbf"
@@ -65,9 +73,6 @@ else
 fi
 
 # Remove development code
-# -i.bak works with BSD (macOS) and GNU sed alike. On its own line, so set -e stops the build when sed fails.
-sed -i.bak "/'YAYMATIK_IS_DEVELOPMENT', true/d" "$DEST_PATH/yaymatik.php"
-rm "$DEST_PATH/yaymatik.php.bak"
 rm -f "$DEST_PATH/includes/Engine/Register/RegisterDev.php"
 
 # main.js has a fixed name, so only a new ?ver=YAYMATIK_VERSION makes browsers load a new build.

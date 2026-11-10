@@ -14,7 +14,6 @@ phpunit.xml.dist
 CLAUDE.local.md
 /tests
 log.xml
-composer.json
 composer.lock
 package.json
 package-lock.json
@@ -29,7 +28,6 @@ README.md
 scoper.inc.php
 
 /includes/Pro
-/includes/YayMatikProLicenseAdapter.php
 /apps
 /packages
 /release

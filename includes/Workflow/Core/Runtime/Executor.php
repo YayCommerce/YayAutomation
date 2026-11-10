@@ -254,7 +254,7 @@ final class Executor {
         }
         $row_id = $this->runs->start_step( $run_id, $step_id, $config );
         if ( ! $row_id ) {
-            throw new \RuntimeException( __( 'Could not save the step result.', 'yaymatik' ) );
+            throw new \RuntimeException( esc_html__( 'Could not save the step result.', 'yaymatik' ) );
         }
 
         $scope->set_current_step( $run_id, $step_id );

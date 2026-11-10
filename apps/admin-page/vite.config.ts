@@ -43,6 +43,8 @@ const externalOptions: Options = {
       react: 'React',
       'react-dom': 'ReactDOM',
       'react-dom/client': 'ReactDOM',
+      // motion's prebuilt code imports the automatic runtime; WordPress ships it as `react-jsx-runtime` (6.6+).
+      'react/jsx-runtime': 'ReactJSXRuntime',
     },
   },
 };

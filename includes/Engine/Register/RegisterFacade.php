@@ -4,6 +4,8 @@ namespace YayMatik\Engine\Register;
 use YayMatik\Utils\SingletonTrait;
 use YayMatik\YayMatik;
 
+defined( 'ABSPATH' ) || exit;
+
 /**
  * Registers the admin assets and loads the script as a module.
  *

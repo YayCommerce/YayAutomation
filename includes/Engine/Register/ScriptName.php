@@ -1,6 +1,8 @@
 <?php
 namespace YayMatik\Engine\Register;
 
+defined( 'ABSPATH' ) || exit;
+
 /** Asset handles. */
 class ScriptName {
 
@@ -11,5 +13,5 @@ class ScriptName {
     public const PAGE_ADMIN = 'yaymatik/module/page-admin';
 
     /** WordPress handles of the admin script's externals (apps/admin-page/vite.config.ts). */
-    public const ADMIN_DEPS = [ 'react', 'react-dom', 'wp-hooks', 'wp-i18n', 'wp-date' ];
+    public const ADMIN_DEPS = [ 'react', 'react-dom', 'react-jsx-runtime', 'wp-hooks', 'wp-i18n', 'wp-date' ];
 }
