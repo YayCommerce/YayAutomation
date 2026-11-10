@@ -160,6 +160,13 @@ Additions (Jack, Nov 10):
 - CP3: register the deactivation hook at top level in `yaymatik.php`, with a callback that needs no autoloaded class: `function_exists( 'as_unschedule_all_actions' )`, then unschedule the three hooks and `delete_option( 'yaymatik_cleanup_checked_at' )` directly. Deactivation must work on a site where Requirements failed and `vendor/autoload.php` never loaded. That replaces `Cleanup::unschedule()`. Before `plugins_loaded`, only the `require` of `vendor/autoload.php` needs the autoloader (no CLI commands or file-load hooks use it; `Fallback.php` needs none), and it moves into `plugin_init()` after the check. check-plugin-lifecycle covers "deactivate while requirements fail": force WP 6.8, schedule the jobs first, deactivate, no recurring jobs left.
 - CP5 preflight: scope with `:where( #yaymatik, body > :not(#wpwrap) )` inside `@layer base`, so specificity and cascade order stay as today and utilities still win.
 
+Run 2 decisions (Jack, Nov 10; CP8 builds them):
+- G1: do what YayBulkOrder does (approved on WordPress.org). First a read-only study: its admin-shell version, its release removals, the approved zip's license/updater contents, whether ours fatals with the same removals; then the exact change. An admin-shell change stops for Jack's answer.
+- Q3: the `.yay-ui` text rules (`text-foreground`, `text-sm`) move from `body.yay-ui` to the preflight's `:where( #yaymatik, body > :not(#wpwrap) )` scope; `body` keeps only the background. Re-measure the admin menu and bar as in CP5.
+- Delete `includes/YayMatikProLicenseAdapter.php`, its `.distignore` line and the `grep -vx` filter in `release.sh`.
+- Drop the `YAYMATIK_IS_DEVELOPMENT` sed line in `release.sh`.
+- `AdminShell::boot()` runs once: keep the call in `plugin_init`, after checking a second call has no side effect.
+
 ## Deviations
 - CP1: `--wp-env-min` runs `../../node_modules/.bin/wp-env` from `dev/wp-env-min` (a shell function in `wp-target.sh`), not `pnpm --dir dev/wp-env-min exec wp-env`: pnpm refuses a folder without a `package.json`.
 - CP1: `856c522` also took CP2's staged moves and deletes (`git mv` / `git rm`), so it doesn't build alone; the CP2 commit completes it. Not amended (commit rules).
