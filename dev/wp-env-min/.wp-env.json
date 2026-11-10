@@ -1,0 +1,10 @@
+{
+  "core": "WordPress/WordPress#6.9",
+  "phpVersion": "7.4",
+  "port": 8911,
+  "testsEnvironment": false,
+  "plugins": ["https://downloads.wordpress.org/plugin/woocommerce.11.0.0.zip", "../.."],
+  "mappings": {
+    "wp-content/mu-plugins": "../wp/mu-plugins"
+  }
+}

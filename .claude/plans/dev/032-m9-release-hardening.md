@@ -21,7 +21,7 @@ A free zip that passes the WordPress.org checklist, a light-only admin with a he
 
 ### Run 1
 
-0. **Docs, API freeze, review skill** — Risk: 1
+0. ✅ **Docs, API freeze, review skill** (5838e43) — Risk: 1
    - Files: `docs/ROADMAP-dev.md` (CT and its items ✅ PR #37; M9.1 light only; M9 items), `docs/ROADMAP-v1.0.md` (header status and date, phase statuses, release checklist as picked Oct 26 + Nov 9, criterion 6 light only, open question 7 answered, the "Nov 30" line, M5 row and Templates "Starts when" = Order status changed from pending / on-hold / failed to processing / completed, total ≥ 500; API freeze line), `docs/workflow-core-design.md` §8 (experimental hooks and actions until Extension API v1, v1.1; `YayMatik\Workflow\` internal), `@internal` one-liners on `Core/Steps/Step.php`, `Modules/Module.php`, `Core/Data/DataItem.php`, new `.claude/skills/wp-review/SKILL.md`, new `.claude/docs/context-wporg-release-checklist.md`, `.claude/docs/ops-release.md` (pointer).
    - D15: nothing left to drop. 031 removed the "delete reset-data.sh" line; grep finds it only in old plan files.
    - Tests: `pnpm lint:php`; `/wp-review` dry read of the skill.
@@ -161,7 +161,8 @@ Additions (Jack, Nov 10):
 - CP5 preflight: scope with `:where( #yaymatik, body > :not(#wpwrap) )` inside `@layer base`, so specificity and cascade order stay as today and utilities still win.
 
 ## Deviations
-(none yet)
+- CP1: `--wp-env-min` runs `../../node_modules/.bin/wp-env` from `dev/wp-env-min` (a shell function in `wp-target.sh`), not `pnpm --dir dev/wp-env-min exec wp-env`: pnpm refuses a folder without a `package.json`.
+- CP1: MySQL 8 probe ran on staging (8.0.46): REGEXP 8/8, GET_LOCK / RELEASE_LOCK, collation `utf8mb4_unicode_520_ci` folds case and accents, as `user_collides()` expects.
 
 ## Meta
 - Target branch: jack/feature/032-m9-release

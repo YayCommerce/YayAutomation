@@ -1,8 +1,17 @@
 # Sourced with the target as $1: sets WP (the wp-cli command) and PLUGIN_FOLDER (the plugin's folder on that site).
+# With `check` as $2 it refuses staging: check scripts write test rows.
+# On wp-env the cli runs in the plugin folder, so `eval-file dev/scripts/…` finds the file in the container.
+[[ $2 == check && $1 == --staging ]] && { echo "Refused: check scripts never run on staging."; return 1; }
 case $1 in
   --wp-env)
-    WP=(pnpm wp-env run cli wp)
     PLUGIN_FOLDER=$(basename "$PWD")
+    WP=(pnpm wp-env run cli --env-cwd="wp-content/plugins/$PLUGIN_FOLDER" wp)
+    ;;
+  --wp-env-min)
+    PLUGIN_FOLDER=$(basename "$PWD")
+    # A separate folder is a separate wp-env site: WordPress, PHP and WooCommerce at the minimum versions.
+    wp_env_min() { (cd dev/wp-env-min && ../../node_modules/.bin/wp-env "$@"); }
+    WP=(wp_env_min run cli --env-cwd="wp-content/plugins/$PLUGIN_FOLDER" wp)
     ;;
   --staging)
     [[ -n $STAGING_SSH && -n $STAGING_URL ]] || { echo "Set STAGING_SSH (user@host[:port]/wp/path) and STAGING_URL in dev/.env.local"; return 1; }
@@ -18,7 +27,7 @@ case $1 in
     PLUGIN_FOLDER=$(basename "$PWD")
     ;;
   *)
-    echo "Unknown target: $1. Use --wp-env or --staging, or nothing for the local site."
+    echo "Unknown target: $1. Use --wp-env, --wp-env-min or --staging, or nothing for the local site."
     return 1
     ;;
 esac

@@ -2,10 +2,11 @@
 # Check that a module added on plugins_loaded (priority 20, as a plugin loaded after YayMatik would) is registered, trigger included (wp-cli).
 cd "$(dirname "$0")/../.." || exit 1
 [[ -f yaymatik.php ]] || { echo "Not the plugin root: $(pwd)"; exit 1; }
-command -v wp >/dev/null || { echo "Missing: wp-cli"; exit 1; }
+. dev/scripts/lib/wp-target.sh "$1" check || exit 1
 
 # --require runs before WordPress loads, so the filter goes in on a WordPress hook like a real plugin's would.
-early=$(mktemp -t yaymatik-late).php
+# The file sits inside the checkout, so the wp-env container sees it.
+early=$(mktemp dev/.late-module.XXXXXX)
 trap 'rm -f "$early"' EXIT
 cat > "$early" <<'PHP'
 <?php
@@ -43,7 +44,7 @@ WP_CLI::add_wp_hook(
 );
 PHP
 
-wp ${WP_PATH:+--path="$WP_PATH"} --require="$early" eval '
+"${WP[@]}" --require="$early" eval '
 use YayMatik\Workflow\ModuleRegistry;
 $fails = 0;
 $ok    = function ( $pass, $what ) use ( &$fails ) {
