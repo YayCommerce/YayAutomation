@@ -83,8 +83,8 @@ A free zip that passes the WordPress.org checklist, a light-only admin with a he
 
 ### Run 2 (after Jack's checks: 8 workflows on staging, inbox check, screens of D1, D9, D20)
 
-8a. ✅ **Build: free admin-shell patch, composer.json, adapter, sed line, boot, S9, jsx-runtime, exceptions** (ca35c23) — Risk: 2
-8b. **`%i` for table and column names** — Risk: 3
+8a. ✅ **Build: free admin-shell patch, composer.json, adapter, sed line, boot, S9, jsx-runtime, exceptions** (ca35c23, fixes 423e552, e9c1575, d12c4f2) — Risk: 2
+8b. ✅ **`%i` for table and column names** (3b6d48f, fix a1a6f11) — Risk: 3
 8c. **Q12 / Q13: query limits and catalog visibility** — Risk: 2
 8d. **Q3 text rules scope; Q6 / Q11 clean-site run** — Risk: 2
 
@@ -197,6 +197,9 @@ Run 2 answers (Jack, Nov 10; these replace the G1 study line above):
 - CP8a: 14 admin-shell files lacked the ABSPATH guard, not 4 (the run-1 listing was cut short); the patch step guards every shipped `vendor-prefixed` PHP file without one.
 - CP8a: escaping the exception messages can show entities (e.g. `&#039;`) in run history, which React escapes already; only rare database-failure messages are affected. `RefResolver` passes an object, so its line has a targeted `phpcs:ignore`; `GoneEntity` escapes its own message.
 - CP8a: without `src/License`, a free copy elected as the highest admin-shell renders the shared Licenses page but can't show or manage another plugin's license (same as YayBulkOrder's approved zip).
+- CP8b: `Schema`'s `CREATE TABLE` statements keep string-built names: they go to `dbDelta()`, not to a `$wpdb` query method, and Plugin Check doesn't flag them. No `dev/` script was converted: `dev/` isn't in the zip, so Plugin Check never scans it; `check-carts` only had its SQL text matches updated for the backticks.
+- CP8b: column names stay literal where they carry a table alias (`o.customer_id`): `%i` would quote the alias and the column as one name.
+- CP8c: cart items aren't filtered by catalog visibility (they are the shopper's own cart); they get a 50-line cap with an "and N more items" line instead. `PersonSubjects` keeps `limit => -1`: it reads one person's order ids for the privacy export and erase, which must find them all. The admin search REST keeps hidden products: a merchant may target them in a condition.
 - CP1: MySQL 8 probe ran on staging (8.0.46): REGEXP 8/8, GET_LOCK / RELEASE_LOCK, collation `utf8mb4_unicode_520_ci` folds case and accents, as `user_collides()` expects.
 
 ## Meta

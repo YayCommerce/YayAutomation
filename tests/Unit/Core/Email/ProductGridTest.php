@@ -20,7 +20,33 @@ final class ProductGridTest extends TestCase {
     }
 
     protected function tearDown(): void {
-        unset( $GLOBALS['yaymatik_test_images'] );
+        unset( $GLOBALS['yaymatik_test_images'], $GLOBALS['yaymatik_test_products'], $GLOBALS['yaymatik_test_primed'] );
+    }
+
+    public function test_for_order_loads_a_bounded_number_of_suggestions_together_and_skips_hidden_ones(): void {
+        $suggested = range( 100, 139 );
+        foreach ( $suggested as $id ) {
+            $GLOBALS['yaymatik_test_products'][ $id ] = new \WC_Product(
+                [
+                    'id'         => $id,
+                    'status'     => 'publish',
+                    'is_visible' => $id >= 102,
+                    'is_in_stock' => true,
+                ]
+            );
+        }
+        $bought = new \WC_Product(
+            [
+                'id'             => 1,
+                'cross_sell_ids' => $suggested,
+            ]
+        );
+        $order  = new \WC_Order( [ 'line_items' => [ new \WC_Order_Item_Product( [ 'product' => $bought ] ) ] ] );
+
+        $shown = ProductGrid::for_order( $order, ProductGrid::CROSS_SELLS );
+
+        $this->assertSame( [ range( 100, 100 + ProductGrid::MAX * 3 - 1 ) ], $GLOBALS['yaymatik_test_primed'], 'one priming call, MAX × 3 ids' );
+        $this->assertSame( [ 102, 103, 104, 105 ], array_map( fn( $product ) => $product->get_id(), $shown ), 'hidden ones skipped, at most MAX' );
     }
 
     /**

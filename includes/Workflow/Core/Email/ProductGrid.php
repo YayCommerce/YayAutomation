@@ -45,7 +45,9 @@ final class ProductGrid {
             $suggested  = array_merge( $suggested, self::CROSS_SELLS === $kind ? $parent->get_cross_sell_ids() : $parent->get_upsell_ids() );
         }
 
-        $ids = array_diff( array_unique( array_map( 'intval', $suggested ) ), $in_order );
+        // A few extra, as some may be hidden or out of stock; loaded together, not one query each.
+        $ids = array_slice( array_values( array_diff( array_unique( array_map( 'intval', $suggested ) ), $in_order ) ), 0, self::MAX * 3 );
+        _prime_post_caches( $ids );
         return self::shown( array_filter( array_map( 'wc_get_product', $ids ) ) );
     }
 
@@ -71,10 +73,12 @@ final class ProductGrid {
             $products     = function_exists( 'wc_get_products' )
                 ? (array) wc_get_products(
                     [
-                        'status'  => 'publish',
-                        'limit'   => self::MAX * 3,
-                        'orderby' => 'date',
-                        'order'   => 'DESC',
+                        'status'       => 'publish',
+                        'visibility'   => 'catalog',
+                        'stock_status' => 'instock',
+                        'limit'        => self::MAX * 3,
+                        'orderby'      => 'date',
+                        'order'        => 'DESC',
                     ]
                 )
                 : [];

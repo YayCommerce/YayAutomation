@@ -10,6 +10,9 @@ final class CartItems {
 
     public const IMAGE = 64;
 
+    /** Lines listed; the rest are counted in one line, and the total still covers them. */
+    public const MAX_LINES = 50;
+
     /**
      * Table in HTML, on one line: the email body goes through wpautop(), which would put <br> between table rows. No lines → ''.
      *
@@ -17,19 +20,27 @@ final class CartItems {
      * @param bool      $html
      */
     public static function render( SavedCart $cart, bool $html ): string {
-        $lines = $cart->lines();
-        if ( ! $lines ) {
+        $all = $cart->lines();
+        if ( ! $all ) {
             return '';
         }
+        $lines = array_slice( $all, 0, self::MAX_LINES );
+        $more  = count( $all ) - count( $lines );
+        /* translators: %d: number of cart lines not listed */
+        $more_text = $more ? sprintf( _n( 'and %d more item', 'and %d more items', $more, 'yaymatik' ), $more ) : '';
+        _prime_post_caches( self::product_ids( $lines ) );
         $total = __( 'Cart total', 'yaymatik' );
         if ( ! $html ) {
             $text = array_map(
                 fn( array $line ) => sprintf( '%s × %d — %s', self::name( $line, self::product( $line ) ), (int) ( $line['quantity'] ?? 0 ), $cart->price( (float) ( $line['line_total'] ?? 0 ), false ) ),
                 $lines
             );
-            return implode( "\n", array_merge( $text, [ $total . ': ' . $cart->price( $cart->total(), false ) ] ) );
+            return implode( "\n", array_merge( $text, array_filter( [ $more_text ] ), [ $total . ': ' . $cart->price( $cart->total(), false ) ] ) );
         }
         $rows = implode( '', array_map( fn( array $line ) => self::row( $cart, $line ), $lines ) );
+        if ( $more_text ) {
+            $rows .= '<tr><td colspan="3" style="padding:0 0 12px;color:#71717a;">' . esc_html( $more_text ) . '</td></tr>';
+        }
         // Inline padding and margins throughout: WooCommerce inlines its email CSS (`td td` padding, `img` margin-right) into anything that doesn't set its own.
         return '<table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width:100%;margin:0 0 16px;">' . $rows
             . '<tr><td colspan="2" style="padding:12px 12px 0 0;border-top:1px solid #e4e4e7;font-weight:bold;">' . esc_html( $total ) . '</td>'
@@ -85,6 +96,21 @@ final class CartItems {
      */
     private static function name( array $line, ?\WC_Product $product ): string {
         return html_entity_decode( $product ? $product->get_name() : (string) ( $line['name'] ?? '' ), ENT_QUOTES, 'UTF-8' );
+    }
+
+    /**
+     * Products and variations of these lines, so their posts load in one query.
+     *
+     * @param array[] $lines
+     * @return int[]
+     */
+    private static function product_ids( array $lines ): array {
+        $ids = [];
+        foreach ( $lines as $line ) {
+            $ids[] = (int) ( $line['product_id'] ?? 0 );
+            $ids[] = (int) ( $line['variation_id'] ?? 0 );
+        }
+        return array_values( array_unique( array_filter( $ids ) ) );
     }
 
     /**
