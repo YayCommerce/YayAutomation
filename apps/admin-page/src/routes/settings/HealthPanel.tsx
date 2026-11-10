@@ -1,5 +1,5 @@
-import { Fragment, type ReactNode } from 'react';
-import type { FixableHealthCheckId, HealthCheck, HealthCheckId } from '@yaymatik/types';
+import { Fragment, useState, type ReactNode } from 'react';
+import type { FixableHealthCheckId, HealthCheck, HealthCheckId, HealthChecksResponse } from '@yaymatik/types';
 import { CircleAlert, CircleCheck, ExternalLink, Info, RefreshCw, TriangleAlert } from 'lucide-react';
 import { humanTimeDiff } from '@wordpress/date';
 import { __, _n, sprintf } from '@wordpress/i18n';
@@ -22,11 +22,31 @@ const ORDER: HealthCheckId[] = ['runs_queued', 'runs_running', 'cleanup_job', 'i
 const countText = (check: HealthCheck) => (check.capped ? `${check.count}+` : String(check.count));
 const pluralCount = (check: HealthCheck) => (check.capped ? Math.max(check.count, 2) : check.count);
 
+/** A scan can answer in a few milliseconds; the button stays busy this long, so a click is seen. */
+export const MIN_CHECK_MS = 600;
+
+const shownChecks = (data: HealthChecksResponse | undefined) =>
+  data ? ORDER.flatMap((id) => data.checks.filter((check) => check.id === id && check.status !== 'ok')) : [];
+
 export function HealthPanel() {
   const { data, error, isFetching, refetch } = useHealthQuery();
-  const shown = data
-    ? ORDER.flatMap((id) => data.checks.filter((check) => check.id === id && check.status !== 'ok'))
-    : [];
+  const shown = shownChecks(data);
+  const [checking, setChecking] = useState(false);
+  const checkAgain = async () => {
+    if (checking || isFetching) return;
+    setChecking(true);
+    const [result] = await Promise.all([refetch(), new Promise((resolve) => setTimeout(resolve, MIN_CHECK_MS))]);
+    setChecking(false);
+    // A failed scan says so in the card.
+    if (result.isError) return;
+    const problems = shownChecks(result.data).filter((check) => check.status === 'problem').length;
+    if (problems) {
+      /* translators: %d: number of problems */
+      toast.info(sprintf(_n('Found %d problem.', 'Found %d problems.', problems, 'yaymatik'), problems));
+    } else {
+      toast.success(__('No problems found.', 'yaymatik'));
+    }
+  };
   // A failed scan hides the rows it replaced; a scan running again shows them until it ends.
   const failed = isFetching ? null : error;
 
@@ -40,7 +60,7 @@ export function HealthPanel() {
           !failed && <Skeleton className="h-3 w-40" />
         )}
         <CardAction>
-          <LoadingButton variant="outline" size="sm" loading={isFetching} onClick={() => !isFetching && refetch()}>
+          <LoadingButton variant="outline" size="sm" loading={isFetching || checking} onClick={() => void checkAgain()}>
             <RefreshCw />
             {__('Check again', 'yaymatik')}
           </LoadingButton>

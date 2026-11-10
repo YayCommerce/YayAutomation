@@ -21,10 +21,16 @@ const preview = (changes: Partial<EmailPreview> = {}): EmailPreview => ({
   to: 'jane@example.test',
   sample: false,
   order: '1745',
+  sampleProducts: null,
   ...changes,
 });
 
-const sent: EmailTestResult = { sentTo: 'you@example.test', subject: '[Test] Tom & Jerry', sample: false };
+const sent: EmailTestResult = {
+  sentTo: 'you@example.test',
+  subject: '[Test] Tom & Jerry',
+  sample: false,
+  sampleProducts: null,
+};
 
 /** Rejects like `ApiError` for a step with issues. */
 const refused = () =>
@@ -122,6 +128,24 @@ describe('EmailActions', () => {
 
     expect(dialog()!.textContent).toContain('Sample data');
     expect(dialog()!.textContent).not.toContain('Order #');
+  });
+
+  it('says when a grid shows sample products because no recent order has any', async () => {
+    renderActions({ preview: vi.fn(async () => preview({ sampleProducts: 'cross_sells' })) });
+    await click(button('Preview'));
+
+    expect(dialog()!.textContent).toContain('Order #1745');
+    expect(dialog()!.textContent).toContain('Sample products: no recent order has cross-sells');
+  });
+
+  it('says the same in the Send test toast', async () => {
+    renderActions({ sendTest: vi.fn(async () => ({ ...sent, sampleProducts: 'upsells' as const })) });
+    await click(button('Preview'));
+    await click(button('Send test'));
+
+    expect(toast.success).toHaveBeenCalledWith('Test email sent to you@example.test', {
+      description: 'Sample products: no recent order has upsells',
+    });
   });
 
   it('narrows the email to 375px on Mobile', async () => {

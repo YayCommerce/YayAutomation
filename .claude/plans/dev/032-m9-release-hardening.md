@@ -209,6 +209,9 @@ Run 3 decisions (Jack, Nov 10, after the browser check); CP10 builds them:
 - CP8b: `Schema`'s `CREATE TABLE` statements keep string-built names: they go to `dbDelta()`, not to a `$wpdb` query method, and Plugin Check doesn't flag them. No `dev/` script was converted: `dev/` isn't in the zip, so Plugin Check never scans it; `check-carts` only had its SQL text matches updated for the backticks.
 - CP8b: column names stay literal where they carry a table alias (`o.customer_id`): `%i` would quote the alias and the column as one name.
 - CP8c: cart items aren't filtered by catalog visibility (they are the shopper's own cart); they get a 50-line cap with an "and N more items" line instead. `PersonSubjects` keeps `limit => -1`: it reads one person's order ids for the privacy export and erase, which must find them all. The admin search REST keeps hidden products: a merchant may target them in a condition.
+- CP10 diagnosis: order #4584 (wp-env) has one line, Seed Tee, which had no cross-sells or upsells: the empty grid was no data, not CP8c. With the seed's cross-sells the same order shows 2 cross-sells and 1 upsell, so CP8c's filters keep valid products.
+- CP10: "Found N problem(s)." counts checks with status `problem`, as the summary line does; a late-jobs info row alone gives "No problems found."
+- CP10: Preview scans the newest 20 paid orders for one with a grid; with none it keeps the newest paid order's data and fills only the grid with the store's newest products.
 - CP1: MySQL 8 probe ran on staging (8.0.46): REGEXP 8/8, GET_LOCK / RELEASE_LOCK, collation `utf8mb4_unicode_520_ci` folds case and accents, as `user_collides()` expects.
 
 ## Meta

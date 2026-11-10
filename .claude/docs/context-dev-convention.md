@@ -39,5 +39,5 @@ Without it, WP loads the prod build in `assets/dist/admin-page/`.
 
 ## App shell and Settings (`apps/admin-page/src/routes/`)
 
-- `layout/Layout.tsx` — sticky app header: `top` = `--wp-admin--admin-bar--height` (0 at ≤600px, where the admin bar scrolls away), z-40; sticky sub-bars under it (overview title bar) use z-30. Logo `assets/images/yaymatik-logo.png`. Light only: `main.tsx` sets `yay-light` on `<html>`. A page puts its header buttons into `#yay-header-actions` (`useHeaderSlot()` + `createPortal`): Settings' Save changes; Overview and the editor's Create (`workflows/shared/create/CreateWorkflowButton`).
+- `layout/Layout.tsx` — sticky app header: `top` = `--wp-admin--admin-bar--height` (0 at ≤600px, where the admin bar scrolls away), z-40; sticky sub-bars under it (overview title bar) use z-30. Logo `assets/images/yaymatik-logo.png`. Light only: `main.tsx` sets `yay-light` on `<html>`. A page puts its header buttons into `#yay-header-actions` (`useHeaderSlot()` + `createPortal`): Settings' Save changes; the Create button of Overview, the editor and the template preview (`workflows/shared/create/CreateWorkflowButton`).
 - `settings/` — `SettingsPage` (form, leave guard), sections `CartTrackingSection`, `EmailsSection`, `RunHistorySection`, `HealthPanel` (last card), `api/` (settings and health queries).

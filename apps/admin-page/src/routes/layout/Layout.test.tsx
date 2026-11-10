@@ -63,10 +63,12 @@ const headerButtons = () =>
   );
 
 describe('app header', () => {
-  it('shows Create on the overview and the editor', async () => {
+  it('shows Create on the overview, the editor and a template preview', async () => {
     await renderAt('/workflows/7');
     expect(headerButtons()).toEqual(['Create workflowCreate']);
     await renderAt('/workflows/7/edit');
+    expect(headerButtons()).toEqual(['Create workflowCreate']);
+    await renderAt('/workflows/templates/first-order-thank-you-discount');
     expect(headerButtons()).toEqual(['Create workflowCreate']);
   });
 

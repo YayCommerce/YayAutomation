@@ -27,6 +27,25 @@ final class ProductGrid {
     /** @var \WC_Product[]|null The store's newest products. */
     private static $newest = null;
 
+    /** @var bool A preview's grids show the store's newest products when the order's own grid is empty. */
+    private static $newest_when_empty = false;
+
+    /**
+     * Runs `$work` with empty order grids filled with the store's newest products: an email preview whose order has none.
+     *
+     * @param callable $work
+     * @return mixed What `$work` returns.
+     */
+    public static function with_newest_when_empty( callable $work ) {
+        $before                  = self::$newest_when_empty;
+        self::$newest_when_empty = true;
+        try {
+            return $work();
+        } finally {
+            self::$newest_when_empty = $before;
+        }
+    }
+
     /**
      * Cross-sells or upsells of the order's products (a variation counts as its parent), minus what the order has.
      *
@@ -67,7 +86,7 @@ final class ProductGrid {
                 break;
             }
         }
-        return $shown;
+        return $shown || ! self::$newest_when_empty ? $shown : self::newest();
     }
 
     /**

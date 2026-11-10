@@ -60,6 +60,28 @@ foreach ( [
     $product->save();
 }
 
+// Cross-sells and upsells, so the cross-sell / upsell templates show a real grid.
+$seed_ids = array_map(
+    'wc_get_product_id_by_sku',
+    [
+        'tee'   => 'yay-seed-tee',
+        'mug'   => 'yay-seed-mug',
+        'print' => 'yay-seed-print',
+    ]
+);
+foreach ( [
+    'tee'   => [ [ 'mug', 'print' ], [ 'print' ] ],
+    'mug'   => [ [ 'tee' ], [ 'print' ] ],
+    'print' => [ [ 'tee', 'mug' ], [] ],
+] as $key => list( $cross, $up ) ) {
+    $product = wc_get_product( $seed_ids[ $key ] );
+    if ( $product ) {
+        $product->set_cross_sell_ids( array_map( fn( $other ) => $seed_ids[ $other ], $cross ) );
+        $product->set_upsell_ids( array_map( fn( $other ) => $seed_ids[ $other ], $up ) );
+        $product->save();
+    }
+}
+
 $customer_email = 'customer@yay-seed.test';
 if ( ! email_exists( $customer_email ) && ! username_exists( 'yay-seed-customer' ) ) {
     $customer = wc_create_new_customer( $customer_email, 'yay-seed-customer', 'yay-seed-customer' );

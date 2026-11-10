@@ -1,6 +1,7 @@
 import type { MouseEventHandler } from 'react';
 import type { WorkflowTemplate } from '@yaymatik/types';
 import { ChevronLeft, Info, TriangleAlert } from 'lucide-react';
+import { createPortal } from 'react-dom';
 import { Link, useLocation, useNavigate, useParams } from 'react-router';
 import { __ } from '@wordpress/i18n';
 
@@ -15,9 +16,11 @@ import {
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
 import { LoadingButton } from '@/components/ui/button';
+import { useHeaderSlot } from '@/routes/layout/useHeaderSlot';
 import { stepsInOrder } from '../../model/graph';
 import { kindMeta } from '../../shared/canvas/NodeCardView';
 import { ReadOnlyCanvas } from '../../shared/canvas/ReadOnlyCanvas';
+import { CreateWorkflowButton } from '../../shared/create/CreateWorkflowButton';
 import { EditorLayout, EditorPlaceholder } from '../../shared/layout/EditorLayout';
 import { LIBRARY_PATH, readLibraryNavState } from '../../shared/nav/library.nav';
 import { PluginIcon, plugins } from '../../shared/ui/PluginIcon';
@@ -44,6 +47,16 @@ const missingPlugins = (template: WorkflowTemplate) =>
     .map((id) => plugins[id].label);
 
 export default function TemplatePreviewPage() {
+  const headerSlot = useHeaderSlot();
+  return (
+    <>
+      <TemplatePreview />
+      {headerSlot && createPortal(<CreateWorkflowButton />, headerSlot)}
+    </>
+  );
+}
+
+function TemplatePreview() {
   const { templateId = '' } = useParams();
   const template = findTemplate(templateId);
   const navigate = useNavigate();
