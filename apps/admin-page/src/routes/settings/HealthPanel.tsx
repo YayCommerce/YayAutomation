@@ -1,4 +1,4 @@
-import { Fragment, useState, type ReactNode } from 'react';
+import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react';
 import type { FixableHealthCheckId, HealthCheck, HealthCheckId, HealthChecksResponse } from '@yaymatik/types';
 import { CircleAlert, CircleCheck, ExternalLink, Info, RefreshCw, TriangleAlert } from 'lucide-react';
 import { humanTimeDiff } from '@wordpress/date';
@@ -32,14 +32,23 @@ export function HealthPanel() {
   const { data, error, isFetching, refetch } = useHealthQuery();
   const shown = shownChecks(data);
   const [checking, setChecking] = useState(false);
+  // The scan outlives a click: no toast or state update once the page is left.
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
   const checkAgain = async () => {
     if (checking || isFetching) return;
     setChecking(true);
     const [result] = await Promise.all([refetch(), new Promise((resolve) => setTimeout(resolve, MIN_CHECK_MS))]);
+    if (!mounted.current) return;
     setChecking(false);
     // A failed scan says so in the card.
     if (result.isError) return;
-    const problems = shownChecks(result.data).filter((check) => check.status === 'problem').length;
+    const problems = (result.data?.checks ?? []).filter((check) => check.status === 'problem').length;
     if (problems) {
       /* translators: %d: number of problems */
       toast.info(sprintf(_n('Found %d problem.', 'Found %d problems.', problems, 'yaymatik'), problems));

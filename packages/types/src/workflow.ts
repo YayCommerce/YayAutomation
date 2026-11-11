@@ -197,8 +197,8 @@ export interface EmailPreview {
   sample: boolean;
   /** The number of the order whose data it shows; null with made-up values. */
   order: string | null;
-  /** A product grid the email shows, filled with the store's newest products: no recent order has any. */
-  sampleProducts: ProductGridKind | null;
+  /** Product grids the email shows filled with the store's newest products: no recent order has any. */
+  sampleProducts: ProductGridKind[];
 }
 
 /** `ProductGrid` kinds: what `order.cross_sell_products` and `order.upsell_products` show. */
@@ -210,7 +210,7 @@ export interface EmailTestResult {
   /** With the "[Test] " prefix. */
   subject: string;
   sample: boolean;
-  sampleProducts: ProductGridKind | null;
+  sampleProducts: ProductGridKind[];
 }
 
 export type RunStatus = 'queued' | 'running' | 'waiting' | 'completed' | 'failed' | 'cancelled' | 'skipped';

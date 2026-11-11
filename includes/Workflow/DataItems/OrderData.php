@@ -226,8 +226,8 @@ final class OrderData extends DataItem {
         return [
             'label'       => $label,
             'type'        => self::TYPE_STRING,
-            'value'       => fn( \WC_Order $order ) => ProductGrid::render( ProductGrid::for_order( $order, $kind ), false ),
-            'display'     => fn( \WC_Order $order, bool $html ) => ProductGrid::render( ProductGrid::for_order( $order, $kind ), $html ),
+            'value'       => fn( \WC_Order $order ) => ProductGrid::render( ProductGrid::for_block( $order, $kind ), false ),
+            'display'     => fn( \WC_Order $order, bool $html ) => ProductGrid::render( ProductGrid::for_block( $order, $kind ), $html ),
             'conditional' => false,
             'block'       => true,
         ];

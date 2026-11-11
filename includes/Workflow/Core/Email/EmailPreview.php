@@ -46,8 +46,8 @@ final class EmailPreview {
      * @param mixed    $config
      * @param int|null $order_id Null = the latest paid order (a cart trigger: the newest cart), 0 = made-up data.
      * @return array|\WP_Error [ 'subject', 'heading', 'html' (wrapped, styles inlined), 'to', 'sample',
-     *                         'order' (the order's number; null with made-up data), 'sampleProducts' (the grid kind
-     *                         shown with the store's newest products, as no recent order has any; or null) ]
+     *                         'order' (the order's number; null with made-up data), 'sampleProducts' (grid kinds
+     *                         filled with the store's newest products) ]
      */
     public static function render( $graph, string $node_id, $config, ?int $order_id = null ) {
         $email = self::compose( $graph, $node_id, $config, $order_id );
@@ -165,9 +165,8 @@ final class EmailPreview {
      * @param array[]  $nodes   By id.
      * @param string   $node_id
      * @param int|null $order_id
-     * @param string[] $kinds   Grid kinds the email shows.
-     * @return array [ Values, bool $sample, string|null $order_number, string|null $missing ] `$missing`: the first
-     *               grid kind the order has nothing for, shown with the store's newest products.
+     * @param string[] $kinds
+     * @return array [ Values, bool $sample, string|null $order_number, string[] $missing grid kinds ]
      */
     private static function values( array $graph, array $nodes, string $node_id, ?int $order_id, array $kinds ): array {
         $trigger = null;
@@ -184,9 +183,21 @@ final class EmailPreview {
         $provides = $trigger ? $trigger->resolved_provides() : [];
         $refs     = null;
         $resolver = null;
+        $missing  = [];
         if ( in_array( OrderData::ID, $provides, true ) ) {
-            $order_id = $order_id ?? ( $kinds ? self::order_with_grids( $kinds ) : self::latest_paid_order() );
-            $refs     = $order_id ? $trigger->resolved_refs( [ 'order_id' => $order_id ] ) : null;
+            if ( null === $order_id && $kinds ) {
+                // Each order loaded once: what it has decides both the pick and what the preview fills in.
+                $present = [];
+                foreach ( self::paid_orders( self::GRID_SCAN ) as $id ) {
+                    $present[ $id ] = self::grids_of( wc_get_order( $id ), $kinds );
+                }
+                $order_id = self::pick_order( $present );
+                $missing  = $order_id ? array_values( array_diff( $kinds, $present[ $order_id ] ) ) : [];
+            } else {
+                $order_id = $order_id ?? ( self::paid_orders( 1 )[0] ?? 0 );
+                $missing  = $order_id && $kinds ? array_values( array_diff( $kinds, self::grids_of( wc_get_order( $order_id ), $kinds ) ) ) : [];
+            }
+            $refs = $order_id ? $trigger->resolved_refs( [ 'order_id' => $order_id ] ) : null;
         } elseif ( in_array( CartData::ID, $provides, true ) && 0 !== $order_id ) {
             $cart_id = CartStore::newest_for_preview();
             $refs    = $cart_id ? $trigger->resolved_refs( [ 'cart_id' => $cart_id ] ) : null;
@@ -210,17 +221,10 @@ final class EmailPreview {
         );
         $scope->set_output_display( Executor::output_display( $nodes, [ StepRegistry::class, 'get' ] ) );
         if ( $refs ) {
-            $order   = $order_id ? wc_get_order( $order_id ) : null;
-            $missing = null;
-            foreach ( $order ? $kinds : [] as $kind ) {
-                if ( ! ProductGrid::for_order( $order, $kind ) ) {
-                    $missing = $kind;
-                    break;
-                }
-            }
+            $order = $order_id ? wc_get_order( $order_id ) : null;
             return [ $scope, false, $order ? (string) $order->get_order_number() : null, $missing ];
         }
-        return [ new SampleValues( $scope, array_intersect_key( DataRegistry::items(), array_flip( $provides ) ) ), true, null, null ];
+        return [ new SampleValues( $scope, array_intersect_key( DataRegistry::items(), array_flip( $provides ) ) ), true, null, [] ];
     }
 
     /**
@@ -235,62 +239,54 @@ final class EmailPreview {
     }
 
     /**
-     * The first of these orders, newest first, that has something for every kind; 0 when none has.
+     * The order with the most of the email's grids, the newest among equals; 0 for none.
      *
-     * @param int[]    $ids
-     * @param string[] $kinds
-     * @param callable $has_grid fn( int $order_id, string $kind ): bool.
+     * @param array $present Order id => grid kinds it has, newest first.
      */
-    public static function pick_order( array $ids, array $kinds, callable $has_grid ): int {
-        foreach ( $ids as $id ) {
-            if ( ! array_filter( $kinds, fn( string $kind ) => ! $has_grid( (int) $id, $kind ) ) ) {
-                return (int) $id;
+    public static function pick_order( array $present ): int {
+        $best = 0;
+        $most = -1;
+        foreach ( $present as $id => $kinds ) {
+            if ( count( $kinds ) > $most ) {
+                $best = (int) $id;
+                $most = count( $kinds );
             }
         }
-        return 0;
+        return $best;
     }
 
     /**
-     * The newest paid order with something in these grids, among the last GRID_SCAN; else the newest paid order.
+     * The grid kinds this order has something for.
      *
-     * @param string[] $kinds
+     * @param \WC_Order|false $order
+     * @param string[]        $kinds
+     * @return string[]
      */
-    private static function order_with_grids( array $kinds ): int {
-        $ids    = wc_get_orders(
-            [
-                'type'    => 'shop_order',
-                'status'  => self::ORDER_STATUSES,
-                'limit'   => self::GRID_SCAN,
-                'orderby' => 'date',
-                'order'   => 'DESC',
-                'return'  => 'ids',
-            ]
-        );
-        $ids    = is_array( $ids ) ? array_map( 'intval', $ids ) : [];
-        $picked = self::pick_order(
-            $ids,
-            $kinds,
-            function ( int $id, string $kind ): bool {
-                $order = wc_get_order( $id );
-                return $order instanceof \WC_Order && (bool) ProductGrid::for_order( $order, $kind );
-            }
-        );
-        return $picked ? $picked : ( $ids[0] ?? 0 );
+    private static function grids_of( $order, array $kinds ): array {
+        if ( ! $order instanceof \WC_Order ) {
+            return [];
+        }
+        return array_values( array_filter( $kinds, fn( string $kind ) => (bool) ProductGrid::for_order( $order, $kind ) ) );
     }
 
-    /** The newest processing or completed order's id; 0 when there's none. */
-    private static function latest_paid_order(): int {
+    /**
+     * The newest processing or completed orders' ids.
+     *
+     * @param int $limit
+     * @return int[]
+     */
+    private static function paid_orders( int $limit ): array {
         $ids = wc_get_orders(
             [
                 'type'    => 'shop_order',
                 'status'  => self::ORDER_STATUSES,
-                'limit'   => 1,
+                'limit'   => $limit,
                 'orderby' => 'date',
                 'order'   => 'DESC',
                 'return'  => 'ids',
             ]
         );
-        return is_array( $ids ) && $ids ? (int) $ids[0] : 0;
+        return is_array( $ids ) ? array_map( 'intval', $ids ) : [];
     }
 
     /**

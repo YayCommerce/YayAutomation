@@ -61,8 +61,8 @@ final class EmailPreviewTest extends TestCase {
         $this->assertStringContainsString( 'Tom &amp; Jerry', $preview['html'] );
         $this->assertTrue( $preview['sample'] );
         $this->assertNull( $preview['order'] );
-        $this->assertNull( $preview['sampleProducts'] );
-        $this->assertNull( $sent['sampleProducts'] );
+        $this->assertSame( [], $preview['sampleProducts'] );
+        $this->assertSame( [], $sent['sampleProducts'] );
     }
 
     public function test_grid_kinds_come_from_the_merge_tags_the_email_uses(): void {
@@ -71,18 +71,44 @@ final class EmailPreviewTest extends TestCase {
         $this->assertSame( [ 'cross_sells', 'upsells' ], EmailPreview::grid_kinds( [ 'message' => '{{ order.upsell_products }} {{ order.cross_sell_products }}' ] ) );
     }
 
-    public function test_the_order_picked_is_the_newest_with_every_grid_the_email_shows(): void {
-        // Order 9 has cross-sells only, 8 has both, 7 has both: newest first.
-        $grids    = [
+    public function test_the_order_picked_has_the_most_grids_the_newest_among_equals(): void {
+        // Newest first: 9 has cross-sells only, 8 and 7 have both.
+        $present = [
             9 => [ 'cross_sells' ],
             8 => [ 'cross_sells', 'upsells' ],
             7 => [ 'cross_sells', 'upsells' ],
         ];
-        $has_grid = fn( int $id, string $kind ) => in_array( $kind, $grids[ $id ] ?? [], true );
-
-        $this->assertSame( 9, EmailPreview::pick_order( [ 9, 8, 7 ], [ 'cross_sells' ], $has_grid ) );
-        $this->assertSame( 8, EmailPreview::pick_order( [ 9, 8, 7 ], [ 'cross_sells', 'upsells' ], $has_grid ) );
-        $this->assertSame( 0, EmailPreview::pick_order( [ 9 ], [ 'upsells' ], $has_grid ), 'none has it: 0, so Preview shows sample products' );
-        $this->assertSame( 0, EmailPreview::pick_order( [], [ 'cross_sells' ], $has_grid ) );
+        $this->assertSame( 8, EmailPreview::pick_order( $present ) );
+        $this->assertSame(
+            9,
+            EmailPreview::pick_order(
+                [
+                    9 => [ 'cross_sells' ],
+                    8 => [ 'upsells' ],
+                ]
+            ),
+            'equals: the newest'
+        );
+        $this->assertSame(
+            8,
+            EmailPreview::pick_order(
+                [
+                    9 => [],
+                    8 => [ 'cross_sells' ],
+                ]
+            ),
+            'a partial match beats none'
+        );
+        $this->assertSame(
+            9,
+            EmailPreview::pick_order(
+                [
+                    9 => [],
+                    8 => [],
+                ]
+            ),
+            'none has a grid: the newest, filled with sample products'
+        );
+        $this->assertSame( 0, EmailPreview::pick_order( [] ) );
     }
 }

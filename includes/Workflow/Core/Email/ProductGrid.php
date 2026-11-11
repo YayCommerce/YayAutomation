@@ -27,14 +27,14 @@ final class ProductGrid {
     /** @var \WC_Product[]|null The store's newest products. */
     private static $newest = null;
 
-    /** @var bool A preview's grids show the store's newest products when the order's own grid is empty. */
+    /** @var bool A preview's grid blocks show the store's newest products when the order's own grid is empty. */
     private static $newest_when_empty = false;
 
     /**
-     * Runs `$work` with empty order grids filled with the store's newest products: an email preview whose order has none.
+     * Runs `$work` with empty grid blocks filled with the store's newest products: an email preview whose order has none.
      *
      * @param callable $work
-     * @return mixed What `$work` returns.
+     * @return mixed
      */
     public static function with_newest_when_empty( callable $work ) {
         $before                  = self::$newest_when_empty;
@@ -86,7 +86,29 @@ final class ProductGrid {
                 break;
             }
         }
-        return $shown || ! self::$newest_when_empty ? $shown : self::newest();
+        return $shown;
+    }
+
+    /**
+     * What a grid block shows: `for_order()`, or in a preview without one, the newest products not in the order.
+     *
+     * @param \WC_Order $order
+     * @param string    $kind
+     * @return \WC_Product[]
+     */
+    public static function for_block( \WC_Order $order, string $kind ): array {
+        $shown = self::for_order( $order, $kind );
+        if ( $shown || ! self::$newest_when_empty ) {
+            return $shown;
+        }
+        $in_order = [];
+        foreach ( $order->get_items() as $item ) {
+            if ( $item instanceof \WC_Order_Item_Product ) {
+                $in_order[] = (int) $item->get_product_id();
+                $in_order[] = (int) $item->get_variation_id();
+            }
+        }
+        return array_values( array_filter( self::newest(), fn( \WC_Product $product ) => ! in_array( $product->get_id(), $in_order, true ) ) );
     }
 
     /**

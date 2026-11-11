@@ -41,14 +41,15 @@ export function EmailActions() {
         setPreview(await tools.preview());
       } else {
         const result = await tools.sendTest();
+        const description = result.sample
+          ? __('Sample data', 'yaymatik')
+          : result.sampleProducts.length > 0
+            ? sampleProductsText(result.sampleProducts)
+            : '';
         toast.success(
           /* translators: %s: email address */
           sprintf(__('Test email sent to %s', 'yaymatik'), result.sentTo),
-          result.sample
-            ? { description: __('Sample data', 'yaymatik') }
-            : result.sampleProducts
-              ? { description: sampleProductsText(result.sampleProducts) }
-              : {},
+          description ? { description } : {},
         );
       }
     } catch (error) {
