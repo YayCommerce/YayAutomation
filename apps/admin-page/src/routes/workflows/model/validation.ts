@@ -86,8 +86,11 @@ export function issueText(issue: WorkflowIssue, ...graphs: (WorkflowGraph | null
   const node = graphs.flatMap((graph) => graph?.nodes ?? []).find((n) => n.id === issue.nodeId);
   const label = node && stepOf(node.data)?.label;
   if (!label || issue.message.includes(label)) return issue.message;
-  /* translators: 1: a step, e.g. "Change order status", 2: what's wrong with it */
-  return sprintf(__('%1$s: %2$s', 'yaymatik'), label, issue.message);
+  return sprintf(
+    /* translators: 1: a step, e.g. "Change order status", 2: what's wrong with it */ __('%1$s: %2$s', 'yaymatik'),
+    label,
+    issue.message,
+  );
 }
 
 /** `activateIssues()` as text, each line once. */

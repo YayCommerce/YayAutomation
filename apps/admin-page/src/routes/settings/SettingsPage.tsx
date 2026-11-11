@@ -44,8 +44,10 @@ export default function SettingsPage() {
         <h1 className="sr-only">{__('Settings', 'yaymatik')}</h1>
         {error && !isFetching ? (
           <SettingsErrorAlert
-            /* translators: %s: why it failed */
-            message={sprintf(__('Couldn’t load your settings. %s', 'yaymatik'), error.message)}
+            message={sprintf(
+              /* translators: %s: why it failed */ __('Couldn’t load your settings. %s', 'yaymatik'),
+              error.message,
+            )}
             onRetry={() => refetch()}
           />
         ) : (

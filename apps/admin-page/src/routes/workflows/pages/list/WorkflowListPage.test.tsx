@@ -21,7 +21,7 @@ vi.mock('./library/TemplatesDialog', () => ({ TemplatesDialog: () => null }));
 
 let container: HTMLDivElement;
 let root: Root;
-let router: ReturnType<typeof createHashRouter>;
+let router: ReturnType<typeof createHashRouter> | undefined;
 
 beforeEach(() => {
   container = document.createElement('div');
@@ -31,18 +31,21 @@ beforeEach(() => {
 
 afterEach(() => {
   act(() => root.unmount());
-  router.dispose();
+  router?.dispose();
+  router = undefined;
   container.remove();
 });
 
 async function render(query: Partial<ReturnType<typeof useWorkflowsQuery>>) {
   vi.mocked(useWorkflowsQuery).mockReturnValue(query as ReturnType<typeof useWorkflowsQuery>);
-  router = createHashRouter([{ path: '/workflows', element: <WorkflowListPage /> }]);
-  await act(() => router.navigate('/workflows'));
+  router?.dispose();
+  const next = createHashRouter([{ path: '/workflows', element: <WorkflowListPage /> }]);
+  router = next;
+  await act(() => next.navigate('/workflows'));
   await act(async () =>
     root.render(
       <QueryClientProvider client={new QueryClient()}>
-        <RouterProvider router={router} />
+        <RouterProvider router={next} />
       </QueryClientProvider>,
     ),
   );

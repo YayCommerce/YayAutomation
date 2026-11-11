@@ -120,8 +120,17 @@ export function WorkflowBulkActions({
     setPending(false);
     setDialog(refused.length ? 'deleteBlocked' : null);
     if (done) {
-      /* translators: %d: number of workflows */
-      toast.success(sprintf(_n('%d workflow deleted', '%d workflows deleted', done, 'yaymatik'), done));
+      toast.success(
+        sprintf(
+          /* translators: %d: number of workflows */ _n(
+            '%d workflow deleted',
+            '%d workflows deleted',
+            done,
+            'yaymatik',
+          ),
+          done,
+        ),
+      );
     }
     if (failed.length) {
       const index = targets.indexOf(failed[0]);
@@ -143,7 +152,7 @@ export function WorkflowBulkActions({
       <BulkActionBox selected={selected.length} onClose={onClear}>
         <span className="text-sm whitespace-nowrap">
           {sprintf(
-            /* translators: %d: number of selected workflows */
+            /* translators: %d: number of selected items */
             __('%d selected', 'yaymatik'),
             selected.length,
           )}

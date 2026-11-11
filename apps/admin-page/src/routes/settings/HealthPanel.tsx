@@ -50,8 +50,12 @@ export function HealthPanel() {
     if (result.isError) return;
     const problems = (result.data?.checks ?? []).filter((check) => check.status === 'problem').length;
     if (problems) {
-      /* translators: %d: number of problems */
-      toast.info(sprintf(_n('Found %d problem.', 'Found %d problems.', problems, 'yaymatik'), problems));
+      toast.info(
+        sprintf(
+          /* translators: %d: number of problems */ _n('Found %d problem.', 'Found %d problems.', problems, 'yaymatik'),
+          problems,
+        ),
+      );
     } else {
       toast.success(__('No problems found.', 'yaymatik'));
     }
@@ -78,8 +82,10 @@ export function HealthPanel() {
       <CardContent>
         {failed ? (
           <SettingsErrorAlert
-            /* translators: %s: why it failed */
-            message={sprintf(__('Couldn’t run the health check. %s', 'yaymatik'), failed.message)}
+            message={sprintf(
+              /* translators: %s: why it failed */ __('Couldn’t run the health check. %s', 'yaymatik'),
+              failed.message,
+            )}
             onRetry={() => refetch()}
           />
         ) : !data ? (
@@ -126,11 +132,9 @@ function summary(shown: HealthCheck[], checkedAt: string) {
     );
   }
   if (shown.length) {
-    /* translators: %s: when, e.g. "5 minutes ago" */
-    return sprintf(__('No problems · checked %s', 'yaymatik'), time);
+    return sprintf(/* translators: %s: when, e.g. "5 minutes ago" */ __('No problems · checked %s', 'yaymatik'), time);
   }
-  /* translators: %s: when, e.g. "5 minutes ago" */
-  return sprintf(__('Checked %s', 'yaymatik'), time);
+  return sprintf(/* translators: %s: when, e.g. "5 minutes ago" */ __('Checked %s', 'yaymatik'), time);
 }
 
 const fixRows: Record<

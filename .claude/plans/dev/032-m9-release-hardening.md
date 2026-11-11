@@ -89,6 +89,13 @@ A free zip that passes the WordPress.org checklist, a light-only admin with a he
    - `pages/editor/revealViewport.ts` (pure), called from `ViewKeeper.bringIntoView` in `WorkflowCanvas.tsx`: an axis where the step already fits keeps its offset; the other is centred in the area beside the panel. Zoom and the 300 ms pan stay.
    - Tests: `revealViewport.test.ts` (4: in view, panel only, below the fold only, both axes), `WorkflowListPage.test.tsx` (3). Lint 0 errors, Vitest 492, build OK. Browser at 1366×657 (1366×768 minus browser bars): a step under the panel moves sideways only (y 48 → 48); a step under the panel and below the fold is centred; empty list shows one pair.
 
+12. ✅ **Release lint, translator comments, list title row, schedule** — Risk: 1
+   - `dev/scripts/release.sh`: the phpcbf pass on the build folder is gone. With a path argument phpcs skips `phpcs.xml`'s `<file>` list, so it rewrote `vendor-prefixed` after `free-admin-shell.php` patched and verified it (2667 changed lines in 29 files). The script now runs `pnpm lint:php` on the source first and stops on an error, or when the tools are missing ("run ./run.sh setup").
+   - Translator comments sit right before the `__()` / `_n()` call inside the expression, so terser keeps them when it rewrites the statement; 14 strings that lost theirs now carry one. Strings used with two comments get one generic comment ("%s needs a subject." / "needs a message." / "needs a field name.": step name; "%s no longer exists."; "%d selected"; "Sent to %s"). No msgid changed (990 before and after).
+   - `WorkflowListPage.tsx`: the title row has `min-h-9`, so hiding the buttons doesn't shift the layout. Its test disposes the first router before the second render.
+   - `schedule-v1.md`: the M9 plan is 032; the "Kept out of git" sentence is gone.
+   - Tests: install, lint, lint:php, Vitest 492, PHPUnit 905, build. `./run.sh release`: no phpcbf output; make-pot prints only the known `GenerateCoupon.php:119` warning. The zip's `vendor-prefixed` equals the checkout's plus `free-admin-shell.php` (applied to a copy, `diff -r` clean).
+
 ### Run 2 (after Jack's checks: 8 workflows on staging, inbox check, screens of D1, D9, D20)
 
 8a. ✅ **Build: free admin-shell patch, composer.json, adapter, sed line, boot, S9, jsx-runtime, exceptions** (ca35c23, fixes 423e552, e9c1575, d12c4f2) — Risk: 2

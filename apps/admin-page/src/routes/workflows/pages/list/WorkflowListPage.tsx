@@ -42,7 +42,7 @@ export default function WorkflowListPage() {
 
   return (
     <PageCard>
-      <div className="flex flex-wrap items-center justify-between gap-4">
+      <div className="flex min-h-9 flex-wrap items-center justify-between gap-4">
         <PageTitle>
           {__('Workflows', 'yaymatik')}
           {!!workflows?.length && <span className="text-muted-foreground text-sm font-normal">{workflows.length}</span>}

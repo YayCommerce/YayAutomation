@@ -1,8 +1,8 @@
 # Schedule v1.0 (private)
 
-Personal planning, not team docs. Kept out of git (`.claude/plans/dev/`). Source: docs/ROADMAP-dev.md (build order M1 → M2 → F2 → M7 → M8 → M3 → M4 → M5 → M6 → M9), docs/ROADMAP-v1.0.md, docs/workflow-core-design.md, plans 008–029.
+Personal planning, not team docs. Source: docs/ROADMAP-dev.md (build order M1 → M2 → F2 → M7 → M8 → M3 → M4 → M5 → M6 → M9), docs/ROADMAP-v1.0.md, docs/workflow-core-design.md, plans 008–029.
 
-**Release date: set by Jack (Nov 4, 11:08: release timing is not a factor in planning).** The earlier target (Fri Nov 6, 18 templates, nothing cut; Jack, Mon Nov 2 10:43) is replaced. **18 of 18 templates merged (Nov 4, #35 f747ff8).** Left: **030 Additional Triggers, Conditions and Actions** (custom workflows; `decisions-triggers-actions.md`), then **031 M9 release hardening**, then RC and release.
+**Release date: set by Jack (Nov 4, 11:08: release timing is not a factor in planning).** The earlier target (Fri Nov 6, 18 templates, nothing cut; Jack, Mon Nov 2 10:43) is replaced. **18 of 18 templates merged (Nov 4, #35 f747ff8).** Left: **030 Additional Triggers, Conditions and Actions** (custom workflows; `decisions-triggers-actions.md`), then **032 M9 release hardening**, then RC and release.
 
 Mon–Fri work days. Pace so far: F1 (sized L ≈ 3 weeks) took Oct 9–15; M1 (planned 5 days) Oct 19–21; M2 (planned 5 days) Oct 22–23; F2 (planned 1 day) Oct 26 morning; M7 (planned 3 days) Oct 27 – Nov 1; M8 (planned 1.5 days) Nov 2; M3–M5 (planned 1 day) Nov 3 morning; M6 (planned 1 day) Nov 3 pm – Nov 4 morning.
 
@@ -41,7 +41,7 @@ Mon–Fri work days. Pace so far: F1 (sized L ≈ 3 weeks) took Oct 9–15; M1 (
 |---|---|---|
 | 1 | Mock frames for 030 UI (Condition form, groups, Reviews picker group, new panels) | — |
 | 2 | ✅ 030 /wplan, then run 1 (CP0–CP6: hardening, data + Condition), run 2 (CP7–CP10: order / customer / review triggers), run 3 (CP11–CP16: write actions, Wait until, Stop waiting runs, check script); one PR | 030 #37 |
-| 3 | ⏳ M9 (renumbered 032; runs 1–3 + CP11 built on jack/feature/032-m9-release, not merged): version 1.0.0, Requires Plugins header, translation file, readme, M9.3; M9.1 end-to-end test of 18 templates (classic / block checkout, light / dark admin) plus custom-workflow catalog checks | 031 |
+| 3 | ⏳ 032 M9 (runs 1–3 + CP11 built on jack/feature/032-m9-release, not merged): version 1.0.0, Requires Plugins header, translation file, readme, M9.3; M9.1 end-to-end test of 18 templates (classic / block checkout, light / dark admin) plus custom-workflow catalog checks | 032 |
 | 4 | RC, RC fixes, release build, release (date by Jack) | — |
 | Next feature plan | Manual "Test run on an order" (V11.5, dry run) | — |
 
@@ -63,7 +63,7 @@ Mock: https://claude.ai/artifact/R6XzCEZqqyVHBe7uaknMoS. Authority: plan decisio
 | 028 M3–M5 | done (#m3m5) | — (Built, #34; overrides: alert From Pending / On hold / Failed, To Processing / Completed; review Condition before Wait; W-3 account button; Account created panel no Footer; field hints not built) | — |
 | 029 M6 | done (#m6) | — (Built, #35) | — |
 | 030 catalog | before run 1 | Condition form (list rules, relative date, meta key, search field), condition groups, Reviews picker group, panels of new triggers / actions (Wait until, Stop waiting runs, Change customer role, Update customer custom field, Resend email) | — |
-| 031 M9 | — | nothing new; M9.1 uses every frame (light / dark) as the checklist; all frames → Built | — |
+| 032 M9 | — | nothing new; M9.1 uses every frame (light / dark) as the checklist; all frames → Built | — |
 - Every UI checkpoint prompt: "build to section #id of YayMatik Pages v3; overrides: …". Browser check compares the screen with the frame: difference = bug (fix prompt) or decision (mock updated same day).
 - A PR that changes a Built screen redraws its frame before merge.
 
@@ -84,7 +84,7 @@ Mock: https://claude.ai/artifact/R6XzCEZqqyVHBe7uaknMoS. Authority: plan decisio
 - Tue Nov 3: 028 decisions H1, R1–R4, W1–W6 (9 changes to the Nov 2 proposal); high-value alert on Processing or Completed; run label after erase kept (live account email). ✅ (#34)
 - Tue Nov 3: 029 decisions D1–D10 (chat decided at Jack's request); D1 revised to "last real order" (pending, failed, cancelled don't count). ✅ (#35)
 - **Wed Nov 4: release timing no longer a planning factor; Jack sets the date (11:08).** ✅
-- **Wed Nov 4: plan 030 "Additional Triggers, Conditions and Actions" before M9; M9 renumbered 031 (15:14).** ✅
+- **Wed Nov 4: plan 030 "Additional Triggers, Conditions and Actions" before M9; M9 renumbered 031 (15:14); 031 later went to staging e2e, so M9 is 032.** ✅
 - Wed Nov 4: 030 decisions D1–D18 (`decisions-triggers-actions.md`): 6 triggers, ~25 condition fields + list / relative date / meta / search / groups, 6 actions; no Slack, HTTP (v1.2 Pro), stock trigger, tags, Change workflow status; one plan in 3 runs. ✅
 
 ## After v1.0
@@ -149,7 +149,7 @@ One card per phase, one checklist per card, about one item per working day.
 - ✅ Run 2: Order paid, Order refunded, Order note added, customer milestones, Review posted — PR #37
 - ✅ Run 3: customer custom field, customer role, resend WooCommerce email, Wait until, Stop waiting runs; merge — PR #37
 
-**Release hardening (031)** · checklist M9
+**Release hardening (032)** · checklist M9
 - ⏳ Translation file, readme, plugin header, version 1.0.0 (M9.2, M9.4) — built in plan 032, not merged
 - ⏳ Turn off unfinished modules (M9.3) — built in plan 032, not merged
 - v1.0 release candidate
@@ -178,4 +178,4 @@ One card per phase, one checklist per card, about one item per working day.
 | Mon Nov 2 | M7 UI PR merged; M8: abandoned cart decisions, plan, cart sweep + triggers |
 | Tue Nov 3 | M3 Review request, M4 Welcome series, M5 High-value order alert merged (#34); M6 Win-back decisions |
 | Wed Nov 4 | M6 Win-back merged (#35, 18/18 templates); custom workflow catalog decisions (plan 030) |
-| Next days | 030: mock frames, /wplan, run 1 → run 3; then 031 M9 |
+| Next days | 030: mock frames, /wplan, run 1 → run 3; then 032 M9 |

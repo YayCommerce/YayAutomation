@@ -48,7 +48,7 @@ class UpdateOrderMeta extends Action {
     public function fields(): array {
         return [
             Field::text( 'key', __( 'Field name', 'yaymatik' ) )
-                /* translators: %s: step name, e.g. "Update order custom field" */
+                /* translators: %s: step name */
                 ->required( __( '%s needs a field name.', 'yaymatik' ) )
                 ->help( __( 'The meta key, e.g. _vip_order.', 'yaymatik' ) ),
             Field::text( 'value', __( 'Value', 'yaymatik' ) )->variables(),

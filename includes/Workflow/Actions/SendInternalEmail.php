@@ -47,12 +47,12 @@ class SendInternalEmail extends Action {
                 ->placeholder( (string) get_option( 'admin_email' ) )
                 ->help( __( 'Separate addresses with commas. Leave blank to use the site admin email.', 'yaymatik' ) ),
             Field::text( 'subject', __( 'Subject', 'yaymatik' ) )
-                /* translators: %s: step name, e.g. "Send internal email" */
+                /* translators: %s: step name */
                 ->required( __( '%s needs a subject.', 'yaymatik' ) )
                 ->variables()
                 ->default( __( 'Order {{ order.number }} is {{ order.status }}', 'yaymatik' ) ),
             Field::html( 'message', __( 'Message', 'yaymatik' ) )
-                /* translators: %s: step name, e.g. "Send internal email" */
+                /* translators: %s: step name */
                 ->required( __( '%s needs a message.', 'yaymatik' ) )
                 ->variables()
                 ->default( self::sample_message() ),

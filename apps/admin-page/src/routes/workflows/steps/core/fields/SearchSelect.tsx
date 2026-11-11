@@ -135,8 +135,9 @@ export function SearchSelect({
             </CommandGroup>
           </CommandList>
           <div className="text-muted-foreground flex items-center justify-between gap-2 border-t px-3 py-1.5 text-xs">
-            {/* translators: %d: how many values are chosen */}
-            <span>{sprintf(__('%d selected', 'yaymatik'), value.length)}</span>
+            <span>
+              {sprintf(/* translators: %d: number of selected items */ __('%d selected', 'yaymatik'), value.length)}
+            </span>
             {search.hasNextPage && (
               <Button
                 variant="link"

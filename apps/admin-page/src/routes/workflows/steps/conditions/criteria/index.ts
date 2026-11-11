@@ -28,8 +28,7 @@ function comparedText(field: DataField | undefined, { operator, value: compared,
     if (!compared.length) return '';
     return field?.options?.length
       ? compared.map((item) => optionLabel(field, item)).join(', ')
-      : /* translators: %d: how many values a rule lists */
-        sprintf(__('%d selected', 'yaymatik'), compared.length);
+      : sprintf(/* translators: %d: number of selected items */ __('%d selected', 'yaymatik'), compared.length);
   }
   if (isRelative(operator)) {
     // Being typed: "0" isn't an amount yet.
@@ -52,8 +51,8 @@ function describe(rule: Rule) {
   const shown = needsValue(operator) ? comparedText(field, rule) : '';
   // "Custom field vip is equal to yes".
   const name = field?.type === 'meta' ? `${field.label} ${rule.key || PLACEHOLDER}` : field?.label;
-  /* translators: 1: variable, 2: comparison, e.g. "is greater than", 3: value */
   return sprintf(
+    /* translators: 1: variable, 2: comparison, e.g. "is greater than", 3: value */
     __('%1$s %2$s %3$s', 'yaymatik'),
     name ?? PLACEHOLDER,
     operatorLabels[operator] ?? PLACEHOLDER,

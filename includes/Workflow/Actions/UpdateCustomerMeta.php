@@ -43,7 +43,7 @@ class UpdateCustomerMeta extends Action {
     public function fields(): array {
         return [
             Field::text( 'key', __( 'Field name', 'yaymatik' ) )
-                /* translators: %s: step name, e.g. "Update customer custom field" */
+                /* translators: %s: step name */
                 ->required( __( '%s needs a field name.', 'yaymatik' ) )
                 ->suggest( 'customer-meta-keys' ),
             Field::text( 'value', __( 'Value', 'yaymatik' ) )->variables(),

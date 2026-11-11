@@ -20,6 +20,12 @@ PROJECT_PATH=$(pwd)
 BUILD_PATH="${PROJECT_PATH}/release"
 DEST_PATH="$BUILD_PATH/$PLUGIN_SLUG"
 
+# Lint the source, not the build: a path argument bypasses phpcs.xml's <file> list and would reach
+# vendor-prefixed after its patches were verified.
+[[ -x dev/tools/lintphp/vendor/bin/phpcs ]] || { echo "Missing PHP lint tools: run ./run.sh setup"; exit 1; }
+echo "Linting PHP..."
+pnpm lint:php || exit 1
+
 if [[ ! -f vendor/autoload.php ]]; then
     echo "Installing Composer dependencies..."
     # composer.json classmaps vendor-prefixed/src, so it must exist before install.
@@ -65,15 +71,6 @@ find "$DEST_PATH/vendor" -mindepth 1 -maxdepth 1 ! -name autoload.php ! -name co
 cp "$PROJECT_PATH/composer.lock" "$DEST_PATH/"
 composer dump-autoload --optimize --classmap-authoritative --no-dev --working-dir="$DEST_PATH" || exit 1
 rm -f "$DEST_PATH/composer.lock"
-
-# Same pinned tools as `pnpm lint:php` (installed by ./run.sh setup).
-PHPCBF="$PROJECT_PATH/dev/tools/lintphp/vendor/bin/phpcbf"
-if [[ -x $PHPCBF ]]; then
-    echo "Run lint"
-    "$PHPCBF" --standard="$PROJECT_PATH/phpcs.xml" "$DEST_PATH" || true
-else
-    echo "Skipping lint: run ./run.sh setup to install the PHP lint tools."
-fi
 
 # Remove development code
 rm -f "$DEST_PATH/includes/Engine/Register/RegisterDev.php"

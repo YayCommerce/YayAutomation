@@ -55,15 +55,23 @@ const results: Partial<Record<StepId, ResultText>> = {
       /* translators: %s: date and time, e.g. "Oct 9 at 3:00 PM" */
       return run.waitUntil ? sprintf(__('until %s', 'yaymatik'), shortDayTime(run.waitUntil)) : '';
     }
-    /* translators: %s: date and time, e.g. "Oct 9 at 3:00 PM" */
-    return step.finishedAt ? sprintf(__('Waited until %s', 'yaymatik'), shortDayTime(step.finishedAt)) : summary(step);
+    return step.finishedAt
+      ? sprintf(
+          /* translators: %s: date and time, e.g. "Oct 9 at 3:00 PM" */ __('Waited until %s', 'yaymatik'),
+          shortDayTime(step.finishedAt),
+        )
+      : summary(step);
   },
   send_email: (step) =>
-    /* translators: %s: email address */
-    sprintf(__('Sent to %s', 'yaymatik'), text(step.output.to)),
+    sprintf(
+      /* translators: %s: one or more email addresses, comma-separated */ __('Sent to %s', 'yaymatik'),
+      text(step.output.to),
+    ),
   send_internal_email: (step) =>
-    /* translators: %s: email addresses, comma-separated */
-    sprintf(__('Sent to %s', 'yaymatik'), Array.isArray(step.output.to) ? step.output.to.join(', ') : ''),
+    sprintf(
+      /* translators: %s: one or more email addresses, comma-separated */ __('Sent to %s', 'yaymatik'),
+      Array.isArray(step.output.to) ? step.output.to.join(', ') : '',
+    ),
   generate_coupon: (step) => text(step.output.code),
   resend_wc_email: (step) =>
     /* translators: %s: a WooCommerce email's name, e.g. "Completed order" */

@@ -315,7 +315,7 @@ final class Executor {
             return __( 'The customer was deleted.', 'yaymatik' );
         }
         $entity = DataRegistry::entities()[ $gone->ref()->type() ] ?? null;
-        /* translators: %s: what was deleted, e.g. "Order" */
+        /* translators: %s: what was deleted, e.g. "Order" or order:12 */
         return sprintf( __( '%s no longer exists.', 'yaymatik' ), $entity ? $entity->label() : $gone->ref()->type() );
     }
 
