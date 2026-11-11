@@ -34,8 +34,10 @@ function discount({ discount_type, amount }: GenerateCouponConfig) {
 /** "expires in 30 days", "never expires". */
 function expiry({ expiry_days: days }: GenerateCouponConfig) {
   if (days === null) return __('never expires', 'yaymatik');
-  /* translators: %s: number of days */
-  return sprintf(_n('expires in %s day', 'expires in %s days', days, 'yaymatik'), value(String(days)));
+  return sprintf(
+    /* translators: %s: number of days */ _n('expires in %s day', 'expires in %s days', days, 'yaymatik'),
+    value(String(days)),
+  );
 }
 
 export const generateCouponStep = defineStep<GenerateCouponConfig>({

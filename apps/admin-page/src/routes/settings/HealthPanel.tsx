@@ -1,5 +1,5 @@
-import { Fragment, type ReactNode } from 'react';
-import type { FixableHealthCheckId, HealthCheck, HealthCheckId } from '@yaymatik/types';
+import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react';
+import type { FixableHealthCheckId, HealthCheck, HealthCheckId, HealthChecksResponse } from '@yaymatik/types';
 import { CircleAlert, CircleCheck, ExternalLink, Info, RefreshCw, TriangleAlert } from 'lucide-react';
 import { humanTimeDiff } from '@wordpress/date';
 import { __, _n, sprintf } from '@wordpress/i18n';
@@ -22,11 +22,44 @@ const ORDER: HealthCheckId[] = ['runs_queued', 'runs_running', 'cleanup_job', 'i
 const countText = (check: HealthCheck) => (check.capped ? `${check.count}+` : String(check.count));
 const pluralCount = (check: HealthCheck) => (check.capped ? Math.max(check.count, 2) : check.count);
 
+/** A scan can answer in a few milliseconds; the button stays busy this long, so a click is seen. */
+export const MIN_CHECK_MS = 600;
+
+const shownChecks = (data: HealthChecksResponse | undefined) =>
+  data ? ORDER.flatMap((id) => data.checks.filter((check) => check.id === id && check.status !== 'ok')) : [];
+
 export function HealthPanel() {
   const { data, error, isFetching, refetch } = useHealthQuery();
-  const shown = data
-    ? ORDER.flatMap((id) => data.checks.filter((check) => check.id === id && check.status !== 'ok'))
-    : [];
+  const shown = shownChecks(data);
+  const [checking, setChecking] = useState(false);
+  // The scan outlives a click: no toast or state update once the page is left.
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
+  const checkAgain = async () => {
+    if (checking || isFetching) return;
+    setChecking(true);
+    const [result] = await Promise.all([refetch(), new Promise((resolve) => setTimeout(resolve, MIN_CHECK_MS))]);
+    if (!mounted.current) return;
+    setChecking(false);
+    // A failed scan says so in the card.
+    if (result.isError) return;
+    const problems = (result.data?.checks ?? []).filter((check) => check.status === 'problem').length;
+    if (problems) {
+      toast.info(
+        sprintf(
+          /* translators: %d: number of problems */ _n('Found %d problem.', 'Found %d problems.', problems, 'yaymatik'),
+          problems,
+        ),
+      );
+    } else {
+      toast.success(__('No problems found.', 'yaymatik'));
+    }
+  };
   // A failed scan hides the rows it replaced; a scan running again shows them until it ends.
   const failed = isFetching ? null : error;
 
@@ -40,7 +73,7 @@ export function HealthPanel() {
           !failed && <Skeleton className="h-3 w-40" />
         )}
         <CardAction>
-          <LoadingButton variant="outline" size="sm" loading={isFetching} onClick={() => !isFetching && refetch()}>
+          <LoadingButton variant="outline" size="sm" loading={isFetching || checking} onClick={() => void checkAgain()}>
             <RefreshCw />
             {__('Check again', 'yaymatik')}
           </LoadingButton>
@@ -49,8 +82,10 @@ export function HealthPanel() {
       <CardContent>
         {failed ? (
           <SettingsErrorAlert
-            /* translators: %s: why it failed */
-            message={sprintf(__('Couldn’t run the health check. %s', 'yaymatik'), failed.message)}
+            message={sprintf(
+              /* translators: %s: why it failed */ __('Couldn’t run the health check. %s', 'yaymatik'),
+              failed.message,
+            )}
             onRetry={() => refetch()}
           />
         ) : !data ? (
@@ -97,11 +132,9 @@ function summary(shown: HealthCheck[], checkedAt: string) {
     );
   }
   if (shown.length) {
-    /* translators: %s: when, e.g. "5 minutes ago" */
-    return sprintf(__('No problems · checked %s', 'yaymatik'), time);
+    return sprintf(/* translators: %s: when, e.g. "5 minutes ago" */ __('No problems · checked %s', 'yaymatik'), time);
   }
-  /* translators: %s: when, e.g. "5 minutes ago" */
-  return sprintf(__('Checked %s', 'yaymatik'), time);
+  return sprintf(/* translators: %s: when, e.g. "5 minutes ago" */ __('Checked %s', 'yaymatik'), time);
 }
 
 const fixRows: Record<

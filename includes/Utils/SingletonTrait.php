@@ -1,6 +1,8 @@
 <?php
 namespace YayMatik\Utils;
 
+defined( 'ABSPATH' ) || exit;
+
 trait SingletonTrait {
     private static $instance;
 

@@ -135,15 +135,17 @@ final class ModuleRegistryTest extends TestCase {
         $this->assertSame( [ 'yaymatik', 'woocommerce' ], array_keys( $plugins ) );
         foreach ( $plugins as $id => $plugin ) {
             $this->assertSame( [ 'id', 'label', 'description', 'active', 'logo' ], array_keys( $plugin ) );
-            $this->assertMatchesRegularExpression( '#^https?://.+\.svg$#', $plugin['logo'], $id );
+            $this->assertStringStartsWith( 'data:image/svg+xml,%3Csvg', $plugin['logo'], $id );
         }
         $this->assertTrue( $plugins['yaymatik']['active'], 'always active' );
     }
 
-    public function test_each_logo_is_an_svg_file_the_plugin_ships(): void {
+    public function test_each_core_logo_is_an_inline_one_colour_svg(): void {
         foreach ( ModuleRegistry::from( self::FREE ) as $id => $module ) {
-            $this->assertSame( YAYMATIK_PLUGIN_URL . "assets/logos/$id.svg", $module->logo() );
-            $this->assertFileExists( dirname( __DIR__, 2 ) . "/assets/logos/$id.svg" );
+            $prefix = 'data:image/svg+xml,';
+            $this->assertStringStartsWith( $prefix, $module->logo(), $id );
+            $svg = rawurldecode( substr( $module->logo(), strlen( $prefix ) ) );
+            $this->assertMatchesRegularExpression( '/^<svg [^>]*viewBox="0 0 24 24"[^>]*stroke="currentColor"/', $svg, $id );
         }
     }
 }

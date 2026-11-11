@@ -8,7 +8,7 @@ import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTi
 import { toast } from '@/components/ui/sonner';
 import { PageCard, PageTitle } from '@/components/widget/PageWidget';
 import { useCreateWorkflowMutation, useWorkflowsQuery } from '../../api/workflow.query';
-import { CreateWorkflowDialog } from './CreateWorkflowDialog';
+import { CreateWorkflowDialog } from '../../shared/create/CreateWorkflowDialog';
 import { TemplatesDialog } from './library/TemplatesDialog';
 import { WorkflowsEmptyIllustration } from './WorkflowIllustrations';
 import { WorkflowsTable, WorkflowsTableSkeleton } from './WorkflowsTable';
@@ -42,18 +42,21 @@ export default function WorkflowListPage() {
 
   return (
     <PageCard>
-      <div className="flex flex-wrap items-center justify-between gap-4">
+      <div className="flex min-h-9 flex-wrap items-center justify-between gap-4">
         <PageTitle>
           {__('Workflows', 'yaymatik')}
           {!!workflows?.length && <span className="text-muted-foreground text-sm font-normal">{workflows.length}</span>}
         </PageTitle>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={() => setTemplatesOpen(true)}>
-            <LayoutTemplate />
-            {browseLabel}
-          </Button>
-          {createButton}
-        </div>
+        {/* The empty state has its own pair; loading and errors offer none. */}
+        {!!workflows?.length && (
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => setTemplatesOpen(true)}>
+              <LayoutTemplate />
+              {browseLabel}
+            </Button>
+            {createButton}
+          </div>
+        )}
       </div>
 
       {error ? (

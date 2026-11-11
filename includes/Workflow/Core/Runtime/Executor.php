@@ -83,12 +83,12 @@ final class Executor {
         try {
             return $this->slice( $run );
         } catch ( \Throwable $e ) {
-            Logger::error( "Run {$id} failed: " . $e->getMessage(), [ 'run_id' => $id ] );
+            Logger::error( "Run {$id} failed: " . self::message( $e ), [ 'run_id' => $id ] );
             $this->runs->save_run(
                 $id,
                 [
                     'status' => RunStore::STATUS_FAILED,
-                    'error'  => $e->getMessage(),
+                    'error'  => self::message( $e ),
                 ]
             );
             return RunStore::STATUS_FAILED;
@@ -250,11 +250,11 @@ final class Executor {
         try {
             $config = $step ? $step->sanitize( $config ) : $config;
         } catch ( \Throwable $e ) {
-            $broken = StepResult::failed( $e->getMessage() );
+            $broken = StepResult::failed( self::message( $e ) );
         }
         $row_id = $this->runs->start_step( $run_id, $step_id, $config );
         if ( ! $row_id ) {
-            throw new \RuntimeException( __( 'Could not save the step result.', 'yaymatik' ) );
+            throw new \RuntimeException( esc_html__( 'Could not save the step result.', 'yaymatik' ) );
         }
 
         $scope->set_current_step( $run_id, $step_id );
@@ -291,8 +291,18 @@ final class Executor {
         } catch ( GoneEntity $gone ) {
             return StepResult::skipped( self::gone_message( $gone ) );
         } catch ( \Throwable $e ) {
-            return StepResult::failed( $e->getMessage() );
+            return StepResult::failed( self::message( $e ) );
         }
+    }
+
+    /**
+     * An exception's message as plain text: messages are escaped where they are thrown, and the run history
+     * escapes what it shows.
+     *
+     * @param \Throwable $e
+     */
+    private static function message( \Throwable $e ): string {
+        return htmlspecialchars_decode( $e->getMessage(), ENT_QUOTES );
     }
 
     /**
@@ -305,7 +315,7 @@ final class Executor {
             return __( 'The customer was deleted.', 'yaymatik' );
         }
         $entity = DataRegistry::entities()[ $gone->ref()->type() ] ?? null;
-        /* translators: %s: what was deleted, e.g. "Order" */
+        /* translators: %s: what was deleted, e.g. "Order" or order:12 */
         return sprintf( __( '%s no longer exists.', 'yaymatik' ), $entity ? $entity->label() : $gone->ref()->type() );
     }
 

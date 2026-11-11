@@ -66,24 +66,28 @@ export function CriteriaForm({ config, onChange }: StepFormProps<CriteriaConfig>
   return (
     <div className="flex flex-col gap-3.5">
       <div className="flex flex-wrap items-center gap-1.5 text-sm/7.5">
-        {/* translators: 1: the Yes path's tag, 2: "all" or "any" */}
-        {__('Take the %1$s path when %2$s of these match:', 'yaymatik')
-          .split(/(%\d\$s)/)
-          .map((part, i) =>
-            part === '%1$s' ? (
-              <span
-                key={i}
-                className="inline-flex h-5.5 items-center gap-1 rounded-full border pr-2 pl-1.5 text-[12.5px] font-semibold"
-              >
-                <Check className="text-kind-action size-3 stroke-[2.5]" aria-hidden />
-                {__('Yes', 'yaymatik')}
-              </span>
-            ) : part === '%2$s' ? (
-              <MatchSelect key={i} match={value.match} onChange={(match) => update({ ...value, match })} />
-            ) : (
-              part.trim() && <span key={i}>{part.trim()}</span>
-            ),
-          )}
+        {
+          /* translators: 1: the Yes path's tag, 2: "all" or "any" */ __(
+            'Take the %1$s path when %2$s of these match:',
+            'yaymatik',
+          )
+            .split(/(%\d\$s)/)
+            .map((part, i) =>
+              part === '%1$s' ? (
+                <span
+                  key={i}
+                  className="inline-flex h-5.5 items-center gap-1 rounded-full border pr-2 pl-1.5 text-[12.5px] font-semibold"
+                >
+                  <Check className="text-kind-action size-3 stroke-[2.5]" aria-hidden />
+                  {__('Yes', 'yaymatik')}
+                </span>
+              ) : part === '%2$s' ? (
+                <MatchSelect key={i} match={value.match} onChange={(match) => update({ ...value, match })} />
+              ) : (
+                part.trim() && <span key={i}>{part.trim()}</span>
+              ),
+            )
+        }
       </div>
 
       <div className="flex flex-col gap-2">

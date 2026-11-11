@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { toast } from '@/components/ui/sonner';
 import { issuesOf, useEmailTools } from '../../core/fields/emailTools';
-import { PreviewDialog } from './PreviewDialog';
+import { PreviewDialog, sampleProductsText } from './PreviewDialog';
 
 const testRecipient = window.yayMatikMeta.wp.userEmail;
 
@@ -41,10 +41,15 @@ export function EmailActions() {
         setPreview(await tools.preview());
       } else {
         const result = await tools.sendTest();
+        const description = result.sample
+          ? __('Sample data', 'yaymatik')
+          : result.sampleProducts.length > 0
+            ? sampleProductsText(result.sampleProducts)
+            : '';
         toast.success(
           /* translators: %s: email address */
           sprintf(__('Test email sent to %s', 'yaymatik'), result.sentTo),
-          result.sample ? { description: __('Sample data', 'yaymatik') } : {},
+          description ? { description } : {},
         );
       }
     } catch (error) {

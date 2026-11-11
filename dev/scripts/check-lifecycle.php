@@ -724,5 +724,60 @@ $move( $saved, 'on-hold' );
 $move( $saved, 'completed' );
 $ok( 2 === count( $alert_runs( $saved->get_id() ) ), 'processing → on-hold → completed runs twice: the known limit' );
 
+// Preview of an email with a cross-sell grid: the newest paid order that has one, else the store's newest products.
+$suggested = $product( 'Check Suggested' );
+$with_grid = $product( 'Check With Cross-sells' );
+$with_grid->set_cross_sell_ids( [ $suggested->get_id() ] );
+$with_grid->save();
+$no_grid  = $product( 'Check No Cross-sells' );
+$has_grid = $order( [ $with_grid ], "grid@{$domain}" );
+$has_grid->set_date_created( time() - MINUTE_IN_SECONDS );
+$has_grid->set_status( 'completed' );
+$has_grid->save();
+$newer = $order( [ $no_grid ], "nogrid@{$domain}" );
+$newer->set_status( 'completed' );
+$newer->save();
+$grid_mail  = [
+    'to'      => '{{ customer.email }}',
+    'subject' => 'Check grid',
+    'heading' => 'Hi',
+    'message' => '<p>These go well with what you bought:</p><p>{{ order.cross_sell_products }}</p>',
+];
+$grid_graph = json_decode(
+    wp_json_encode(
+        [
+            'nodes' => [
+                $node(
+                    'trigger',
+                    'trigger',
+                    0,
+                    'order_status_changed',
+                    [
+                        'from'          => [],
+                        'to'            => [ 'completed' ],
+                        'only_checkout' => false,
+                    ]
+                ),
+                $node( 'mail', 'action', 170, 'send_email', $grid_mail ),
+            ],
+            'edges' => [
+                [
+                    'id'     => 'e1',
+                    'source' => 'trigger',
+                    'target' => 'mail',
+                ],
+            ],
+        ]
+    ),
+    true
+);
+$picked     = EmailPreview::render( $grid_graph, 'mail', $grid_mail );
+$ok( ! is_wp_error( $picked ) && (string) $has_grid->get_order_number() === $picked['order'] && [] === $picked['sampleProducts'] && false !== strpos( $picked['html'], 'Check Suggested' ), 'preview with a cross-sell grid: the newest paid order that has one, not the newer order without' );
+$fallback = EmailPreview::render( $grid_graph, 'mail', $grid_mail, $newer->get_id() );
+$newest   = array_values( array_filter( ProductGrid::newest(), fn( WC_Product $item ) => $item->get_id() !== $no_grid->get_id() ) );
+$ok( ! is_wp_error( $fallback ) && (string) $newer->get_order_number() === $fallback['order'] && [ 'cross_sells' ] === $fallback['sampleProducts'] && ( ! $newest || false !== strpos( $fallback['html'], esc_url( $newest[0]->get_permalink() ) ) ), 'an order without cross-sells: its data, the grid from the newest products minus its own, sampleProducts set' );
+$test = EmailPreview::send_test( $grid_graph, 'mail', $grid_mail, "preview@{$domain}", $newer->get_id() );
+$ok( ! is_wp_error( $test ) && [ 'cross_sells' ] === $test['sampleProducts'], 'Send test makes the same choice' );
+
 echo $fails ? "{$fails} failed\n" : "All passed\n"; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 exit( $fails ? 1 : 0 );

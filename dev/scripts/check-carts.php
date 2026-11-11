@@ -762,9 +762,9 @@ $saved( $prefix . 'old', [ $line( 1, 1 ) ] );
 $age( $prefix . 'old', "last_activity_at = '{$old}'" );
 $queries = [];
 $record  = function ( $sql ) use ( &$queries, $table, $runs_table ) {
-    if ( 0 === strpos( $sql, "DELETE FROM {$table} " ) ) {
+    if ( 0 === strpos( $sql, "DELETE FROM `{$table}` " ) ) {
         $queries[] = 'carts';
-    } elseif ( false !== strpos( $sql, "FROM {$runs_table} r WHERE" ) ) {
+    } elseif ( false !== strpos( $sql, "FROM `{$runs_table}` r WHERE" ) ) {
         $queries[] = 'runs';
     }
     return $sql;
@@ -1577,7 +1577,7 @@ $preview       = function ( array $config = [] ) use ( $preview_graph ) {
 $shown         = $preview();
 $ok( ! is_wp_error( $shown ) && false === $shown['sample'] && null === $shown['order'] && false !== strpos( $shown['html'], 'href="#"' ) && false !== strpos( $shown['html'], 'Restore my cart' ) && false === strpos( $shown['html'], UnsubscribeLink::ARG_TOKEN . '=' ), 'preview: a real cart, the button goes nowhere, no token' );
 $no_carts = function ( $query ) use ( $table ) {
-    return false !== strpos( $query, "SELECT id FROM {$table}" ) && false !== strpos( $query, 'ORDER BY id DESC LIMIT 1' ) ? 'SELECT 0' : $query;
+    return false !== strpos( $query, "SELECT id FROM `{$table}`" ) && false !== strpos( $query, 'ORDER BY id DESC LIMIT 1' ) ? 'SELECT 0' : $query;
 };
 add_filter( 'query', $no_carts );
 $shown = $preview();

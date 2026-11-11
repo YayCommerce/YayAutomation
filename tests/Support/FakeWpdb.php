@@ -17,6 +17,12 @@ final class FakeWpdb {
     /** @var string */
     public $usermeta = 'wp_usermeta';
 
+    /** @var string */
+    public $options = 'wp_options';
+
+    /** @var string */
+    public $postmeta = 'wp_postmeta';
+
     /** @var int */
     public $insert_id = 0;
 
@@ -36,13 +42,23 @@ final class FakeWpdb {
         $args = isset( $args[0] ) && is_array( $args[0] ) ? $args[0] : $args;
         $i    = 0;
         return preg_replace_callback(
-            '/%[ds]/',
+            '/%[dsif]/',
             function ( $m ) use ( $args, &$i ) {
                 $value = $args[ $i++ ] ?? '';
+                if ( '%i' === $m[0] ) {
+                    return '`' . str_replace( '`', '``', (string) $value ) . '`';
+                }
+                if ( '%f' === $m[0] ) {
+                    return (string) (float) $value;
+                }
                 return '%d' === $m[0] ? (string) (int) $value : "'" . addslashes( (string) $value ) . "'";
             },
             $query
         );
+    }
+
+    public function esc_like( $text ) {
+        return addcslashes( $text, '_%\\' );
     }
 
     public function insert( $table, $data, $format = null ) {

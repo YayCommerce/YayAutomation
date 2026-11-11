@@ -50,14 +50,14 @@ if ( ! function_exists( 'esc_attr' ) ) {
 if ( ! function_exists( 'esc_url' ) ) {
     // Like WordPress: spaces encoded, other unsafe characters dropped, only known protocols kept,
     // `http://` added to a bare host, `&` and `'` as entities.
-    function esc_url( $url ) {
+    function esc_url( $url, $protocols = null ) {
         $url = str_replace( ' ', '%20', ltrim( (string) $url ) );
         $url = (string) preg_replace( '|[^a-z0-9-~+_.?#=!&;,/:%@$\|*\'()\[\]\x80-\xff]|i', '', $url );
         if ( '' === $url ) {
             return '';
         }
         if ( preg_match( '/^([a-z][a-z0-9+.-]*):/i', $url, $match ) ) {
-            if ( ! in_array( strtolower( $match[1] ), [ 'http', 'https', 'mailto', 'tel' ], true ) ) {
+            if ( ! in_array( strtolower( $match[1] ), $protocols ?? [ 'http', 'https', 'mailto', 'tel' ], true ) ) {
                 return '';
             }
         } elseif ( ! in_array( $url[0], [ '/', '#', '?' ], true ) ) {
@@ -191,6 +191,12 @@ if ( ! function_exists( 'is_wp_error' ) ) {
     }
 }
 
+if ( ! function_exists( 'wp_get_list_item_separator' ) ) {
+    function wp_get_list_item_separator() {
+        return ', ';
+    }
+}
+
 if ( ! function_exists( '_n' ) ) {
     function _n( $single, $plural, $number, $domain = 'default' ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- same signature as WordPress.
         return 1 === (int) $number ? $single : $plural;
@@ -243,8 +249,8 @@ if ( ! function_exists( 'date_i18n' ) ) {
 }
 
 if ( ! function_exists( 'esc_url_raw' ) ) {
-    function esc_url_raw( $url ) {
-        return str_replace( [ '&#038;', '&#039;' ], [ '&', "'" ], esc_url( $url ) );
+    function esc_url_raw( $url, $protocols = null ) {
+        return str_replace( [ '&#038;', '&#039;' ], [ '&', "'" ], esc_url( $url, $protocols ) );
     }
 }
 
@@ -446,5 +452,45 @@ if ( ! function_exists( 'is_super_admin' ) ) {
 if ( ! function_exists( 'user_can' ) ) {
     function user_can( $user, $capability ) {
         return ! empty( $user->allcaps[ $capability ] );
+    }
+}
+
+if ( ! function_exists( 'is_multisite' ) ) {
+    // A network when a test sets `$GLOBALS['yaymatik_test_sites']` (site ids).
+    function is_multisite() {
+        return isset( $GLOBALS['yaymatik_test_sites'] );
+    }
+}
+
+if ( ! function_exists( 'get_sites' ) ) {
+    function get_sites( $args = [] ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- same signature as WordPress.
+        return $GLOBALS['yaymatik_test_sites'] ?? [];
+    }
+}
+
+if ( ! function_exists( 'switch_to_blog' ) ) {
+    // Site 1 keeps the base prefix, as in WordPress.
+    function switch_to_blog( $site_id ) {
+        $GLOBALS['wpdb']->prefix = 1 === (int) $site_id ? $GLOBALS['wpdb']->base_prefix : $GLOBALS['wpdb']->base_prefix . $site_id . '_';
+        return true;
+    }
+}
+
+if ( ! function_exists( 'restore_current_blog' ) ) {
+    function restore_current_blog() {
+        $GLOBALS['wpdb']->prefix = $GLOBALS['wpdb']->base_prefix;
+        return true;
+    }
+}
+
+if ( ! function_exists( 'wp_cache_delete' ) ) {
+    function wp_cache_delete( $key, $group = '' ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- same signature as WordPress.
+        return true;
+    }
+}
+
+if ( ! function_exists( 'esc_html__' ) ) {
+    function esc_html__( $text, $domain = 'default' ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- same signature as WordPress.
+        return esc_html( $text );
     }
 }

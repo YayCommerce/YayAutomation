@@ -18,15 +18,20 @@ final class ReviewProducts {
         if ( 'yes' !== get_option( 'woocommerce_enable_reviews', 'yes' ) ) {
             return [];
         }
-        $products = [];
+        $ids = [];
         foreach ( $order->get_items() as $item ) {
             $id = $item instanceof \WC_Order_Item_Product ? (int) $item->get_product_id() : 0;
             // A refund's quantity is negative. A returned line isn't worth asking about, though the order stays completed.
-            if ( $id <= 0 || isset( $products[ $id ] ) || $item->get_quantity() + $order->get_qty_refunded_for_item( $item->get_id() ) <= 0 ) {
-                continue;
+            if ( $id > 0 && $item->get_quantity() + $order->get_qty_refunded_for_item( $item->get_id() ) > 0 ) {
+                $ids[ $id ] = $id;
             }
+        }
+        _prime_post_caches( array_values( $ids ) );
+        $products = [];
+        foreach ( $ids as $id ) {
             $product = wc_get_product( $id );
-            if ( $product && 'publish' === $product->get_status() && $product->get_reviews_allowed() ) {
+            // Not in the shop's catalog ('search' only or 'hidden'): the email leaves it out, as the product grids do.
+            if ( $product && 'publish' === $product->get_status() && in_array( $product->get_catalog_visibility(), [ 'visible', 'catalog' ], true ) && $product->get_reviews_allowed() ) {
                 $products[ $id ] = $product;
             }
         }

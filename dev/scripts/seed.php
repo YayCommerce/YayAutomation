@@ -26,6 +26,18 @@ require_once ABSPATH . 'wp-admin/includes/misc.php';
 $GLOBALS['wp_rewrite']->set_permalink_structure( '/%postname%/' );
 flush_rewrite_rules();
 \WC_Install::create_pages();
+// WooCommerce's own Checkout page uses the block; this one keeps the classic form for testing both.
+if ( ! get_page_by_path( 'classic-checkout' ) ) {
+    wp_insert_post(
+        [
+            'post_type'    => 'page',
+            'post_status'  => 'publish',
+            'post_title'   => 'Classic checkout',
+            'post_name'    => 'classic-checkout',
+            'post_content' => '<!-- wp:shortcode -->[woocommerce_checkout]<!-- /wp:shortcode -->',
+        ]
+    );
+}
 
 foreach ( [
     'yay-seed-tee'   => [ 'Seed Tee', '20' ],
@@ -46,6 +58,28 @@ foreach ( [
         ]
     );
     $product->save();
+}
+
+// Cross-sells and upsells, so the cross-sell / upsell templates show a real grid.
+$seed_ids = array_map(
+    'wc_get_product_id_by_sku',
+    [
+        'tee'   => 'yay-seed-tee',
+        'mug'   => 'yay-seed-mug',
+        'print' => 'yay-seed-print',
+    ]
+);
+foreach ( [
+    'tee'   => [ [ 'mug', 'print' ], [ 'print' ] ],
+    'mug'   => [ [ 'tee' ], [ 'print' ] ],
+    'print' => [ [ 'tee', 'mug' ], [] ],
+] as $key => list( $cross, $up ) ) {
+    $product = wc_get_product( $seed_ids[ $key ] );
+    if ( $product ) {
+        $product->set_cross_sell_ids( array_map( fn( $other ) => $seed_ids[ $other ], $cross ) );
+        $product->set_upsell_ids( array_map( fn( $other ) => $seed_ids[ $other ], $up ) );
+        $product->save();
+    }
 }
 
 $customer_email = 'customer@yay-seed.test';

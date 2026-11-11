@@ -20,10 +20,14 @@ scp_port=()
 remote_dir=/tmp/yaymatik-deploy-$$
 
 # A clean worktree: no ignored local files reach the zip, and this checkout keeps its dev autoloader. admin-shell still floats to its latest release.
+# The worktree has no lint tools (gitignored vendor), so lint here: the tree is clean, so it is the same source.
+echo "Linting PHP..."
+pnpm lint:php
 tmp=$(mktemp -d)
 trap 'git worktree remove --force "$tmp/build" || true; rm -rf "$tmp"; ssh "${ssh_port[@]}" "$host" rm -rf "$remote_dir" || true' EXIT
 git worktree add -q --detach "$tmp/build" HEAD
-"$tmp/build/run.sh" release pro --rc
+cp dev/.env.local "$tmp/build/dev/"
+YAYMATIK_SKIP_LINT=1 "$tmp/build/run.sh" release pro --rc
 zip=$tmp/build/release/yaymatik-pro.zip
 
 # A repeated rc keeps the same ?ver=, so browsers would keep the old main.js.

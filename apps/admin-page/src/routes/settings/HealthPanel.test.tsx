@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { toast } from '@/components/ui/sonner';
 import { fixHealthCheck, getHealthChecks } from './api/health.api';
-import { HealthPanel } from './HealthPanel';
+import { HealthPanel, MIN_CHECK_MS } from './HealthPanel';
 
 vi.mock('@/components/ui/sonner', () => ({ toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() } }));
 vi.mock('./api/health.api', () => ({ getHealthChecks: vi.fn(), fixHealthCheck: vi.fn() }));
@@ -288,9 +288,36 @@ describe('HealthPanel', () => {
     expect(getHealthChecks).toHaveBeenCalledTimes(1);
 
     await act(async () => button('Check again')!.click());
-    await tick();
+    await tick(MIN_CHECK_MS);
     expect(getHealthChecks).toHaveBeenCalledTimes(2);
     focusManager.setFocused(undefined);
+  });
+
+  it('keeps Check again busy for a moment even when the scan answers at once, then says what it found', async () => {
+    await render(allOk);
+
+    await act(async () => button('Check again')!.click());
+    await tick(50);
+    expect(getHealthChecks).toHaveBeenCalledTimes(2);
+    expect(spinning(button('Check again')), 'still busy after the fast answer').toBe(true);
+    expect(toast.success).not.toHaveBeenCalled();
+
+    await tick(MIN_CHECK_MS);
+    expect(spinning(button('Check again'))).toBe(false);
+    expect(toast.success).toHaveBeenCalledWith('No problems found.');
+    expect(summary()).toMatch(/^Checked /);
+  });
+
+  it('counts the problems the scan found in its toast; the late-jobs row alone is not a problem', async () => {
+    await render([queued(3), cleanup, late(4)]);
+    await act(async () => button('Check again')!.click());
+    await tick(MIN_CHECK_MS + 50);
+    expect(toast.info).toHaveBeenCalledWith('Found 2 problems.');
+
+    vi.mocked(getHealthChecks).mockResolvedValue(scan([late(4)]));
+    await act(async () => button('Check again')!.click());
+    await tick(MIN_CHECK_MS + 50);
+    expect(toast.success).toHaveBeenCalledWith('No problems found.');
   });
 
   it('shows a load error with Try again', async () => {

@@ -21,6 +21,8 @@ defined( 'ABSPATH' ) || exit;
  * - `merge_tag`   bool, default true; false = not offered by "Insert variable" and not a known tag
  * - `conditional` bool, default true; false = display only
  * - `block`       bool, default false; a ready-made email block (HTML display), inserted on its own line
+ *
+ * @internal Experimental: may change before Extension API v1.
  */
 abstract class DataItem {
 

@@ -42,7 +42,7 @@ final class RefResolver {
             $this->loaded[ $key ] = $loader ? $loader( $ref->id() ) : null;
         }
         if ( ! is_object( $this->loaded[ $key ] ) ) {
-            throw new GoneEntity( $ref );
+            throw new GoneEntity( $ref ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- GoneEntity escapes its own message.
         }
         return $this->loaded[ $key ];
     }

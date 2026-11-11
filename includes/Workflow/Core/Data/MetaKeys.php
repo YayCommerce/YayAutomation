@@ -47,7 +47,7 @@ final class MetaKeys {
         global $wpdb;
         // Every row the write can reach, as `update_user_meta()` finds them; DISTINCT would fold the spellings into one.
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- the collation's answer, past any cache.
-        $found = $wpdb->get_col( $wpdb->prepare( "SELECT meta_key FROM {$wpdb->usermeta} WHERE user_id = %d AND meta_key = %s", $user_id, $key ) );
+        $found = $wpdb->get_col( $wpdb->prepare( 'SELECT meta_key FROM %i WHERE user_id = %d AND meta_key = %s', $wpdb->usermeta, $user_id, $key ) );
         if ( '' !== $wpdb->last_error ) {
             return true;
         }

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Delete all workflows, versions, runs, carts, trigger claims and settings; keeps unsubscribes. --yes skips the prompt. Target: local site, --wp-env or --staging.
+# Delete all workflows, versions, runs, carts, trigger claims and settings; keeps unsubscribes. --yes skips the prompt. Target: local site, --wp-env, --wp-env-min or --staging.
 cd "$(dirname "$0")/../.." || exit 1
 [[ -f yaymatik.php ]] || { echo "Not the plugin root: $(pwd)"; exit 1; }
 

@@ -3,9 +3,9 @@ import { ArrowUp, ChevronRight, LayoutTemplate, Loader2, Sparkles } from 'lucide
 import { __ } from '@wordpress/i18n';
 
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
-import { WorkflowAppIcon } from '../../shared/layout/EditorLayout';
-import { ComingSoonChip } from '../../shared/ui/ComingSoonChip';
 import { StepTile } from '../../steps/core/StepTile';
+import { WorkflowAppIcon } from '../layout/EditorLayout';
+import { ComingSoonChip } from '../ui/ComingSoonChip';
 
 /** Example prompts for the describe box; shown, not usable, until the assistant ships (v2.0). */
 const ideas = [
@@ -61,12 +61,13 @@ export function CreateWorkflowDialog({
             </DialogDescription>
           </div>
 
-          {/* The assistant isn't built yet: the box looks as it will, but nothing in it can be used. */}
+          {/* The assistant isn't built yet: the box, its send button and the examples look like disabled
+              controls (the kit's opacity-50) and nothing in them takes focus or clicks. "Coming soon" stays clear. */}
           <div
             aria-disabled
-            className="bg-card border-input flex w-full max-w-150 cursor-not-allowed flex-col gap-2.5 rounded-[14px] border pt-3 pr-3 pb-2.5 pl-3.5 shadow-[0_0_0_4px_color-mix(in_srgb,var(--primary)_10%,transparent),0_8px_24px_-14px_color-mix(in_srgb,var(--primary)_60%,transparent)]"
+            className="bg-card border-input flex w-full max-w-150 cursor-not-allowed flex-col gap-2.5 rounded-[14px] border pt-3 pr-3 pb-2.5 pl-3.5"
           >
-            <div className="flex min-h-11 gap-2.5 text-[14.5px]/normal">
+            <div className="flex min-h-11 gap-2.5 text-[14.5px]/normal opacity-50">
               <Sparkles className="text-primary mt-0.75 size-4 shrink-0" aria-hidden />
               <span className="text-muted-foreground">
                 {__('e.g. Email customers who haven’t ordered in 90 days with a coupon', 'yaymatik')}
@@ -75,7 +76,7 @@ export function CreateWorkflowDialog({
             <div className="flex items-center justify-end gap-2">
               <ComingSoonChip />
               <span
-                className="bg-muted text-muted-foreground flex size-8 items-center justify-center rounded-full"
+                className="bg-muted text-muted-foreground flex size-8 items-center justify-center rounded-full opacity-50"
                 aria-hidden
               >
                 <ArrowUp className="size-3.75 stroke-[2.5]" />
@@ -88,7 +89,8 @@ export function CreateWorkflowDialog({
             {ideas.map((idea) => (
               <li
                 key={idea}
-                className="bg-card text-muted-foreground-600 flex h-7.5 items-center gap-1.5 rounded-full border px-3 text-[13px]"
+                aria-disabled
+                className="bg-card text-muted-foreground-600 flex h-7.5 cursor-not-allowed items-center gap-1.5 rounded-full border px-3 text-[13px] opacity-50"
               >
                 <Sparkles className="text-muted-foreground size-3.25" aria-hidden />
                 {idea}

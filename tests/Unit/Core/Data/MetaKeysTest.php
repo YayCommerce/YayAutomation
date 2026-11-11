@@ -73,7 +73,7 @@ final class MetaKeysTest extends TestCase {
     public function test_user_collides_when_the_collation_finds_a_blocked_row(): void {
         $GLOBALS['wpdb']->result = [ 'wp_capabilities' ];
         $this->assertTrue( MetaKeys::user_collides( 7, 'WP_CAPABILITIES' ) );
-        $this->assertSame( "SELECT meta_key FROM wp_usermeta WHERE user_id = 7 AND meta_key = 'WP_CAPABILITIES'", $GLOBALS['wpdb']->calls[0][1] );
+        $this->assertSame( "SELECT meta_key FROM `wp_usermeta` WHERE user_id = 7 AND meta_key = 'WP_CAPABILITIES'", $GLOBALS['wpdb']->calls[0][1] );
     }
 
     public function test_user_collides_on_any_row_even_beside_a_free_one(): void {

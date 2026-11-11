@@ -130,7 +130,14 @@ export function StepPicker({
           // Typing is the reason the picker is open.
           autoFocus
           value={query}
-          placeholder={plugin ? sprintf(__('Search %s', 'yaymatik'), plugins[plugin].label) : searchLabels[kind]}
+          placeholder={
+            plugin
+              ? sprintf(
+                  /* translators: %s: plugin name, e.g. "WooCommerce" */ __('Search %s', 'yaymatik'),
+                  plugins[plugin].label,
+                )
+              : searchLabels[kind]
+          }
           onChange={(event) => setQuery(event.target.value)}
         />
       </InputGroup>

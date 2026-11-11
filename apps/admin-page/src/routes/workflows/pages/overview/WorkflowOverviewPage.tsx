@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState, type ReactNode } from 'react';
 import type { Workflow, WorkflowIssue } from '@yaymatik/types';
 import { ChevronLeft, CircleAlert, Pencil } from 'lucide-react';
+import { createPortal } from 'react-dom';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 import { __, _n, sprintf } from '@wordpress/i18n';
 
@@ -8,11 +9,13 @@ import { shortDay } from '@/lib/helpers/date.helper';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useHeaderSlot } from '@/routes/layout/useHeaderSlot';
 import { useWorkflowQuery } from '../../api/workflow.query';
 import { activateIssues, activateIssueTexts, issueText, stepsNeedingSetup } from '../../model/validation';
 import { useActivateWorkflow } from '../../shared/actions/useActivateWorkflow';
 import { ActivateDialog, DeactivateDialog, MoreActionsMenu } from '../../shared/actions/WorkflowActions';
 import { ReadOnlyCanvas } from '../../shared/canvas/ReadOnlyCanvas';
+import { CreateWorkflowButton } from '../../shared/create/CreateWorkflowButton';
 import { WorkflowAppIcon } from '../../shared/layout/EditorLayout';
 import type { EditorNavState } from '../../shared/nav/editor.nav';
 import { ErrorAlert } from '../../shared/ui/ErrorAlert';
@@ -27,19 +30,23 @@ import { WorkflowRuns } from './WorkflowRuns';
 export default function WorkflowOverviewPage() {
   const { workflowId = '' } = useParams();
   const { data: workflow, error } = useWorkflowQuery(workflowId);
-
-  if (workflow) {
-    return <WorkflowOverview workflow={workflow} />;
-  }
+  const headerSlot = useHeaderSlot();
 
   return (
-    <OverviewLayout title={!error && <Skeleton className="h-5 w-48" />}>
-      {error ? (
-        <div className="text-muted-foreground flex flex-1 items-center justify-center">{error.message}</div>
+    <>
+      {workflow ? (
+        <WorkflowOverview workflow={workflow} />
       ) : (
-        <Skeleton className="flex-1" />
+        <OverviewLayout title={!error && <Skeleton className="h-5 w-48" />}>
+          {error ? (
+            <div className="text-muted-foreground flex flex-1 items-center justify-center">{error.message}</div>
+          ) : (
+            <Skeleton className="flex-1" />
+          )}
+        </OverviewLayout>
       )}
-    </OverviewLayout>
+      {headerSlot && createPortal(<CreateWorkflowButton />, headerSlot)}
+    </>
   );
 }
 

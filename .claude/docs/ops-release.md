@@ -2,9 +2,19 @@
 
 Use `/wdist`.
 
-- Version: `yaymatik.php` header `Version:` + `YAYMATIK_VERSION` — keep in sync.
-- Zip: `./run.sh release` (`dev/scripts/release.sh`) → `release/yaymatik.zip` (free: `.distignore` leaves out `includes/Pro/`). `./run.sh release pro` → `release/yaymatik-pro.zip`, the same with `includes/Pro/`. Exclusions: `.distignore`. It runs `./vendor/bin/yaycommerce-prerelease` first and ships only `vendor/autoload.php` + `vendor/composer/` + `vendor-prefixed/`.
-- Before release: build passes, clean working tree, `pnpm e2e` passes on the release commit (local wp-env only; CI doesn't run it), the free zip loads the admin page on a clean site.
+- Zip: `./run.sh release` (`dev/scripts/release.sh`) → `release/yaymatik.zip` (free: `.distignore` leaves out `includes/Pro/`; `release.sh` removes admin-shell's `src/License`, as YayBulkOrder's lite build does, and `dev/scripts/lib/free-admin-shell.php` adds `class_exists` guards and ABSPATH guards to the rest of the scoped copy, failing the build when admin-shell changes under it). `composer.json` ships beside `vendor/`. `languages/yaymatik.pot` is made from the built files into the zip (`wp i18n make-pot`, so wp-cli is needed); `pnpm makepot` updates the committed copy. `./run.sh release pro` → `release/yaymatik-pro.zip`, the same with `includes/Pro/`. Exclusions: `.distignore`. It runs `./vendor/bin/yaycommerce-prerelease` first and ships only `vendor/autoload.php` + `vendor/composer/` + `vendor-prefixed/`.
+- WordPress.org review: `/wp-review` checks the free zip against `.claude/docs/context-wporg-release-checklist.md` (IDs S, G, B, Q, R, T, U).
+- Versions: `Version:` and `YAYMATIK_VERSION` in `yaymatik.php` and `Stable tag:` in `readme.txt` are equal.
+
+## Release gate
+
+On the release commit, clean working tree, in this order; stop at the first failure:
+
+1. `pnpm lint`, `pnpm lint:php`, `pnpm test`, `pnpm test:php`, `pnpm build`.
+2. `./run.sh check-all --wp-env` and `./run.sh check-all --wp-env-min`; `./run.sh probe-mysql --staging` (MySQL 8).
+3. `pnpm e2e` (wp-env only; CI doesn't run it).
+4. `/wp-review` on the free zip.
+5. By hand: each of the 8 workflows once on staging, one email in a real inbox from a dev site, the free zip uploaded and smoke-tested on a clean site.
 
 ## Staging
 

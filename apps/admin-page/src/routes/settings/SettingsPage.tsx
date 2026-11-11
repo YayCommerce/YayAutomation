@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { useStore } from '@tanstack/react-form';
 import type { Settings, SettingsResponse } from '@yaymatik/types';
 import { X } from 'lucide-react';
@@ -21,6 +21,7 @@ import { FieldGroup, FieldSeparator } from '@/components/ui/field';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/components/ui/sonner';
 import { PageCard } from '@/components/widget/PageWidget';
+import { useHeaderSlot } from '@/routes/layout/useHeaderSlot';
 import { errorMessage } from '@/routes/workflows/api/workflow.api';
 import { SettingsError } from './api/settings.api';
 import { useSaveSettings, useSettingsQuery } from './api/settings.query';
@@ -43,8 +44,10 @@ export default function SettingsPage() {
         <h1 className="sr-only">{__('Settings', 'yaymatik')}</h1>
         {error && !isFetching ? (
           <SettingsErrorAlert
-            /* translators: %s: why it failed */
-            message={sprintf(__('Couldn’t load your settings. %s', 'yaymatik'), error.message)}
+            message={sprintf(
+              /* translators: %s: why it failed */ __('Couldn’t load your settings. %s', 'yaymatik'),
+              error.message,
+            )}
             onRetry={() => refetch()}
           />
         ) : (
@@ -160,7 +163,7 @@ function SettingsEditor({ settings }: { settings: SettingsResponse }) {
 
       {headerSlot &&
         createPortal(
-          <LoadingButton className="ml-2" loading={submitting} onClick={submit}>
+          <LoadingButton loading={submitting} onClick={submit}>
             <span className="hidden sm:inline">{__('Save changes', 'yaymatik')}</span>
             <span className="sm:hidden">{__('Save', 'yaymatik')}</span>
           </LoadingButton>,
@@ -201,13 +204,6 @@ function SettingsEditor({ settings }: { settings: SettingsResponse }) {
 
 const isChanged = (values: SettingsValues, saved: SettingsValues) =>
   Object.keys(changedSettings(values, saved)).length > 0;
-
-/** Layout's `#yay-header-actions`, once Layout is in the DOM (it isn't during the first render). */
-function useHeaderSlot() {
-  const [slot, setSlot] = useState<HTMLElement | null>(null);
-  useEffect(() => setSlot(document.getElementById('yay-header-actions')), []);
-  return slot;
-}
 
 function CardSkeleton({ rows }: { rows: number }) {
   return (

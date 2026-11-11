@@ -29,6 +29,15 @@ final class EmailPreview {
 
     private const ORDER_STATUSES = [ 'processing', 'completed' ];
 
+    /** Paid orders looked at for one whose suggested-products grid isn't empty. */
+    private const GRID_SCAN = 20;
+
+    /** Merge tags of the order grids => their `ProductGrid` kind. */
+    private const GRID_TAGS = [
+        'order.cross_sell_products' => ProductGrid::CROSS_SELLS,
+        'order.upsell_products'     => ProductGrid::UPSELLS,
+    ];
+
     /**
      * The email as the recipient would see it.
      *
@@ -37,7 +46,8 @@ final class EmailPreview {
      * @param mixed    $config
      * @param int|null $order_id Null = the latest paid order (a cart trigger: the newest cart), 0 = made-up data.
      * @return array|\WP_Error [ 'subject', 'heading', 'html' (wrapped, styles inlined), 'to', 'sample',
-     *                         'order' (the order's number; null with made-up data) ]
+     *                         'order' (the order's number; null with made-up data), 'sampleProducts' (grid kinds
+     *                         filled with the store's newest products) ]
      */
     public static function render( $graph, string $node_id, $config, ?int $order_id = null ) {
         $email = self::compose( $graph, $node_id, $config, $order_id );
@@ -45,12 +55,13 @@ final class EmailPreview {
             return $email;
         }
         return [
-            'subject' => $email['subject'],
-            'heading' => $email['heading'],
-            'html'    => self::inline_styles( $email['body'] ),
-            'to'      => $email['to'],
-            'sample'  => $email['sample'],
-            'order'   => $email['order'],
+            'subject'        => $email['subject'],
+            'heading'        => $email['heading'],
+            'html'           => self::inline_styles( $email['body'] ),
+            'to'             => $email['to'],
+            'sample'         => $email['sample'],
+            'order'          => $email['order'],
+            'sampleProducts' => $email['sample_products'],
         ];
     }
 
@@ -62,7 +73,7 @@ final class EmailPreview {
      * @param mixed    $config
      * @param string   $to
      * @param int|null $order_id As in `render()`.
-     * @return array|\WP_Error [ 'sentTo', 'subject', 'sample' ]
+     * @return array|\WP_Error [ 'sentTo', 'subject', 'sample', 'sampleProducts' ]
      */
     public static function send_test( $graph, string $node_id, $config, string $to, ?int $order_id = null ) {
         if ( ! is_email( $to ) ) {
@@ -77,9 +88,10 @@ final class EmailPreview {
             return new \WP_Error( 'yaymatik_mail_failed', __( 'Couldn’t send the test email.', 'yaymatik' ), [ 'status' => 500 ] );
         }
         return [
-            'sentTo'  => $to,
-            'subject' => $subject,
-            'sample'  => $email['sample'],
+            'sentTo'         => $to,
+            'subject'        => $subject,
+            'sample'         => $email['sample'],
+            'sampleProducts' => $email['sample_products'],
         ];
     }
 
@@ -88,7 +100,7 @@ final class EmailPreview {
      * @param string   $node_id
      * @param mixed    $config
      * @param int|null $order_id
-     * @return array|\WP_Error Compose output + `to`, `sample`, `order`.
+     * @return array|\WP_Error Compose output + `to`, `sample`, `order`, `sample_products`.
      */
     private static function compose( $graph, string $node_id, $config, ?int $order_id ) {
         $graph = GraphSchema::prepare( is_array( $graph ) ? self::with_config( $graph, $node_id, $config ) : $graph );
@@ -125,18 +137,24 @@ final class EmailPreview {
             );
         }
 
-        $config                          = $step->sanitize( $node['data']['config'] );
-        list( $values, $sample, $order ) = self::values( $graph, $nodes, $node_id, $order_id );
-        if ( $step instanceof SendEmail ) {
-            // No unsubscribe link (`#`) or List-Unsubscribe header: neither may carry a real customer's token.
-            $email       = $step->compose( $config, $values, null );
-            $email['to'] = SendEmail::recipient( $config, $values );
-        } else {
+        $config                                    = $step->sanitize( $node['data']['config'] );
+        $kinds                                     = self::grid_kinds( $config );
+        list( $values, $sample, $order, $missing ) = self::values( $graph, $nodes, $node_id, $order_id, $kinds );
+        $build                                     = function () use ( $step, $config, $values ) {
+            if ( $step instanceof SendEmail ) {
+                // No unsubscribe link (`#`) or List-Unsubscribe header: neither may carry a real customer's token.
+                $email       = $step->compose( $config, $values, null );
+                $email['to'] = SendEmail::recipient( $config, $values );
+                return $email;
+            }
             $email       = $step->compose( $config, $values ) + [ 'headers' => "Content-Type: text/html\r\n" ];
             $email['to'] = (string) $config['recipients'];
-        }
-        $email['sample'] = $sample;
-        $email['order']  = $order;
+            return $email;
+        };
+        $email                                     = $missing ? ProductGrid::with_newest_when_empty( $build ) : $build();
+        $email['sample']                           = $sample;
+        $email['order']                            = $order;
+        $email['sample_products']                  = $missing;
         return $email;
     }
 
@@ -147,9 +165,10 @@ final class EmailPreview {
      * @param array[]  $nodes   By id.
      * @param string   $node_id
      * @param int|null $order_id
-     * @return array [ Values, bool $sample, string|null $order_number ]
+     * @param string[] $kinds
+     * @return array [ Values, bool $sample, string|null $order_number, string[] $missing grid kinds ]
      */
-    private static function values( array $graph, array $nodes, string $node_id, ?int $order_id ): array {
+    private static function values( array $graph, array $nodes, string $node_id, ?int $order_id, array $kinds ): array {
         $trigger = null;
         $outputs = [];
         foreach ( Validator::steps_above( $graph, $node_id ) as $id ) {
@@ -164,9 +183,21 @@ final class EmailPreview {
         $provides = $trigger ? $trigger->resolved_provides() : [];
         $refs     = null;
         $resolver = null;
+        $missing  = [];
         if ( in_array( OrderData::ID, $provides, true ) ) {
-            $order_id = $order_id ?? self::latest_paid_order();
-            $refs     = $order_id ? $trigger->resolved_refs( [ 'order_id' => $order_id ] ) : null;
+            if ( null === $order_id && $kinds ) {
+                // Each order loaded once: what it has decides both the pick and what the preview fills in.
+                $present = [];
+                foreach ( self::paid_orders( self::GRID_SCAN ) as $id ) {
+                    $present[ $id ] = self::grids_of( wc_get_order( $id ), $kinds );
+                }
+                $order_id = self::pick_order( $present );
+                $missing  = $order_id ? array_values( array_diff( $kinds, $present[ $order_id ] ) ) : [];
+            } else {
+                $order_id = $order_id ?? ( self::paid_orders( 1 )[0] ?? 0 );
+                $missing  = $order_id && $kinds ? array_values( array_diff( $kinds, self::grids_of( wc_get_order( $order_id ), $kinds ) ) ) : [];
+            }
+            $refs = $order_id ? $trigger->resolved_refs( [ 'order_id' => $order_id ] ) : null;
         } elseif ( in_array( CartData::ID, $provides, true ) && 0 !== $order_id ) {
             $cart_id = CartStore::newest_for_preview();
             $refs    = $cart_id ? $trigger->resolved_refs( [ 'cart_id' => $cart_id ] ) : null;
@@ -191,24 +222,71 @@ final class EmailPreview {
         $scope->set_output_display( Executor::output_display( $nodes, [ StepRegistry::class, 'get' ] ) );
         if ( $refs ) {
             $order = $order_id ? wc_get_order( $order_id ) : null;
-            return [ $scope, false, $order ? (string) $order->get_order_number() : null ];
+            return [ $scope, false, $order ? (string) $order->get_order_number() : null, $missing ];
         }
-        return [ new SampleValues( $scope, array_intersect_key( DataRegistry::items(), array_flip( $provides ) ) ), true, null ];
+        return [ new SampleValues( $scope, array_intersect_key( DataRegistry::items(), array_flip( $provides ) ) ), true, null, [] ];
     }
 
-    /** The newest processing or completed order's id; 0 when there's none. */
-    private static function latest_paid_order(): int {
+    /**
+     * The grid kinds an email's config shows, by merge tag.
+     *
+     * @param array $config
+     * @return string[]
+     */
+    public static function grid_kinds( array $config ): array {
+        $text = (string) wp_json_encode( $config );
+        return array_values( array_filter( self::GRID_TAGS, fn( string $tag ) => false !== strpos( $text, $tag ), ARRAY_FILTER_USE_KEY ) );
+    }
+
+    /**
+     * The order with the most of the email's grids, the newest among equals; 0 for none.
+     *
+     * @param array $present Order id => grid kinds it has, newest first.
+     */
+    public static function pick_order( array $present ): int {
+        $best = 0;
+        $most = -1;
+        foreach ( $present as $id => $kinds ) {
+            if ( count( $kinds ) > $most ) {
+                $best = (int) $id;
+                $most = count( $kinds );
+            }
+        }
+        return $best;
+    }
+
+    /**
+     * The grid kinds this order has something for.
+     *
+     * @param \WC_Order|false $order
+     * @param string[]        $kinds
+     * @return string[]
+     */
+    private static function grids_of( $order, array $kinds ): array {
+        if ( ! $order instanceof \WC_Order ) {
+            return [];
+        }
+        return array_values( array_filter( $kinds, fn( string $kind ) => (bool) ProductGrid::for_order( $order, $kind ) ) );
+    }
+
+    /**
+     * The newest processing or completed orders' ids.
+     *
+     * @param int $limit
+     * @return int[]
+     */
+    private static function paid_orders( int $limit ): array {
         $ids = wc_get_orders(
             [
                 'type'    => 'shop_order',
                 'status'  => self::ORDER_STATUSES,
-                'limit'   => 1,
+                'limit'   => $limit,
                 'orderby' => 'date',
                 'order'   => 'DESC',
                 'return'  => 'ids',
             ]
         );
-        return is_array( $ids ) && $ids ? (int) $ids[0] : 0;
+        return is_array( $ids ) ? array_map( 'intval', $ids ) : [];
     }
 
     /**

@@ -14,7 +14,48 @@ final class ReviewProductsTest extends TestCase {
     }
 
     protected function tearDown(): void {
-        unset( $GLOBALS['yaymatik_test_comment_queries'] );
+        unset( $GLOBALS['yaymatik_test_comment_queries'], $GLOBALS['yaymatik_test_products'], $GLOBALS['yaymatik_test_primed'] );
+    }
+
+    public function test_for_order_primes_the_lines_once_and_leaves_out_products_not_in_the_catalog(): void {
+        $visibilities = [
+            1 => 'visible',
+            2 => 'hidden',
+            3 => 'search',
+        ];
+        foreach ( $visibilities as $id => $visibility ) {
+            $GLOBALS['yaymatik_test_products'][ $id ] = new \WC_Product(
+                [
+                    'id'                 => $id,
+                    'status'             => 'publish',
+                    'catalog_visibility' => $visibility,
+                    'reviews_allowed'    => true,
+                ]
+            );
+        }
+        $lines = array_map(
+            fn( $id ) => new \WC_Order_Item_Product(
+                [
+                    'id'         => $id * 10,
+                    'product_id' => $id,
+                    'quantity'   => 1,
+                ]
+            ),
+            [ 1, 2, 3 ]
+        );
+        $order = new \WC_Order(
+            [
+                'line_items'            => $lines,
+                'qty_refunded_for_item' => 0,
+                'billing_email'         => 'a@b.test',
+                'customer_id'           => 0,
+            ]
+        );
+
+        $products = ReviewProducts::for_order( $order );
+
+        $this->assertSame( [ [ 1, 2, 3 ] ], $GLOBALS['yaymatik_test_primed'] );
+        $this->assertSame( [ 1 ], array_map( fn( $product ) => $product->get_id(), $products ), "'hidden' and 'search' only are not in the catalog" );
     }
 
     private static function product(): \WC_Product {

@@ -14,7 +14,6 @@ phpunit.xml.dist
 CLAUDE.local.md
 /tests
 log.xml
-composer.json
 composer.lock
 package.json
 package-lock.json

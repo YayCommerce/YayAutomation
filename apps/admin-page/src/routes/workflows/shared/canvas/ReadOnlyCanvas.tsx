@@ -8,7 +8,6 @@ import { __ } from '@wordpress/i18n';
 
 import { Button } from '@/components/ui/button';
 import { ButtonGroup } from '@/components/ui/button-group';
-import { useTheme } from '@/components/ui/theme-provider';
 import { edgeTypes } from './CurvedEdge';
 import { EdgeArrowDefs } from './EdgeArrow';
 import { canvasStyle, spacedPositions, toFlowEdges, toFlowNodes } from './flow';
@@ -35,7 +34,6 @@ export function ReadOnlyCanvas({
   /** Largest zoom fit may reach. Full-page canvases pass 2 (the editor's default) to fill the space. */
   maxZoom?: number;
 }) {
-  const { theme } = useTheme();
   const fitViewOptions = useMemo(() => ({ minZoom: MIN_ZOOM, maxZoom, padding: 0.2, duration: 0 }), [maxZoom]);
   const nodes = useMemo(() => toFlowNodes(graph), [graph]);
   const edges = useMemo(() => toFlowEdges(graph), [graph]);
@@ -46,7 +44,6 @@ export function ReadOnlyCanvas({
       defaultEdges={edges}
       nodeTypes={readOnlyNodeTypes}
       edgeTypes={edgeTypes}
-      colorMode={theme}
       style={canvasStyle}
       nodesDraggable={false}
       nodesConnectable={false}

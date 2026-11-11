@@ -114,9 +114,9 @@ class GenerateCoupon extends Action {
     }
 
     public function summary(): string {
-        // `%key%` placeholders the editor fills, not sprintf's `%d` / `%e`: phpcbf would number them.
-        /* translators: %discount_type%: the discount, e.g. "10% off"; %expiry_days%: e.g. "expires in 30 days" or "never expires"; keep the placeholders as they are. */
-        return __( '%discount_type%, %expiry_days%', 'yaymatik' ); // phpcs:ignore WordPress.WP.I18n.UnorderedPlaceholdersText
+        // Core's translated separator instead of a translatable '%discount_type%, %expiry_days%': make-pot reads
+        // `%d` and `%e` in it as two unordered sprintf placeholders.
+        return '%discount_type%' . wp_get_list_item_separator() . '%expiry_days%';
     }
 
     public function outputs(): array {

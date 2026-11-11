@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { EmailPreview } from '@yaymatik/types';
+import type { EmailPreview, ProductGridKind } from '@yaymatik/types';
 import { Monitor, Send, Smartphone, X } from 'lucide-react';
 import { __, sprintf } from '@wordpress/i18n';
 
@@ -77,6 +77,11 @@ export function PreviewDialog({
                         )
                       : __('Nothing is sent', 'yaymatik')}
                 </DialogDescription>
+                {!preview.sample && preview.sampleProducts.length > 0 && (
+                  <span className="bg-warning-soft text-warning-soft-foreground truncate rounded-full px-2 py-0.5 text-[11px] font-semibold">
+                    {sampleProductsText(preview.sampleProducts)}
+                  </span>
+                )}
               </div>
               <div className="flex shrink-0 items-center gap-2">
                 <DeviceToggle value={device} onChange={setDevice} />
@@ -246,4 +251,12 @@ export function EmailFrame({ html, width, minWidth }: { html: string; width: num
       className={cn('block max-w-full shrink-0 bg-white', !height && 'h-[60vh]')}
     />
   );
+}
+
+/** Why grids show the store's newest products instead of the order's suggestions. */
+export function sampleProductsText(kinds: ProductGridKind[]): string {
+  if (kinds.length > 1) return __('Sample products: no recent order has cross-sells or upsells', 'yaymatik');
+  return kinds[0] === 'upsells'
+    ? __('Sample products: no recent order has upsells', 'yaymatik')
+    : __('Sample products: no recent order has cross-sells', 'yaymatik');
 }

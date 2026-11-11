@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { toast } from '@/components/ui/sonner';
 import { EmailToolsContext, type EmailTools } from '../../core/fields/emailTools';
 import { EmailActions } from './EmailActions';
+import { sampleProductsText } from './PreviewDialog';
 
 vi.mock('@/components/ui/sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
@@ -21,10 +22,16 @@ const preview = (changes: Partial<EmailPreview> = {}): EmailPreview => ({
   to: 'jane@example.test',
   sample: false,
   order: '1745',
+  sampleProducts: [],
   ...changes,
 });
 
-const sent: EmailTestResult = { sentTo: 'you@example.test', subject: '[Test] Tom & Jerry', sample: false };
+const sent: EmailTestResult = {
+  sentTo: 'you@example.test',
+  subject: '[Test] Tom & Jerry',
+  sample: false,
+  sampleProducts: [],
+};
 
 /** Rejects like `ApiError` for a step with issues. */
 const refused = () =>
@@ -122,6 +129,30 @@ describe('EmailActions', () => {
 
     expect(dialog()!.textContent).toContain('Sample data');
     expect(dialog()!.textContent).not.toContain('Order #');
+  });
+
+  it('says when a grid shows sample products because no recent order has any', async () => {
+    renderActions({ preview: vi.fn(async () => preview({ sampleProducts: ['cross_sells'] })) });
+    await click(button('Preview'));
+
+    expect(dialog()!.textContent).toContain('Order #1745');
+    expect(dialog()!.textContent).toContain('Sample products: no recent order has cross-sells');
+  });
+
+  it('names both grids when neither has a recent order', () => {
+    expect(sampleProductsText(['cross_sells', 'upsells'])).toBe(
+      'Sample products: no recent order has cross-sells or upsells',
+    );
+  });
+
+  it('says the same in the Send test toast', async () => {
+    renderActions({ sendTest: vi.fn(async () => ({ ...sent, sampleProducts: ['upsells' as const] })) });
+    await click(button('Preview'));
+    await click(button('Send test'));
+
+    expect(toast.success).toHaveBeenCalledWith('Test email sent to you@example.test', {
+      description: 'Sample products: no recent order has upsells',
+    });
   });
 
   it('narrows the email to 375px on Mobile', async () => {

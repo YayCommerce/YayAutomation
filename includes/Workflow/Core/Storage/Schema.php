@@ -29,6 +29,16 @@ final class Schema {
         return $wpdb->prefix . 'yaymatik_' . $name;
     }
 
+    /**
+     * Placeholders for an `IN (…)` list in `$wpdb->prepare()`, e.g. `%d,%d,%d`; '' for none, so an empty list fails loudly.
+     *
+     * @param int    $count
+     * @param string $placeholder
+     */
+    public static function in( int $count, string $placeholder = '%d' ): string {
+        return $count > 0 ? implode( ',', array_fill( 0, $count, $placeholder ) ) : '';
+    }
+
     /** Creates or upgrades the tables; runs on every load, so plugin updates are covered. */
     public static function maybe_install(): void {
         if ( self::DB_VERSION === get_option( self::DB_VERSION_OPTION ) ) {

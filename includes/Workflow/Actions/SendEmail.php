@@ -62,20 +62,20 @@ class SendEmail extends Action {
         return [
             Field::notice( 'from', __( 'From', 'yaymatik' ), SendInternalEmail::sender()['fromLine'] ),
             Field::text( 'to', __( 'To', 'yaymatik' ) )
-                /* translators: %s: step name, e.g. "Send email" */
+                /* translators: %s: step name */
                 ->required( __( '%s needs an email address.', 'yaymatik' ) )
                 ->variables()
                 ->default( '{{ customer.email }}' )
                 ->help( __( 'One email address, or a variable such as the customer’s email.', 'yaymatik' ) ),
             Field::text( 'subject', __( 'Subject', 'yaymatik' ) )
-                /* translators: %s: step name, e.g. "Send email" */
+                /* translators: %s: step name */
                 ->required( __( '%s needs a subject.', 'yaymatik' ) )
                 ->variables(),
             Field::text( 'heading', __( 'Heading', 'yaymatik' ) )
                 ->variables()
                 ->help( __( 'Shown at the top of the email. Leave blank to use the subject.', 'yaymatik' ) ),
             Field::html( 'message', __( 'Message', 'yaymatik' ) )
-                /* translators: %s: step name, e.g. "Send email" */
+                /* translators: %s: step name */
                 ->required( __( '%s needs a message.', 'yaymatik' ) )
                 ->variables(),
         ];

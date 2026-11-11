@@ -12,12 +12,12 @@ import {
   type NodeChange,
 } from '@xyflow/react';
 
-import { useTheme } from '@/components/ui/theme-provider';
 import { moveNode } from '../../model/graph';
 import { edgeTypes } from '../../shared/canvas/CurvedEdge';
 import { EdgeArrowDefs } from '../../shared/canvas/EdgeArrow';
 import { canvasStyle, toFlowEdges, toFlowNodes, type FlowNode } from '../../shared/canvas/flow';
 import { useEditorContext } from './editor.context';
+import { revealViewport } from './revealViewport';
 import { useWorkflowFormContext } from './useWorkflowForm';
 import { nodeTypes } from './WorkflowNodeCard';
 
@@ -38,7 +38,6 @@ const fitOptions = (inset: number): FitViewOptions => ({
  * `onPaneClick`: a click on empty canvas, which closes the step panel.
  */
 export function WorkflowCanvas({ panelInset, onPaneClick }: { panelInset: number; onPaneClick: () => void }) {
-  const { theme } = useTheme();
   const form = useWorkflowFormContext();
   const { openNodeId, openPanel, requestDelete } = useEditorContext();
   // The first fit; later ones come from `ViewKeeper`.
@@ -96,7 +95,6 @@ export function WorkflowCanvas({ panelInset, onPaneClick }: { panelInset: number
         if (nodes.length) requestDelete(nodes.map((node) => node.id));
         return false;
       }}
-      colorMode={theme}
       style={canvasStyle}
       nodesConnectable={false}
       // Wheel and trackpad move around a long workflow; Ctrl/Cmd + wheel and pinch zoom.
@@ -154,18 +152,9 @@ function ViewKeeper({ panelInset, openNodeId }: { panelInset: number; openNodeId
         if (framesLeft > 0) frame = requestAnimationFrame(() => bringIntoView(framesLeft - 1));
         return;
       }
-      const { x, y, zoom } = getViewport();
       const { x: nodeX, y: nodeY } = node.internals.positionAbsolute;
-      const left = nodeX * zoom + x;
-      const top = nodeY * zoom + y;
-      const inView = left >= panelInset && left + w * zoom <= width && top >= 0 && top + h * zoom <= height;
-      if (inView) return;
-      // Center it in the free area, same zoom.
-      const centerX = panelInset + (width - panelInset) / 2;
-      void setViewport(
-        { x: centerX - (nodeX + w / 2) * zoom, y: height / 2 - (nodeY + h / 2) * zoom, zoom },
-        { duration: 300 },
-      );
+      const next = revealViewport({ x: nodeX, y: nodeY, w, h }, getViewport(), { panelInset, width, height });
+      if (next) void setViewport(next, { duration: 300 });
     };
     frame = requestAnimationFrame(() => bringIntoView(MEASURE_FRAMES));
     return () => cancelAnimationFrame(frame);

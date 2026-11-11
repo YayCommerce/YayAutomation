@@ -12,6 +12,35 @@ if ( ! class_exists( 'WC_Order_Item' ) ) {
     class WC_Order_Item {}
 }
 
+if ( ! class_exists( 'WC_Order_Item_Product' ) ) {
+    /** A product line from an array of getter values: `id`, `product_id`, `quantity`, `product`. */
+    class WC_Order_Item_Product extends WC_Order_Item {
+
+        /** @var array */
+        public $data;
+
+        public function __construct( array $data = [] ) {
+            $this->data = $data;
+        }
+
+        public function __call( $name, $args ) {
+            $key = substr( $name, 4 );
+            return array_key_exists( $key, $this->data ) ? $this->data[ $key ] : null;
+        }
+    }
+}
+
+if ( ! function_exists( '_prime_post_caches' ) ) {
+    /**
+     * Records the ids each call asks for: `$GLOBALS['yaymatik_test_primed']`.
+     *
+     * @param int[] $ids
+     */
+    function _prime_post_caches( $ids ) {
+        $GLOBALS['yaymatik_test_primed'][] = $ids;
+    }
+}
+
 if ( ! class_exists( 'WC_Order' ) ) {
     /** An order from an array of getter values. */
     class WC_Order {
@@ -138,7 +167,7 @@ if ( ! class_exists( 'WC_Customer' ) ) {
 }
 
 if ( ! class_exists( 'WC_Product' ) ) {
-    /** A product from an array of getter values. */
+    /** A product from an array of getter values: `get_x()` reads `x`, `is_x()` reads `is_x`. */
     class WC_Product {
 
         /** @var array */
@@ -149,7 +178,7 @@ if ( ! class_exists( 'WC_Product' ) ) {
         }
 
         public function __call( $name, $args ) {
-            $key = substr( $name, 4 );
+            $key = 0 === strpos( $name, 'get_' ) ? substr( $name, 4 ) : $name;
             return array_key_exists( $key, $this->data ) ? $this->data[ $key ] : '';
         }
     }

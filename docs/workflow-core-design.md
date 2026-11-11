@@ -157,8 +157,9 @@ Our own small template module. **No Liquid or other template library, now or lat
   - An unfinished step is not registered, so it stays out of a release. No tier checks inside steps.
   - Another plugin adds its module class on the filter `yaymatik_modules`, before `init` (the registry is first read on `init`). A taken id (module, step, data item) keeps its first owner.
   - Filters for extending core's steps and data: `yaymatik_data_item_{id}_fields` (a data item's fields, `DataItem::fields()`), `yaymatik_trigger_provides` (the data items a trigger provides, `Trigger::resolved_provides()`), `yaymatik_trigger_refs` (a trigger's scope refs, `Trigger::resolved_refs()`; a null native ref stays null).
+- **Experimental until Extension API v1 (v1.1).** v1.0 ships the filters and actions above as experimental: they may change before v1.1. Classes under `YayMatik\Workflow\` are internal, including the base classes an extension subclasses (`Step`, `Module`, `DataItem`, marked `@internal`).
 - **Each Yay plugin owns its steps, templates and data types**, registered into Workflow Core. **YayMatik Pro** owns templates that combine several plugins.
-- **Plugin logo (L5).** Each module gives one logo: the URL of a one-colour SVG file its plugin ships (core's in `assets/logos/`). The admin app draws it as a CSS mask in the tile's text colour. It marks who provides a step or template (template cards, library sidebar, picker), never what a step does. One per plugin, not per step.
+- **Plugin logo (L5).** Each module gives one logo, a one-colour SVG: a URL, or for core's modules a `data:` URI of an inline SVG, so it loads when assets come from a CDN. The admin app draws it as a CSS mask in the tile's text colour. It marks who provides a step or template (template cards, library sidebar, picker), never what a step does. One per plugin, not per step.
 - **Feature directory:** a static list in core of every known step and template, its plugin, and where to install it. The editor shows "Install X to use this"; the AI uses it to suggest features.
 
 ## §9 Health check · P6

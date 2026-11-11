@@ -197,7 +197,12 @@ export interface EmailPreview {
   sample: boolean;
   /** The number of the order whose data it shows; null with made-up values. */
   order: string | null;
+  /** Product grids the email shows filled with the store's newest products: no recent order has any. */
+  sampleProducts: ProductGridKind[];
 }
+
+/** `ProductGrid` kinds: what `order.cross_sell_products` and `order.upsell_products` show. */
+export type ProductGridKind = 'cross_sells' | 'upsells';
 
 /** `POST /workflows/{id}/send-test`: the test email went to the logged-in user. */
 export interface EmailTestResult {
@@ -205,6 +210,7 @@ export interface EmailTestResult {
   /** With the "[Test] " prefix. */
   subject: string;
   sample: boolean;
+  sampleProducts: ProductGridKind[];
 }
 
 export type RunStatus = 'queued' | 'running' | 'waiting' | 'completed' | 'failed' | 'cancelled' | 'skipped';

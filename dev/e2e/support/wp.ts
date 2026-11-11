@@ -38,6 +38,11 @@ export function abandonCart(email: string) {
   );
 }
 
+/** Removes the daily cleanup job, as if it were lost: the Health check reports it. */
+export function removeCleanupJob() {
+  wp('eval', 'as_unschedule_all_actions( "yaymatik_cleanup", [], "yaymatik" );');
+}
+
 /** Ends every wait now: the run's own time, and the job that resumes it. */
 export function endWaits() {
   wp(

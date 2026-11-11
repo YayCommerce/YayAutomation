@@ -175,9 +175,6 @@ declare global {
         /** WooCommerce's sender. `fromName` is plain text, may be blank. */
         email: { fromLine: string; fromName: string; fromAddress: string };
       };
-      docs: {
-        workflowRuns: string;
-      };
     };
   }
 }

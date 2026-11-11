@@ -5,6 +5,7 @@
 ## Entry points
 
 - `yaymatik.php` → `includes/YayMatik.php`: wire new engine classes here.
+- `yaymatik.php` loads `vendor/autoload.php` on `plugins_loaded`, only after `Requirements::met()` (WordPress, PHP, WooCommerce). Its deactivation hook and `uninstall.php` → `Uninstaller` load no autoloaded class. Uninstall deletes jobs and transients; tables, options and meta only with `YAYMATIK_REMOVE_ALL_DATA`.
 - `includes/Engine/` is WordPress glue only (`BEPages/`, `FEPages/`, `API/`, `Register/`). REST controllers call Workflow Core and hold no workflow logic.
 - `includes/Workflow/`: top level holds what modules register, `Core/` the shared code. Folders are named for the plural of the base class they hold.
 - `includes/Pro/` is left out of the free zip. Free vs Pro is the folder: no tier checks inside steps.

@@ -34,11 +34,9 @@ final class WorkflowStore {
      */
     public static function is_active( int $id ): bool {
         global $wpdb;
-        $table = self::table();
-        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-        $status = $wpdb->get_var( $wpdb->prepare( "SELECT status FROM {$table} WHERE id = %d", $id ) );
+        $status = $wpdb->get_var( $wpdb->prepare( 'SELECT status FROM %i WHERE id = %d', self::table(), $id ) );
         if ( null === $status && '' !== $wpdb->last_error ) {
-            throw new \RuntimeException( 'Could not read the workflow status: ' . $wpdb->last_error );
+            throw new \RuntimeException( esc_html( 'Could not read the workflow status: ' . $wpdb->last_error ) );
         }
         return 'active' === $status;
     }
@@ -126,7 +124,8 @@ final class WorkflowStore {
         // before an Activate would overwrite the fresh one that Activate just wrote.
         $wpdb->query(
             $wpdb->prepare(
-                "INSERT IGNORE INTO {$wpdb->options} (option_name, option_value, autoload) VALUES (%s, %s, 'yes')",
+                "INSERT IGNORE INTO %i (option_name, option_value, autoload) VALUES (%s, %s, 'yes')",
+                $wpdb->options,
                 self::ACTIVE_TRIGGERS_OPTION,
                 maybe_serialize( $ids )
             )
@@ -165,9 +164,7 @@ final class WorkflowStore {
     /** @return string[]|null Null on a query error. */
     private static function query_active_trigger_ids(): ?array {
         global $wpdb;
-        $table = self::table();
-        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-        $ids = $wpdb->get_col( "SELECT DISTINCT trigger_id FROM {$table} WHERE status = 'active' ORDER BY trigger_id" );
+        $ids = $wpdb->get_col( $wpdb->prepare( "SELECT DISTINCT trigger_id FROM %i WHERE status = 'active' ORDER BY trigger_id", self::table() ) );
         return '' === $wpdb->last_error ? $ids : null;
     }
 
@@ -480,9 +477,7 @@ final class WorkflowStore {
 
     private static function row( int $id ): ?array {
         global $wpdb;
-        $table = self::table();
-        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-        return $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE id = %d", $id ), ARRAY_A );
+        return $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM %i WHERE id = %d', self::table(), $id ), ARRAY_A );
     }
 
     /**
@@ -494,17 +489,27 @@ final class WorkflowStore {
      */
     private static function select( string $where, array $args, bool $with_draft ): array {
         global $wpdb;
-        $workflows = self::table();
-        $versions  = VersionStore::table();
-        $columns   = 'w.*, l.graph AS live_graph, l.layout AS live_layout';
-        $joins     = "LEFT JOIN {$versions} l ON l.id = w.live_version_id";
+        $versions = VersionStore::table();
+        $columns  = 'w.*, l.graph AS live_graph, l.layout AS live_layout';
+        $joins    = 'LEFT JOIN %i l ON l.id = w.live_version_id';
+        // Table names in the order their %i appear: the columns' subquery, the workflows, then the joins.
+        $before = [];
+        $after  = [ $versions ];
         if ( $with_draft ) {
-            $columns .= ", d.graph AS draft_graph, d.layout AS draft_layout, d.updated_at AS draft_updated_at, (SELECT MAX(v.updated_at) FROM {$versions} v WHERE v.workflow_id = w.id) AS last_version_at";
-            $joins   .= " LEFT JOIN {$versions} d ON d.id = w.draft_version_id";
+            $columns .= ', d.graph AS draft_graph, d.layout AS draft_layout, d.updated_at AS draft_updated_at, (SELECT MAX(v.updated_at) FROM %i v WHERE v.workflow_id = w.id) AS last_version_at';
+            $joins   .= ' LEFT JOIN %i d ON d.id = w.draft_version_id';
+            $before[] = $versions;
+            $after[]  = $versions;
         }
-        $sql = "SELECT {$columns} FROM {$workflows} w {$joins} {$where} ORDER BY w.updated_at DESC, w.id DESC";
-        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-        return $wpdb->get_results( $args ? $wpdb->prepare( $sql, ...$args ) : $sql, ARRAY_A );
+        return $wpdb->get_results(
+            // phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- one value per %i and per placeholder of $where.
+            $wpdb->prepare(
+                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- fixed fragments; $where has placeholders for $args.
+                "SELECT {$columns} FROM %i w {$joins} {$where} ORDER BY w.updated_at DESC, w.id DESC",
+                array_merge( $before, [ self::table() ], $after, $args )
+            ),
+            ARRAY_A
+        );
     }
 
     private static function to_array( array $row ): array {

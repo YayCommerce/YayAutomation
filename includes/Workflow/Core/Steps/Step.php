@@ -7,6 +7,8 @@ defined( 'ABSPATH' ) || exit;
 
 /**
  * One workflow step type; PHP `fields()` is the one source of its settings.
+ *
+ * @internal Experimental: may change before Extension API v1.
  */
 abstract class Step {
 

@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
+import { __, sprintf } from '@wordpress/i18n';
 
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -33,7 +34,12 @@ function Pagination({
   return (
     <div data-slot="pagination" className={cn('flex items-center gap-4', className)} {...props}>
       <span>
-        Page {currentPage} of {pageCount}
+        {sprintf(
+          /* translators: 1: current page, 2: number of pages */
+          __('Page %1$d of %2$d', 'yaymatik'),
+          currentPage,
+          pageCount,
+        )}
       </span>
 
       <div className="flex items-center gap-1">
@@ -46,7 +52,7 @@ function Pagination({
       </div>
 
       <div className="flex items-center gap-2">
-        <span>Go to</span>
+        <span>{__('Go to', 'yaymatik')}</span>
         <NumberInputRoot
           min={1}
           max={pageCount}
