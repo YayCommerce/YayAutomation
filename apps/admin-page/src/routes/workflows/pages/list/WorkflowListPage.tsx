@@ -47,13 +47,16 @@ export default function WorkflowListPage() {
           {__('Workflows', 'yaymatik')}
           {!!workflows?.length && <span className="text-muted-foreground text-sm font-normal">{workflows.length}</span>}
         </PageTitle>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={() => setTemplatesOpen(true)}>
-            <LayoutTemplate />
-            {browseLabel}
-          </Button>
-          {createButton}
-        </div>
+        {/* The empty state has its own pair; loading and errors offer none. */}
+        {!!workflows?.length && (
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => setTemplatesOpen(true)}>
+              <LayoutTemplate />
+              {browseLabel}
+            </Button>
+            {createButton}
+          </div>
+        )}
       </div>
 
       {error ? (
