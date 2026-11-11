@@ -191,6 +191,12 @@ if ( ! function_exists( 'is_wp_error' ) ) {
     }
 }
 
+if ( ! function_exists( 'wp_get_list_item_separator' ) ) {
+    function wp_get_list_item_separator() {
+        return ', ';
+    }
+}
+
 if ( ! function_exists( '_n' ) ) {
     function _n( $single, $plural, $number, $domain = 'default' ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- same signature as WordPress.
         return 1 === (int) $number ? $single : $plural;

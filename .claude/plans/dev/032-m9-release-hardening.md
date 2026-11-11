@@ -223,6 +223,7 @@ Run 3 decisions (Jack, Nov 10, after the browser check); CP10 builds them:
 - CP10 diagnosis: order #4584 (wp-env) has one line, Seed Tee, which had no cross-sells or upsells: the empty grid was no data, not CP8c. With the seed's cross-sells the same order shows 2 cross-sells and 1 upsell, so CP8c's filters keep valid products.
 - CP10: "Found N problem(s)." counts checks with status `problem`, as the summary line does; a late-jobs info row alone gives "No problems found."
 - CP10: Preview scans the newest 20 paid orders for one with a grid; with none it keeps the newest paid order's data and fills only the grid with the store's newest products.
+- CP12 follow-up: `GenerateCoupon::summary()` returns `'%discount_type%' . wp_get_list_item_separator() . '%expiry_days%'` instead of a translatable string; make-pot read its `%d` / `%e` as unordered placeholders. The string leaves the .pot, and `languages/yaymatik.pot` is rebuilt (it also picks up CP12's comments). make-pot now prints no warnings.
 - CP1: MySQL 8 probe ran on staging (8.0.46): REGEXP 8/8, GET_LOCK / RELEASE_LOCK, collation `utf8mb4_unicode_520_ci` folds case and accents, as `user_collides()` expects.
 
 ## Meta

@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-11T01:38:07+00:00\n"
+"POT-Creation-Date: 2026-11-11T07:17:57+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.8.1\n"
 "X-Domain: yaymatik\n"
@@ -43,7 +43,7 @@ msgid "There are no draft changes to update."
 msgstr ""
 
 #: includes/Engine/API/RestAPI.php:481
-#: assets/dist/admin-page/main.js:129
+#: assets/dist/admin-page/main.js:162
 msgid "Run not found."
 msgstr ""
 
@@ -134,7 +134,7 @@ msgstr ""
 #: includes/Workflow/Actions/ResendWcEmail.php:58
 #: includes/Workflow/Actions/ResendWcEmail.php:72
 #: includes/Workflow/DataItems/CartData.php:36
-#: assets/dist/admin-page/main.js:88
+#: assets/dist/admin-page/main.js:113
 msgid "Email"
 msgstr ""
 
@@ -196,7 +196,7 @@ msgid "When you ask us to erase your personal data, your carts and those hashes 
 msgstr ""
 
 #: includes/Engine/Privacy/PersonalData.php:207
-#: assets/dist/admin-page/main.js:88
+#: assets/dist/admin-page/main.js:113
 msgid "Carts"
 msgstr ""
 
@@ -219,7 +219,7 @@ msgid "Last activity"
 msgstr ""
 
 #: includes/Engine/Privacy/PersonalData.php:225
-#: assets/dist/admin-page/main.js:141
+#: assets/dist/admin-page/main.js:174
 msgid "Workflow"
 msgstr ""
 
@@ -228,14 +228,14 @@ msgid "Deleted workflow"
 msgstr ""
 
 #: includes/Engine/Privacy/PersonalData.php:226
-#: assets/dist/admin-page/main.js:141
+#: assets/dist/admin-page/main.js:174
 msgid "Started"
 msgstr ""
 
 #: includes/Engine/Privacy/PersonalData.php:227
-#: assets/dist/admin-page/main.js:115
-#: assets/dist/admin-page/main.js:141
-#: assets/dist/admin-page/main.js:145
+#: assets/dist/admin-page/main.js:144
+#: assets/dist/admin-page/main.js:174
+#: assets/dist/admin-page/main.js:178
 msgid "Status"
 msgstr ""
 
@@ -246,7 +246,7 @@ msgid "Sent to"
 msgstr ""
 
 #: includes/Engine/Privacy/PersonalData.php:239
-#: assets/dist/admin-page/main.js:141
+#: assets/dist/admin-page/main.js:174
 msgid "Workflow runs"
 msgstr ""
 
@@ -314,7 +314,7 @@ msgid "Add, remove or replace a role on the customer’s account."
 msgstr ""
 
 #: includes/Workflow/Actions/ChangeCustomerRole.php:91
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "Change"
 msgstr ""
 
@@ -475,11 +475,6 @@ msgstr ""
 msgid "Letters, numbers, - and _. The code is the prefix and 8 random characters."
 msgstr ""
 
-#. translators: %discount_type%: the discount, e.g. "10% off"; %expiry_days%: e.g. "expires in 30 days" or "never expires"; keep the placeholders as they are.
-#: includes/Workflow/Actions/GenerateCoupon.php:119
-msgid "%discount_type%, %expiry_days%"
-msgstr ""
-
 #: includes/Workflow/Actions/GenerateCoupon.php:125
 msgid "Coupon code"
 msgstr ""
@@ -536,7 +531,7 @@ msgstr ""
 
 #. translators: %s: discount, e.g. "10%" or "$5.00"
 #: includes/Workflow/Actions/GenerateCoupon.php:270
-#: assets/dist/admin-page/main.js:44
+#: assets/dist/admin-page/main.js:58
 msgid "%s off"
 msgstr ""
 
@@ -547,7 +542,7 @@ msgstr ""
 
 #: includes/Workflow/Actions/GenerateCoupon.php:340
 #: includes/Workflow/Actions/GenerateCoupon.php:361
-#: assets/dist/admin-page/main.js:44
+#: assets/dist/admin-page/main.js:58
 msgid "Free shipping"
 msgstr ""
 
@@ -613,7 +608,7 @@ msgstr ""
 msgid "To"
 msgstr ""
 
-#. translators: %s: step name, e.g. "Send email"
+#. translators: %s: step name
 #: includes/Workflow/Actions/SendEmail.php:66
 msgid "%s needs an email address."
 msgstr ""
@@ -624,12 +619,11 @@ msgstr ""
 
 #: includes/Workflow/Actions/SendEmail.php:70
 #: includes/Workflow/Actions/SendInternalEmail.php:49
-#: assets/dist/admin-page/main.js:141
+#: assets/dist/admin-page/main.js:174
 msgid "Subject"
 msgstr ""
 
-#. translators: %s: step name, e.g. "Send email"
-#. translators: %s: step name, e.g. "Send internal email"
+#. translators: %s: step name
 #: includes/Workflow/Actions/SendEmail.php:72
 #: includes/Workflow/Actions/SendInternalEmail.php:51
 msgid "%s needs a subject."
@@ -648,8 +642,7 @@ msgstr ""
 msgid "Message"
 msgstr ""
 
-#. translators: %s: step name, e.g. "Send email"
-#. translators: %s: step name, e.g. "Send internal email"
+#. translators: %s: step name
 #: includes/Workflow/Actions/SendEmail.php:79
 #: includes/Workflow/Actions/SendInternalEmail.php:56
 msgid "%s needs a message."
@@ -718,12 +711,11 @@ msgstr ""
 #: includes/Workflow/Actions/UpdateCustomerMeta.php:61
 #: includes/Workflow/Actions/UpdateOrderMeta.php:50
 #: includes/Workflow/Actions/UpdateOrderMeta.php:66
-#: assets/dist/admin-page/main.js:63
+#: assets/dist/admin-page/main.js:81
 msgid "Field name"
 msgstr ""
 
-#. translators: %s: step name, e.g. "Update customer custom field"
-#. translators: %s: step name, e.g. "Update order custom field"
+#. translators: %s: step name
 #: includes/Workflow/Actions/UpdateCustomerMeta.php:47
 #: includes/Workflow/Actions/UpdateOrderMeta.php:52
 msgid "%s needs a field name."
@@ -731,7 +723,7 @@ msgstr ""
 
 #: includes/Workflow/Actions/UpdateCustomerMeta.php:49
 #: includes/Workflow/Actions/UpdateOrderMeta.php:54
-#: assets/dist/admin-page/main.js:63
+#: assets/dist/admin-page/main.js:81
 msgid "Value"
 msgstr ""
 
@@ -788,12 +780,12 @@ msgid "Pause the workflow for a while before the next step."
 msgstr ""
 
 #: includes/Workflow/Actions/Wait.php:58
-#: assets/dist/admin-page/main.js:60
+#: assets/dist/admin-page/main.js:76
 msgid "Wait for"
 msgstr ""
 
 #: includes/Workflow/Actions/Wait.php:65
-#: assets/dist/admin-page/main.js:60
+#: assets/dist/admin-page/main.js:76
 msgid "Then the workflow continues with the next step."
 msgstr ""
 
@@ -803,33 +795,33 @@ msgid "Wait %delay%"
 msgstr ""
 
 #: includes/Workflow/Actions/Wait.php:81
-#: assets/dist/admin-page/main.js:52
+#: assets/dist/admin-page/main.js:68
 msgid "Enter a whole number, 1 or more."
 msgstr ""
 
 #: includes/Workflow/Actions/Wait.php:84
-#: assets/dist/admin-page/main.js:52
+#: assets/dist/admin-page/main.js:68
 msgid "Wait at most a year."
 msgstr ""
 
 #: includes/Workflow/Actions/Wait.php:96
-#: assets/dist/admin-page/main.js:52
+#: assets/dist/admin-page/main.js:68
 msgid "Minutes"
 msgstr ""
 
 #: includes/Workflow/Actions/Wait.php:97
-#: assets/dist/admin-page/main.js:52
+#: assets/dist/admin-page/main.js:68
 msgid "Hours"
 msgstr ""
 
 #: includes/Workflow/Actions/Wait.php:98
 #: includes/Workflow/Actions/WaitUntil.php:49
-#: assets/dist/admin-page/main.js:52
+#: assets/dist/admin-page/main.js:68
 msgid "Days"
 msgstr ""
 
 #: includes/Workflow/Actions/Wait.php:99
-#: assets/dist/admin-page/main.js:52
+#: assets/dist/admin-page/main.js:68
 msgid "Weeks"
 msgstr ""
 
@@ -850,7 +842,7 @@ msgid "Runs resume when WordPress next runs its scheduled tasks, so it can be a 
 msgstr ""
 
 #: includes/Workflow/Actions/WaitUntil.php:50
-#: assets/dist/admin-page/main.js:60
+#: assets/dist/admin-page/main.js:76
 msgid "Any day"
 msgstr ""
 
@@ -896,12 +888,12 @@ msgid "Sun"
 msgstr ""
 
 #: includes/Workflow/Actions/WaitUntil.php:89
-#: assets/dist/admin-page/main.js:60
+#: assets/dist/admin-page/main.js:76
 msgid "Enter a time, e.g. 9:15 am."
 msgstr ""
 
 #: includes/Workflow/Conditions/Criteria.php:31
-#: assets/dist/admin-page/main.js:84
+#: assets/dist/admin-page/main.js:109
 msgid "Condition"
 msgstr ""
 
@@ -910,13 +902,13 @@ msgid "Take the Yes path when the rules match, otherwise the No path."
 msgstr ""
 
 #: includes/Workflow/Conditions/Criteria.php:46
-#: assets/dist/admin-page/main.js:63
+#: assets/dist/admin-page/main.js:81
 msgid "Match"
 msgstr ""
 
 #: includes/Workflow/Conditions/Criteria.php:48
-#: assets/dist/admin-page/main.js:115
-#: assets/dist/admin-page/main.js:141
+#: assets/dist/admin-page/main.js:144
+#: assets/dist/admin-page/main.js:174
 msgid "All"
 msgstr ""
 
@@ -931,22 +923,21 @@ msgstr ""
 #: includes/Workflow/Core/Data/DataItem.php:128
 #: includes/Workflow/Core/Data/Template.php:280
 #: includes/Workflow/Core/Steps/Condition.php:23
-#: assets/dist/admin-page/main.js:68
-#: assets/dist/admin-page/main.js:84
-#: assets/dist/admin-page/main.js:119
+#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:109
+#: assets/dist/admin-page/main.js:148
 msgid "Yes"
 msgstr ""
 
 #: includes/Workflow/Core/Data/DataItem.php:128
 #: includes/Workflow/Core/Data/Template.php:280
 #: includes/Workflow/Core/Steps/Condition.php:24
-#: assets/dist/admin-page/main.js:84
-#: assets/dist/admin-page/main.js:119
+#: assets/dist/admin-page/main.js:109
+#: assets/dist/admin-page/main.js:148
 msgid "No"
 msgstr ""
 
-#. translators: %s: entity, e.g. order:12
-#. translators: %s: what was deleted, e.g. "Order"
+#. translators: %s: what was deleted, e.g. "Order" or order:12
 #: includes/Workflow/Core/Data/GoneEntity.php:17
 #: includes/Workflow/Core/Runtime/Executor.php:319
 msgid "%s no longer exists."
@@ -1082,183 +1073,183 @@ msgid "Invalid connection between steps."
 msgstr ""
 
 #: includes/Workflow/Core/Definition/Messages.php:16
-#: assets/dist/admin-page/main.js:15
+#: assets/dist/admin-page/main.js:27
 msgid "Give this workflow a name."
 msgstr ""
 
 #: includes/Workflow/Core/Definition/Messages.php:17
-#: assets/dist/admin-page/main.js:15
+#: assets/dist/admin-page/main.js:27
 msgid "Choose a trigger."
 msgstr ""
 
 #: includes/Workflow/Core/Definition/Messages.php:18
-#: assets/dist/admin-page/main.js:15
+#: assets/dist/admin-page/main.js:27
 msgid "Add at least one action."
 msgstr ""
 
 #: includes/Workflow/Core/Definition/Messages.php:19
-#: assets/dist/admin-page/main.js:15
+#: assets/dist/admin-page/main.js:27
 msgid "Some steps aren’t connected. Connect them or remove them."
 msgstr ""
 
 #: includes/Workflow/Core/Definition/Messages.php:20
-#: assets/dist/admin-page/main.js:15
+#: assets/dist/admin-page/main.js:27
 msgid "Choose an action."
 msgstr ""
 
 #: includes/Workflow/Core/Definition/Messages.php:21
-#: assets/dist/admin-page/main.js:15
+#: assets/dist/admin-page/main.js:27
 msgid "Deactivate this workflow before you delete it."
 msgstr ""
 
 #. translators: %s: data item or step, e.g. "Order"
 #: includes/Workflow/Core/Definition/Messages.php:23
-#: assets/dist/admin-page/main.js:17
+#: assets/dist/admin-page/main.js:29
 msgid "%s data isn’t available at this step."
 msgstr ""
 
 #: includes/Workflow/Core/Definition/Messages.php:24
-#: assets/dist/admin-page/main.js:17
+#: assets/dist/admin-page/main.js:29
 msgid "This step can set off this workflow’s own trigger. The workflow won’t start again from it."
 msgstr ""
 
 #. translators: %s: merge tag, e.g. {{ order.foo }}
 #: includes/Workflow/Core/Definition/Messages.php:27
-#: assets/dist/admin-page/main.js:19
+#: assets/dist/admin-page/main.js:31
 msgid "%s isn’t an available variable."
 msgstr ""
 
 #. translators: 1: filter name, e.g. shout; 2: the available filters, e.g. "default, upper"
 #: includes/Workflow/Core/Definition/Messages.php:29
-#: assets/dist/admin-page/main.js:21
+#: assets/dist/admin-page/main.js:33
 msgid "%1$s isn’t a filter. Available filters: %2$s."
 msgstr ""
 
 #. translators: %s: merge tag, e.g. {{ steps.coupon.code }}
 #: includes/Workflow/Core/Definition/Messages.php:31
-#: assets/dist/admin-page/main.js:23
+#: assets/dist/admin-page/main.js:35
 msgid "%s comes from a step that isn’t in this workflow anymore. Add that step above this one, or remove the variable."
 msgstr ""
 
 #. translators: 1: merge tag, e.g. {{ steps.coupon.code }}; 2: step name, e.g. "Generate coupon"
 #: includes/Workflow/Core/Definition/Messages.php:33
-#: assets/dist/admin-page/main.js:25
+#: assets/dist/admin-page/main.js:37
 msgid "%1$s needs the %2$s step above this one. Move it above, or remove the variable."
 msgstr ""
 
 #. translators: %s: a merge tag as written, e.g. {{ order. }}. Keep {{ variable }} and {{ variable | filter }} as they are.
 #: includes/Workflow/Core/Definition/Messages.php:35
-#: assets/dist/admin-page/main.js:27
+#: assets/dist/admin-page/main.js:39
 msgid "%s is written incorrectly. Use {{ variable }} or {{ variable | filter }}."
 msgstr ""
 
 #: includes/Workflow/Core/Definition/Messages.php:37
-#: assets/dist/admin-page/main.js:27
+#: assets/dist/admin-page/main.js:39
 msgid "This field is required."
 msgstr ""
 
 #. translators: %s: the text entered as an email address
 #: includes/Workflow/Core/Definition/Messages.php:39
-#: assets/dist/admin-page/main.js:29
+#: assets/dist/admin-page/main.js:41
 msgid "%s isn’t a valid email address."
 msgstr ""
 
 #: includes/Workflow/Core/Definition/Messages.php:40
-#: assets/dist/admin-page/main.js:29
+#: assets/dist/admin-page/main.js:41
 msgid "Choose an option from the list."
 msgstr ""
 
 #: includes/Workflow/Core/Definition/Messages.php:41
-#: assets/dist/admin-page/main.js:29
+#: assets/dist/admin-page/main.js:41
 msgid "Choose options from the list."
 msgstr ""
 
 #. translators: %s: smallest number allowed
 #: includes/Workflow/Core/Definition/Messages.php:43
-#: assets/dist/admin-page/main.js:31
+#: assets/dist/admin-page/main.js:43
 msgid "Enter %s or more."
 msgstr ""
 
 #. translators: %s: largest number allowed
 #: includes/Workflow/Core/Definition/Messages.php:45
-#: assets/dist/admin-page/main.js:33
+#: assets/dist/admin-page/main.js:45
 msgid "Enter %s or less."
 msgstr ""
 
 #: includes/Workflow/Core/Definition/Messages.php:47
-#: assets/dist/admin-page/main.js:33
+#: assets/dist/admin-page/main.js:45
 msgid "Add a rule, or remove this condition."
 msgstr ""
 
 #: includes/Workflow/Core/Definition/Messages.php:48
-#: assets/dist/admin-page/main.js:33
+#: assets/dist/admin-page/main.js:45
 msgid "Add a rule, or remove this group."
 msgstr ""
 
 #: includes/Workflow/Core/Definition/Messages.php:49
-#: assets/dist/admin-page/main.js:33
+#: assets/dist/admin-page/main.js:45
 msgid "Choose data for each rule."
 msgstr ""
 
 #: includes/Workflow/Core/Definition/Messages.php:50
-#: assets/dist/admin-page/main.js:33
+#: assets/dist/admin-page/main.js:45
 msgid "Choose a comparison for each rule."
 msgstr ""
 
 #: includes/Workflow/Core/Definition/Messages.php:51
-#: assets/dist/admin-page/main.js:33
+#: assets/dist/admin-page/main.js:45
 msgid "Choose data to compare with."
 msgstr ""
 
 #. translators: %s: variable, e.g. "Order total"
 #: includes/Workflow/Core/Definition/Messages.php:53
-#: assets/dist/admin-page/main.js:35
+#: assets/dist/admin-page/main.js:47
 msgid "Enter a value for %s."
 msgstr ""
 
 #. translators: %s: comparison name, "is empty"
 #: includes/Workflow/Core/Definition/Messages.php:55
-#: assets/dist/admin-page/main.js:37
+#: assets/dist/admin-page/main.js:49
 msgid "Or choose “%s” to check for a blank value."
 msgstr ""
 
 #: includes/Workflow/Core/Definition/Messages.php:56
-#: assets/dist/admin-page/main.js:37
+#: assets/dist/admin-page/main.js:49
 msgid "Enter a number."
 msgstr ""
 
 #: includes/Workflow/Core/Definition/Messages.php:57
-#: assets/dist/admin-page/main.js:37
+#: assets/dist/admin-page/main.js:49
 msgid "Enter a date (YYYY-MM-DD)."
 msgstr ""
 
 #: includes/Workflow/Core/Definition/Messages.php:58
-#: assets/dist/admin-page/main.js:37
+#: assets/dist/admin-page/main.js:49
 msgid "Choose a value from the list."
 msgstr ""
 
 #: includes/Workflow/Core/Definition/Messages.php:59
-#: assets/dist/admin-page/main.js:37
+#: assets/dist/admin-page/main.js:49
 msgid "Choose at least one value."
 msgstr ""
 
 #: includes/Workflow/Core/Definition/Messages.php:60
-#: assets/dist/admin-page/main.js:37
+#: assets/dist/admin-page/main.js:49
 msgid "Enter a whole number of 1 or more."
 msgstr ""
 
 #: includes/Workflow/Core/Definition/Messages.php:61
-#: assets/dist/admin-page/main.js:37
+#: assets/dist/admin-page/main.js:49
 msgid "Enter the custom field name."
 msgstr ""
 
 #: includes/Workflow/Core/Definition/Messages.php:62
-#: assets/dist/admin-page/main.js:37
+#: assets/dist/admin-page/main.js:49
 msgid "This custom field is protected. Choose another one."
 msgstr ""
 
 #: includes/Workflow/Core/Definition/Validator.php:35
-#: assets/dist/admin-page/main.js:15
+#: assets/dist/admin-page/main.js:27
 msgid "New workflow"
 msgstr ""
 
@@ -1398,7 +1389,7 @@ msgid "Result"
 msgstr ""
 
 #: includes/Workflow/Core/Storage/Settings.php:82
-#: assets/dist/admin-page/main.js:15
+#: assets/dist/admin-page/main.js:27
 msgid "Fix the highlighted settings."
 msgstr ""
 
@@ -1408,7 +1399,7 @@ msgstr ""
 
 #. translators: 1: smallest number, 2: largest number
 #: includes/Workflow/Core/Storage/Settings.php:128
-#: assets/dist/admin-page/main.js:13
+#: assets/dist/admin-page/main.js:23
 msgid "Enter a whole number from %1$d to %2$d."
 msgstr ""
 
@@ -1562,7 +1553,7 @@ msgid "Customer unsubscribed"
 msgstr ""
 
 #: includes/Workflow/DataItems/OrderData.php:23
-#: assets/dist/admin-page/main.js:88
+#: assets/dist/admin-page/main.js:113
 msgid "Order"
 msgstr ""
 
@@ -2097,12 +2088,13 @@ msgstr ""
 
 #: includes/YayMatikMenuAdapter.php:26
 #: assets/dist/admin-page/main.js:1
-#: assets/dist/admin-page/main.js:117
+#: assets/dist/admin-page/main.js:146
 msgid "Workflows"
 msgstr ""
 
 #: assets/dist/admin-page/main.js:1
-#: assets/dist/admin-page/main.js:13
+#: assets/dist/admin-page/main.js:23
+#: assets/dist/admin-page/main.js:25
 msgid "Settings"
 msgstr ""
 
@@ -2168,8 +2160,8 @@ msgid "Carts with no activity for this long are deleted, with their email, 7 to 
 msgstr ""
 
 #: assets/dist/admin-page/main.js:2
-#: assets/dist/admin-page/main.js:13
-#: assets/dist/admin-page/main.js:63
+#: assets/dist/admin-page/main.js:23
+#: assets/dist/admin-page/main.js:81
 msgid "days"
 msgstr ""
 
@@ -2197,1435 +2189,1446 @@ msgstr ""
 msgid "WooCommerce email settings"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:2
+#. translators: 1: date, 2: time
+#: assets/dist/admin-page/main.js:4
 msgid "%1$s at %2$s"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:2
-#: assets/dist/admin-page/main.js:63
+#: assets/dist/admin-page/main.js:4
+#: assets/dist/admin-page/main.js:79
 msgid "Try again"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:2
+#: assets/dist/admin-page/main.js:4
 msgid "Health check"
 msgstr ""
 
 #. translators: 1: number of problems, 2: when, e.g. "5 minutes ago"
-#: assets/dist/admin-page/main.js:4
+#: assets/dist/admin-page/main.js:6
 msgid "%1$d problem · checked %2$s"
 msgid_plural "%1$d problems · checked %2$s"
 msgstr[0] ""
 msgstr[1] ""
 
-#: assets/dist/admin-page/main.js:4
+#. translators: %s: when, e.g. "5 minutes ago"
+#: assets/dist/admin-page/main.js:8
 msgid "No problems · checked %s"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:4
+#. translators: %s: when, e.g. "5 minutes ago"
+#: assets/dist/admin-page/main.js:10
 msgid "Checked %s"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:4
+#. translators: %d: number of problems
+#: assets/dist/admin-page/main.js:12
 msgid "Found %d problem."
 msgid_plural "Found %d problems."
 msgstr[0] ""
 msgstr[1] ""
 
-#: assets/dist/admin-page/main.js:4
+#: assets/dist/admin-page/main.js:12
 msgid "No problems found."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:4
+#: assets/dist/admin-page/main.js:12
 msgid "Check again"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:4
+#. translators: %s: why it failed
+#: assets/dist/admin-page/main.js:14
 msgid "Couldn’t run the health check. %s"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:4
+#: assets/dist/admin-page/main.js:14
 msgid "No problems found"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:4
+#: assets/dist/admin-page/main.js:14
 msgid "Runs are being queued and picked up as they should, and the daily cleanup is scheduled."
 msgstr ""
 
 #. translators: %s: number of runs
-#: assets/dist/admin-page/main.js:6
+#: assets/dist/admin-page/main.js:16
 msgid "%s run is stuck before it starts"
 msgid_plural "%s runs are stuck before they start"
 msgstr[0] ""
 msgstr[1] ""
 
-#: assets/dist/admin-page/main.js:6
+#: assets/dist/admin-page/main.js:16
 msgid "It is queued or waiting, but no background job will pick it up. This happens when queueing failed."
 msgid_plural "They are queued or waiting, but no background job will pick them up. This happens when queueing failed."
 msgstr[0] ""
 msgstr[1] ""
 
-#: assets/dist/admin-page/main.js:6
+#: assets/dist/admin-page/main.js:16
 msgid "Fix: queue it again. It continues from where it stopped."
 msgid_plural "Fix: queue them again. Each run continues from where it stopped."
 msgstr[0] ""
 msgstr[1] ""
 
-#: assets/dist/admin-page/main.js:6
+#: assets/dist/admin-page/main.js:16
 msgid "Queue them again"
 msgstr ""
 
 #. translators: %s: number of runs
-#: assets/dist/admin-page/main.js:8
+#: assets/dist/admin-page/main.js:18
 msgid "%s run stopped in the middle of a step"
 msgid_plural "%s runs stopped in the middle of a step"
 msgstr[0] ""
 msgstr[1] ""
 
-#: assets/dist/admin-page/main.js:8
+#: assets/dist/admin-page/main.js:18
 msgid "It is still marked running, but its recovery job died. Runs like this never resume on their own."
 msgid_plural "They are still marked running, but their recovery jobs died. Runs like this never resume on their own."
 msgstr[0] ""
 msgstr[1] ""
 
-#: assets/dist/admin-page/main.js:8
+#: assets/dist/admin-page/main.js:18
 msgid "Fix: queue recovery again. The interrupted step fails; it never runs twice."
 msgid_plural "Fix: queue recovery again. The interrupted steps fail; none runs twice."
 msgstr[0] ""
 msgstr[1] ""
 
-#: assets/dist/admin-page/main.js:8
+#: assets/dist/admin-page/main.js:18
 msgid "Queue recovery again"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:8
+#: assets/dist/admin-page/main.js:18
 msgid "The daily cleanup isn’t running on time"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:8
+#: assets/dist/admin-page/main.js:18
 msgid "It’s missing or more than an hour late, so old runs and carts aren’t deleted on time."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:8
+#: assets/dist/admin-page/main.js:18
 msgid "Fix: schedule it again."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:8
+#: assets/dist/admin-page/main.js:18
 msgid "Schedule again"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:8
+#: assets/dist/admin-page/main.js:18
 msgid "The daily inactive-customer check isn’t running on time"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:8
+#: assets/dist/admin-page/main.js:18
 msgid "It’s missing or more than a day late, so customers may start their win-back late or miss it."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:8
+#: assets/dist/admin-page/main.js:18
 msgid "The daily cleanup is scheduled again."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:8
+#: assets/dist/admin-page/main.js:18
 msgid "The daily inactive-customer check is scheduled again."
 msgstr ""
 
 #. translators: %d: number of runs
-#: assets/dist/admin-page/main.js:9
+#: assets/dist/admin-page/main.js:19
 msgid "%d run queued again."
 msgid_plural "%d runs queued again."
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of runs
-#: assets/dist/admin-page/main.js:10
+#: assets/dist/admin-page/main.js:20
 msgid "%d run queued for recovery."
 msgid_plural "%d runs queued for recovery."
 msgstr[0] ""
 msgstr[1] ""
 
-#: assets/dist/admin-page/main.js:10
+#: assets/dist/admin-page/main.js:20
 msgid "Nothing to fix any more."
 msgstr ""
 
 #. translators: %s: why it failed
-#: assets/dist/admin-page/main.js:11
+#: assets/dist/admin-page/main.js:21
 msgid "Couldn’t fix it. %s"
 msgstr ""
 
 #. translators: %d: number of jobs
-#: assets/dist/admin-page/main.js:13
+#: assets/dist/admin-page/main.js:23
 msgid "%d background job is late"
 msgid_plural "%d background jobs are late"
 msgstr[0] ""
 msgstr[1] ""
 
-#: assets/dist/admin-page/main.js:13
+#: assets/dist/admin-page/main.js:23
 msgid "They were due more than 15 minutes ago. WP-Cron only runs when someone visits the site, so a quiet store runs jobs late."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:13
+#: assets/dist/admin-page/main.js:23
 msgid "How to run WP-Cron from the server"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:13
+#: assets/dist/admin-page/main.js:23
 msgid "Run history"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:13
+#: assets/dist/admin-page/main.js:23
 msgid "Runs and every step’s result, as shown on each workflow’s page."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:13
+#: assets/dist/admin-page/main.js:23
 msgid "Keep run history for"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:13
+#: assets/dist/admin-page/main.js:23
 msgid "Finished runs older than this are deleted once a day, including runs of deleted workflows, 7 to 730 days. Queued, running and waiting runs are kept."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:13
+#. translators: %s: why it failed
+#: assets/dist/admin-page/main.js:25
 msgid "Couldn’t load your settings. %s"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:13
+#: assets/dist/admin-page/main.js:25
 msgid "Settings saved"
 msgstr ""
 
 #. translators: %s: why it failed
-#: assets/dist/admin-page/main.js:13
-#: assets/dist/admin-page/main.js:15
+#: assets/dist/admin-page/main.js:25
+#: assets/dist/admin-page/main.js:27
 msgid "Couldn’t save your settings. %s"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:15
+#: assets/dist/admin-page/main.js:27
 msgid "Save changes"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:15
-#: assets/dist/admin-page/main.js:68
+#: assets/dist/admin-page/main.js:27
+#: assets/dist/admin-page/main.js:93
 msgid "Save"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:15
-#: assets/dist/admin-page/main.js:46
-#: assets/dist/admin-page/main.js:89
-#: assets/dist/admin-page/main.js:117
+#: assets/dist/admin-page/main.js:27
+#: assets/dist/admin-page/main.js:62
+#: assets/dist/admin-page/main.js:116
+#: assets/dist/admin-page/main.js:146
 msgid "Close"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:15
+#: assets/dist/admin-page/main.js:27
 msgid "Unsaved changes"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:15
+#: assets/dist/admin-page/main.js:27
 msgid "You have unsaved changes. Do you want to save them before leaving?"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:15
-#: assets/dist/admin-page/main.js:76
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:27
+#: assets/dist/admin-page/main.js:101
+#: assets/dist/admin-page/main.js:118
 msgid "Discard changes"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:15
+#: assets/dist/admin-page/main.js:27
 msgid "Coming soon"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:15
+#: assets/dist/admin-page/main.js:27
 msgid "Thank first-time buyers"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:15
+#: assets/dist/admin-page/main.js:27
 msgid "Alert me about big orders"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:15
+#: assets/dist/admin-page/main.js:27
 msgid "Remind shoppers about their cart"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:15
+#: assets/dist/admin-page/main.js:27
 msgid "Ask for a review after delivery"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:15
+#: assets/dist/admin-page/main.js:27
 msgid "What do you want to automate?"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:15
+#: assets/dist/admin-page/main.js:27
 msgid "Soon you can describe it and get a draft to review. Until then, start on your own below."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:15
+#: assets/dist/admin-page/main.js:27
 msgid "e.g. Email customers who haven’t ordered in 90 days with a coupon"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:15
+#: assets/dist/admin-page/main.js:27
 msgid "Example prompts"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:15
+#: assets/dist/admin-page/main.js:27
 msgid "or start on your own"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:15
-#: assets/dist/admin-page/main.js:117
+#: assets/dist/admin-page/main.js:27
+#: assets/dist/admin-page/main.js:146
 msgid "Browse templates"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:15
+#: assets/dist/admin-page/main.js:27
 msgid "Ready-made workflows to review and activate"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:15
-#: assets/dist/admin-page/main.js:84
+#: assets/dist/admin-page/main.js:27
+#: assets/dist/admin-page/main.js:109
 msgid "Choose a trigger"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:15
+#: assets/dist/admin-page/main.js:27
 msgid "Build it step by step"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:15
-#: assets/dist/admin-page/main.js:117
+#: assets/dist/admin-page/main.js:27
+#: assets/dist/admin-page/main.js:146
 msgid "Create workflow"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:15
+#: assets/dist/admin-page/main.js:27
 msgid "Create"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:15
+#: assets/dist/admin-page/main.js:27
 msgid "Your latest changes couldn’t be saved, so no workflow was created."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:37
+#: assets/dist/admin-page/main.js:49
 msgid "Blocks"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:37
+#: assets/dist/admin-page/main.js:49
 msgid "Ready-made parts of the email, e.g. a product grid or a coupon box"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:37
+#: assets/dist/admin-page/main.js:49
 msgid "All data"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:37
+#: assets/dist/admin-page/main.js:49
 msgid "Data from the trigger"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:37
+#: assets/dist/admin-page/main.js:49
 msgid "No variable found."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:37
+#: assets/dist/admin-page/main.js:49
 msgid "From earlier steps"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:37
+#: assets/dist/admin-page/main.js:49
 msgid "No data to insert here yet."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:37
-#: assets/dist/admin-page/main.js:40
+#: assets/dist/admin-page/main.js:49
+#: assets/dist/admin-page/main.js:52
 msgid "Insert variable"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:37
+#: assets/dist/admin-page/main.js:49
 msgid "Pick data from the workflow to use here."
 msgstr ""
 
 #. translators: %s: a data item or step, e.g. "Order"
-#: assets/dist/admin-page/main.js:38
+#: assets/dist/admin-page/main.js:50
 msgid "Search in %s"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:38
+#: assets/dist/admin-page/main.js:50
 msgid "Search all data"
 msgstr ""
 
 #. translators: %s: variable types, e.g. "Number"
-#: assets/dist/admin-page/main.js:40
+#: assets/dist/admin-page/main.js:52
 msgid "Types: %s"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:40
+#: assets/dist/admin-page/main.js:52
 msgid "Search"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:40
-#: assets/dist/admin-page/main.js:89
+#: assets/dist/admin-page/main.js:52
+#: assets/dist/admin-page/main.js:116
 msgid "Nothing found."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:40
+#: assets/dist/admin-page/main.js:52
 msgid "Used in your workflows"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:40
+#: assets/dist/admin-page/main.js:52
 msgid "Choose an option"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:40
+#: assets/dist/admin-page/main.js:52
 msgid "Not set"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:40
+#. translators: 1: comma-separated list, 2: the last item
+#: assets/dist/admin-page/main.js:54
 msgid "%1$s or %2$s"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:40
+#: assets/dist/admin-page/main.js:54
 msgid "Cart tracking is off, so this trigger never starts."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:40
+#: assets/dist/admin-page/main.js:54
 msgid "Turn on cart tracking in Settings"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:40
-#: assets/dist/admin-page/main.js:44
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:54
+#: assets/dist/admin-page/main.js:58
+#: assets/dist/admin-page/main.js:118
 msgid "No settings needed."
 msgstr ""
 
 #. translators: %s: time, e.g. "60 minutes"
-#: assets/dist/admin-page/main.js:42
+#: assets/dist/admin-page/main.js:56
 msgid "A cart counts as abandoned after %s without activity."
 msgstr ""
 
 #. translators: %d: number of minutes
-#: assets/dist/admin-page/main.js:44
+#: assets/dist/admin-page/main.js:58
 msgid "%d minute"
 msgid_plural "%d minutes"
 msgstr[0] ""
 msgstr[1] ""
 
-#: assets/dist/admin-page/main.js:44
+#: assets/dist/admin-page/main.js:58
 msgid "Change it in Settings"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:44
+#: assets/dist/admin-page/main.js:58
 msgid "Carts that reached checkout start Checkout abandoned instead, never this trigger."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:44
+#: assets/dist/admin-page/main.js:58
 msgid "Only carts that reached checkout with an email. They never start Cart abandoned."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:44
+#: assets/dist/admin-page/main.js:58
 msgid "Runs stop as soon as the shopper places an order."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:44
+#: assets/dist/admin-page/main.js:58
 msgid "Shoppers who unsubscribe get no more reminders. A shopper who already got a reminder this week for another cart is skipped."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:44
+#: assets/dist/admin-page/main.js:58
 msgid "Store staff are never changed. A customer’s only role is never removed."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:44
+#: assets/dist/admin-page/main.js:58
 msgid "No shipping method takes a free shipping coupon yet, so this coupon won’t give free shipping. Add a Free shipping method that requires “A valid free shipping coupon” in"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:44
+#: assets/dist/admin-page/main.js:58
 msgid "WooCommerce → Shipping"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:44
+#: assets/dist/admin-page/main.js:58
 msgid "Your Free shipping methods also need a minimum order amount, so the customer gets free shipping only when the order reaches it."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:44
+#: assets/dist/admin-page/main.js:58
 msgid "never expires"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:44
+#. translators: %s: number of days
+#: assets/dist/admin-page/main.js:60
 msgid "expires in %s day"
 msgid_plural "expires in %s days"
 msgstr[0] ""
 msgstr[1] ""
 
-#: assets/dist/admin-page/main.js:44
+#: assets/dist/admin-page/main.js:60
 msgid "Sent to the order’s billing email, as WooCommerce sends it. Skipped when the email is turned off in WooCommerce."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:44
-#: assets/dist/admin-page/main.js:48
+#: assets/dist/admin-page/main.js:60
+#: assets/dist/admin-page/main.js:64
 msgid "Email preview"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:44
-#: assets/dist/admin-page/main.js:48
+#: assets/dist/admin-page/main.js:60
+#: assets/dist/admin-page/main.js:64
 msgid "Sample data"
 msgstr ""
 
 #. translators: %s: order number
-#: assets/dist/admin-page/main.js:46
+#: assets/dist/admin-page/main.js:62
 msgid "Order #%s data · nothing is sent"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:46
+#: assets/dist/admin-page/main.js:62
 msgid "Nothing is sent"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:46
+#: assets/dist/admin-page/main.js:62
 msgid "Send test"
 msgstr ""
 
 #. translators: %s: email address
-#: assets/dist/admin-page/main.js:48
+#: assets/dist/admin-page/main.js:64
 msgid "to %s"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:48
+#: assets/dist/admin-page/main.js:64
 msgid "Desktop"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:48
+#: assets/dist/admin-page/main.js:64
 msgid "Mobile"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:48
+#: assets/dist/admin-page/main.js:64
 msgid "Preview width"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:48
+#: assets/dist/admin-page/main.js:64
 msgid "Sample products: no recent order has cross-sells or upsells"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:48
+#: assets/dist/admin-page/main.js:64
 msgid "Sample products: no recent order has upsells"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:48
+#: assets/dist/admin-page/main.js:64
 msgid "Sample products: no recent order has cross-sells"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:48
+#: assets/dist/admin-page/main.js:64
 msgid "An unsubscribe link is added automatically."
 msgstr ""
 
 #. translators: %s: email address
-#: assets/dist/admin-page/main.js:50
+#: assets/dist/admin-page/main.js:66
 msgid "Test email sent to %s"
 msgstr ""
 
 #. translators: %s: email address
-#: assets/dist/admin-page/main.js:52
+#: assets/dist/admin-page/main.js:68
 msgid "Test goes to %s"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:52
+#: assets/dist/admin-page/main.js:68
 msgid "Preview"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:52
+#: assets/dist/admin-page/main.js:68
 msgid "More email actions"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:52
+#: assets/dist/admin-page/main.js:68
 msgid "Preview email"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:52
+#: assets/dist/admin-page/main.js:68
 msgid "Send test email"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:52
+#: assets/dist/admin-page/main.js:68
 msgid "To you, subject starts with [Test]"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:52
+#: assets/dist/admin-page/main.js:68
 msgid "Fix this step first"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:52
+#: assets/dist/admin-page/main.js:68
 msgid "Customers without an account are skipped."
 msgstr ""
 
 #. translators: %s: number of minutes
-#: assets/dist/admin-page/main.js:54
+#: assets/dist/admin-page/main.js:70
 msgid "%s minute"
 msgid_plural "%s minutes"
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %s: number of hours
-#: assets/dist/admin-page/main.js:56
+#: assets/dist/admin-page/main.js:72
 msgid "%s hour"
 msgid_plural "%s hours"
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %s: number of days
-#: assets/dist/admin-page/main.js:58
+#: assets/dist/admin-page/main.js:74
 msgid "%s day"
 msgid_plural "%s days"
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %s: number of weeks
-#: assets/dist/admin-page/main.js:60
+#: assets/dist/admin-page/main.js:76
 msgid "%s week"
 msgid_plural "%s weeks"
 msgstr[0] ""
 msgstr[1] ""
 
-#: assets/dist/admin-page/main.js:60
-#: assets/dist/admin-page/main.js:63
+#: assets/dist/admin-page/main.js:76
+#: assets/dist/admin-page/main.js:81
 msgid "Unit"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:60
+#: assets/dist/admin-page/main.js:76
 msgid "Choose a time"
 msgstr ""
 
 #. translators: 1: time zone, e.g. "Asia/Ho_Chi_Minh"; 2: a time, e.g. "9:15 AM"
-#: assets/dist/admin-page/main.js:62
+#: assets/dist/admin-page/main.js:78
 msgid "Store time (%1$s). Past %2$s, it waits for the next chosen day."
 msgstr ""
 
 #. translators: %s: time zone, e.g. "Asia/Ho_Chi_Minh"
-#: assets/dist/admin-page/main.js:63
+#: assets/dist/admin-page/main.js:79
 msgid "Store time (%s)."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:63
+#: assets/dist/admin-page/main.js:79
 msgid "and"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:63
+#: assets/dist/admin-page/main.js:79
 msgid "or"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:63
+#: assets/dist/admin-page/main.js:79
 msgid "Search products"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:63
+#: assets/dist/admin-page/main.js:79
 msgid "No products found."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:63
+#: assets/dist/admin-page/main.js:79
 msgid "Search categories"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:63
+#: assets/dist/admin-page/main.js:79
 msgid "No categories found."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:63
+#: assets/dist/admin-page/main.js:79
 msgid "Search coupons"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:63
+#: assets/dist/admin-page/main.js:79
 msgid "No coupons found."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:63
+#: assets/dist/admin-page/main.js:79
 msgid "Couldn’t load the list."
 msgstr ""
 
-#. translators: %d: how many values a rule lists
-#. translators: %d: number of selected workflows
-#: assets/dist/admin-page/main.js:63
-#: assets/dist/admin-page/main.js:64
-#: assets/dist/admin-page/main.js:105
+#. translators: %d: number of selected items
+#: assets/dist/admin-page/main.js:81
+#: assets/dist/admin-page/main.js:83
+#: assets/dist/admin-page/main.js:132
 msgid "%d selected"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:63
+#: assets/dist/admin-page/main.js:81
 msgid "Load more"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:63
+#: assets/dist/admin-page/main.js:81
 msgid "Number"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:63
+#: assets/dist/admin-page/main.js:81
 msgid "Text"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:63
+#: assets/dist/admin-page/main.js:81
 msgid "Date"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:63
+#: assets/dist/admin-page/main.js:81
 msgid "Option"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:63
+#: assets/dist/admin-page/main.js:81
 msgid "Choose values"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:63
+#: assets/dist/admin-page/main.js:81
 msgid "hours"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:63
+#: assets/dist/admin-page/main.js:81
 msgid "Choose a value"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:63
+#: assets/dist/admin-page/main.js:81
 msgid "Choose data"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:63
+#: assets/dist/admin-page/main.js:81
 msgid "Type a value instead"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:63
+#: assets/dist/admin-page/main.js:81
 msgid "Compare with other data"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:63
+#: assets/dist/admin-page/main.js:81
 msgid "all"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:63
+#: assets/dist/admin-page/main.js:81
 msgid "any"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:63
+#: assets/dist/admin-page/main.js:81
 msgid "of these"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:63
+#: assets/dist/admin-page/main.js:81
 msgid "Remove group"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:63
+#: assets/dist/admin-page/main.js:81
 msgid "Add rule to group"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:63
+#: assets/dist/admin-page/main.js:81
 msgid "Comparison"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:63
+#: assets/dist/admin-page/main.js:81
 msgid "Choose a comparison"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:63
+#: assets/dist/admin-page/main.js:81
 msgid "Remove rule"
 msgstr ""
 
 #. translators: %d: number of hours
-#: assets/dist/admin-page/main.js:65
+#: assets/dist/admin-page/main.js:84
 msgid "%d hour"
 msgid_plural "%d hours"
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of days
-#: assets/dist/admin-page/main.js:66
+#: assets/dist/admin-page/main.js:85
 msgid "%d day"
 msgid_plural "%d days"
 msgstr[0] ""
 msgstr[1] ""
 
-#: assets/dist/admin-page/main.js:66
+#. translators: 1: variable, 2: comparison, e.g. "is greater than", 3: value
+#: assets/dist/admin-page/main.js:87
 msgid "%1$s %2$s %3$s"
 msgstr ""
 
 #. translators: %d: how many more rules
-#: assets/dist/admin-page/main.js:67
+#: assets/dist/admin-page/main.js:88
 msgid "or %d more"
 msgstr ""
 
 #. translators: %d: how many more rules
-#: assets/dist/admin-page/main.js:68
+#: assets/dist/admin-page/main.js:89
 msgid "and %d more"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:68
+#: assets/dist/admin-page/main.js:89
 msgid "A group has no rules yet"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:68
+#. translators: 1: the Yes path's tag, 2: "all" or "any"
+#: assets/dist/admin-page/main.js:91
 msgid "Take the %1$s path when %2$s of these match:"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:68
+#: assets/dist/admin-page/main.js:91
 msgid "Add rule"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:68
+#: assets/dist/admin-page/main.js:91
 msgid "Add group"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:68
+#: assets/dist/admin-page/main.js:91
 msgid "Otherwise the No path runs."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:68
+#: assets/dist/admin-page/main.js:91
 msgid "Checked once a day"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:68
+#: assets/dist/admin-page/main.js:91
 msgid "Customers already past this number don’t start it. For them, use Order paid with a condition."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:68
+#: assets/dist/admin-page/main.js:91
 msgid "Starts once per customer, on the paid order that reaches this amount."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:68
+#: assets/dist/admin-page/main.js:91
 msgid "Paid means Processing or Completed. Orders imported already paid don’t start it."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:68
+#: assets/dist/admin-page/main.js:91
 msgid "Use Refund › Full refund in a Condition to tell a full refund from a partial one."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:68
+#: assets/dist/admin-page/main.js:91
 msgid "Replies and reviews waiting for approval don’t start it. Use Review › Rating in a Condition for low or high ratings."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:68
+#: assets/dist/admin-page/main.js:91
 msgid "A guest reviewer has only an email address."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:68
+#. translators: 1: a step, e.g. "Change order status", 2: what's wrong with it
+#: assets/dist/admin-page/main.js:93
 msgid "%1$s: %2$s"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:68
+#: assets/dist/admin-page/main.js:93
 msgid "More actions"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:68
-#: assets/dist/admin-page/main.js:115
+#: assets/dist/admin-page/main.js:93
+#: assets/dist/admin-page/main.js:144
 msgid "Rename"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:68
-#: assets/dist/admin-page/main.js:70
-#: assets/dist/admin-page/main.js:84
-#: assets/dist/admin-page/main.js:105
-#: assets/dist/admin-page/main.js:113
-#: assets/dist/admin-page/main.js:115
+#: assets/dist/admin-page/main.js:93
+#: assets/dist/admin-page/main.js:95
+#: assets/dist/admin-page/main.js:109
+#: assets/dist/admin-page/main.js:132
+#: assets/dist/admin-page/main.js:142
+#: assets/dist/admin-page/main.js:144
 msgid "Delete"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:68
+#: assets/dist/admin-page/main.js:93
 msgid "Workflow renamed"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:68
-#: assets/dist/admin-page/main.js:84
+#: assets/dist/admin-page/main.js:93
+#: assets/dist/admin-page/main.js:109
 msgid "Rename workflow"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:68
+#: assets/dist/admin-page/main.js:93
 msgid "Enter a new name for this workflow."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:68
-#: assets/dist/admin-page/main.js:115
+#: assets/dist/admin-page/main.js:93
+#: assets/dist/admin-page/main.js:144
 msgid "Name"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:68
-#: assets/dist/admin-page/main.js:70
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:93
+#: assets/dist/admin-page/main.js:95
+#: assets/dist/admin-page/main.js:118
 msgid "Cancel"
 msgstr ""
 
 #. translators: %s: workflow name
-#: assets/dist/admin-page/main.js:70
+#: assets/dist/admin-page/main.js:95
 msgid "Delete “%s”?"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:70
-#: assets/dist/admin-page/main.js:84
+#: assets/dist/admin-page/main.js:95
+#: assets/dist/admin-page/main.js:109
 msgid "This can’t be undone."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:70
+#: assets/dist/admin-page/main.js:95
 msgid "Workflow deleted"
 msgstr ""
 
 #. translators: %s: workflow name
-#: assets/dist/admin-page/main.js:72
+#: assets/dist/admin-page/main.js:97
 msgid "Activate “%s”?"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:72
+#: assets/dist/admin-page/main.js:97
 msgid "It starts running right away. You can deactivate it at any time."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:72
+#: assets/dist/admin-page/main.js:97
 msgid "Your draft changes aren’t included. Update first to include them."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:72
-#: assets/dist/admin-page/main.js:91
-#: assets/dist/admin-page/main.js:115
-#: assets/dist/admin-page/main.js:141
+#: assets/dist/admin-page/main.js:97
+#: assets/dist/admin-page/main.js:118
+#: assets/dist/admin-page/main.js:144
+#: assets/dist/admin-page/main.js:174
 msgid "Activate"
 msgstr ""
 
 #. translators: %d: number of runs
-#: assets/dist/admin-page/main.js:74
+#: assets/dist/admin-page/main.js:99
 msgid "%d waiting run was cancelled."
 msgid_plural "%d waiting runs were cancelled."
 msgstr[0] ""
 msgstr[1] ""
 
-#: assets/dist/admin-page/main.js:74
+#: assets/dist/admin-page/main.js:99
 msgid "Update this workflow?"
 msgstr ""
 
 #. translators: %d: number of runs
-#: assets/dist/admin-page/main.js:76
+#: assets/dist/admin-page/main.js:101
 msgid "It’s active, so your draft changes take effect right away. %d waiting run will be cancelled. Runs under way finish on the version they started on."
 msgid_plural "It’s active, so your draft changes take effect right away. %d waiting runs will be cancelled. Runs under way finish on the version they started on."
 msgstr[0] ""
 msgstr[1] ""
 
-#: assets/dist/admin-page/main.js:76
+#: assets/dist/admin-page/main.js:101
 msgid "It’s active, so your draft changes take effect right away. Runs under way finish on the version they started on."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:76
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:101
+#: assets/dist/admin-page/main.js:118
 msgid "Update"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:76
+#: assets/dist/admin-page/main.js:101
 msgid "Discard draft changes?"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:76
+#: assets/dist/admin-page/main.js:101
 msgid "Your draft changes will be deleted. The workflow stays as it was."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:76
+#: assets/dist/admin-page/main.js:101
 msgid "New events won’t start them. Runs under way stop before their next step. You can activate them again at any time."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:76
+#: assets/dist/admin-page/main.js:101
 msgid "New events won’t start it. Runs under way stop before their next step. You can activate it again at any time."
 msgstr ""
 
 #. translators: %d: number of runs
-#: assets/dist/admin-page/main.js:77
+#: assets/dist/admin-page/main.js:102
 msgid "New events won’t start them. Runs under way stop before their next step. You can activate them again at any time. %d waiting run will be cancelled."
 msgid_plural "New events won’t start them. Runs under way stop before their next step. You can activate them again at any time. %d waiting runs will be cancelled."
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of runs
-#: assets/dist/admin-page/main.js:78
+#: assets/dist/admin-page/main.js:103
 msgid "New events won’t start it. Runs under way stop before their next step. You can activate it again at any time. %d waiting run will be cancelled."
 msgid_plural "New events won’t start it. Runs under way stop before their next step. You can activate it again at any time. %d waiting runs will be cancelled."
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %s: workflow name
-#: assets/dist/admin-page/main.js:80
+#: assets/dist/admin-page/main.js:105
 msgid "Deactivate “%s”?"
 msgstr ""
 
 #. translators: %d: number of workflows
-#: assets/dist/admin-page/main.js:82
+#: assets/dist/admin-page/main.js:107
 msgid "Deactivate %d workflow?"
 msgid_plural "Deactivate %d workflows?"
 msgstr[0] ""
 msgstr[1] ""
 
-#: assets/dist/admin-page/main.js:82
-#: assets/dist/admin-page/main.js:91
-#: assets/dist/admin-page/main.js:105
-#: assets/dist/admin-page/main.js:115
-#: assets/dist/admin-page/main.js:141
+#: assets/dist/admin-page/main.js:107
+#: assets/dist/admin-page/main.js:118
+#: assets/dist/admin-page/main.js:132
+#: assets/dist/admin-page/main.js:144
+#: assets/dist/admin-page/main.js:174
 msgid "Deactivate"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:82
+#: assets/dist/admin-page/main.js:107
 msgid "There was a problem deleting some workflows"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:82
+#: assets/dist/admin-page/main.js:107
 msgid "There was a problem deleting this workflow"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:82
+#: assets/dist/admin-page/main.js:107
 msgid "Deactivate these workflows before you delete them."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:82
+#: assets/dist/admin-page/main.js:107
 msgid "Back"
 msgstr ""
 
 #. translators: %d: number of steps
-#: assets/dist/admin-page/main.js:84
+#: assets/dist/admin-page/main.js:109
 msgid "Delete %d step?"
 msgid_plural "Delete %d steps?"
 msgstr[0] ""
 msgstr[1] ""
 
-#: assets/dist/admin-page/main.js:84
+#: assets/dist/admin-page/main.js:109
 msgid "Delete this step?"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:84
+#: assets/dist/admin-page/main.js:109
 msgid "Workflow activated"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:84
-#: assets/dist/admin-page/main.js:143
+#: assets/dist/admin-page/main.js:109
+#: assets/dist/admin-page/main.js:176
 msgid "Fix in editor"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:84
+#: assets/dist/admin-page/main.js:109
 msgid "Workflow deactivated"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:84
-#: assets/dist/admin-page/main.js:115
-#: assets/dist/admin-page/main.js:145
+#: assets/dist/admin-page/main.js:109
+#: assets/dist/admin-page/main.js:144
+#: assets/dist/admin-page/main.js:178
 msgid "Active"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:84
-#: assets/dist/admin-page/main.js:115
-#: assets/dist/admin-page/main.js:145
+#: assets/dist/admin-page/main.js:109
+#: assets/dist/admin-page/main.js:144
+#: assets/dist/admin-page/main.js:178
 msgid "Inactive"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:84
-#: assets/dist/admin-page/main.js:115
-#: assets/dist/admin-page/main.js:145
+#: assets/dist/admin-page/main.js:109
+#: assets/dist/admin-page/main.js:144
+#: assets/dist/admin-page/main.js:178
 msgid "Draft"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:84
-#: assets/dist/admin-page/main.js:115
-#: assets/dist/admin-page/main.js:145
+#: assets/dist/admin-page/main.js:109
+#: assets/dist/admin-page/main.js:144
+#: assets/dist/admin-page/main.js:178
 msgid "Trigger"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:84
+#: assets/dist/admin-page/main.js:109
 msgid "Choose a condition"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:84
+#: assets/dist/admin-page/main.js:109
 msgid "Action"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:84
+#: assets/dist/admin-page/main.js:109
 msgid "Choose an action"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:84
+#: assets/dist/admin-page/main.js:109
 msgid "Error"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:84
-#: assets/dist/admin-page/main.js:117
+#: assets/dist/admin-page/main.js:109
+#: assets/dist/admin-page/main.js:146
 msgid "Needs setup"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:84
-#: assets/dist/admin-page/main.js:143
-#: assets/dist/admin-page/main.js:147
+#: assets/dist/admin-page/main.js:109
+#: assets/dist/admin-page/main.js:176
+#: assets/dist/admin-page/main.js:180
 msgid "Open Settings"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:84
+#: assets/dist/admin-page/main.js:109
 msgid "Show step"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:84
+#: assets/dist/admin-page/main.js:109
 msgid "Previous issue"
 msgstr ""
 
 #. translators: 1: current issue number, 2: number of issues
-#: assets/dist/admin-page/main.js:86
+#: assets/dist/admin-page/main.js:111
 msgid "%1$d / %2$d"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:86
+#: assets/dist/admin-page/main.js:111
 msgid "Next issue"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:86
+#: assets/dist/admin-page/main.js:111
 msgid "Couldn’t save"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:86
+#: assets/dist/admin-page/main.js:111
 msgid "Retry"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:86
+#: assets/dist/admin-page/main.js:111
 msgid "Saved"
 msgstr ""
 
 #. translators: %s: date and time
-#: assets/dist/admin-page/main.js:88
+#: assets/dist/admin-page/main.js:113
 msgid "Last changed on %s"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:88
+#: assets/dist/admin-page/main.js:113
 msgid "Saving…"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:88
+#: assets/dist/admin-page/main.js:113
 msgid "Coupons"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:88
+#: assets/dist/admin-page/main.js:113
 msgid "Flow"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:88
+#: assets/dist/admin-page/main.js:113
 msgid "Customers"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:88
+#: assets/dist/admin-page/main.js:113
 msgid "Reviews"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:88
+#: assets/dist/admin-page/main.js:113
 msgid "Search plugins and triggers"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:88
+#: assets/dist/admin-page/main.js:113
 msgid "Search plugins and actions"
 msgstr ""
 
 #. translators: %s: data item, e.g. "Order"
-#: assets/dist/admin-page/main.js:89
+#: assets/dist/admin-page/main.js:114
 msgid "Requires %s data. Choose a trigger or add a step above that provides it."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:89
+#. translators: %s: plugin name, e.g. "WooCommerce"
+#: assets/dist/admin-page/main.js:116
 msgid "Search %s"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:89
+#: assets/dist/admin-page/main.js:116
 msgid "All plugins"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:89
+#: assets/dist/admin-page/main.js:116
 msgid "Back to settings"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:89
+#: assets/dist/admin-page/main.js:116
 msgid "Change the trigger?"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:89
+#: assets/dist/admin-page/main.js:116
 msgid "Change the action?"
 msgstr ""
 
 #. translators: 1: current step, 2: new step
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "“%1$s” becomes “%2$s” and its settings are cleared. Steps that used its data will need setup."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "Change trigger"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "Change action"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "Delete step"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "Add step"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "Couldn’t save your latest changes. Try again."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "Workflow updated"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "There were no changes to update."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "Close editor"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
-#: assets/dist/admin-page/main.js:117
-#: assets/dist/admin-page/main.js:141
+#: assets/dist/admin-page/main.js:118
+#: assets/dist/admin-page/main.js:146
+#: assets/dist/admin-page/main.js:174
 msgid "Draft changes"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "Changes discarded"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "Leave without saving?"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "Your latest changes couldn’t be saved and will be lost."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "Stay"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "Leave"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "Hi {{ customer.first_name | default: \"there\" }},"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid ""
 "See you soon,\n"
 "{{ site.name }}"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "You left something in your cart"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "Your cart is saved"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "We saved the items you left at {{ site.name }}:"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "Still thinking it over?"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "Your cart is waiting"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "Your cart is still saved. Pick up where you left off:"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "Last reminder about your cart"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "Your cart is still here"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "This is our last reminder. Your items are one click away:"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "{{ steps.coupon.amount }} off the cart you left"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "A little something to help you decide"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "Use this coupon for {{ steps.coupon.amount }} off your order:"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "Cart reminder"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "An hour after a cart is abandoned, email the shopper their cart. Stops as soon as they order."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "Cart 3-email series"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "Three reminders with the shopper’s cart: after 1 hour, 1 day and 3 days. Stops as soon as they order."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "Cart 3-email series + coupon"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "Three reminders with the shopper’s cart; the last adds a 10% off coupon valid for 7 days. Stops as soon as they order."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "Did something go wrong at checkout?"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "Finish your order"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "You were almost done. Your order isn’t placed yet, and your items are saved:"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "If something went wrong, reply to this email and we’ll help."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "{{ steps.coupon.amount }} off to finish your order"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "Your order is still waiting"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "Checkout reminder"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "An hour after a checkout is abandoned, email the shopper the order they started. Stops as soon as they order."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "Checkout reminder + coupon"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "A reminder after 1 hour, then a 10% off coupon valid for 7 days after 1 day. Stops as soon as they order."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "Use this coupon for {{ steps.coupon.amount }} off your next order:"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "Picked for you, {{ customer.first_name }}"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "You might also like"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "Thanks again for your order {{ order.number }}. These go well with what you bought:"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "Cross-sell to first-time buyers"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "7 days after a first order is completed, suggest products that go well with what the customer bought."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "Cross-sell to repeat buyers"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "7 days after a returning customer’s order is completed, suggest products that go well with what they bought."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "Cross-sell with a coupon"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "14 days after an order is completed, suggest products that go well with it, with a 10% off coupon valid for 14 days."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "Upsell after 30 days"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "30 days after an order is completed, suggest upgrades to what the customer bought, with a 15% off coupon valid for 14 days."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "Ready for an upgrade, {{ customer.first_name }}?"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "Upgrade what you love"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "It’s been a month since your order {{ order.number }}. Here are a few upgrades you might like:"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "Thanks for your first order — a gift for your next one"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "Thanks for shopping with us"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "Thank you for your first order with {{ site.name }}. We hope you love it!"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "Enter the code at checkout to use it."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid ""
 "See you again soon,\n"
 "{{ site.name }}"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "First-order thank-you: % off next order"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "Thank customers when their first order is completed, with a 10% off coupon for their next order, valid for 30 days."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "As a thank you, here is {{ steps.coupon.amount }} off your next order:"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "First-order thank-you: free shipping"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "Thank customers when their first order is completed, with a free shipping coupon for their next order, valid for 30 days."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "As a thank you, your next order ships free:"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "High-value order alert"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "Email the store team when an order of an amount you choose or more is paid, so big orders get attention fast."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "High-value order {{ order.number }} - {{ order.total }}"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid ""
 "A high-value order was placed on {{ site.name }}.\n"
 "\n"
@@ -3637,621 +3640,622 @@ msgid ""
 "{{ order.items }}"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "How did your order go?"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "Tell us what you think"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "Thanks again for order {{ order.number }}. If you have a minute, tell other shoppers what you think:"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "It takes a minute and helps a lot."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "A quick review?"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "Still have a minute?"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "You haven’t reviewed these yet:"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "Review request"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "7 days after an order is completed, ask for a review of each product the customer hasn’t reviewed yet."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "Review request + reminder"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "7 days after an order is completed, ask for a review of each product; a week later, remind once about the ones still not reviewed."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "Welcome to {{ site.name }}"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "Your account is ready. You can track orders, save addresses and check out faster next time."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "New in the shop"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "Here’s what just arrived at {{ site.name }}:"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "Anything we can help with?"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "Reply to this email if you have a question. Your orders and addresses are in your account:"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "Welcome email"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "When a customer creates an account, welcome them with links to their account and the shop."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "Welcome 3-email series"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "Three emails after a customer creates an account: a welcome right away, new products after 3 days, an offer to help after 7 days."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "We miss you at {{ site.name }}"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "It’s been a while"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "Win-back + discount"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "When a customer hasn’t ordered for 90 days, send a 15% off coupon, valid for 14 days."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "It’s been a while since your last order. Here’s {{ steps.coupon.amount }} off your next one:"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "Win-back + free shipping"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "When a customer hasn’t ordered for 90 days, send a free shipping coupon, valid for 14 days."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "It’s been a while since your last order. Here’s free shipping on your next order:"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "Recover carts"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "Post-purchase"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "Customer lifecycle"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "Alerts"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
-#: assets/dist/admin-page/main.js:99
+#: assets/dist/admin-page/main.js:118
+#: assets/dist/admin-page/main.js:126
 msgid "Clear search"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:118
 msgid "Show less"
 msgstr ""
 
 #. translators: %d: number of hidden items
-#: assets/dist/admin-page/main.js:93
+#: assets/dist/admin-page/main.js:120
 msgid "Show %d more"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:93
+#: assets/dist/admin-page/main.js:120
 msgid "Categories"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:93
+#: assets/dist/admin-page/main.js:120
 msgid "All templates"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:93
+#: assets/dist/admin-page/main.js:120
 msgid "Plugins"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:93
+#: assets/dist/admin-page/main.js:120
 msgid "Find a plugin"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:93
-#: assets/dist/admin-page/main.js:147
+#: assets/dist/admin-page/main.js:120
+#: assets/dist/admin-page/main.js:180
 msgid "Not installed"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:93
+#: assets/dist/admin-page/main.js:120
 msgid "No plugin found."
 msgstr ""
 
 #. translators: %s: filter name, e.g. "Post-purchase"
-#: assets/dist/admin-page/main.js:95
+#: assets/dist/admin-page/main.js:122
 msgid "Remove filter %s"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:95
+#: assets/dist/admin-page/main.js:122
 msgid "Most popular"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:95
+#: assets/dist/admin-page/main.js:122
 msgid "Newest"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:95
+#: assets/dist/admin-page/main.js:122
 msgid "Name (A–Z)"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:95
-#: assets/dist/admin-page/main.js:147
+#: assets/dist/admin-page/main.js:122
+#: assets/dist/admin-page/main.js:180
 msgid "Template Library"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:95
+#: assets/dist/admin-page/main.js:122
 msgid "Ready-made workflows for WooCommerce. Pick one, review it, then activate."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:95
+#: assets/dist/admin-page/main.js:122
 msgid "Search templates"
 msgstr ""
 
 #. translators: 1: templates shown, 2: all templates
-#: assets/dist/admin-page/main.js:97
+#: assets/dist/admin-page/main.js:124
 msgid "%1$d of %2$d template"
 msgid_plural "%1$d of %2$d templates"
 msgstr[0] ""
 msgstr[1] ""
 
-#: assets/dist/admin-page/main.js:97
+#: assets/dist/admin-page/main.js:124
 msgid "Clear all"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:97
+#: assets/dist/admin-page/main.js:124
 msgid "Sort templates"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:97
+#: assets/dist/admin-page/main.js:124
 msgid "No templates found"
 msgstr ""
 
 #. translators: %s: what was searched for
-#: assets/dist/admin-page/main.js:99
+#: assets/dist/admin-page/main.js:126
 msgid "No templates match “%s”."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:99
+#: assets/dist/admin-page/main.js:126
 msgid "Try a different filter."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:99
+#: assets/dist/admin-page/main.js:126
 msgid "Clear filters"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:99
+#: assets/dist/admin-page/main.js:126
 msgid "Needs cart tracking"
 msgstr ""
 
 #. translators: 1: current page, 2: number of pages
-#: assets/dist/admin-page/main.js:101
+#: assets/dist/admin-page/main.js:128
 msgid "Page %1$d of %2$d"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:101
+#: assets/dist/admin-page/main.js:128
 msgid "Go to"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:101
-#: assets/dist/admin-page/main.js:141
+#: assets/dist/admin-page/main.js:128
+#: assets/dist/admin-page/main.js:174
 msgid "Running"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:101
-#: assets/dist/admin-page/main.js:141
+#: assets/dist/admin-page/main.js:128
+#: assets/dist/admin-page/main.js:174
 msgid "Waiting"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:101
-#: assets/dist/admin-page/main.js:141
+#: assets/dist/admin-page/main.js:128
+#: assets/dist/admin-page/main.js:174
 msgid "Completed"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:101
-#: assets/dist/admin-page/main.js:141
+#: assets/dist/admin-page/main.js:128
+#: assets/dist/admin-page/main.js:174
 msgid "Failed"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:101
-#: assets/dist/admin-page/main.js:141
+#: assets/dist/admin-page/main.js:128
+#: assets/dist/admin-page/main.js:174
 msgid "Cancelled"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:101
-#: assets/dist/admin-page/main.js:141
+#: assets/dist/admin-page/main.js:128
+#: assets/dist/admin-page/main.js:174
 msgid "Skipped"
 msgstr ""
 
 #. translators: %s: date and time, e.g. "Oct 9 at 3:00 PM"
-#: assets/dist/admin-page/main.js:103
+#: assets/dist/admin-page/main.js:130
 msgid "Waiting until %s"
 msgstr ""
 
 #. translators: %d: number of workflows
-#: assets/dist/admin-page/main.js:107
+#: assets/dist/admin-page/main.js:134
 msgid "%d workflow deactivated"
 msgid_plural "%d workflows deactivated"
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of workflows
-#: assets/dist/admin-page/main.js:109
+#: assets/dist/admin-page/main.js:136
 msgid "%d workflow couldn’t be deactivated"
 msgid_plural "%d workflows couldn’t be deactivated"
 msgstr[0] ""
 msgstr[1] ""
 
-#: assets/dist/admin-page/main.js:109
+#. translators: %d: number of workflows
+#: assets/dist/admin-page/main.js:138
 msgid "%d workflow deleted"
 msgid_plural "%d workflows deleted"
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of workflows
-#: assets/dist/admin-page/main.js:111
+#: assets/dist/admin-page/main.js:140
 msgid "%d workflow couldn’t be deleted"
 msgid_plural "%d workflows couldn’t be deleted"
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of workflows
-#: assets/dist/admin-page/main.js:113
+#: assets/dist/admin-page/main.js:142
 msgid "Delete %d workflow?"
 msgid_plural "Delete %d workflows?"
 msgstr[0] ""
 msgstr[1] ""
 
-#: assets/dist/admin-page/main.js:113
+#: assets/dist/admin-page/main.js:142
 msgid "These workflows will be permanently deleted."
 msgstr ""
 
 #. translators: %s: workflow name
-#: assets/dist/admin-page/main.js:115
+#: assets/dist/admin-page/main.js:144
 msgid "Actions for %s"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:115
-#: assets/dist/admin-page/main.js:141
+#: assets/dist/admin-page/main.js:144
+#: assets/dist/admin-page/main.js:174
 msgid "Edit"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:115
+#: assets/dist/admin-page/main.js:144
 msgid "No trigger yet"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:115
-#: assets/dist/admin-page/main.js:145
+#: assets/dist/admin-page/main.js:144
+#: assets/dist/admin-page/main.js:178
 msgid "Runs (30 days)"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:115
-#: assets/dist/admin-page/main.js:145
+#: assets/dist/admin-page/main.js:144
+#: assets/dist/admin-page/main.js:178
 msgid "Last run"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:115
+#: assets/dist/admin-page/main.js:144
 msgid "Last updated"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:115
+#: assets/dist/admin-page/main.js:144
 msgid "Actions"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:115
+#: assets/dist/admin-page/main.js:144
 msgid "Select all workflows"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:115
+#: assets/dist/admin-page/main.js:144
 msgid "No workflows here yet."
 msgstr ""
 
 #. translators: %s: workflow name
-#: assets/dist/admin-page/main.js:117
+#: assets/dist/admin-page/main.js:146
 msgid "Select %s"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:117
+#: assets/dist/admin-page/main.js:146
 msgid "Fix the issues in the editor before activating."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:117
+#: assets/dist/admin-page/main.js:146
 msgid "Automate your store’s routine work"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:117
+#: assets/dist/admin-page/main.js:146
 msgid "Start from a template or build your own. A workflow runs on its own once you activate it."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:117
+#: assets/dist/admin-page/main.js:146
 msgid "Zoom out"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:117
+#: assets/dist/admin-page/main.js:146
 msgid "Zoom in"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:117
+#: assets/dist/admin-page/main.js:146
 msgid "Fit view"
 msgstr ""
 
 #. translators: %s: custom field name
-#: assets/dist/admin-page/main.js:118
+#: assets/dist/admin-page/main.js:147
 msgid "Custom field %s updated"
 msgstr ""
 
 #. translators: %s: custom field name
-#: assets/dist/admin-page/main.js:119
+#: assets/dist/admin-page/main.js:148
 msgid "Custom field %s unchanged"
 msgstr ""
 
 #. translators: %s: date and time, e.g. "Oct 9 at 3:00 PM"
-#: assets/dist/admin-page/main.js:121
-#: assets/dist/admin-page/main.js:123
+#: assets/dist/admin-page/main.js:150
+#: assets/dist/admin-page/main.js:152
 msgid "until %s"
 msgstr ""
 
 #. translators: 1: how long it waited, e.g. "Wait 1 day"; 2: date and time, e.g. "Oct 9 at 3:00 PM"
-#: assets/dist/admin-page/main.js:123
+#: assets/dist/admin-page/main.js:152
 msgid "%1$s, resumed %2$s"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:123
+#. translators: %s: date and time, e.g. "Oct 9 at 3:00 PM"
+#: assets/dist/admin-page/main.js:154
 msgid "Waited until %s"
 msgstr ""
 
-#. translators: %s: email address
-#. translators: %s: email addresses, comma-separated
-#: assets/dist/admin-page/main.js:124
-#: assets/dist/admin-page/main.js:125
+#. translators: %s: one or more email addresses, comma-separated
+#: assets/dist/admin-page/main.js:156
+#: assets/dist/admin-page/main.js:158
 msgid "Sent to %s"
 msgstr ""
 
 #. translators: %s: a WooCommerce email's name, e.g. "Completed order"
-#: assets/dist/admin-page/main.js:126
+#: assets/dist/admin-page/main.js:159
 msgid "Sent %s"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:126
+#: assets/dist/admin-page/main.js:159
 msgid "Roles unchanged"
 msgstr ""
 
 #. translators: %s: role name
-#: assets/dist/admin-page/main.js:127
+#: assets/dist/admin-page/main.js:160
 msgid "Removed %s"
 msgstr ""
 
 #. translators: %s: role name
-#: assets/dist/admin-page/main.js:128
+#: assets/dist/admin-page/main.js:161
 msgid "Replaced roles with %s"
 msgstr ""
 
 #. translators: %s: role name
-#: assets/dist/admin-page/main.js:129
+#: assets/dist/admin-page/main.js:162
 msgid "Added %s"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:129
+#: assets/dist/admin-page/main.js:162
 msgid "View order"
 msgstr ""
 
 #. translators: %s: date and time, e.g. "Oct 9 at 3:00 PM"
-#: assets/dist/admin-page/main.js:131
+#: assets/dist/admin-page/main.js:164
 msgid "Started %s"
 msgstr ""
 
 #. translators: %s: date and time, e.g. "Oct 9 at 3:00 PM"
-#: assets/dist/admin-page/main.js:133
+#: assets/dist/admin-page/main.js:166
 msgid "Finished %s"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:133
+#: assets/dist/admin-page/main.js:166
 msgid "Removed step"
 msgstr ""
 
 #. translators: %s: user display name
-#: assets/dist/admin-page/main.js:135
+#: assets/dist/admin-page/main.js:168
 msgid "Created by %s"
 msgstr ""
 
 #. translators: %s: user display name
-#: assets/dist/admin-page/main.js:137
+#: assets/dist/admin-page/main.js:170
 msgid "Edited by %s"
 msgstr ""
 
 #. translators: %s: user display name
-#: assets/dist/admin-page/main.js:139
+#: assets/dist/admin-page/main.js:172
 msgid "Activated by %s"
 msgstr ""
 
 #. translators: %s: user display name
-#: assets/dist/admin-page/main.js:141
+#: assets/dist/admin-page/main.js:174
 msgid "Deactivated by %s"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:141
+#: assets/dist/admin-page/main.js:174
 msgid "Version created"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:141
+#: assets/dist/admin-page/main.js:174
 msgid "Recent history"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:141
+#: assets/dist/admin-page/main.js:174
 msgid "No versions yet."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:141
+#: assets/dist/admin-page/main.js:174
 msgid "Previous page"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:141
+#: assets/dist/admin-page/main.js:174
 msgid "Next page"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:141
+#: assets/dist/admin-page/main.js:174
 msgid "This version has errors"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:141
+#: assets/dist/admin-page/main.js:174
 msgid "a deleted user"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:141
+#: assets/dist/admin-page/main.js:174
 msgid "Steps run"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:141
+#: assets/dist/admin-page/main.js:174
 msgid "No runs with this status."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:141
+#: assets/dist/admin-page/main.js:174
 msgid "No runs yet"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:141
+#: assets/dist/admin-page/main.js:174
 msgid "Each time this workflow starts, the run shows up here with every step’s result."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:141
+#: assets/dist/admin-page/main.js:174
 msgid "Version history"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:141
+#: assets/dist/admin-page/main.js:174
 msgid "Edit workflow"
 msgstr ""
 
 #. translators: %d: number of steps
-#: assets/dist/admin-page/main.js:143
+#: assets/dist/admin-page/main.js:176
 msgid "%d step needs setup before this workflow can run."
 msgid_plural "%d steps need setup before this workflow can run."
 msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %s: date, e.g. "Oct 2"
-#: assets/dist/admin-page/main.js:145
+#: assets/dist/admin-page/main.js:178
 msgid "Active since %s"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:145
+#: assets/dist/admin-page/main.js:178
 msgid "Back to workflows"
 msgstr ""
 
 #. translators: %s: plugin name(s), e.g. "WooCommerce"
-#: assets/dist/admin-page/main.js:147
+#: assets/dist/admin-page/main.js:180
 msgid "Install %s before activating."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:147
+#: assets/dist/admin-page/main.js:180
 msgid "Draft created. Review the emails, then activate it."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:147
+#: assets/dist/admin-page/main.js:180
 msgid "Draft created. Review it, then activate it."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:147
+#: assets/dist/admin-page/main.js:180
 msgid "Template not found."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:147
+#: assets/dist/admin-page/main.js:180
 msgid "Use template"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:147
+#: assets/dist/admin-page/main.js:180
 msgid "Turn on product reviews. Without them there’s nothing to review."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:147
+#: assets/dist/admin-page/main.js:180
 msgid "Open WooCommerce settings"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:147
+#: assets/dist/admin-page/main.js:180
 msgid "What it does"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:147
+#: assets/dist/admin-page/main.js:180
 msgid "Yes:"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:147
+#: assets/dist/admin-page/main.js:180
 msgid "No:"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:147
+#: assets/dist/admin-page/main.js:180
 msgid "Plugins used"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:147
+#: assets/dist/admin-page/main.js:180
 msgid "Installed"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:147
+#: assets/dist/admin-page/main.js:180
 msgid "Other versions"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:147
+#: assets/dist/admin-page/main.js:180
 msgid "Before you start"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:147
+#: assets/dist/admin-page/main.js:180
 msgid "Turn on cart tracking. Without it this workflow never starts."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:147
+#: assets/dist/admin-page/main.js:180
 msgid "Using it creates a draft. Review the emails, then activate it."
 msgstr ""
 
-#: assets/dist/admin-page/main.js:147
+#: assets/dist/admin-page/main.js:180
 msgid "Using it creates a draft. Review it, then activate it."
 msgstr ""
