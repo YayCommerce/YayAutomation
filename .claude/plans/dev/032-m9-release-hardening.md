@@ -96,6 +96,12 @@ A free zip that passes the WordPress.org checklist, a light-only admin with a he
    - `schedule-v1.md`: the M9 plan is 032; the "Kept out of git" sentence is gone.
    - Tests: install, lint, lint:php, Vitest 492, PHPUnit 905, build. `./run.sh release`: no phpcbf output; make-pot prints only the known `GenerateCoupon.php:119` warning. The zip's `vendor-prefixed` equals the checkout's plus `free-admin-shell.php` (applied to a copy, `diff -r` clean).
 
+13. ✅ **Deploy lints before the worktree** — Risk: 1
+   - Regression from CP12: `./run.sh deploy` stopped with "Missing PHP lint tools": it builds in a fresh `git worktree`, which has no `dev/tools/*/vendor` (gitignored).
+   - `dev/scripts/deploy.sh`: runs `pnpm lint:php` in this checkout before `git worktree add` (the tree is required clean, so it is the same source) and stops on failure; copies `dev/.env.local` into the worktree (no "Created dev/.env.local"); calls the worktree's release with `YAYMATIK_SKIP_LINT=1`.
+   - `dev/scripts/release.sh`: `YAYMATIK_SKIP_LINT=1` prints "Lint skipped: done by the caller"; otherwise CP12's behaviour (missing tools or lint errors → exit 1).
+   - Tests: install, lint, lint:php, Vitest 492, PHPUnit 905, build. `./run.sh release` lints. Worktree of HEAD with the new `release.sh`: `YAYMATIK_SKIP_LINT=1 run.sh release pro --rc` builds `yaymatik-pro.zip` (1.0.0-rc354, `includes/Pro` in, no `.env.local`); without the variable it stops with "Missing PHP lint tools". `./run.sh deploy` not run.
+
 ### Run 2 (after Jack's checks: 8 workflows on staging, inbox check, screens of D1, D9, D20)
 
 8a. ✅ **Build: free admin-shell patch, composer.json, adapter, sed line, boot, S9, jsx-runtime, exceptions** (ca35c23, fixes 423e552, e9c1575, d12c4f2) — Risk: 2

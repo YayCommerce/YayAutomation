@@ -22,9 +22,13 @@ DEST_PATH="$BUILD_PATH/$PLUGIN_SLUG"
 
 # Lint the source, not the build: a path argument bypasses phpcs.xml's <file> list and would reach
 # vendor-prefixed after its patches were verified.
-[[ -x dev/tools/lintphp/vendor/bin/phpcs ]] || { echo "Missing PHP lint tools: run ./run.sh setup"; exit 1; }
-echo "Linting PHP..."
-pnpm lint:php || exit 1
+if [[ $YAYMATIK_SKIP_LINT == 1 ]]; then
+    echo "Lint skipped: done by the caller"
+else
+    [[ -x dev/tools/lintphp/vendor/bin/phpcs ]] || { echo "Missing PHP lint tools: run ./run.sh setup"; exit 1; }
+    echo "Linting PHP..."
+    pnpm lint:php || exit 1
+fi
 
 if [[ ! -f vendor/autoload.php ]]; then
     echo "Installing Composer dependencies..."
