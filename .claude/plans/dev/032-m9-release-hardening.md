@@ -123,7 +123,7 @@ A free zip that passes the WordPress.org checklist, a light-only admin with a he
 **Conflicts (open decisions)**
 - D7: `YayMatikLicenseAdapter` isn't a license client. It is the free menu adapter (`PluginMenuAdapter`), and `YayMatik.php:45` registers it, so the free zip can't drop it. `YayMatikProLicenseAdapter` has no caller. Open 1.
 - D6: `I18n.php` calls `unload_textdomain( 'yaymatik' )`, then loads only from `languages/`, which doesn't exist. On WP ≥ 6.7 an unload stops just-in-time loading. So removing only `load_plugin_textdomain` still blocks WordPress.org language packs for PHP strings. Open 2.
-- B1: `https://github.com/YayCommerce/YayMatik` and `…/YayAutomation` (this repo's origin) both return 404, so the repo is private. The repo also holds `includes/Pro`. Open 3.
+- B1: `https://github.com/YayCommerce/YayMatik` and `…/YayAutomation` (this repo's origin) both return 404, so the repo is private. The repo also holds `includes/Pro`. Open 3; changed Nov 11: this repo goes public, Pro modules included.
 - D14: staging is MySQL 8.0.46. wp-env runs `mariadb:lts`, and the local site runs MariaDB 11.2.3. Staging is MySQL 8, but D19a forbids check-* there. The MySQL-sensitive code is `RunStore.php:495` (`REGEXP`, erase) and `GET_LOCK`. Open 4.
 - D19a: `check-orders` and `check-status-flow` are before/after diff tools that print JSON, not PASS/FAIL. `check-status-flow` defaults to local order ids 1693/1694. Open 5.
 - D20c: the runs empty state already uses the same tile classes as the Template Library's "No templates found" (`TemplatesDialog.tsx:206`). The other style is the Health check circle (`HealthPanel.tsx:70`). Open 6.
@@ -170,7 +170,7 @@ Final (Jack, Nov 9–10): D1–D20 as in the brief, with the resolutions above. 
 Opens answered (Jack, Nov 10); these override the Approach and checkpoints where they differ:
 1. Rename `YayMatikLicenseAdapter` → `YayMatikMenuAdapter`, kept in free; `release.sh` drops `YayMatikProLicenseAdapter` from the free zip (CP4).
 2. Delete `I18n.php` and its call. `wp_set_script_translations( ScriptName::PAGE_ADMIN, 'yaymatik' )` stays, without the languages path argument (no JSON shipped) (CP4).
-3. Source: public repo `YayCommerce/YayMatik`, free code only (no `includes/Pro`), made public at submission; its default branch holds the zip's code. readme Source Code: `pnpm install && pnpm build` rebuilds `assets/dist` from that repo; `vendor-prefixed/` ships prebuilt PHP (CP7). `/wp-review` B1 checks that link once the repo is public.
+3. Source (changed Nov 11): this repo, `YayCommerce/YayAutomation`, made public at submission. It holds the Pro modules (`includes/Pro`) too; its default branch is `develop`, which holds the zip's code. readme Source Code: `pnpm install && pnpm build` rebuilds `assets/dist` from that repo; `vendor-prefixed/` ships prebuilt PHP (CP7). `/wp-review` B1 checks that link once the repo is public.
 4. MySQL 8: a read-only probe on staging: RunStore's `REGEXP` pattern on sample strings, `GET_LOCK` / `RELEASE_LOCK`, and the collation `SELECT` that `MetaKeys::user_collides()` (`MetaKeys.php:46`) relies on. No writes. In CP1 as `dev/scripts/probe-mysql.sh`, which only ever targets `--staging` and runs only `SELECT`s.
 5. `check-orders` and `check-status-flow` get the target option and stay out of check-all.
 6. Runs empty-state icon: the HealthPanel look (`HealthPanel.tsx:70`: `size-11 rounded-full`), with a token that contrasts on the grey runs section (CP5).

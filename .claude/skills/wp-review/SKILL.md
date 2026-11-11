@@ -38,7 +38,7 @@ Review the **free release zip** against `.claude/docs/context-wporg-release-chec
 ## Project specifics
 
 - **G1:** the zip has no `includes/Pro/` and no `vendor-prefixed/src/License/` (no updater, no license client). `YayMatikMenuAdapter` is the free menu. admin-shell's license views and `license.js` still ship, as in YayBulkOrder's approved zip; every License-namespace use left in `vendor-prefixed` sits behind a `class_exists` guard (`dev/scripts/lib/free-admin-shell.php`).
-- **B1:** every GitHub link in `readme.txt` must return HTTP 200 (`curl -s -o /dev/null -w '%{http_code}' <url>`). A 404 means `YayCommerce/YayMatik` is still private: a blocker at submission. Once public, compare its default branch with the reviewed commit and report it if behind; it must not hold `includes/Pro`.
+- **B1:** every GitHub link in `readme.txt` must return HTTP 200 (`curl -s -o /dev/null -w '%{http_code}' <url>`). A 404 means `YayCommerce/YayAutomation` is still private: a blocker at submission. Once public, check the reviewed commit is on `develop` (`git merge-base --is-ancestor <commit> origin/develop`) and report it if not.
 - **Q2:** PHP names (options, meta, transients, tables, hooks, constants) use `yaymatik` / `YAYMATIK_` / `YayMatik\`. `yay-*` CSS classes and `yayMatikMeta` are the admin app's.
 - **Q7, Q10:** `./run.sh check-plugin-lifecycle --wp-env` (and `--wp-env-min`) covers deactivate, uninstall and the forced old WordPress; report its result.
 - **Q11:** needs a clean `--wp-env-min` site (`wp-env clean all`). Without it, report "not checked".

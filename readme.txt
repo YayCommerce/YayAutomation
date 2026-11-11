@@ -85,7 +85,7 @@ YayMatik doesn't connect to any external service. Emails go out through your sit
 
 The admin app ships built (`assets/dist/`). Its source code and build steps are public:
 
-https://github.com/YayCommerce/YayMatik
+https://github.com/YayCommerce/YayAutomation
 
 To build it, with Node.js 22.13 or later and pnpm 9 or later:
 
