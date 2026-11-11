@@ -84,6 +84,10 @@ A free zip that passes the WordPress.org checklist, a light-only admin with a he
 ### Run 3
 
 10. ✅ **UI fixes from Jack's browser check** (dc31f27, fix 5cf3ab6) — Risk: 2
+11. ✅ **Workflows list buttons, step reveal per axis** (5f164b3) — Risk: 1
+   - `pages/list/WorkflowListPage.tsx`: the title-row Browse templates / Create workflow show only when `workflows?.length > 0`. Empty: the empty state's pair only. Loading or error: none.
+   - `pages/editor/revealViewport.ts` (pure), called from `ViewKeeper.bringIntoView` in `WorkflowCanvas.tsx`: an axis where the step already fits keeps its offset; the other is centred in the area beside the panel. Zoom and the 300 ms pan stay.
+   - Tests: `revealViewport.test.ts` (4: in view, panel only, below the fold only, both axes), `WorkflowListPage.test.tsx` (3). Lint 0 errors, Vitest 492, build OK. Browser at 1366×657 (1366×768 minus browser bars): a step under the panel moves sideways only (y 48 → 48); a step under the panel and below the fold is centred; empty list shows one pair.
 
 ### Run 2 (after Jack's checks: 8 workflows on staging, inbox check, screens of D1, D9, D20)
 

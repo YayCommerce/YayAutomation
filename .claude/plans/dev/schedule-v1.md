@@ -33,13 +33,15 @@ Mon–Fri work days. Pace so far: F1 (sized L ≈ 3 weeks) took Oct 9–15; M1 (
 | Tue Nov 3 | 028 M3 Review request ×2, M4 Welcome ×2 (Customer account created trigger, data-store guard, billing fill), M5 High-value alert on paid (Processing / Completed); EmailButton, site blocks, flow.ts; merged as 8a94a41. PHPUnit 570, Vitest 346, check-lifecycle 65; browser checks 16/16 (step 8 n/a). Summary doc https://claude.ai/artifact/YME1B8QAULjerSwNYuih6H | 028 #34 |
 | Nov 3–4 | 029 M6 Win-back ×2: Customer inactive daily sweep (last real order N days, 7-day window, batches), `trigger_claims` (DB 7), health row; merged as f747ff8. PHPUnit 590, Vitest 363, check-winback 65 on HPOS and posts; browser checks 12/12. Findings: second win-back version re-emails the window (v1.1 backlog); check-carts left queued runs (script fixed) | 029 #35 |
 | Wed Nov 4 | 030 decisions D1–D18 (catalog compared with Shopify Flow / Klaviyo / AutomateWoo 6.9.4 source; hooks checked in WC 11.2.1 source) | — |
+| Nov 5–9 | 030 custom workflow catalog: triggers, conditions + groups, actions, Wait until, Stop waiting runs; merged Mon Nov 9 as 8b5c7f5 | 030 #37 |
+| Nov 5–10 | 031 staging deploy, mail log, Playwright e2e on wp-env; merged Tue Nov 10 as fb0ea8a | 031 #38 |
 
 ## Plan
 | Order | Work | Plan / PR |
 |---|---|---|
 | 1 | Mock frames for 030 UI (Condition form, groups, Reviews picker group, new panels) | — |
-| 2 | 030 /wplan, then run 1 (CP0–CP6: hardening, data + Condition), run 2 (CP7–CP10: order / customer / review triggers), run 3 (CP11–CP16: write actions, Wait until, Stop waiting runs, check script); one PR | 030 |
-| 3 | 031 M9: version 1.0.0, Requires Plugins header, translation file, readme, M9.3; M9.1 end-to-end test of 18 templates (classic / block checkout, light / dark admin) plus custom-workflow catalog checks | 031 |
+| 2 | ✅ 030 /wplan, then run 1 (CP0–CP6: hardening, data + Condition), run 2 (CP7–CP10: order / customer / review triggers), run 3 (CP11–CP16: write actions, Wait until, Stop waiting runs, check script); one PR | 030 #37 |
+| 3 | ⏳ M9 (renumbered 032; runs 1–3 + CP11 built on jack/feature/032-m9-release, not merged): version 1.0.0, Requires Plugins header, translation file, readme, M9.3; M9.1 end-to-end test of 18 templates (classic / block checkout, light / dark admin) plus custom-workflow catalog checks | 031 |
 | 4 | RC, RC fixes, release build, release (date by Jack) | — |
 | Next feature plan | Manual "Test run on an order" (V11.5, dry run) | — |
 
@@ -143,13 +145,13 @@ One card per phase, one checklist per card, about one item per working day.
 **Custom workflow catalog (030)** · checklist 030
 - ✅ Decisions: catalog compared with Shopify Flow, Klaviyo, AutomateWoo; hooks checked in WooCommerce source
 - Mock frames for the new Condition form, groups and panels
-- Run 1: safety fixes, new condition data and comparisons, condition groups
-- Run 2: Order paid, Order refunded, Order note added, customer milestones, Review posted
-- Run 3: customer custom field, customer role, resend WooCommerce email, Wait until, Stop waiting runs; merge
+- ✅ Run 1: safety fixes, new condition data and comparisons, condition groups — PR #37
+- ✅ Run 2: Order paid, Order refunded, Order note added, customer milestones, Review posted — PR #37
+- ✅ Run 3: customer custom field, customer role, resend WooCommerce email, Wait until, Stop waiting runs; merge — PR #37
 
 **Release hardening (031)** · checklist M9
-- Translation file, readme, plugin header, version 1.0.0 (M9.2, M9.4)
-- Turn off unfinished modules (M9.3)
+- ⏳ Translation file, readme, plugin header, version 1.0.0 (M9.2, M9.4) — built in plan 032, not merged
+- ⏳ Turn off unfinished modules (M9.3) — built in plan 032, not merged
 - v1.0 release candidate
 - End-to-end test of all 18 templates and the new catalog: classic / block checkout, light / dark admin (M9.1)
 
