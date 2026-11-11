@@ -83,7 +83,7 @@ A free zip that passes the WordPress.org checklist, a light-only admin with a he
 
 ### Run 3
 
-10. **UI fixes from Jack's browser check** — Risk: 2
+10. ✅ **UI fixes from Jack's browser check** (dc31f27, fix 5cf3ab6) — Risk: 2
 
 ### Run 2 (after Jack's checks: 8 workflows on staging, inbox check, screens of D1, D9, D20)
 
