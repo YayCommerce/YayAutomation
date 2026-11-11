@@ -101,7 +101,7 @@ Template Library → preview → Use template → configure → activate. When a
      - Delete the action only → "Add an action to this workflow".
      - Delete a middle node with one child → the child reconnects to the parent.
      - Change operator to ≤ → node summary updates live.
-     - Trigger `to` = [Processing, Completed] on real orders (YaySMTP log; customer jack.yaycommerce@gmail.com): → Processing sends, → Completed sends, → On hold doesn't.
+     - Trigger `to` = [Processing, Completed] on real orders (YaySMTP log; customer email = the tester's inbox): → Processing sends, → Completed sends, → On hold doesn't.
      - Workflow #1504 (single status strings) loads with Processing as a tag, saves, and still sends on a real order.
      - Server 400 via `fetch` for each case, active and inactive: empty name, no action, unreachable node (made by editing the graph JSON), invalid config; response carries `data.errors` with matching codes.
      - `/wcheck` screenshots of the error header, field error, multi-select tags and node summary, next to Images 1–4. Light and dark mode.
