@@ -60,10 +60,10 @@ A privacy export or erase page finds a person's runs through an index instead of
      - Each of the 7 write sites sends one INSERT IGNORE only when an email is present.
      - D8: the index insert returns false or throws → the store call keeps its result, `Logger::error` called.
    - Old tests: O1's one count.
-3. **`about()` rewrite** — Risk: 3
+3. ✅ **`about()` rewrite** (ad1b581, with CP4) — Risk: 3
    - Files: `Storage/RunStore.php`; `about()`'s own asserts if any (check-runs privacy section).
    - Tests: PHPUnit SQL shape for the three callers; `check-runs` on both wp-env targets; the privacy part of e2e if present.
-4. **Sync (D4)** — Risk: 2
+4. ✅ **Sync (D4)** (ad1b581) — Risk: 2
    - Files: `Storage/RunStore.php`, tests in `RunEmailsTest.php`.
    - Tests: anonymize deletes only the person's rows of those runs; delete_with_steps order and failure path.
 5. **Bench + check (D6)** — Risk: 1
@@ -97,6 +97,22 @@ Browser check steps, in the PR text (format: 0 Before you start · 1 Setup · 2 
 - Both on: one reminder only.
 - Admin repeats a test with the same email within 7 days → a Skipped row with the reason under Skipped.
 - Privacy: Tools › Export Personal Data for a customer with runs, one of them Skipped → the export lists them. Then Tools › Erase Personal Data → export again → no runs found.
+
+## Results (CP5, wp-env: MariaDB, PHP 8.1)
+`./run.sh bench-privacy --wp-env`. The measured shopper is every 400th run, so 125 runs at 50k and 500 at 200k, more than a real shopper. Old = one run of the full scan; new = median of 5.
+
+| Lookup | 50k old ms | 50k new ms | 200k old ms | 200k new ms |
+|---|---|---|---|---|
+| for_export p1 | 1393 | 1.6 | 5510 | 3.6 |
+| for_export p2 | 1507 | 1.4 | 5598 | 4.3 |
+| ids_mentioning | 1353 | 1.3 | 5675 | 3.6 |
+| in_progress_mentioning | 0.7 | 0.9 | 2.2 | 2.1 |
+| waiting_ids_for_subjects | 45 | 1.1 | 255 | 3.1 |
+
+- New plans: `run_emails` range on `email`, `runs` range on `subject`, `r` eq_ref on PRIMARY; only the small derived and union tables are `ALL`. No full scan of runs or run_steps. All PASS (< 50 ms).
+- Old `in_progress_mentioning` was already fast here: `status IN (queued, running)` leaves 2 rows to test.
+- Write cost, a run + 5 steps (13 writes): 8.9 ms with an email in every value (7 index writes) vs 5.6 ms without (no index query).
+- check-privacy-index: 224 PASS on wp-env.
 
 ## Out of Scope
 - Extension API (034).
