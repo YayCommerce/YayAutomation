@@ -76,6 +76,8 @@ final class RunStore {
         if ( empty( $run['root_run_id'] ) ) {
             $wpdb->update( self::table(), [ 'root_run_id' => $id ], [ 'id' => $id ], [ '%d' ], [ '%d' ] );
         }
+        // Rows a failed delete left for this id belong to an older run: MySQL 5.7 can hand out an id again after a restart.
+        $wpdb->query( $wpdb->prepare( 'DELETE FROM %i WHERE run_id = %d', Schema::table( Schema::RUN_EMAILS ), $id ) );
         self::index_emails( [ $scope ], $skipped ? [ (string) ( $run['error'] ?? '' ) ] : [], 'SELECT %d AS run_id', [ $id ] );
         return $id;
     }

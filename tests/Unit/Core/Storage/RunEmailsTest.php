@@ -283,4 +283,17 @@ final class RunEmailsTest extends TestCase {
         RunStore::anonymize( [ 4 ], $long );
         $this->assertSame( "DELETE FROM `wp_yaymatik_run_emails` WHERE run_id IN (4) AND email IN ('{$key}')", $this->db->last_sql() );
     }
+
+    public function test_a_new_run_first_drops_index_rows_left_for_its_id(): void {
+        RunStore::create(
+            [
+                'workflow_id' => 1,
+                'version_id'  => 2,
+                'scope'       => [ 'to' => 'a@x.test' ],
+            ]
+        );
+        $queries = array_column( array_filter( $this->db->calls, fn( array $call ) => 'query' === $call[0] ), 1 );
+        $this->assertSame( 'DELETE FROM `wp_yaymatik_run_emails` WHERE run_id = 1', $queries[0] );
+        $this->assertStringStartsWith( 'INSERT IGNORE INTO `wp_yaymatik_run_emails`', $queries[1] );
+    }
 }

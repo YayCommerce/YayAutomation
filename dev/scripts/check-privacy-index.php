@@ -125,6 +125,19 @@ RunStore::delete_with_steps( [ $seeded['step input'], $seeded['long local part']
 $ok( 0 === (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i WHERE run_id IN (%d, %d)', Schema::table( Schema::RUN_EMAILS ), $seeded['step input'], $seeded['long local part'] ) ), 'delete: the runs\' index rows gone' );
 $compare( 'after delete' );
 
+// An index row a failed delete left for the next id must not list the run that gets that id.
+$next   = (int) $wpdb->get_row( $wpdb->prepare( 'SHOW TABLE STATUS LIKE %s', RunStore::table() ), ARRAY_A )['Auto_increment'];
+$orphan = "orphan@{$domain}";
+$wpdb->insert(
+    Schema::table( Schema::RUN_EMAILS ),
+    [
+        'run_id' => $next,
+        'email'  => $orphan,
+    ]
+);
+$reused = $run( [ 'note' => 'no email here' ] );
+$ok( $next === $reused && [] === RunStore::for_export( $orphan, [], 1000, 0 ) && 0 === (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i WHERE email = %s', Schema::table( Schema::RUN_EMAILS ), $orphan ) ), 'an orphan index row for the next id: dropped when that run is created, export lists nothing' );
+
 // A Skipped cart run, recorded by the Dispatcher: found by its cart while the cart lives, and holding no email.
 wp_set_current_user( 1 );
 $settings = Settings::all();
