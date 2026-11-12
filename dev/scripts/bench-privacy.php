@@ -46,7 +46,8 @@ $seed = function ( int $total ) use ( $wpdb, $runs_table, $steps_table, $index_t
     for ( $from = $have; $from < $total; $from += 500 ) {
         $rows   = [];
         $emails = [];
-        for ( $i = $from; $i < min( $total, $from + 500 ); $i++ ) {
+        $to     = min( $total, $from + 500 );
+        for ( $i = $from; $i < $to; $i++ ) {
             $email    = 0 === $i % BENCH_HEAVY_EVERY ? BENCH_HEAVY : 'c' . ( $i % BENCH_CUSTOMERS ) . '@bench.test';
             $subject  = ( $i % 3 ? 'order:' : 'cart:' ) . ( 1000000 + $i );
             $scope    = wp_json_encode(

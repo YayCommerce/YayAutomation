@@ -67,7 +67,14 @@ final class CartTriggerTest extends TestCase {
         ];
         $trigger = new CartAbandoned();
 
-        $this->db->results = [ [ 'status' => 'ordered', 'order_id' => '31' ] + $row ];
+        $ordered           = array_merge(
+            $row,
+            [
+                'status'   => 'ordered',
+                'order_id' => '31',
+            ]
+        );
+        $this->db->results = [ $ordered ];
         $this->assertSame( 'The shopper placed order #31.', $trigger->skip_reason( [ 'cart_id' => 7 ] ) );
 
         $this->db->results = [ $row, '4' ];
