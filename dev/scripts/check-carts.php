@@ -27,6 +27,7 @@ use YayMatik\Workflow\Core\Email\CartItems;
 use YayMatik\Workflow\Core\Email\UnsubscribeLink;
 use YayMatik\Workflow\Core\Data\Ref;
 use YayMatik\Workflow\Core\Runtime\ActionSchedulerQueue;
+use YayMatik\Workflow\Core\Runtime\Cancellation;
 use YayMatik\Workflow\Core\Runtime\Cleanup;
 use YayMatik\Workflow\Core\Runtime\RunPresenter;
 use YayMatik\Workflow\Core\Runtime\Runtime;
@@ -1183,6 +1184,10 @@ $cart_runs = function ( int $cart_id ) use ( $wpdb, $runs_table, &$runs ) {
     $runs = array_values( array_unique( array_merge( $runs, $ids ) ) );
     return $ids;
 };
+// Runs a workflow started, and the reasons of the skipped ones a refused claim recorded.
+$started   = fn( int $cart_id ) => array_values( array_filter( $cart_runs( $cart_id ), fn( $id ) => 'skipped' !== RunStore::find( $id )['status'] ) );
+$skips     = fn( int $cart_id ) => array_values( array_map( fn( $id ) => RunStore::find( $id )['error'], array_filter( $cart_runs( $cart_id ), fn( $id ) => 'skipped' === RunStore::find( $id )['status'] ) ) );
+$week_text = 'This shopper already got a reminder series in the last 7 days.';
 $sweep     = function () {
     CartSweep::run();
     Runtime::dispatcher()->flush();
@@ -1312,13 +1317,13 @@ UnsubscribeStore::add( $unsub );
 $due_row( 'unsub', "email = '{$unsub}'" );
 $sweep();
 $r = $row( $sw . 'unsub' );
-$ok( 'abandoned' === $r['status'] && [] === $cart_runs( (int) $r['id'] ) && null === $r['series_at'], 'unsubscribed: abandoned, no run, no series' );
+$ok( 'abandoned' === $r['status'] && [] === $started( (int) $r['id'] ) && [ Cancellation::unsubscribed() ] === $skips( (int) $r['id'] ) && null === $r['series_at'], 'unsubscribed: abandoned, no run started, one Skipped run with the reason, no series' );
 
 $pair = "pair@{$domain}";
 $due_row( 'younger', "email = '{$pair}'" );
 $due_row( 'older', "email = '{$pair}', last_activity_at = UTC_TIMESTAMP() - INTERVAL 3 HOUR" );
 $sweep();
-$ok( 1 === count( $cart_runs( (int) $row( $sw . 'older' )['id'] ) ) && [] === $cart_runs( (int) $row( $sw . 'younger' )['id'] ) && null === $row( $sw . 'younger' )['series_at'], 'two carts, one email, one sweep: only the older starts, though its id is higher' );
+$ok( 1 === count( $started( (int) $row( $sw . 'older' )['id'] ) ) && [] === $started( (int) $row( $sw . 'younger' )['id'] ) && [ $week_text ] === $skips( (int) $row( $sw . 'younger' )['id'] ) && null === $row( $sw . 'younger' )['series_at'], 'two carts, one email, one sweep: only the older starts, though its id is higher; the younger is Skipped' );
 
 $due_row( 'unblocked', "email = '{$series}'" );
 $sweep();
@@ -1339,14 +1344,18 @@ $six = "six@{$domain}";
 $due_row( 'six', "email = '{$six}', status = 'abandoned', abandoned_at = UTC_TIMESTAMP(), series_at = UTC_TIMESTAMP() - INTERVAL 6 DAY" );
 $due_row( 'aftersix', "email = '{$six}'" );
 $sweep();
-$ok( [] === $cart_runs( (int) $row( $sw . 'aftersix' )['id'] ), 'a series 6 days old blocks' );
+$r = $row( $sw . 'aftersix' );
+$ok( [] === $started( (int) $r['id'] ) && [ $week_text ] === $skips( (int) $r['id'] ), 'a series 6 days old blocks: a Skipped run with the reason' );
+$skip  = $cart_runs( (int) $r['id'] )[0];
+$stats = RunStore::stats( [ $cart_flow ] )[ $cart_flow ] ?? [];
+$ok( in_array( $skip, array_column( RunStore::list( [ 'workflow_id' => $cart_flow, 'status' => 'skipped' ] ), 'id' ), true ) && $skip === ( $stats['last_id'] ?? 0 ) && 'skipped' === ( $stats['last_status'] ?? '' ) && ( $stats['recent'] ?? 0 ) >= 1, 'the Skipped run is listed under Skipped and counts as the workflow\'s last run' );
 
 $due_row( 'late', "email = 'late@{$domain}'" );
 CartSweep::run();
 $age( $sw . 'late', "status = 'ordered'" );
 Runtime::dispatcher()->flush();
 $r = $row( $sw . 'late' );
-$ok( [] === $cart_runs( (int) $r['id'] ) && null === $r['series_at'], 'ordered between the sweep and its shutdown: no run, no series' );
+$ok( [] === $started( (int) $r['id'] ) && [ Cancellation::order_placed( 0 ) ] === $skips( (int) $r['id'] ) && null === $r['series_at'], 'ordered between the sweep and its shutdown: no run started, Skipped as ordered, no series' );
 
 // Account with no billing email: the run still reaches the cart's address.
 $sent = [];
@@ -1495,7 +1504,7 @@ $ok( 'cancelled' === Runtime::worker()->run( $gone_q ) && 'The cart was emptied 
 $late_mail = "late@{$domain}";
 $due_row( 'late', "email = '{$late_mail}'" );
 $sweep();
-$late_run = $cart_runs( (int) $row( $sw . 'late' )['id'] )[0];
+$late_run = $started( (int) $row( $sw . 'late' )['id'] )[0];
 UnsubscribeStore::add( $late_mail );
 as_unschedule_all_actions( ActionSchedulerQueue::HOOK, [ $late_run ], ActionSchedulerQueue::GROUP );
 $ok( 'cancelled' === Runtime::worker()->run( $late_run ) && $left === $run_row( $late_run )['error'], 'queued run + unsubscribed email: Cancelled at start' );

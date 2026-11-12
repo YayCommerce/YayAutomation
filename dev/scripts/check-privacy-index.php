@@ -12,6 +12,12 @@
 require_once __DIR__ . '/lib/privacy-old-scan.php';
 
 use YayMatik\Engine\Privacy\PersonalData;
+use YayMatik\Workflow\Core\Runtime\Cancellation;
+use YayMatik\Workflow\Core\Runtime\PersonSubjects;
+use YayMatik\Workflow\Core\Runtime\Runtime;
+use YayMatik\Workflow\Core\Steps\StepRegistry;
+use YayMatik\Workflow\Core\Storage\CartStore;
+use YayMatik\Workflow\Core\Storage\Settings;
 use YayMatik\Workflow\Core\Storage\RunStepStore;
 use YayMatik\Workflow\Core\Storage\RunStore;
 use YayMatik\Workflow\Core\Storage\Schema;
@@ -118,6 +124,95 @@ $compare( 'after erase' );
 RunStore::delete_with_steps( [ $seeded['step input'], $seeded['long local part'] ] );
 $ok( 0 === (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i WHERE run_id IN (%d, %d)', Schema::table( Schema::RUN_EMAILS ), $seeded['step input'], $seeded['long local part'] ) ), 'delete: the runs\' index rows gone' );
 $compare( 'after delete' );
+
+// A Skipped cart run, recorded by the Dispatcher: found by its cart while the cart lives, and holding no email.
+wp_set_current_user( 1 );
+$settings = Settings::all();
+Settings::update( [ 'cart_tracking' => true ] );
+$rest     = function ( string $method, string $route, ?array $body = null ) {
+    $request = new WP_REST_Request( $method, '/yaymatik/v1/' . $route );
+    if ( null !== $body ) {
+        $request->set_header( 'content-type', 'application/json' );
+        $request->set_body( wp_json_encode( $body ) );
+    }
+    return rest_do_request( $request );
+};
+$node     = fn( string $id, string $kind, string $block, array $config, int $y ) => [
+    'id'       => $id,
+    'kind'     => $kind,
+    'position' => [
+        'x' => 0,
+        'y' => $y,
+    ],
+    'data'     => [
+        'block'  => $block,
+        'config' => (object) $config,
+    ],
+];
+$flow     = (int) $rest(
+    'POST',
+    'workflows',
+    [
+        'name'  => 'Check privacy index (temporary)',
+        'graph' => [
+            'nodes' => [
+                $node( 'trigger', 'trigger', 'cart_abandoned', [], 0 ),
+                $node(
+                    'mail',
+                    'action',
+                    'send_email',
+                    [
+                        'to'      => '{{ customer.email }}',
+                        'subject' => 'Check',
+                        'heading' => 'Hi',
+                        'message' => '<p>Hi</p>',
+                    ],
+                    170
+                ),
+            ],
+            'edges' => [
+                [
+                    'id'     => 'e1',
+                    'source' => 'trigger',
+                    'target' => 'mail',
+                ],
+            ],
+        ],
+    ]
+)->get_data()['id'];
+$ok( 200 === $rest( 'POST', "workflows/{$flow}/activate" )->get_status(), 'skipped run: a temporary Cart abandoned workflow activates' );
+$shopper = "skipped@{$domain}";
+CartStore::upsert(
+    'pidx-' . $domain,
+    [
+        'email' => $shopper,
+        'items' => '[{"product_id":1,"quantity":1}]',
+    ]
+);
+$cart = CartStore::for_email( $shopper )[0] ?? [ 'id' => 0 ];
+$wpdb->update( Schema::table( Schema::CARTS ), [ 'status' => CartStore::ORDERED ], [ 'id' => (int) $cart['id'] ] );
+Runtime::dispatcher()->collect( StepRegistry::get( 'cart_abandoned' ), [ 'cart_id' => (int) $cart['id'] ] );
+Runtime::dispatcher()->flush();
+$skipped = RunStore::list(
+    [
+        'workflow_id' => $flow,
+        'status'      => 'skipped',
+    ]
+)[0] ?? [ 'id' => 0 ];
+$ok( $skipped['id'] && Cancellation::order_placed( 0 ) === $skipped['error'], 'skipped run: recorded with the ordered-cart reason' );
+$subjects = PersonSubjects::for_email( $shopper );
+$exported = fn() => array_column( $privacy->export( $shopper, 1 )['data'], 'item_id' );
+$ok( in_array( "yaymatik-run-{$skipped['id']}", $exported(), true ), 'skipped run: export lists it, by its cart' );
+$ok( $ids( yaymatik_old_for_export( $shopper, $subjects, 1000, 0 ) ) === $ids( RunStore::for_export( $shopper, $subjects, 1000, 0 ) ) && yaymatik_old_ids_mentioning( $shopper, $subjects, 1000 ) === RunStore::ids_mentioning( $shopper, $subjects, 1000 ), 'skipped run: export and erase lookups match the old scan' );
+$erase = $privacy->erase( $shopper, 1 );
+$row   = RunStore::find( (int) $skipped['id'] );
+$ok( $erase['done'] && [] === CartStore::for_email( $shopper ) && ! in_array( "yaymatik-run-{$skipped['id']}", $exported(), true ), 'skipped run: erase deletes the cart; export no longer finds the run' );
+$ok( $row && false === stripos( wp_json_encode( $row ), $shopper ), 'skipped run: kept, with no email in it' );
+$rest( 'POST', "workflows/{$flow}/deactivate" );
+$ok( 200 === $rest( 'DELETE', "workflows/{$flow}" )->get_status(), 'skipped run: the temporary workflow deleted' );
+// By subject: the site's own active cart workflows recorded skipped runs for this cart too.
+RunStore::delete_with_steps( array_map( 'intval', $wpdb->get_col( $wpdb->prepare( 'SELECT id FROM %i WHERE subject = %s', RunStore::table(), 'cart:' . (int) $cart['id'] ) ) ) );
+Settings::update( [ 'cart_tracking' => $settings['cart_tracking'] ] );
 
 $cleanup();
 echo $fails ? "{$fails} failed\n" : "All passed\n"; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped

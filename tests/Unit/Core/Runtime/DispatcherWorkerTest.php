@@ -706,6 +706,69 @@ final class DispatcherWorkerTest extends TestCase {
         $this->assertSame( 2, $this->workflows->lookups );
     }
 
+    public function test_a_refused_claim_with_a_reason_records_a_skipped_run_per_listening_workflow(): void {
+        $this->add_workflow( 2 );
+        $this->add_workflow( 3 );
+        unset( $this->workflows->versions[3] );
+        $trigger                = new FakeTrigger( OrderStatusChanged::ID );
+        $trigger->claims        = false;
+        $trigger->skip          = 'This shopper already got a reminder series in the last 7 days.';
+        $trigger->event_context = [ 'order' => 12 ];
+        $dispatcher             = $this->dispatcher_with( [ $trigger ] );
+
+        $dispatcher->collect( $trigger, self::paid( 12 ) );
+        $dispatcher->flush();
+
+        $this->assertSame( [ 1, 2 ], array_column( $this->runs->runs, 'workflow_id' ) );
+        foreach ( $this->runs->runs as $run ) {
+            $this->assertSame( 'skipped', $run['status'] );
+            $this->assertSame( $trigger->skip, $run['error'] );
+            $this->assertNotNull( $run['finished_at'] );
+            $this->assertSame( OrderStatusChanged::ID, $run['trigger_id'] );
+        }
+        $this->assertSame( [], $this->queue->jobs );
+    }
+
+    public function test_a_refused_claim_without_a_reason_or_without_a_workflow_records_nothing(): void {
+        $trigger         = new FakeTrigger( OrderStatusChanged::ID );
+        $trigger->claims = false;
+        $dispatcher      = $this->dispatcher_with( [ $trigger ] );
+        $dispatcher->collect( $trigger, self::paid( 12 ) );
+        $dispatcher->flush();
+        $this->assertSame( [], $this->runs->runs );
+
+        $other         = new FakeTrigger( 'other' );
+        $other->skip   = 'Skipped.';
+        $other->claims = false;
+        $dispatcher    = $this->dispatcher_with( [ $other ] );
+        $dispatcher->collect( $other, self::paid( 12 ) );
+        $dispatcher->flush();
+        $this->assertSame( [], $this->runs->runs );
+    }
+
+    public function test_a_full_sweep_of_skips_does_not_pause_the_workflow(): void {
+        $trigger                = new FakeTrigger( OrderStatusChanged::ID );
+        $trigger->claims        = false;
+        $trigger->skip          = 'Skipped.';
+        $trigger->event_context = [ 'order' => 12 ];
+        $dispatcher             = $this->dispatcher_with( [ $trigger ] );
+        for ( $i = 0; $i < 200; $i++ ) {
+            $dispatcher->collect( $trigger, self::paid( 100 + $i ) );
+        }
+        $dispatcher->flush();
+
+        $this->assertCount( 200, $this->runs->runs );
+        $this->assertSame( [], $this->workflows->deactivated );
+
+        // Under the ceiling, so the next real event still starts a run.
+        $this->dispatcher->collect( $this->trigger, self::paid( self::ORDER ) );
+        $this->dispatcher->flush();
+        $this->assertCount( 201, $this->runs->runs );
+        $this->assertSame( 'queued', end( $this->runs->runs )['status'] );
+        $this->assertSame( [ [ 201, null ] ], $this->queue->jobs );
+        $this->assertSame( [], $this->workflows->deactivated );
+    }
+
     /**
      * A status event for an order.
      *

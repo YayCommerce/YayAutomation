@@ -38,30 +38,35 @@ final class RunStore {
     private const IN_PROGRESS = [ self::STATUS_QUEUED, self::STATUS_RUNNING ];
 
     /**
-     * A queued run; one with no parent is its own root.
+     * A queued run, or a skipped one that never runs; one with no parent is its own root.
      *
      * @param array $run `workflow_id`, `version_id`, `trigger_id`, `subject`, `scope` (array), and when
-     *                   another run started it `parent_run_id`, `root_run_id`, `depth`.
+     *                   another run started it `parent_run_id`, `root_run_id`, `depth`; `status` skipped
+     *                   with its `error` for a run a trigger refused.
      * @return int Run id; 0 when the insert failed (logged).
      */
     public static function create( array $run ): int {
         global $wpdb;
-        $scope = (string) wp_json_encode( $run['scope'] ?? [] );
-        $ok    = $wpdb->insert(
+        $scope   = (string) wp_json_encode( $run['scope'] ?? [] );
+        $skipped = self::STATUS_SKIPPED === ( $run['status'] ?? '' );
+        $now     = current_time( 'mysql', true );
+        $ok      = $wpdb->insert(
             self::table(),
             [
                 'workflow_id'   => (int) $run['workflow_id'],
                 'version_id'    => (int) $run['version_id'],
                 'trigger_id'    => (string) ( $run['trigger_id'] ?? '' ),
                 'subject'       => (string) ( $run['subject'] ?? '' ),
-                'status'        => self::STATUS_QUEUED,
+                'status'        => $skipped ? self::STATUS_SKIPPED : self::STATUS_QUEUED,
                 'scope'         => $scope,
+                'error'         => $skipped ? (string) ( $run['error'] ?? '' ) : null,
                 'parent_run_id' => (int) ( $run['parent_run_id'] ?? 0 ),
                 'root_run_id'   => (int) ( $run['root_run_id'] ?? 0 ),
                 'depth'         => (int) ( $run['depth'] ?? 0 ),
-                'started_at'    => current_time( 'mysql', true ),
+                'started_at'    => $now,
+                'finished_at'   => $skipped ? $now : null,
             ],
-            [ '%d', '%d', '%s', '%s', '%s', '%s', '%d', '%d', '%d', '%s' ]
+            [ '%d', '%d', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%d', '%s', '%s' ]
         );
         if ( ! $ok ) {
             Logger::error( 'Could not create a run: ' . $wpdb->last_error, [ 'workflow_id' => (int) $run['workflow_id'] ] );
@@ -71,7 +76,7 @@ final class RunStore {
         if ( empty( $run['root_run_id'] ) ) {
             $wpdb->update( self::table(), [ 'root_run_id' => $id ], [ 'id' => $id ], [ '%d' ], [ '%d' ] );
         }
-        self::index_emails( [ $scope ], [], 'SELECT %d AS run_id', [ $id ] );
+        self::index_emails( [ $scope ], $skipped ? [ (string) ( $run['error'] ?? '' ) ] : [], 'SELECT %d AS run_id', [ $id ] );
         return $id;
     }
 

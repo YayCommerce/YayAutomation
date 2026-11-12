@@ -57,4 +57,31 @@ final class CartTriggerTest extends TestCase {
         $this->db->results = [ $row, null, null, 0 ];
         $this->assertFalse( ( new CartAbandoned() )->claim( [ 'cart_id' => 7 ] ) );
     }
+
+    public function test_each_refusal_has_its_reason_and_starts_no_series(): void {
+        $row     = [
+            'id'       => '7',
+            'email'    => 'ann@x.test',
+            'status'   => 'abandoned',
+            'order_id' => '0',
+        ];
+        $trigger = new CartAbandoned();
+
+        $this->db->results = [ [ 'status' => 'ordered', 'order_id' => '31' ] + $row ];
+        $this->assertSame( 'The shopper placed order #31.', $trigger->skip_reason( [ 'cart_id' => 7 ] ) );
+
+        $this->db->results = [ $row, '4' ];
+        $this->assertSame( 'The shopper unsubscribed from these emails.', $trigger->skip_reason( [ 'cart_id' => 7 ] ) );
+
+        $this->db->results = [ $row, null, '1' ];
+        $this->assertSame( 'This shopper already got a reminder series in the last 7 days.', $trigger->skip_reason( [ 'cart_id' => 7 ] ) );
+
+        $this->db->results = [ null ];
+        $this->assertNull( $trigger->skip_reason( [ 'cart_id' => 7 ] ) );
+
+        $this->db->calls   = [];
+        $this->db->results = [ $row, null, '1' ];
+        $this->assertFalse( $trigger->claim( [ 'cart_id' => 7 ] ) );
+        $this->assertStringNotContainsString( 'series_at = ', implode( "\n", array_column( $this->db->calls, 1 ) ) );
+    }
 }

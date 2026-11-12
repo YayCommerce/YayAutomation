@@ -3,11 +3,20 @@ namespace YayMatik\Tests\Support;
 
 use YayMatik\Workflow\Core\Steps\Trigger;
 
-/** A trigger whose id and `stop_reason()` a test sets; counts its `listen()` calls. */
+/** A trigger whose id, context, `claim()`, `skip_reason()` and `stop_reason()` a test sets; counts its `listen()` calls. */
 final class FakeTrigger extends Trigger {
 
     /** @var string|null */
     public $reason = null;
+
+    /** @var bool */
+    public $claims = true;
+
+    /** @var string|null */
+    public $skip = null;
+
+    /** @var array What `context()` returns; empty reads as no context. */
+    public $event_context = [];
 
     /** @var string */
     public $trigger_id;
@@ -53,7 +62,7 @@ final class FakeTrigger extends Trigger {
     }
 
     public function context( array $args ): ?array {
-        return [];
+        return $this->event_context;
     }
 
     public function refs( array $args ): ?array {
@@ -66,5 +75,13 @@ final class FakeTrigger extends Trigger {
 
     public function stop_reason( string $subject ): ?string {
         return $this->reason;
+    }
+
+    public function claim( array $args ): bool {
+        return $this->claims;
+    }
+
+    public function skip_reason( array $args ): ?string {
+        return $this->skip;
     }
 }

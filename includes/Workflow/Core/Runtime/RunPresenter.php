@@ -116,13 +116,13 @@ final class RunPresenter {
     }
 
     /**
-     * The admin URL of the order that ended a cancelled cart run; null for anything else, also an order placed after the run stopped for another reason.
+     * The admin URL of the order that ended or skipped a cart run; null for anything else, also an order placed after the run stopped for another reason.
      *
      * @param array $run
      */
     private static function stopped_by_order_url( array $run ): ?string {
         list( $type, $id ) = array_pad( explode( ':', (string) $run['subject'], 2 ), 2, '' );
-        if ( 'cart' !== $type || RunStore::STATUS_CANCELLED !== $run['status'] ) {
+        if ( 'cart' !== $type || ! in_array( $run['status'], [ RunStore::STATUS_CANCELLED, RunStore::STATUS_SKIPPED ], true ) ) {
             return null;
         }
         $cart = CartStore::find( (int) $id );

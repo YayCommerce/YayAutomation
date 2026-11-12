@@ -5,6 +5,7 @@ use YayMatik\Utils\Logger;
 use YayMatik\Workflow\Core\Data\Scope;
 use YayMatik\Workflow\Core\Definition\GraphSchema;
 use YayMatik\Workflow\Core\Steps\Trigger;
+use YayMatik\Workflow\Core\Storage\RunStore;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -197,7 +198,14 @@ final class Dispatcher {
             $this->active[ $trigger->id() ] ??= $this->workflows->active_for_trigger( $trigger->id() );
 
             $workflows = $this->active[ $trigger->id() ];
-            if ( ! $workflows || ! $trigger->claim( $args ) ) {
+            if ( ! $workflows ) {
+                return;
+            }
+            if ( ! $trigger->claim( $args ) ) {
+                $reason = $trigger->skip_reason( $args );
+                if ( null !== $reason ) {
+                    $this->skip_runs( $workflows, $trigger, $args, $reason, $parent_run );
+                }
                 return;
             }
             $context = $trigger->context( $args );
@@ -207,9 +215,7 @@ final class Dispatcher {
             }
             foreach ( $workflows as $workflow ) {
                 $node = GraphSchema::trigger( $workflow['graph']['nodes'] ?? [] );
-                if ( ! $node || $node['data']['block'] !== $trigger->id()
-                    || true !== $trigger->validate( $node['data']['config'] )
-                    || ! $trigger->matches( $context, $node['data']['config'] ) ) {
+                if ( ! $this->listens( $workflow, $trigger ) || ! $trigger->matches( $context, $node['data']['config'] ) ) {
                     continue;
                 }
                 $claims = $trigger->claims_per_workflow();
@@ -233,6 +239,61 @@ final class Dispatcher {
         } catch ( \Throwable $e ) {
             Logger::error( "Could not start workflows for {$trigger->id()}: " . $e->getMessage(), [ 'args' => $args ] );
         }
+    }
+
+    /**
+     * A finished skipped run, with the reason, for each workflow the refused event would have started.
+     *
+     * @param array[]    $workflows
+     * @param Trigger    $trigger
+     * @param array      $args
+     * @param string     $reason
+     * @param array|null $parent_run
+     */
+    private function skip_runs( array $workflows, Trigger $trigger, array $args, string $reason, ?array $parent_run ): void {
+        $context = $trigger->context( $args );
+        $refs    = $context ? $trigger->resolved_refs( $args ) : null;
+        if ( ! $context || null === $refs ) {
+            return;
+        }
+        $scope   = ( new Scope( [ 'trigger' => $refs ], null, [] ) )->to_array();
+        $subject = $trigger->subject( $args );
+        foreach ( $workflows as $workflow ) {
+            $id = (int) $workflow['id'];
+            if ( isset( $this->paused[ $id ] ) || ! $this->listens( $workflow, $trigger )
+                || ! $trigger->matches( $context, GraphSchema::trigger( $workflow['graph']['nodes'] ?? [] )['data']['config'] ) ) {
+                continue;
+            }
+            $version_id = $this->workflows->live_version_id( $id );
+            if ( ! $version_id ) {
+                continue;
+            }
+            $this->runs->create_run(
+                [
+                    'workflow_id'   => $id,
+                    'version_id'    => $version_id,
+                    'trigger_id'    => $trigger->id(),
+                    'subject'       => $subject,
+                    'scope'         => $scope,
+                    'status'        => RunStore::STATUS_SKIPPED,
+                    'error'         => $reason,
+                    'parent_run_id' => $parent_run ? (int) $parent_run['id'] : 0,
+                    'root_run_id'   => $parent_run ? (int) $parent_run['root_run_id'] : 0,
+                    'depth'         => $parent_run ? (int) $parent_run['depth'] + 1 : 0,
+                ]
+            );
+        }
+    }
+
+    /**
+     * Whether the workflow's trigger node is this trigger with a valid config.
+     *
+     * @param array   $workflow
+     * @param Trigger $trigger
+     */
+    private function listens( array $workflow, Trigger $trigger ): bool {
+        $node = GraphSchema::trigger( $workflow['graph']['nodes'] ?? [] );
+        return $node && $node['data']['block'] === $trigger->id() && true === $trigger->validate( $node['data']['config'] );
     }
 
     /**

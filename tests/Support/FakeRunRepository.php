@@ -27,6 +27,7 @@ class FakeRunRepository implements RunRepository {
     public $claims = [];
 
     public function create_run( array $run ): int {
+        $skipped           = RunStore::STATUS_SKIPPED === ( $run['status'] ?? '' );
         $id                = count( $this->runs ) + 1;
         $this->runs[ $id ] = [
             'id'            => $id,
@@ -34,16 +35,16 @@ class FakeRunRepository implements RunRepository {
             'version_id'    => (int) $run['version_id'],
             'trigger_id'    => (string) ( $run['trigger_id'] ?? '' ),
             'subject'       => (string) ( $run['subject'] ?? '' ),
-            'status'        => RunStore::STATUS_QUEUED,
+            'status'        => $skipped ? RunStore::STATUS_SKIPPED : RunStore::STATUS_QUEUED,
             'position'      => null,
             'scope'         => $run['scope'] ?? [],
             'wait_until'    => null,
-            'error'         => null,
+            'error'         => $skipped ? (string) ( $run['error'] ?? '' ) : null,
             'parent_run_id' => (int) ( $run['parent_run_id'] ?? 0 ),
             'root_run_id'   => (int) ( $run['root_run_id'] ?? 0 ) ? (int) $run['root_run_id'] : $id,
             'depth'         => (int) ( $run['depth'] ?? 0 ),
             'started_at'    => '2026-10-12 10:00:00',
-            'finished_at'   => null,
+            'finished_at'   => $skipped ? '2026-10-12 10:00:00' : null,
         ];
         return $id;
     }
