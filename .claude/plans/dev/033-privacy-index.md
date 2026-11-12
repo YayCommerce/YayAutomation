@@ -106,6 +106,11 @@ Browser check steps in the PR description (format: 0 Understand First · 1 Prepa
 - R1: `RunStore::create()` deletes any `run_emails` rows for the new id before indexing, so rows left by a failed delete can't attach to an id reused after a MySQL 5.7 restart. PHPUnit; check-privacy-index seeds an orphan row for the next id.
 - R2 (Jack picked A): the sweep fires on every abandon, a cart in a series included. `CartTrigger::skip_reason()` first returns "This cart already got a reminder series.", so `claim()` never reaches `start_series()` and I1 holds. That abandon's kind decides which workflows record the Skipped run. `CartStore::due()` no longer reads `series_at`. Browser step B4 now repeats with the same logged-in cart.
 - R1 3143d5b, R2 6152b40.
+- R4 (e0df0db), e2e harness only, no plugin code. Through Docker the specs' `wp-env run cli` work lands seconds after the call returns, so:
+  - `runQueueUntil()` (`dev/e2e/support/wp.ts`) re-runs `runQueue()` and checks again until the expected state appears, up to 30 s (`expect.poll`). The journeys use it for each run status (Completed, Waiting ×1 / ×2) and mail-log row. Each check reloads the page and then makes the same assertion as before, `toHaveCount` with the same count, now with a 5 s timeout inside each try: a bare `count()` after a reload ran before the React runs table rendered. The final assertions are unchanged.
+  - The unsubscribe journey is `test.slow()`: two workflows, two orders and two queue waits go past 90 s.
+  - The health-check test retries removal + page load with `toPass` (30 s) and reloads each try: a second `goto` to the same `#/settings` URL is a same-document navigation and never refetched.
+  - `removeCleanupJob()` also stamps `yaymatik_cleanup_checked_at`, because `resetSite()` clears it and the next page load's hourly self-check would schedule the job again.
 - R3: e2e in `mcr.microsoft.com/playwright:v1.64.1-noble` (see Results). No committed change: the script lives in the session scratchpad.
   - The repo and `~/.wp-env` are mounted at their host paths, with the host Docker socket, because the helpers call `pnpm wp-env run cli` and `./run.sh`.
   - The container installs `docker.io` and `docker-compose-v2`, with `DOCKER_API_VERSION=1.43` for the host's Docker 24.
@@ -133,10 +138,11 @@ Browser check steps in the PR description (format: 0 Understand First · 1 Prepa
 - `pnpm e2e` can't run on the host: this Playwright build doesn't support Chromium on macOS 12.
 - After R1–R2 (6152b40):
   - CI steps on the host all pass: `pnpm install --frozen-lockfile`, lint, lint:php, test (Vitest 492), test:php (PHPUnit 923), build. check-all `--wp-env` and `--wp-env-min`: 10/10 PASS each.
-  - e2e in Docker: 7 passed, 4 failed. The failures: an order runs the workflow; abandoned checkout reminder; classic checkout order; unsubscribe stops the next email.
-  - `develop` (9b31ca7) in the same container fails the same 4 tests, 7 passed, so this is the harness, not 033.
-  - Each failure finds its run still Running (0 steps) or not there when the page reloads. Action Scheduler's log shows each job ran "via WP CLI", that is the test's own `runQueue()`, about 2–3 s after the reload. In this container the helpers' `pnpm wp-env run cli` calls, through the proxied socket, don't finish their work before the test goes on.
-  - Still open: e2e on a host whose Playwright runs natively, as in 032.
+  - e2e in Docker before R4: 7 passed, 4 failed; `develop` (9b31ca7) failed the same 4 in the same container.
+- After R4 (e0df0db), in `mcr.microsoft.com/playwright:v1.64.1-noble`:
+  - This branch: e2e 11/11.
+  - `develop` 9b31ca7 with only the three R4 e2e files: 11/11, so the harness fix alone makes develop green. Those files were not committed there.
+  - CI steps on the host all pass: install --frozen-lockfile, lint, lint:php, test (Vitest 492), test:php (PHPUnit 923), build.
 
 ## Out of Scope
 
