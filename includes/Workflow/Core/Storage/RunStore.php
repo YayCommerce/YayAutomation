@@ -2,6 +2,7 @@
 namespace YayMatik\Workflow\Core\Storage;
 
 use YayMatik\Utils\Logger;
+use YayMatik\Workflow\Core\Email\UnsubscribeLink;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -45,7 +46,8 @@ final class RunStore {
      */
     public static function create( array $run ): int {
         global $wpdb;
-        $ok = $wpdb->insert(
+        $scope = (string) wp_json_encode( $run['scope'] ?? [] );
+        $ok    = $wpdb->insert(
             self::table(),
             [
                 'workflow_id'   => (int) $run['workflow_id'],
@@ -53,7 +55,7 @@ final class RunStore {
                 'trigger_id'    => (string) ( $run['trigger_id'] ?? '' ),
                 'subject'       => (string) ( $run['subject'] ?? '' ),
                 'status'        => self::STATUS_QUEUED,
-                'scope'         => wp_json_encode( $run['scope'] ?? [] ),
+                'scope'         => $scope,
                 'parent_run_id' => (int) ( $run['parent_run_id'] ?? 0 ),
                 'root_run_id'   => (int) ( $run['root_run_id'] ?? 0 ),
                 'depth'         => (int) ( $run['depth'] ?? 0 ),
@@ -69,6 +71,7 @@ final class RunStore {
         if ( empty( $run['root_run_id'] ) ) {
             $wpdb->update( self::table(), [ 'root_run_id' => $id ], [ 'id' => $id ], [ '%d' ], [ '%d' ] );
         }
+        self::index_emails( [ $scope ], [], 'SELECT %d AS run_id', [ $id ] );
         return $id;
     }
 
@@ -301,6 +304,10 @@ final class RunStore {
             Logger::error( 'Could not cancel waiting runs: ' . $wpdb->last_error, [ 'run_ids' => $ids ] );
             return 0;
         }
+        if ( $done ) {
+            // Only the runs this call ended: one its job took meanwhile never got the reason.
+            self::index_emails( [], [ $reason ], 'SELECT id AS run_id FROM %i WHERE id IN (' . Schema::in( count( $ids ) ) . ') AND status = %s AND error = %s', array_merge( [ self::table() ], $ids, [ self::STATUS_CANCELLED, $reason ] ) );
+        }
         return (int) $done;
     }
 
@@ -339,6 +346,7 @@ final class RunStore {
             Logger::error( 'Could not save a run: ' . $wpdb->last_error, [ 'run_id' => $id ] );
             return false;
         }
+        self::index_emails( array_filter( [ $row['scope'] ?? null ] ), array_filter( [ $row['error'] ?? null ] ), 'SELECT id AS run_id FROM %i WHERE id = %d', [ self::table(), $id ] );
         return true;
     }
 
@@ -540,6 +548,130 @@ final class RunStore {
             }
         }
         return count( $changed );
+    }
+
+    /**
+     * Adds the emails in these values to `run_emails` for the runs `$runs` selects; logs a failure, never throws.
+     *
+     * @param string[] $json Values of JSON columns, as stored.
+     * @param string[] $text Values of text columns.
+     * @param string   $runs `SELECT` of a `run_id` column; its placeholders take `$params`.
+     * @param array    $params
+     */
+    public static function index_emails( array $json, array $text, string $runs, array $params ): void {
+        global $wpdb;
+        try {
+            $emails = self::emails_in( $json, $text );
+            if ( ! $emails ) {
+                return;
+            }
+            $list = implode( ' UNION ALL ', array_fill( 0, count( $emails ), 'SELECT %s AS email' ) );
+            $done = $wpdb->query(
+                // phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- placeholders are built to match the array.
+                $wpdb->prepare(
+                    // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- $runs and $list are placeholders.
+                    "INSERT IGNORE INTO %i (run_id, email) SELECT r.run_id, e.email FROM ({$runs}) r CROSS JOIN ({$list}) e",
+                    array_merge( [ Schema::table( Schema::RUN_EMAILS ) ], $params, $emails )
+                )
+            );
+            if ( false === $done ) {
+                Logger::error( 'Could not index a run\'s emails: ' . $wpdb->last_error, [ 'runs' => $params ] );
+            }
+        } catch ( \Throwable $e ) {
+            Logger::error( 'Could not index a run\'s emails: ' . $e->getMessage(), [ 'runs' => $params ] );
+        }
+    }
+
+    /**
+     * Index values: JSON strings `replace_json()` would replace, and text addresses `replace_text()` would.
+     *
+     * @param string[] $json
+     * @param string[] $text
+     * @return string[]
+     */
+    private static function emails_in( array $json, array $text ): array {
+        $found = [];
+        foreach ( $json as $value ) {
+            self::json_emails( json_decode( (string) $value, true ), $found );
+        }
+        foreach ( $text as $value ) {
+            self::text_emails( (string) $value, $found );
+        }
+        return array_keys( $found );
+    }
+
+    /**
+     * @param mixed $value Decoded JSON.
+     * @param array $found Index value => true.
+     */
+    private static function json_emails( $value, array &$found ): void {
+        if ( is_string( $value ) ) {
+            $lower = strtolower( $value );
+            // Untrimmed, as `replace_json()` replaces only the whole JSON string.
+            if ( ( false !== strpos( $value, '@' ) && UnsubscribeLink::normalize( $value ) === $lower ) || preg_match( '/^email:[0-9a-f]{64}$/', $lower ) ) {
+                $found[ self::index_key( $lower ) ] = true;
+            }
+            return;
+        }
+        if ( is_array( $value ) ) {
+            foreach ( $value as $key => $item ) {
+                // JSON object keys were in the scanned text too.
+                if ( is_string( $key ) ) {
+                    self::json_emails( $key, $found );
+                }
+                self::json_emails( $item, $found );
+            }
+        }
+    }
+
+    /**
+     * Each `@` with every start and end `replace_text()`'s boundaries allow, kept when it is an email.
+     *
+     * @param string $text
+     * @param array  $found Index value => true.
+     */
+    private static function text_emails( string $text, array &$found ): void {
+        $alnum = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        $in    = fn( string $char, string $chars ) => '' !== $char && false !== strpos( $chars, $char );
+        $at    = strpos( $text, '@' );
+        while ( false !== $at ) {
+            $starts = [];
+            $i      = $at - 1;
+            while ( $i >= 0 && $in( $text[ $i ], $alnum . "!#$%&'*+/=?^_`{|}~.-" ) ) {
+                // Not `$text[-1]`: a negative offset reads from the end.
+                if ( 0 === $i || ! $in( $text[ $i - 1 ], $alnum . '._%+-' ) ) {
+                    $starts[] = $i;
+                }
+                --$i;
+            }
+            $ends = [];
+            $i    = $at + 1;
+            while ( $in( $text[ $i ] ?? '', $alnum . '.-' ) ) {
+                ++$i;
+                $next = $text[ $i ] ?? '';
+                if ( ! $in( $next, $alnum . '-' ) && ! ( '.' === $next && $in( $text[ $i + 1 ] ?? '', $alnum ) ) ) {
+                    $ends[] = $i;
+                }
+            }
+            foreach ( $starts as $start ) {
+                foreach ( $ends as $end ) {
+                    $email = strtolower( substr( $text, $start, $end - $start ) );
+                    if ( is_email( $email ) ) {
+                        $found[ self::index_key( $email ) ] = true;
+                    }
+                }
+            }
+            $at = strpos( $text, '@', $at + 1 );
+        }
+    }
+
+    /**
+     * An email or claim key as `run_emails` keeps it.
+     *
+     * @param string $email Lowercased.
+     */
+    private static function index_key( string $email ): string {
+        return substr( $email, 0, 190 );
     }
 
     /**

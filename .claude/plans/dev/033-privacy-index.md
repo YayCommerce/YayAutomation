@@ -8,7 +8,7 @@ A privacy export or erase page finds a person's runs through an index instead of
 ## Approach
 
 ### Part 1: privacy index
-- **Table** `run_emails` (D1): `run_id bigint(20) unsigned`, `email varchar(190)`, `UNIQUE KEY run_email (run_id,email)`, `KEY email (email,run_id)`. `runs` gets `KEY subject (subject,status)`. `DB_VERSION` 7 → 8; dbDelta adds both. `Schema::RUN_EMAILS`, the install check list, `Uninstaller::TABLES` and the `reset-data.sh` list get it.
+- **Table** `run_emails` (D1): `run_id bigint(20) unsigned`, `email varchar(190)`, `PRIMARY KEY (run_id,email)`, `KEY email (email,run_id)`. `runs` gets `KEY subject (subject,status)`. `DB_VERSION` 7 → 8; dbDelta adds both. `Schema::RUN_EMAILS`, the install check list, `Uninstaller::TABLES` and the `reset-data.sh` list get it.
 - **Extractor**, a private part of `RunStore`. It returns the lowercased values the old scan would match, truncated to 190 chars:
   - JSON columns (`scope`, step `input`, `output`): decode, then walk every string, keys included. A string counts when it is a whole normalized email (`strtolower( $s ) === UnsubscribeLink::normalize( $s )`) or a claim key (`email:` + 64 hex). This mirrors `json_like()`: the old LIKE only matches the email as a whole JSON string, in a `_ci` column.
   - Text columns (`runs.error`, step `error`): for each `@`, every start the lookbehind of `replace_text()` allows and every end its lookahead allows. Each candidate is kept when `is_email()` passes. That is the exact set of normalized emails `text_regexp()` would match, apostrophes and trailing dots included.
@@ -28,7 +28,7 @@ A privacy export or erase page finds a person's runs through an index instead of
 - **No backfill** (D5). The PR text says: run `./run.sh reset-data` on staging and tester sites after the deploy.
 - **Proof** (D6). The old OR-chain SQL lives in `dev/scripts/lib/privacy-old-scan.php`, required by both scripts only.
   - `bench-privacy` runs on wp-env only. It seeds 50k and 200k runs (3–6 steps each, realistic JSON: refs, email step input and output, some errors with emails) through bulk SQL plus the indexer. It prints EXPLAIN and the median ms of `for_export` p1/p2, `ids_mentioning`, `in_progress_mentioning` and `waiting_ids_for_subjects`, old vs new. It also prints write cost: create + 5 steps with and without indexing. It deletes its rows at the end (marker workflow id). Pass: no `ALL` on runs or run_steps in EXPLAIN and < 50 ms per page at 200k.
-  - `check-privacy-index` runs on any wp-env target and is added to check-all. It seeds runs through the real stores, covering edge texts (case, a trailing dot, `.au`, hyphen, apostrophe, an email as a JSON key, inside a longer string, a claim key), plus a Skipped cart run (E2) made through the Dispatcher. For every seeded email the new id lists must equal the old scan for all three lookups, before and after an erase, and after a cleanup delete. Export must list the Skipped run, and erase must change it and leave it findable no more.
+  - `check-privacy-index` runs on any wp-env target and is added to check-all. It seeds runs through the real stores, covering edge texts (case, a trailing dot, `.au`, hyphen, apostrophe, an email as a JSON key, inside a longer string, a claim key, a 70-char local part that only real `is_email()` accepts), plus a Skipped cart run (E2) made through the Dispatcher. For every seeded email the new id lists must equal the old scan for all three lookups, before and after an erase, and after a cleanup delete. Export must list the Skipped run, and erase must change it and leave it findable no more.
 
 ### Part 2: cart skips
 - **E1: lock a cart only when a series starts.**
@@ -50,7 +50,7 @@ A privacy export or erase page finds a person's runs through an index instead of
 
 ## Checkpoints
 
-1. **Schema + table** — Risk: 3
+1. ✅ **Schema + table** (4da6801) — Risk: 3
    - Files: `Storage/Schema.php`, `Uninstaller.php`, `dev/scripts/reset-data.sh`, `dev/scripts/check-storage.sh` (new asserts: table, both keys), `docs/workflow-core-design.md` (tables list).
    - Tests: UninstallerTest green unchanged; `check-storage --wp-env` and `--wp-env-min` (MariaDB + the min target) show DB 8, `run_emails`, `KEY subject`.
 2. **Indexing in the stores + D8** — Risk: 3
@@ -120,7 +120,11 @@ D1–D6 and D8 as in the brief, confirmed. D7 is not in the brief.
 - E1 / E2 / I1–I4 as in the brief.
 
 ## Deviations
-(none yet)
+- CP1: `run_emails` has `PRIMARY KEY (run_id,email)` instead of a UNIQUE key and no primary: same constraint, and MySQL with `sql_require_primary_key=ON` (some managed hosts) refuses a table without a primary key (review finding).
+- CP1: `UninstallerTest::test_with_the_constant_…` hard-coded 7 tables / 11 queries; it now counts `Uninstaller::TABLES` (12 queries). A new table can't pass it unedited.
+- CP2: O1 covered two old asserts, not one. `test_finish_…`: the second update moved from `calls[1]` to `calls[2]`, count 2 → 3. `test_resumed_condition_…` took `end( calls )` as the run save; its fake step outputs `a@x.com`, so the index INSERT is last now. It takes the last update instead.
+- CP2: the writer is `RunStore::index_emails( array $json, array $text, string $runs, array $params )`. `$runs` is a prepared `SELECT` of run ids, and the write is one `INSERT IGNORE … SELECT … CROSS JOIN (SELECT %s AS email UNION ALL …)` instead of resolving ids and sending VALUES. This keeps one statement per indexed write: `finish()` knows only the step id, and the cancel paths need "rows this UPDATE changed". Every form selects from `runs` (or `run_steps`), so a missing run gets no index row. Under statement-based binlog MySQL warns that INSERT IGNORE … SELECT is unsafe (MIXED and ROW, the MySQL 8 default, are fine).
+- CP2: claim keys are indexed wherever they appear, step input and output included. The old scan matched them in `runs.scope` only, while `anonymize()` already replaced them everywhere, so erase now reaches every run it would scrub. check-privacy-index seeds claim keys in scope only.
 
 ## Meta
 - Target branch: jack/feature/033-privacy-index
