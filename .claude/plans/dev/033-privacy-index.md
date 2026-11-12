@@ -53,7 +53,7 @@ A privacy export or erase page finds a person's runs through an index instead of
 1. ✅ **Schema + table** (4da6801) — Risk: 3
    - Files: `Storage/Schema.php`, `Uninstaller.php`, `dev/scripts/reset-data.sh`, `dev/scripts/check-storage.sh` (new asserts: table, both keys), `docs/workflow-core-design.md` (tables list).
    - Tests: UninstallerTest green unchanged; `check-storage --wp-env` and `--wp-env-min` (MariaDB + the min target) show DB 8, `run_emails`, `KEY subject`.
-2. **Indexing in the stores + D8** — Risk: 3
+2. ✅ **Indexing in the stores + D8** (b98b1e2) — Risk: 3
    - Files: `Storage/RunStore.php`, `Storage/RunStepStore.php`, new `tests/Unit/Core/Storage/RunEmailsTest.php`.
    - Tests:
      - The extractor: each JSON and text case above, each paired with what `text_regexp()` / `json_like()` would match.
@@ -125,6 +125,11 @@ D1–D6 and D8 as in the brief, confirmed. D7 is not in the brief.
 - CP2: O1 covered two old asserts, not one. `test_finish_…`: the second update moved from `calls[1]` to `calls[2]`, count 2 → 3. `test_resumed_condition_…` took `end( calls )` as the run save; its fake step outputs `a@x.com`, so the index INSERT is last now. It takes the last update instead.
 - CP2: the writer is `RunStore::index_emails( array $json, array $text, string $runs, array $params )`. `$runs` is a prepared `SELECT` of run ids, and the write is one `INSERT IGNORE … SELECT … CROSS JOIN (SELECT %s AS email UNION ALL …)` instead of resolving ids and sending VALUES. This keeps one statement per indexed write: `finish()` knows only the step id, and the cancel paths need "rows this UPDATE changed". Every form selects from `runs` (or `run_steps`), so a missing run gets no index row. Under statement-based binlog MySQL warns that INSERT IGNORE … SELECT is unsafe (MIXED and ROW, the MySQL 8 default, are fine).
 - CP2: claim keys are indexed wherever they appear, step input and output included. The old scan matched them in `runs.scope` only, while `anonymize()` already replaced them everywhere, so erase now reaches every run it would scrub. check-privacy-index seeds claim keys in scope only.
+- CP3: `check-carts.php`'s `$new_run` fixture writes runs with raw `$wpdb->insert`, past the stores. It now calls `RunStore::index_emails()` for what it writes, or its privacy checks find nothing. No assert changed.
+- CP3 + CP4 are one commit: both rewrite parts of `RunStore` and `RunEmailsTest`, and splitting by hunk needs interactive staging.
+- CP4: `anonymize()` keeps a run's index rows when its scrub UPDATE failed or changed no row, or when reading the rows failed, so the next erase finds it again. It removes the rest and counts a run whose only link was a stale one (a value overwritten later) as changed. Otherwise a page of stale links would end as "Some workflow runs could not be erased".
+- CP4: `delete_with_steps()` deletes steps, then runs, then index rows, not index rows first: a leftover index row is never joined, while a run left without its rows would hide from erase (review finding).
+- Found while checking: check-carts fails 6 sweep asserts when the site already has an active cart workflow (wp-env's seeded "Cart reminder", id 2). That predates 033. Runs here turned it off for the check and back on after.
 
 ## Meta
 - Target branch: jack/feature/033-privacy-index

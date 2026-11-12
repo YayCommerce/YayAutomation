@@ -374,7 +374,7 @@ final class RunStore {
     }
 
     /**
-     * Steps first, so a failure in between leaves no steps without their run.
+     * Steps first, so a failure in between leaves no steps without their run; index rows last, as one left over is never joined.
      *
      * @param int[] $ids
      */
@@ -386,7 +386,7 @@ final class RunStore {
         }
         $in = Schema::in( count( $ids ) );
         // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- Schema::in() gives one %d per run.
-        if ( false === $wpdb->query( $wpdb->prepare( "DELETE FROM %i WHERE run_id IN ({$in})", array_merge( [ RunStepStore::table() ], $ids ) ) ) || false === $wpdb->query( $wpdb->prepare( "DELETE FROM %i WHERE id IN ({$in})", array_merge( [ self::table() ], $ids ) ) ) ) {
+        if ( false === $wpdb->query( $wpdb->prepare( "DELETE FROM %i WHERE run_id IN ({$in})", array_merge( [ RunStepStore::table() ], $ids ) ) ) || false === $wpdb->query( $wpdb->prepare( "DELETE FROM %i WHERE id IN ({$in})", array_merge( [ self::table() ], $ids ) ) ) || false === $wpdb->query( $wpdb->prepare( "DELETE FROM %i WHERE run_id IN ({$in})", array_merge( [ Schema::table( Schema::RUN_EMAILS ) ], $ids ) ) ) ) {
             Logger::error( 'Could not delete old runs: ' . $wpdb->last_error );
             return false;
         }
@@ -409,8 +409,8 @@ final class RunStore {
             // phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- placeholders are built to match the array.
             $wpdb->prepare(
                 // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- $about has placeholders for $params.
-                "SELECT r.id, r.status, r.started_at, w.name AS workflow_name FROM %i r LEFT JOIN %i w ON w.id = r.workflow_id WHERE {$about} ORDER BY r.id LIMIT %d OFFSET %d",
-                array_merge( [ self::table(), Schema::table( Schema::WORKFLOWS ) ], $params, [ $limit, $offset ] )
+                "SELECT r.id, r.status, r.started_at, w.name AS workflow_name FROM %i r INNER JOIN {$about} ON m.id = r.id LEFT JOIN %i w ON w.id = r.workflow_id ORDER BY r.id LIMIT %d OFFSET %d",
+                array_merge( [ self::table() ], $params, [ Schema::table( Schema::WORKFLOWS ), $limit, $offset ] )
             ),
             ARRAY_A
         );
@@ -434,8 +434,8 @@ final class RunStore {
             // phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- placeholders are built to match the array.
             $wpdb->prepare(
                 // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- $busy and $about are placeholders.
-                "SELECT r.id, r.status FROM %i r WHERE r.status NOT IN ({$busy}) AND ({$about}) ORDER BY r.id LIMIT %d",
-                array_merge( [ self::table() ], self::IN_PROGRESS, $params, [ $limit ] )
+                "SELECT r.id, r.status FROM %i r INNER JOIN {$about} ON m.id = r.id WHERE r.status NOT IN ({$busy}) ORDER BY r.id LIMIT %d",
+                array_merge( [ self::table() ], $params, self::IN_PROGRESS, [ $limit ] )
             ),
             ARRAY_A
         );
@@ -456,16 +456,15 @@ final class RunStore {
             // phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- placeholders are built to match the array.
             $wpdb->prepare(
                 // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- $busy and $about are placeholders.
-                "SELECT r.id FROM %i r WHERE r.status IN ({$busy}) AND ({$about}) LIMIT 1",
-                array_merge( [ self::table() ], self::IN_PROGRESS, $params )
+                "SELECT r.id FROM %i r INNER JOIN {$about} ON m.id = r.id WHERE r.status IN ({$busy}) LIMIT 1",
+                array_merge( [ self::table() ], $params, self::IN_PROGRESS )
             )
         );
         return null !== $found;
     }
 
     /**
-     * `WHERE` part over `r` (runs): the email in any of the five columns `anonymize()` changes, or a run about one
-     * of the subjects (runs started by a trigger hold refs, not the email).
+     * Derived table `m` of the ids of runs whose index holds the email or claim key, or about one of the subjects.
      *
      * @param string   $email
      * @param string[] $subjects
@@ -473,16 +472,15 @@ final class RunStore {
      * @return array [ string $sql, array $params ]
      */
     private static function about( string $email, array $subjects, bool $waiting_subjects ): array {
-        $like   = self::json_like( $email );
-        $regexp = self::text_regexp( $email );
-        // A guest's milestone run holds only the claim key made from the email.
-        $sql    = 'r.scope LIKE %s OR r.scope LIKE %s OR r.error REGEXP %s OR EXISTS (SELECT 1 FROM %i s WHERE s.run_id = r.id AND (s.input LIKE %s OR s.output LIKE %s OR s.error REGEXP %s))';
-        $params = [ $like, self::json_like( TriggerClaimStore::email_key( $email ) ), $regexp, RunStepStore::table(), $like, $like, $regexp ];
+        // A guest's milestone run holds only the claim key made from the email; a run a trigger started holds
+        // refs, not the email, so it is found by its subject.
+        $sql    = 'SELECT run_id AS id FROM %i WHERE email IN (%s, %s)';
+        $params = [ Schema::table( Schema::RUN_EMAILS ), self::index_key( $email ), self::index_key( TriggerClaimStore::email_key( $email ) ) ];
         if ( $subjects ) {
-            $sql   .= ' OR (r.subject IN (' . Schema::in( count( $subjects ), '%s' ) . ')' . ( $waiting_subjects ? ' AND r.status = %s' : '' ) . ')';
-            $params = array_merge( $params, array_values( $subjects ), $waiting_subjects ? [ self::STATUS_WAITING ] : [] );
+            $sql   .= ' UNION SELECT id FROM %i WHERE subject IN (' . Schema::in( count( $subjects ), '%s' ) . ')' . ( $waiting_subjects ? ' AND status = %s' : '' );
+            $params = array_merge( $params, [ self::table() ], array_values( $subjects ), $waiting_subjects ? [ self::STATUS_WAITING ] : [] );
         }
-        return [ $sql, $params ];
+        return [ "({$sql}) m", $params ];
     }
 
     /**
@@ -490,7 +488,7 @@ final class RunStore {
      *
      * @param int[]  $ids Queued and running ones are left alone.
      * @param string $email Normalized.
-     * @return int Runs with a row changed.
+     * @return int Runs with a row changed or their index link to the email removed.
      */
     public static function anonymize( array $ids, string $email ): int {
         global $wpdb;
@@ -512,6 +510,7 @@ final class RunStore {
             return 0;
         }
         $changed = [];
+        $failed  = [];
         $tables  = [
             self::table()         => [ 'id', [ 'scope' ], [ 'error' ] ],
             RunStepStore::table() => [ 'run_id', [ 'input', 'output' ], [ 'error' ] ],
@@ -527,6 +526,11 @@ final class RunStore {
                 ),
                 ARRAY_A
             );
+            // An unread table may still hold the email: keep every run findable for the next erase.
+            if ( '' !== $wpdb->last_error ) {
+                Logger::error( 'Could not read runs to erase: ' . $wpdb->last_error, [ 'run_ids' => $ids ] );
+                return count( $changed );
+            }
             foreach ( $rows as $row ) {
                 $update = [];
                 foreach ( $json_columns as $column ) {
@@ -542,12 +546,31 @@ final class RunStore {
                 $done = $wpdb->update( $table, $update, [ 'id' => (int) $row['id'] ] );
                 if ( false === $done ) {
                     Logger::error( 'Could not erase an email from a run: ' . $wpdb->last_error, [ 'run_id' => (int) $row[ $run_column ] ] );
-                } elseif ( $done ) {
+                }
+                // No row changed, so the email may still be there.
+                if ( ! $done ) {
+                    $failed[ (int) $row[ $run_column ] ] = true;
+                } else {
                     $changed[ (int) $row[ $run_column ] ] = true;
                 }
             }
         }
-        return count( $changed );
+        // A run whose scrub failed stays findable, so the next erase tries again.
+        $ids = array_values( array_diff( $ids, array_keys( $failed ) ) );
+        if ( ! $ids ) {
+            return count( $changed );
+        }
+        $keys = [ self::index_key( $email ), self::index_key( TriggerClaimStore::email_key( $email ) ) ];
+        $in   = Schema::in( count( $ids ) );
+        // A link left by an overwritten value counts as erased, so a page of only those isn't reported as failed.
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- Schema::in() gives one %d per run.
+        $linked = (array) $wpdb->get_col( $wpdb->prepare( "SELECT DISTINCT run_id FROM %i WHERE run_id IN ({$in}) AND email IN (%s, %s)", array_merge( [ Schema::table( Schema::RUN_EMAILS ) ], $ids, $keys ) ) );
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- Schema::in() gives one %d per run.
+        if ( false === $wpdb->query( $wpdb->prepare( "DELETE FROM %i WHERE run_id IN ({$in}) AND email IN (%s, %s)", array_merge( [ Schema::table( Schema::RUN_EMAILS ) ], $ids, $keys ) ) ) ) {
+            Logger::error( 'Could not remove an erased email from the run index: ' . $wpdb->last_error, [ 'run_ids' => $ids ] );
+            return count( $changed );
+        }
+        return count( $changed + array_fill_keys( array_map( 'intval', $linked ), true ) );
     }
 
     /**
@@ -672,27 +695,6 @@ final class RunStore {
      */
     private static function index_key( string $email ): string {
         return substr( $email, 0, 190 );
-    }
-
-    /**
-     * `LIKE` value for the email as a whole JSON string; case-insensitive by the tables' `_ci` collation.
-     *
-     * @param string $email
-     */
-    private static function json_like( string $email ): string {
-        global $wpdb;
-        return '%' . $wpdb->esc_like( (string) wp_json_encode( $email ) ) . '%';
-    }
-
-    /**
-     * `REGEXP` value with the same boundaries as `replace_text()`; works with ICU (MySQL 8) and PCRE (MariaDB).
-     *
-     * @param string $email
-     */
-    private static function text_regexp( string $email ): string {
-        // A dot after the address ends it unless a letter or digit follows: `bob@x.test.` ending a sentence
-        // matches, `bob@x.test.au` doesn't.
-        return '(^|[^A-Za-z0-9._%+-])' . addcslashes( $email, '.[]()*+?{}|^$\\' ) . '($|[^A-Za-z0-9.-]|[.]($|[^A-Za-z0-9]))';
     }
 
     /**

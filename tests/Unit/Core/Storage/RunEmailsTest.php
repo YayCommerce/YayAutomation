@@ -175,4 +175,104 @@ final class RunEmailsTest extends TestCase {
         $this->assertSame( 9, RunStepStore::start( 7, 'n1', [ 'to' => 'a@x.test' ] ) );
         $this->assertStringContainsString( "Could not index a run's emails: Gone away", (string) file_get_contents( $this->log ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
     }
+
+    public function test_lookups_join_the_index_and_the_subjects(): void {
+        $key   = 'email:' . hash( 'sha256', 'bob@x.test' );
+        $about = "(SELECT run_id AS id FROM `wp_yaymatik_run_emails` WHERE email IN ('bob@x.test', '{$key}') UNION SELECT id FROM `wp_yaymatik_runs` WHERE subject IN ('cart:4','order:9')%s) m";
+
+        $this->db->result = [];
+        RunStore::for_export( 'bob@x.test', [ 'cart:4', 'order:9' ], 20, 40 );
+        $this->assertSame( 'SELECT r.id, r.status, r.started_at, w.name AS workflow_name FROM `wp_yaymatik_runs` r INNER JOIN ' . sprintf( $about, '' ) . ' ON m.id = r.id LEFT JOIN `wp_yaymatik_workflows` w ON w.id = r.workflow_id ORDER BY r.id LIMIT 20 OFFSET 40', $this->db->last_sql() );
+
+        RunStore::ids_mentioning( 'bob@x.test', [ 'cart:4', 'order:9' ], 20 );
+        $this->assertSame( 'SELECT r.id, r.status FROM `wp_yaymatik_runs` r INNER JOIN ' . sprintf( $about, " AND status = 'waiting'" ) . " ON m.id = r.id WHERE r.status NOT IN ('queued','running') ORDER BY r.id LIMIT 20", $this->db->last_sql() );
+
+        $this->db->result = null;
+        $this->assertFalse( RunStore::in_progress_mentioning( 'bob@x.test', [] ) );
+        $this->assertSame( "SELECT r.id FROM `wp_yaymatik_runs` r INNER JOIN (SELECT run_id AS id FROM `wp_yaymatik_run_emails` WHERE email IN ('bob@x.test', '{$key}')) m ON m.id = r.id WHERE r.status IN ('queued','running') LIMIT 1", $this->db->last_sql() );
+    }
+
+    public function test_erase_removes_the_persons_index_rows_except_where_it_failed(): void {
+        $key               = 'email:' . hash( 'sha256', 'bob@x.test' );
+        $this->db->results = [
+            [ '4', '5' ],
+            [
+                [
+                    'id'    => '4',
+                    'scope' => '{"to":"bob@x.test"}',
+                    'error' => null,
+                ],
+            ],
+            [],
+            [ '5' ],
+        ];
+        // Run 4 scrubbed, run 5's link left by an overwritten value removed: both count.
+        $this->assertSame( 2, RunStore::anonymize( [ 4, 5, 6 ], 'bob@x.test' ) );
+        $this->assertSame( "DELETE FROM `wp_yaymatik_run_emails` WHERE run_id IN (4,5) AND email IN ('bob@x.test', '{$key}')", $this->db->last_sql() );
+
+        // The scrub of run 4 fails: its rows stay for the next erase.
+        $db = new class() {
+            /** @var string */
+            public $prefix = 'wp_';
+
+            /** @var string */
+            public $last_error = '';
+
+            /** @var string[] */
+            public $sql = [];
+
+            /** @var array */
+            public $results = [];
+
+            public function prepare( $query, ...$args ) {
+                return ( new FakeWpdb() )->prepare( $query, ...$args );
+            }
+
+            public function get_col( $sql ) {
+                return false !== strpos( $sql, 'run_emails' ) ? [] : [ '4', '5' ];
+            }
+
+            public function get_results( $sql ) {
+                return false !== strpos( $sql, 'wp_yaymatik_runs' ) ? [
+                    [
+                        'id'    => '4',
+                        'scope' => '{"to":"bob@x.test"}',
+                        'error' => null,
+                    ],
+                ] : [];
+            }
+
+            public function update() {
+                return false;
+            }
+
+            public function query( $sql ) {
+                $this->sql[] = $sql;
+                return 1;
+            }
+        };
+        // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- no WordPress here.
+        $GLOBALS['wpdb'] = $db;
+        RunStore::anonymize( [ 4, 5 ], 'bob@x.test' );
+        $this->assertSame( [ "DELETE FROM `wp_yaymatik_run_emails` WHERE run_id IN (5) AND email IN ('bob@x.test', '{$key}')" ], $db->sql );
+
+        // A read that fails leaves every link.
+        $db->sql        = [];
+        $db->last_error = 'Lock wait timeout';
+        RunStore::anonymize( [ 4, 5 ], 'bob@x.test' );
+        $this->assertSame( [], $db->sql );
+    }
+
+    public function test_deleting_runs_removes_their_index_rows_last(): void {
+        $this->db->result = 1;
+        $this->assertTrue( RunStore::delete_with_steps( [ 4, 5 ] ) );
+        $this->assertSame(
+            [
+                'DELETE FROM `wp_yaymatik_run_steps` WHERE run_id IN (4,5)',
+                'DELETE FROM `wp_yaymatik_runs` WHERE id IN (4,5)',
+                'DELETE FROM `wp_yaymatik_run_emails` WHERE run_id IN (4,5)',
+            ],
+            array_column( $this->db->calls, 1 )
+        );
+    }
 }

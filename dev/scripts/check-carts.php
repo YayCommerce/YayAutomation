@@ -722,6 +722,8 @@ $new_run  = function ( array $run, array $steps = [] ) use ( $wpdb, $runs_table,
     if ( empty( $run['root_run_id'] ) ) {
         $wpdb->update( $runs_table, [ 'root_run_id' => $id ], [ 'id' => $id ] );
     }
+    // Written past the stores, so indexed here as they would.
+    RunStore::index_emails( [ $run['scope'] ?? '{}' ], array_filter( [ $run['error'] ?? null ] ), 'SELECT %d AS run_id', [ $id ] );
     foreach ( $steps as $step ) {
         $wpdb->insert(
             $steps_table,
@@ -732,6 +734,7 @@ $new_run  = function ( array $run, array $steps = [] ) use ( $wpdb, $runs_table,
                 'started_at' => $old,
             ]
         );
+        RunStore::index_emails( array_filter( [ $step['input'] ?? null, $step['output'] ?? null ] ), array_filter( [ $step['error'] ?? null ] ), 'SELECT %d AS run_id', [ $id ] );
     }
     return $id;
 };
