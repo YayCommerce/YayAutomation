@@ -14,7 +14,7 @@ use YayMatik\Workflow\DataItems\CustomerData;
 
 defined( 'ABSPATH' ) || exit;
 
-/** Base for a cart's first abandon in its cycle. Event args hold `cart_id`. */
+/** Base for a cart abandon: starts the cart's one reminder series, or is skipped. Event args hold `cart_id`. */
 abstract class CartTrigger extends Trigger {
 
     /** One reminder series per email in this time. */
@@ -39,12 +39,13 @@ abstract class CartTrigger extends Trigger {
     public function listen( callable $emit ): void {
         add_action(
             'yaymatik_cart_abandoned',
-            function ( $cart_id ) use ( $emit ) {
-                $row = CartStore::find( (int) $cart_id );
-                if ( $row && $this->id() === $row['abandon_trigger'] ) {
+            function ( $cart_id, $kind ) use ( $emit ) {
+                if ( $this->id() === $kind ) {
                     $emit( [ 'cart_id' => (int) $cart_id ] );
                 }
-            }
+            },
+            10,
+            2
         );
     }
 
@@ -74,19 +75,39 @@ abstract class CartTrigger extends Trigger {
     }
 
     /**
-     * Skips ordered carts, unsubscribed shoppers and emails with a series running; else marks this cart's series as started.
+     * Starts this cart's series unless `skip_reason()` refuses it or another series or an order came first.
      *
      * @param array $args
      */
     public function claim( array $args ): bool {
+        return null === $this->skip_reason( $args ) && CartStore::start_series( (int) ( $args['cart_id'] ?? 0 ), $this->id() );
+    }
+
+    /**
+     * A cart already in a series, an ordered cart, an unsubscribed shopper, or an email with a series in the last 7 days; null for a gone cart.
+     *
+     * @param array $args
+     */
+    public function skip_reason( array $args ): ?string {
         $id  = (int) ( $args['cart_id'] ?? 0 );
         $row = CartStore::find( $id );
-        // Events are claimed in order, so the older cart of a sweep starts and blocks the next.
-        if ( ! $row || CartStore::ORDERED === $row['status'] || UnsubscribeStore::has( $row['email'] ) || CartStore::series_taken( $row['email'], $id, gmdate( 'Y-m-d H:i:s', time() - self::SERIES_EVERY ) ) ) {
-            return false;
+        if ( ! $row ) {
+            return null;
         }
-        CartStore::mark_series( $id );
-        return true;
+        if ( ! empty( $row['series_at'] ) ) {
+            return __( 'This cart already got a reminder series.', 'yaymatik' );
+        }
+        if ( CartStore::ORDERED === $row['status'] ) {
+            return Cancellation::order_placed( (int) $row['order_id'] );
+        }
+        if ( UnsubscribeStore::has( $row['email'] ) ) {
+            return Cancellation::unsubscribed();
+        }
+        // Events are claimed in order, so the older cart of a sweep starts and blocks the next.
+        if ( CartStore::series_taken( $row['email'], $id, gmdate( 'Y-m-d H:i:s', time() - self::SERIES_EVERY ) ) ) {
+            return __( 'This shopper already got a reminder series in the last 7 days.', 'yaymatik' );
+        }
+        return null;
     }
 
     public function setup_issue(): ?string {

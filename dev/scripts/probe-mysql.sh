@@ -1,5 +1,5 @@
 #!/bin/bash
-# Read-only probe of staging's MySQL 8 (SELECTs only): the erase REGEXP, GET_LOCK / RELEASE_LOCK, the user meta key collation. Staging only.
+# Read-only probe of staging's MySQL 8 (SELECTs only): the privacy index SQL, GET_LOCK / RELEASE_LOCK, the user meta key collation. Staging only.
 #   ./run.sh probe-mysql --staging
 cd "$(dirname "$0")/../.." || exit 1
 [[ -f yaymatik.php ]] || { echo "Not the plugin root: $(pwd)"; exit 1; }
@@ -16,28 +16,17 @@ $ok    = function ( $pass, $what ) use ( &$fails ) {
 };
 echo "Server: ", $wpdb->get_var( "SELECT VERSION()" ), "\n";
 
-// The pattern RunStore builds; PHP preg_replace with the same boundaries is the expected answer.
-$regexp = new ReflectionMethod( \YayMatik\Workflow\Core\Storage\RunStore::class, "text_regexp" );
-$regexp->setAccessible( true );
-$email   = "bob.o+1@x.test";
-$pattern = $regexp->invoke( null, $email );
-$samples = [
-    "bob.o+1@x.test"                => true,
-    "Sent to bob.o+1@x.test."       => true,
-    "(bob.o+1@x.test)"              => true,
-    "BOB.O+1@X.TEST failed"         => true,
-    "bob.o+1@x.test.au"             => false,
-    "abob.o+1@x.test"               => false,
-    "bob.o+1@x.tester"              => false,
-    "bobXo+1@x.test"                => false,
-];
-// The erase matches stored rows, so each sample is compared under the collation of runs.error.
-$runs      = \YayMatik\Workflow\Core\Storage\RunStore::table();
-$collation = $wpdb->get_row( "SHOW FULL COLUMNS FROM {$runs} LIKE \"error\"", ARRAY_A )["Collation"];
-echo "{$runs}.error collation: {$collation}\n";
-foreach ( $samples as $text => $expected ) {
-    $got = (int) $wpdb->get_var( $wpdb->prepare( "SELECT CONVERT( %s USING utf8mb4 ) COLLATE {$collation} REGEXP %s", $text, $pattern ) );
-    $ok( ( 1 === $got ) === $expected && "" === $wpdb->last_error, "REGEXP " . ( $expected ? "matches" : "skips" ) . " \"{$text}\"" );
+// The privacy index: the SELECT half of RunStore::index_emails(), and the lookups once the site is at DB 8.
+$pairs = $wpdb->get_results( $wpdb->prepare( "SELECT r.run_id, e.email FROM (SELECT %d AS run_id) r CROSS JOIN (SELECT %s AS email UNION ALL SELECT %s AS email) e", 7, "a@x.test", "b@x.test" ), ARRAY_A );
+$ok( 2 === count( (array) $pairs ) && "" === $wpdb->last_error, "index rows: derived run ids cross joined with a UNION ALL of emails" );
+$emails = $wpdb->prefix . "yaymatik_run_emails";
+if ( $wpdb->get_var( $wpdb->prepare( "SHOW TABLES LIKE %s", $wpdb->esc_like( $emails ) ) ) === $emails ) {
+    $probe = "probe-" . wp_generate_password( 8, false ) . "@x.test";
+    $ok( [] === \YayMatik\Workflow\Core\Storage\RunStore::for_export( $probe, [ "cart:0" ], 50, 50 ) && "" === $wpdb->last_error, "for_export: UNION of the index and subjects, page 2" );
+    $ok( [] === \YayMatik\Workflow\Core\Storage\RunStore::ids_mentioning( $probe, [ "cart:0" ], 50 ) && "" === $wpdb->last_error, "ids_mentioning" );
+    $ok( false === \YayMatik\Workflow\Core\Storage\RunStore::in_progress_mentioning( $probe, [] ) && "" === $wpdb->last_error, "in_progress_mentioning" );
+} else {
+    echo "INFO no {$emails} yet (site before DB 8): lookups not probed\n";
 }
 
 $lock = "yaymatik_probe_" . wp_generate_password( 8, false );

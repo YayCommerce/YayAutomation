@@ -111,14 +111,14 @@ switch ( $args[0] ?? '' ) {
             $new->save();
         }
         $ok( $in_group() > 0 && $like( $wpdb->options, 'option_name', '\_transient\_yaymatik\_%' ) > 0, 'prepared: a job in the group and a transient' );
-        $ok( 7 === $tables() && false !== get_option( 'yaymatik_db_version' ), 'prepared: 7 tables and the options' );
+        $ok( 8 === $tables() && false !== get_option( 'yaymatik_db_version' ), 'prepared: 8 tables and the options' );
         $ok( $coupon_id() && '1' === get_post_meta( $coupon_id(), '_yaymatik_generated', true ) && $the_order(), 'prepared: a generated coupon and an order with YayMatik meta' );
         break;
 
     case 'uninstalled-kept':
         $ok( 0 === $in_group(), 'uninstalled: no job left in the yaymatik group' );
         $ok( 0 === $like( $wpdb->options, 'option_name', '\_transient\_yaymatik\_%' ) && 0 === $like( $wpdb->options, 'option_name', '\_transient\_timeout\_yaymatik\_%' ), 'uninstalled: no yaymatik transient' );
-        $ok( 7 === $tables(), 'without the constant: the 7 tables stay' );
+        $ok( 8 === $tables(), 'without the constant: the 8 tables stay' );
         $ok( false !== get_option( 'yaymatik_db_version' ) && $like( $wpdb->options, 'option_name', 'yaymatik\_%' ) > 0, 'without the constant: options stay' );
         $ok( '1' === get_post_meta( $coupon_id(), '_yaymatik_generated', true ), 'without the constant: coupon meta stays' );
         $ok( '1' === $the_order()->get_meta( '_yaymatik_lifecycle_check' ), 'without the constant: order meta stays' );

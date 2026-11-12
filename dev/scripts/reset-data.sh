@@ -1,5 +1,5 @@
 #!/bin/bash
-# Delete all workflows, versions, runs, carts, trigger claims and settings; keeps unsubscribes. --yes skips the prompt. Target: local site, --wp-env, --wp-env-min or --staging.
+# Delete all workflows, versions, runs (with their privacy index), carts, trigger claims and settings; keeps unsubscribes. --yes skips the prompt. Target: local site, --wp-env, --wp-env-min or --staging.
 cd "$(dirname "$0")/../.." || exit 1
 [[ -f yaymatik.php ]] || { echo "Not the plugin root: $(pwd)"; exit 1; }
 
@@ -11,7 +11,7 @@ done
 . dev/scripts/lib/wp-target.sh "$target" || exit 1
 
 if ! $yes; then
-  read -r -p "Delete every YayMatik workflow, version, run, cart and setting on ${target:-the local site}? Type yes: " answer
+  read -r -p "Delete every YayMatik workflow, version, run (and its privacy index), cart and setting on ${target:-the local site}? Type yes: " answer
   [[ $answer == yes ]] || { echo "Cancelled."; exit 1; }
 fi
 
@@ -22,7 +22,7 @@ global $wpdb;
 $meta = $wpdb->query( "DELETE pm FROM {$wpdb->postmeta} pm JOIN {$wpdb->posts} p ON p.ID = pm.post_id WHERE p.post_type = '\''yaymatik_wf'\''" );
 $posts = $wpdb->query( "DELETE FROM {$wpdb->posts} WHERE post_type = '\''yaymatik_wf'\''" );
 echo "Workflow posts: {$posts} (meta rows: {$meta})\n";
-foreach ( [ "workflows", "versions", "workflow_versions", "runs", "run_steps", "carts", "trigger_claims" ] as $name ) {
+foreach ( [ "workflows", "versions", "workflow_versions", "runs", "run_steps", "carts", "trigger_claims", "run_emails" ] as $name ) {
     $table = $wpdb->prefix . "yaymatik_" . $name;
     if ( $wpdb->get_var( $wpdb->prepare( "SHOW TABLES LIKE %s", $wpdb->esc_like( $table ) ) ) === $table ) {
         $wpdb->query( "DROP TABLE {$table}" );

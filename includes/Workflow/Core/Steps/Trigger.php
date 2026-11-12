@@ -95,6 +95,15 @@ abstract class Trigger extends Step {
         return true;
     }
 
+    /**
+     * Why `claim()` refuses these args, recorded as a skipped run of each listening workflow; null records nothing.
+     *
+     * @param array $args
+     */
+    public function skip_reason( array $args ): ?string { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- for triggers whose claim can refuse.
+        return null;
+    }
+
     /** Once per workflow per claim key, recorded in `trigger_claims`. */
     public function claims_per_workflow(): bool {
         return false;

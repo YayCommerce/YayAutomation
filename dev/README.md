@@ -15,7 +15,8 @@ Run everything through `./run.sh` in the plugin root. It works from any folder.
 | `./run.sh seed [--wp-env\|--wp-env-min\|--staging]` | Add the fake store data: products, a customer, cash on delivery, cart tracking, a "Classic checkout" page (`/classic-checkout/`). Safe to run again. |
 | `./run.sh reset-data [--wp-env\|--wp-env-min\|--staging] [--yes]` | Delete all YayMatik data on that site. Staging recovery: this, then `seed`. |
 | `./run.sh check-all [--wp-env\|--wp-env-min]` | Run every PASS/FAIL check on one site and print one table; exits 1 on any FAIL. Each `check-*` also runs on its own with the same targets. |
-| `./run.sh probe-mysql --staging` | Read-only probe of staging's MySQL 8 (SELECTs only): erase `REGEXP`, `GET_LOCK`, the user meta key collation. |
+| `./run.sh bench-privacy --wp-env\|--wp-env-min [sizes…]` | Seed 50k and 200k runs (or the sizes given), then print EXPLAIN and median ms of each privacy lookup, old full scan vs the index, and the write cost of indexing. Removes its rows. |
+| `./run.sh probe-mysql --staging` | Read-only probe of staging's MySQL 8 (SELECTs only): the privacy index SQL, `GET_LOCK`, the user meta key collation. |
 | `./run.sh deploy` | Build a Pro rc zip of this commit and install it on staging. Refuses uncommitted changes, a wrong site, a missing mail log and an rc the site already has. |
 | `./run.sh claude-workflow` (alias `cw`) | Claude work menu: tmux + Remote Control sessions. macOS, needs `zsh`, `tmux`, `claude`. |
 

@@ -9,7 +9,7 @@ defined( 'ABSPATH' ) || exit;
 final class Uninstaller {
 
     /** Schema's tables, without `{prefix}yaymatik_`; UninstallerTest keeps the list equal to Schema's constants. */
-    const TABLES = [ 'workflows', 'workflow_versions', 'runs', 'run_steps', 'unsubscribes', 'carts', 'trigger_claims' ];
+    const TABLES = [ 'workflows', 'workflow_versions', 'runs', 'run_steps', 'unsubscribes', 'carts', 'trigger_claims', 'run_emails' ];
 
     /** Action Scheduler group of every YayMatik job. */
     const GROUP = 'yaymatik';

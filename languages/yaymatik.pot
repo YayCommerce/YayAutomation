@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-11T07:17:57+00:00\n"
+"POT-Creation-Date: 2026-11-12T04:20:18+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.8.1\n"
 "X-Domain: yaymatik\n"
@@ -1875,8 +1875,16 @@ msgstr ""
 msgid "When a cart is abandoned"
 msgstr ""
 
+#: includes/Workflow/Triggers/CartTrigger.php:98
+msgid "This cart already got a reminder series."
+msgstr ""
+
+#: includes/Workflow/Triggers/CartTrigger.php:108
+msgid "This shopper already got a reminder series in the last 7 days."
+msgstr ""
+
 #. translators: %s: trigger name
-#: includes/Workflow/Triggers/CartTrigger.php:97
+#: includes/Workflow/Triggers/CartTrigger.php:118
 msgid "Turn on cart tracking before activating. %s never starts while it’s off."
 msgstr ""
 

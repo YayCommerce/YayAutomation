@@ -36,9 +36,10 @@ final class CartSweep {
         $before = gmdate( 'Y-m-d H:i:s', $cutoff );
         $after  = gmdate( 'Y-m-d H:i:s', $cutoff - self::WINDOW );
         foreach ( CartStore::due( $before, $after, self::BATCH ) as $row ) {
-            $first = null === $row['abandoned_at'];
-            if ( CartStore::mark_abandoned( (int) $row['id'], $row['last_activity_at'], $first ? self::kind( $row ) : '' ) && $first ) {
-                do_action( 'yaymatik_cart_abandoned', (int) $row['id'] );
+            // Every abandon fires; the cart trigger's claim locks a cart only when a workflow starts its series, and
+            // records a cart already in one as skipped.
+            if ( CartStore::mark_abandoned( (int) $row['id'], $row['last_activity_at'] ) ) {
+                do_action( 'yaymatik_cart_abandoned', (int) $row['id'], self::kind( $row ) );
             }
         }
     }

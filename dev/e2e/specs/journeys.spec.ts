@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, type Page, test } from '@playwright/test';
 
 import {
   activate,
@@ -18,9 +18,26 @@ import {
   uniqueEmail,
   useTemplate,
 } from '../support/journey';
-import { abandonCart, completeOrder, endWaits, resetSite, runQueue } from '../support/wp';
+import { abandonCart, completeOrder, endWaits, resetSite, runQueue, runQueueUntil } from '../support/wp';
 
 test.beforeEach(() => resetSite());
+
+/** Reloads the page; whether it then lists `count` runs with this status (the runs table renders after load). */
+const hasRuns = async (page: Page, status: string, count: number) => {
+  await page.reload();
+  try {
+    await expect(page.getByRole('row').filter({ hasText: status })).toHaveCount(count, { timeout: 5_000 });
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+/** Opens the mail log and counts this email's rows. */
+const mailRows = async (page: Page, email: string, subject: string) => {
+  await openMailLog(page);
+  return mailRow(page, email, subject).count();
+};
 
 test('builds a workflow from a template', async ({ page }) => {
   await page.goto('/wp-admin/admin.php?page=yaymatik#/workflows');
@@ -49,9 +66,8 @@ test('an order runs the workflow and logs its email', async ({ page, browser, ba
   await addToCart(shopper);
   await placeOrder(shopper, email);
   completeOrder(email);
-  runQueue();
+  await runQueueUntil(() => hasRuns(page, 'Completed', 1));
 
-  await page.reload();
   await expect(page.getByRole('row').filter({ hasText: 'Completed' })).toHaveCount(1);
 
   await openMailLog(page);
@@ -94,13 +110,13 @@ test('an abandoned checkout gets a reminder that restores the cart', async ({ pa
   await shopper.context().close();
 
   abandonCart(email);
-  runQueue();
+  // The reminder waits before its email; only then can its wait be ended.
+  await runQueueUntil(() => hasRuns(page, 'Waiting', 1));
   await openMailLog(page);
   await expect(mailRow(page, email, CHECKOUT_SUBJECT)).toHaveCount(0);
 
   endWaits();
-  runQueue();
-  await openMailLog(page);
+  await runQueueUntil(async () => (await mailRows(page, email, CHECKOUT_SUBJECT)) > 0);
   await mailRow(page, email, CHECKOUT_SUBJECT).getByRole('link').click();
   const link = page.frameLocator('iframe[title="Mail body"]').locator('a[href*="yaymatik_cart"]').first();
   const restoreUrl = await link.getAttribute('href');
@@ -121,13 +137,14 @@ test('an order through classic checkout runs the workflow', async ({ page, brows
   await addToCart(shopper);
   await placeClassicOrder(shopper, email);
   completeOrder(email);
-  runQueue();
+  await runQueueUntil(async () => (await mailRows(page, email, FIRST_ORDER_SUBJECT)) > 0);
 
-  await openMailLog(page);
   await expect(mailRow(page, email, FIRST_ORDER_SUBJECT)).toBeVisible();
 });
 
 test('an unsubscribe link stops the next email', async ({ page, browser, baseURL }) => {
+  // Two workflows, two orders and two queue waits: over the default 90 s when jobs land late.
+  test.slow();
   await useTemplate(page, FIRST_ORDER);
   await activate(page);
   await useTemplate(page, REVIEW_REQUEST);
@@ -143,10 +160,9 @@ test('an unsubscribe link stops the next email', async ({ page, browser, baseURL
     await placeOrder(shopper, email);
     completeOrder(email);
   }
-  runQueue();
 
   // Each review request waits for its email; the thank-yous are already sent.
-  await page.reload();
+  await runQueueUntil(() => hasRuns(page, 'Waiting', 2));
   await expect(page.getByRole('row').filter({ hasText: 'Waiting' })).toHaveCount(2);
   await openMailLog(page);
   await mailRow(page, leaving, FIRST_ORDER_SUBJECT).getByRole('link').click();
@@ -159,8 +175,7 @@ test('an unsubscribe link stops the next email', async ({ page, browser, baseURL
   await expect(reader.getByText('You’re unsubscribed')).toBeVisible();
 
   endWaits();
-  runQueue();
-  await openMailLog(page);
+  await runQueueUntil(async () => (await mailRows(page, staying, REVIEW_SUBJECT)) > 0);
   await expect(mailRow(page, staying, REVIEW_SUBJECT)).toHaveCount(1);
   await expect(mailRow(page, leaving, REVIEW_SUBJECT)).toHaveCount(0);
 });

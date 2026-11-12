@@ -57,8 +57,8 @@ final class RunStepStoreTest extends TestCase {
         $this->assertSame( '{"to":"a@x.com"}', $done['output'] );
         $this->assertNull( $done['error'] );
         $this->assertArrayHasKey( 'finished_at', $done );
-        $this->assertArrayNotHasKey( 'finished_at', $this->db->calls[1][2] );
-        $this->assertCount( 2, $this->db->calls );
+        $this->assertArrayNotHasKey( 'finished_at', $this->db->calls[2][2] );
+        $this->assertCount( 3, $this->db->calls );
     }
 
     public function test_for_run_decodes_rows_in_order(): void {
@@ -211,7 +211,8 @@ final class RunStepStoreTest extends TestCase {
         $this->assertSame( 1, $then->runs );
         $inserts = array_values( array_filter( $this->db->calls, fn( array $call ) => 'insert' === $call[0] ) );
         $this->assertSame( [ 'yes' ], array_map( fn( array $call ) => $call[2]['step_id'], $inserts ) );
-        $last = end( $this->db->calls );
+        $updates = array_filter( $this->db->calls, fn( array $call ) => 'update' === $call[0] );
+        $last    = end( $updates );
         $this->assertSame( [ 'result' => 'yes' ], json_decode( $last[2]['scope'], true )['steps']['c'] );
     }
 

@@ -7,7 +7,7 @@ cd "$(dirname "$0")/../.." || exit 1
 
 # check-orders and check-status-flow print JSON to diff before / after a change, so they are not here.
 # plugin-lifecycle uninstalls the plugin and reseeds the site, so it runs last and on wp-env only.
-checks=(storage runs late-module carts lifecycle winback catalog settings plugin-lifecycle)
+checks=(storage runs late-module carts privacy-index lifecycle winback catalog settings plugin-lifecycle)
 wp_env_only=(plugin-lifecycle)
 logs=$(mktemp -d -t yaymatik-check-all.XXXXXX) || exit 1
 results=()

@@ -27,6 +27,7 @@ use YayMatik\Workflow\Core\Email\CartItems;
 use YayMatik\Workflow\Core\Email\UnsubscribeLink;
 use YayMatik\Workflow\Core\Data\Ref;
 use YayMatik\Workflow\Core\Runtime\ActionSchedulerQueue;
+use YayMatik\Workflow\Core\Runtime\Cancellation;
 use YayMatik\Workflow\Core\Runtime\Cleanup;
 use YayMatik\Workflow\Core\Runtime\RunPresenter;
 use YayMatik\Workflow\Core\Runtime\Runtime;
@@ -579,9 +580,9 @@ CartTracker::record( CartSnapshot::from_wc(), 'cart' );
 $ok( $row( $prefix . 's' ) === $s_before && null === $row( $v5 ), 'next request, cart unchanged: still no write, no binding' );
 
 $block = '<div class="wp-block-woocommerce-checkout"></div>';
-$first = apply_filters( 'render_block_woocommerce/checkout', $block, [] );
+$first = apply_filters( 'render_block_woocommerce/checkout', $block, [] ); // phpcs:ignore WordPress.NamingConventions.ValidHookName.UseUnderscores -- WordPress's own block hook.
 $ok( 1 === substr_count( $first, $added_text ) && 0 === strpos( $first, '<div class="woocommerce-notices-wrapper">' ) && null === WC()->session->get( 'yaymatik_restore_notice' ) && [] === (array) wc_get_notices(), 'Checkout block: the notice printed once before the block, flag and notices cleared' );
-$ok( apply_filters( 'render_block_woocommerce/checkout', $block, [] ) === $block, 'Checkout block, next render: nothing added' );
+$ok( apply_filters( 'render_block_woocommerce/checkout', $block, [] ) === $block, 'Checkout block, next render: nothing added' ); // phpcs:ignore WordPress.NamingConventions.ValidHookName.UseUnderscores -- WordPress's own block hook.
 
 $mix = $saved( $prefix . 'mix', [ $line( $p1, 1 ), $line( $oos, 1 ), $vline( $gone_parent, $orphan, 1 ), $vline( $vp, $vv, 2 ) ] );
 $visitor( $prefix . 'v5b' );
@@ -722,6 +723,8 @@ $new_run  = function ( array $run, array $steps = [] ) use ( $wpdb, $runs_table,
     if ( empty( $run['root_run_id'] ) ) {
         $wpdb->update( $runs_table, [ 'root_run_id' => $id ], [ 'id' => $id ] );
     }
+    // Written past the stores, so indexed here as they would.
+    RunStore::index_emails( [ $run['scope'] ?? '{}' ], array_filter( [ $run['error'] ?? null ] ), 'SELECT %d AS run_id', [ $id ] );
     foreach ( $steps as $step ) {
         $wpdb->insert(
             $steps_table,
@@ -732,6 +735,7 @@ $new_run  = function ( array $run, array $steps = [] ) use ( $wpdb, $runs_table,
                 'started_at' => $old,
             ]
         );
+        RunStore::index_emails( array_filter( [ $step['input'] ?? null, $step['output'] ?? null ] ), array_filter( [ $step['error'] ?? null ] ), 'SELECT %d AS run_id', [ $id ] );
     }
     return $id;
 };
@@ -1079,13 +1083,13 @@ $settings( $on );
 
 // Abandon sweep. Each cart is an hour past the 60 minutes unless a check says otherwise.
 $settings( [ 'abandon_minutes' => 60 ] + $on );
-$idle    = 'last_activity_at = UTC_TIMESTAMP() - INTERVAL 2 HOUR';
-$sw      = $prefix . 'sw_';
-$fired   = [];
-$listen  = function ( $id ) use ( &$fired ) {
-    $fired[] = (int) $id;
+$idle   = 'last_activity_at = UTC_TIMESTAMP() - INTERVAL 2 HOUR';
+$sw     = $prefix . 'sw_';
+$fired  = [];
+$listen = function ( $id, $kind ) use ( &$fired ) {
+    $fired[ (int) $id ] = $kind;
 };
-add_action( 'yaymatik_cart_abandoned', $listen );
+add_action( 'yaymatik_cart_abandoned', $listen, 10, 2 );
 $due_row = function ( string $name, string $columns = '' ) use ( $saved, $age, $sw, $line, $idle ) {
     $saved( $sw . $name, [ $line( 1, 1 ) ] );
     $age( $sw . $name, $idle . ( '' === $columns ? '' : ", {$columns}" ) );
@@ -1103,34 +1107,41 @@ $settings( [ 'cart_tracking' => false ] + $on );
 CartSweep::run();
 $ok( 'active' === $row( $sw . 'due' )['status'] && [] === $fired, 'sweep, tracking off: nothing marked' );
 $settings( [ 'abandon_minutes' => 60 ] + $on );
-$sweep_at = gmdate( 'Y-m-d H:i:s', time() - 5 );
-$updated  = $row( $sw . 'due' )['updated_at'];
+$updated = $row( $sw . 'due' )['updated_at'];
 CartSweep::run();
 $r = $row( $sw . 'due' );
-$ok( 'abandoned' === $r['status'] && $r['abandoned_at'] >= $sweep_at && 'cart_abandoned' === $r['abandon_trigger'], 'sweep: a due cart abandoned, cart_abandoned' );
+$ok( 'abandoned' === $r['status'] && 'cart_abandoned' === ( $fired[ (int) $r['id'] ] ?? '' ), 'sweep: a due cart abandoned, fired as cart_abandoned' );
+$ok( null === $r['abandoned_at'] && '' === $r['abandon_trigger'] && null === $r['series_at'], 'sweep: no workflow took it, so nothing locked' );
 $ok( $updated === $r['updated_at'], 'sweep: updated_at untouched, the capture limit counts only the shopper' );
 $r2 = $row( $sw . 'checkout' );
-$ok( 'abandoned' === $r2['status'] && 'checkout_abandoned' === $r2['abandon_trigger'], 'sweep: a cart that reached checkout → checkout_abandoned' );
-$ok( in_array( (int) $r['id'], $fired, true ) && in_array( (int) $r2['id'], $fired, true ), 'sweep: the first abandon fires the action' );
+$ok( 'abandoned' === $r2['status'] && 'checkout_abandoned' === ( $fired[ (int) $r2['id'] ] ?? '' ), 'sweep: a cart that reached checkout fires as checkout_abandoned' );
 foreach ( [ 'noemail', 'noitems', 'blank', 'new', 'stale' ] as $name ) {
-    $ok( 'active' === $row( $sw . $name )['status'] && ! in_array( (int) $row( $sw . $name )['id'], $fired, true ), "sweep ignores {$name}" );
+    $ok( 'active' === $row( $sw . $name )['status'] && ! isset( $fired[ (int) $row( $sw . $name )['id'] ] ), "sweep ignores {$name}" );
 }
-$ok( 'ordered' === $row( $sw . 'ordered' )['status'] && ! in_array( (int) $row( $sw . 'ordered' )['id'], $fired, true ), 'sweep ignores an ordered cart' );
+$ok( 'ordered' === $row( $sw . 'ordered' )['status'] && ! isset( $fired[ (int) $row( $sw . 'ordered' )['id'] ] ), 'sweep ignores an ordered cart' );
 
-// Activity on an abandoned row, then a second abandon.
-$first_at = '2026-01-02 03:04:05';
-$age( $sw . 'due', "abandoned_at = '{$first_at}'" );
+// Nothing took the first abandon: the shopper returns, reaches checkout and leaves again.
 $browser( $sw . 'due' );
 CartTracker::record( $cart( [ $line( 1, 2 ) ] ), 'cart' );
-$r = $row( $sw . 'due' );
-$ok( 'active' === $r['status'] && $first_at === $r['abandoned_at'] && 'cart_abandoned' === $r['abandon_trigger'], 'record on an abandoned cart: active, abandoned_at and trigger kept' );
-
+$ok( 'active' === $row( $sw . 'due' )['status'], 'record on an abandoned cart: active' );
 $age( $sw . 'due', $idle . ', checkout_at = UTC_TIMESTAMP()' );
 $fired = [];
 CartSweep::run();
 $r = $row( $sw . 'due' );
-$ok( 'abandoned' === $r['status'] && $first_at === $r['abandoned_at'] && 'cart_abandoned' === $r['abandon_trigger'], 'second abandon: abandoned, first abandoned_at and trigger kept, even after reaching checkout' );
-$ok( ! in_array( (int) $r['id'], $fired, true ), 'second abandon: no action' );
+$ok( 'abandoned' === $r['status'] && 'checkout_abandoned' === ( $fired[ (int) $r['id'] ] ?? '' ), 'second abandon, no series yet: fires again, now as checkout_abandoned' );
+
+// A series started: activity keeps it, and the next abandon fires with its kind for the trigger to skip.
+$first_at = '2026-01-02 03:04:05';
+$age( $sw . 'due', "abandoned_at = '{$first_at}', abandon_trigger = 'cart_abandoned', series_at = '{$first_at}'" );
+$browser( $sw . 'due' );
+CartTracker::record( $cart( [ $line( 1, 2 ) ] ), 'cart' );
+$r = $row( $sw . 'due' );
+$ok( 'active' === $r['status'] && $first_at === $r['abandoned_at'] && 'cart_abandoned' === $r['abandon_trigger'], 'record on a cart in a series: active, abandoned_at and trigger kept' );
+$age( $sw . 'due', $idle );
+$fired = [];
+CartSweep::run();
+$r = $row( $sw . 'due' );
+$ok( 'abandoned' === $r['status'] && $first_at === $r['abandoned_at'] && 'cart_abandoned' === $r['abandon_trigger'] && 'checkout_abandoned' === ( $fired[ (int) $r['id'] ] ?? '' ), 'abandon after a series started: abandoned, series kept, fires so the trigger can record it skipped' );
 
 add_filter( 'woocommerce_is_checkout', '__return_true' );
 $browser( $sw . 'due' );
@@ -1151,7 +1162,7 @@ $ok( 'ordered' === $row( $sw . 'ordered' )['status'], 'order linked to an ordere
 $due_row( 'race' );
 $read = $row( $sw . 'race' );
 $age( $sw . 'race', 'last_activity_at = UTC_TIMESTAMP()' );
-$ok( false === CartStore::mark_abandoned( (int) $read['id'], $read['last_activity_at'], 'cart_abandoned' ) && 'active' === $row( $sw . 'race' )['status'] && null === $row( $sw . 'race' )['abandoned_at'], 'activity after the read: not marked' );
+$ok( false === CartStore::mark_abandoned( (int) $read['id'], $read['last_activity_at'] ) && 'active' === $row( $sw . 'race' )['status'] && null === $row( $sw . 'race' )['abandoned_at'], 'activity after the read: not marked' );
 
 // New cycle.
 $age( $sw . 'race', "status = 'ordered', abandoned_at = UTC_TIMESTAMP(), abandon_trigger = 'cart_abandoned', series_at = UTC_TIMESTAMP()" );
@@ -1169,10 +1180,14 @@ remove_action( 'yaymatik_cart_abandoned', $listen );
 
 // Cart triggers: real workflows through the real Dispatcher; a sweep's events start at flush().
 $cart_runs = function ( int $cart_id ) use ( $wpdb, $runs_table, &$runs ) {
-    $ids = array_map( 'intval', $wpdb->get_col( $wpdb->prepare( "SELECT id FROM {$runs_table} WHERE subject = %s ORDER BY id", 'cart:' . $cart_id ) ) );
+    $ids  = array_map( 'intval', $wpdb->get_col( $wpdb->prepare( "SELECT id FROM {$runs_table} WHERE subject = %s ORDER BY id", 'cart:' . $cart_id ) ) );
     $runs = array_values( array_unique( array_merge( $runs, $ids ) ) );
     return $ids;
 };
+// Runs a workflow started, and the reasons of the skipped ones a refused claim recorded.
+$started   = fn( int $cart_id ) => array_values( array_filter( $cart_runs( $cart_id ), fn( $id ) => 'skipped' !== RunStore::find( $id )['status'] ) );
+$skips     = fn( int $cart_id ) => array_values( array_map( fn( $id ) => RunStore::find( $id )['error'], array_filter( $cart_runs( $cart_id ), fn( $id ) => 'skipped' === RunStore::find( $id )['status'] ) ) );
+$week_text = 'This shopper already got a reminder series in the last 7 days.';
 $sweep     = function () {
     CartSweep::run();
     Runtime::dispatcher()->flush();
@@ -1194,7 +1209,7 @@ $admin    = get_users(
 );
 $new_flow = function ( string $name, string $trigger, bool $two_emails = false, string $message = '<p>{{ cart.total }}</p>' ) use ( $admin, &$flows ) {
     wp_set_current_user( (int) $admin[0] );
-    $graph   = [
+    $graph = [
         'nodes' => [
             [
                 'id'       => 'trigger',
@@ -1235,14 +1250,14 @@ $new_flow = function ( string $name, string $trigger, bool $two_emails = false, 
         ],
     ];
     if ( $two_emails ) {
-        $second               = $graph['nodes'][1];
-        $second['id']         = 'mail2';
-        $second['position']   = [
+        $second             = $graph['nodes'][1];
+        $second['id']       = 'mail2';
+        $second['position'] = [
             'x' => 0,
             'y' => 340,
         ];
-        $graph['nodes'][]     = $second;
-        $graph['edges'][]     = [
+        $graph['nodes'][]   = $second;
+        $graph['edges'][]   = [
             'id'     => 'e2',
             'source' => 'mail',
             'target' => 'mail2',
@@ -1263,8 +1278,19 @@ $new_flow = function ( string $name, string $trigger, bool $two_emails = false, 
     $status  = rest_do_request( new WP_REST_Request( 'POST', "/yaymatik/v1/workflows/{$id}/activate" ) )->get_status();
     return 200 === $status ? $id : 0;
 };
-$cart_flow     = $new_flow( 'cart', 'cart_abandoned' );
+// Only Checkout on: an abandon before checkout uses nothing up; the same cart starts Checkout later.
 $checkout_flow = $new_flow( 'checkout', 'checkout_abandoned' );
+$due_row( 'later' );
+$sweep();
+$r = $row( $sw . 'later' );
+$ok( 'abandoned' === $r['status'] && [] === $cart_runs( (int) $r['id'] ) && null === $r['series_at'], 'only Checkout on, cart abandoned before checkout: no run, no series' );
+$age( $sw . 'later', $idle . ", status = 'active', checkout_at = UTC_TIMESTAMP()" );
+$sweep();
+$r     = $row( $sw . 'later' );
+$found = $cart_runs( (int) $r['id'] );
+$ok( 1 === count( $found ) && (int) RunStore::find( $found[0] )['workflow_id'] === $checkout_flow && 'checkout_abandoned' === $r['abandon_trigger'] && null !== $r['series_at'], 'only Checkout on, same cart left at checkout later: one Checkout run, series locked as checkout' );
+
+$cart_flow = $new_flow( 'cart', 'cart_abandoned' );
 $ok( $cart_flow > 0 && $checkout_flow > 0, 'a workflow per cart trigger activates' );
 
 $due_row( 'tcart' );
@@ -1279,19 +1305,35 @@ $ok( 'cart:' . $r['id'] === $run['subject'] && 'cart:' . $r['id'] === $keys['car
 $found = $cart_runs( (int) $row( $sw . 'tcheckout' )['id'] );
 $ok( 1 === count( $found ) && (int) RunStore::find( $found[0] )['workflow_id'] === $checkout_flow, 'checkout kind: one run, of the checkout workflow only' );
 
+// Both on: a cart in a Cart series, left again at checkout, gets no second series.
+$age( $sw . 'tcart', $idle . ", status = 'active', checkout_at = UTC_TIMESTAMP()" );
+$sweep();
+$r = $row( $sw . 'tcart' );
+$ok( 1 === count( $started( (int) $r['id'] ) ) && 'cart_abandoned' === $r['abandon_trigger'], 'both on, a cart in a series left again at checkout: still one run, kind kept' );
+$cart_text = 'This cart already got a reminder series.';
+$skip_ids  = array_values( array_diff( $cart_runs( (int) $r['id'] ), $started( (int) $r['id'] ) ) );
+$ok( [ $cart_text ] === $skips( (int) $r['id'] ) && (int) RunStore::find( $skip_ids[0] )['workflow_id'] === $checkout_flow && ! as_has_scheduled_action( ActionSchedulerQueue::HOOK, [ $skip_ids[0] ], ActionSchedulerQueue::GROUP ), 'both on, same: one Skipped Checkout run "already got a reminder series", no job, so no email' );
+
+// The same cart left again the same way: the Cart workflow records it skipped, the series stays.
+$series_at = $r['series_at'];
+$age( $sw . 'tcart', $idle . ", status = 'active', checkout_at = NULL" );
+$sweep();
+$r = $row( $sw . 'tcart' );
+$ok( 1 === count( $started( (int) $r['id'] ) ) && [ $cart_text, $cart_text ] === $skips( (int) $r['id'] ) && $series_at === $r['series_at'] && 'cart_abandoned' === $r['abandon_trigger'], 'a cart in a series left again: a Skipped Cart run with the reason, no new series' );
+
 // Series per email.
 $unsub = "unsub@{$domain}";
 UnsubscribeStore::add( $unsub );
 $due_row( 'unsub', "email = '{$unsub}'" );
 $sweep();
 $r = $row( $sw . 'unsub' );
-$ok( 'abandoned' === $r['status'] && [] === $cart_runs( (int) $r['id'] ) && null === $r['series_at'], 'unsubscribed: abandoned, no run, no series' );
+$ok( 'abandoned' === $r['status'] && [] === $started( (int) $r['id'] ) && [ Cancellation::unsubscribed() ] === $skips( (int) $r['id'] ) && null === $r['series_at'], 'unsubscribed: abandoned, no run started, one Skipped run with the reason, no series' );
 
 $pair = "pair@{$domain}";
 $due_row( 'younger', "email = '{$pair}'" );
 $due_row( 'older', "email = '{$pair}', last_activity_at = UTC_TIMESTAMP() - INTERVAL 3 HOUR" );
 $sweep();
-$ok( 1 === count( $cart_runs( (int) $row( $sw . 'older' )['id'] ) ) && [] === $cart_runs( (int) $row( $sw . 'younger' )['id'] ) && null === $row( $sw . 'younger' )['series_at'], 'two carts, one email, one sweep: only the older starts, though its id is higher' );
+$ok( 1 === count( $started( (int) $row( $sw . 'older' )['id'] ) ) && [] === $started( (int) $row( $sw . 'younger' )['id'] ) && [ $week_text ] === $skips( (int) $row( $sw . 'younger' )['id'] ) && null === $row( $sw . 'younger' )['series_at'], 'two carts, one email, one sweep: only the older starts, though its id is higher; the younger is Skipped' );
 
 $due_row( 'unblocked', "email = '{$series}'" );
 $sweep();
@@ -1312,14 +1354,33 @@ $six = "six@{$domain}";
 $due_row( 'six', "email = '{$six}', status = 'abandoned', abandoned_at = UTC_TIMESTAMP(), series_at = UTC_TIMESTAMP() - INTERVAL 6 DAY" );
 $due_row( 'aftersix', "email = '{$six}'" );
 $sweep();
-$ok( [] === $cart_runs( (int) $row( $sw . 'aftersix' )['id'] ), 'a series 6 days old blocks' );
+$r = $row( $sw . 'aftersix' );
+$ok( [] === $started( (int) $r['id'] ) && [ $week_text ] === $skips( (int) $r['id'] ), 'a series 6 days old blocks: a Skipped run with the reason' );
+$skip  = $cart_runs( (int) $r['id'] )[0];
+$stats = RunStore::stats( [ $cart_flow ] )[ $cart_flow ] ?? [];
+$ok(
+    in_array(
+        $skip,
+        array_column(
+            RunStore::list(
+                [
+                    'workflow_id' => $cart_flow,
+                    'status'      => 'skipped',
+                ]
+            ),
+            'id'
+        ),
+        true
+    ) && ( $stats['last_id'] ?? 0 ) === $skip && 'skipped' === ( $stats['last_status'] ?? '' ) && ( $stats['recent'] ?? 0 ) >= 1,
+    'the Skipped run is listed under Skipped and counts as the workflow\'s last run'
+);
 
 $due_row( 'late', "email = 'late@{$domain}'" );
 CartSweep::run();
 $age( $sw . 'late', "status = 'ordered'" );
 Runtime::dispatcher()->flush();
 $r = $row( $sw . 'late' );
-$ok( [] === $cart_runs( (int) $r['id'] ) && null === $r['series_at'], 'ordered between the sweep and its shutdown: no run, no series' );
+$ok( [] === $started( (int) $r['id'] ) && [ Cancellation::order_placed( 0 ) ] === $skips( (int) $r['id'] ) && null === $r['series_at'], 'ordered between the sweep and its shutdown: no run started, Skipped as ordered, no series' );
 
 // Account with no billing email: the run still reaches the cart's address.
 $sent = [];
@@ -1401,12 +1462,12 @@ $browser( $sw . 'unpaid' );
 $next_request();
 CartTracker::emptied();
 $ok( null !== $row( $sw . 'unpaid' ) && 'cancelled' === $run_row( $unpaid_run )['status'] && '[]' === $row( $sw . 'unpaid' )['items'], 'emptied with an unpaid order: row kept for the payment, no items, run cancelled' );
-$age( $sw . 'unpaid', "status = 'active', {$idle}, abandoned_at = NULL" );
+$age( $sw . 'unpaid', "status = 'active', {$idle}, series_at = NULL, abandoned_at = NULL, abandon_trigger = ''" );
 $fired = [];
-add_action( 'yaymatik_cart_abandoned', $listen );
+add_action( 'yaymatik_cart_abandoned', $listen, 10, 2 );
 $sweep();
 remove_action( 'yaymatik_cart_abandoned', $listen );
-$ok( 'active' === $row( $sw . 'unpaid' )['status'] && ! in_array( (int) $row( $sw . 'unpaid' )['id'], $fired, true ), 'emptied with an unpaid order: the sweep skips it' );
+$ok( 'active' === $row( $sw . 'unpaid' )['status'] && ! isset( $fired[ (int) $row( $sw . 'unpaid' )['id'] ] ), 'emptied with an unpaid order: the sweep skips it' );
 $ok( 'The cart was emptied or deleted.' === YayMatik\Workflow\Core\Steps\StepRegistry::get( 'cart_abandoned' )->stop_reason( 'cart:' . $row( $sw . 'unpaid' )['id'] ), 'emptied with an unpaid order: a queued run stops too' );
 
 $settings(
@@ -1428,9 +1489,9 @@ CartTracker::record( $cart( [ $line( 1, 4 ) ] ), 'cart' );
 $ok( 'active' === $row( $sw . 'back' )['status'] && 'waiting' === $run_row( $back_run )['status'], 'a returning shopper: cart active, run still waiting' );
 
 // Unsubscribed: stops the run before a coupon or an email nobody gets.
-$left      = 'The shopper unsubscribed from these emails.';
-$left_mail = "left@{$domain}";
-$left_run  = $waiting( 'left', "email = '{$left_mail}'" );
+$left       = 'The shopper unsubscribed from these emails.';
+$left_mail  = "left@{$domain}";
+$left_run   = $waiting( 'left', "email = '{$left_mail}'" );
 $left_order = $new_run(
     [
         'subject'     => 'order:' . ( $fake + 42 ),
@@ -1468,7 +1529,7 @@ $ok( 'cancelled' === Runtime::worker()->run( $gone_q ) && 'The cart was emptied 
 $late_mail = "late@{$domain}";
 $due_row( 'late', "email = '{$late_mail}'" );
 $sweep();
-$late_run = $cart_runs( (int) $row( $sw . 'late' )['id'] )[0];
+$late_run = $started( (int) $row( $sw . 'late' )['id'] )[0];
 UnsubscribeStore::add( $late_mail );
 as_unschedule_all_actions( ActionSchedulerQueue::HOOK, [ $late_run ], ActionSchedulerQueue::GROUP );
 $ok( 'cancelled' === Runtime::worker()->run( $late_run ) && $left === $run_row( $late_run )['error'], 'queued run + unsubscribed email: Cancelled at start' );
@@ -1530,19 +1591,19 @@ $variation->set_parent_id( $parent->get_id() );
 $variation->set_status( 'publish' );
 $variation->set_regular_price( '5' );
 $variation->save();
-$posts[]   = $variation->get_id();
-$var_line  = [
+$posts[]  = $variation->get_id();
+$var_line = [
     'name'         => 'Saved variation',
     'variation_id' => $variation->get_id(),
 ] + $line( $parent->get_id(), 1, 5.0 );
-$var_cart  = new YayMatik\Workflow\Core\Cart\SavedCart(
+$var_cart = new YayMatik\Workflow\Core\Cart\SavedCart(
     [
         'items'    => (string) wp_json_encode( [ $var_line ] ),
         'total'    => 5,
         'currency' => 'USD',
     ]
 );
-$var_html  = CartItems::render( $var_cart, true );
+$var_html = CartItems::render( $var_cart, true );
 $ok( false !== strpos( $var_html, 'Saved variation' ) && false === strpos( $var_html, '<a ' ), 'cart.items: a published variation of a draft parent shows its saved name, no link' );
 
 $block_row = $saved( $sw . 'blocks', [ $line( $block_product->get_id(), 1 ) ] );
@@ -1600,8 +1661,8 @@ $ok( ! array_key_exists( 'stoppedByOrderUrl', RunPresenter::item( $stopped, 0 ) 
 wp_set_current_user( (int) $admin[0] );
 $off_flow = $new_flow( 'tracking off', 'cart_abandoned' );
 $settings( [ 'cart_tracking' => false ] + $on );
-$activate = fn( int $id ) => rest_do_request( new WP_REST_Request( 'POST', "/yaymatik/v1/workflows/{$id}/activate" ) );
-$update   = function ( int $id, array $graph ) {
+$activate     = fn( int $id ) => rest_do_request( new WP_REST_Request( 'POST', "/yaymatik/v1/workflows/{$id}/activate" ) );
+$update       = function ( int $id, array $graph ) {
     $request = new WP_REST_Request( 'PUT', "/yaymatik/v1/workflows/{$id}" );
     $request->set_header( 'content-type', 'application/json' );
     $request->set_body( wp_json_encode( [ 'graph' => $graph ] ) );
@@ -1617,17 +1678,17 @@ $settings( [ 'abandon_minutes' => 60 ] + $on );
 $ok( 200 === $activate( $off_flow )->get_status(), 'tracking on: Activate works' );
 
 // Apply with tracking off: the trigger decides, on an active workflow.
-$apply_flow  = $new_flow( 'apply', 'cart_abandoned' );
-$apply_graph = WorkflowStore::find( $apply_flow )['graph'];
-$apply       = fn( int $id ) => rest_do_request( new WP_REST_Request( 'POST', "/yaymatik/v1/workflows/{$id}/apply" ) );
+$apply_flow   = $new_flow( 'apply', 'cart_abandoned' );
+$apply_graph  = WorkflowStore::find( $apply_flow )['graph'];
+$apply        = fn( int $id ) => rest_do_request( new WP_REST_Request( 'POST', "/yaymatik/v1/workflows/{$id}/apply" ) );
 $settings( [ 'cart_tracking' => false ] + $on );
 $same_trigger = $apply_graph;
 $same_trigger['nodes'][1]['data']['config']['heading'] = 'Changed';
 $update( $apply_flow, $same_trigger );
 $ok( 200 === $apply( $apply_flow )->get_status(), 'tracking off, active workflow: Update with the same trigger works' );
-$new_trigger = $same_trigger;
+$new_trigger                              = $same_trigger;
 $new_trigger['nodes'][0]['data']['block'] = 'checkout_abandoned';
-$drafted     = $update( $apply_flow, $new_trigger )->get_data();
+$drafted                                  = $update( $apply_flow, $new_trigger )->get_data();
 $ok( 'cart_tracking_off' === ( $drafted['issues']['draft'][0]['code'] ?? '' ) && [] === $drafted['issues']['live'], 'tracking off: a draft that changes the trigger shows the issue on the draft only' );
 $refused = $apply( $apply_flow );
 $ok( 400 === $refused->get_status() && 'cart_tracking_off' === ( $refused->get_data()['data']['errors'][0]['code'] ?? '' ), 'tracking off: Update that changes to a cart trigger → 400 cart_tracking_off' );

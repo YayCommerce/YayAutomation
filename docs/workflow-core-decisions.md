@@ -34,6 +34,7 @@ Each note: **Decision** · **Why** · **Rejected** · **Cost** · **For devs** (
 | [M3–M5](#m3m5-lifecycle-workflows) | Lifecycle workflows | Owner |
 | [M6](#m6-win-back) | Win-back | Owner |
 | [CT](#ct-custom-workflow-catalog) | Custom workflow catalog | Owner |
+| [PI](#pi-privacy-lookup-index) | Privacy lookup index | Owner |
 
 "High" = recommended and accepted as-is. "Owner" = debated and decided by the product owner.
 
@@ -387,23 +388,27 @@ Today errors only go to the WooCommerce log, which merchants never open.
 
 ## M8. Abandoned carts
 
-**Decision.** A 5-minute job marks carts abandoned. A cart's first abandon in its cycle starts its trigger, and the `abandoned_at` column on the row is the claim. No `trigger_claims` table.
+**Decision.** A 5-minute job marks carts abandoned. Each abandon fires `yaymatik_cart_abandoned` with its kind, cart or checkout, decided at that abandon. The cart is locked only when an active workflow starts its series: `series_at`, `abandoned_at` and `abandon_trigger` are set in one UPDATE that requires `series_at IS NULL`. No `trigger_claims` table.
 
 **Why.**
-- One cart has one row, and only a new cycle (after an order) clears `abandoned_at`, so a per-row column already answers "did this cart start yet".
-- A shopper who returns turns the row active and keeps `abandoned_at`, so leaving again can't start a second series.
+- One cart has one row, and only a new cycle (after an order) clears `series_at`, so a per-row column already answers "did this cart start a series yet". The single UPDATE is the lock, so Cart and Checkout workflows can never both start for one cart.
+- Plan 033: until then the first abandon locked the cart, even when no workflow took it. A shopper idle 15 minutes while browsing, then leaving at checkout, never got the Checkout reminder. Now an abandon nobody takes uses nothing up.
+- The hook changed with it: it fires on every abandon, also of a cart already in a series (not once per cycle), and gains `$kind`. It is experimental like the other hooks, so it can change before Extension API v1.
+- A cart already in a series that is abandoned again records a Skipped run, "This cart already got a reminder series.", in the workflows of that abandon's kind. Testers and store owners repeating a test with the same cart see why nothing was sent, instead of nothing at all. `claim()` refuses it before `start_series()`, so a cart still gets at most one series.
+- A shopper who returns turns the row active and keeps `series_at`, so leaving again can't start a second series.
 - The sweep only looks 24 h past the abandon time, so turning tracking on doesn't email old carts.
 - A series goes on when the shopper returns: coming back without ordering is not a reason to stop reminding. Only an order, a gone cart or an unsubscribe stops it.
 - Cart emails show the prices the shopper saw, with the product's live name, image and link: the reminder must match the cart, and a price the shop raised since would read as a bait. The cart page may show a newer price after restoring.
 - One series per email in 7 days, read from `series_at`, set when an active workflow takes the cart: two carts of one shopper, in one browser and another, would otherwise send two series.
 
 **Cost.**
-- A cart abandoned before its workflow was activated never starts it: the event fires once per cycle.
+- A cart abandoned before its workflow was activated starts it only if the shopper returns and leaves again.
 - A cart idle over 24 h past the abandon time is skipped for good, also when the job itself was that late (a store with no visits and no server cron).
 - A cart a workflow took but couldn't start (rate limit, no live version) still blocks that email for 7 days.
 - Emptying a cart deletes its row and its claim, so a new cart can start a new series; one series per email limits this.
 - Events fire at shutdown of the sweep: a crash between marking and that shutdown loses that cart's series.
 - The job adds 288 Action Scheduler rows a day, even with tracking off; Action Scheduler's own retention removes them.
+- A shopper who keeps coming back to a cart in a series adds one Skipped run per abandon, and each counts toward the 1000-runs-per-minute ceiling; a sweep is at most 200 carts.
 
 ## M3–M5. Lifecycle workflows
 
@@ -485,3 +490,25 @@ Today errors only go to the WooCommerce log, which merchants never open.
 - Resend WooCommerce email can't resend the refunded email.
 - Wait until's time in a DST gap runs at the shifted time.
 - Update customer custom field writes one text value, never a list. A key that differs from a stored one only in case reads as changed on every run.
+
+## PI. Privacy lookup index
+
+**Decision.** A `run_emails` table holds each email and guest claim key a run mentions, written by `RunStore` and `RunStepStore` at every write of a run's scope or error or a step's input, output or error. Privacy export and erase look up a person's runs there, and by `runs.subject` with `KEY subject (subject, status)`. They no longer scan every run and step.
+
+**Why.**
+- The old lookup was a LIKE / REGEXP over every run and every step's JSON, on every export or erase page. At 200k runs it took about 5.5 s per page; the index takes about 4 ms (plan 033 bench).
+- Plain normalized emails, not an HMAC. A hash needs a secret, and a lost or changed secret would make erase quietly find nothing. The rows hold what the runs already hold, and erase removes them with the run's data.
+- The extractor matches what erase replaces (`replace_json()`, `replace_text()`): a whole JSON string, and in text the same boundaries. So the index never finds less than erase would scrub. `check-privacy-index` compares it with the old scan.
+- Index rows are written with INSERT IGNORE in one statement per write. Writes to an existing row select its run from `runs` or `run_steps`, so a run that isn't there gets no row; `create()` indexes the id it just inserted.
+- An indexing failure is logged and the run goes on: a privacy lookup is less important than the customer's email going out. `check-privacy-index` catches a gap.
+
+**Rejected.**
+- Keep the scan and add LIMITs: still a full read of the steps table per page.
+- MySQL full-text or JSON indexes: neither matches the erase boundaries, and both differ between MySQL and MariaDB.
+
+**Cost.**
+- About 3 ms more per run with 5 steps whose values all hold an email (bench: 8.9 vs 5.6 ms).
+- Values are cut to 190 characters, so two addresses that share their first 190 characters find each other's runs. Erase still only replaces the exact address, and keeps the index link of an address that long.
+- An overwritten value leaves its row until an erase finds the run and removes it.
+- No backfill: before v1.0, dev data is reset (`./run.sh reset-data`) after deploy.
+

@@ -39,13 +39,14 @@ final class RunStepStore {
      */
     public static function start( int $run_id, string $step_id, array $input ): int {
         global $wpdb;
-        $ok = $wpdb->insert(
+        $json = (string) wp_json_encode( $input );
+        $ok   = $wpdb->insert(
             self::table(),
             [
                 'run_id'     => $run_id,
                 'step_id'    => $step_id,
                 'status'     => self::STATUS_RUNNING,
-                'input'      => wp_json_encode( $input ),
+                'input'      => $json,
                 'started_at' => current_time( 'mysql', true ),
             ],
             [ '%d', '%s', '%s', '%s', '%s' ]
@@ -54,7 +55,9 @@ final class RunStepStore {
             Logger::error( 'Could not save a step: ' . $wpdb->last_error, [ 'run_id' => $run_id ] );
             return 0;
         }
-        return (int) $wpdb->insert_id;
+        $id = (int) $wpdb->insert_id;
+        RunStore::index_emails( [ $json ], [], 'SELECT id AS run_id FROM %i WHERE id = %d', [ RunStore::table(), $run_id ] );
+        return $id;
     }
 
     /**
@@ -82,6 +85,7 @@ final class RunStepStore {
             Logger::error( 'Could not save a step: ' . $wpdb->last_error, [ 'run_step_id' => $id ] );
             return false;
         }
+        RunStore::index_emails( [ $row['output'] ], array_filter( [ $error ] ), 'SELECT run_id FROM %i WHERE id = %d', [ self::table(), $id ] );
         return true;
     }
 
@@ -109,6 +113,9 @@ final class RunStepStore {
             Logger::error( 'Could not close a run\'s steps: ' . $wpdb->last_error, [ 'run_id' => $run_id ] );
             return false;
         }
+        if ( $done ) {
+            RunStore::index_emails( [], [ $error ], 'SELECT id AS run_id FROM %i WHERE id = %d', [ RunStore::table(), $run_id ] );
+        }
         return true;
     }
 
@@ -131,6 +138,8 @@ final class RunStepStore {
         );
         if ( false === $done ) {
             Logger::error( 'Could not cancel waiting steps: ' . $wpdb->last_error, [ 'run_ids' => $run_ids ] );
+        } elseif ( $done ) {
+            RunStore::index_emails( [], [ $reason ], 'SELECT DISTINCT run_id FROM %i WHERE run_id IN (' . Schema::in( count( $ids ) ) . ') AND status = %s AND error = %s', array_merge( [ self::table() ], $ids, [ self::STATUS_CANCELLED, $reason ] ) );
         }
     }
 

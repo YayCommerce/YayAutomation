@@ -1,6 +1,8 @@
 import { execFileSync } from 'node:child_process';
 import { resolve } from 'node:path';
 
+import { expect } from '@playwright/test';
+
 const root = resolve(__dirname, '../../..');
 
 function run(command: string, args: string[]) {
@@ -24,6 +26,22 @@ export function runQueue() {
   wp('action-scheduler', 'run', '--force');
 }
 
+/**
+ * Runs due jobs until `ready` holds, up to 30 s. Through Docker a job can land a few seconds after `runQueue()`
+ * returns, so one reload right after it can still find the run queued or running.
+ */
+export async function runQueueUntil(ready: () => Promise<boolean>) {
+  await expect
+    .poll(
+      async () => {
+        runQueue();
+        return ready();
+      },
+      { timeout: 30_000, intervals: [1_000, 2_000, 3_000] },
+    )
+    .toBe(true);
+}
+
 export function completeOrder(email: string) {
   wp('eval', `wc_get_orders( [ 'billing_email' => '${email}' ] )[0]->update_status( 'completed' );`);
 }
@@ -38,9 +56,15 @@ export function abandonCart(email: string) {
   );
 }
 
-/** Removes the daily cleanup job, as if it were lost: the Health check reports it. */
+/**
+ * Removes the daily cleanup job, as if it were lost: the Health check reports it. The hourly self-check is marked
+ * done, or the next page load after `resetSite()` (which clears its option) schedules the job again first.
+ */
 export function removeCleanupJob() {
-  wp('eval', 'as_unschedule_all_actions( "yaymatik_cleanup", [], "yaymatik" );');
+  wp(
+    'eval',
+    'as_unschedule_all_actions( "yaymatik_cleanup", [], "yaymatik" ); update_option( "yaymatik_cleanup_checked_at", time(), true );',
+  );
 }
 
 /** Ends every wait now: the run's own time, and the job that resumes it. */
