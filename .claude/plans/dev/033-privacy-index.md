@@ -105,7 +105,13 @@ Browser check steps in the PR description (format: 0 Understand First · 1 Prepa
 ## Review fixes (Nov 12, after Jack's review)
 - R1: `RunStore::create()` deletes any `run_emails` rows for the new id before indexing, so rows left by a failed delete can't attach to an id reused after a MySQL 5.7 restart. PHPUnit; check-privacy-index seeds an orphan row for the next id.
 - R2 (Jack picked A): the sweep fires on every abandon, a cart in a series included. `CartTrigger::skip_reason()` first returns "This cart already got a reminder series.", so `claim()` never reaches `start_series()` and I1 holds. That abandon's kind decides which workflows record the Skipped run. `CartStore::due()` no longer reads `series_at`. Browser step B4 now repeats with the same logged-in cart.
-- R3: e2e in the Playwright Docker image (see Results).
+- R1 3143d5b, R2 6152b40.
+- R3: e2e in `mcr.microsoft.com/playwright:v1.64.1-noble` (see Results). No committed change: the script lives in the session scratchpad.
+  - The repo and `~/.wp-env` are mounted at their host paths, with the host Docker socket, because the helpers call `pnpm wp-env run cli` and `./run.sh`.
+  - The container installs `docker.io` and `docker-compose-v2`, with `DOCKER_API_VERSION=1.43` for the host's Docker 24.
+  - The tests run as a user with the host's uid 501, gid 20 and name `imac`: wp-env runs WP-CLI as `os.userInfo()`, and root is refused. That user reaches the socket through a root-run proxy.
+  - A TCP forward maps the container's localhost:8910 to host.docker.internal:8910. WordPress's site URL is localhost:8910, so `baseURL` stays as it is; no env override was needed.
+  - `pnpm build` runs on the host, as the host's node_modules hold macOS-native build tools; the container runs `playwright test -c dev/e2e/playwright.config.ts`.
 
 ## Results (CP5, wp-env: MariaDB, PHP 8.1)
 
@@ -124,7 +130,13 @@ Browser check steps in the PR description (format: 0 Understand First · 1 Prepa
 - Write cost, a run + 5 steps (13 writes): 8.9 ms with an email in every value (7 index writes) vs 5.6 ms without (no index query).
 - check-privacy-index: 224 PASS on wp-env.
 - Final: `check-all --wp-env` and `--wp-env-min` all 10 PASS on d474604, before the lint-only 3bd5065. PHPUnit 922 OK; phpcs clean on every changed file. `probe-mysql --staging` PASS (lookups not probed until staging is at DB 8).
-- `pnpm e2e` NOT run: this Playwright build doesn't support Chromium on macOS 12 ("Playwright does not support chromium on mac12"). Run it on another machine before merge.
+- `pnpm e2e` can't run on the host: this Playwright build doesn't support Chromium on macOS 12.
+- After R1–R2 (6152b40):
+  - CI steps on the host all pass: `pnpm install --frozen-lockfile`, lint, lint:php, test (Vitest 492), test:php (PHPUnit 923), build. check-all `--wp-env` and `--wp-env-min`: 10/10 PASS each.
+  - e2e in Docker: 7 passed, 4 failed. The failures: an order runs the workflow; abandoned checkout reminder; classic checkout order; unsubscribe stops the next email.
+  - `develop` (9b31ca7) in the same container fails the same 4 tests, 7 passed, so this is the harness, not 033.
+  - Each failure finds its run still Running (0 steps) or not there when the page reloads. Action Scheduler's log shows each job ran "via WP CLI", that is the test's own `runQueue()`, about 2–3 s after the reload. In this container the helpers' `pnpm wp-env run cli` calls, through the proxied socket, don't finish their work before the test goes on.
+  - Still open: e2e on a host whose Playwright runs natively, as in 032.
 
 ## Out of Scope
 
