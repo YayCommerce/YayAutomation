@@ -17,9 +17,14 @@ test('saves a setting', async ({ page }) => {
 });
 
 test('the health check finds a missing daily job and schedules it again', async ({ page }) => {
-  removeCleanupJob();
-  await page.goto(SETTINGS);
-  await expect(page.getByText(CLEANUP_LATE)).toBeVisible();
+  // Through Docker the reset's CLI work can land after the removal and schedule the job again: retry both.
+  await expect(async () => {
+    removeCleanupJob();
+    await page.goto(SETTINGS);
+    // A second goto to the same `#/settings` URL is a same-document navigation: reload to check again.
+    await page.reload();
+    await expect(page.getByText(CLEANUP_LATE)).toBeVisible({ timeout: 5_000 });
+  }).toPass({ timeout: 30_000 });
   await page.getByRole('button', { name: 'Schedule again' }).click();
   await expect(page.getByText('The daily cleanup is scheduled again.')).toBeVisible();
   await expect(page.getByText(CLEANUP_LATE)).toHaveCount(0);
