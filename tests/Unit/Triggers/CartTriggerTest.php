@@ -83,8 +83,17 @@ final class CartTriggerTest extends TestCase {
         $this->db->results = [ $row, null, '1' ];
         $this->assertSame( 'This shopper already got a reminder series in the last 7 days.', $trigger->skip_reason( [ 'cart_id' => 7 ] ) );
 
+        $this->db->results = [ [ 'series_at' => '2026-01-01 10:00:00' ] + $row ];
+        $this->assertSame( 'This cart already got a reminder series.', $trigger->skip_reason( [ 'cart_id' => 7 ] ) );
+
         $this->db->results = [ null ];
         $this->assertNull( $trigger->skip_reason( [ 'cart_id' => 7 ] ) );
+
+        // I1: a cart in a series never reaches start_series.
+        $this->db->calls   = [];
+        $this->db->results = [ [ 'series_at' => '2026-01-01 10:00:00' ] + $row ];
+        $this->assertFalse( $trigger->claim( [ 'cart_id' => 7 ] ) );
+        $this->assertStringNotContainsString( 'series_at = ', implode( "\n", array_column( $this->db->calls, 1 ) ) );
 
         $this->db->calls   = [];
         $this->db->results = [ $row, null, '1' ];

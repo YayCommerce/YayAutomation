@@ -1130,7 +1130,7 @@ CartSweep::run();
 $r = $row( $sw . 'due' );
 $ok( 'abandoned' === $r['status'] && 'checkout_abandoned' === ( $fired[ (int) $r['id'] ] ?? '' ), 'second abandon, no series yet: fires again, now as checkout_abandoned' );
 
-// A series started: activity keeps it, and the next abandon fires nothing.
+// A series started: activity keeps it, and the next abandon fires with its kind for the trigger to skip.
 $first_at = '2026-01-02 03:04:05';
 $age( $sw . 'due', "abandoned_at = '{$first_at}', abandon_trigger = 'cart_abandoned', series_at = '{$first_at}'" );
 $browser( $sw . 'due' );
@@ -1141,7 +1141,7 @@ $age( $sw . 'due', $idle );
 $fired = [];
 CartSweep::run();
 $r = $row( $sw . 'due' );
-$ok( 'abandoned' === $r['status'] && $first_at === $r['abandoned_at'] && 'cart_abandoned' === $r['abandon_trigger'] && [] === $fired, 'abandon after a series started: abandoned, series kept, no action' );
+$ok( 'abandoned' === $r['status'] && $first_at === $r['abandoned_at'] && 'cart_abandoned' === $r['abandon_trigger'] && 'checkout_abandoned' === ( $fired[ (int) $r['id'] ] ?? '' ), 'abandon after a series started: abandoned, series kept, fires so the trigger can record it skipped' );
 
 add_filter( 'woocommerce_is_checkout', '__return_true' );
 $browser( $sw . 'due' );
@@ -1309,7 +1309,17 @@ $ok( 1 === count( $found ) && (int) RunStore::find( $found[0] )['workflow_id'] =
 $age( $sw . 'tcart', $idle . ", status = 'active', checkout_at = UTC_TIMESTAMP()" );
 $sweep();
 $r = $row( $sw . 'tcart' );
-$ok( 1 === count( $cart_runs( (int) $r['id'] ) ) && 'cart_abandoned' === $r['abandon_trigger'], 'both on, a cart in a series left again at checkout: still one run, kind kept' );
+$ok( 1 === count( $started( (int) $r['id'] ) ) && 'cart_abandoned' === $r['abandon_trigger'], 'both on, a cart in a series left again at checkout: still one run, kind kept' );
+$cart_text = 'This cart already got a reminder series.';
+$skip_ids  = array_values( array_diff( $cart_runs( (int) $r['id'] ), $started( (int) $r['id'] ) ) );
+$ok( [ $cart_text ] === $skips( (int) $r['id'] ) && (int) RunStore::find( $skip_ids[0] )['workflow_id'] === $checkout_flow && ! as_has_scheduled_action( ActionSchedulerQueue::HOOK, [ $skip_ids[0] ], ActionSchedulerQueue::GROUP ), 'both on, same: one Skipped Checkout run "already got a reminder series", no job, so no email' );
+
+// The same cart left again the same way: the Cart workflow records it skipped, the series stays.
+$series_at = $r['series_at'];
+$age( $sw . 'tcart', $idle . ", status = 'active', checkout_at = NULL" );
+$sweep();
+$r = $row( $sw . 'tcart' );
+$ok( 1 === count( $started( (int) $r['id'] ) ) && [ $cart_text, $cart_text ] === $skips( (int) $r['id'] ) && $series_at === $r['series_at'] && 'cart_abandoned' === $r['abandon_trigger'], 'a cart in a series left again: a Skipped Cart run with the reason, no new series' );
 
 // Series per email.
 $unsub = "unsub@{$domain}";

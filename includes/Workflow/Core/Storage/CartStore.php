@@ -270,13 +270,13 @@ final class CartStore {
      * @param string $before GMT datetime.
      * @param string $after  GMT datetime.
      * @param int    $limit
-     * @return array[] `id`, `last_activity_at`, `checkout_at`, `series_at`.
+     * @return array[] `id`, `last_activity_at`, `checkout_at`.
      */
     public static function due( string $before, string $after, int $limit ): array {
         global $wpdb;
         $table = self::table();
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own table, uses KEY status.
-        return (array) $wpdb->get_results( $wpdb->prepare( "SELECT id, last_activity_at, checkout_at, series_at FROM %i WHERE status = %s AND email <> '' AND items NOT IN ('', '[]') AND last_activity_at <= %s AND last_activity_at > %s ORDER BY last_activity_at, id LIMIT %d", $table, self::ACTIVE, $before, $after, $limit ), ARRAY_A );
+        return (array) $wpdb->get_results( $wpdb->prepare( "SELECT id, last_activity_at, checkout_at FROM %i WHERE status = %s AND email <> '' AND items NOT IN ('', '[]') AND last_activity_at <= %s AND last_activity_at > %s ORDER BY last_activity_at, id LIMIT %d", $table, self::ACTIVE, $before, $after, $limit ), ARRAY_A );
     }
 
     /**

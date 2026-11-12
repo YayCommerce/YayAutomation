@@ -14,7 +14,7 @@ use YayMatik\Workflow\DataItems\CustomerData;
 
 defined( 'ABSPATH' ) || exit;
 
-/** Base for a cart abandon that may start the cart's one reminder series. Event args hold `cart_id`. */
+/** Base for a cart abandon: starts the cart's one reminder series, or is skipped. Event args hold `cart_id`. */
 abstract class CartTrigger extends Trigger {
 
     /** One reminder series per email in this time. */
@@ -84,7 +84,7 @@ abstract class CartTrigger extends Trigger {
     }
 
     /**
-     * An ordered cart, an unsubscribed shopper, or an email with a series in the last 7 days; null for a gone cart.
+     * A cart already in a series, an ordered cart, an unsubscribed shopper, or an email with a series in the last 7 days; null for a gone cart.
      *
      * @param array $args
      */
@@ -93,6 +93,9 @@ abstract class CartTrigger extends Trigger {
         $row = CartStore::find( $id );
         if ( ! $row ) {
             return null;
+        }
+        if ( ! empty( $row['series_at'] ) ) {
+            return __( 'This cart already got a reminder series.', 'yaymatik' );
         }
         if ( CartStore::ORDERED === $row['status'] ) {
             return Cancellation::order_placed( (int) $row['order_id'] );

@@ -35,7 +35,7 @@ A privacy export or erase page finds a person's runs through an index instead of
 ### Part 2: cart skips
 
 - **E1: lock a cart only when a series starts.**
-  - `CartSweep::run` marks every due cart abandoned, as today. It fires `do_action( 'yaymatik_cart_abandoned', $id, $kind )` whenever the row has no `series_at`. The kind comes from `kind()` at this abandonment (I3).
+  - `CartSweep::run` marks every due cart abandoned, as today. It fires `do_action( 'yaymatik_cart_abandoned', $id, $kind )` on every abandon (since R2; at first only without `series_at`). The kind comes from `kind()` at this abandonment (I3).
   - `CartStore::mark_abandoned` loses `$kind` and sets status only. `due()` also returns `series_at`.
   - `CartTrigger::listen` emits when `$kind === $this->id()`. The Dispatcher reaches `claim()` only when a workflow for that trigger is active, so an abandonment nobody takes writes nothing (I4).
   - `claim()` ends with `CartStore::start_series( $id, $kind )`: `UPDATE … SET series_at = now, abandoned_at = now, abandon_trigger = %s WHERE id = %d AND series_at IS NULL AND status <> 'ordered'`, true on 1 row. That is the at-most-one-series lock (I1), and it is atomic, so Cart and Checkout can never both start. `mark_series` goes.
@@ -79,7 +79,7 @@ A privacy export or erase page finds a person's runs through an index instead of
      - `listen` emits only its own kind.
      - The `start_series` SQL holds `series_at IS NULL`; `claim` is false when 0 rows change.
    - check-carts (real DB):
-     - I1: a second abandonment after a series fires nothing.
+     - I1: a second abandonment after a series starts nothing (since R2: records a Skipped run).
      - I2: unchanged.
      - I3: cart idle → cart kind; later at checkout → checkout kind.
      - I4: only Checkout on → idle cart: no run, no `series_at`; it returns, reaches checkout, idles → a Checkout run.
@@ -101,6 +101,11 @@ Browser check steps in the PR description (format: 0 Understand First · 1 Prepa
 - Both on: one reminder only.
 - Admin repeats a test with the same email within 7 days → a Skipped row with the reason under Skipped.
 - Privacy: Tools › Export Personal Data for a customer with runs, one of them Skipped → the export lists them. Then Tools › Erase Personal Data → export again → no runs found.
+
+## Review fixes (Nov 12, after Jack's review)
+- R1: `RunStore::create()` deletes any `run_emails` rows for the new id before indexing, so rows left by a failed delete can't attach to an id reused after a MySQL 5.7 restart. PHPUnit; check-privacy-index seeds an orphan row for the next id.
+- R2 (Jack picked A): the sweep fires on every abandon, a cart in a series included. `CartTrigger::skip_reason()` first returns "This cart already got a reminder series.", so `claim()` never reaches `start_series()` and I1 holds. That abandon's kind decides which workflows record the Skipped run. `CartStore::due()` no longer reads `series_at`. Browser step B4 now repeats with the same logged-in cart.
+- R3: e2e in the Playwright Docker image (see Results).
 
 ## Results (CP5, wp-env: MariaDB, PHP 8.1)
 
@@ -127,7 +132,7 @@ Browser check steps in the PR description (format: 0 Understand First · 1 Prepa
 - Backfill or migration of `run_emails` (D5).
 - HMAC or hashing of index values (D1).
 - UI changes beyond what E2's Skipped rows need (none expected).
-- Skip records for silent rejects: missing cart, a lost race, a second abandonment after a series.
+- Skip records for silent rejects: missing cart, a lost race.
 
 ## Decisions
 

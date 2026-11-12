@@ -6,7 +6,7 @@ use YayMatik\Tests\Support\FakeWpdb;
 use YayMatik\Workflow\Core\Cart\CartSweep;
 use YayMatik\Workflow\Core\Storage\Settings;
 
-/** Reaching checkout decides which trigger a cart starts; only a cart without a series fires. */
+/** Reaching checkout decides which trigger a cart starts; every abandon fires, a cart in a series too. */
 final class CartSweepTest extends TestCase {
 
     protected function tearDown(): void {
@@ -24,7 +24,7 @@ final class CartSweepTest extends TestCase {
         $this->assertSame( 'checkout_abandoned', CartSweep::kind( [ 'checkout_at' => '2026-01-01 10:00:00' ] ) );
     }
 
-    public function test_each_abandon_of_a_cart_without_a_series_fires_with_its_kind(): void {
+    public function test_each_abandon_fires_with_its_kind(): void {
         $GLOBALS['yaymatik_test_options']['yaymatik_settings'] = [ 'cart_tracking' => true ];
         $this->forget_settings();
         $db          = new FakeWpdb();
@@ -62,7 +62,7 @@ final class CartSweepTest extends TestCase {
 
         CartSweep::run();
 
-        $this->assertSame( [ [ 1, 'cart_abandoned' ], [ 2, 'checkout_abandoned' ] ], $fired );
+        $this->assertSame( [ [ 1, 'cart_abandoned' ], [ 2, 'checkout_abandoned' ], [ 3, 'checkout_abandoned' ] ], $fired );
         $marked = array_values( array_filter( $db->calls, fn( array $call ) => 'update' === $call[0] ) );
         $this->assertCount( 3, $marked );
         $this->assertSame( [ 'status' => 'abandoned' ], $marked[2][2] );

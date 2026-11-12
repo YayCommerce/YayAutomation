@@ -388,12 +388,13 @@ Today errors only go to the WooCommerce log, which merchants never open.
 
 ## M8. Abandoned carts
 
-**Decision.** A 5-minute job marks carts abandoned. Each abandon of a cart with no series yet fires `yaymatik_cart_abandoned` with its kind, cart or checkout, decided at that abandon. The cart is locked only when an active workflow starts its series: `series_at`, `abandoned_at` and `abandon_trigger` are set in one UPDATE that requires `series_at IS NULL`. No `trigger_claims` table.
+**Decision.** A 5-minute job marks carts abandoned. Each abandon fires `yaymatik_cart_abandoned` with its kind, cart or checkout, decided at that abandon. The cart is locked only when an active workflow starts its series: `series_at`, `abandoned_at` and `abandon_trigger` are set in one UPDATE that requires `series_at IS NULL`. No `trigger_claims` table.
 
 **Why.**
 - One cart has one row, and only a new cycle (after an order) clears `series_at`, so a per-row column already answers "did this cart start a series yet". The single UPDATE is the lock, so Cart and Checkout workflows can never both start for one cart.
 - Plan 033: until then the first abandon locked the cart, even when no workflow took it. A shopper idle 15 minutes while browsing, then leaving at checkout, never got the Checkout reminder. Now an abandon nobody takes uses nothing up.
-- The hook changed with it: it fires on every abandon without a series (not once per cycle) and gains `$kind`. It is experimental like the other hooks, so it can change before Extension API v1.
+- The hook changed with it: it fires on every abandon, also of a cart already in a series (not once per cycle), and gains `$kind`. It is experimental like the other hooks, so it can change before Extension API v1.
+- A cart already in a series that is abandoned again records a Skipped run, "This cart already got a reminder series.", in the workflows of that abandon's kind. Testers and store owners repeating a test with the same cart see why nothing was sent, instead of nothing at all. `claim()` refuses it before `start_series()`, so a cart still gets at most one series.
 - A shopper who returns turns the row active and keeps `series_at`, so leaving again can't start a second series.
 - The sweep only looks 24 h past the abandon time, so turning tracking on doesn't email old carts.
 - A series goes on when the shopper returns: coming back without ordering is not a reason to stop reminding. Only an order, a gone cart or an unsubscribe stops it.
@@ -407,6 +408,7 @@ Today errors only go to the WooCommerce log, which merchants never open.
 - Emptying a cart deletes its row and its claim, so a new cart can start a new series; one series per email limits this.
 - Events fire at shutdown of the sweep: a crash between marking and that shutdown loses that cart's series.
 - The job adds 288 Action Scheduler rows a day, even with tracking off; Action Scheduler's own retention removes them.
+- A shopper who keeps coming back to a cart in a series adds one Skipped run per abandon, and each counts toward the 1000-runs-per-minute ceiling; a sweep is at most 200 carts.
 
 ## M3–M5. Lifecycle workflows
 
