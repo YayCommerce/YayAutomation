@@ -90,7 +90,7 @@ A privacy export or erase page finds a person's runs through an index instead of
      - PHPUnit: each reason, one skipped run per listening workflow, none for a workflow of another trigger, none when no workflow is active, null reason → no run.
      - PHPUnit (FakeRunRepository): 200 skipped claims in one dispatch round → 200 skipped runs, the workflow stays active (no `deactivate`), no pause logged.
      - check-carts: a 7-day repeat → a skipped run with the reason, visible through `RunStore::list( status skipped )`, and counted in `RunStore::stats()` (recent, last_status skipped).
-8. **.pot, docs, PR text** — Risk: 1
+8. ✅ **.pot, docs, PR text** (eacce9d; fixes 3da5f03, d474604, 3bd5065) — Risk: 1
    - Files: `languages/yaymatik.pot` (`pnpm makepot`), `docs/workflow-core-decisions.md` (no HMAC; index-at-write instead of a scan; lock on series start), `.claude/plans/dev/033-pr.md` (summary, bench table, reset-data step, browser steps).
    - Tests: check-all `--wp-env` and `--wp-env-min`, `pnpm e2e`, `./run.sh probe-mysql --staging` (read-only, as is), make-pot without warnings.
 
@@ -118,6 +118,8 @@ Browser check steps in the PR description (format: 0 Understand First · 1 Prepa
 - Old `in_progress_mentioning` was already fast here: `status IN (queued, running)` leaves 2 rows to test.
 - Write cost, a run + 5 steps (13 writes): 8.9 ms with an email in every value (7 index writes) vs 5.6 ms without (no index query).
 - check-privacy-index: 224 PASS on wp-env.
+- Final: `check-all --wp-env` and `--wp-env-min` all 10 PASS on d474604, before the lint-only 3bd5065. PHPUnit 922 OK; phpcs clean on every changed file. `probe-mysql --staging` PASS (lookups not probed until staging is at DB 8).
+- `pnpm e2e` NOT run: this Playwright build doesn't support Chromium on macOS 12 ("Playwright does not support chromium on mac12"). Run it on another machine before merge.
 
 ## Out of Scope
 
