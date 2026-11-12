@@ -10,7 +10,7 @@ defined( 'ABSPATH' ) || exit;
 final class Schema {
 
     // Bump when a table below changes; dbDelta() then upgrades the tables on the next load.
-    private const DB_VERSION        = '7';
+    private const DB_VERSION        = '8';
     private const DB_VERSION_OPTION = 'yaymatik_db_version';
 
     public const WORKFLOWS         = 'workflows';
@@ -20,6 +20,7 @@ final class Schema {
     public const UNSUBSCRIBES      = 'unsubscribes';
     public const CARTS             = 'carts';
     public const TRIGGER_CLAIMS    = 'trigger_claims';
+    public const RUN_EMAILS        = 'run_emails';
 
     /**
      * @param string $name One of the table constants.
@@ -50,7 +51,7 @@ final class Schema {
         $charset = $wpdb->get_charset_collate();
         dbDelta( array_map( fn( string $columns ) => $columns . " {$charset};", self::tables() ) );
         // Without every table, keep the old version so the next load tries again.
-        foreach ( [ self::WORKFLOWS, self::WORKFLOW_VERSIONS, self::RUNS, self::RUN_STEPS, self::UNSUBSCRIBES, self::CARTS, self::TRIGGER_CLAIMS ] as $name ) {
+        foreach ( [ self::WORKFLOWS, self::WORKFLOW_VERSIONS, self::RUNS, self::RUN_STEPS, self::UNSUBSCRIBES, self::CARTS, self::TRIGGER_CLAIMS, self::RUN_EMAILS ] as $name ) {
             $table = self::table( $name );
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- install check, runs once per DB version.
             if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $table ) ) ) !== $table ) {
@@ -73,6 +74,7 @@ final class Schema {
         $unsubs    = self::table( self::UNSUBSCRIBES );
         $carts     = self::table( self::CARTS );
         $claims    = self::table( self::TRIGGER_CLAIMS );
+        $emails    = self::table( self::RUN_EMAILS );
         return [
             // `trigger_id` is the live graph's trigger. A draft exists only once turned on (`activated_at`
             // set); never turned on, edits go to the live row in place.
@@ -123,7 +125,8 @@ final class Schema {
                 KEY status (status),
                 KEY workflow_id (workflow_id,started_at),
                 KEY root_run_id (root_run_id),
-                KEY wait_until (wait_until)
+                KEY wait_until (wait_until),
+                KEY subject (subject,status)
             )",
             "CREATE TABLE {$steps} (
                 id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -184,6 +187,14 @@ final class Schema {
                 claimed_at datetime NOT NULL,
                 PRIMARY KEY  (id),
                 UNIQUE KEY workflow_subject (workflow_id,subject)
+            )",
+            // The emails and guest claim keys a run's scope, error or steps hold, lowercased and cut to 190 chars,
+            // so a privacy request finds its runs without reading every row.
+            "CREATE TABLE {$emails} (
+                run_id bigint(20) unsigned NOT NULL,
+                email varchar(190) NOT NULL,
+                PRIMARY KEY  (run_id,email),
+                KEY email (email,run_id)
             )",
         ];
     }

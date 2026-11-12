@@ -58,20 +58,20 @@ final class UninstallerTest extends TestCase {
     }
 
     public function test_with_the_constant_tables_options_and_meta_go_but_coupons_stay(): void {
-        // Every read takes the next result: the Action Scheduler check, 11 queries, the option names, 2 queries, then the wc_orders_meta check.
-        $this->wpdb->results = array_merge( [ 'wp_actionscheduler_actions' ], array_fill( 0, 11, 1 ), [ [ 'yaymatik_settings' ] ], [ 1, 1, 'wp_wc_orders_meta' ] );
+        // Every read takes the next result: the Action Scheduler check, 12 queries, the option names, 2 queries, then the wc_orders_meta check.
+        $this->wpdb->results = array_merge( [ 'wp_actionscheduler_actions' ], array_fill( 0, 12, 1 ), [ [ 'yaymatik_settings' ] ], [ 1, 1, 'wp_wc_orders_meta' ] );
         Uninstaller::site( true );
         $sql = array_slice( $this->queries(), 4 );
 
         $drops = array_map( fn( $name ) => "DROP TABLE IF EXISTS `wp_yaymatik_{$name}`", Uninstaller::TABLES );
-        $this->assertSame( $drops, array_slice( $sql, 0, 7 ) );
+        $this->assertSame( $drops, array_slice( $sql, 0, count( $drops ) ) );
         $this->assertSame(
             [
                 "DELETE FROM `wp_options` WHERE option_name LIKE 'yaymatik\\\\_%'",
                 "DELETE FROM `wp_postmeta` WHERE meta_key LIKE '\\\\_yaymatik\\\\_%'",
                 "DELETE FROM `wp_wc_orders_meta` WHERE meta_key LIKE '\\\\_yaymatik\\\\_%'",
             ],
-            array_slice( $sql, 7 )
+            array_slice( $sql, count( $drops ) )
         );
         foreach ( $this->queries() as $query ) {
             $this->assertStringNotContainsString( 'wp_posts', $query );

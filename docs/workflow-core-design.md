@@ -34,10 +34,11 @@ Table names below omit the prefix: each is `{prefix}yaymatik_<name>`, e.g. `wp_y
 |---|---|
 | `workflows` | id, name, status, trigger_id, live_version_id, draft_version_id, activated_at, created_at, updated_at · index (status, trigger_id) |
 | `workflow_versions` | id, workflow_id, action, graph (logic), layout (step positions), user_id, created_at, updated_at. A version's logic never changes; its layout may. Only the draft row's logic is edited in place |
-| `runs` | id, workflow_id, version_id, trigger_id, subject (`order:<id>`, `cart:<id>`, `user:<id>`, `review:<id>`), status, position, scope, wait_until, error, parent_run_id, root_run_id, depth, started_at, finished_at |
+| `runs` | id, workflow_id, version_id, trigger_id, subject (`order:<id>`, `cart:<id>`, `user:<id>`, `review:<id>`), status, position, scope, wait_until, error, parent_run_id, root_run_id, depth, started_at, finished_at · index (subject, status) |
 | `run_steps` | id, run_id, step_id, iteration, status, input, output, error, attempt, started_at, finished_at |
 | `carts` | id, session_key (WooCommerce session: user id or guest `t_…`; unique), user_id, email, first_name, items (JSON lines), total, currency, status (active, abandoned, ordered), abandoned_at, abandon_trigger, series_at (the cycle's first abandon, its trigger, and when a reminder series started), checkout_at, order_id, restored_at, last_activity_at, created_at, updated_at |
 | `trigger_claims` | id, workflow_id, subject, claimed_at · unique (workflow_id, subject). One row per workflow and claim key, for triggers that start once per key: the key is a subject (`order:12`), `user:<id>`, or a guest's hashed email (`email:` + sha256 of the lowercased email, 70 characters, so no plain email is kept and it fits the column); a deleted workflow's rows go in Cleanup |
+| `run_emails` | run_id, email · primary (run_id, email), index (email, run_id). The emails and guest claim keys (`email:…`) a run's scope or error or its steps' input, output or error hold, lowercased and cut to 190 characters |
 
 - A run pins the version it started on.
 - Deleting a workflow deletes its versions; its runs stay until retention cleanup (M7.4).

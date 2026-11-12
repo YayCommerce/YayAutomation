@@ -32,6 +32,9 @@ register_shutdown_function( $cleanup );
 add_filter( "pre_option_timezone_string", fn() => "Asia/Ho_Chi_Minh" );
 add_filter( "pre_option_gmt_offset", fn() => 7 );
 $ok( current_time( "mysql" ) !== current_time( "mysql", true ), "site time differs from GMT for this check" );
+$keys = fn( string $table ) => array_unique( array_column( (array) $wpdb->get_results( "SHOW INDEX FROM {$table}", ARRAY_A ), "Key_name" ) );
+$ok( [] === array_diff( [ "PRIMARY", "email" ], $keys( Schema::table( Schema::RUN_EMAILS ) ) ), "run_emails has its primary and email keys" );
+$ok( in_array( "subject", $keys( R::table() ), true ), "runs has KEY subject" );
 
 $scope = new Scope( [ "trigger" => [ "order" => new Ref( "order", 12 ), "status_from" => "pending" ] ] );
 $id    = R::create( [ "workflow_id" => $W, "version_id" => 5, "trigger_id" => "order_created", "subject" => "order:12", "scope" => $scope->to_array() ] );
