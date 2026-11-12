@@ -36,9 +36,9 @@ final class CartSweep {
         $before = gmdate( 'Y-m-d H:i:s', $cutoff );
         $after  = gmdate( 'Y-m-d H:i:s', $cutoff - self::WINDOW );
         foreach ( CartStore::due( $before, $after, self::BATCH ) as $row ) {
-            $first = null === $row['abandoned_at'];
-            if ( CartStore::mark_abandoned( (int) $row['id'], $row['last_activity_at'], $first ? self::kind( $row ) : '' ) && $first ) {
-                do_action( 'yaymatik_cart_abandoned', (int) $row['id'] );
+            // A cart is locked only when a workflow starts its series, so an abandon nothing took leaves it free.
+            if ( CartStore::mark_abandoned( (int) $row['id'], $row['last_activity_at'] ) && null === $row['series_at'] ) {
+                do_action( 'yaymatik_cart_abandoned', (int) $row['id'], self::kind( $row ) );
             }
         }
     }

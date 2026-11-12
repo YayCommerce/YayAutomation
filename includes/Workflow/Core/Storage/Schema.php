@@ -153,7 +153,8 @@ final class Schema {
             )",
             // One per WooCommerce session (`session_key` = WC customer id: a user id, or `t_…` for a guest).
             // `items` is a JSON list of lines; `total` and line prices as the cart showed them.
-            // `abandoned_at` and `abandon_trigger` hold a cycle's first abandon, kept when the shopper returns.
+            // `abandoned_at` and `abandon_trigger` hold the abandon that started the cycle's reminder series (`series_at`),
+            // kept when the shopper returns.
             "CREATE TABLE {$carts} (
                 id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
                 session_key varchar(100) NOT NULL,

@@ -270,13 +270,13 @@ final class CartStore {
      * @param string $before GMT datetime.
      * @param string $after  GMT datetime.
      * @param int    $limit
-     * @return array[] `id`, `last_activity_at`, `checkout_at`, `abandoned_at`.
+     * @return array[] `id`, `last_activity_at`, `checkout_at`, `series_at`.
      */
     public static function due( string $before, string $after, int $limit ): array {
         global $wpdb;
         $table = self::table();
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own table, uses KEY status.
-        return (array) $wpdb->get_results( $wpdb->prepare( "SELECT id, last_activity_at, checkout_at, abandoned_at FROM %i WHERE status = %s AND email <> '' AND items NOT IN ('', '[]') AND last_activity_at <= %s AND last_activity_at > %s ORDER BY last_activity_at, id LIMIT %d", $table, self::ACTIVE, $before, $after, $limit ), ARRAY_A );
+        return (array) $wpdb->get_results( $wpdb->prepare( "SELECT id, last_activity_at, checkout_at, series_at FROM %i WHERE status = %s AND email <> '' AND items NOT IN ('', '[]') AND last_activity_at <= %s AND last_activity_at > %s ORDER BY last_activity_at, id LIMIT %d", $table, self::ACTIVE, $before, $after, $limit ), ARRAY_A );
     }
 
     /**
@@ -284,23 +284,15 @@ final class CartStore {
      *
      * @param int    $id
      * @param string $last_activity The `last_activity_at` that was read.
-     * @param string $kind          The cycle's first abandon: the trigger id to store. Empty on a later abandon.
      * @return bool This call changed the row.
      */
-    public static function mark_abandoned( int $id, string $last_activity, string $kind ): bool {
+    public static function mark_abandoned( int $id, string $last_activity ): bool {
         global $wpdb;
-        $fields = [ 'status' => self::ABANDONED ];
-        if ( '' !== $kind ) {
-            $fields += [
-                'abandoned_at'    => current_time( 'mysql', true ),
-                'abandon_trigger' => $kind,
-            ];
-        }
         // `updated_at` stays: the capture limit counts it as the shopper's activity.
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own table, a write.
         return 1 === $wpdb->update(
             self::table(),
-            $fields,
+            [ 'status' => self::ABANDONED ],
             [
                 'id'               => $id,
                 'status'           => self::ACTIVE,
@@ -332,12 +324,16 @@ final class CartStore {
     }
 
     /**
-     * @param int $id
+     * Locks the cart to one series, decided by this abandon; false when another series or an order came first.
+     *
+     * @param int    $id
+     * @param string $kind The trigger id starting it.
      */
-    public static function mark_series( int $id ): void {
+    public static function start_series( int $id, string $kind ): bool {
         global $wpdb;
+        $now = current_time( 'mysql', true );
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own table, a write.
-        $wpdb->update( self::table(), [ 'series_at' => current_time( 'mysql', true ) ], [ 'id' => $id ] );
+        return 1 === $wpdb->query( $wpdb->prepare( 'UPDATE %i SET series_at = %s, abandoned_at = %s, abandon_trigger = %s WHERE id = %d AND series_at IS NULL AND status <> %s', self::table(), $now, $now, $kind, $id, self::ORDERED ) );
     }
 
     /**

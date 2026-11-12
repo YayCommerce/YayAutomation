@@ -14,7 +14,7 @@ use YayMatik\Workflow\DataItems\CustomerData;
 
 defined( 'ABSPATH' ) || exit;
 
-/** Base for a cart's first abandon in its cycle. Event args hold `cart_id`. */
+/** Base for a cart abandon that may start the cart's one reminder series. Event args hold `cart_id`. */
 abstract class CartTrigger extends Trigger {
 
     /** One reminder series per email in this time. */
@@ -39,12 +39,13 @@ abstract class CartTrigger extends Trigger {
     public function listen( callable $emit ): void {
         add_action(
             'yaymatik_cart_abandoned',
-            function ( $cart_id ) use ( $emit ) {
-                $row = CartStore::find( (int) $cart_id );
-                if ( $row && $this->id() === $row['abandon_trigger'] ) {
+            function ( $cart_id, $kind ) use ( $emit ) {
+                if ( $this->id() === $kind ) {
                     $emit( [ 'cart_id' => (int) $cart_id ] );
                 }
-            }
+            },
+            10,
+            2
         );
     }
 
@@ -74,7 +75,7 @@ abstract class CartTrigger extends Trigger {
     }
 
     /**
-     * Skips ordered carts, unsubscribed shoppers and emails with a series running; else marks this cart's series as started.
+     * Skips ordered carts, unsubscribed shoppers and emails with a series running; else starts this cart's series.
      *
      * @param array $args
      */
@@ -85,8 +86,7 @@ abstract class CartTrigger extends Trigger {
         if ( ! $row || CartStore::ORDERED === $row['status'] || UnsubscribeStore::has( $row['email'] ) || CartStore::series_taken( $row['email'], $id, gmdate( 'Y-m-d H:i:s', time() - self::SERIES_EVERY ) ) ) {
             return false;
         }
-        CartStore::mark_series( $id );
-        return true;
+        return CartStore::start_series( $id, $this->id() );
     }
 
     public function setup_issue(): ?string {

@@ -66,7 +66,7 @@ A privacy export or erase page finds a person's runs through an index instead of
 4. ✅ **Sync (D4)** (ad1b581) — Risk: 2
    - Files: `Storage/RunStore.php`, tests in `RunEmailsTest.php`.
    - Tests: anonymize deletes only the person's rows of those runs; delete_with_steps order and failure path.
-5. **Bench + check (D6)** — Risk: 1
+5. ✅ **Bench + check (D6)** (aa9dff7) — Risk: 1
    - Files: new `dev/scripts/lib/privacy-old-scan.php`, `bench-privacy.{sh,php}`, `check-privacy-index.{sh,php}`, `check-all.sh` (list), `dev/README.md` if it lists scripts.
    - Tests: check-privacy-index PASS on both wp-env targets. Bench numbers (50k/200k, EXPLAIN, ms, write cost) go into the plan's Results and the PR text. Fail → stop and report, don't tune silently.
 6. **E1: lock on series start** — Risk: 3
@@ -145,6 +145,9 @@ D1–D6 and D8 as in the brief, confirmed. D7 is not in the brief.
 - CP3 + CP4 are one commit: both rewrite parts of `RunStore` and `RunEmailsTest`, and splitting by hunk needs interactive staging.
 - CP4: `anonymize()` keeps a run's index rows when its scrub UPDATE failed or changed no row, or when reading the rows failed, so the next erase finds it again. It removes the rest and counts a run whose only link was a stale one (a value overwritten later) as changed. Otherwise a page of stale links would end as "Some workflow runs could not be erased".
 - CP4: `delete_with_steps()` deletes steps, then runs, then index rows, not index rows first: a leftover index row is never joined, while a run left without its rows would hide from erase (review finding).
+- CP6 (O2): check-carts' sweep section is rewritten. Its listener records id => kind. "first abandon locks" became "no workflow took it: nothing locked", "a second abandon without a series fires again, now as checkout", and "after a series started: no action". New real-workflow cases: only Checkout on (I4), and both on with a cart in a series left again at checkout (I1). The emptied-with-unpaid-order fixture clears `series_at`, the lock now, instead of `abandoned_at`. `tests/stubs.php` gets `DAY_IN_SECONDS`.
+- CP6, not done: `claim()` locks the cart before the Dispatcher's `context()`, `validate()` and `start_run()`. A cart whose workflow can't start (rate limit, no live version) stays locked, as before 033; that is the documented M8 cost. Cart triggers have no config, so `validate()` can't fail, and a cart gone at `context()` needs no lock.
+- Found while checking: check-carts' capture-limit asserts ("one email from at most 3 sessions", 3 block-checkout ones) failed once and passed on the rerun; time-dependent, not touched by 033.
 - Found while checking: check-carts fails 6 sweep asserts when the site already has an active cart workflow (wp-env's seeded "Cart reminder", id 2). That predates 033. Runs here turned it off for the check and back on after.
 
 ## Meta

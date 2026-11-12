@@ -327,6 +327,10 @@ if ( ! defined( 'MINUTE_IN_SECONDS' ) ) {
     define( 'MINUTE_IN_SECONDS', 60 );
 }
 
+if ( ! defined( 'DAY_IN_SECONDS' ) ) {
+    define( 'DAY_IN_SECONDS', 86400 );
+}
+
 if ( ! function_exists( 'get_transient' ) ) {
     // No expiry: tests move a clock, and code compares its own window end.
     function get_transient( $transient ) {
