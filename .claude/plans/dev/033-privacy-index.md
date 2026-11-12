@@ -25,9 +25,9 @@ A privacy export or erase page finds a person's runs through an index instead of
   - Callers join it as `INNER JOIN (…) m ON m.id = r.id`, keep their own status filters, and `ORDER BY r.id LIMIT`. `for_export` keeps `OFFSET`. Signatures and `PersonalData.php` stay as they are.
 - **Sync** (D4):
   - `anonymize()` deletes the person's rows (email + claim key) for the runs it was given, after the scrub.
-  - `delete_with_steps()` deletes `run_emails` rows first, then steps, then runs, so a failure leaves no index row without its run.
+  - `delete_with_steps()` deletes steps, then runs, then `run_emails` rows. A leftover index row is never joined; a run left without its rows would hide from erase.
   - Workflow delete keeps runs, so nothing changes there.
-- **No backfill** (D5). The PR text says: run `./run.sh reset-data` on staging and tester sites after the deploy.
+- **No backfill** (D5). The PR text says: on staging, after the deploy, run `./run.sh reset-data --staging`, `seed`, then `./run.sh probe-mysql --staging`. Tester sites get the zip (Upload Plugin › Replace current with uploaded, then Health check › Check again) and test only with emails never used on that site.
 - **Proof** (D6). The old OR-chain SQL lives in `dev/scripts/lib/privacy-old-scan.php`, required by both scripts only.
   - `bench-privacy` runs on wp-env only. It seeds 50k and 200k runs (3–6 steps each, realistic JSON: refs, email step input and output, some errors with emails) through bulk SQL plus the indexer. It prints EXPLAIN and the median ms of `for_export` p1/p2, `ids_mentioning`, `in_progress_mentioning` and `waiting_ids_for_subjects`, old vs new. It also prints write cost: create + 5 steps with and without indexing. It deletes its rows at the end (marker workflow id). Pass: no `ALL` on runs or run_steps in EXPLAIN and < 50 ms per page at 200k.
   - `check-privacy-index` runs on any wp-env target and is added to check-all. It seeds runs through the real stores, covering edge texts (case, a trailing dot, `.au`, hyphen, apostrophe, an email as a JSON key, inside a longer string, a claim key, a 70-char local part that only real `is_email()` accepts), plus a Skipped cart run (E2) made through the Dispatcher. For every seeded email the new id lists must equal the old scan for all three lookups, before and after an erase, and after a cleanup delete. Export must list the Skipped run, and after erase it must not be found.
@@ -162,7 +162,7 @@ Browser check steps in the PR description (format: 0 Understand First · 1 Prepa
 - D2 Index at all 7 writes; one extractor with the old scan's boundaries; INSERT IGNORE; indexing code only in RunStore and RunStepStore.
 - D3 `about()` = UNION over `run_emails` and `runs.subject`; `KEY subject (subject,status)`; OFFSET kept; PersonalData unchanged.
 - D4 anonymize and delete_with_steps keep the index in sync; Uninstaller lists the table.
-- D5 No backfill; reset-data after deploy.
+- D5 No backfill; reset-data + seed + probe-mysql on staging only; tester sites upload the zip and use fresh emails.
 - D6 bench-privacy + check-privacy-index; the old scan only in dev scripts.
 - D8 An indexing failure logs and never fails the run.
 - E1 / E2 / I1–I4 as in the brief.
