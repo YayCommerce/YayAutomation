@@ -80,7 +80,7 @@ $cleanup = function () use ( $wpdb, $claims, $ghost, $domain, &$flows, &$orders,
 register_shutdown_function( $cleanup );
 
 // Claims.
-$ok( '7' === get_option( 'yaymatik_db_version' ), 'schema at DB version 7' );
+$ok( version_compare( (string) get_option( 'yaymatik_db_version' ), '7', '>=' ), 'schema at DB version 7 or later (trigger_claims)' );
 $ok( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $claims ) ) ) === $claims, 'trigger_claims table present' );
 $ok( true === TriggerClaimStore::claim( $ghost, $subject ), 'first claim: true' );
 $ok( false === TriggerClaimStore::claim( $ghost, $subject ), 'second claim: false' );

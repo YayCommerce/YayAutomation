@@ -3,11 +3,13 @@
 Status: written 2026-11-12, reviewed by Jack the same day (O1–O3 approved as recommended, 5 amendments folded in). One branch `jack/feature/033-privacy-index` off develop (9b31ca7), one PR, one-pass mode. Must ship before the WordPress.org submission. The Extension API moves to 034.
 
 ## Goal
+
 A privacy export or erase page finds a person's runs through an index instead of scanning every run and step, and a cart abandonment that no workflow takes stays free for a later one. A cart claim a workflow rejects shows as a Skipped run with its reason.
 
 ## Approach
 
 ### Part 1: privacy index
+
 - **Table** `run_emails` (D1): `run_id bigint(20) unsigned`, `email varchar(190)`, `PRIMARY KEY (run_id,email)`, `KEY email (email,run_id)`. `runs` gets `KEY subject (subject,status)`. `DB_VERSION` 7 → 8; dbDelta adds both. `Schema::RUN_EMAILS`, the install check list, `Uninstaller::TABLES` and the `reset-data.sh` list get it.
 - **Extractor**, a private part of `RunStore`. It returns the lowercased values the old scan would match, truncated to 190 chars:
   - JSON columns (`scope`, step `input`, `output`): decode, then walk every string, keys included. A string counts when it is a whole normalized email (`strtolower( $s ) === UnsubscribeLink::normalize( $s )`) or a claim key (`email:` + 64 hex). This mirrors `json_like()`: the old LIKE only matches the email as a whole JSON string, in a `_ci` column.
@@ -31,6 +33,7 @@ A privacy export or erase page finds a person's runs through an index instead of
   - `check-privacy-index` runs on any wp-env target and is added to check-all. It seeds runs through the real stores, covering edge texts (case, a trailing dot, `.au`, hyphen, apostrophe, an email as a JSON key, inside a longer string, a claim key, a 70-char local part that only real `is_email()` accepts), plus a Skipped cart run (E2) made through the Dispatcher. For every seeded email the new id lists must equal the old scan for all three lookups, before and after an erase, and after a cleanup delete. Export must list the Skipped run, and after erase it must not be found.
 
 ### Part 2: cart skips
+
 - **E1: lock a cart only when a series starts.**
   - `CartSweep::run` marks every due cart abandoned, as today. It fires `do_action( 'yaymatik_cart_abandoned', $id, $kind )` whenever the row has no `series_at`. The kind comes from `kind()` at this abandonment (I3).
   - `CartStore::mark_abandoned` loses `$kind` and sets status only. `due()` also returns `series_at`.
@@ -81,7 +84,7 @@ A privacy export or erase page finds a person's runs through an index instead of
      - I3: cart idle → cart kind; later at checkout → checkout kind.
      - I4: only Checkout on → idle cart: no run, no `series_at`; it returns, reaches checkout, idles → a Checkout run.
      - Both on: exactly one run per cart.
-7. **E2: Skipped runs** — Risk: 2
+7. ✅ **E2: Skipped runs** (a476dfb) — Risk: 2
    - Files: `Core/Steps/Trigger.php`, `Triggers/CartTrigger.php`, `Runtime/Dispatcher.php`, `Storage/RunStore.php` (create status/error), `tests/Support/FakeTrigger.php` (a settable skip reason), new tests in `DispatcherWorkerTest.php` and a new `tests/Unit/Triggers/CartTriggerTest.php`.
    - Tests:
      - PHPUnit: each reason, one skipped run per listening workflow, none for a workflow of another trigger, none when no workflow is active, null reason → no run.
@@ -91,7 +94,8 @@ A privacy export or erase page finds a person's runs through an index instead of
    - Files: `languages/yaymatik.pot` (`pnpm makepot`), `docs/workflow-core-decisions.md` (no HMAC; index-at-write instead of a scan; lock on series start), `.claude/plans/dev/033-pr.md` (summary, bench table, reset-data step, browser steps).
    - Tests: check-all `--wp-env` and `--wp-env-min`, `pnpm e2e`, `./run.sh probe-mysql --staging` (read-only, as is), make-pot without warnings.
 
-Browser check steps, in the PR text (format: 0 Before you start · 1 Setup · 2 Steps (Goal / Do / Pass when / Why) · 3 Results; UI only):
+Browser check steps in the PR description (format: 0 Understand First · 1 Preparation · 2 Steps (Purpose / Action / Expected Result / Why) · 3 Results Table; UI only).
+
 - Only Cart on.
 - Only Checkout on: idle cart → nothing; return, go to checkout, leave → a Checkout run.
 - Both on: one reminder only.
@@ -99,15 +103,16 @@ Browser check steps, in the PR text (format: 0 Before you start · 1 Setup · 2 
 - Privacy: Tools › Export Personal Data for a customer with runs, one of them Skipped → the export lists them. Then Tools › Erase Personal Data → export again → no runs found.
 
 ## Results (CP5, wp-env: MariaDB, PHP 8.1)
+
 `./run.sh bench-privacy --wp-env`. The measured shopper is every 400th run, so 125 runs at 50k and 500 at 200k, more than a real shopper. Old = one run of the full scan; new = median of 5.
 
-| Lookup | 50k old ms | 50k new ms | 200k old ms | 200k new ms |
-|---|---|---|---|---|
-| for_export p1 | 1393 | 1.6 | 5510 | 3.6 |
-| for_export p2 | 1507 | 1.4 | 5598 | 4.3 |
-| ids_mentioning | 1353 | 1.3 | 5675 | 3.6 |
-| in_progress_mentioning | 0.7 | 0.9 | 2.2 | 2.1 |
-| waiting_ids_for_subjects | 45 | 1.1 | 255 | 3.1 |
+| Lookup                   | 50k old ms | 50k new ms | 200k old ms | 200k new ms |
+| ------------------------ | ---------- | ---------- | ----------- | ----------- |
+| for_export p1            | 1393       | 1.6        | 5510        | 3.6         |
+| for_export p2            | 1507       | 1.4        | 5598        | 4.3         |
+| ids_mentioning           | 1353       | 1.3        | 5675        | 3.6         |
+| in_progress_mentioning   | 0.7        | 0.9        | 2.2         | 2.1         |
+| waiting_ids_for_subjects | 45         | 1.1        | 255         | 3.1         |
 
 - New plans: `run_emails` range on `email`, `runs` range on `subject`, `r` eq_ref on PRIMARY; only the small derived and union tables are `ALL`. No full scan of runs or run_steps. All PASS (< 50 ms).
 - Old `in_progress_mentioning` was already fast here: `status IN (queued, running)` leaves 2 rows to test.
@@ -115,6 +120,7 @@ Browser check steps, in the PR text (format: 0 Before you start · 1 Setup · 2 
 - check-privacy-index: 224 PASS on wp-env.
 
 ## Out of Scope
+
 - Extension API (034).
 - Backfill or migration of `run_emails` (D5).
 - HMAC or hashing of index values (D1).
@@ -122,10 +128,11 @@ Browser check steps, in the PR text (format: 0 Before you start · 1 Setup · 2 
 - Skip records for silent rejects: missing cart, a lost race, a second abandonment after a series.
 
 ## Decisions
+
 - O1 (approved): `RunStepStoreTest::test_finish_sets_finished_at_except_while_waiting` gets its call count changed 2 → 3 (the index INSERT for `a@x.com`). It is the only old PHPUnit edit besides `about()`'s own.
 - O2 (approved): the old-lock asserts in `check-carts.php:1110-1132` are rewritten to I1–I4 in CP6 and listed in Deviations.
 - O3 (approved): new `Trigger::skip_reason( array $args ): ?string`, default null; `claim(): bool` unchanged.
-D1–D6 and D8 as in the brief, confirmed. D7 is not in the brief.
+  D1–D6 and D8 as in the brief, confirmed. D7 is not in the brief.
 - D1 `run_emails`: plain normalized email, truncated to 190 the same way at write and lookup; claim keys stored too; DB 8; no HMAC.
 - D2 Index at all 7 writes; one extractor with the old scan's boundaries; INSERT IGNORE; indexing code only in RunStore and RunStepStore.
 - D3 `about()` = UNION over `run_emails` and `runs.subject`; `KEY subject (subject,status)`; OFFSET kept; PersonalData unchanged.
@@ -136,6 +143,7 @@ D1–D6 and D8 as in the brief, confirmed. D7 is not in the brief.
 - E1 / E2 / I1–I4 as in the brief.
 
 ## Deviations
+
 - CP1: `run_emails` has `PRIMARY KEY (run_id,email)` instead of a UNIQUE key and no primary: same constraint, and MySQL with `sql_require_primary_key=ON` (some managed hosts) refuses a table without a primary key (review finding).
 - CP1: `UninstallerTest::test_with_the_constant_…` hard-coded 7 tables / 11 queries; it now counts `Uninstaller::TABLES` (12 queries). A new table can't pass it unedited.
 - CP2: O1 covered two old asserts, not one. `test_finish_…`: the second update moved from `calls[1]` to `calls[2]`, count 2 → 3. `test_resumed_condition_…` took `end( calls )` as the run save; its fake step outputs `a@x.com`, so the index INSERT is last now. It takes the last update instead.
@@ -151,10 +159,13 @@ D1–D6 and D8 as in the brief, confirmed. D7 is not in the brief.
 - CP7: the skip reasons reuse the existing `Cancellation::order_placed()` and `unsubscribed()` strings; the only new string is the 7-day one.
 - CP7: check-carts' "no run" asserts for unsubscribed, the younger of two carts, the 6-day block and ordered-before-flush now read "no run started, one Skipped run with the reason". The later queued-run fixture reuses the `late` cart, so it takes the started run, not `[0]`.
 - CP7 (review): `skip_runs()` reads `context()` and each workflow's `matches()` like a real start, skips a workflow paused in the same flush, and keeps the parent run's chain fields. A Skipped run "placed order #N" gets the same order link a cancelled one has (`RunPresenter::stopped_by_order_url()`). Kept: a refused cart's checks run twice (`claim()`, then `skip_reason()`). That is about 3 extra reads per refused cart, only on refusals, and it keeps `claim()` correct on its own.
+- CP8: check-winback asserted "schema at DB version 7" and check-plugin-lifecycle "7 tables"; a schema bump can't pass them unedited. Now "DB 7 or later" and 8 tables.
+- Whole-plan review: erase keeps the index link of an address over 190 characters, since a cut value may be another person's too. Not done, all logged above or accepted in the brief: the claim locks before the start checks, the double refusal check, the columns kept by amendment 5, re-indexing the scope on each save, the `$runs` fragment signature, and loop guards on finished skipped runs. Also not done: after a failed index DELETE in `delete_with_steps()`, orphan rows could join a reused id on MySQL 5.7.
 - Found while checking: check-carts' capture-limit asserts ("one email from at most 3 sessions", 3 block-checkout ones) failed once and passed on the rerun; time-dependent, not touched by 033.
 - Found while checking: check-carts fails 6 sweep asserts when the site already has an active cart workflow (wp-env's seeded "Cart reminder", id 2). That predates 033. Runs here turned it off for the check and back on after.
 
 ## Meta
+
 - Target branch: jack/feature/033-privacy-index
 - Base branch: develop (9b31ca7)
 - Next: /wdev-lite, one-pass

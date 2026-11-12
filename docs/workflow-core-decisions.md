@@ -34,6 +34,7 @@ Each note: **Decision** · **Why** · **Rejected** · **Cost** · **For devs** (
 | [M3–M5](#m3m5-lifecycle-workflows) | Lifecycle workflows | Owner |
 | [M6](#m6-win-back) | Win-back | Owner |
 | [CT](#ct-custom-workflow-catalog) | Custom workflow catalog | Owner |
+| [PI](#pi-privacy-lookup-index) | Privacy lookup index | Owner |
 
 "High" = recommended and accepted as-is. "Owner" = debated and decided by the product owner.
 
@@ -487,3 +488,25 @@ Today errors only go to the WooCommerce log, which merchants never open.
 - Resend WooCommerce email can't resend the refunded email.
 - Wait until's time in a DST gap runs at the shifted time.
 - Update customer custom field writes one text value, never a list. A key that differs from a stored one only in case reads as changed on every run.
+
+## PI. Privacy lookup index
+
+**Decision.** A `run_emails` table holds each email and guest claim key a run mentions, written by `RunStore` and `RunStepStore` at every write of a run's scope or error or a step's input, output or error. Privacy export and erase look up a person's runs there, and by `runs.subject` with `KEY subject (subject, status)`. They no longer scan every run and step.
+
+**Why.**
+- The old lookup was a LIKE / REGEXP over every run and every step's JSON, on every export or erase page. At 200k runs it took about 5.5 s per page; the index takes about 4 ms (plan 033 bench).
+- Plain normalized emails, not an HMAC. A hash needs a secret, and a lost or changed secret would make erase quietly find nothing. The rows hold what the runs already hold, and erase removes them with the run's data.
+- The extractor matches what erase replaces (`replace_json()`, `replace_text()`): a whole JSON string, and in text the same boundaries. So the index never finds less than erase would scrub. `check-privacy-index` compares it with the old scan.
+- Index rows are written with INSERT IGNORE in one statement per write. Writes to an existing row select its run from `runs` or `run_steps`, so a run that isn't there gets no row; `create()` indexes the id it just inserted.
+- An indexing failure is logged and the run goes on: a privacy lookup is less important than the customer's email going out. `check-privacy-index` catches a gap.
+
+**Rejected.**
+- Keep the scan and add LIMITs: still a full read of the steps table per page.
+- MySQL full-text or JSON indexes: neither matches the erase boundaries, and both differ between MySQL and MariaDB.
+
+**Cost.**
+- About 3 ms more per run with 5 steps whose values all hold an email (bench: 8.9 vs 5.6 ms).
+- Values are cut to 190 characters, so two addresses that share their first 190 characters find each other's runs. Erase still only replaces the exact address, and keeps the index link of an address that long.
+- An overwritten value leaves its row until an erase finds the run and removes it.
+- No backfill: before v1.0, dev data is reset (`./run.sh reset-data`) after deploy.
+
