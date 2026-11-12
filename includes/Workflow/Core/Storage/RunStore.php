@@ -565,13 +565,15 @@ final class RunStore {
         if ( ! $ids ) {
             return count( $changed );
         }
-        $keys = [ self::index_key( $email ), self::index_key( TriggerClaimStore::email_key( $email ) ) ];
+        // A cut address may be another's too, so its link stays: a later erase only visits the run again.
+        $keys = array_values( array_filter( [ strlen( $email ) <= 190 ? $email : '', TriggerClaimStore::email_key( $email ) ] ) );
         $in   = Schema::in( count( $ids ) );
+        $of   = Schema::in( count( $keys ), '%s' );
         // A link left by an overwritten value counts as erased, so a page of only those isn't reported as failed.
-        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- Schema::in() gives one %d per run.
-        $linked = (array) $wpdb->get_col( $wpdb->prepare( "SELECT DISTINCT run_id FROM %i WHERE run_id IN ({$in}) AND email IN (%s, %s)", array_merge( [ Schema::table( Schema::RUN_EMAILS ) ], $ids, $keys ) ) );
-        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- Schema::in() gives one %d per run.
-        if ( false === $wpdb->query( $wpdb->prepare( "DELETE FROM %i WHERE run_id IN ({$in}) AND email IN (%s, %s)", array_merge( [ Schema::table( Schema::RUN_EMAILS ) ], $ids, $keys ) ) ) ) {
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- Schema::in() gives the list placeholders.
+        $linked = (array) $wpdb->get_col( $wpdb->prepare( "SELECT DISTINCT run_id FROM %i WHERE run_id IN ({$in}) AND email IN ({$of})", array_merge( [ Schema::table( Schema::RUN_EMAILS ) ], $ids, $keys ) ) );
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- Schema::in() gives the list placeholders.
+        if ( false === $wpdb->query( $wpdb->prepare( "DELETE FROM %i WHERE run_id IN ({$in}) AND email IN ({$of})", array_merge( [ Schema::table( Schema::RUN_EMAILS ) ], $ids, $keys ) ) ) ) {
             Logger::error( 'Could not remove an erased email from the run index: ' . $wpdb->last_error, [ 'run_ids' => $ids ] );
             return count( $changed );
         }

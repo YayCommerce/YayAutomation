@@ -208,7 +208,7 @@ final class RunEmailsTest extends TestCase {
         ];
         // Run 4 scrubbed, run 5's link left by an overwritten value removed: both count.
         $this->assertSame( 2, RunStore::anonymize( [ 4, 5, 6 ], 'bob@x.test' ) );
-        $this->assertSame( "DELETE FROM `wp_yaymatik_run_emails` WHERE run_id IN (4,5) AND email IN ('bob@x.test', '{$key}')", $this->db->last_sql() );
+        $this->assertSame( "DELETE FROM `wp_yaymatik_run_emails` WHERE run_id IN (4,5) AND email IN ('bob@x.test','{$key}')", $this->db->last_sql() );
 
         // The scrub of run 4 fails: its rows stay for the next erase.
         $db = new class() {
@@ -254,7 +254,7 @@ final class RunEmailsTest extends TestCase {
         // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- no WordPress here.
         $GLOBALS['wpdb'] = $db;
         RunStore::anonymize( [ 4, 5 ], 'bob@x.test' );
-        $this->assertSame( [ "DELETE FROM `wp_yaymatik_run_emails` WHERE run_id IN (5) AND email IN ('bob@x.test', '{$key}')" ], $db->sql );
+        $this->assertSame( [ "DELETE FROM `wp_yaymatik_run_emails` WHERE run_id IN (5) AND email IN ('bob@x.test','{$key}')" ], $db->sql );
 
         // A read that fails leaves every link.
         $db->sql        = [];
@@ -274,5 +274,13 @@ final class RunEmailsTest extends TestCase {
             ],
             array_column( $this->db->calls, 1 )
         );
+    }
+
+    public function test_erase_keeps_the_link_of_an_address_cut_to_190(): void {
+        $long              = str_repeat( 'a', 60 ) . '@' . str_repeat( 'b', 140 ) . '.test';
+        $key               = 'email:' . hash( 'sha256', $long );
+        $this->db->results = [ [ '4' ], [], [], [] ];
+        RunStore::anonymize( [ 4 ], $long );
+        $this->assertSame( "DELETE FROM `wp_yaymatik_run_emails` WHERE run_id IN (4) AND email IN ('{$key}')", $this->db->last_sql() );
     }
 }
