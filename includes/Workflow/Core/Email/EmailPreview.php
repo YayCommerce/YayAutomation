@@ -257,6 +257,37 @@ final class EmailPreview {
     }
 
     /**
+     * The order and account a plugin's editor previews with, as Preview picks them (product grids aside); null when made up.
+     *
+     * @param mixed $graph
+     * @return array [ 'orderId' => int|null, 'userId' => int|null ]
+     */
+    public static function sample_ids( $graph ): array {
+        $node     = is_array( $graph ) && is_array( $graph['nodes'] ?? null ) ? GraphSchema::trigger( $graph['nodes'] ) : null;
+        $trigger  = is_array( $node ) && is_string( $node['data']['block'] ?? null ) ? StepRegistry::get( $node['data']['block'] ) : null;
+        $provides = $trigger instanceof Trigger ? $trigger->resolved_provides() : [];
+        if ( in_array( OrderData::ID, $provides, true ) ) {
+            $order = wc_get_order( self::paid_orders( 1 )[0] ?? 0 );
+            return [
+                'orderId' => $order ? (int) $order->get_id() : null,
+                'userId'  => $order && $order->get_customer_id() ? (int) $order->get_customer_id() : null,
+            ];
+        }
+        if ( in_array( CartData::ID, $provides, true ) ) {
+            $cart = SavedCart::find( (int) CartStore::newest_for_preview() );
+            return [
+                'orderId' => null,
+                'userId'  => $cart && $cart->user_id() ? $cart->user_id() : null,
+            ];
+        }
+        $user = [ CustomerData::ID ] === array_values( array_diff( $provides, DataRegistry::ALWAYS ) ) ? self::newest_customer() : null;
+        return [
+            'orderId' => null,
+            'userId'  => $user ? (int) $user->ID : null,
+        ];
+    }
+
+    /**
      * The grid kinds an email's config shows, by merge tag.
      *
      * @param array $config

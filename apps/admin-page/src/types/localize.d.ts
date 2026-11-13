@@ -111,6 +111,8 @@ export interface CatalogStepMeta extends StepMeta {
   email?: 'customer' | 'staff';
   /** Another plugin's action: its run-detail line with `%output%` / `%field%` placeholders; '' = the summary. */
   result?: string;
+  /** Another plugin's iframe editor: the config field its `save` fills, and the button's label. */
+  editor?: { field: string; button: string };
 }
 
 export type DataFieldType = 'number' | 'string' | 'enum' | 'date' | 'boolean' | 'list' | 'meta';

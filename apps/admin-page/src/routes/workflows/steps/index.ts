@@ -14,6 +14,7 @@ import { waitStep } from './actions/wait';
 import { waitUntilStep } from './actions/wait-until';
 import { criteriaStep } from './conditions/criteria';
 import { defineStep } from './core/defineStep';
+import { editorFooter } from './core/fields/EditorFrame';
 import { createRegistry } from './core/registry';
 import { cartAbandonedStep } from './triggers/cart-abandoned';
 import { checkoutAbandonedStep } from './triggers/checkout-abandoned';
@@ -60,13 +61,18 @@ const coreSteps = [
 
 /**
  * Another plugin's triggers and actions: PHP only, so their form and checks come from their catalog fields.
- * An email action gets Send email's Preview and Send test.
+ * An email action gets Send email's Preview and Send test; one with an `editor`, its button under the form.
  */
 const coreIds = new Set<string>(coreSteps.map((stepDef) => stepDef.id));
 const moduleSteps = Object.entries(window.yayMatikMeta.automation.steps)
   .filter(([id, meta]) => !coreIds.has(id) && (meta?.kind === 'trigger' || meta?.kind === 'action'))
   .map(([id, meta]) =>
-    defineStep({ id: id as StepId, kind: meta!.kind, ...(meta?.email ? { Actions: EmailActions } : {}) }),
+    defineStep({
+      id: id as StepId,
+      kind: meta!.kind,
+      ...(meta?.email ? { Actions: EmailActions } : {}),
+      ...(meta?.editor ? { Footer: editorFooter(id, meta.editor, meta.label) } : {}),
+    }),
   );
 
 /**

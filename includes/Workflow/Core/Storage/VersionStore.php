@@ -144,6 +144,24 @@ final class VersionStore {
     }
 
     /**
+     * Every version's and draft's graph that has a step of this id, decoded.
+     *
+     * @param string $step_id
+     * @return array[]
+     */
+    public static function graphs_with_step( string $step_id ): array {
+        global $wpdb;
+        $graphs = $wpdb->get_col(
+            $wpdb->prepare(
+                'SELECT graph FROM %i WHERE graph LIKE %s',
+                self::table(),
+                '%' . $wpdb->esc_like( '"block":' . wp_json_encode( $step_id ) ) . '%'
+            )
+        );
+        return array_values( array_filter( array_map( fn( $graph ) => json_decode( (string) $graph, true ), (array) $graphs ), 'is_array' ) );
+    }
+
+    /**
      * @param string $gmt GMT `Y-m-d H:i:s`.
      */
     public static function to_iso( string $gmt ): string {

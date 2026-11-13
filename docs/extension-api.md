@@ -280,7 +280,7 @@ Rules:
 ```
 
 - The URL **must be same-origin** with the admin (`admin_url()`). `url` is a callable, so core checks its result each time it builds the URL: another origin is refused + diagnostic (at registration core only checks that `url` is callable). No cross-origin editors in v1 (no SaaS), so origin checks are exact. **[Certain]** on the browser rule; **[Likely]** that this fits YayMail / YayMagic (both are WP admin apps).
-- `$ctx`: `value` (current reference, `''` when none), `workflow_id`, `node_id`, `step` (id), `config` (unsaved config). Core appends `yaymatik_embed=1&yaymatik_channel=<random>`.
+- `$ctx`: `value` (current reference, `''` when none), `workflow_id`, `node_id`, `step` (id), `config` (unsaved config). Core appends `yaymatik_embed=1&yaymatik_channel=<random>`. Another origin, a throw or a non-string → the editor doesn't open ("This step's editor couldn't be opened.") + diagnostic.
 - Core opens the URL in a **full-screen modal** iframe (no `sandbox`: the page is the plugin's own trusted admin page; WP admin's `X-Frame-Options: SAMEORIGIN` allows it).
 
 **postMessage schema v1** — every message is `{ source: 'yaymatik-editor', version: 1, channel, type, … }`:

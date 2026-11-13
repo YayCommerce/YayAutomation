@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { previewEmail, sendTestEmail } from '../../api/workflow.api';
+import { openStepEditor, previewEmail, sendTestEmail } from '../../api/workflow.api';
 import { updateNodeConfig } from '../../model/graph';
 import { availableData, sameItems } from '../../model/validation';
 import { kindMeta } from '../../shared/canvas/NodeCardView';
@@ -26,6 +26,7 @@ import { StepEyebrow } from '../../shared/ui/StepTile';
 import { WarningBadge } from '../../shared/ui/WarningBadge';
 import { steps as stepDefs, stepOf } from '../../steps';
 import { alwaysAvailable } from '../../steps/core/data';
+import { EditorToolsContext, type EditorTools } from '../../steps/core/fields/editorTools';
 import { EmailToolsContext, type EmailTools } from '../../steps/core/fields/emailTools';
 import { FeedbackContext, FieldIssueContext, type Feedback } from '../../steps/core/fields/feedback';
 import { VariableScopeContext, type VariableScope } from '../../steps/core/fields/variableScope';
@@ -105,6 +106,8 @@ export function StepPanel({
 }) {
   // A different step picked while the current one has edited settings, until confirmed.
   const [swapTo, setSwapTo] = useState<StepId | null>(null);
+  // Bumped when another plugin's editor writes a field: the form owns its values, so it starts again from the new ones.
+  const [formRevision, setFormRevision] = useState(0);
   const form = useWorkflowFormContext();
   // Null when the step was deleted while its panel was open.
   const node = useStore(form.store, (state) => state.values.graph.nodes.find((n) => n.id === nodeId) ?? null);
@@ -162,6 +165,23 @@ export function StepPanel({
       sendTest: () => sendTestEmail(workflowId, input()),
     };
   }, [config, form, nodeId, workflowId]);
+  const editorTools = useMemo<EditorTools>(
+    () => ({
+      open: () => {
+        const graph = form.state.values.graph;
+        const config = graph.nodes.find((n) => n.id === nodeId)?.data.config ?? {};
+        return openStepEditor(workflowId, { nodeId, config, graph });
+      },
+      save: (field, value) => {
+        form.setFieldValue('graph', (graph) => {
+          const config = graph.nodes.find((n) => n.id === nodeId)?.data.config ?? {};
+          return updateNodeConfig(graph, nodeId, { ...config, [field]: value });
+        });
+        setFormRevision((revision) => revision + 1);
+      },
+    }),
+    [form, nodeId, workflowId],
+  );
   if (!node) return null;
 
   const stepDef = stepOf(node.data);
@@ -245,76 +265,80 @@ export function StepPanel({
 
   return (
     <EmailToolsContext.Provider value={emailTools}>
-      {/* The card's tile and eyebrow, so the panel reads as the step it belongs to; then its actions. */}
-      <div className="flex flex-col gap-3 border-b p-4">
-        <div className="flex items-start gap-3">
-          <StepTile kind={node.kind} icon={stepDef.icon} size="lg" />
-          <div className="min-w-0 flex-1">
-            <StepEyebrow
-              kind={node.kind}
-              kindLabel={kindMeta[node.kind].label}
-              stepLabel={stepDef.label}
-              plugin={stepDef.plugin}
-            />
-            <h2 className="text-[15px]/5 font-semibold">{stepDef.label}</h2>
-            {/* The condition's sentence says what it does. */}
-            {node.kind !== 'condition' && <p className="text-muted-foreground mt-0.5 text-xs">{stepDef.description}</p>}
-          </div>
-          {node.kind !== 'condition' && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon-sm" aria-label={swapLabel} onClick={() => onSwap(true)}>
-                  <ArrowRightLeft />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>{swapLabel}</TooltipContent>
-            </Tooltip>
-          )}
-          {close}
-        </div>
-        {stepDef.Actions && <stepDef.Actions />}
-      </div>
-
-      <div className="min-h-0 flex-1 overflow-y-auto p-4">
-        {notice && (
-          <Alert destructive className="border-destructive/30 mb-4 border">
-            <CircleAlert aria-hidden />
-            <AlertDescription>{notice.message}</AlertDescription>
-          </Alert>
-        )}
-        {warning && (
-          <WarningBadge className="mb-4 h-auto w-full justify-start py-1.5 text-left whitespace-normal">
-            {warning}
-          </WarningBadge>
-        )}
-        {stepDef.inactive ? (
-          <p className="text-muted-foreground text-sm">
-            {sprintf(
-              /* translators: %s: plugin name, e.g. "YayMail" */
-              __(
-                'You can edit and save this workflow, but you can’t turn it on until %1$s is active. If it’s already on, it keeps running and skips this step.',
-                'yaymatik',
-              ),
-              stepDef.inactive,
+      <EditorToolsContext.Provider value={editorTools}>
+        {/* The card's tile and eyebrow, so the panel reads as the step it belongs to; then its actions. */}
+        <div className="flex flex-col gap-3 border-b p-4">
+          <div className="flex items-start gap-3">
+            <StepTile kind={node.kind} icon={stepDef.icon} size="lg" />
+            <div className="min-w-0 flex-1">
+              <StepEyebrow
+                kind={node.kind}
+                kindLabel={kindMeta[node.kind].label}
+                stepLabel={stepDef.label}
+                plugin={stepDef.plugin}
+              />
+              <h2 className="text-[15px]/5 font-semibold">{stepDef.label}</h2>
+              {/* The condition's sentence says what it does. */}
+              {node.kind !== 'condition' && (
+                <p className="text-muted-foreground mt-0.5 text-xs">{stepDef.description}</p>
+              )}
+            </div>
+            {node.kind !== 'condition' && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="icon-sm" aria-label={swapLabel} onClick={() => onSwap(true)}>
+                    <ArrowRightLeft />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>{swapLabel}</TooltipContent>
+              </Tooltip>
             )}
-          </p>
-        ) : stepDef.Form ? (
-          <FeedbackContext.Provider value={feedback}>
-            <FieldIssueContext.Provider value={underField}>
-              <VariableScopeContext.Provider value={scope}>
-                {/* Keyed by step and step, so switching either starts a fresh form. */}
-                <stepDef.Form
-                  key={`${node.id}:${stepDef.id}`}
-                  config={node.data.config}
-                  onChange={(config) => update((graph) => updateNodeConfig(graph, node.id, config))}
-                />
-              </VariableScopeContext.Provider>
-            </FieldIssueContext.Provider>
-          </FeedbackContext.Provider>
-        ) : (
-          <p className="text-muted-foreground text-sm">{__('No settings needed.', 'yaymatik')}</p>
-        )}
-      </div>
+            {close}
+          </div>
+          {stepDef.Actions && <stepDef.Actions />}
+        </div>
+
+        <div className="min-h-0 flex-1 overflow-y-auto p-4">
+          {notice && (
+            <Alert destructive className="border-destructive/30 mb-4 border">
+              <CircleAlert aria-hidden />
+              <AlertDescription>{notice.message}</AlertDescription>
+            </Alert>
+          )}
+          {warning && (
+            <WarningBadge className="mb-4 h-auto w-full justify-start py-1.5 text-left whitespace-normal">
+              {warning}
+            </WarningBadge>
+          )}
+          {stepDef.inactive ? (
+            <p className="text-muted-foreground text-sm">
+              {sprintf(
+                /* translators: %s: plugin name, e.g. "YayMail" */
+                __(
+                  'You can edit and save this workflow, but you can’t turn it on until %1$s is active. If it’s already on, it keeps running and skips this step.',
+                  'yaymatik',
+                ),
+                stepDef.inactive,
+              )}
+            </p>
+          ) : stepDef.Form ? (
+            <FeedbackContext.Provider value={feedback}>
+              <FieldIssueContext.Provider value={underField}>
+                <VariableScopeContext.Provider value={scope}>
+                  {/* Keyed by step and step, so switching either starts a fresh form. */}
+                  <stepDef.Form
+                    key={`${node.id}:${stepDef.id}:${formRevision}`}
+                    config={node.data.config}
+                    onChange={(config) => update((graph) => updateNodeConfig(graph, node.id, config))}
+                  />
+                </VariableScopeContext.Provider>
+              </FieldIssueContext.Provider>
+            </FeedbackContext.Provider>
+          ) : (
+            <p className="text-muted-foreground text-sm">{__('No settings needed.', 'yaymatik')}</p>
+          )}
+        </div>
+      </EditorToolsContext.Provider>
     </EmailToolsContext.Provider>
   );
 }

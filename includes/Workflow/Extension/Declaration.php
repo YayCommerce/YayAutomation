@@ -46,7 +46,9 @@ final class Declaration {
 
     private const MAX_FACTS = 10;
 
-    private const ACTION_KEYS = [ 'requires', 'run', 'outputs', 'sample_outputs', 'on_error', 'result', 'emits', 'email' ];
+    private const ACTION_KEYS = [ 'requires', 'run', 'outputs', 'sample_outputs', 'on_error', 'result', 'emits', 'email', 'editor' ];
+
+    private const EDITOR_KEYS = [ 'field', 'button', 'url' ];
 
     private const EMAIL_KEYS = [ 'audience', 'recipient', 'build' ];
 
@@ -160,11 +162,17 @@ final class Declaration {
         if ( null === $error && isset( $args['email'] ) && 'customer' !== $args['email']['recipient'] && ! self::has_field( $fields, $args['email']['recipient'] ) ) {
             $error = '"email" "recipient" must be "customer" or a key of "fields".';
         }
+        if ( null === $error && isset( $args['editor'] ) ) {
+            $error = self::editor_error( $args['editor'], $fields );
+        }
         if ( null !== $error ) {
             self::refuse( $module->id(), $what, $error );
             return null;
         }
         self::unknown_keys( $module->id(), $what, $args, array_merge( self::STEP_KEYS, self::ACTION_KEYS ) );
+        if ( isset( $args['editor'] ) ) {
+            self::unknown_keys( $module->id(), "{$what} editor", $args['editor'], self::EDITOR_KEYS );
+        }
         if ( isset( $args['email'] ) ) {
             self::unknown_keys( $module->id(), "{$what} email", $args['email'], self::EMAIL_KEYS );
             $args['email'] += [ 'audience' => 'customer' ];
@@ -200,16 +208,44 @@ final class Declaration {
     }
 
     /**
+     * The iframe editor (docs/extension-api.md §5.6): its URL is checked each time it's built, not here.
+     *
+     * @param mixed   $editor
+     * @param Field[] $fields
+     */
+    private static function editor_error( $editor, array $fields ): ?string {
+        if ( ! is_array( $editor ) ) {
+            return '"editor" must be [ field, button, url ].';
+        }
+        $field = is_string( $editor['field'] ?? null ) ? self::field( $fields, $editor['field'] ) : null;
+        if ( ! $field || ! in_array( $field->type(), [ Field::TEXT, Field::SELECT ], true ) ) {
+            return '"editor" "field" must be a text or select field of this action.';
+        }
+        if ( ! is_string( $editor['button'] ?? null ) || '' === trim( $editor['button'] ) ) {
+            return '"editor" needs a "button" label.';
+        }
+        return is_callable( $editor['url'] ?? null ) ? null : '"editor" "url" must be a callable.';
+    }
+
+    /**
      * @param Field[] $fields
      * @param string  $key
      */
     private static function has_field( array $fields, string $key ): bool {
+        return null !== self::field( $fields, $key );
+    }
+
+    /**
+     * @param Field[] $fields
+     * @param string  $key
+     */
+    private static function field( array $fields, string $key ): ?Field {
         foreach ( $fields as $field ) {
             if ( $field->key() === $key ) {
-                return true;
+                return $field;
             }
         }
-        return false;
+        return null;
     }
 
     /**

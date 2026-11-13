@@ -80,10 +80,58 @@ class ExtensionAction extends Action {
         );
     }
 
-    /** No category: no picker heading. `result`: the run-detail line, '' = the summary. */
+    /** No category: no picker heading. `result`: the run-detail line, '' = the summary. `editor`: its field and button. */
     public function client_meta(): array {
-        return array_filter( parent::client_meta(), fn( $value, string $key ) => 'category' !== $key || '' !== $value, ARRAY_FILTER_USE_BOTH )
+        $meta = array_filter( parent::client_meta(), fn( $value, string $key ) => 'category' !== $key || '' !== $value, ARRAY_FILTER_USE_BOTH )
             + [ 'result' => $this->result() ];
+        if ( isset( $this->args['editor'] ) ) {
+            $meta['editor'] = [
+                'field'  => $this->args['editor']['field'],
+                'button' => $this->args['editor']['button'],
+            ];
+        }
+        return $meta;
+    }
+
+    /**
+     * The iframe editor's URL for this context, or why not: another origin than the admin's is refused.
+     *
+     * @param array $context
+     * @return string|\WP_Error
+     */
+    public function editor_url( array $context ) {
+        $url = Guard::call( $this->module, 'editor url', fn() => ( $this->args['editor']['url'] )( $context ), fn( \Throwable $e ) => $e );
+        if ( $url instanceof \Throwable ) {
+            return self::editor_refused();
+        }
+        if ( ! is_string( $url ) || ! self::same_origin( $url, admin_url() ) ) {
+            Diagnostics::record( $this->module, 'editor url', 'The editor URL must be a string on this site\'s admin origin (admin_url()).' );
+            return self::editor_refused();
+        }
+        return $url;
+    }
+
+    private static function editor_refused(): \WP_Error {
+        return new \WP_Error( 'yaymatik_editor_url', __( 'This step’s editor couldn’t be opened. Details are in Settings › Health check.', 'yaymatik' ), [ 'status' => 400 ] );
+    }
+
+    /**
+     * Same scheme, host and port.
+     *
+     * @param string $url
+     * @param string $admin
+     */
+    private static function same_origin( string $url, string $admin ): bool {
+        $origin = function ( string $address ): ?string {
+            $parts = wp_parse_url( $address );
+            if ( ! is_array( $parts ) || ! isset( $parts['scheme'], $parts['host'] ) ) {
+                return null;
+            }
+            $scheme = strtolower( $parts['scheme'] );
+            $port   = $parts['port'] ?? ( 'https' === $scheme ? 443 : 80 );
+            return $scheme . '://' . strtolower( $parts['host'] ) . ':' . $port;
+        };
+        return null !== $origin( $url ) && $origin( $url ) === $origin( $admin );
     }
 
     /** Run-detail line with `%output%` / `%field%` placeholders; '' = the summary. */

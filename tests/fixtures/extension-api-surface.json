@@ -4,7 +4,9 @@
         "constants": {
             "VERSION": "1.0.0"
         },
-        "methods": []
+        "methods": {
+            "references": "static (string $step_id, string $field): array"
+        }
     },
     "YayMatik\\Api\\CartView": {
         "kind": "interface",
@@ -79,7 +81,8 @@
             "trigger_facts",
             "privacy_subjects",
             "email",
-            "templates"
+            "templates",
+            "editor_iframe"
         ],
         "module_keys": [
             "id",
@@ -114,12 +117,18 @@
             "on_error",
             "result",
             "emits",
-            "email"
+            "email",
+            "editor"
         ],
         "email_keys": [
             "audience",
             "recipient",
             "build"
+        ],
+        "editor_keys": [
+            "field",
+            "button",
+            "url"
         ],
         "template_keys": [
             "name",

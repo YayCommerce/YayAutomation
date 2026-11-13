@@ -113,6 +113,12 @@ export const getRun = (id: string) =>
     ? request<RunDetail>(api.get(`runs/${id}`))
     : Promise.reject(new ApiError(__('Run not found.', 'yaymatik'), 404));
 
+/** `POST /workflows/{id}/editor`. */
+export interface StepEditorTarget {
+  url: string;
+  sample: { orderId: number | null; userId: number | null };
+}
+
 /** An email step's unsaved config and the graph it sits in, as the editor has them. */
 export interface EmailStepInput {
   nodeId: string;
@@ -123,6 +129,10 @@ export interface EmailStepInput {
 /** Renders only: no coupon, no run. 400 with `issues` when the step's settings have any. */
 export const previewEmail = (id: string, input: EmailStepInput) =>
   request<EmailPreview>(api.post(`workflows/${id}/preview`, { json: input }));
+
+/** Another plugin's editor for a step (`editor` in its catalog): a same-origin URL and the sample Preview uses. */
+export const openStepEditor = (id: string, input: EmailStepInput) =>
+  request<StepEditorTarget>(api.post(`workflows/${id}/editor`, { json: input }));
 
 /** Sends to the logged-in user, subject prefixed "[Test]". 400 with `issues` as for Preview. */
 export const sendTestEmail = (id: string, input: EmailStepInput) =>

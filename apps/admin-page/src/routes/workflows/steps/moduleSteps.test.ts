@@ -26,7 +26,12 @@ const moduleStep = {
 };
 
 /** An email action: Preview and Send test come from the catalog's `email`. */
-const emailStep = { ...moduleStep, requires: [], email: 'customer', result: 'Sent to %to%', fields: [] };
+const emailStep = {
+  ...moduleStep,
+  requires: [],
+  email: 'customer',
+  result: 'Sent to %to%',
+};
 
 async function loadSteps() {
   vi.resetModules();
