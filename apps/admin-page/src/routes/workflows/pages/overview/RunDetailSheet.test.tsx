@@ -1,12 +1,28 @@
 import { act } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import type { RunDetail } from '@yaymatik/types';
+import type { RunDetail, StepId } from '@yaymatik/types';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { toast } from '@/components/ui/sonner';
 import { ApiError, getRun } from '../../api/workflow.api';
 import { RunDetailSheet } from './RunDetailSheet';
+
+// The registry reads the steps of plugins that are off when it loads.
+vi.hoisted(() => {
+  const automation = window.yayMatikMeta.automation;
+  const acme = { module: 'acme', plugin: 'Acme Rewards', outputs: [], facts: [] };
+  window.yayMatikMeta = {
+    ...window.yayMatikMeta,
+    automation: {
+      ...automation,
+      inactiveSteps: {
+        acme_add_points: { ...acme, kind: 'action', label: 'Add reward points' },
+        acme_points_earned: { ...acme, kind: 'trigger', label: 'Points earned' },
+      },
+    },
+  } as unknown as Window['yayMatikMeta'];
+});
 
 vi.mock('@/components/ui/sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 vi.mock('../../api/workflow.api', async (original) => ({
@@ -107,6 +123,33 @@ describe('RunDetailSheet', () => {
     await open('31');
     const sheet = document.body.querySelector('[data-slot="sheet-content"]')!;
     await vi.waitFor(() => expect(sheet.querySelector('li')?.textContent).toContain('Points earned: 42, Tier: Gold'));
+  });
+
+  it('names a trigger and an action of a plugin that is off, greyed like the canvas', async () => {
+    vi.mocked(getRun).mockResolvedValue({
+      ...run,
+      triggerId: 'acme_points_earned',
+      steps: [{ ...run.steps[0], stepType: 'acme_add_points' as StepId, output: {} }],
+    });
+    await open('31');
+    const sheet = document.body.querySelector('[data-slot="sheet-content"]')!;
+    await vi.waitFor(() => expect(sheet.querySelectorAll('li')).toHaveLength(2));
+    const [trigger, action] = sheet.querySelectorAll('li');
+    expect(trigger.textContent).toContain('Points earned');
+    expect(action.textContent).toContain('Add reward points');
+    expect(sheet.textContent).not.toContain('Removed step');
+    expect(action.querySelector('[aria-hidden]')?.className).toContain('grayscale');
+  });
+
+  it('says "Removed step" for a step id no plugin knows', async () => {
+    vi.mocked(getRun).mockResolvedValue({
+      ...run,
+      steps: [{ ...run.steps[0], stepType: 'gone_step' as StepId, output: {} }],
+    });
+    await open('31');
+    const sheet = document.body.querySelector('[data-slot="sheet-content"]')!;
+    await vi.waitFor(() => expect(sheet.querySelectorAll('li')).toHaveLength(2));
+    expect(sheet.querySelectorAll('li')[1].textContent).toContain('Removed step');
   });
 
   it('links the order that stopped a cart run', async () => {

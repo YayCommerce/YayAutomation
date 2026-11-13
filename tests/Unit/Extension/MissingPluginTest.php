@@ -167,8 +167,8 @@ final class MissingPluginTest extends TestCase {
             'status' => $status,
             'graph'  => self::graph(),
         ];
-        $check    = HealthCheck::missing_plugin( [ $workflow( 3, 'active' ), $workflow( 4, 'inactive' ) ] );
+        $check    = HealthCheck::missing_plugin( [ $workflow( 3, 'active' ), $workflow( 4, 'inactive' ), $workflow( 5, 'draft' ), $workflow( 6, 'active' ) ] );
 
-        $this->assertSame( [ 'problem', 1, [ '3' ], [ 'Acme Rewards' ], null ], [ $check['status'], $check['count'], $check['workflowIds'], $check['plugins'], $check['fix'] ] );
+        $this->assertSame( [ 'problem', 2, [ '3', '6' ], [ 'Acme Rewards' ], null ], [ $check['status'], $check['count'], $check['workflowIds'], $check['plugins'], $check['fix'] ] );
     }
 }
