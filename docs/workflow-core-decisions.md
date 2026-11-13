@@ -35,6 +35,7 @@ Each note: **Decision** · **Why** · **Rejected** · **Cost** · **For devs** (
 | [M6](#m6-win-back) | Win-back | Owner |
 | [CT](#ct-custom-workflow-catalog) | Custom workflow catalog | Owner |
 | [PI](#pi-privacy-lookup-index) | Privacy lookup index | Owner |
+| [EX](#ex-extension-api-v1) | Extension API v1 | Owner |
 
 "High" = recommended and accepted as-is. "Owner" = debated and decided by the product owner.
 
@@ -512,3 +513,38 @@ Today errors only go to the WooCommerce log, which merchants never open.
 - An overwritten value leaves its row until an erase finds the run and removes it.
 - No backfill: before v1.0, dev data is reset (`./run.sh reset-data`) after deploy.
 
+## EX. Extension API v1
+
+**Decision.** Other plugins add steps, data, templates and an iframe editor through `yaymatik_register` and a declarative registrar: args arrays and callables, wrapped by core in internal adapters. Contract: [extension-api.md](extension-api.md). Confirmed 2026-11-13.
+
+**The missing-plugin rule (Q2).** A workflow that uses a step from an inactive plugin can be opened, edited and saved, but not activated or updated; if it is already active it keeps running and skips that step with a reason.
+
+| ID | Decision | Why |
+|---|---|---|
+| Q1 | A step index option (`yaymatik_extension_steps`) remembers each extension step's plugin, label and outputs | When a plugin is off its code doesn't run, so core can't ask it for a name. No graph shape change |
+| Q2 | Missing plugin: open / edit / save yes, Activate / Update blocked (`missing_plugin`), an active workflow keeps running and skips the step | Turning on a workflow we already know will skip its main step (often the email) misleads the store owner. Stopping it on deactivation would cancel customers' waiting runs over a plugin update that takes a minute |
+| Q3 | Design edits in a plugin's iframe editor apply to live workflows at once; the panel says so | The design lives in the plugin, outside YayMatik versions. Copying it into each version would need every plugin to version its designs |
+| Q4 | Emails need not be about an order; YayMail (order) and YayMagic (no order) are both golden consumers | Customer-only triggers (account created, inactive, milestones) are half the catalog |
+| Q4a | Preview of a customer-only trigger uses the newest real customer account, core Send email too | Made-up data hides blocks that read a real account |
+| Q4b | Core renders YayMatik merge tags in extension email subject / HTML | One variable syntax for the store owner; the plugin renders only its own blocks |
+| Q5 | No core dedupe; plugins throttle in `listen`. Trigger `facts` kept, narrow | Dedupe needed a schema change (`trigger_claims` expiry). Facts carry event-time values without a plugin table, limited so erase still reaches every person |
+| Q6 | The plugin places `unsubscribe_url()`; core inserts its footer before `</body>` when it's missing | A full-document design knows where its footer goes; core still guarantees the link |
+| Q7 | No kses on extension email HTML; kses on values core inserts into other emails | A whole document needs `<head>` / `<style>`, and it comes from the plugin's own PHP. Values shown in someone else's email are not trusted |
+| Q8 | No delete hook; `Api::references()` lists values still in use | Waiting runs and old versions may still point at a design |
+| Q9 | Every id starts with the module id + `_` | A step always names the plugin it needs, and core can never collide with it later |
+| Q10 | Public facades, no `class_alias` | Internal classes can change without breaking anyone |
+| Q11 | No Abilities bridge; open picker categories; Health check › Extensions | Smaller frozen surface; the site owner sees what broke |
+| Q12 | No auto-disable; diagnostics only | Turning off a plugin's steps on errors would stop customers' runs silently |
+| N8 | `CustomerView` / `CartView` for data-field callbacks on `customer` / `cart` | The object behind `customer` differs per trigger and `SavedCart` is internal: not safe to expose |
+
+**Rejected.**
+- Extensions subclass `Step` / `Module` / `DataItem`: every core refactor would fatal a plugin.
+- Keep stopping a workflow whose plugin is gone (Failed "Unknown step type."): a plugin update would fail customers' runs.
+- Cross-origin editors, JS panels, extension condition steps in v1: a bigger surface to freeze.
+
+**Cost.**
+- An adapter layer to maintain, and less freedom than subclasses.
+- Error isolation at about eight call sites plus a diagnostics option.
+- Snapshot tests that must be updated on purpose when the public surface or the core steps change.
+
+**For devs.** Anything not in extension-api.md is internal. A change to a core step id, config key, output key, operator or data field key fails the core-steps snapshot: it's a MAJOR change of the API.

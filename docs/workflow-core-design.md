@@ -93,6 +93,8 @@ Table names below omit the prefix: each is `{prefix}yaymatik_<name>`, e.g. `wp_y
 
 **PHP is the one source of truth for a step's settings.** The editor builds its checks from it, so PHP and TS can't disagree.
 
+This contract is internal. Other plugins use the public Extension API ([extension-api.md](extension-api.md)): args arrays and callables that core wraps in its own step classes.
+
 ```
 Step:   id() label() plugin() module()
         icon(): string           a name from core's step icon list, e.g. "mail" (L5)
@@ -114,7 +116,7 @@ Trigger: fires_for_own_runs( config )   whether its workflow reacts to events it
 - **Forms.**
   - No custom form → the generic `StepForm` draws one from the fields. A simple step from a Yay plugin needs PHP only.
   - Core step with a complex form (Condition rules) → `defineStep( { id, Form } )`, imported directly. No global call, fully typed.
-  - Plugin step with a custom form → planned, through the public extension API (§10 P4).
+  - Plugin step with a custom form → an iframe editor through the public Extension API ([extension-api.md](extension-api.md) §5.6, 1.1).
   - A custom `Form` gets `{ config, onChange }` (`StepFormProps`).
   - Beside any form, `defineStep` takes `Footer` (under the form, with its latest config, e.g. Send email's unsubscribe note) and `Actions` (panel header, e.g. Send email's Preview / Send test). Send email and Generate coupon use the generic form plus these.
 - **Icons (L5).** A step's `icon()` is a name from a fixed list in core (lucide icons, about 40), never an SVG. The editor draws it in the step's tile, tinted by kind (trigger, condition, action), on the canvas, in the picker, the panel header, template cards and the preview. A missing icon is added to core's list, not shipped by the plugin.
@@ -159,7 +161,7 @@ Our own small template module. **No Liquid or other template library, now or lat
   - Another plugin adds its module class on the filter `yaymatik_modules`, before `init` (the registry is first read on `init`). A taken id (module, step, data item) keeps its first owner.
   - Filters for extending core's steps and data: `yaymatik_data_item_{id}_fields` (a data item's fields, `DataItem::fields()`), `yaymatik_trigger_provides` (the data items a trigger provides, `Trigger::resolved_provides()`), `yaymatik_trigger_refs` (a trigger's scope refs, `Trigger::resolved_refs()`; a null native ref stays null).
   - Action `yaymatik_cart_abandoned( $cart_id, $kind )`: a cart was abandoned, on every abandon; `$kind` is `cart_abandoned` or `checkout_abandoned`.
-- **Experimental until Extension API v1 (v1.1).** v1.0 ships the filters and actions above as experimental: they may change before v1.1. Classes under `YayMatik\Workflow\` are internal, including the base classes an extension subclasses (`Step`, `Module`, `DataItem`, marked `@internal`).
+- **Frozen by Extension API v1 (1.1), see [extension-api.md](extension-api.md).** Other plugins integrate through `yaymatik_register` and its registrar; the filters and actions above stay internal (Pro uses them) or experimental, as its §11 lists. Classes under `YayMatik\Workflow\` are internal, including the base classes (`Step`, `Module`, `DataItem`, marked `@internal`).
 - **Each Yay plugin owns its steps, templates and data types**, registered into Workflow Core. **YayMatik Pro** owns templates that combine several plugins.
 - **Plugin logo (L5).** Each module gives one logo, a one-colour SVG: a URL, or for core's modules a `data:` URI of an inline SVG, so it loads when assets come from a CDN. The admin app draws it as a CSS mask in the tile's text colour. It marks who provides a step or template (template cards, library sidebar, picker), never what a step does. One per plugin, not per step.
 - **Feature directory:** a static list in core of every known step and template, its plugin, and where to install it. The editor shows "Install X to use this"; the AI uses it to suggest features.
@@ -174,7 +176,7 @@ Settings → Health check finds problems and proposes a fix the site owner can a
 | Large tables (runs, Action Scheduler) | Shorter retention; cleanup now |
 | Slow query triggers on big stores | Smaller batch size |
 | Email delivery not configured | Suggest an SMTP plugin (YaySMTP) |
-| Active workflow uses a step from a missing plugin | Install link from the feature directory |
+| `missing_plugin`: active workflows use a step from an inactive plugin. Such a workflow can be opened, edited and saved, but not activated or updated; an active one keeps running and skips that step with a reason ([extension-api.md](extension-api.md) §10) | None: count, workflow links, Plugins page link |
 | (a) `runs_queued`: queued over 5 min, or waiting 15 min past `wait_until`, with no pending or in-progress `yaymatik_run` or `yaymatik_recover_run` job (an overdue job still counts: that is (c)) | Queue them again |
 | (b) `runs_running`: running with no `yaymatik_run` and no `yaymatik_recover_run` job | Queue recovery; the interrupted step fails, it never runs twice |
 | (c) `jobs_late`: pending `yaymatik` jobs over 15 min past due | Info only: server cron guide link |
@@ -188,12 +190,12 @@ Built: (a)–(e) in `Core/Runtime/HealthCheck.php`; REST `GET /health/checks` an
 | ID | Topic | Decision |
 |---|---|---|
 | P3 | Waiting runs on Update | Always cancel in v1.0. Revisit after v1.0 |
-| P4 | Public extension API | Last: after Pro connectors and Yay integrations are stable. Until then the registry and step contract are internal, and plugin steps have no custom forms |
+| P4 | Public extension API | 1.1, plan 034: [extension-api.md](extension-api.md). The registry and step contract stay internal behind it |
 | P5 | AI provider | Not decided. v1.0 only keeps a provider interface open |
 
 ## §11 Decision log
 
-All confirmed 2026-10-07, except L5 (2026-10-08), M7 (2026-10-27), M8, M3–M5, M6 and CT. Reasons, rejected options and costs: [workflow-core-decisions.md](workflow-core-decisions.md).
+All confirmed 2026-10-07, except L5 (2026-10-08), M7 (2026-10-27), M8, M3–M5, M6, CT and EX (2026-11-13). Reasons, rejected options and costs: [workflow-core-decisions.md](workflow-core-decisions.md).
 
 | ID | Decision | Section |
 |---|---|---|
@@ -215,7 +217,7 @@ All confirmed 2026-10-07, except L5 (2026-10-08), M7 (2026-10-27), M8, M3–M5, 
 | P1 | Runtime free; Free vs Pro by folder | §8 |
 | P2 | Yay plugins own their steps; Pro owns multi-plugin templates; feature directory | §8 |
 | P3 | Cancel waiting runs on Update in v1.0 | §10 |
-| P4 | Public extension API last | §10 |
+| P4 | Public extension API in 1.1 (plan 034) | §10 |
 | P5 | AI provider deferred | §10 |
 | P6 | Settings → Health check | §9 |
 | P7 | Tree + container steps; no merge | §7 |
@@ -224,3 +226,4 @@ All confirmed 2026-10-07, except L5 (2026-10-08), M7 (2026-10-27), M8, M3–M5, 
 | M3–M5 | High-value on a status change; reviews read when the step runs; account trigger refuses saved `WC_Customer`s; billing fill in memory | §4, §6 |
 | M6 | Win-back on a person's last real order, in a 7-day window, once per workflow and order through `trigger_claims` | §2, §3 |
 | CT | Custom workflow catalog: customer stats, Order paid, milestones, Review posted, guarded role change, condition groups | §3, §4, §5 |
+| EX | Extension API v1: declarative registrar, inactive plugin's steps kept but block Activate | §5, §8, §9 |

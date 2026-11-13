@@ -1,0 +1,269 @@
+# Plan: Public Extension API v1 (YayMatik 1.1)
+
+Status: written 2026-11-13 from develop 6be688a, reviewed by Jack the same day (O1 approved as recommended, 6 amendments folded in). Source of truth: `docs/extension-api.md` (agreed contract; §15 decisions, §17 checkpoints). Reference consumer: `.claude/local/034-example-acme.php` (gitignored). One plan, two PRs, one-pass mode.
+
+- **PR A** `jack/feature/034a-extension-api` from develop 6be688a: CP0–CP5 (backend, API, missing plugin).
+- **PR B** `jack/feature/034b-extension-ui` from PR A's last commit: CP6–CP10 (email, templates, iframe editor, example plugin, .pot). Opened after PR A is merged.
+
+## Goal
+
+A plugin adds triggers, actions, data fields, data items, templates and an iframe editor to YayMatik through `yaymatik_register` and a declarative registrar. A broken extension never breaks core, and a deactivated one never breaks a workflow.
+
+## Approach
+
+### Shape
+
+- **Public layer** `includes/Api/` (namespace `YayMatik\Api`): `Api` (VERSION, `references()`), `Registrar`, `Module`, `Field`, `Type`, `Ref`, `Result`, interfaces `Values`, `RunContext`, `EmailContext`, `CustomerView`, `CartView`. All `final` or interfaces. Each wraps one internal class; nothing internal leaks through a signature.
+- **Adapters** `includes/Workflow/Extension/`: `ExtensionModule extends Module`, `ExtensionTrigger extends Trigger`, `ExtensionAction extends Action`, `ExtensionDataItem extends DataItem`, `Declaration` (validates args arrays, id rules), `Diagnostics` (option + Logger), `StepIndex` (missing-plugin index), `Guard` (one `call( module, callback, fn, fallback )` try/catch helper used by every call site in §9).
+- **Registry**: `ModuleRegistry::modules()` fires `yaymatik_register` once, before building, with a `Registrar`; extension modules join the class-based ones. Today modules, steps and data items are class names built with `new $class()` (ModuleRegistry.php:55, :90, :146); `from()` / `collect()` / `data()` also accept instances, since an extension module holds its adapters as objects.
+- **Two vocabularies, one public**: public `Type` maps to the internal `Core\Data\Type` and to the condition type (`DataItem::TYPE_*`): number/money → number, string, boolean, date, enum, list → list, entity → relation (not conditional).
+- **No DB change.** Two options: `yaymatik_extension_errors` (diagnostics) and `yaymatik_extension_steps` (step index). No `DB_VERSION` bump. `Uninstaller` already removes `yaymatik_%` options on full removal.
+
+### Runtime rules kept
+
+- Loop guard: `Dispatcher::in_chain()` (Dispatcher.php:153–156, :320–332) already stops a workflow restarting itself through a run's own events, because `collect()` records the current run as parent (Dispatcher.php:109). That needs no `emits`. `emits` keeps its 1.0 meaning: the `may_refire` warning (Validator.php:224–242). CP2 proves both with a test.
+- No core dedupe; `facts` stay narrow (§5.3): scalar types, ≤ 10 keys, ≤ 1 KB each, emails only as personal data. Runtime already reads plain trigger values (Scope.php:201–202); CP3 teaches the Validator, catalog and run detail.
+
+## Contract check (every file:line in docs/extension-api.md, against 6be688a)
+
+All cited lines match: Runtime.php:38–39, Template.php:17, ModuleRegistry.php:55/56, 90/91, 146/147, Step.php:42, Dispatcher.php:77–90, :85, :161–170, :196–239, :205–208, Executor.php:263, :280–283, :284–295, EmailPreview.php:28, :52–96, :78–96, :113, :117–138, :144, :171–228, SendEmail.php:119–133, :173–193, ResendWcEmail.php:18, GraphSchema.php:50–53, RefResolver.php:65–79, PersonSubjects.php:17–63, Operators.php:12–17, OrderData.php:140, StepPicker.tsx:25–33, localize.d.ts:78, runResults.ts:65, :100, meta.ts:30, plugins.ts:6.
+
+Mismatches between the contract, the reference consumer and the code (each resolved in the CP named):
+
+| # | Where | Finding | Resolution |
+|---|---|---|---|
+| M1 | §4 `Type::number()` | Internal `Type` has no `number()` factory (Type.php:37–73; NUMBER only via `from_condition_type`) | Public `Type::number()` builds it (CP2) |
+| M2 | §4 `Type::list()` | Internal name is `list_of()` | Public `list()`; `list` is a legal method name on PHP 7.4, confirmed by `php -l` on wp-env-min (CP2) |
+| M3 | §4 `Field::required( msg )` | Acme calls `->required()`; internal default is `''` (Field.php:204) | Public `required( string $message = '' )` (CP2) |
+| M4 | §5.2 `validate( $config, $available )` | `Step::validate( array $config )` has no `$available` (Step.php:81); the Validator computes it at Validator.php:206. Adding a parameter breaks every override | New internal `Step::context_error( array $config, array $available ): ?\WP_Error` (default null), called by `Validator::step_error()` and by the Executor with the run's trigger items (CP2) |
+| M5 | §5.2 `setup_issue` on triggers **and** actions | Only the trigger's is checked, with the fixed code `cart_tracking_off` (Validator.php:178–187); actions have none | `Step::setup_issue()` moves to `Step`; the Validator checks every node; extension issues use the new code `setup_issue` (TS `WorkflowIssueCode`, workflow.ts:165–173). Core cart keeps `cart_tracking_off` (its Settings link) (CP2) |
+| M6 | §4 `Ref::user( int )`, acme `$customer->type() === 'user'` | Internally a customer ref is `Ref( 'customer', 'user:12' )` (Ref.php, RefResolver.php:65–79); there is no `user` item | Public `Ref` is item-free: `Ref::user(5)` under key `customer` → internal `Ref( 'customer', 'user:5' )`; `Ref::order(12)` under `order` → `Ref( 'order', '12' )`, under `customer` → `Ref( 'customer', 'order:12' )`. `$ctx->ref( 'customer' )` returns `type()` = `user`/`order`/`cart`/`review`, `id()` = the number (CP2) |
+| M7 | §5.3 facts in `refs` | Runtime reads them (Scope.php:201), but `Validator::reach()` rejects `trigger.<fact>` as an unknown variable (Validator.php:454–480) | CP3 |
+| M8 | §5.4 `emits` "(loop guard)", acme comment "loop guard must know" | Runtime guard needs no `emits`; it only drives `may_refire` (Validator.php:233) | Contract row and example comment say "warns in the editor"; CP2 test proves the guard (CP2 docs, CP9 example) |
+| M9 | §5.6 "same-origin … refused at registration" | `url` is a callable: its result is only known when called | Checked when the URL is built (REST), refused + diagnostic; at registration only `is_callable` (CP8; contract wording fixed in CP8) |
+| M10 | §7 acme template `design_id => 0` with `->required()`; §7 "a failing template is hidden" | Server check would hide the acme template; CP7 needs "usable, not activatable" | Hidden only on `GraphSchema::prepare` errors or structural issues (`no_trigger`, `no_action`, `unlinked`, `no_block`, `missing_data`, unknown variable). Kept: `setup_issue`, `cart_tracking_off`, and `invalid_config` on a field the template left empty (CP7; §7 wording fixed) |
+| M11 | §7 `workflow` key | Acme omits it; TS `TemplateWorkflow` is a closed union (workflow.ts:142) | Optional; default = template id; TS type opens to `string & {}` (CP7) |
+| M12 | §10 "Skipped: YayMail isn't active." | The Skipped tab and status already say Skipped | Reason "YayMail isn't active." (CP4; §10 wording fixed) |
+| M13 | §17 CP9 "currency-switch trigger" vs the acme model | Acme's points trigger already covers `facts` + dedupe in `listen` | D13; §14 / §17 wording fixed in CP0 |
+| M14 | §5.6 `Api::references()` | Not placed in any CP in §17 | CP8 (it serves the editor's `field`) |
+
+## Decisions
+
+- **D1** Public classes wrap internal ones; no `class_alias` (Q10). Adapters live in `Workflow\Extension\`, marked `@internal`.
+- **D2** `Module` handle: `ok()` false → every method returns false and does nothing. Reasons recorded in Diagnostics: bad or reserved id, `requires_api` not met, duplicate module id, called after `yaymatik_register` ran.
+- **D3** Declaration errors refuse that one declaration (diagnostic + `_doing_it_wrong()` under `WP_DEBUG`); the rest of the module loads. Unknown keys: ignored + `_doing_it_wrong()` under `WP_DEBUG`.
+- **D4** Diagnostics: last 50 entries, one write per (module, callback) per 10 minutes (count++ in memory, flushed on the next write), also `Logger::error`. No auto-disable (Q12).
+- **D5** Step index: refreshed when the registry is built and its fingerprint (md5 of the extension step ids + labels + outputs) changed. Entries are added and updated, never removed: a deactivated plugin's steps must stay known. One `update_option( …, false )` (not autoloaded).
+- **D6** Missing plugin (Q2): open / edit / save yes; a node whose step is unknown is kept only when the stored draft or live graph has the same node id with the same step (raw config, ≤ 64 KB); a new unknown node is still "Unknown step type.". Activate / Update blocked with `missing_plugin`. Already active: keeps running, the step is Skipped with "YayMail isn't active." A missing trigger fires nothing (no listener). Health check `missing_plugin`, no fix.
+- **D7** Email capability: an internal interface `Core\Email\EmailStep` (`email_audience()`, `compose_email( config, Values, ?unsubscribe ): array`, `recipient( config, Values )`). `SendEmail`, `SendInternalEmail` and `ExtensionAction` with `email` implement it. `EmailPreview` and run detail read it, not step ids. Sending moves into `Core\Email\EmailDelivery` (recipient → unsubscribed → link → send → `to`), used by `SendEmail::run` and the adapter.
+- **D8** Customer preview sample (Q4a): a trigger that provides `customer` but no `order` / `cart` previews with the newest customer account (`user:ID`); core Send email too.
+- **D9** Templates: PHP chain → graph in `Workflow\Extension\TemplateBuilder` (positions from the same `ROW_GAP` as TS `flow.ts`, branch offset for `then` / `otherwise`). Shipped in meta (`automation.templates`), merged with the TS registry; the dev-only TS throw stays on core templates.
+- **D10** Iframe editor: URL built by REST `POST /workflows/{id}/editor` (`{ nodeId, config }` → `{ url, sample }`); the app adds `yaymatik_embed=1&yaymatik_channel=<crypto.randomUUID()>`. The postMessage checks are exact (`origin`, `source`, `channel`, `version`).
+- **D11** Run detail `result`: the catalog sends `result` (default the summary); `runResults.ts` fills `%output%` / `%field%` from the step's output and input for any step without a hand-written result. Email-capability actions default to "Sent to %to%".
+- **D12** Ids: `^[a-z][a-z0-9_]{2,63}$`, prefixed with module id + `_`; reserved module ids from §5.1.
+- **D13** (was O1, approved) CP9 example plugin is built from the acme reference: points trigger with `facts` + transient dedupe, add-points action, no-order email action with an iframe designer, template. It adds what acme lacks: data item `acme_rewards_reward` + `privacy_subjects` + `once_per` on a "Reward redeemed" trigger, and a `setup_issue`. No currency-switch trigger; CP0 changes contract §14 / §17 to say so.
+- **D14** Real event for browser checks: the acme reference (`.claude/local/034-example-acme.php`, updated locally in CP0, not committed) and CP9's example hook `woocommerce_order_status_completed` and add `floor( order total )` points to the order's customer (accounts only) through `acme_rewards_add()`, which fires `acme_points_earned`. Browser steps fire it by completing an order in WooCommerce › Orders and reloading admin pages (WP-Cron runs the jobs); no wp-cli in browser steps.
+- **D15** Extension templates are checked only when the registry fingerprint changes (D5): `TemplateCheck` runs then, and the hidden ids + reasons are stored in the step index option. Admin page loads read the stored list; they never re-run the check.
+
+## Checkpoints
+
+Per CP: stop hook green; `/code-review high` on risk 2–3; commit `feat|fix|docs: plan 034 CPn — …`; mark ✅ with hash here.
+
+### PR A — `jack/feature/034a-extension-api`
+
+#### CP0 — Contract, docs, 033 tester steps — Risk 1
+
+- **Files**
+  - `docs/extension-api.md`: commit as is, plus the M-row wording fixes that need no code (M8, M9, M10, M11, M12, M14), §14 / §17 per D13 (points trigger, no currency-switch trigger), and the title without "(DRAFT for plan 034)".
+  - `.claude/local/034-example-acme.php` (local, gitignored): add the D14 order-completed hook.
+  - `docs/workflow-core-design.md`: §5 (step contract: `setup_issue` on Step, `context_error`, email capability, "public API in docs/extension-api.md"), §8 line 162 (experimental until 1.1 → "frozen by Extension API v1, see docs/extension-api.md"), §9 row line 177 "step from a missing plugin" → the Q2 rule and the `missing_plugin` check, §10 P4 → "1.1, plan 034", line 117.
+  - `docs/workflow-core-decisions.md`: new section "EX. Extension API v1" with rows Q1–Q12, N8, the Q2 rule in one line, and why (turning on a workflow that will skip its main step misleads; stopping on deactivation cancels customers' waiting runs).
+  - `docs/ROADMAP-dev.md` V12.2 (inactive plugin handled softly → 034 CP4), P4 → 1.1 / 034; `docs/ROADMAP-v1.0.md:302` API freeze line points at docs/extension-api.md.
+  - `.claude/plans/dev/034-extension-api.md` (this file).
+  - `.claude/plans/dev/033-pr.md` browser steps, see below.
+- **033-pr.md fix.** Today B2 turns off Cart reminder while B1's run still waits; Deactivate cancels waiting runs (RepositoryWorkflows.php:41–44), so B1's email never comes. New § 1 Setup: in both workflows set the Wait step to **5 minutes** for this test. New § 2 in four phases:
+  - **Phase 1 — Cart reminder on.** B1. Wait until the run is **Completed** and A has the email (≈ 20–25 min abandon + 5 min wait).
+  - **Phase 2 — Cart off, Checkout on.** B2 (both leaves).
+  - **Phase 3 — both on.** B3 and B4 together (C's cart and A's cart again in the same waiting window).
+  - **Phase 4.** B5 privacy.
+  - End: set both Wait steps back to **1 hour** and Update. § 0 timing line and § 3 table updated (B1 "Completed, email after ~5 min").
+- **Tests**: none (docs). `pnpm lint` unaffected.
+- **Browser**: none.
+
+#### CP1 — Error isolation + diagnostics + Health check › Extensions — Risk 2
+
+- **Files**
+  - New `includes/Workflow/Extension/Diagnostics.php` (`record( module, callback, message )`, `recent( hours )`, D4), `Guard.php` (`call()`).
+  - `ModuleRegistry.php`: guarded `new $class()` at :55, :90, :146 (each throw → that one left out + diagnostic); second claim of an id (:56, :91, :147) → diagnostic.
+  - `Core/Runtime/Dispatcher.php`: `listen()` at :85 guarded per trigger (that trigger off for the request); `refs` / `subject` / `matches` / `context` failures in `dispatch()` (:239) and `skip_runs()` also record a diagnostic naming the module.
+  - `Core/Definition/Catalog.php`: `step()` guarded per step; `Core/Data/DataRegistry.php` `to_client()` guarded per item.
+  - `Core/Data/Template.php` + `Conditions/Criteria.php` (or `DataItem::display()` / the Scope read): field `value` / `display` / `options` throw → empty value + diagnostic.
+  - `Core/Runtime/HealthCheck.php`: `extensions(): array` (module id, label, `requires_api` or null, errors in 24 h with message / callback / count / last time). `Engine/API/HealthRoutes.php`: `/health/checks` returns `extensions` beside the checks.
+  - TS: `routes/settings/api/health.api.ts` type, `HealthPanel.tsx` "Extensions" block (one row per non-core module; "No problems" or the error list).
+  - Module for diagnostics: the step's / item's owner from `ModuleRegistry::plugins()`.
+- **Tests**: `tests/Unit/Workflow/Extension/DiagnosticsTest.php` (cap 50, 10-minute throttle, count), `ModuleRegistryTest` (a throwing module / step / item is left out, the rest loads; duplicate claim recorded), `Core/Runtime/DispatcherTest` (a throwing `listen` leaves other triggers listening). Vitest `HealthPanel.test.tsx` (Extensions block). `check-late-module` extended: a module whose `listen` throws doesn't break the request (wp-cli, exit 0, diagnostic written).
+- **Docs**: design §9 (Health check › Extensions row), `.claude/docs/context-php-backend.md` one line on `Guard` if it has a "Runtime" pointer.
+- **Browser** (UI only)
+  - 0 Understand: Settings › Health check gets an Extensions block listing other plugins' YayMatik modules and their recent errors.
+  - 1 Prepare: local site on the PR A zip or `pnpm dev`.
+  - 2 Steps — **E1** Goal: the block shows on a clean site. Do: Settings › Health check › Check again. Pass when: an "Extensions" block says no other plugin adds to YayMatik. Why: core modules aren't listed.
+  - 3 Results table (E1).
+
+#### CP2 — Public API, registrar, triggers + actions — Risk 2
+
+- **Files**
+  - New `includes/Api/`: `Api.php` (VERSION `'1.0.0'`), `Registrar.php` (`module()`, `supports()`, `api_version()`), `Module.php`, `Field.php`, `Type.php`, `Ref.php`, `Result.php`, `Values.php`, `RunContext.php`, `EmailContext.php` (interface only; used in CP6), `CustomerView.php`, `CartView.php` (interfaces only; filled in CP3). `supports()` lists only features built so far; CP3, CP5–CP8 add theirs.
+  - New `includes/Workflow/Extension/`: `ExtensionModule.php`, `ExtensionTrigger.php`, `ExtensionAction.php`, `Declaration.php` (keys of §5.2–5.4, id rules D12, `requires_api`), `RunValues.php` (Values / RunContext over a Scope), `RefMap.php` (M6).
+  - `ModuleRegistry.php`: fire `yaymatik_register` once inside `modules()` (late `$r->module()` → `_doing_it_wrong()` + diagnostic); `from()`, `collect()`, `data()` accept instances.
+  - `Core/Steps/Step.php`: `setup_issue()` moves up from Trigger (M5); new `context_error()` (M4). `Trigger.php` keeps its override point. `Core/Definition/Validator.php`: `step_error()` calls `context_error()` with `$available`; setup issue per node (code `setup_issue` for non-cart steps). `Core/Runtime/Executor.php` `run_step()` calls `context_error()` with the run's trigger items.
+  - Open categories: `Trigger::category()` / `Action::category()` accept a module-declared category; `Catalog::to_client()` adds `categories` (id → label, core + declared). TS: `localize.d.ts:78` `category?: string`; `StepPicker.tsx:25–33` labels from meta, core labels kept as the fallback map's source in PHP; `WorkflowIssueCode` + `setup_issue`.
+  - `Field::number()` etc. map 1:1 to `Core\Steps\Field` (M3); `suggest` / `rules` stay internal.
+- **Tests**
+  - PHPUnit `tests/Unit/Api/RegistrarTest.php` (once-only hook, inert handle, `requires_api` major / minor, reserved ids, prefix rule, unknown keys), `Api/TypeTest.php` (M1, M2, condition-type mapping), `Api/RefTest.php` (M6 both ways), `Workflow/Extension/ExtensionTriggerTest.php` (listen → emit → refs / subject / matches / `once_per`), `ExtensionActionTest.php` (run → Result → StepResult, outputs filtered, `on_error`, `context_error` with `$available`), `Core/Definition/ValidatorTest.php` (`setup_issue` on an action; `may_refire` from `emits`).
+  - **Loop guard without `emits`** (`Core/Runtime/DispatcherTest.php`): an extension action whose `run` fires its own workflow's trigger synchronously, no `emits` → `start_run` returns 0 for the child event (in_chain), one run total; with `emits` declared → `Validator::warnings()` has `may_refire` and the runtime result is the same.
+  - wp-cli `dev/scripts/check-late-module.sh`: a registrar module added on `plugins_loaded` 20 shows its trigger in `StepRegistry::triggers()` and its action in the catalog; `php -l` of `includes/Api/Type.php` on wp-env-min (PHP 7.4).
+  - Vitest: `StepPicker` renders a declared category with its server label.
+- **Docs**: design §5 (Step::setup_issue, context_error), §8 (registrar is the way in; `yaymatik_modules` internal); contract §16 untouched.
+- **Browser**
+  - 0 Understand: another plugin's trigger and action appear in the pickers, grouped by its own category, with its logo.
+  - 1 Prepare: copy `.claude/local/034-example-acme.php` (with the D14 hook) to `wp-content/plugins/acme-rewards/acme-rewards.php`, delete sections 5 and 6 (email action, template: PR B), add any 24×24 `logo.svg` beside it, activate "Acme Rewards for YayMatik (example)". One customer account with a past order you can complete, or a new order for that customer.
+  - 2 Steps — **E2a** Goal: trigger in the picker. Do: Workflows › Create › Choose trigger, search "points". Pass when: "Customer earned points" shows under Customers with the Acme logo; its form has "Only when at least" (default 1). Why: registrar trigger + server-drawn fields. — **E2b** Goal: action works end to end. Do: build "Customer earned points" → "Add reward points" (Points 10), Activate. In WooCommerce › Orders open the customer's order (total e.g. 25.40) and set it to Completed. Reload the workflow's Workflow runs a few times over a minute or two. Pass when: 1 Completed run; the Add reward points step reads "New balance: 35" (25 from the order + 10); no second run. Why: a registrar trigger and action run like core steps. The second `acme_points_earned` (fired by the action) is stopped by Acme's own hourly transient before YayMatik sees it, so this step does not prove the loop guard; the PHPUnit test in CP2 does, without a transient.
+  - 3 Results (E2a, E2b).
+
+#### CP3 — Data items, data fields, views, trigger facts — Risk 2
+
+- **Files**
+  - `Api/Module.php` `data_item()`, `data_fields()`; new `Workflow/Extension/ExtensionDataItem.php`, `FieldAdapter.php` (public keys → internal field defs; `display` and `block` HTML through `wp_kses_post`).
+  - Core items get extension fields through the existing `yaymatik_data_item_{id}_fields` filter (DataItem.php:79), wrapped so `value` gets the public object.
+  - New `Workflow/Extension/CustomerViewAdapter.php`, `CartViewAdapter.php` (wrap `WC_Order` / `WC_Customer` / `CartCustomer` / reviewer and `SavedCart`, RefResolver.php:65–79).
+  - Trigger facts: `ExtensionTrigger::facts()` (limits of §5.3: scalar types, ≤ 10 keys, ≤ 1 KB per value — cut + diagnostic, JSON-safe). `Core/Steps/Trigger.php` `facts(): array` default `[]`; `Validator::reach()` (:454–480) accepts `trigger.<fact>`; `Validator::variables()` lists them first; `Catalog::step()` sends `facts` for a trigger; condition fields `trigger.<fact>` with the fact's operators (`Conditions/Criteria.php`); `RunPresenter` shows facts in run detail. `sample_facts` feed `SampleValues`.
+  - TS: `localize.d.ts` `facts` on CatalogStepMeta; Insert variable (`steps/core/fields/VariablePicker`, `model/variables`) and condition field list read them; run detail shows them under the trigger step.
+  - `Api/Registrar::supports()` + `data_items`, `data_fields`, `trigger_facts`.
+- **Tests**: PHPUnit `Workflow/Extension/ExtensionDataItemTest.php` (load null → gone, sample), `FieldAdapterTest.php` (kses on display / block, throw → empty + diagnostic), `CustomerViewAdapterTest.php` (each source object), `Core/Definition/ValidatorTest` (fact path valid, unknown fact invalid), `Conditions/CriteriaTest` (rule on a fact), `ExtensionTriggerTest` (fact limits). Vitest: variables list includes `trigger.points`; condition picker offers a fact. `./run.sh meta-fixture`.
+- **Docs**: design §4 (facts in the trigger section, views), contract unchanged.
+- **Browser**
+  - 0 Understand: plugin fields show in conditions and Insert variable; trigger facts read as `trigger.<key>`.
+  - 1 Prepare: as CP2.
+  - 2 Steps — **E3a** Goal: field in a condition. Do: in a workflow on "Order paid", add a condition, pick field. Pass when: Customer › "Points balance" is listed with number operators. Why: `data_fields( 'customer' )`. — **E3b** Goal: fact as variable. Do: workflow on "Customer earned points", add Send email, open Insert variable. Pass when: "Points earned" (`{{ trigger.points }}`) is listed; saving the email with it shows no issue. Why: facts reach Validator and catalog. — **E3c** Goal: run detail. Do: wait an hour after E2b (Acme's throttle) or use another customer; complete one of their orders (total e.g. 42.90) in WooCommerce › Orders; reload Workflow runs and open the new run. Pass when: the run's trigger step shows "Points earned: 42". Why: facts in run detail.
+  - 3 Results (E3a–c).
+
+#### CP4 — Missing plugin (Q2) — Risk 3
+
+- **Files**
+  - New `Workflow/Extension/StepIndex.php` (D5; `get( step_id ): ?array` with module id, module label, kind, step label, output keys).
+  - `Core/Definition/GraphSchema.php` `prepare( $graph, array $stored = [] )`: keep an unknown node when `$stored` has it (D6), raw config ≤ 64 KB, `data.block` kept. `Validator::prepare_changes()` gets the stored graphs; `Engine/API/RestAPI.php` update path (:283) reads the workflow before `prepare_changes()` (draft + live nodes) — the lock section re-reads as today.
+  - `Validator::errors()`: a node whose step is in the index and not registered → `missing_plugin` "This workflow uses YayMail, which isn't active. Activate YayMail to turn the workflow on." (Messages `missingPlugin`), before `no_block` / `no_trigger`. `reach()`: `steps.<node>.<key>` of such a node is not an error.
+  - `Core/Runtime/Executor.php:280–283`: unknown step in the index → Skipped "YayMail isn't active." (M12); not in the index → Failed as today.
+  - `Core/Runtime/HealthCheck.php`: check `missing_plugin` (active workflows with such nodes: count, workflow ids, no fix). TS HealthPanel row with workflow links and a Plugins page link.
+  - Catalog: `inactiveSteps` (id → plugin label, kind, label, outputs) for indexed steps not registered.
+  - TS: `model/structure.ts` accepts inactive steps; `model/validation.ts` mirrors `missing_plugin`; `steps/index.ts` `stepOf()` returns a stub for an inactive step; canvas card greyed with "Needs YayMail — the plugin isn't active."; step panel read-only with the Q2 line; delete allowed. `WorkflowIssueCode` + `missing_plugin`.
+- **Q2 rule, written in four places**: contract §10 (already), design §9 (CP0), decision log EX row (CP0), UI text in the step panel: "You can edit and save this workflow, but you can't turn it on until YayMail is active. If it's already on, it keeps running and skips this step."
+- **Tests**: PHPUnit `Core/Definition/GraphSchemaTest` (stored unknown kept, new unknown refused, 64 KB cap), `ValidatorTest` (`missing_plugin`, merge tags from its outputs), `Core/Runtime/ExecutorTest` (Skipped with reason, run goes on), `Workflow/Extension/StepIndexTest` (fingerprint refresh, entries never removed), `HealthCheckTest`. Vitest: structure + validation with an inactive step; card render. wp-cli `check-late-module` adds: register → index written; drop the module → save keeps the node, activate 400 `missing_plugin`.
+- **Docs**: design §9 table row filled; `.claude/docs/context-php-backend.md` if it lists issue codes.
+- **Browser**
+  - 0 Understand: turning off a plugin greys its steps; the workflow still opens and saves; it can't be activated; an active one keeps running and skips the step.
+  - 1 Prepare: Acme as in CP2. Workflow W1 "Customer earned points → Add reward points", active. Workflow W2 same steps, inactive.
+  - 2 Steps — **E4a** Goal: open and save. Do: Plugins › deactivate Acme; open W2, rename it, Save. Pass when: both Acme cards are greyed with "Needs Acme Rewards — the plugin isn't active."; save succeeds; panel shows the Q2 line. Why: stored unknown nodes are kept. — **E4b** Goal: Activate blocked. Do: click Activate on W2. Pass when: blocked with "This workflow uses Acme Rewards, which isn't active. Activate Acme Rewards to turn the workflow on." Why: `missing_plugin`. — **E4c** Goal: Health check. Do: Settings › Health check › Check again. Pass when: "Active workflows use a plugin that isn't active: 1" links W1. Why: new check. — **E4d** Goal: reactivate. Do: activate Acme; reload W2; Activate. Pass when: cards normal, W2 activates. Why: nothing was rewritten. — **E4e** Goal: an active workflow keeps running and skips the missing step. Do: with Acme active, create W3 "Order paid → Add reward points (10) → Add order note ('W3 ran')" and Activate it. Deactivate Acme. Place a Cash on delivery order as a customer, then set it to Processing in WooCommerce › Orders. Reload W3's Workflow runs a few times. Pass when: 1 Completed run; the Add reward points step is Skipped with "Acme Rewards isn't active."; the order has the note "W3 ran". Why: Q2, an already active workflow keeps running and skips that step.
+  - 3 Results (E4a–e).
+
+#### CP5 — Privacy subjects, contract tests, PR A text — Risk 2
+
+- **Files**
+  - `Api/Module` reads module key `privacy_subjects`; `Core/Runtime/PersonSubjects.php::for_email()` merges each module's subjects (guarded, diagnostic). `supports()` + `privacy_subjects`.
+  - Public-surface snapshot: `tests/Unit/Api/SurfaceTest.php` reflects every public class / method / parameter / return type in `includes/Api/` and compares with `tests/fixtures/extension-api-surface.json`.
+  - Core-steps snapshot (G4): `tests/Unit/Api/CoreStepsTest.php` reads `apps/admin-page/src/test/fixtures/meta.json` (step ids, kinds, config keys, output keys, operator ids, core data item / field keys, categories) and compares with `tests/fixtures/extension-api-core.json`; new `dev/scripts/extension-core.sh` writes `docs/extension-api-core.md` and the JSON from meta.json; the test also fails when the md is stale.
+  - `.claude/plans/dev/034a-pr.md` (Summary, CPs, tests, review notes, browser steps E1–E4 collected).
+- **Tests**: the two snapshots; `Core/Runtime/PersonSubjectsTest` (module subjects merged, throw ignored + diagnostic). `check-privacy-index` adds a run with a module subject found by export.
+- **Docs**: contract §12 points at `docs/extension-api-core.md`; §8 done.
+- **Browser**: none (Tools › Export is WordPress UI; covered by the check script).
+
+### PR B — `jack/feature/034b-extension-ui`
+
+#### CP6 — Email capability — Risk 3
+
+- **Files**
+  - New `Core/Email/EmailStep.php` (interface, D7), `Core/Email/EmailDelivery.php` (from `SendEmail.php:119–133`; footer + headers stay in SendEmail as static helpers `footer()` → public).
+  - `Actions/SendEmail.php`, `Actions/SendInternalEmail.php` implement `EmailStep`; `SendEmail::run` uses `EmailDelivery`.
+  - `ExtensionAction` with `email`: `build` under `Guard` → subject / html / wrap; core renders merge tags (`Template::render_html` with context escaping; subject via `SendEmail::plain_line`); `wrap` true → `WC()->mailer()->wrap_message( subject, html )`; footer inserted before `</body>` (or appended) when `unsubscribe_url()` is missing; `audience` staff → no unsubscribe / List-Unsubscribe; recipient `customer` = `{{ customer.email }}`. Output `to`. Failures "No valid email address." / "Couldn't send the email." / "Couldn't build the email.".
+  - `Core/Email/EmailPreview.php`: `:113` → `instanceof EmailStep`; `:143–153` → `compose_email()`; `values()` (:171–228) adds the customer sample (D8) for core Send email too.
+  - Catalog: `email: 'customer'|'staff'` in client meta; `result` (D11). TS `templates/core/meta.ts:30` `sendsCustomerEmail` reads `stepOf(...).email === 'customer'`; Preview / Send test buttons shown for any step with `email` (B2 panel `defineStep` Actions slot → generic `EmailTools` when catalog says email); `runResults.ts` generic `result` (D11), `send_email` / `send_internal_email` special cases kept only where they differ.
+  - `supports()` + `email`.
+- **Tests**: PHPUnit `Core/Email/EmailDeliveryTest` (unsubscribed → Skipped, invalid → Failed, headers), `Workflow/Extension/ExtensionEmailTest` (merge tags rendered after `build`, footer inserted once, `wrap`, staff audience, throw in `build`), `Core/Email/EmailPreviewTest` (extension step previews, customer sample), `Actions/SendEmailTest` unchanged results.
+  - HTML fidelity (`ExtensionEmailTest`): a full document with `<head><style>`, attributes and nested tables comes out byte-identical except the `{{ }}` tags; no `wpautop`, no kses; a tag inside an attribute (`href="{{ … }}"`, `alt="{{ … }}"`) is escaped for that context (URL / attribute), in text for HTML.
+  - `./run.sh check-orders` before and after CP6: Preview == Send test byte for byte, and the JSON diff is empty, since `SendEmail::run` moves to `EmailDelivery`. Vitest: `sendsCustomerEmail` by capability; `stepResult` generic `result`; Preview button for a catalog email step. `./run.sh meta-fixture`.
+- **Docs**: design §5 email capability; `.claude/docs/context-dev-convention.md` line 35 (an email action needs no TS).
+- **Browser**
+  - 0 Understand: a plugin's email action gets the same Preview, Send test, unsubscribe and "Sent to" as Send email.
+  - 1 Prepare: Acme full file (sections 5 back; template still unused until CP7), one `acme_design` post (any content).
+  - 2 Steps — **E6a** Goal: Preview with a customer sample. Do: workflow "Customer account created → Send rewards email" (pick the design), click Preview. Pass when: Preview shows the Acme HTML with the newest customer's first name and one Unsubscribe link; "Sample: customer …" names a real account. Why: Q4a + footer rule. — **E6b** Goal: Send test. Do: Send test. Pass when: Mail log / inbox has "[Test] …" to your admin email; unsubscribe link goes to `#`. — **E6c** Goal: Use template wording. Do: Browse templates on any core template. Pass when: unchanged texts ("Review the emails, then activate it."). Why: capability replaced the id check.
+  - 3 Results (E6a–c).
+
+#### CP7 — Templates — Risk 2
+
+- **Files**
+  - `Api/Module::template()`; new `Workflow/Extension/TemplateBuilder.php` (chain → nodes / edges / positions, D9), `TemplateCheck.php` (M10 rule: prepare + Validator issues filtered; hidden + diagnostic + `_doing_it_wrong()` under `WP_DEBUG`). Steps limited to §12 core public steps and the module's own. Runs only when the registry fingerprint changes (D15); the hidden ids + reasons go into the step index option with it, and meta reads that list.
+  - Catalog / AdminPage meta: `automation.templates` (id, name, description, category, workflow, createdAt, before[], plugin, graph). `supports()` + `templates`.
+  - TS: `packages/types` `WorkflowTemplate` gets `plugin?`, `before?`; `TemplateWorkflow` opens (M11). `templates/index.ts` merges meta templates after core ones; `pluginsOf` already reads steps. `pages/list/library/TemplatesDialog.tsx` groups extension templates by plugin with name + logo; hidden when the module is inactive (not in meta). `TemplatePreviewPage.tsx` "Before you start" adds `before` lines and, for a step with a setup issue or an empty required field, "Set up <step label> before you activate."
+  - **Setup rule (CP7 must-cover)**: Use template creates the draft (save allows issues); Activate is blocked by the step's `setup_issue` / `invalid_config` until set up.
+- **Tests**: PHPUnit `TemplateBuilderTest` (chain, branches, positions), `TemplateCheckTest` (structural issue → hidden; empty required field / setup issue → kept; foreign plugin step → hidden; not re-run while the fingerprint is unchanged, re-run when it changes). Vitest: registry merge, library group with plugin logo, preview "Before you start" lines, draft from an extension template has the issue on the step. `meta-fixture`.
+- **Docs**: design §6 (extension templates), contract §7 wording (M10, M11).
+- **Browser**
+  - 0 Understand: a plugin's templates show in their own group; one that needs setup can be used but not activated.
+  - 1 Prepare: Acme full file; delete all `acme_design` posts so the email has no design.
+  - 2 Steps — **E7a** Goal: group. Do: Workflows › Browse templates. Pass when: an "Acme Rewards" group with its logo has "Welcome bonus points". — **E7b** Goal: preview. Do: open it. Pass when: Before you start shows "Pick or design the email in Acme Rewards after you add the template." and "Set up Send rewards email before you activate." — **E7c** Goal: use, not activate. Do: Use template, then Activate. Pass when: the draft opens; Activate is blocked on the email step (Design required). Why: CP7 rule. — **E7d** Do: pick a design, Activate. Pass when: activates.
+  - 3 Results (E7a–d).
+
+#### CP8 — Iframe editor — Risk 3
+
+- **Files**
+  - `ExtensionAction` `editor` (field must be a declared text/select field; `url` callable). REST `POST /workflows/{id}/editor` in `Engine/API/RestAPI.php` (`edit_workflows` permission as preview): calls `url` under `Guard`, refuses a non same-origin result (M9) + diagnostic, returns `{ url, sample: { orderId, userId } }`.
+  - `Api::references( step_id, field )`: scans `VersionStore` + workflow drafts for nodes of that step; distinct values (M14).
+  - TS new `steps/core/fields/EditorFrame.tsx` (full-screen modal, iframe without `sandbox`, `useEditorChannel` hook: `ready` → `init` with value, config, sample, locale, variables from `availableVariables()`; `change` (dirty), `save` (value string|number ≤ 191 → `config[field]`, optional `label`, close, refresh Preview), `cancel` / close with dirty confirm, `error` in header; unknown types ignored; posts with `targetOrigin = location.origin`). Button from catalog `editor.button` in the step panel; notice "Design changes apply to live emails at once." (Q3).
+  - `supports()` + `editor_iframe`.
+- **Tests**: Vitest `useEditorChannel.test.ts` (wrong origin / source / channel / version ignored; save writes the field; >191 refused; dirty confirm), `EditorFrame.test.tsx`. PHPUnit `RestAPI` editor route (cross-origin refused), `Api/ReferencesTest`. 
+- **Docs**: contract §5.6 (M9 wording), design §5.
+- **Browser**
+  - 0 Understand: "Customize design" opens the plugin's designer over the workflow; saving fills the step.
+  - 1 Prepare: CP9's example plugin is the first one with a designer page; run E8 after CP9 lands, or with Acme plus its designer page from `dev/example-extension/`.
+  - 2 Steps — **E8a** Goal: open. Do: Send rewards email › Customize design. Pass when: full-screen modal with the designer; header shows the step name. — **E8b** Goal: save. Do: change something, Save in the designer. Pass when: modal closes; Design field shows the new label; Preview reflects it. — **E8c** Goal: dirty close. Do: change, click close. Pass when: asks to confirm. — **E8d** Goal: live notice. Pass when: the panel says "Design changes apply to live emails at once."
+  - 3 Results (E8a–d).
+
+#### CP9 — Example plugin + `./run.sh check-extension` — Risk 2
+
+- **Files**
+  - New `dev/example-extension/acme-rewards.php` (+ `logo.svg`, `designer.php` embedded editor page): the acme reference as the base (fix M8 comment), with the D14 order-completed hook, plus per D13: data item `acme_rewards_reward` with `load`, trigger "Reward redeemed" (subject `acme_rewards_reward:ID`, `once_per` subject), `privacy_subjects`, `setup_issue` on the email action ("Create a design in Acme Rewards first.").
+  - `.wp-env.json` mapping `wp-content/plugins/acme-rewards` → `./dev/example-extension`. Devs run `pnpm wp-env start` after pulling; `034b-pr.md` says so under its setup notes.
+  - New `dev/scripts/check-extension.sh` + `check-extension.php` (wp-env only; added to `check-all` under `wp_env_only`):
+    1. Register: module ok, steps / data / templates in the catalog, Health › Extensions clean.
+    2. Run: active workflow "Customer earned points → Add reward points → Send rewards email" fired by `do_action( 'acme_points_earned', … )`; Wait none; `wp action-scheduler run` as a **background job** (no logged-in user, no `$post`): run Completed, Mail log has the email with rendered merge tags, the Acme unsubscribe link once, `List-Unsubscribe` headers; step "Sent to …"; trigger fact in the scope; loop guard: one run.
+    3. Deactivate (`wp plugin deactivate acme-rewards`): REST GET workflow 200 with the Acme nodes; PUT save unchanged 200; PUT with a new Acme node 400; activate a second inactive workflow → 400 `missing_plugin`; fire a core trigger on an active workflow "Order paid → Add reward points → Add order note" → run Completed, Acme step **Skipped** "Acme Rewards isn't active.", note added; Health `missing_plugin` = 1.
+    4. Reactivate: activate works; the same run path Completes; nothing rewritten (graph hash unchanged).
+    5. Privacy: export for the customer lists the `acme_rewards_reward:` run.
+    6. Measures for the PR: example plugin lines, number of public classes / methods / keys used.
+- **Tests**: the script (PASS/FAIL table), `check-all --wp-env`.
+- **Docs**: contract §14 / §17 already fixed in CP0 (D13); `docs/extension-api.md` "Example" pointer to `dev/example-extension/`; `.claude/docs/context-dev-convention.md` check list line.
+- **Browser**: E8a–d (CP8) now; plus **E9** Goal: a real send from a background job with the designed email. Do: workflow "Customer earned points → Wait (1 minute) → Send rewards email" with a design saved through Customize design, Activate. Complete an order of a customer whose Acme throttle is free (another customer, or an hour later) in WooCommerce › Orders. Reload Workflow runs every minute or so for 2–3 minutes, then open Tools › Mail log. Pass when: the run is Completed; the email step reads "Sent to <customer email>"; Mail log has the Acme email with the customer's first name and points, one Unsubscribe link. Why: the email is built in a WP-Cron job with no logged-in user, as on a live site.
+
+#### CP10 — .pot, docs pass, PR B text — Risk 1
+
+- **Files**: `languages/yaymatik.pot` (`pnpm makepot`, last), `docs/extension-api.md` §16 changelog "1.0.0 (YayMatik 1.1)", `readme.txt` changelog line for 1.1 only if Jack wants it now (else left), `.claude/plans/dev/034b-pr.md` (Summary, CPs, tests, measures from CP9, setup note "run `pnpm wp-env start` after pulling: new `.wp-env.json` mapping", browser steps E6–E9 collected), `docs/ROADMAP-dev.md` marks (✅ V12.2 part / P4).
+- **Tests**: stop hook; `check-all --wp-env`.
+- **Browser**: none.
+
+## Out of scope
+
+- Core `dedupe` for triggers (Q5); derived data items, REST-searched options, meta-type fields (§6.3); Abilities bridge, JS panels, cross-origin iframes, extension condition steps (§13 Drop).
+- Connectors inside YayMail / YayMagic / YayCurrency / YayPricing / YayWholesale (each owner's task, J7).
+- Any schema / `DB_VERSION` change. If one turns out unavoidable: stop and ask.
+- Public `yaymatik_modules` and provides / refs filters for extensions (stay internal for Pro).
+
+## Deviations
+
+- CP0: design §5 gets only the pointer to the public API; `setup_issue` on Step and `context_error` are written in CP2, the email capability in CP6, when they exist (CLAUDE.md docs rule: document only what exists).
+- CP0: the contract's status line pointed at `claude/decisions-034-extension-api.md`, which isn't in the repo; it now points at §15 and decision log § EX.
+
+## Meta
+
+- Target branches: `jack/feature/034a-extension-api` (CP0–CP5), `jack/feature/034b-extension-ui` (CP6–CP10)
+- Base branch: develop (6be688a)
+- PR texts: `.claude/plans/dev/034a-pr.md`, `.claude/plans/dev/034b-pr.md`
