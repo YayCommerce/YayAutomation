@@ -10,6 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     define( 'ABSPATH', __DIR__ . '/' );
 }
 define( 'YAYMATIK_PLUGIN_URL', 'https://example.test/wp-content/plugins/yaymatik/' );
+define( 'YAYMATIK_VERSION', '0.0.0' );
 
 spl_autoload_register(
     static function ( string $class_name ): void {

@@ -98,7 +98,7 @@ final class ExtensionEmailAction extends ExtensionAction implements EmailStep {
                 'unsubscribe' => $url,
             ]
         );
-        $built = Guard::call( $this->module, 'build', fn() => ( $this->args['email']['build'] )( $config, $run ), fn( \Throwable $e ) => $e );
+        $built   = Guard::call( $this->module, 'build', fn() => ( $this->args['email']['build'] )( $config, $run ), fn( \Throwable $e ) => $e );
         if ( ! is_array( $built ) || ! is_string( $built['html'] ?? null ) ) {
             if ( ! $built instanceof \Throwable ) {
                 Diagnostics::record( $this->module, 'build', 'build must return [ subject, html, wrap ].' );

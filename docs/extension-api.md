@@ -347,7 +347,7 @@ $m->template( 'yaymail_order_paid_email', [
     'name'        => __( 'Thank-you email designed in YayMail', 'yaymail' ),
     'description' => __( '…', 'yaymail' ),
     'category'    => 'post_purchase',            // core template categories: recover_carts, post_purchase, customer_lifecycle, alerts
-    'workflow'    => 'yaymail_thank_you',        // optional, default the template id; groups versions ("Other versions")
+    'workflow'    => 'yaymail_thank_you',        // optional, default the template id; groups versions ("Other versions"); starts with the module id + _
     'created'     => '2026-12-01',               // "Newest" sort
     'before'      => [ __( 'Design the email in YayMail after you add the template.', 'yaymail' ) ], // "Before you start" lines
     'steps'       => [
@@ -362,10 +362,10 @@ $m->template( 'yaymail_order_paid_email', [
 ] );
 ```
 
-- **Chain format**, not nodes / edges / positions: core builds the graph and lays it out (as TS `flow.ts` does for core templates). A condition takes `then` / `otherwise`.
+- **Chain format**, not nodes / edges / positions: core builds the graph and lays it out (as TS `flow.ts` does for core templates). A condition takes `then` / `otherwise` and ends its list: the steps after it go under those. Each step has an `id`, unique in the template (lowercase letters, digits, `_` or `-`).
 - A template may use **core public steps (§12)** and **its own module's steps** only. Templates that combine two plugins belong to YayMatik Pro (design P2).
 - Ready content (subject / body) is translated by the plugin with its own text domain (J8). Store-specific values are never baked in at registration (proposal finding 5): use a variable, or leave the field blank where core fills it at run time (high-value alert: blank recipients = the admin email).
-- Core checks each template **on the server** with the same checks as Use template / Activate (`GraphSchema::prepare` + `Validator::errors`). A template is hidden + diagnostic (under `WP_DEBUG` also `_doing_it_wrong()`) when `prepare` fails or it has a structural issue: no trigger, no action, an unlinked or unknown step, missing data, an unknown variable. A step that still needs setup (`setup_issue`, cart tracking off, a required field the template leaves empty) keeps it shown: Use template creates the draft, and Activate is blocked until the step is set up.
+- Core checks each template **on the server** with the same checks as Use template / Activate (`GraphSchema::prepare` + `Validator::errors`). A template is hidden + diagnostic (under `WP_DEBUG` also `_doing_it_wrong()`) when `prepare` fails or it has a structural issue: no trigger, no action, an unlinked or unknown step, missing data, an unknown variable. A step that still needs setup (`setup_issue`, cart tracking off, a required field the template leaves empty) keeps it shown: Use template creates the draft, and Activate is blocked until the step is set up. The check runs when the plugin's steps or templates change, not on every page load.
 - Browse templates shows each module's templates in **its own group with the plugin's name and logo** (`pluginsOf`, plugins.ts:6). Templates of an inactive plugin are not shown.
 
 ## 8. Privacy

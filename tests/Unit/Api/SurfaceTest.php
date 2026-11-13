@@ -42,7 +42,7 @@ final class SurfaceTest extends TestCase {
         }
         ksort( $surface );
         $keys = [ 'features' => self::constant( \YayMatik\Api\Registrar::class, 'FEATURES' ) ];
-        foreach ( [ 'MODULE_KEYS', 'STEP_KEYS', 'TRIGGER_KEYS', 'ACTION_KEYS', 'EMAIL_KEYS', 'DATA_ITEM_KEYS', 'DATA_FIELD_KEYS' ] as $name ) {
+        foreach ( [ 'MODULE_KEYS', 'STEP_KEYS', 'TRIGGER_KEYS', 'ACTION_KEYS', 'EMAIL_KEYS', 'TEMPLATE_KEYS', 'DATA_ITEM_KEYS', 'DATA_FIELD_KEYS' ] as $name ) {
             $keys[ strtolower( $name ) ] = self::constant( \YayMatik\Workflow\Extension\Declaration::class, $name );
         }
         $keys['field_types'] = array_keys( self::constant( \YayMatik\Workflow\Extension\Declaration::class, 'FIELD_TYPES' ) );

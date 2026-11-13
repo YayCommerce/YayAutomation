@@ -3,7 +3,7 @@ import type { WorkflowTemplate } from '@yaymatik/types';
 import { ChevronLeft, Info, TriangleAlert } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { Link, useLocation, useNavigate, useParams } from 'react-router';
-import { __ } from '@wordpress/i18n';
+import { __, sprintf } from '@wordpress/i18n';
 
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -18,6 +18,7 @@ import {
 import { LoadingButton } from '@/components/ui/button';
 import { useHeaderSlot } from '@/routes/layout/useHeaderSlot';
 import { stepsInOrder, triggerOf } from '../../model/graph';
+import { validateWorkflow } from '../../model/validation';
 import { kindMeta } from '../../shared/canvas/NodeCardView';
 import { ReadOnlyCanvas } from '../../shared/canvas/ReadOnlyCanvas';
 import { CreateWorkflowButton } from '../../shared/create/CreateWorkflowButton';
@@ -161,6 +162,11 @@ function TemplateSidePanel({ template, navState }: { template: WorkflowTemplate;
   const setupCoupon = shippingSetupCoupons(template)[0];
   const setupTracking = needsCartTracking(template.graph);
   const setupReviews = needsProductReviews(template.graph);
+  // Another plugin's template may leave a step for the store owner to set up (e.g. its email design).
+  const setupNodes = [
+    ...new Set(validateWorkflow({ name: template.name, graph: template.graph }).flatMap((issue) => issue.nodeId ?? [])),
+  ];
+  const before = template.before ?? [];
 
   return (
     <aside className="bg-background flex w-75 shrink-0 flex-col gap-5 overflow-y-auto border-l p-4.5 text-[13.5px] max-md:max-h-[45%] max-md:w-full max-md:border-t max-md:border-l-0">
@@ -249,9 +255,23 @@ function TemplateSidePanel({ template, navState }: { template: WorkflowTemplate;
       )}
 
       {/* Hidden when nothing is missing. */}
-      {(setupCoupon || setupTracking || setupReviews) && (
+      {(setupCoupon || setupTracking || setupReviews || before.length > 0 || setupNodes.length > 0) && (
         <section className="flex flex-col gap-2">
           <h3 className={groupHeading}>{__('Before you start', 'yaymatik')}</h3>
+          {before.map((line, i) => (
+            <p key={i} className="text-[13px]">
+              {line}
+            </p>
+          ))}
+          {setupNodes.map((nodeId) => (
+            <p key={nodeId} className="text-warning-foreground bg-warning/20 rounded-md px-2.5 py-1.5 text-[13px]">
+              {sprintf(
+                /* translators: %s: step name, e.g. "Send rewards email" */
+                __('Set up %s before you activate.', 'yaymatik'),
+                stepOf(template.graph.nodes.find((node) => node.id === nodeId)!.data)?.label ?? '',
+              )}
+            </p>
+          ))}
           {setupTracking && (
             <CartTrackingWarning
               message={__('Turn on cart tracking. Without it this workflow never starts.', 'yaymatik')}

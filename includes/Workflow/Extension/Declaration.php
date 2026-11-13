@@ -50,6 +50,11 @@ final class Declaration {
 
     private const EMAIL_KEYS = [ 'audience', 'recipient', 'build' ];
 
+    private const TEMPLATE_KEYS = [ 'name', 'description', 'category', 'workflow', 'created', 'before', 'steps' ];
+
+    /** Browse templates' categories (TS `TemplateCategory`). */
+    private const TEMPLATE_CATEGORIES = [ 'recover_carts', 'post_purchase', 'customer_lifecycle', 'alerts' ];
+
     /** Field type => whether its third argument (`options`, `units` or `text`) is required. */
     private const FIELD_TYPES = [
         Field::TEXT        => '',
@@ -205,6 +210,48 @@ final class Declaration {
             }
         }
         return false;
+    }
+
+    /**
+     * Normalized template args, or null when refused. The chain is checked when the registry is built (`TemplateCheck`).
+     *
+     * @param ExtensionModule $module
+     * @param string          $id
+     * @param array           $args
+     */
+    public static function template( ExtensionModule $module, string $id, array $args ): ?array {
+        $what  = "template {$id}";
+        $error = self::own_id_error( $module->id(), $id );
+        foreach ( [ 'name', 'description' ] as $key ) {
+            if ( null === $error && ( ! is_string( $args[ $key ] ?? null ) || '' === trim( $args[ $key ] ) ) ) {
+                $error = "\"{$key}\" is required.";
+            }
+        }
+        if ( null === $error && ! in_array( $args['category'] ?? null, self::TEMPLATE_CATEGORIES, true ) ) {
+            $error = '"category" must be one of: ' . implode( ', ', self::TEMPLATE_CATEGORIES ) . '.';
+        }
+        if ( null === $error && isset( $args['workflow'] ) && ( ! is_string( $args['workflow'] ) || null !== self::own_id_error( $module->id(), $args['workflow'] ) ) ) {
+            $error = "\"workflow\" must start with \"{$module->id()}_\" and be 3–64 lowercase letters, digits or underscores.";
+        }
+        if ( null === $error && isset( $args['created'] ) && ( ! is_string( $args['created'] ) || ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $args['created'] ) ) ) {
+            $error = '"created" must be a date, YYYY-MM-DD.';
+        }
+        if ( null === $error && isset( $args['before'] ) && ( ! is_array( $args['before'] ) || count( array_filter( $args['before'], 'is_string' ) ) !== count( $args['before'] ) ) ) {
+            $error = '"before" must be a list of strings.';
+        }
+        if ( null === $error && ( ! is_array( $args['steps'] ?? null ) || ! $args['steps'] ) ) {
+            $error = '"steps" must be a list of steps, the trigger first.';
+        }
+        if ( null !== $error ) {
+            self::refuse( $module->id(), $what, $error );
+            return null;
+        }
+        self::unknown_keys( $module->id(), $what, $args, self::TEMPLATE_KEYS );
+        return [
+            'workflow' => $args['workflow'] ?? $id,
+            'created'  => $args['created'] ?? '',
+            'before'   => array_values( $args['before'] ?? [] ),
+        ] + $args;
     }
 
     /**

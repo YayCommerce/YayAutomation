@@ -137,9 +137,10 @@ export type TemplateCategory = 'recover_carts' | 'post_purchase' | 'customer_lif
 
 /**
  * The workflow a template is a version of (e.g. the abandoned cart versions). Versions show each
- * other under "Other versions"; "Most popular" sorts by workflow.
+ * other under "Other versions"; "Most popular" sorts by workflow. Another plugin's template names its own.
  */
 export type TemplateWorkflow =
+  | (string & {})
   | 'abandoned_cart'
   | 'abandoned_checkout'
   | 'first_order_thank_you'
@@ -159,6 +160,10 @@ export interface WorkflowTemplate {
   /** ISO date. Sort key for "Newest". */
   createdAt: string;
   graph: WorkflowGraph;
+  /** Another plugin's template (PHP `Module::template()`): its module id, for its own group in the library. */
+  plugin?: WorkflowPlugin;
+  /** "Before you start" lines the plugin wrote. */
+  before?: string[];
 }
 
 /** Codes shared by the TS `validateWorkflow()` and PHP `Validator::errors()`. */

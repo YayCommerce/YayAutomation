@@ -14,8 +14,9 @@ export const categoryLabels: Record<TemplateCategory, string> = {
 
 /**
  * "Most popular" rank until installs are tracked: expected demand, carts first, the staff alert last.
+ * Another plugin's workflows come after these.
  */
-export const workflowRank: Record<TemplateWorkflow, number> = {
+export const workflowRank: Partial<Record<TemplateWorkflow, number>> = {
   abandoned_cart: 0,
   abandoned_checkout: 1,
   first_order_thank_you: 2,
@@ -25,6 +26,9 @@ export const workflowRank: Record<TemplateWorkflow, number> = {
   win_back: 6,
   high_value_order_alert: 7,
 };
+
+/** A workflow's "Most popular" place. */
+export const rankOf = (workflow: TemplateWorkflow) => workflowRank[workflow] ?? Object.keys(workflowRank).length;
 
 /** The graph emails the customer: Use template asks to review the emails before activating. */
 export const sendsCustomerEmail = (graph: WorkflowGraph) =>

@@ -5757,6 +5757,7 @@
             "ruleKeyRequired": "Enter the custom field name.",
             "ruleMetaKey": "This custom field is protected. Choose another one."
         },
+        "templates": [],
         "email": {
             "fromLine": "Example Store <store@example.test>",
             "fromName": "Example Store",

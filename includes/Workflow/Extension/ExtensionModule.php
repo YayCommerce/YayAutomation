@@ -48,6 +48,9 @@ final class ExtensionModule extends Module {
     /** @var ExtensionDataItem[] By id. */
     private $data_items = [];
 
+    /** @var array[] By id. */
+    private $templates = [];
+
     /**
      * @param string        $id
      * @param string        $label
@@ -120,6 +123,32 @@ final class ExtensionModule extends Module {
     /** @return ExtensionDataItem[] By id. */
     public function data_items(): array {
         return $this->data_items;
+    }
+
+    /** @return array[] Template args from `Declaration::template()`, by id. */
+    public function templates(): array {
+        return $this->templates;
+    }
+
+    /**
+     * @param string $id
+     * @param array  $args
+     */
+    public function add_template( string $id, array $args ): bool {
+        if ( ! ( $this->open )() ) {
+            Declaration::too_late( $this->id, "template {$id}" );
+            return false;
+        }
+        if ( isset( $this->templates[ $id ] ) ) {
+            Declaration::refuse( $this->id, "template {$id}", "Template id \"{$id}\" is already declared by this module." );
+            return false;
+        }
+        $args = Declaration::template( $this, $id, $args );
+        if ( null === $args ) {
+            return false;
+        }
+        $this->templates[ $id ] = $args;
+        return true;
     }
 
     /**

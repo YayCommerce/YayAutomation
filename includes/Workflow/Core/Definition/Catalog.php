@@ -11,6 +11,7 @@ use YayMatik\Workflow\Core\Steps\Field;
 use YayMatik\Workflow\Core\Steps\Step;
 use YayMatik\Workflow\Core\Steps\StepRegistry;
 use YayMatik\Workflow\Extension\StepIndex;
+use YayMatik\Workflow\Extension\TemplateBuilder;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -32,7 +33,41 @@ final class Catalog {
             'operatorLabels' => Operators::labels(),
             'always'         => DataRegistry::ALWAYS,
             'messages'       => Messages::all(),
+            'templates'      => self::templates(),
         ];
+    }
+
+    /** Active plugins' templates minus the hidden ones; shape of `WorkflowTemplate` (packages/types/src/workflow.ts). */
+    public static function templates(): array {
+        $hidden = null;
+        $list   = [];
+        foreach ( ModuleRegistry::modules() as $module ) {
+            if ( ! $module instanceof ExtensionModule ) {
+                continue;
+            }
+            $hidden = $hidden ?? StepIndex::hidden_templates();
+            foreach ( $module->templates() as $id => $args ) {
+                $graph = isset( $hidden[ $id ] ) ? null : TemplateBuilder::graph( $args['steps'] );
+                if ( ! is_array( $graph ) ) {
+                    continue;
+                }
+                foreach ( $graph['nodes'] as $i => $node ) {
+                    $graph['nodes'][ $i ]['data']['config'] = (object) $node['data']['config'];
+                }
+                $list[] = [
+                    'id'          => $id,
+                    'name'        => $args['name'],
+                    'description' => $args['description'],
+                    'category'    => $args['category'],
+                    'workflow'    => $args['workflow'],
+                    'createdAt'   => $args['created'],
+                    'before'      => $args['before'],
+                    'plugin'      => $module->id(),
+                    'graph'       => $graph,
+                ];
+            }
+        }
+        return $list;
     }
 
     /**

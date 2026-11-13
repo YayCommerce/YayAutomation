@@ -181,7 +181,7 @@ Per CP: stop hook green; `/code-review high` on risk 2–3; commit `feat|fix|doc
 
 ### PR B — `jack/feature/034b-extension-ui`
 
-#### CP6 — Email capability — Risk 3
+#### ✅ CP6 — Email capability — Risk 3 (196e719)
 
 - **Files**
   - New `Core/Email/EmailStep.php` (interface, D7), `Core/Email/EmailDelivery.php` (from `SendEmail.php:119–133`; footer + headers stay in SendEmail as static helpers `footer()` → public).
@@ -295,6 +295,13 @@ Per CP: stop hook green; `/code-review high` on risk 2–3; commit `feat|fix|doc
 - CP6: run detail: `send_email` / `send_internal_email` keep their own lines; other plugins' actions use the catalog `result` (`%key%` from the output, else the config). An email action's default is "Sent to %to%".
 - CP6: `./run.sh meta-fixture` now skips every active plugin but WooCommerce and YayMatik and ignores the step index, so an extension on the dev site (Acme, later `dev/example-extension`) never enters the fixture. The local site's role list changed since PR A (DB drift): the fixture keeps PR A's role lists so the diff shows only the `email` keys.
 - CP6 (review, not changed): a staff email action sends to one address (contract §5.5 `recipient` is one field); YayMatik merge tags typed into data a plugin puts into its HTML are rendered too (Q4b, agreed); `sendsCustomerEmail` doesn't know an inactive plugin's email step (templates of inactive plugins aren't shown, CP7).
+- CP7: the template check has its own fingerprint (`checked` in the step index option): `YAYMATIK_VERSION`, the extension module ids, their step ids and each chain as written. The step entries' fingerprint stays PR A's. The hidden list (`templates`) is recomputed in full when `checked` changes.
+- CP7: owners for "core public steps or its own module's" come from the registry (`ModuleRegistry::plugins()`: `yaymatik`, `woocommerce`), then from the modules being checked (first owner wins).
+- CP7: the Validator reports one issue per step, so a step whose first issue is a field the template left blank isn't checked further (e.g. a bad merge tag in the same step); Activate still catches it after the field is set. A blank field = missing, `''`, `0`, `'0'`, `null` or `[]` in the template's config.
+- CP7: "Set up <step> before you activate." comes from the editor's own check of each step (`firstIssue`: a required field left blank, a TS-known check). A plugin's `setup_issue` is server-only, so the preview doesn't list it; Activate does.
+- CP7: TS `TemplateCategory` stays closed (a plugin uses the four core categories, refused otherwise); `TemplateWorkflow` opens; `workflowRank` becomes partial and `rankOf()` puts other plugins' workflows after core's. `createTemplateRegistry( core, extensions )`: the dev-only throw checks core's only. Templates of plugins in the library: core's grid first, then one section per plugin (`<h3>` with its logo and name), each with the same sort and filters.
+- CP7: tests define `YAYMATIK_VERSION` (`0.0.0`) in `tests/bootstrap.php`.
+- CP7 (review): a template's `workflow` must start with the module id + `_` (else it could join core's versions or another plugin's). "Set up <step>" lines come from `validateWorkflow()` (one per step with an issue). Not changed: a falsy value (`0`) counts as blank (contract §7's own example uses `design_id => 0`); a hidden template's reason is a diagnostic in Health check › Extensions for 24 h, as every diagnostic (D4); the step index labels are translated, so on a site where admins use different locales its fingerprint (PR A) changes per locale and the option is rewritten. The template check isn't rerun then, since its fingerprint has no labels.
 
 ## Meta
 

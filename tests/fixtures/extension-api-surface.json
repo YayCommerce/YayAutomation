@@ -38,6 +38,7 @@
             "data_fields": "(string $item_id, array $fields): bool",
             "data_item": "(string $id, array $args): bool",
             "ok": "(): bool",
+            "template": "(string $id, array $args): bool",
             "trigger": "(string $id, array $args): bool"
         }
     },
@@ -77,7 +78,8 @@
             "data_fields",
             "trigger_facts",
             "privacy_subjects",
-            "email"
+            "email",
+            "templates"
         ],
         "module_keys": [
             "id",
@@ -118,6 +120,15 @@
             "audience",
             "recipient",
             "build"
+        ],
+        "template_keys": [
+            "name",
+            "description",
+            "category",
+            "workflow",
+            "created",
+            "before",
+            "steps"
         ],
         "data_item_keys": [
             "label",

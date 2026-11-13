@@ -59,6 +59,16 @@ final class Module {
     }
 
     /**
+     * A ready-made workflow in Browse templates (docs/extension-api.md §7).
+     *
+     * @param string $id
+     * @param array  $args
+     */
+    public function template( string $id, array $args ): bool {
+        return $this->module ? $this->module->add_template( $id, $args ) : false;
+    }
+
+    /**
      * A picker section for this module's steps.
      *
      * @param string $id

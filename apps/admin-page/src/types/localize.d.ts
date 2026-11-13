@@ -1,4 +1,4 @@
-import type { StepId, WorkflowNodeKind, WorkflowPlugin } from '@yaymatik/types';
+import type { StepId, WorkflowNodeKind, WorkflowPlugin, WorkflowTemplate } from '@yaymatik/types';
 
 /** PHP `Workflow\ModuleRegistry::to_client()`. */
 export interface PluginMeta {
@@ -194,6 +194,8 @@ declare global {
         always: string[];
         /** PHP `Core\Definition\Messages::all()`. Same as `model/messages.ts`. */
         messages: Record<string, string>;
+        /** PHP `Catalog::templates()`: active plugins' templates, built and checked on the server. */
+        templates: WorkflowTemplate[];
         /** WooCommerce's sender. `fromName` is plain text, may be blank. */
         email: { fromLine: string; fromName: string; fromAddress: string };
       };
