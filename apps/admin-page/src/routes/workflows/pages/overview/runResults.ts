@@ -92,12 +92,28 @@ const results: Partial<Record<StepId, ResultText>> = {
   },
 };
 
+const placeholderText = (value: unknown) =>
+  Array.isArray(value) ? value.map(String).join(', ') : typeof value === 'number' ? String(value) : text(value);
+
+/** Another plugin's `result` line: each `%key%` from the step's output, else its config. */
+const catalogResult = (step: RunStepRow) => {
+  const line = step.stepType ? window.yayMatikMeta.automation.steps[step.stepType]?.result : undefined;
+  if (!line) return null;
+  return line.replace(/%([a-z_][a-z0-9_]*)%/g, (_, key: string) =>
+    placeholderText(key in step.output ? step.output[key] : step.input[key]),
+  );
+};
+
 /** What a step did ("Yes", "Sent to a@b.com"), why it didn't, or else its card summary ("Set to Completed"). */
 export function stepResult(step: RunStepRow, run: RunContext): string {
   if (step.status === 'skipped' || step.status === 'failed' || step.status === 'cancelled') return step.error ?? '';
   if (step.status !== 'running') {
     const result = step.stepType && results[step.stepType];
     if (result) return result(step, run);
+    if (step.status === 'completed') {
+      const line = catalogResult(step);
+      if (line) return line;
+    }
   }
   return summary(step, run);
 }

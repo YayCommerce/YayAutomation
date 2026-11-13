@@ -16,6 +16,9 @@ final class FakeMailer {
     /** @var string[] Headers of each send, in order; '' when none were passed. */
     public $headers = [];
 
+    /** @var callable|null Called inside send(), e.g. to read the filters set while sending. */
+    public $on_send = null;
+
     /** @var FakeWcEmail[] WooCommerce's emails, keyed by class name. */
     public $emails = [];
 
@@ -31,6 +34,9 @@ final class FakeMailer {
     public function send( $to, $subject, $body, $headers = '' ) {
         $this->sent[]    = [ $to, $subject, $body ];
         $this->headers[] = $headers;
+        if ( $this->on_send ) {
+            ( $this->on_send )();
+        }
         return $this->succeeds;
     }
 }

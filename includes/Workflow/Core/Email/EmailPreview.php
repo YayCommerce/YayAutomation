@@ -3,17 +3,17 @@ namespace YayMatik\Workflow\Core\Email;
 
 use YayMatik\Workflow\Core\Cart\SavedCart;
 use YayMatik\Workflow\Core\Data\DataRegistry;
+use YayMatik\Workflow\Core\Data\Ref;
 use YayMatik\Workflow\Core\Data\RefResolver;
 use YayMatik\Workflow\Core\Storage\CartStore;
 use YayMatik\Workflow\DataItems\CartData;
+use YayMatik\Workflow\DataItems\CustomerData;
 use YayMatik\Workflow\DataItems\OrderData;
 use YayMatik\Workflow\Core\Data\SampleValues;
 use YayMatik\Workflow\Core\Data\Scope;
 use YayMatik\Workflow\Core\Definition\GraphSchema;
 use YayMatik\Workflow\Core\Definition\Validator;
 use YayMatik\Workflow\Core\Runtime\Executor;
-use YayMatik\Workflow\Actions\SendEmail;
-use YayMatik\Workflow\Actions\SendInternalEmail;
 use YayMatik\Workflow\Core\Steps\Step;
 use YayMatik\Workflow\Core\Steps\StepRegistry;
 use YayMatik\Workflow\Core\Steps\Trigger;
@@ -45,23 +45,24 @@ final class EmailPreview {
      * @param mixed    $graph
      * @param string   $node_id
      * @param mixed    $config
-     * @param int|null $order_id Null = the latest paid order (a cart trigger: the newest cart), 0 = made-up data.
-     * @return array|\WP_Error [ 'subject', 'heading', 'html' (wrapped, styles inlined), 'to', 'sample',
-     *                         'order' (the order's number; null with made-up data), 'sampleProducts' (grid kinds
-     *                         filled with the store's newest products) ]
+     * @param int|null $order_id Null = the latest paid order (a cart trigger: the newest cart; a customer-only
+     *                           trigger: the newest customer account), 0 = made-up data.
+     * @return array|\WP_Error [ 'subject', 'heading', 'html' (as sent), 'to', 'sample', 'order' (number or null),
+     *                         'customer' (account name or null), 'sampleProducts' (grid kinds filled with newest products) ]
      */
     public static function render( $graph, string $node_id, $config, ?int $order_id = null ) {
-        $email = self::compose( $graph, $node_id, $config, $order_id );
+        $email = self::compose( $graph, $node_id, $config, $order_id, false );
         if ( is_wp_error( $email ) ) {
             return $email;
         }
         return [
             'subject'        => $email['subject'],
             'heading'        => $email['heading'],
-            'html'           => self::inline_styles( $email['body'] ),
+            'html'           => $email['raw'] ? $email['body'] : self::inline_styles( $email['body'] ),
             'to'             => $email['to'],
             'sample'         => $email['sample'],
             'order'          => $email['order'],
+            'customer'       => $email['customer'],
             'sampleProducts' => $email['sample_products'],
         ];
     }
@@ -80,12 +81,12 @@ final class EmailPreview {
         if ( ! is_email( $to ) ) {
             return new \WP_Error( 'yaymatik_no_email', __( 'Your account has no valid email address.', 'yaymatik' ), [ 'status' => 400 ] );
         }
-        $email = self::compose( $graph, $node_id, $config, $order_id );
+        $email = self::compose( $graph, $node_id, $config, $order_id, true );
         if ( is_wp_error( $email ) ) {
             return $email;
         }
         $subject = self::TEST_PREFIX . $email['subject'];
-        if ( ! WC()->mailer()->send( $to, $subject, $email['body'], $email['headers'] ) ) {
+        if ( ! EmailDelivery::send( $to, [ 'subject' => $subject ] + $email ) ) {
             return new \WP_Error( 'yaymatik_mail_failed', __( 'Couldn’t send the test email.', 'yaymatik' ), [ 'status' => 500 ] );
         }
         return [
@@ -101,9 +102,10 @@ final class EmailPreview {
      * @param string   $node_id
      * @param mixed    $config
      * @param int|null $order_id
-     * @return array|\WP_Error Compose output + `to`, `sample`, `order`, `sample_products`.
+     * @param bool     $test     Send test.
+     * @return array|\WP_Error Compose output + `to`, `sample`, `order`, `customer`, `sample_products`.
      */
-    private static function compose( $graph, string $node_id, $config, ?int $order_id ) {
+    private static function compose( $graph, string $node_id, $config, ?int $order_id, bool $test ) {
         $graph = is_array( $graph ) ? self::with_config( $graph, $node_id, $config ) : $graph;
         // A step of a plugin that's off stays in the graph, as in the saved workflow.
         $graph = GraphSchema::prepare( $graph, is_array( $graph['nodes'] ?? null ) ? array_filter( $graph['nodes'], fn( $node ) => is_array( $node ) && null !== StepIndex::inactive( (string) ( $node['data']['block'] ?? '' ) ) ) : [] );
@@ -113,7 +115,7 @@ final class EmailPreview {
         $nodes = GraphSchema::by_id( $graph['nodes'] );
         $node  = $nodes[ $node_id ] ?? null;
         $step  = $node && $node['data']['block'] ? StepRegistry::get( $node['data']['block'] ) : null;
-        if ( ! $step instanceof SendEmail && ! $step instanceof SendInternalEmail ) {
+        if ( ! $step instanceof EmailStep ) {
             return new \WP_Error( 'yaymatik_not_email', __( 'Only email steps can be previewed.', 'yaymatik' ), [ 'status' => 400 ] );
         }
 
@@ -140,24 +142,25 @@ final class EmailPreview {
             );
         }
 
-        $config                                    = $step->sanitize( $node['data']['config'] );
-        $kinds                                     = self::grid_kinds( $config );
-        list( $values, $sample, $order, $missing ) = self::values( $graph, $nodes, $node_id, $order_id, $kinds );
-        $build                                     = function () use ( $step, $config, $values ) {
-            if ( $step instanceof SendEmail ) {
-                // No unsubscribe link (`#`) or List-Unsubscribe header: neither may carry a real customer's token.
-                $email       = $step->compose( $config, $values, null );
-                $email['to'] = SendEmail::recipient( $config, $values );
-                return $email;
-            }
-            $email       = $step->compose( $config, $values ) + [ 'headers' => "Content-Type: text/html\r\n" ];
-            $email['to'] = (string) $config['recipients'];
+        $config = $step->sanitize( $node['data']['config'] );
+        $kinds  = self::grid_kinds( $config );
+        list( $values, $sample, $order, $missing, $customer ) = self::values( $graph, $nodes, $node_id, $order_id, $kinds );
+        // No unsubscribe link (`#`) or List-Unsubscribe header: neither may carry a real customer's token.
+        $build = function () use ( $step, $config, $values, $test ) {
+            $email       = $step->compose_email( $config, $values, null, $test );
+            $email['to'] = $step->email_recipient( $config, $values );
             return $email;
         };
-        $email                                     = $missing ? ProductGrid::with_newest_when_empty( $build ) : $build();
-        $email['sample']                           = $sample;
-        $email['order']                            = $order;
-        $email['sample_products']                  = $missing;
+        try {
+            $email = $missing ? ProductGrid::with_newest_when_empty( $build ) : $build();
+        } catch ( \RuntimeException $e ) {
+            // Another plugin's `build` failed; the reason is in Health check › Extensions.
+            return new \WP_Error( 'yaymatik_email_build', htmlspecialchars_decode( $e->getMessage(), ENT_QUOTES ), [ 'status' => 400 ] );
+        }
+        $email['sample']          = $sample;
+        $email['order']           = $order;
+        $email['customer']        = $customer;
+        $email['sample_products'] = $missing;
         return $email;
     }
 
@@ -169,7 +172,7 @@ final class EmailPreview {
      * @param string   $node_id
      * @param int|null $order_id
      * @param string[] $kinds
-     * @return array [ Values, bool $sample, string|null $order_number, string[] $missing grid kinds ]
+     * @return array [ Values, bool $sample, string|null $order_number, string[] $missing grid kinds, string|null $customer name ]
      */
     private static function values( array $graph, array $nodes, string $node_id, ?int $order_id, array $kinds ): array {
         $trigger = null;
@@ -187,6 +190,7 @@ final class EmailPreview {
         $refs     = null;
         $resolver = null;
         $missing  = [];
+        $customer = null;
         if ( in_array( OrderData::ID, $provides, true ) ) {
             if ( null === $order_id && $kinds ) {
                 // Each order loaded once: what it has decides both the pick and what the preview fills in.
@@ -213,6 +217,10 @@ final class EmailPreview {
                     },
                 ] + RefResolver::default_loaders()
             );
+        } elseif ( [ CustomerData::ID ] === array_values( array_diff( $provides, DataRegistry::ALWAYS ) ) && 0 !== $order_id ) {
+            $user     = self::newest_customer();
+            $refs     = $user ? [ CustomerData::ID => new Ref( CustomerData::ID, 'user:' . $user->ID ) ] : null;
+            $customer = $user ? $user->display_name : null;
         }
 
         $scope = new Scope(
@@ -226,9 +234,26 @@ final class EmailPreview {
         $scope->set_output_display( Executor::output_display( $nodes, [ StepRegistry::class, 'get' ] ) );
         if ( $refs ) {
             $order = $order_id ? wc_get_order( $order_id ) : null;
-            return [ $scope, false, $order ? (string) $order->get_order_number() : null, $missing ];
+            return [ $scope, false, $order ? (string) $order->get_order_number() : null, $missing, $customer ];
         }
-        return [ new SampleValues( $scope, array_intersect_key( DataRegistry::items(), array_flip( $provides ) ) ), true, null, [] ];
+        return [ new SampleValues( $scope, array_intersect_key( DataRegistry::items(), array_flip( $provides ) ) ), true, null, [], null ];
+    }
+
+    /**
+     * The newest customer account, for a trigger whose only data is the customer.
+     *
+     * @return \WP_User|null
+     */
+    private static function newest_customer() {
+        $users = get_users(
+            [
+                'role'    => 'customer',
+                'orderby' => 'registered',
+                'order'   => 'DESC',
+                'number'  => 1,
+            ]
+        );
+        return $users ? $users[0] : null;
     }
 
     /**

@@ -191,7 +191,7 @@ export interface WorkflowIssue {
 export interface EmailPreview {
   subject: string;
   heading: string;
-  /** The whole email (WooCommerce wrapper, styles inlined), for an iframe. */
+  /** The whole email as sent (WooCommerce wrapper with styles inlined, or a plugin's own document), for an iframe. */
   html: string;
   /** Who it goes to, variables filled in. */
   to: string;
@@ -199,6 +199,8 @@ export interface EmailPreview {
   sample: boolean;
   /** The number of the order whose data it shows; null with made-up values. */
   order: string | null;
+  /** A trigger with a customer but no order or cart: the account whose data it shows; else null. */
+  customer: string | null;
   /** Product grids the email shows filled with the store's newest products: no recent order has any. */
   sampleProducts: ProductGridKind[];
 }

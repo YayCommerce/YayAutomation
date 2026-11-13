@@ -7,10 +7,16 @@ command -v wp >/dev/null || { echo "Missing: wp-cli"; exit 1; }
 out=apps/admin-page/src/test/fixtures/meta.json
 mkdir -p "$(dirname "$out")"
 
+# Core only: other active plugins are skipped (an extension such as dev/example-extension would add its steps).
+plugin=$(basename "$PWD")
+skip=$(wp ${WP_PATH:+--path="$WP_PATH"} plugin list --status=active --field=name | grep -vxF -e woocommerce -e "$plugin" | paste -sd, -)
+
 # English labels; site-specific and per-request values replaced. WooCommerce option lists (statuses,
 # payment methods) still come from the site that ran it, so regenerate from a plain WooCommerce install.
-wp ${WP_PATH:+--path="$WP_PATH"} eval '
+wp ${WP_PATH:+--path="$WP_PATH"} ${skip:+--skip-plugins="$skip"} eval '
 switch_to_locale( "en_US" );
+// Steps a skipped extension left in the step index would show as inactive steps.
+add_filter( "pre_option_yaymatik_extension_steps", fn() => [] );
 // The sender is read by SendInternalEmail (field text and automation.email): never the dev site sender.
 add_filter( "pre_option_woocommerce_email_from_name", fn() => "Example Store" );
 add_filter( "pre_option_woocommerce_email_from_address", fn() => "store@example.test" );

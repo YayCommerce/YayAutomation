@@ -46,7 +46,9 @@ final class Declaration {
 
     private const MAX_FACTS = 10;
 
-    private const ACTION_KEYS = [ 'requires', 'run', 'outputs', 'sample_outputs', 'on_error', 'result', 'emits' ];
+    private const ACTION_KEYS = [ 'requires', 'run', 'outputs', 'sample_outputs', 'on_error', 'result', 'emits', 'email' ];
+
+    private const EMAIL_KEYS = [ 'audience', 'recipient', 'build' ];
 
     /** Field type => whether its third argument (`options`, `units` or `text`) is required. */
     private const FIELD_TYPES = [
@@ -140,22 +142,69 @@ final class Declaration {
             ?? self::list_error( $args, 'requires', false )
             ?? self::items_error( $args['requires'] ?? [] )
             ?? self::list_error( $args, 'emits', false )
-            ?? self::callable_error( $args, [ 'run' ], [ 'sample_outputs' ] );
+            ?? ( isset( $args['email'] ) ? self::email_error( $args ) : self::callable_error( $args, [ 'run' ], [ 'sample_outputs' ] ) );
         if ( null === $error && isset( $args['on_error'] ) && ! in_array( $args['on_error'], [ Step::ON_ERROR_STOP, Step::ON_ERROR_CONTINUE ], true ) ) {
             $error = '"on_error" must be "stop" or "continue".';
+        }
+        if ( null === $error && isset( $args['result'] ) && ! is_string( $args['result'] ) ) {
+            $error = '"result" must be a string.';
         }
         $fields  = null === $error ? self::fields( $module->id(), $args['fields'] ?? [] ) : null;
         $outputs = null === $error && ! is_string( $fields ) ? self::outputs( $module->id(), $args['outputs'] ?? [] ) : null;
         $error   = $error ?? ( is_string( $fields ) ? $fields : null ) ?? ( is_string( $outputs ) ? $outputs : null );
+        if ( null === $error && isset( $args['email'] ) && 'customer' !== $args['email']['recipient'] && ! self::has_field( $fields, $args['email']['recipient'] ) ) {
+            $error = '"email" "recipient" must be "customer" or a key of "fields".';
+        }
         if ( null !== $error ) {
             self::refuse( $module->id(), $what, $error );
             return null;
         }
         self::unknown_keys( $module->id(), $what, $args, array_merge( self::STEP_KEYS, self::ACTION_KEYS ) );
+        if ( isset( $args['email'] ) ) {
+            self::unknown_keys( $module->id(), "{$what} email", $args['email'], self::EMAIL_KEYS );
+            $args['email'] += [ 'audience' => 'customer' ];
+        }
         return [
             'fields'  => $fields,
             'outputs' => $outputs,
         ] + $args;
+    }
+
+    /**
+     * An email action: core runs it, so it has no `run` or `outputs` of its own (docs/extension-api.md §5.5).
+     *
+     * @param array $args
+     */
+    private static function email_error( array $args ): ?string {
+        $email = $args['email'];
+        if ( ! is_array( $email ) ) {
+            return '"email" must be [ audience, recipient, build ].';
+        }
+        foreach ( [ 'run', 'outputs', 'sample_outputs' ] as $key ) {
+            if ( isset( $args[ $key ] ) ) {
+                return "An email action has no \"{$key}\": core sends it and outputs \"to\".";
+            }
+        }
+        if ( isset( $email['audience'] ) && ! in_array( $email['audience'], [ 'customer', 'staff' ], true ) ) {
+            return '"email" "audience" must be "customer" or "staff".';
+        }
+        if ( ! is_string( $email['recipient'] ?? null ) ) {
+            return '"email" needs "recipient": "customer" or a field key.';
+        }
+        return is_callable( $email['build'] ?? null ) ? null : '"email" "build" must be a callable.';
+    }
+
+    /**
+     * @param Field[] $fields
+     * @param string  $key
+     */
+    private static function has_field( array $fields, string $key ): bool {
+        foreach ( $fields as $field ) {
+            if ( $field->key() === $key ) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

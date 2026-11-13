@@ -56,6 +56,28 @@ describe('stepResult', () => {
     ).toBe('Set to Completed');
   });
 
+  it('fills another plugin’s result line from the step’s output, then its config', () => {
+    const steps = window.yayMatikMeta.automation.steps;
+    const stepType = 'acme_add_points' as Row['stepType'];
+    steps[stepType!] = {
+      ...steps.add_order_note!,
+      plugin: 'acme',
+      summary: 'Add %points%',
+      result: 'New balance: %balance% (+%points%)',
+    };
+    try {
+      expect(stepResult(row({ stepType, input: { points: 10 }, output: { balance: 35 } }), run)).toBe(
+        'New balance: 35 (+10)',
+      );
+      expect(stepResult(row({ stepType, output: { balance: [1, 2] } }), run)).toBe('New balance: 1, 2 (+)');
+      steps[stepType!] = { ...steps[stepType!]!, result: '' };
+      // No result line: the card summary (none here: the step isn't in this test's registry).
+      expect(stepResult(row({ stepType, input: { points: 10 } }), run)).toBe('');
+    } finally {
+      delete steps[stepType!];
+    }
+  });
+
   it('says why a step was skipped, failed or cancelled', () => {
     for (const status of ['skipped', 'failed', 'cancelled'] as const) {
       expect(stepResult(row({ stepType: 'send_email', status, error: 'The customer unsubscribed.' }), run)).toBe(

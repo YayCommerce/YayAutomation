@@ -310,6 +310,20 @@ if ( ! function_exists( 'get_userdata' ) ) {
     }
 }
 
+if ( ! function_exists( 'get_users' ) ) {
+    // Test users filtered by role, newest registered first, cut to the number asked for.
+    function get_users( $args = [] ) {
+        $users = array_values(
+            array_filter(
+                $GLOBALS['yaymatik_test_users'] ?? [],
+                fn( $user ) => ! isset( $args['role'] ) || in_array( $args['role'], (array) ( $user->roles ?? [] ), true )
+            )
+        );
+        usort( $users, fn( $a, $b ) => strcmp( (string) ( $b->user_registered ?? '' ), (string) ( $a->user_registered ?? '' ) ) );
+        return isset( $args['number'] ) ? array_slice( $users, 0, (int) $args['number'] ) : $users;
+    }
+}
+
 if ( ! function_exists( 'get_user_meta' ) ) {
     function get_user_meta( $user_id, $key = '', $single = false ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- same signature as WordPress.
         return $GLOBALS['yaymatik_test_users'][ $user_id ]->meta[ $key ] ?? '';

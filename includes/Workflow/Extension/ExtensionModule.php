@@ -190,7 +190,7 @@ final class ExtensionModule extends Module {
         if ( null === $args ) {
             return false;
         }
-        $this->actions[ $id ] = new ExtensionAction( $this->id, $id, $args );
+        $this->actions[ $id ] = isset( $args['email'] ) ? new ExtensionEmailAction( $this->id, $id, $args ) : new ExtensionAction( $this->id, $id, $args );
         return true;
     }
 

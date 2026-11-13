@@ -27,7 +27,8 @@ export const workflowRank: Record<TemplateWorkflow, number> = {
 };
 
 /** The graph emails the customer: Use template asks to review the emails before activating. */
-export const sendsCustomerEmail = (graph: WorkflowGraph) => graph.nodes.some(({ data }) => data.block === 'send_email');
+export const sendsCustomerEmail = (graph: WorkflowGraph) =>
+  graph.nodes.some(({ data }) => stepOf(data)?.email === 'customer');
 
 /** The graph starts from a cart trigger while cart tracking is off. */
 export const needsCartTracking = (graph: WorkflowGraph) => {

@@ -60,10 +60,12 @@
             "fail": "(string $reason)",
             "get": "(string $path)",
             "is_preview": "(): bool",
+            "is_test": "(): bool",
             "item": "(string $id)",
             "order": "()",
             "render": "(string $text, bool $html = false): string",
             "skip": "(string $reason)",
+            "unsubscribe_url": "(): string",
             "user": "()"
         }
     },
@@ -74,7 +76,8 @@
             "data_items",
             "data_fields",
             "trigger_facts",
-            "privacy_subjects"
+            "privacy_subjects",
+            "email"
         ],
         "module_keys": [
             "id",
@@ -108,7 +111,13 @@
             "sample_outputs",
             "on_error",
             "result",
-            "emits"
+            "emits",
+            "email"
+        ],
+        "email_keys": [
+            "audience",
+            "recipient",
+            "build"
         ],
         "data_item_keys": [
             "label",

@@ -12,7 +12,7 @@ defined( 'ABSPATH' ) || exit;
  *
  * @internal
  */
-final class ExtensionAction extends Action {
+class ExtensionAction extends Action {
 
     use ExtensionStep;
 
@@ -80,8 +80,14 @@ final class ExtensionAction extends Action {
         );
     }
 
-    /** No category: no picker heading. */
+    /** No category: no picker heading. `result`: the run-detail line, '' = the summary. */
     public function client_meta(): array {
-        return array_filter( parent::client_meta(), fn( $value, string $key ) => 'category' !== $key || '' !== $value, ARRAY_FILTER_USE_BOTH );
+        return array_filter( parent::client_meta(), fn( $value, string $key ) => 'category' !== $key || '' !== $value, ARRAY_FILTER_USE_BOTH )
+            + [ 'result' => $this->result() ];
+    }
+
+    /** Run-detail line with `%output%` / `%field%` placeholders; '' = the summary. */
+    protected function result(): string {
+        return $this->args['result'] ?? '';
     }
 }

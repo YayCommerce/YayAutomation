@@ -81,12 +81,12 @@ final class SendEmailTest extends TestCase {
     }
 
     public function test_a_preview_link_goes_nowhere_and_has_no_unsubscribe_headers(): void {
-        $email = $this->step()->compose( $this->config(), $this->scope(), null );
+        $email = $this->step()->compose_email( $this->config(), $this->scope(), null );
 
         $this->assertStringEndsWith( '<a href="#">Unsubscribe</a></p>', $email['body'], 'same look, no token' );
         $this->assertStringNotContainsString( 'yaymatik_token', $email['body'] );
         $this->assertSame( "Content-Type: text/html\r\n", $email['headers'] );
-        $this->assertSame( 'ann@x.com', SendEmail::recipient( $this->config(), $this->scope() ) );
+        $this->assertSame( 'ann@x.com', $this->step()->email_recipient( $this->config(), $this->scope() ) );
     }
 
     public function test_heading_is_plain_text_with_variables(): void {

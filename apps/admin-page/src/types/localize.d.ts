@@ -107,6 +107,10 @@ export interface CatalogStepMeta extends StepMeta {
   /** In form order. */
   fields: StepFieldMeta[];
   outputs: StepOutputMeta[];
+  /** Sends an email (PHP `EmailStep`): Preview and Send test; `customer` has an unsubscribe link. */
+  email?: 'customer' | 'staff';
+  /** Another plugin's action: its run-detail line with `%output%` / `%field%` placeholders; '' = the summary. */
+  result?: string;
 }
 
 export type DataFieldType = 'number' | 'string' | 'enum' | 'date' | 'boolean' | 'list' | 'meta';

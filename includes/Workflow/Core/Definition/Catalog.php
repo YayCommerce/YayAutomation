@@ -6,6 +6,7 @@ use YayMatik\Workflow\Core\Data\Operators;
 use YayMatik\Workflow\Core\Data\Type;
 use YayMatik\Workflow\Extension\ExtensionModule;
 use YayMatik\Workflow\ModuleRegistry;
+use YayMatik\Workflow\Core\Email\EmailStep;
 use YayMatik\Workflow\Core\Steps\Field;
 use YayMatik\Workflow\Core\Steps\Step;
 use YayMatik\Workflow\Core\Steps\StepRegistry;
@@ -108,7 +109,7 @@ final class Catalog {
         return [
             'kind'   => $step->kind(),
             'plugin' => $plugin,
-        ] + $step->client_meta() + [
+        ] + $step->client_meta() + ( $step instanceof EmailStep ? [ 'email' => $step->email_audience() ] : [] ) + [
             'label'       => $step->label(),
             'description' => $step->description(),
             'icon'        => $step->icon(),

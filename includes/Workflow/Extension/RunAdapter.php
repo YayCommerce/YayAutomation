@@ -7,6 +7,7 @@ use YayMatik\Workflow\Core\Data\DataRegistry;
 use YayMatik\Workflow\Core\Data\Ref;
 use YayMatik\Workflow\Core\Data\Scope;
 use YayMatik\Workflow\Core\Data\Template;
+use YayMatik\Workflow\Core\Data\Values;
 use YayMatik\Workflow\Core\Steps\StepResult;
 use YayMatik\Workflow\DataItems\CartData;
 use YayMatik\Workflow\DataItems\CustomerData;
@@ -15,21 +16,32 @@ use YayMatik\Workflow\DataItems\OrderData;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * A run's Scope as the public `Run`: no Ref or other internal object gets out. An entity deleted
- * since the event throws `GoneEntity`, which skips the step as in core steps.
+ * A run's values as the public `Run`: no Ref or other internal object gets out.
  *
  * @internal
  */
 final class RunAdapter implements Run {
 
-    /** @var Scope */
-    private $scope;
+    /** @var Values */
+    private $values;
+
+    /** @var array [ 'preview' => bool, 'test' => bool, 'unsubscribe' => string ] */
+    private $email;
+
+    /** @var bool */
+    private $asked_for_unsubscribe = false;
 
     /**
-     * @param Scope $scope
+     * @param Values $values
+     * @param array  $email  For an email's `build`: `preview`, `test`, `unsubscribe` (the link, `#` when not sending).
      */
-    public function __construct( Scope $scope ) {
-        $this->scope = $scope;
+    public function __construct( Values $values, array $email = [] ) {
+        $this->values = $values;
+        $this->email  = $email + [
+            'preview'     => false,
+            'test'        => false,
+            'unsubscribe' => '',
+        ];
     }
 
     public function order() {
@@ -40,14 +52,14 @@ final class RunAdapter implements Run {
         $customer = $this->entity( CustomerData::ID );
         $user_id  = $customer ? CustomerData::user_id( $customer ) : 0;
         if ( ! $user_id ) {
-            $user_id = (int) $this->scope->get( 'trigger.user_id' );
+            $user_id = (int) $this->values->get( 'trigger.user_id' );
         }
         $user = $user_id > 0 ? get_userdata( $user_id ) : false;
         return $user ? $user : null;
     }
 
     public function customer_email(): string {
-        return (string) $this->scope->get( 'trigger.' . CustomerData::ID . '.email' );
+        return (string) $this->values->get( 'trigger.' . CustomerData::ID . '.email' );
     }
 
     public function cart() {
@@ -70,7 +82,7 @@ final class RunAdapter implements Run {
      * @param string $path
      */
     public function get( string $path ) {
-        return self::plain( $this->scope->get( $path ) );
+        return self::plain( $this->values->get( $path ) );
     }
 
     /**
@@ -80,7 +92,7 @@ final class RunAdapter implements Run {
     public function render( string $text, bool $html = false ): string {
         static $template = null;
         $template        = $template ?? new Template();
-        return $template->render( $text, $this->scope, $html );
+        return $template->render( $text, $this->values, $html );
     }
 
     /**
@@ -90,7 +102,8 @@ final class RunAdapter implements Run {
      * @return object|null
      */
     private function entity( string $id ) {
-        return $this->scope->entity( 'trigger.' . $id );
+        // Preview's made-up values have no entities. A deleted one throws `GoneEntity`: the step is skipped.
+        return $this->values instanceof Scope ? $this->values->entity( 'trigger.' . $id ) : null;
     }
 
     /**
@@ -105,7 +118,21 @@ final class RunAdapter implements Run {
     }
 
     public function is_preview(): bool {
-        return false;
+        return $this->email['preview'];
+    }
+
+    public function unsubscribe_url(): string {
+        $this->asked_for_unsubscribe = true;
+        return $this->email['unsubscribe'];
+    }
+
+    /** Whether the email's `build` read `unsubscribe_url()`. */
+    public function asked_for_unsubscribe(): bool {
+        return $this->asked_for_unsubscribe;
+    }
+
+    public function is_test(): bool {
+        return $this->email['test'];
     }
 
     /**
