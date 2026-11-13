@@ -1,6 +1,8 @@
 <?php
 namespace YayMatik\Workflow\Extension;
 
+use YayMatik\Workflow\Core\Steps\Trigger;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -66,10 +68,11 @@ trait ExtensionStep {
     /**
      * The declared `validate( $config, $available )`: its first `[ field => message ]`.
      *
-     * @param array $config
-     * @param array $available
+     * @param array        $config
+     * @param array        $available
+     * @param Trigger|null $trigger
      */
-    public function context_error( array $config, array $available ): ?\WP_Error {
+    public function context_error( array $config, array $available, ?Trigger $trigger ): ?\WP_Error { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- the declared callable gets the public `( $config, $available )`.
         if ( ! isset( $this->args['validate'] ) ) {
             return null;
         }

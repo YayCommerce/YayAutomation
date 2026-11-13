@@ -7,9 +7,18 @@ import { Button } from '@/components/ui/button';
 import { FieldError } from '@/components/ui/field';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { fieldByKey, isRelative, needsValue, operatorLabels, operatorsFor, takesList } from '../../core/data';
+import {
+  checkedTrigger,
+  fieldByKey,
+  isRelative,
+  needsValue,
+  operatorLabels,
+  operatorsFor,
+  takesList,
+} from '../../core/data';
 import { errorStyles, FieldIssueContext, useShowErrors } from '../../core/fields/feedback';
 import { spotlightTarget, VariablePicker } from '../../core/fields/VariablePicker';
+import { useVariableScope } from '../../core/fields/variableScope';
 import type { StepFormProps } from '../../core/types';
 import {
   criteriaErrors,
@@ -60,7 +69,8 @@ export function CriteriaForm({ config, onChange }: StepFormProps<CriteriaConfig>
   };
 
   const showErrors = useShowErrors();
-  const errors = withRuleIssue(criteriaErrors(value.rules), useContext(FieldIssueContext));
+  const trigger = useVariableScope().trigger?.id ?? null;
+  const errors = withRuleIssue(criteriaErrors(value.rules, checkedTrigger(trigger)), useContext(FieldIssueContext));
   const errorFor = (index: number) => (showErrors ? errors[index] : null);
 
   return (
@@ -275,7 +285,8 @@ function RuleBox({
   onDismissNew: () => void;
   onRemove: () => void;
 }) {
-  const field = fieldByKey(rule.field);
+  const trigger = useVariableScope().trigger?.id ?? null;
+  const field = fieldByKey(rule.field, trigger);
   const tone = error ? errorStyles : null;
 
   const hasValue = needsValue(rule.operator);
@@ -318,7 +329,7 @@ function RuleBox({
           <VariablePicker
             conditionalOnly
             autoOpen={autoOpen}
-            onSelect={(key) => onChange(ruleForField(rule, key))}
+            onSelect={(key) => onChange(ruleForField(rule, key, trigger))}
             onDismiss={autoOpen ? onDismissNew : undefined}
           >
             <DataSelect

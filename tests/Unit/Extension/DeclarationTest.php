@@ -282,7 +282,7 @@ final class DeclarationTest extends TestCase {
         $this->assertSame( '"provides" must list data items a payload gives: customer, order, cart, review (declare a data item before the trigger that provides it).', Diagnostics::recent( 24 )[1]['message'] ?? '' );
     }
 
-    public function test_fact_keys_are_not_ids_and_keep_one_type_across_triggers(): void {
+    public function test_fact_keys_are_not_ids_and_are_per_trigger(): void {
         $added = [];
         Extensions::collect(
             [],
@@ -296,7 +296,7 @@ final class DeclarationTest extends TestCase {
                     );
                     foreach ( [
                         'customer' => 'string',
-                        'points'   => 'acme' === $id ? 'number' : 'string',
+                        'amount'   => 'acme' === $id ? 'money' : 'string',
                     ] as $key => $type ) {
                         $added[] = $module->trigger(
                             "{$id}_{$key}",
@@ -317,7 +317,7 @@ final class DeclarationTest extends TestCase {
             }
         );
 
-        $this->assertSame( [ false, true, false, false ], $added );
-        $this->assertSame( 'Fact "points" is already declared by another trigger as number.', self::last_diagnostic() );
+        $this->assertSame( [ false, true, false, true ], $added, 'one plugin\'s fact type never removes another\'s trigger' );
+        $this->assertSame( [], array_filter( array_column( Diagnostics::recent( 24 ), 'message' ), fn( string $message ) => false !== strpos( $message, 'amount' ) ) );
     }
 }

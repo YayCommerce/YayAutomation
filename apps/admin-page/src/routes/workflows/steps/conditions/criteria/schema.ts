@@ -63,9 +63,9 @@ export function withOperator(rule: Rule, operator: string): Rule {
 }
 
 /** Whether a rule's value still means something on another field of the same type. */
-function valueFits(rule: Rule, from: DataField | undefined, to: DataField) {
+function valueFits(rule: Rule, from: DataField | undefined, to: DataField, trigger: string | null) {
   if (rule.valueType === 'variable') {
-    const other = fieldByKey(String(rule.value));
+    const other = fieldByKey(String(rule.value), trigger);
     return !!other && comparableWith(to)(other);
   }
   // A product id means nothing as a category.
@@ -76,16 +76,16 @@ function valueFits(rule: Rule, from: DataField | undefined, to: DataField) {
 }
 
 /** The rule on another field: the same type keeps the comparison and any value that fits; another type starts over. */
-export function ruleForField(rule: Rule, key: string): Rule {
-  const from = fieldByKey(rule.field);
-  const to = fieldByKey(key)!;
+export function ruleForField(rule: Rule, key: string, trigger: string | null): Rule {
+  const from = fieldByKey(rule.field, trigger);
+  const to = fieldByKey(key, trigger)!;
   const same = to.type === from?.type;
   const base: Rule = { field: key, operator: rule.operator, value: rule.value, valueType: rule.valueType };
   if (rule.unit) base.unit = rule.unit;
   // Order and customer custom fields are different stores.
   if (to.type === 'meta') base.key = rule.field === key ? (rule.key ?? '') : '';
   const next = withOperator(base, same ? rule.operator : operatorsFor(to.type)[0]);
-  if (same && valueFits(rule, from, to)) return next;
+  if (same && valueFits(rule, from, to, trigger)) return next;
   return { ...next, value: blankValue(next.operator), valueType: 'value' };
 }
 
@@ -96,9 +96,16 @@ export const VARIABLE_VALUE_TYPES: DataField['type'][] = ['number', 'string', 'd
 export const comparableWith = (field: DataField) => (other: DataField) =>
   other.conditional && other.type === field.type && VARIABLE_VALUE_TYPES.includes(field.type);
 
+/** Whether a rule reads a trigger fact, as its variable or as the one it compares with. Mirrors PHP `Criteria::reads_fact()`. */
+const readsFact = (rule: Rule) =>
+  rule.field.startsWith('trigger.') || (rule.valueType === 'variable' && String(rule.value).startsWith('trigger.'));
+
 /** Why one criteria can't run, or null. Same checks, order and messages as PHP `Criteria::rule_error()`. */
-function ruleError({ field: fieldKey, operator, value, valueType, key }: Rule): string | null {
-  const field = fieldByKey(fieldKey);
+function ruleError(rule: Rule, trigger: string | null | undefined): string | null {
+  // No trigger known here (the step schema): a rule on a fact is the workflow's check, `factIssue()`.
+  if (trigger === undefined && readsFact(rule)) return null;
+  const { field: fieldKey, operator, value, valueType, key } = rule;
+  const field = fieldByKey(fieldKey, trigger);
   if (!field?.conditional) return messages.ruleVariable;
   if (!operatorsFor(field.type).includes(operator)) return messages.ruleComparison;
   // Which keys are blocked is the server's to say, `ruleMetaKey` after a save: they depend on the store.
@@ -114,7 +121,7 @@ function ruleError({ field: fieldKey, operator, value, valueType, key }: Rule): 
   if (isRelative(operator)) return /^[1-9]\d*$/.test(text.trim()) ? null : messages.ruleAmount;
 
   if (valueType === 'variable') {
-    const other = fieldByKey(text);
+    const other = fieldByKey(text, trigger);
     return other && comparableWith(field)(other) ? null : messages.ruleCompareWith;
   }
 
@@ -141,18 +148,18 @@ function ruleError({ field: fieldKey, operator, value, valueType, key }: Rule): 
 const criteriaRequired = messages.rulesRequired;
 
 /** A group's errors: an empty one needs a rule. */
-const groupErrors = ({ rules }: Group): GroupErrors =>
+const groupErrors = ({ rules }: Group, trigger: string | null | undefined): GroupErrors =>
   rules.some((rule) => rule.field)
-    ? { own: null, rules: rules.map(ruleError) }
+    ? { own: null, rules: rules.map((rule) => ruleError(rule, trigger)) }
     : { own: messages.groupRulesRequired, rules: rules.map(() => null) };
 
 /**
  * The error of each item, in order (null when fine). With no variable chosen anywhere, the first one
  * carries `rulesRequired`. Same order as PHP `Criteria::validate()`.
  */
-export function criteriaErrors(items: CriteriaItem[]): (string | GroupErrors | null)[] {
+export function criteriaErrors(items: CriteriaItem[], trigger?: string | null): (string | GroupErrors | null)[] {
   if (flatRules(items).some((rule) => rule.field)) {
-    return items.map((item) => (isGroup(item) ? groupErrors(item) : ruleError(item)));
+    return items.map((item) => (isGroup(item) ? groupErrors(item, trigger) : ruleError(item, trigger)));
   }
   return items.map((item, i) => {
     const own = i === 0 ? criteriaRequired : null;
@@ -191,6 +198,15 @@ export const schema = v.pipe(
     if (error) addIssue({ message: error });
   }),
 );
+
+/** The first broken rule on a trigger fact, against the workflow's trigger. Mirrors PHP `Criteria::context_error()`. */
+export function factIssue({ rules }: CriteriaConfig, trigger: string) {
+  const message = flatRules(rules)
+    .filter(readsFact)
+    .map((rule) => ruleError(rule, trigger))
+    .find(Boolean);
+  return message ? { message } : null;
+}
 
 /** One empty criteria to start, joined by AND once a second one is added. */
 export const defaults = (): CriteriaConfig => ({ match: 'all', rules: [emptyRule()] });

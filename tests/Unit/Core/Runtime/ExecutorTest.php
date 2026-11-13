@@ -10,6 +10,7 @@ use YayMatik\Tests\Support\FakeRunRepository;
 use YayMatik\Tests\Support\FakeStep;
 use YayMatik\Tests\Support\FakeTrigger;
 use YayMatik\Tests\Support\FakeWorkflows;
+use YayMatik\Workflow\Conditions\Criteria;
 use YayMatik\Workflow\Core\Data\GoneEntity;
 use YayMatik\Workflow\Core\Data\Ref;
 use YayMatik\Workflow\Core\Data\RefResolver;
@@ -972,5 +973,83 @@ final class ExecutorTest extends TestCase {
         $this->assertSame( 'completed', $this->slice( $id ) );
         $this->assertSame( [ 'c', 'yes' ], array_keys( $this->statuses( $id ) ) );
         $this->assertSame( [ 'result' => 'yes' ], $this->runs->steps( $id )[0]['output'] );
+    }
+
+    public function test_a_condition_on_a_fact_reads_the_runs_trigger_type(): void {
+        $GLOBALS['yaymatik_test_options'] = [];
+        foreach ( Extensions::collect(
+            [],
+            function ( $registrar ) {
+                foreach ( [
+                    'acme'  => 'money',
+                    'other' => 'string',
+                ] as $id => $type ) {
+                    $registrar->module(
+                        [
+                            'id'    => $id,
+                            'label' => ucfirst( $id ),
+                        ]
+                    )->trigger(
+                        "{$id}_paid",
+                        [
+                            'label'       => 'T',
+                            'description' => 'T.',
+                            'provides'    => [ 'customer' ],
+                            'facts'       => [
+                                'amount' => [
+                                    'label' => 'Amount',
+                                    'type'  => $type,
+                                ],
+                            ],
+                        ]
+                    );
+                }
+            }
+        ) as $module ) {
+            $this->steps[ $module->triggers()[0]->id() ] = $module->triggers()[0];
+        }
+        $this->steps['condition'] = new Criteria();
+        $rule                     = [
+            'field'     => 'trigger.amount',
+            'operator'  => 'equal',
+            'value'     => '10',
+            'valueType' => 'value',
+        ];
+        $this->graph(
+            [
+                'c' => [
+                    'condition',
+                    [
+                        'match' => 'all',
+                        'rules' => [ $rule ],
+                    ],
+                ],
+            ],
+            [ [ 't', 'c' ] ]
+        );
+
+        $results = [];
+        foreach ( [ 'acme_paid', 'other_paid' ] as $trigger ) {
+            $id = $this->runs->create_run(
+                [
+                    'workflow_id' => 9,
+                    'version_id'  => self::VERSION,
+                    'trigger_id'  => $trigger,
+                    'scope'       => [ 'trigger' => [ 'amount' => '10.0' ] ],
+                ]
+            );
+            $this->runs->claim_run( $id, [ 'queued' ] );
+            $this->assertSame( 'completed', $this->slice( $id ) );
+            $results[ $trigger ] = $this->runs->steps( $id )[0]['output']['result'] ?? null;
+        }
+
+        $this->assertSame(
+            [
+                'acme_paid'  => 'yes',
+                'other_paid' => 'no',
+            ],
+            $results,
+            'money: 10.0 is 10; text: "10.0" isn\'t "10"'
+        );
     }
 }

@@ -1,8 +1,12 @@
-import type { CSSProperties } from 'react';
+import { createContext, type CSSProperties } from 'react';
 import type { Edge, Node } from '@xyflow/react';
 import type { WorkflowGraph, WorkflowNodeData, WorkflowNodeKind } from '@yaymatik/types';
 
+import { triggerOf } from '../../model/graph';
 import { stepOf } from '../../steps';
+
+/** The canvas workflow's `triggerOf()`, for its cards' summaries. */
+export const CanvasTriggerContext = createContext<string | null>(null);
 
 /** ReactFlow node typed by our data + kind. `type` picks the component from `nodeTypes`. */
 export type FlowNode = Node<WorkflowNodeData, WorkflowNodeKind>;
@@ -93,9 +97,9 @@ export function toFlowNodes(graph: WorkflowGraph, heights: Record<string, number
 }
 
 /** Not set up yet: no step chosen, or settings still missing (e.g. a condition with no criteria). */
-function isPending(data: WorkflowNodeData) {
+function isPending(data: WorkflowNodeData, trigger: string | null) {
   const stepDef = stepOf(data);
-  return !stepDef || stepDef.firstError(data.config) !== null;
+  return !stepDef || stepDef.firstError(data.config, trigger) !== null;
 }
 
 /**
@@ -103,7 +107,8 @@ function isPending(data: WorkflowNodeData) {
  * editor lines are dashed, and a line into a step that isn't set up yet runs until it is.
  */
 export function toFlowEdges(graph: WorkflowGraph, { editing = false } = {}): Edge[] {
-  const pending = new Set(graph.nodes.filter((node) => isPending(node.data)).map((node) => node.id));
+  const trigger = triggerOf(graph);
+  const pending = new Set(graph.nodes.filter((node) => isPending(node.data, trigger)).map((node) => node.id));
   return graph.edges.map((edge) => ({
     id: edge.id,
     source: edge.source,

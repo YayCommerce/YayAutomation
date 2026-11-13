@@ -131,7 +131,7 @@ export function StepPanel({
             label: def.label,
             kind: n.kind,
             icon: def.icon,
-            summary: plainSummary(def.summary(n.data.config)),
+            summary: plainSummary(def.summary(n.data.config, triggerStep?.id)),
           };
         }
       }
@@ -141,6 +141,7 @@ export function StepPanel({
   );
   const scope = useMemo<VariableScope>(() => {
     const trigger = triggerStep && {
+      id: triggerStep.id,
       label: triggerStep.label,
       kind: 'trigger' as const,
       icon: triggerStep.icon,
@@ -234,7 +235,9 @@ export function StepPanel({
   // Shown while the form shows its errors. The form shows its own first error itself (under a field,
   // or in a condition's rule); anything else goes under its field, or at the top.
   const shown =
-    feedback !== 'none' && issue && issue.message !== stepDef.firstError(node.data.config) ? issue : undefined;
+    feedback !== 'none' && issue && issue.message !== stepDef.firstError(node.data.config, triggerStep?.id)
+      ? issue
+      : undefined;
   // A condition draws its own rules: an issue that names its rule goes under that rule.
   const underField = shown?.field && (stepDef.drawsField(shown.field) || shown.rule) ? shown : undefined;
   // The cart trigger's notes already warn about tracking, with a link to fix it.

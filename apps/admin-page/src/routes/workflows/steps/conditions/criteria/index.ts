@@ -6,6 +6,7 @@ import { missing } from '../../core/marks';
 import { CriteriaForm } from './Form';
 import {
   defaults,
+  factIssue,
   flatRules,
   isGroup,
   joinerText,
@@ -23,7 +24,11 @@ const optionLabel = (field: DataField | undefined, value: string) =>
   field?.options?.find((option) => option.value === value)?.label ?? value;
 
 /** What a rule compares with, as text. Search lists hold ids, and a summary never asks the server for their names. */
-function comparedText(field: DataField | undefined, { operator, value: compared, valueType, unit }: Rule) {
+function comparedText(
+  field: DataField | undefined,
+  { operator, value: compared, valueType, unit }: Rule,
+  trigger: string | null | undefined,
+) {
   if (Array.isArray(compared)) {
     if (!compared.length) return '';
     return field?.options?.length
@@ -41,14 +46,14 @@ function comparedText(field: DataField | undefined, { operator, value: compared,
       amount,
     );
   }
-  return valueType === 'variable' ? (fieldByKey(compared)?.label ?? '') : optionLabel(field, compared);
+  return valueType === 'variable' ? (fieldByKey(compared, trigger)?.label ?? '') : optionLabel(field, compared);
 }
 
 /** "Order total is greater than or equal to 500"; placeholders for the parts still missing. */
-function describe(rule: Rule) {
+function describe(rule: Rule, trigger: string | null | undefined) {
   const { field: key, operator } = rule;
-  const field = fieldByKey(key);
-  const shown = needsValue(operator) ? comparedText(field, rule) : '';
+  const field = fieldByKey(key, trigger);
+  const shown = needsValue(operator) ? comparedText(field, rule, trigger) : '';
   // "Custom field vip is equal to yes".
   const name = field?.type === 'meta' ? `${field.label} ${rule.key || PLACEHOLDER}` : field?.label;
   return sprintf(
@@ -71,9 +76,9 @@ function joined(parts: string[], match: CriteriaConfig['match']) {
 }
 
 /** A rule, or "(A or B)" for a group of more than one. */
-function describeItem(item: CriteriaItem) {
-  if (!isGroup(item)) return describe(item);
-  const inner = item.rules.filter((rule) => rule.field).map(describe);
+function describeItem(item: CriteriaItem, trigger: string | null | undefined) {
+  if (!isGroup(item)) return describe(item, trigger);
+  const inner = item.rules.filter((rule) => rule.field).map((rule) => describe(rule, trigger));
   return inner.length > 1 ? `(${joined(inner, item.match)})` : inner[0];
 }
 
@@ -88,17 +93,21 @@ export const criteriaStep = defineStep<CriteriaConfig>({
     flatRules(rules).flatMap((rule) =>
       [rule.field, rule.valueType === 'variable' && needsValue(rule.operator) ? String(rule.value) : '']
         .filter(Boolean)
-        // A fact (`trigger.<key>`) is the trigger's, not a data item; the server checks it against the trigger.
+        // A fact (`trigger.<key>`) is the trigger's, not a data item: `contextIssue` checks it.
         .filter((key) => !key.startsWith('trigger.'))
         .map(itemOf),
     ),
+  contextIssue: factIssue,
   // The rules on one line, joined by "and" / "or"; blank until a rule has its variable.
   summaryValues: {
-    rules: ({ match, rules }) => {
+    rules: ({ match, rules }, trigger) => {
       if (rules.some((item) => isGroup(item) && !item.rules.some((rule) => rule.field))) {
         return missing(__('A group has no rules yet', 'yaymatik'));
       }
-      return joined(rules.filter((item) => isGroup(item) || item.field).map(describeItem), match);
+      return joined(
+        rules.filter((item) => isGroup(item) || item.field).map((item) => describeItem(item, trigger)),
+        match,
+      );
     },
   },
   Form: CriteriaForm,

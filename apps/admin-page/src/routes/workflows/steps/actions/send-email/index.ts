@@ -11,7 +11,7 @@ export const sendEmailStep = defineStep<SendEmailConfig>({
   id: 'send_email',
   kind: 'action',
   summaryValues: {
-    to: ({ to }) => value(variableNames(to)),
+    to: ({ to }, trigger) => value(variableNames(to, trigger)),
   },
   Footer: UnsubscribeNote,
   Actions: EmailActions,

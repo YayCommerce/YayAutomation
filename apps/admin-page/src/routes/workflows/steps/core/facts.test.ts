@@ -61,9 +61,11 @@ describe('trigger facts', () => {
       type: 'number',
       block: false,
     });
-    expect(tagError(['You got {{ trigger.points }} points'])).toBeNull();
-    expect(tagError(['{{ trigger.nope }}'])).not.toBeNull();
-    expect(fieldByKey('trigger.points')).toMatchObject({ type: 'number', conditional: true });
+    // Whether the trigger has the fact is the workflow's check: the next test.
+    expect(tagError(['You got {{ trigger.points }} points', '{{ trigger.nope }}'])).toBeNull();
+    expect(tagError(['{{ trigger.order.nope }}'])).not.toBeNull();
+    expect(fieldByKey('trigger.points', 'acme_points')).toMatchObject({ type: 'number', conditional: true });
+    expect(fieldByKey('trigger.points', 'order_created')).toBeUndefined();
   });
 
   it('are data of their own trigger only, in the editor check as on the server', async () => {
@@ -75,6 +77,15 @@ describe('trigger facts', () => {
 
     expect(codes('acme_points')).not.toContain('invalid_config');
     expect(codes('order_status_changed')).toContain('invalid_config');
+    expect(
+      validateWorkflow({ name: 'A', graph: graphOn('acme_points', '{{ trigger.nope }}') }).find((i) => i.nodeId === 'a')
+        ?.code,
+    ).toBe('invalid_config');
+    expect(
+      validateWorkflow({ name: 'A', graph: graphOn('acme_points', '{{ trigger.order }}') }).find(
+        (i) => i.nodeId === 'a',
+      )?.code,
+    ).toBe('invalid_config');
     expect(itemLabel('trigger')).toBe('Trigger');
   });
 });

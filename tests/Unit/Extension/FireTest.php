@@ -477,11 +477,4 @@ final class FireTest extends TestCase {
             )
         );
     }
-
-    public function test_a_date_fact_has_a_moment_for_in_the_last(): void {
-        $scope = new \YayMatik\Workflow\Core\Data\Scope( [ 'trigger' => [ 'expires_on' => '2026-11-14' ] ], null, [] );
-
-        $this->assertSame( ( new \DateTimeImmutable( '2026-11-14', wp_timezone() ) )->getTimestamp(), $scope->timestamp( 'trigger.expires_on' ) );
-        $this->assertNull( $scope->timestamp( 'steps.a.date' ) );
-    }
 }

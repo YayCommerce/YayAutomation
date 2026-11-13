@@ -2,7 +2,7 @@
 namespace YayMatik\Workflow\Core\Data;
 
 use YayMatik\Workflow\Core\Definition\Catalog;
-use YayMatik\Workflow\Core\Steps\StepRegistry;
+use YayMatik\Workflow\Core\Steps\Trigger;
 use YayMatik\Workflow\DataItems\SiteData;
 use YayMatik\Workflow\Extension\Extensions;
 use YayMatik\Workflow\ModuleRegistry;
@@ -53,20 +53,15 @@ final class DataRegistry {
     }
 
     /**
-     * Field definition by full key, or null when unknown.
+     * Field definition by full key, or null when unknown; `trigger.<fact>` is the given trigger's.
      *
-     * @param string $key
+     * @param string       $key
+     * @param Trigger|null $trigger
      */
-    public static function field( string $key ): ?array {
+    public static function field( string $key, ?Trigger $trigger = null ): ?array {
         list( $item, $field ) = array_pad( explode( '.', $key, 2 ), 2, '' );
-        // `trigger.<fact>`: the first registered trigger with that fact defines it.
         if ( 'trigger' === $item ) {
-            foreach ( StepRegistry::triggers() as $trigger ) {
-                if ( isset( $trigger->facts()[ $field ] ) ) {
-                    return $trigger->facts()[ $field ];
-                }
-            }
-            return null;
+            return $trigger ? ( $trigger->facts()[ $field ] ?? null ) : null;
         }
         $item = self::items()[ $item ] ?? null;
         return $item ? ( $item->fields()[ $field ] ?? null ) : null;

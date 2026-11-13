@@ -8,9 +8,10 @@ import { __ } from '@wordpress/i18n';
 
 import { Button } from '@/components/ui/button';
 import { ButtonGroup } from '@/components/ui/button-group';
+import { triggerOf } from '../../model/graph';
 import { edgeTypes } from './CurvedEdge';
 import { EdgeArrowDefs } from './EdgeArrow';
-import { canvasStyle, spacedPositions, toFlowEdges, toFlowNodes } from './flow';
+import { canvasStyle, CanvasTriggerContext, spacedPositions, toFlowEdges, toFlowNodes } from './flow';
 import { readOnlyNodeTypes } from './NodeCardView';
 
 // Zoom out as far as needed so the whole graph fits on narrow screens. By default never zoom small
@@ -39,30 +40,32 @@ export function ReadOnlyCanvas({
   const edges = useMemo(() => toFlowEdges(graph), [graph]);
 
   return (
-    <ReactFlow
-      defaultNodes={nodes}
-      defaultEdges={edges}
-      nodeTypes={readOnlyNodeTypes}
-      edgeTypes={edgeTypes}
-      style={canvasStyle}
-      nodesDraggable={false}
-      nodesConnectable={false}
-      elementsSelectable={false}
-      deleteKeyCode={null}
-      fitView
-      fitViewOptions={fitViewOptions}
-      minZoom={MIN_ZOOM}
-      proOptions={{ hideAttribution: true }}
-    >
-      <FitOnResize fitViewOptions={fitViewOptions} />
-      <SpaceOutOnMeasure graph={graph} fitViewOptions={fitViewOptions} />
-      <Background />
-      <EdgeArrowDefs />
-      <Panel position="bottom-left" className="flex items-center gap-2">
-        {controls}
-        <CanvasControls fitViewOptions={fitViewOptions} />
-      </Panel>
-    </ReactFlow>
+    <CanvasTriggerContext.Provider value={triggerOf(graph)}>
+      <ReactFlow
+        defaultNodes={nodes}
+        defaultEdges={edges}
+        nodeTypes={readOnlyNodeTypes}
+        edgeTypes={edgeTypes}
+        style={canvasStyle}
+        nodesDraggable={false}
+        nodesConnectable={false}
+        elementsSelectable={false}
+        deleteKeyCode={null}
+        fitView
+        fitViewOptions={fitViewOptions}
+        minZoom={MIN_ZOOM}
+        proOptions={{ hideAttribution: true }}
+      >
+        <FitOnResize fitViewOptions={fitViewOptions} />
+        <SpaceOutOnMeasure graph={graph} fitViewOptions={fitViewOptions} />
+        <Background />
+        <EdgeArrowDefs />
+        <Panel position="bottom-left" className="flex items-center gap-2">
+          {controls}
+          <CanvasControls fitViewOptions={fitViewOptions} />
+        </Panel>
+      </ReactFlow>
+    </CanvasTriggerContext.Provider>
   );
 }
 

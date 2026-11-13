@@ -239,8 +239,8 @@ final class ExtensionActionTest extends TestCase {
             ]
         );
 
-        $this->assertNull( $action->context_error( [], [ 'order', 'customer' ] ) );
-        $error = $action->context_error( [], [ 'customer' ] );
+        $this->assertNull( $action->context_error( [], [ 'order', 'customer' ], null ) );
+        $error = $action->context_error( [], [ 'customer' ], null );
         $this->assertSame( 'This design needs an order.', $error->get_error_message() );
         $this->assertSame( 'design', $error->get_error_data()['field'] );
     }
@@ -255,7 +255,7 @@ final class ExtensionActionTest extends TestCase {
             ]
         );
 
-        $this->assertSame( 'This step’s settings couldn’t be checked.', $action->context_error( [], [] )->get_error_message() );
+        $this->assertSame( 'This step’s settings couldn’t be checked.', $action->context_error( [], [], null )->get_error_message() );
         $this->assertSame( 'Boom.', Diagnostics::recent( 24 )[0]['message'] );
     }
 

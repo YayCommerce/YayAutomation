@@ -8,6 +8,7 @@ use YayMatik\Workflow\Core\Data\Scope;
 use YayMatik\Workflow\Core\Definition\Messages;
 use YayMatik\Workflow\Core\Steps\Condition;
 use YayMatik\Workflow\Core\Steps\Field;
+use YayMatik\Workflow\Core\Steps\Trigger;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -79,19 +80,51 @@ class Criteria extends Condition {
         if ( ! array_filter( array_column( self::flat_rules( $config['rules'] ), 'field' ) ) ) {
             return $this->invalid( Messages::get( 'rulesRequired' ), 'rules' );
         }
+        return $this->rules_error( $config, false, null ) ?? true;
+    }
+
+    /**
+     * Rules on a trigger fact: only the workflow's trigger knows its type.
+     *
+     * @param array        $config
+     * @param array        $available
+     * @param Trigger|null $trigger
+     */
+    public function context_error( array $config, array $available, ?Trigger $trigger ): ?\WP_Error {
+        return $this->rules_error( $config, true, $trigger );
+    }
+
+    /**
+     * The first broken rule, either those on trigger facts or the others; an empty group counts with the others.
+     *
+     * @param array        $config
+     * @param bool         $facts
+     * @param Trigger|null $trigger
+     */
+    private function rules_error( array $config, bool $facts, ?Trigger $trigger ): ?\WP_Error {
         foreach ( $config['rules'] as $index => $item ) {
-            if ( self::is_group( $item ) && ! array_filter( array_column( $item['rules'], 'field' ) ) ) {
+            if ( ! $facts && self::is_group( $item ) && ! array_filter( array_column( $item['rules'], 'field' ) ) ) {
                 return $this->invalid( Messages::get( 'groupRulesRequired' ), 'rules', [ 'rule' => [ $index ] ] );
             }
             foreach ( self::is_group( $item ) ? $item['rules'] : [ $item ] as $inner => $rule ) {
-                $error = $this->rule_error( $rule );
+                $error = self::reads_fact( $rule ) === $facts ? $this->rule_error( $rule, $trigger ) : null;
                 if ( $error ) {
                     // Where the form draws it: [ item ] at the top level, [ group, rule ] inside a group.
                     return $this->invalid( $error, 'rules', [ 'rule' => self::is_group( $item ) ? [ $index, $inner ] : [ $index ] ] );
                 }
             }
         }
-        return true;
+        return null;
+    }
+
+    /**
+     * Whether a rule reads a trigger fact, as its variable or as the one it compares with.
+     *
+     * @param array $rule
+     */
+    private static function reads_fact( array $rule ): bool {
+        $other = 'variable' === $rule['valueType'] ? (string) $rule['value'] : '';
+        return 0 === strpos( $rule['field'], 'trigger.' ) || 0 === strpos( $other, 'trigger.' );
     }
 
     public function uses( array $config ): array {
@@ -102,8 +135,9 @@ class Criteria extends Condition {
                 $keys[] = $rule['value'];
             }
         }
-        // A fact stays `trigger.<key>`: the Validator checks it against the workflow's trigger, not the data items.
-        $items = array_map( fn( string $key ) => 0 === strpos( $key, 'trigger.' ) ? $key : DataRegistry::item_of( $key ), array_filter( $keys ) );
+        // A fact isn't a data item: `context_error()` checks it against the workflow's trigger.
+        $keys  = array_filter( $keys, fn( string $key ) => '' !== $key && 0 !== strpos( $key, 'trigger.' ) );
+        $items = array_map( [ DataRegistry::class, 'item_of' ], $keys );
         return array_values( array_diff( array_unique( $items ), DataRegistry::ALWAYS ) );
     }
 
@@ -176,7 +210,7 @@ class Criteria extends Condition {
      */
     private static function rule_matches( Scope $scope, array $rule ): bool {
         $operator = $rule['operator'];
-        $field    = DataRegistry::field( $rule['field'] );
+        $field    = DataRegistry::field( $rule['field'], $scope->trigger() );
         if ( DataItem::TYPE_META === $field['type'] ) {
             return Operators::compare( DataItem::TYPE_META, $operator, $scope->meta( $rule['field'], $rule['key'] ), $rule['value'] );
         }
@@ -228,10 +262,11 @@ class Criteria extends Condition {
     /**
      * Why one criteria can't run, or null. Same messages and order as the TS step schema.
      *
-     * @param array $rule
+     * @param array        $rule
+     * @param Trigger|null $trigger
      */
-    private function rule_error( array $rule ): ?string {
-        $field = DataRegistry::field( $rule['field'] );
+    private function rule_error( array $rule, ?Trigger $trigger ): ?string {
+        $field = DataRegistry::field( $rule['field'], $trigger );
         if ( ! $field || ! $field['conditional'] ) {
             return Messages::get( 'ruleVariable' );
         }
@@ -262,7 +297,7 @@ class Criteria extends Condition {
         }
 
         if ( 'variable' === $rule['valueType'] ) {
-            $other = DataRegistry::field( $rule['value'] );
+            $other = DataRegistry::field( $rule['value'], $trigger );
             $fits  = $other && $other['conditional'] && $other['type'] === $field['type']
                 && in_array( $field['type'], self::VARIABLE_VALUE_TYPES, true );
             return $fits ? null : Messages::get( 'ruleCompareWith' );

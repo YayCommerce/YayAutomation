@@ -15,28 +15,35 @@ export const dataItems = meta.data;
 /** Items every workflow has, whatever the trigger supplies. */
 export const alwaysAvailable = meta.always;
 
-/**
- * Trigger facts (`trigger.points`): the first trigger with a key defines it, as in PHP `DataRegistry::field()`.
- * A trigger whose plugin is off keeps its facts' keys only, read as text.
- */
-const facts = [
-  ...Object.values(meta.inactiveSteps).flatMap((step) =>
-    step.facts.map((key) => ({
-      key: `trigger.${key}`,
-      label: key,
-      type: 'string' as const,
-      valueType: 'string',
-      conditional: false,
-    })),
-  ),
-  ...Object.values(meta.steps).flatMap((step) => step?.facts ?? []),
-].reverse();
+const fields = new Map(dataItems.flatMap((item) => item.fields).map((field) => [field.key, field] as const));
 
-const fields = new Map(
-  [...facts, ...dataItems.flatMap((item) => item.fields)].map((field) => [field.key, field] as const),
-);
+/** Each trigger's facts by key, as in PHP `DataRegistry::field()`; an off plugin's keep their keys only, read as text. */
+const facts = new Map<string, Map<string, DataField>>([
+  ...Object.entries(meta.inactiveSteps).map(([id, step]) => [
+    id,
+    new Map(
+      step.facts.map((key) => [
+        `trigger.${key}`,
+        { key: `trigger.${key}`, label: key, type: 'string' as const, valueType: 'string', conditional: false },
+      ]),
+    ),
+  ]),
+  ...Object.entries(meta.steps).map(([id, step]) => [id, new Map((step?.facts ?? []).map((f) => [f.key, f]))]),
+] as [string, Map<string, DataField>][]);
 
-export const fieldByKey = (key: string): DataField | undefined => fields.get(key);
+/** A data field, or a fact of the workflow's trigger (its step id). */
+export const fieldByKey = (key: string, trigger?: string | null): DataField | undefined =>
+  key.startsWith('trigger.') ? (trigger ? facts.get(trigger)?.get(key) : undefined) : fields.get(key);
+
+/** `trigger.<key>`: a fact, which only the workflow's trigger can define. */
+export const isFactPath = (path: string) => {
+  const [first, key, ...rest] = path.split('.');
+  return first === 'trigger' && !!key && !rest.length;
+};
+
+/** The trigger to check fact rules against: none while its plugin is off, as PHP skips `context_error()` then. */
+export const checkedTrigger = (trigger: string | null | undefined) =>
+  trigger && meta.inactiveSteps[trigger] ? undefined : trigger;
 
 /** `order.total` → `order`. */
 export const itemOf = (key: string) => key.split('.')[0];
@@ -78,8 +85,8 @@ export const isStepPath = (segments: string[]) => segments[0] === 'steps';
  * `customer.first_name`), a relation itself (`order.customer`), or undefined. Mirrors PHP
  * `Validator::has_field()`.
  */
-function resolvePath(path: string) {
-  const fact = path.startsWith('trigger.') ? fieldByKey(path) : undefined;
+function resolvePath(path: string, trigger?: string | null) {
+  const fact = isFactPath(path) ? fieldByKey(path, trigger) : undefined;
   if (fact) return { field: fact };
   const [first, ...rest] = pathSegments(path);
   let item = dataItems.find((i) => i.id === first);
@@ -101,15 +108,15 @@ function resolvePath(path: string) {
 export const fieldByPath = (path: string): DataField | undefined => resolvePath(path)?.field;
 
 /** The name of what a merge-tag path reads ("Customer first name"), or undefined for a path nothing defines. */
-export const pathLabel = (path: string): string | undefined => {
-  const found = resolvePath(path);
+export const pathLabel = (path: string, trigger?: string | null): string | undefined => {
+  const found = resolvePath(path, trigger);
   return found?.field?.label ?? found?.relation?.label;
 };
 
 /**
  * The first problem with the merge tags in these texts, or null: a malformed tag or unknown filter,
  * then a path nothing defines. Per text, like PHP `Validator::tag_error()`; whether the step can reach
- * the data is the workflow's check (`missing_data`).
+ * the data, and whether the trigger has a fact, is the workflow's check (`reachProblem()`).
  */
 export function tagError(texts: string[]) {
   for (const text of texts) {
@@ -118,7 +125,7 @@ export function tagError(texts: string[]) {
     const unknown = templatePaths(text).find((path) => {
       const segments = pathSegments(path);
       if (isStepPath(segments)) return segments.length !== 3;
-      return !resolvePath(path);
+      return !isFactPath(path) && !resolvePath(path);
     });
     if (unknown) return sprintf(messages.unknownVariable, variableTag(unknown));
   }

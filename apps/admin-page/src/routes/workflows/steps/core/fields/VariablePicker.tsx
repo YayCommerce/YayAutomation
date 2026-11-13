@@ -110,7 +110,7 @@ export function VariablePicker({
     if (variable.block) return blocks && !forConditions;
     if (!forConditions) return true;
     // An item's own field only: `order.total`, not `order.customer.email` or `steps.<id>.<key>`.
-    const field = variable.key.split('.').length === 2 ? fieldByKey(variable.key) : undefined;
+    const field = variable.key.split('.').length === 2 ? fieldByKey(variable.key, scope.trigger?.id) : undefined;
     return !!field && (!conditionalOnly || field.conditional) && (!filter || filter(field));
   };
   // Built only while open: a criteria box holds several closed pickers.

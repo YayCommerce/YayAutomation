@@ -10,8 +10,8 @@ type RunStepRow = RunDetail['steps'][number];
 const text = (value: unknown) => (typeof value === 'string' ? value : '');
 
 /** The step's card text, from the config it ran with. */
-const summary = (step: RunStepRow) =>
-  step.stepType && steps[step.stepType] ? plainSummary(steps[step.stepType].summary(step.input)) : '';
+const summary = (step: RunStepRow, run: RunContext) =>
+  step.stepType && steps[step.stepType] ? plainSummary(steps[step.stepType].summary(step.input, run.triggerId)) : '';
 
 const customFieldResult = (step: RunStepRow) =>
   sprintf(
@@ -27,7 +27,9 @@ const catalogLabel = (stepId: StepId, key: string, value: string) => {
   return field ? optionLabel(field, value) : value;
 };
 
-type ResultText = (step: RunStepRow, run: Pick<Run, 'waitUntil'>) => string;
+type RunContext = Pick<Run, 'waitUntil' | 'triggerId'>;
+
+type ResultText = (step: RunStepRow, run: RunContext) => string;
 
 const results: Partial<Record<StepId, ResultText>> = {
   condition: (step) => (step.output.result === 'yes' ? __('Yes', 'yaymatik') : __('No', 'yaymatik')),
@@ -45,10 +47,10 @@ const results: Partial<Record<StepId, ResultText>> = {
       ? sprintf(
           /* translators: 1: how long it waited, e.g. "Wait 1 day"; 2: date and time, e.g. "Oct 9 at 3:00 PM" */
           __('%1$s, resumed %2$s', 'yaymatik'),
-          summary(step),
+          summary(step, run),
           shortDayTime(step.finishedAt),
         )
-      : summary(step);
+      : summary(step, run);
   },
   wait_until: (step, run) => {
     if (step.status === 'waiting') {
@@ -60,7 +62,7 @@ const results: Partial<Record<StepId, ResultText>> = {
           /* translators: %s: date and time, e.g. "Oct 9 at 3:00 PM" */ __('Waited until %s', 'yaymatik'),
           shortDayTime(step.finishedAt),
         )
-      : summary(step);
+      : summary(step, run);
   },
   send_email: (step) =>
     sprintf(
@@ -91,11 +93,11 @@ const results: Partial<Record<StepId, ResultText>> = {
 };
 
 /** What a step did ("Yes", "Sent to a@b.com"), why it didn't, or else its card summary ("Set to Completed"). */
-export function stepResult(step: RunStepRow, run: Pick<Run, 'waitUntil'>): string {
+export function stepResult(step: RunStepRow, run: RunContext): string {
   if (step.status === 'skipped' || step.status === 'failed' || step.status === 'cancelled') return step.error ?? '';
   if (step.status !== 'running') {
     const result = step.stepType && results[step.stepType];
     if (result) return result(step, run);
   }
-  return summary(step);
+  return summary(step, run);
 }

@@ -805,17 +805,23 @@ final class ValidatorTest extends TestCase {
                 ],
             ]
         );
+        $scope    = function ( int $points ) {
+            $scope = new \YayMatik\Workflow\Core\Data\Scope( [ 'trigger' => [ 'points' => $points ] ], null, [] );
+            $scope->set_trigger( StepRegistry::get( 'acme_points' ) );
+            return $scope;
+        };
         $results  = self::with_acme(
             [],
             fn() => [
                 $criteria->validate( $config ),
                 $criteria->uses( $config ),
-                $criteria->evaluate( new \YayMatik\Workflow\Core\Data\Scope( [ 'trigger' => [ 'points' => 42 ] ], null, [] ), $config ),
-                $criteria->evaluate( new \YayMatik\Workflow\Core\Data\Scope( [ 'trigger' => [ 'points' => 5 ] ], null, [] ), $config ),
+                $criteria->context_error( $config, [], StepRegistry::get( 'acme_points' ) ),
+                $criteria->evaluate( $scope( 42 ), $config ),
+                $criteria->evaluate( $scope( 5 ), $config ),
             ]
         );
 
-        $this->assertSame( [ true, [ 'trigger.points' ], true, false ], $results );
+        $this->assertSame( [ true, [], null, true, false ], $results );
         $graph  = fn( string $trigger ) => GraphSchema::prepare(
             [
                 'nodes' => [ self::node( 't', 'trigger', $trigger ), self::node( 'c', 'condition', 'condition', $config ), self::node( 'a', 'action', 'acme_act' ) ],

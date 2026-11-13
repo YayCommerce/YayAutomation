@@ -2,9 +2,17 @@ import type { Workflow, WorkflowGraph, WorkflowIssue, WorkflowNode, WorkflowWarn
 import { __, sprintf } from '@wordpress/i18n';
 
 import { stepOf } from '../steps';
-import { alwaysAvailable, fieldByKey, isStepPath, itemLabel, pathSegments, variableTag } from '../steps/core/data';
+import {
+  alwaysAvailable,
+  fieldByKey,
+  isFactPath,
+  isStepPath,
+  itemLabel,
+  pathSegments,
+  variableTag,
+} from '../steps/core/data';
 import { ancestors } from '../steps/core/variables';
-import { descendantsOf } from './graph';
+import { descendantsOf, triggerOf } from './graph';
 import { messages } from './messages';
 
 /**
@@ -170,7 +178,8 @@ function stepIssue(
   }
   if (stepDef.inactive) return null;
 
-  const error = stepDef.firstIssue(node.data.config);
+  // Like PHP `context_error()`: only with a trigger whose plugin is active.
+  const error = stepDef.firstIssue(node.data.config, available === null ? undefined : triggerOf(graph));
   if (error) return { code: 'invalid_config', ...error };
 
   // Each names the field that holds the tag, like PHP.
@@ -216,15 +225,10 @@ function reachProblem(
       ? null
       : { code: 'missing_data', message: sprintf(messages.stepNotAbove, tag, stepDef.label) };
   }
-  if (path.startsWith('trigger.') && fieldByKey(path)) {
-    const { steps, inactiveSteps } = window.yayMatikMeta.automation;
-    const trigger = graph.nodes.find((n) => n.kind === 'trigger')?.data.block;
-    const facts = trigger
-      ? (steps[trigger]?.facts?.map((fact) => fact.key) ??
-        inactiveSteps[trigger]?.facts.map((key) => `trigger.${key}`) ??
-        [])
-      : [];
-    return facts.includes(path) ? null : { code: 'invalid_config', message: sprintf(messages.unknownVariable, tag) };
+  if (isFactPath(path)) {
+    return fieldByKey(path, triggerOf(graph))
+      ? null
+      : { code: 'invalid_config', message: sprintf(messages.unknownVariable, tag) };
   }
   if (available === null || available.includes(segments[0])) return null;
   return { code: 'missing_data', message: sprintf(messages.missingData, itemLabel(segments[0])) };

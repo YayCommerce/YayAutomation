@@ -222,7 +222,7 @@ final class Validator {
         $by_id     = GraphSchema::by_id( $nodes );
         $parents   = GraphSchema::parents( $workflow['graph']['edges'] );
         foreach ( $nodes as $node ) {
-            $error = self::step_error( $node, $available, $by_id, self::ancestors( $node['id'], $parents ) );
+            $error = self::step_error( $node, $available, $trigger_step instanceof Trigger ? $trigger_step : null, $by_id, self::ancestors( $node['id'], $parents ) );
             if ( $error ) {
                 $errors[] = $error + [ 'nodeId' => $node['id'] ];
             }
@@ -420,12 +420,13 @@ final class Validator {
     /**
      * The one issue of a step, or null: its settings first, then its merge tags, then data it needs.
      *
-     * @param array      $node
-     * @param array|null $available Data item ids; null without a trigger.
-     * @param array[]    $by_id
-     * @param array      $above     Step ids => true.
+     * @param array        $node
+     * @param array|null   $available Data item ids; null without a trigger.
+     * @param Trigger|null $trigger
+     * @param array[]      $by_id
+     * @param array        $above     Step ids => true.
      */
-    private static function step_error( array $node, ?array $available, array $by_id, array $above ): ?array {
+    private static function step_error( array $node, ?array $available, ?Trigger $trigger, array $by_id, array $above ): ?array {
         $step = $node['data']['block'] ? StepRegistry::get( $node['data']['block'] ) : null;
         if ( ! $step && self::inactive_step( $node ) ) {
             return null;
@@ -440,16 +441,11 @@ final class Validator {
         $config = $node['data']['config'];
         $valid  = $step->validate( $config );
         if ( is_wp_error( $valid ) ) {
-            $issue = self::issue( 'invalid_config', $valid->get_error_message(), $valid->get_error_data()['field'] ?? null );
-            $rule  = $valid->get_error_data()['rule'] ?? null;
-            if ( is_array( $rule ) ) {
-                $issue['rule'] = array_map( 'intval', $rule );
-            }
-            return $issue;
+            return self::config_issue( $valid );
         }
-        $context = null === $available ? null : $step->context_error( $config, $available );
+        $context = null === $available ? null : $step->context_error( $config, $available, $trigger );
         if ( $context ) {
-            return self::issue( 'invalid_config', $context->get_error_message(), $context->get_error_data()['field'] ?? null );
+            return self::config_issue( $context );
         }
 
         $tags = self::tag_error( $step, $config, $available, $by_id, $above );
@@ -457,12 +453,7 @@ final class Validator {
             return $tags;
         }
 
-        $trigger = self::trigger_step( array_values( $by_id ) );
-        $facts   = $trigger instanceof Trigger ? array_map( fn( $key ) => "trigger.$key", array_keys( $trigger->facts() ) ) : [];
-        $missing = null === $available ? [] : array_diff( $step->uses( $config ), $available, $facts );
-        if ( $missing && 0 === strpos( (string) reset( $missing ), 'trigger.' ) ) {
-            return self::issue( 'invalid_config', Messages::get( 'ruleVariable' ), null );
-        }
+        $missing = null === $available ? [] : array_diff( $step->uses( $config ), $available );
         if ( $missing ) {
             $item = DataRegistry::items()[ reset( $missing ) ] ?? null;
             // Only a rules field reads data items besides the ones a step always needs.
@@ -610,6 +601,20 @@ final class Validator {
 
     private static function missing_message( string $label ): string {
         return Messages::get( 'missingData', $label );
+    }
+
+    /**
+     * A settings error as an invalid_config issue, with the field and condition rule it is about.
+     *
+     * @param \WP_Error $error
+     */
+    private static function config_issue( \WP_Error $error ): array {
+        $issue = self::issue( 'invalid_config', $error->get_error_message(), $error->get_error_data()['field'] ?? null );
+        $rule  = $error->get_error_data()['rule'] ?? null;
+        if ( is_array( $rule ) ) {
+            $issue['rule'] = array_map( 'intval', $rule );
+        }
+        return $issue;
     }
 
     private static function issue( string $code, string $message, ?string $field ): array {

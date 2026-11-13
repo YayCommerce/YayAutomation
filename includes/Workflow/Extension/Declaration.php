@@ -34,9 +34,6 @@ final class Declaration {
     /** @var string[]|null Data item ids, read once. */
     private static $items = null;
 
-    /** @var array[] Facts declared in this request, by key. */
-    private static $facts = [];
-
     private const MODULE_KEYS = [ 'id', 'label', 'description', 'logo', 'requires_api', 'privacy_subjects' ];
 
     private const STEP_KEYS = [ 'label', 'description', 'icon', 'category', 'fields', 'summary', 'validate', 'setup_issue' ];
@@ -64,11 +61,6 @@ final class Declaration {
         Field::NOTICE      => 'text',
         Field::NUMBER_UNIT => 'units',
     ];
-
-    /** A new registration: no fact declared yet. */
-    public static function begin(): void {
-        self::$facts = [];
-    }
 
     /**
      * The module, or null when refused.
@@ -488,8 +480,7 @@ final class Declaration {
     }
 
     /**
-     * Fact definitions, or why they were refused. A key another trigger declared keeps its type:
-     * a condition on `trigger.<key>` reads one definition (`DataRegistry::field()`).
+     * Fact definitions, or why they were refused.
      *
      * @param ExtensionModule $module
      * @param mixed           $facts
@@ -509,13 +500,8 @@ final class Declaration {
             if ( is_string( $def ) ) {
                 return $def . ' Facts are one value: ' . implode( ', ', FieldAdapter::SCALAR_TYPES ) . '.';
             }
-            $known = DataRegistry::field( "trigger.{$key}" ) ?? ( self::$facts[ $key ] ?? null );
-            if ( $known && $known['value_type']->to_string() !== $def['value_type']->to_string() ) {
-                return "Fact \"{$key}\" is already declared by another trigger as {$known['value_type']->to_string()}.";
-            }
             $defs[ $key ] = $def;
         }
-        self::$facts = $defs + self::$facts;
         return $defs;
     }
 

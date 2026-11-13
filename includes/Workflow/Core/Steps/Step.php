@@ -85,10 +85,11 @@ abstract class Step {
     /**
      * Checks that need the data the step can read there; null when fine. Called after `validate()`.
      *
-     * @param array $config
-     * @param array $available Data item ids from the trigger, plus the ones always there.
+     * @param array        $config
+     * @param array        $available Data item ids from the trigger, plus the ones always there.
+     * @param Trigger|null $trigger
      */
-    public function context_error( array $config, array $available ): ?\WP_Error { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter -- for steps whose settings depend on the trigger.
+    public function context_error( array $config, array $available, ?Trigger $trigger ): ?\WP_Error { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter -- for steps whose settings depend on the trigger.
         return null;
     }
 

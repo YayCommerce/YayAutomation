@@ -129,9 +129,11 @@ final class Executor {
         if ( ! $graph || ! is_array( $graph['nodes'] ?? null ) ) {
             return $this->fail( $id, null, null, __( 'The workflow version this run started on no longer exists.', 'yaymatik' ) );
         }
-        $nodes = GraphSchema::by_id( $graph['nodes'] );
-        $edges = is_array( $graph['edges'] ?? null ) ? $graph['edges'] : [];
-        $scope = Scope::from_array( is_array( $run['scope'] ?? null ) ? $run['scope'] : [], ( $this->resolver )() );
+        $nodes   = GraphSchema::by_id( $graph['nodes'] );
+        $edges   = is_array( $graph['edges'] ?? null ) ? $graph['edges'] : [];
+        $scope   = Scope::from_array( is_array( $run['scope'] ?? null ) ? $run['scope'] : [], ( $this->resolver )() );
+        $trigger = ( $this->steps )( (string) ( $run['trigger_id'] ?? '' ) );
+        $scope->set_trigger( $trigger instanceof Trigger ? $trigger : null );
         $scope->set_output_display( self::output_display( $nodes, $this->steps ) );
         // The cursor is the pending step ids; the graph is a tree, so no visited set.
         $queue = is_array( $run['position']['queue'] ?? null )
@@ -294,7 +296,7 @@ final class Executor {
         try {
             $valid = $step->validate( $config );
             if ( true === $valid ) {
-                $valid = $step->context_error( $config, self::available( $scope ) ) ?? true;
+                $valid = $step->context_error( $config, self::available( $scope ), $scope->trigger() ) ?? true;
             }
             if ( true !== $valid ) {
                 /* translators: %s: what is wrong with the step's settings */

@@ -21,7 +21,7 @@ const row = (over: Partial<Row>): Row => ({
   ...over,
 });
 
-const run = { waitUntil: null };
+const run = { waitUntil: null, triggerId: 'order_created' };
 
 describe('stepResult', () => {
   it('reads a condition as Yes / No', () => {
@@ -32,7 +32,10 @@ describe('stepResult', () => {
   it('says until when a waiting wait continues, and when a finished one resumed', () => {
     const wait = { stepType: 'wait' as const, input: { delay: { value: 1, unit: 'days' } } };
     expect(
-      stepResult(row({ ...wait, status: 'waiting', finishedAt: null }), { waitUntil: '2026-10-10T15:00:00+00:00' }),
+      stepResult(row({ ...wait, status: 'waiting', finishedAt: null }), {
+        ...run,
+        waitUntil: '2026-10-10T15:00:00+00:00',
+      }),
     ).toMatch(/^until Oct 10(, 2026)? at 3:00/);
     expect(stepResult(row({ ...wait, finishedAt: '2026-10-10T15:00:00+00:00' }), run)).toMatch(
       /^Wait 1 day, resumed Oct 10(, 2026)? at 3:00/,

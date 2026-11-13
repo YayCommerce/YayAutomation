@@ -17,7 +17,7 @@ import {
 } from '@/components/ui/breadcrumb';
 import { LoadingButton } from '@/components/ui/button';
 import { useHeaderSlot } from '@/routes/layout/useHeaderSlot';
-import { stepsInOrder } from '../../model/graph';
+import { stepsInOrder, triggerOf } from '../../model/graph';
 import { kindMeta } from '../../shared/canvas/NodeCardView';
 import { ReadOnlyCanvas } from '../../shared/canvas/ReadOnlyCanvas';
 import { CreateWorkflowButton } from '../../shared/create/CreateWorkflowButton';
@@ -194,7 +194,7 @@ function TemplateSidePanel({ template, navState }: { template: WorkflowTemplate;
                   </span>
                   {stepDef && (
                     <span className="text-muted-foreground-600 [&_strong]:text-card-foreground block text-[13px]">
-                      <SummaryText text={stepDef.summary(node.data.config)} />
+                      <SummaryText text={stepDef.summary(node.data.config, triggerOf(template.graph))} />
                     </span>
                   )}
                 </span>
