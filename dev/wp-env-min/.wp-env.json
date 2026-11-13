@@ -5,6 +5,7 @@
   "testsEnvironment": false,
   "plugins": ["https://downloads.wordpress.org/plugin/woocommerce.11.0.0.zip", "../.."],
   "mappings": {
-    "wp-content/mu-plugins": "../wp/mu-plugins"
+    "wp-content/mu-plugins": "../wp/mu-plugins",
+    "wp-content/plugins/acme-rewards": "../example-extension"
   }
 }

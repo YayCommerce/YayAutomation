@@ -21,7 +21,7 @@ export interface HealthCheck {
   /** `jobs_late` only: the server cron guide. */
   guide?: string;
   /** `missing_plugin` only: the active workflows with such a step, and the plugins' names. */
-  workflowIds?: string[];
+  workflows?: { id: string; name: string }[];
   plugins?: string[];
 }
 

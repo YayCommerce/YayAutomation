@@ -14,6 +14,8 @@ Labels: **[Certain]** = read in code / official docs; **[Likely]** = standard pr
 - **A broken extension never breaks core** (§9); **a deactivated extension never breaks a workflow** (§10, J9).
 - **Runs look the same** for core and extension steps: canvas summary, run detail, Skipped / Failed reasons, unsubscribe, mail log, privacy export / erase (G2, G5).
 
+**Example:** [`dev/example-extension/`](../dev/example-extension/acme-rewards.php) uses every piece of this contract (an imaginary loyalty plugin, "Acme Rewards"); `./run.sh check-extension` runs it end to end.
+
 ## 2. Entry point
 
 ```php

@@ -8,6 +8,7 @@ use YayMatik\Workflow\Core\Data\Scope;
 use YayMatik\Workflow\Core\Definition\Messages;
 use YayMatik\Workflow\Core\Steps\Condition;
 use YayMatik\Workflow\Core\Steps\Field;
+use YayMatik\Workflow\Core\Steps\StepResult;
 use YayMatik\Workflow\Core\Steps\Trigger;
 
 defined( 'ABSPATH' ) || exit;
@@ -102,6 +103,10 @@ class Criteria extends Condition {
      * @param Trigger|null $trigger
      */
     private function rules_error( array $config, bool $facts, ?Trigger $trigger ): ?\WP_Error {
+        // A run whose trigger's plugin is off has no trigger: `run()` says so instead of a settings error.
+        if ( $facts && ! $trigger ) {
+            return null;
+        }
         foreach ( $config['rules'] as $index => $item ) {
             if ( ! $facts && self::is_group( $item ) && ! array_filter( array_column( $item['rules'], 'field' ) ) ) {
                 return $this->invalid( Messages::get( 'groupRulesRequired' ), 'rules', [ 'rule' => [ $index ] ] );
@@ -158,6 +163,13 @@ class Criteria extends Condition {
         return $keys;
     }
 
+    public function run( Scope $scope, array $config ): StepResult {
+        if ( ! $scope->trigger() && array_filter( self::flat_rules( $config['rules'] ), [ self::class, 'reads_fact' ] ) ) {
+            return StepResult::failed( __( 'This condition reads the trigger’s values, but the trigger’s plugin isn’t active.', 'yaymatik' ) );
+        }
+        return parent::run( $scope, $config );
+    }
+
     public function evaluate( Scope $scope, array $config ): bool {
         foreach ( $config['rules'] as $item ) {
             $result = self::is_group( $item ) ? $this->evaluate( $scope, $item ) : self::rule_matches( $scope, $item );
@@ -211,6 +223,9 @@ class Criteria extends Condition {
     private static function rule_matches( Scope $scope, array $rule ): bool {
         $operator = $rule['operator'];
         $field    = DataRegistry::field( $rule['field'], $scope->trigger() );
+        if ( ! $field ) {
+            return false;
+        }
         if ( DataItem::TYPE_META === $field['type'] ) {
             return Operators::compare( DataItem::TYPE_META, $operator, $scope->meta( $rule['field'], $rule['key'] ), $rule['value'] );
         }

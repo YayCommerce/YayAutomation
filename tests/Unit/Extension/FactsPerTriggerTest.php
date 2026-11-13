@@ -104,6 +104,18 @@ final class FactsPerTriggerTest extends TestCase {
         $this->assertFalse( ( new Criteria() )->evaluate( $this->scope( $facts, 'other_note' ), $config ), 'text: "10.0" isn\'t "10"' );
     }
 
+    public function test_a_fact_rule_fails_with_a_reason_when_the_runs_trigger_plugin_is_off(): void {
+        $config = self::config( 'greater_than', '10' );
+        $scope  = $this->scope( [ 'amount' => '25' ], null );
+
+        $this->assertNull( ( new Criteria() )->context_error( $config, [ 'customer' ], null ), 'not a settings error' );
+        $result = ( new Criteria() )->run( $scope, $config );
+        $this->assertTrue( $result->is_failed() );
+        $this->assertSame( 'This condition reads the trigger’s values, but the trigger’s plugin isn’t active.', $result->message() );
+        $this->assertFalse( ( new Criteria() )->evaluate( $scope, $config ), 'read anyway: false, no notice' );
+        $this->assertTrue( ( new Criteria() )->run( $this->scope( [ 'amount' => '25' ], 'acme_paid' ), $config )->is_ok() );
+    }
+
     public function test_a_date_fact_is_read_only_from_its_own_trigger(): void {
         $facts = [ 'when' => '2026-11-14' ];
 
@@ -135,7 +147,7 @@ final class FactsPerTriggerTest extends TestCase {
             );
             return array_column( $errors, null, 'nodeId' )['c'] ?? null;
         };
-        $steps  = new \ReflectionProperty( StepRegistry::class, 'steps' );
+        $steps = new \ReflectionProperty( StepRegistry::class, 'steps' );
         $steps->setAccessible( true );
         $before = StepRegistry::all();
         $steps->setValue( null, $before + $this->triggers );
