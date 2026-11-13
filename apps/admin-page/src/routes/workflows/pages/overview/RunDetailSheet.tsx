@@ -164,7 +164,6 @@ function StepLine({
   return (
     // A row with no detail line centres its title on the tile; with one, both lines start at its top.
     <li className={cn('flex gap-3', result ? 'items-start' : 'items-center')}>
-      {/* Greyed like its canvas card when the step's plugin is off. */}
       <StepTile
         kind={kind}
         icon={stepDef?.icon}

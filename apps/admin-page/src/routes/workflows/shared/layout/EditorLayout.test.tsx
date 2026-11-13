@@ -16,11 +16,15 @@ beforeEach(() => {
   root = createRoot(container);
 });
 
-afterEach(() => container.remove());
+afterEach(() => {
+  act(() => root.unmount());
+  container.remove();
+  vi.restoreAllMocks();
+});
 
 describe('EditorLayout', () => {
   it('stops the page from scrolling while it is open', () => {
-    const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
+    const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined);
     act(() =>
       root.render(
         <MemoryRouter>
@@ -33,6 +37,5 @@ describe('EditorLayout', () => {
 
     act(() => root.unmount());
     expect(document.documentElement.classList.contains('yaymatik-editor-open')).toBe(false);
-    scrollTo.mockRestore();
   });
 });
