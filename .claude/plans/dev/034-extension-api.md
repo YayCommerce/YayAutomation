@@ -71,7 +71,7 @@ Per CP: stop hook green; `/code-review high` on risk 2–3; commit `feat|fix|doc
 
 ### PR A — `jack/feature/034a-extension-api`
 
-#### CP0 — Contract, docs, 033 tester steps — Risk 1
+#### ✅ CP0 — Contract, docs, 033 tester steps — Risk 1 (7ea8599)
 
 - **Files**
   - `docs/extension-api.md`: commit as is, plus the M-row wording fixes that need no code (M8, M9, M10, M11, M12, M14), §14 / §17 per D13 (points trigger, no currency-switch trigger), and the title without "(DRAFT for plan 034)".
@@ -261,6 +261,10 @@ Per CP: stop hook green; `/code-review high` on risk 2–3; commit `feat|fix|doc
 
 - CP0: design §5 gets only the pointer to the public API; `setup_issue` on Step and `context_error` are written in CP2, the email capability in CP6, when they exist (CLAUDE.md docs rule: document only what exists).
 - CP0: the contract's status line pointed at `claude/decisions-034-extension-api.md`, which isn't in the repo; it now points at §15 and decision log § EX.
+- CP1 (Jack's rule for this run: guards wrap only extension callbacks, at the adapters, never core fields or the Scope read; `GoneEntity` always rethrown): no try/catch in `ModuleRegistry` (`new $class()`), `Dispatcher::listen_active()`, `Catalog::step()`, `DataRegistry::to_client()`, `Template` / `Criteria`. `Guard` is added in CP2 with its first caller (`ExtensionTrigger` / `ExtensionAction`); field `value` / `display` / `options` are guarded in CP3's `FieldAdapter` / `ExtensionDataItem`. The "throwing `listen`" tests (DispatcherTest, check-late-module) move to CP2 with the registrar.
+- CP1: `requiresApi` in Health › Extensions comes in CP2, with the first module that has one (review: no key "for later").
+- CP1 (review): a refused module is named by its class (its id is the winner's); a clash's callback is `step <id>` / `data item <id>` / `module <id>`, so each shows. `count` is a lower bound (repeats inside the 10 minutes are counted per request, D4); the UI says "at least". The option is autoloaded (no query for the throttle check); a write reloads `alloptions` first.
+- Tests mirror `includes/`: `tests/Unit/Extension/…`, not `tests/Unit/Workflow/Extension/…`.
 
 ## Meta
 

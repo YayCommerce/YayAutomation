@@ -2,6 +2,10 @@
 namespace YayMatik\Workflow\Core\Runtime;
 
 use YayMatik\Workflow\Core\Storage\RunStore;
+use YayMatik\Workflow\Extension\Diagnostics;
+use YayMatik\Workflow\ModuleRegistry;
+use YayMatik\Workflow\Modules\WoocommerceModule;
+use YayMatik\Workflow\Modules\YayMatikModule;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -42,6 +46,32 @@ final class HealthCheck {
             self::result( 'cleanup_job', self::job( Cleanup::HOOK, self::CLEANUP_LATE, $now ) ),
             self::result( 'inactive_sweep_job', self::job( InactiveSweep::HOOK, self::SWEEP_LATE, $now ) ),
         ];
+    }
+
+    /**
+     * Other plugins' modules, and any module with an error in the last 24 hours (a refused one included).
+     *
+     * @return array[] `id`, `label`, `errors` (newest first: `callback`, `message`, `count` (at least), `time` ISO 8601).
+     */
+    public static function extensions(): array {
+        $modules = ModuleRegistry::modules();
+        $rows    = [];
+        foreach ( $modules as $id => $module ) {
+            if ( YayMatikModule::ID !== $id && WoocommerceModule::ID !== $id ) {
+                $rows[ $id ] = self::extension( $id, $module->label() );
+            }
+        }
+        foreach ( Diagnostics::recent( 24 ) as $entry ) {
+            $id                      = $entry['module'];
+            $rows[ $id ]           ??= self::extension( $id, isset( $modules[ $id ] ) ? $modules[ $id ]->label() : $id );
+            $rows[ $id ]['errors'][] = [
+                'callback' => $entry['callback'],
+                'message'  => $entry['message'],
+                'count'    => $entry['count'],
+                'time'     => gmdate( 'c', $entry['time'] ),
+            ];
+        }
+        return array_values( $rows );
     }
 
     /**
@@ -184,6 +214,18 @@ final class HealthCheck {
             'runIds' => $found['ids'],
             'fix'    => $found['count'] ? self::FIXES[ $id ] : null,
         ] + ( empty( $found['capped'] ) ? [] : [ 'capped' => true ] );
+    }
+
+    /**
+     * @param string $id
+     * @param string $label
+     */
+    private static function extension( string $id, string $label ): array {
+        return [
+            'id'     => $id,
+            'label'  => $label,
+            'errors' => [],
+        ];
     }
 
     /**

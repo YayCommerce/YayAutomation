@@ -11,12 +11,14 @@ use YayMatik\Workflow\Core\Steps\Action;
 use YayMatik\Workflow\Core\Steps\Condition;
 use YayMatik\Workflow\Core\Steps\Step;
 use YayMatik\Workflow\Core\Steps\Trigger;
+use YayMatik\Workflow\Extension\Diagnostics;
 
 defined( 'ABSPATH' ) || exit;
 
 /**
  * The modules, and the steps and data items they register. Another plugin adds a module class
- * on `HOOK`. An id that is already taken (module, step or data item) keeps its first owner.
+ * on `HOOK`. An id that is already taken (module, step or data item) keeps its first owner; the
+ * second claim is a diagnostic.
  */
 final class ModuleRegistry {
 
@@ -53,9 +55,12 @@ final class ModuleRegistry {
                 continue;
             }
             $module = new $class();
-            if ( ! isset( $modules[ $module->id() ] ) ) {
-                $modules[ $module->id() ] = $module;
+            if ( isset( $modules[ $module->id() ] ) ) {
+                // Named by its class: the id is the winner's.
+                self::taken( get_class( $module ), 'module', $module->id() );
+                continue;
             }
+            $modules[ $module->id() ] = $module;
         }
         return $modules;
     }
@@ -88,9 +93,11 @@ final class ModuleRegistry {
                     continue;
                 }
                 $item = new $class();
-                if ( ! isset( $items[ $item->id() ] ) ) {
-                    $items[ $item->id() ] = $item;
+                if ( isset( $items[ $item->id() ] ) ) {
+                    self::taken( $module->id(), 'data item', $item->id() );
+                    continue;
                 }
+                $items[ $item->id() ] = $item;
             }
         }
         return $items;
@@ -144,13 +151,24 @@ final class ModuleRegistry {
                         continue;
                     }
                     $step = new $class();
-                    if ( ! isset( $steps[ $step->id() ] ) ) {
-                        $steps[ $step->id() ]   = $step;
-                        $plugins[ $step->id() ] = $module->id();
+                    if ( isset( $steps[ $step->id() ] ) ) {
+                        self::taken( $module->id(), 'step', $step->id() );
+                        continue;
                     }
+                    $steps[ $step->id() ]   = $step;
+                    $plugins[ $step->id() ] = $module->id();
                 }
             }
         }
         return [ $steps, $plugins ];
+    }
+
+    /**
+     * @param string $module
+     * @param string $what
+     * @param string $id
+     */
+    private static function taken( string $module, string $what, string $id ): void {
+        Diagnostics::record( $module, "{$what} {$id}", sprintf( '%s id "%s" is already taken by another module; this one was left out.', ucfirst( $what ), $id ) );
     }
 }

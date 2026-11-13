@@ -47,8 +47,9 @@ class HealthRoutes {
     public function checks() {
         return rest_ensure_response(
             [
-                'checks'    => HealthCheck::run(),
-                'checkedAt' => gmdate( 'c' ),
+                'checks'     => HealthCheck::run(),
+                'extensions' => HealthCheck::extensions(),
+                'checkedAt'  => gmdate( 'c' ),
             ]
         );
     }

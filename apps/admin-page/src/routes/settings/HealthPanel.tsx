@@ -1,5 +1,11 @@
 import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react';
-import type { FixableHealthCheckId, HealthCheck, HealthCheckId, HealthChecksResponse } from '@yaymatik/types';
+import type {
+  FixableHealthCheckId,
+  HealthCheck,
+  HealthCheckId,
+  HealthChecksResponse,
+  HealthExtension,
+} from '@yaymatik/types';
 import { CircleAlert, CircleCheck, ExternalLink, Info, RefreshCw, TriangleAlert } from 'lucide-react';
 import { humanTimeDiff } from '@wordpress/date';
 import { __, _n, sprintf } from '@wordpress/i18n';
@@ -115,6 +121,7 @@ export function HealthPanel() {
             </EmptyHeader>
           </Empty>
         )}
+        {data && !failed && <ExtensionsBlock extensions={data.extensions} />}
       </CardContent>
     </Card>
   );
@@ -282,6 +289,58 @@ function LateJobsRow({ check }: { check: HealthCheck }) {
         )
       }
     />
+  );
+}
+
+/** Other plugins' modules: core's own are never listed. */
+function ExtensionsBlock({ extensions }: { extensions: HealthExtension[] }) {
+  return (
+    <section aria-label={__('Extensions', 'yaymatik')} className="mt-4 flex flex-col gap-3 border-t pt-4">
+      <h3 className="text-sm font-medium">{__('Extensions', 'yaymatik')}</h3>
+      {extensions.length ? (
+        extensions.map((extension) => <ExtensionRow key={extension.id} extension={extension} />)
+      ) : (
+        <p className="text-muted-foreground text-sm">{__('No other plugin adds to YayMatik.', 'yaymatik')}</p>
+      )}
+    </section>
+  );
+}
+
+function ExtensionRow({ extension }: { extension: HealthExtension }) {
+  return (
+    <div className="flex gap-3 [&>svg]:mt-0.5 [&>svg]:size-4 [&>svg]:shrink-0" data-extension={extension.id}>
+      {extension.errors.length ? (
+        <CircleAlert className="text-destructive" />
+      ) : (
+        <CircleCheck className="text-success-soft-foreground" />
+      )}
+      <div className="flex min-w-0 flex-col gap-1">
+        <span className="text-sm font-medium">{extension.label}</span>
+        {extension.errors.length ? (
+          <ul className="flex flex-col gap-1">
+            {extension.errors.map((error) => (
+              <li key={`${error.callback}|${error.time}`} className="text-muted-foreground text-sm">
+                <span className="text-foreground">{error.message}</span>{' '}
+                {sprintf(
+                  /* translators: 1: where it failed, e.g. "listen", 2: how many times, 3: when, e.g. "5 minutes ago" */
+                  _n(
+                    '(%1$s, at least %2$d time, last %3$s)',
+                    '(%1$s, at least %2$d times, last %3$s)',
+                    error.count,
+                    'yaymatik',
+                  ),
+                  error.callback,
+                  error.count,
+                  humanTimeDiff(error.time),
+                )}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <span className="text-muted-foreground text-sm">{__('No problems', 'yaymatik')}</span>
+        )}
+      </div>
+    </div>
   );
 }
 

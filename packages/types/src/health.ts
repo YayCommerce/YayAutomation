@@ -16,8 +16,17 @@ export interface HealthCheck {
   guide?: string;
 }
 
+/** Another plugin's module, or one refused at registration. */
+export interface HealthExtension {
+  id: string;
+  label: string;
+  /** Last 24 hours, newest first; `count` is a lower bound. */
+  errors: { callback: string; message: string; count: number; time: string }[];
+}
+
 export interface HealthChecksResponse {
   checks: HealthCheck[];
+  extensions: HealthExtension[];
   checkedAt: string;
 }
 
