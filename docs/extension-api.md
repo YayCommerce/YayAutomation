@@ -503,7 +503,7 @@ Result: every listed need maps to a contract piece; the gaps are on the plugins'
 | Split | Two PRs (§17) |
 
 ## 16. Changelog
-- 1.0.0 (YayMatik 1.1): first stable version.
+- 1.0.0 (YayMatik 1.1): first stable version. `yaymatik_register` (`Registrar`, `Module`: triggers, actions, data items, data fields, categories, templates), `yaymatik_fire`, `Run`, `CustomerView`, `CartView`, `Api::VERSION`, `Api::references()`. Features: `triggers`, `actions`, `data_items`, `data_fields`, `trigger_facts`, `privacy_subjects`, `email`, `templates`, `editor_iframe`. postMessage schema v1. Example: `dev/example-extension/`.
 
 ## 17. Checkpoints and PRs
 
