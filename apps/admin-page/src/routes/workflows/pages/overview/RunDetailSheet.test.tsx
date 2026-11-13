@@ -138,6 +138,7 @@ describe('RunDetailSheet', () => {
     expect(trigger.textContent).toContain('Points earned');
     expect(action.textContent).toContain('Add reward points');
     expect(sheet.textContent).not.toContain('Removed step');
+    expect(trigger.querySelector('[aria-hidden]')?.className).toContain('grayscale');
     expect(action.querySelector('[aria-hidden]')?.className).toContain('grayscale');
   });
 
