@@ -4,6 +4,7 @@ namespace YayMatik\Workflow\Core\Runtime;
 use YayMatik\Utils\Logger;
 use YayMatik\Workflow\Core\Data\DataRegistry;
 use YayMatik\Workflow\Core\Data\GoneEntity;
+use YayMatik\Workflow\Core\Data\Ref;
 use YayMatik\Workflow\Core\Data\RefResolver;
 use YayMatik\Workflow\Core\Data\Scope;
 use YayMatik\Workflow\Core\Definition\GraphSchema;
@@ -283,6 +284,9 @@ final class Executor {
         }
         try {
             $valid = $step->validate( $config );
+            if ( true === $valid ) {
+                $valid = $step->context_error( $config, self::available( $scope ) ) ?? true;
+            }
             if ( true !== $valid ) {
                 /* translators: %s: what is wrong with the step's settings */
                 return StepResult::failed( sprintf( __( 'Invalid settings: %s', 'yaymatik' ), is_wp_error( $valid ) ? $valid->get_error_message() : '' ) );
@@ -293,6 +297,16 @@ final class Executor {
         } catch ( \Throwable $e ) {
             return StepResult::failed( self::message( $e ) );
         }
+    }
+
+    /**
+     * Data item ids the run's trigger holds a ref for, plus the ones always there.
+     *
+     * @param Scope $scope
+     */
+    private static function available( Scope $scope ): array {
+        $refs = array_filter( (array) $scope->get( 'trigger' ), fn( $value ) => $value instanceof Ref );
+        return array_values( array_unique( array_merge( array_keys( $refs ), DataRegistry::ALWAYS ) ) );
     }
 
     /**

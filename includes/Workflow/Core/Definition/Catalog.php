@@ -4,6 +4,7 @@ namespace YayMatik\Workflow\Core\Definition;
 use YayMatik\Workflow\Core\Data\DataRegistry;
 use YayMatik\Workflow\Core\Data\Operators;
 use YayMatik\Workflow\Core\Data\Type;
+use YayMatik\Workflow\Extension\ExtensionModule;
 use YayMatik\Workflow\ModuleRegistry;
 use YayMatik\Workflow\Core\Steps\Field;
 use YayMatik\Workflow\Core\Steps\Step;
@@ -22,6 +23,7 @@ final class Catalog {
         return [
             'plugins'        => ModuleRegistry::to_client(),
             'steps'          => self::steps( StepRegistry::all() ),
+            'categories'     => self::categories(),
             'data'           => DataRegistry::to_client(),
             'operators'      => Operators::BY_TYPE,
             'operatorLabels' => Operators::labels(),
@@ -42,6 +44,25 @@ final class Catalog {
             $meta[ $id ] = self::step( $step, $plugins[ $id ] );
         }
         return $meta;
+    }
+
+    /** Picker section labels by id: core's, then the ones extension modules declared. */
+    public static function categories(): array {
+        $categories = [
+            'email'    => __( 'Email', 'yaymatik' ),
+            'order'    => __( 'Order', 'yaymatik' ),
+            'coupon'   => __( 'Coupons', 'yaymatik' ),
+            'flow'     => __( 'Flow', 'yaymatik' ),
+            'cart'     => __( 'Carts', 'yaymatik' ),
+            'customer' => __( 'Customers', 'yaymatik' ),
+            'review'   => __( 'Reviews', 'yaymatik' ),
+        ];
+        foreach ( ModuleRegistry::modules() as $module ) {
+            if ( $module instanceof ExtensionModule ) {
+                $categories += $module->categories();
+            }
+        }
+        return $categories;
     }
 
     /**

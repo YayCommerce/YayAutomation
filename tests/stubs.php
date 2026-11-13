@@ -267,6 +267,19 @@ if ( ! function_exists( 'admin_url' ) ) {
     }
 }
 
+if ( ! function_exists( 'did_action' ) ) {
+    // `init` has run, other hooks haven't, unless a test sets `$GLOBALS['yaymatik_test_did_action']`.
+    function did_action( $hook_name ) {
+        return $GLOBALS['yaymatik_test_did_action'][ $hook_name ] ?? ( 'init' === $hook_name ? 1 : 0 );
+    }
+}
+
+if ( ! function_exists( 'plugins_url' ) ) {
+    function plugins_url( $path = '', $plugin = '' ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- same signature as WordPress.
+        return 'https://shop.test/wp-content/plugins/' . ltrim( (string) $path, '/' );
+    }
+}
+
 if ( ! function_exists( 'get_option' ) ) {
     // Options a test set with update_option(); `admin_email` is always set.
     function get_option( $name, $default_value = false ) {

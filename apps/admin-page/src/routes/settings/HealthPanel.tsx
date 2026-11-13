@@ -307,6 +307,14 @@ function ExtensionsBlock({ extensions }: { extensions: HealthExtension[] }) {
 }
 
 function ExtensionRow({ extension }: { extension: HealthExtension }) {
+  const name = extension.requiresApi
+    ? sprintf(
+        /* translators: 1: plugin name, 2: Extension API version, e.g. "1.0" */
+        __('%1$s (needs Extension API %2$s)', 'yaymatik'),
+        extension.label,
+        extension.requiresApi,
+      )
+    : extension.label;
   return (
     <div className="flex gap-3 [&>svg]:mt-0.5 [&>svg]:size-4 [&>svg]:shrink-0" data-extension={extension.id}>
       {extension.errors.length ? (
@@ -315,7 +323,7 @@ function ExtensionRow({ extension }: { extension: HealthExtension }) {
         <CircleCheck className="text-success-soft-foreground" />
       )}
       <div className="flex min-w-0 flex-col gap-1">
-        <span className="text-sm font-medium">{extension.label}</span>
+        <span className="text-sm font-medium">{name}</span>
         {extension.errors.length ? (
           <ul className="flex flex-col gap-1">
             {extension.errors.map((error) => (

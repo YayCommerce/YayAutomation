@@ -6,6 +6,7 @@ import { alwaysAvailable } from './data';
 import { defaultsFromFields, schemaFromFields } from './fields/catalogSchema';
 import { StepForm } from './fields/StepForm';
 import { stepIcons } from './icons';
+import { logoIcon } from './logoIcon';
 import { MARKED } from './marks';
 import { renderSummary } from './summary';
 import { templatePaths } from './template';
@@ -106,7 +107,7 @@ export function defineStep<TConfig extends Config>({
     ...spec,
     label: catalog.label,
     description: catalog.description,
-    icon: stepIcons[catalog.icon],
+    icon: catalog.icon ? stepIcons[catalog.icon] : logoIcon(catalog.plugin),
     plugin: catalog.plugin,
     provides: catalog.provides ?? [],
     requires,

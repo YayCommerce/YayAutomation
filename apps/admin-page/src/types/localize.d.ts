@@ -74,8 +74,8 @@ export interface StepMeta {
   plugin?: WorkflowPlugin;
   /** Data items the step adds: a trigger's for every run, an action's for the steps below it. */
   provides?: string[];
-  /** Picker section. */
-  category?: 'email' | 'order' | 'coupon' | 'flow' | 'cart' | 'customer' | 'review';
+  /** Picker section: a key of `automation.categories`. */
+  category?: string;
   /** Actions: data items needed whatever the config. */
   requires?: string[];
 }
@@ -85,7 +85,7 @@ export interface CatalogStepMeta extends StepMeta {
   plugin: WorkflowPlugin;
   label: string;
   description: string;
-  /** A name from PHP `StepIcons::NAMES` (lucide). */
+  /** A name from PHP `StepIcons::NAMES` (lucide); '' for another plugin's step that names none (its logo is drawn). */
   icon: string;
   /** Card text with `%field key%` placeholders. */
   summary: string;
@@ -163,6 +163,8 @@ declare global {
         plugins: PluginMeta[];
         /** By step id; another plugin's ids too. */
         steps: Partial<Record<StepId, CatalogStepMeta>>;
+        /** PHP `Catalog::categories()`: picker section labels by id, core's and other plugins'. */
+        categories: Record<string, string>;
         data: DataItemMeta[];
         /** Operator ids per field type. */
         operators: Record<DataFieldType, string[]>;

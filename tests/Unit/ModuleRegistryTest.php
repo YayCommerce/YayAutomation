@@ -139,8 +139,8 @@ final class ModuleRegistryTest extends TestCase {
         $this->assertEqualsCanonicalizing(
             [
                 YayMatikProModule::class . ' module yaymatik' => 'Module id "yaymatik" is already taken by another module; this one was left out.',
-                'fake step condition'                       => 'Step id "condition" is already taken by another module; this one was left out.',
-                'fake data item site'                       => 'Data item id "site" is already taken by another module; this one was left out.',
+                'fake step condition' => 'Step id "condition" is already taken by another module; this one was left out.',
+                'fake data item site' => 'Data item id "site" is already taken by another module; this one was left out.',
             ],
             array_column(
                 array_map( fn( array $entry ) => $entry + [ 'key' => $entry['module'] . ' ' . $entry['callback'] ], Diagnostics::recent( 24 ) ),

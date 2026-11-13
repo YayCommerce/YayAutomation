@@ -136,6 +136,7 @@ final class HealthCheckTest extends TestCase {
                 [
                     'id'          => 'acme_gone',
                     'label'       => 'acme_gone',
+                    'requiresApi' => null,
                     'errors'      => [
                         [
                             'callback' => 'register',

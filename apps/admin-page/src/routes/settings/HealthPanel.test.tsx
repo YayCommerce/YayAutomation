@@ -359,22 +359,23 @@ describe('HealthPanel', () => {
   it('lists each module with no problems or its errors', async () => {
     const time = new Date().toISOString();
     await render(allOk, [
-      { id: 'acme_rewards', label: 'Acme Rewards', errors: [] },
+      { id: 'acme_rewards', label: 'Acme Rewards', requiresApi: '1.0', errors: [] },
       {
         id: 'acme_broken',
         label: 'Acme Broken',
+        requiresApi: null,
         errors: [{ callback: 'listen', message: 'Boom.', count: 3, time }],
       },
     ]);
 
     const rows = [...extensionsBlock()!.querySelectorAll('[data-extension]')];
     expect(rows.map((row) => row.getAttribute('data-extension'))).toEqual(['acme_rewards', 'acme_broken']);
-    expect(rows[0].textContent).toBe('Acme RewardsNo problems');
+    expect(rows[0].textContent).toBe('Acme Rewards (needs Extension API 1.0)No problems');
     expect(rows[1].textContent).toMatch(/^Acme BrokenBoom\. \(listen, at least 3 times, last .+\)$/);
   });
 
   it('keeps the modules after a fix, whose response has none', async () => {
-    await render([cleanup], [{ id: 'acme_rewards', label: 'Acme Rewards', errors: [] }]);
+    await render([cleanup], [{ id: 'acme_rewards', label: 'Acme Rewards', requiresApi: null, errors: [] }]);
     const finish = deferredFix();
 
     await act(async () => button('Schedule again')!.click());

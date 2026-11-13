@@ -93,13 +93,15 @@ Table names below omit the prefix: each is `{prefix}yaymatik_<name>`, e.g. `wp_y
 
 **PHP is the one source of truth for a step's settings.** The editor builds its checks from it, so PHP and TS can't disagree.
 
-This contract is internal. Other plugins use the public Extension API ([extension-api.md](extension-api.md)): args arrays and callables that core wraps in its own step classes.
+This contract is internal. Other plugins use the public Extension API ([extension-api.md](extension-api.md)): args arrays and callables that core wraps in its own step classes (`Workflow\Extension\ExtensionTrigger`, `ExtensionAction`; a throw in a callback is caught there by `Guard`, recorded as a diagnostic, and never reaches core).
 
 ```
 Step:   id() label() plugin() module()
         icon(): string           a name from core's step icon list, e.g. "mail" (L5)
         fields(): Field[]        settings, rules, widgets
         validate( config )       optional extra checks the field rules can't express
+        context_error( config, available )   checks that need the data items the step can read there (Validator and Executor); null when fine
+        setup_issue(): ?string   why the step can't run on this site; blocks Activate (issue `setup_issue`; core's cart triggers keep `cart_tracking_off`)
         outputs(): array         what later steps can use: key => [ label, type, options?, display?, block? ]
         sample_outputs( config ) made-up outputs for previews of later steps (Generate coupon → YMSAMPLE)
         summary(): string        card text, one short line, e.g. "Send to %recipients%"
@@ -110,7 +112,7 @@ Trigger: fires_for_own_runs( config )   whether its workflow reacts to events it
 
 - **Field vocabulary** (kept small; a rule value's search list is a data field's `search`, see §4, not a word here): text, textarea, html (rich text, cleaned with `wp_kses_post`; drawn as WordPress's classic editor, Visual / Code tabs, stored as WordPress saves it: paragraphs as blank lines or `<p>`, `wpautop` puts them back), emails, select, multiselect, toggle, number, number_unit, notice, rules (core only). Modifiers: `required`, `variables`, `placeholder`, `help`, `show_if`, `suggest` (names under a text input that the app loads, e.g. `customer-meta-keys`: custom field names other workflows read or write; any other text can be typed). A form that needs more gets a custom panel, not a new word.
 - **Catalog.** Steps, fields, outputs and data types go to the admin app through `yayMatikMeta` (and to the AI in v2.0).
-- **Picker sections.** `Action::category()` and `Trigger::category()` put a step under a heading in its plugin's list (Email, Order, Carts, Customers, Reviews). A trigger's is optional: one without a category has no heading.
+- **Picker sections.** `Action::category()` and `Trigger::category()` put a step under a heading in its plugin's list (Email, Order, Carts, Customers, Reviews). A trigger's is optional: one without a category has no heading. Labels come from the catalog (`automation.categories`), so another plugin's own categories show with theirs.
 - **Warnings.** `Validator::warnings()` lists what never blocks Activate: `may_refire`, an action whose `emits()` holds its workflow's trigger, when the trigger's `fires_for_own_runs()` is true. REST sends `warnings: { live, draft }` with every workflow; the step's panel shows the line from the last save.
 - **Editor checks.** Automation builds valibot rules from the PHP fields. Validation always runs in Automation, never in a panel. Rules only in PHP `validate()` show up as the step's issue after a save (under its field when the form draws it, or under its rule for a condition, else at the top of the panel; "Needs setup" on the card), and still block Activate.
 - **Forms.**
@@ -158,7 +160,7 @@ Our own small template module. **No Liquid or other template library, now or lat
 - Steps and data items belong to **modules**, one per plugin (`ModuleRegistry`, `Modules/`). A module lists its triggers, conditions, actions and data items by class name; the catalog sends its id as each step's `plugin`.
   - **Free vs Pro is the folder.** `includes/Pro/` holds Pro modules that extend the free ones; the free zip leaves it out, and the registry loads the Pro modules only when their classes exist.
   - An unfinished step is not registered, so it stays out of a release. No tier checks inside steps.
-  - Another plugin adds its module class on the filter `yaymatik_modules`, before `init` (the registry is first read on `init`). A taken id (module, step, data item) keeps its first owner.
+  - Other plugins register on `yaymatik_register` (fired once, when the registry is first built) and start their triggers with `do_action( 'yaymatik_fire', $trigger_id, $payload )`, handled by `Workflow\Extension\Fire` through `Dispatcher::collect()`. The filter `yaymatik_modules` (module classes, before `init`) is internal, for Pro. A taken id (module, step, data item) keeps its first owner and the second claim is a diagnostic.
   - Filters for extending core's steps and data: `yaymatik_data_item_{id}_fields` (a data item's fields, `DataItem::fields()`), `yaymatik_trigger_provides` (the data items a trigger provides, `Trigger::resolved_provides()`), `yaymatik_trigger_refs` (a trigger's scope refs, `Trigger::resolved_refs()`; a null native ref stays null).
   - Action `yaymatik_cart_abandoned( $cart_id, $kind )`: a cart was abandoned, on every abandon; `$kind` is `cart_abandoned` or `checkout_abandoned`.
 - **Frozen by Extension API v1 (1.1), see [extension-api.md](extension-api.md).** Other plugins integrate through `yaymatik_register` and its registrar; the filters and actions above stay internal (Pro uses them) or experimental, as its §11 lists. Classes under `YayMatik\Workflow\` are internal, including the base classes (`Step`, `Module`, `DataItem`, marked `@internal`).

@@ -1174,6 +1174,15 @@
                 ]
             }
         },
+        "categories": {
+            "email": "Email",
+            "order": "Order",
+            "coupon": "Coupons",
+            "flow": "Flow",
+            "cart": "Carts",
+            "customer": "Customers",
+            "review": "Reviews"
+        },
         "data": [
             {
                 "id": "site",

@@ -12,12 +12,13 @@ use YayMatik\Workflow\Core\Steps\Condition;
 use YayMatik\Workflow\Core\Steps\Step;
 use YayMatik\Workflow\Core\Steps\Trigger;
 use YayMatik\Workflow\Extension\Diagnostics;
+use YayMatik\Workflow\Extension\Extensions;
 
 defined( 'ABSPATH' ) || exit;
 
 /**
- * The modules, and the steps and data items they register. Another plugin adds a module class
- * on `HOOK`. An id that is already taken (module, step or data item) keeps its first owner; the
+ * The modules, and the steps and data items they register. Other plugins register on
+ * `yaymatik_register` (`Extension\Extensions`); Pro adds module classes on `HOOK`. An id that is already taken (module, step or data item) keeps its first owner; the
  * second claim is a diagnostic.
  */
 final class ModuleRegistry {
@@ -36,25 +37,34 @@ final class ModuleRegistry {
         return (array) apply_filters( self::HOOK, $modules );
     }
 
-    /** @return Module[] Keyed by id. */
+    /** @return Module[] Keyed by id. The first call fires `yaymatik_register`. */
     public static function modules(): array {
-        if ( null === self::$modules ) {
-            self::$modules = self::from( self::classes() );
+        if ( null !== self::$modules ) {
+            return self::$modules;
         }
+        // Read from a `yaymatik_register` callback: what is there so far, not kept.
+        if ( Extensions::registering() ) {
+            return self::from( self::classes() );
+        }
+        $core          = self::from( self::classes() );
+        self::$modules = self::from( array_merge( array_values( $core ), Extensions::register( array_keys( $core ) ) ) );
         return self::$modules;
     }
 
     /**
-     * @param array $classes
+     * @param array $classes Module class names, or modules.
      * @return Module[] Keyed by id; anything that isn't a Module subclass is left out.
      */
     public static function from( array $classes ): array {
         $modules = [];
         foreach ( $classes as $class ) {
-            if ( ! is_string( $class ) || ! is_subclass_of( $class, Module::class ) ) {
+            if ( $class instanceof Module ) {
+                $module = $class;
+            } elseif ( is_string( $class ) && is_subclass_of( $class, Module::class ) ) {
+                $module = new $class();
+            } else {
                 continue;
             }
-            $module = new $class();
             if ( isset( $modules[ $module->id() ] ) ) {
                 // Named by its class: the id is the winner's.
                 self::taken( get_class( $module ), 'module', $module->id() );
@@ -150,7 +160,7 @@ final class ModuleRegistry {
                     if ( ! is_subclass_of( $class, $kind ) ) {
                         continue;
                     }
-                    $step = new $class();
+                    $step = is_string( $class ) ? new $class() : $class;
                     if ( isset( $steps[ $step->id() ] ) ) {
                         self::taken( $module->id(), 'step', $step->id() );
                         continue;

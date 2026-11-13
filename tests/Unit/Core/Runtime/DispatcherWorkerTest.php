@@ -17,6 +17,8 @@ use YayMatik\Workflow\Core\Runtime\ActionSchedulerQueue;
 use YayMatik\Workflow\Core\Runtime\Dispatcher;
 use YayMatik\Workflow\Core\Runtime\Worker;
 use YayMatik\Workflow\Core\Steps\StepResult;
+use YayMatik\Workflow\Extension\Extensions;
+use YayMatik\Workflow\Extension\Fire;
 use YayMatik\Workflow\Triggers\OrderStatusChanged;
 
 require_once dirname( __DIR__, 3 ) . '/Support/woocommerce-stubs.php';
@@ -394,6 +396,79 @@ final class DispatcherWorkerTest extends TestCase {
         $this->dispatcher->start_run( $this->workflows->workflows[1], $this->trigger, $this->event(), $this->runs->find_run( $child ) );
 
         $this->assertCount( 2, $this->runs->runs );
+    }
+
+    /**
+     * A run of "acme_points → acme_act", where acme_act fires acme_points again through `yaymatik_fire`.
+     *
+     * @param array $emits The action's `emits`.
+     * @return int Runs of the workflow.
+     */
+    private function refire_through_yaymatik_fire( array $emits ): int {
+        $module                     = Extensions::collect(
+            [],
+            function ( $registrar ) use ( $emits ) {
+                $module = $registrar->module(
+                    [
+                        'id'    => 'acme',
+                        'label' => 'Acme',
+                    ]
+                );
+                $module->trigger(
+                    'acme_points',
+                    [
+                        'label'       => 'Points earned',
+                        'description' => 'When points are earned.',
+                        'provides'    => [ 'customer' ],
+                    ]
+                );
+                $module->action(
+                    'acme_act',
+                    [
+                        'label'       => 'Add points',
+                        'description' => 'Adds points, which fires Points earned.',
+                        'emits'       => $emits,
+                        'run'         => function ( array $config, $run ) {
+                            do_action( Fire::HOOK, 'acme_points', [ 'order_id' => self::ORDER ] );
+                            return $run->done();
+                        },
+                    ]
+                );
+            }
+        )[0];
+        $trigger                    = $module->triggers()[0];
+        $this->steps['acme_points'] = $trigger;
+        $this->steps['acme_act']    = $module->actions()[0];
+        $this->workflows->workflows = [];
+        $this->add_workflow( 5, 'acme_act' );
+        $this->workflows->workflows[5]['graph']['nodes'][0]['data'] = [
+            'block'  => 'acme_points',
+            'config' => [],
+        ];
+        $this->graphs->graphs[15]                                   = $this->workflows->workflows[5]['graph'];
+        $GLOBALS['yaymatik_test_filters'][ Fire::HOOK ]             = [];
+        ( new Fire( $this->workflows, $this->dispatcher, fn( string $id ) => $this->steps[ $id ] ?? null ) )->register();
+
+        try {
+            do_action( Fire::HOOK, 'acme_points', [ 'order_id' => self::ORDER ] );
+            $this->dispatcher->flush();
+            foreach ( array_keys( $this->runs->runs ) as $id ) {
+                $this->worker->run( $id );
+            }
+            $this->dispatcher->flush();
+        } finally {
+            unset( $GLOBALS['yaymatik_test_filters'][ Fire::HOOK ] );
+        }
+        $this->assertSame( 'completed', $this->runs->runs[1]['status'] );
+        return count( $this->runs->runs );
+    }
+
+    public function test_an_extension_action_firing_its_own_trigger_does_not_restart_the_workflow(): void {
+        $this->assertSame( 1, $this->refire_through_yaymatik_fire( [] ), 'no emits needed: the loop guard' );
+    }
+
+    public function test_emits_changes_nothing_at_runtime(): void {
+        $this->assertSame( 1, $this->refire_through_yaymatik_fire( [ 'acme_points' ] ) );
     }
 
     public function test_chain_deeper_than_max_depth_is_not_started(): void {

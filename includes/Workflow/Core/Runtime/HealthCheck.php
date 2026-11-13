@@ -3,6 +3,7 @@ namespace YayMatik\Workflow\Core\Runtime;
 
 use YayMatik\Workflow\Core\Storage\RunStore;
 use YayMatik\Workflow\Extension\Diagnostics;
+use YayMatik\Workflow\Extension\ExtensionModule;
 use YayMatik\Workflow\ModuleRegistry;
 use YayMatik\Workflow\Modules\WoocommerceModule;
 use YayMatik\Workflow\Modules\YayMatikModule;
@@ -51,14 +52,14 @@ final class HealthCheck {
     /**
      * Other plugins' modules, and any module with an error in the last 24 hours (a refused one included).
      *
-     * @return array[] `id`, `label`, `errors` (newest first: `callback`, `message`, `count` (at least), `time` ISO 8601).
+     * @return array[] `id`, `label`, `requiresApi` (null when not given), `errors` (newest first: `callback`, `message`, `count` (at least), `time` ISO 8601).
      */
     public static function extensions(): array {
         $modules = ModuleRegistry::modules();
         $rows    = [];
         foreach ( $modules as $id => $module ) {
             if ( YayMatikModule::ID !== $id && WoocommerceModule::ID !== $id ) {
-                $rows[ $id ] = self::extension( $id, $module->label() );
+                $rows[ $id ] = self::extension( $id, $module->label(), $module instanceof ExtensionModule ? $module->requires_api() : null );
             }
         }
         foreach ( Diagnostics::recent( 24 ) as $entry ) {
@@ -217,14 +218,16 @@ final class HealthCheck {
     }
 
     /**
-     * @param string $id
-     * @param string $label
+     * @param string      $id
+     * @param string      $label
+     * @param string|null $requires_api
      */
-    private static function extension( string $id, string $label ): array {
+    private static function extension( string $id, string $label, ?string $requires_api = null ): array {
         return [
-            'id'     => $id,
-            'label'  => $label,
-            'errors' => [],
+            'id'          => $id,
+            'label'       => $label,
+            'requiresApi' => $requires_api,
+            'errors'      => [],
         ];
     }
 

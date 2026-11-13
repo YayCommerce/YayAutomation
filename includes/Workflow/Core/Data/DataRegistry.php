@@ -3,6 +3,7 @@ namespace YayMatik\Workflow\Core\Data;
 
 use YayMatik\Workflow\Core\Definition\Catalog;
 use YayMatik\Workflow\DataItems\SiteData;
+use YayMatik\Workflow\Extension\Extensions;
 use YayMatik\Workflow\ModuleRegistry;
 
 defined( 'ABSPATH' ) || exit;
@@ -23,10 +24,14 @@ final class DataRegistry {
 
     /** @return DataItem[] */
     public static function items(): array {
-        if ( null === self::$items ) {
-            self::$items = array_filter( self::entities(), fn( DataItem $item ) => $item->standalone() );
+        if ( null !== self::$items ) {
+            return self::$items;
         }
-        return self::$items;
+        $items = array_filter( self::entities(), fn( DataItem $item ) => $item->standalone() );
+        if ( ! Extensions::registering() ) {
+            self::$items = $items;
+        }
+        return $items;
     }
 
     /**
@@ -35,10 +40,15 @@ final class DataRegistry {
      * @return DataItem[]
      */
     public static function entities(): array {
-        if ( null === self::$entities ) {
-            self::$entities = ModuleRegistry::data( ModuleRegistry::modules() );
+        if ( null !== self::$entities ) {
+            return self::$entities;
         }
-        return self::$entities;
+        $entities = ModuleRegistry::data( ModuleRegistry::modules() );
+        // Read from a `yaymatik_register` callback: other plugins' modules are still missing, so not kept.
+        if ( ! Extensions::registering() ) {
+            self::$entities = $entities;
+        }
+        return $entities;
     }
 
     /**

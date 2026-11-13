@@ -83,6 +83,26 @@ abstract class Step {
     }
 
     /**
+     * Checks that need the data the step can read there; null when fine. Called after `validate()`.
+     *
+     * @param array $config
+     * @param array $available Data item ids from the trigger, plus the ones always there.
+     */
+    public function context_error( array $config, array $available ): ?\WP_Error { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter -- for steps whose settings depend on the trigger.
+        return null;
+    }
+
+    /** Why this step can't run on this site, shown when activating; null when it can. */
+    public function setup_issue(): ?string {
+        return null;
+    }
+
+    /** The issue code of `setup_issue()`; the editor may link it to a fix. */
+    public function setup_issue_code(): string {
+        return 'setup_issue';
+    }
+
+    /**
      * Data items this step reads with the config; the trigger must supply them.
      *
      * @param array $config

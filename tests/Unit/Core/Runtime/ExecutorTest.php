@@ -17,6 +17,8 @@ use YayMatik\Workflow\Core\Data\Scope;
 use YayMatik\Workflow\Core\Runtime\Executor;
 use YayMatik\Workflow\Core\Steps\Step;
 use YayMatik\Workflow\Core\Steps\StepResult;
+use YayMatik\Workflow\Extension\Diagnostics;
+use YayMatik\Workflow\Extension\Extensions;
 
 /** The Executor over fakes: cursor, branches, error policy, waits, slices and safe resume. */
 final class ExecutorTest extends TestCase {
@@ -40,6 +42,9 @@ final class ExecutorTest extends TestCase {
 
     /** @var Step[] Step type id => step. */
     private $steps = [];
+
+    /** @var object[] Order id => order the resolver finds. */
+    private $orders = [];
 
     protected function setUp(): void {
         $this->runs                    = new FakeRunRepository();
@@ -129,7 +134,7 @@ final class ExecutorTest extends TestCase {
             $this->workflows,
             $this->clock,
             fn( string $block ) => $this->steps[ $block ] ?? null,
-            fn() => new RefResolver( [] )
+            fn() => new RefResolver( [ 'order' => fn( string $order_id ) => $this->orders[ (int) $order_id ] ?? null ] )
         );
         return $executor->run( $this->runs->find_run( $id ) );
     }
@@ -274,6 +279,58 @@ final class ExecutorTest extends TestCase {
         $this->assertSame( 'skipped', $rows[0]['status'] );
         $this->assertSame( 'Order no longer exists.', $rows[0]['error'] );
         $this->assertSame( 'completed', $rows[1]['status'] );
+    }
+
+    public function test_an_order_deleted_while_the_run_waits_skips_core_and_extension_steps(): void {
+        $GLOBALS['yaymatik_test_options'] = [];
+        $this->orders                     = [ 12 => new \stdClass() ];
+        $until                            = $this->clock->now + 3600;
+        $this->steps['wait']              = new FakeStep( 'wait', fn() => StepResult::wait( $until ) );
+        $this->steps['note']              = new FakeStep(
+            'note',
+            function ( Scope $scope ) {
+                $scope->entity( 'order' );
+                return StepResult::ok();
+            }
+        );
+        $this->steps['acme']              = Extensions::collect(
+            [],
+            function ( $registrar ) {
+                $registrar->module(
+                    [
+                        'id'    => 'acme',
+                        'label' => 'Acme',
+                    ]
+                )->action(
+                    'acme_act',
+                    [
+                        'label'       => 'Act',
+                        'description' => 'Reads the order.',
+                        'run'         => fn( array $config, $run ) => $run->order() ? $run->done() : $run->fail( 'No order.' ),
+                    ]
+                );
+            }
+        )[0]->actions()[0];
+        $this->graph(
+            [
+                'w' => [ 'wait', [] ],
+                'a' => [ 'acme', [] ],
+                'n' => [ 'note', [] ],
+            ],
+            [ [ 't', 'w' ], [ 'w', 'a' ], [ 'a', 'n' ] ]
+        );
+        $id = $this->new_run( ( new Scope( [ 'trigger' => [ 'order' => new Ref( 'order', 12 ) ] ], null, [] ) )->to_array() );
+
+        $this->assertSame( 'waiting', $this->slice( $id ) );
+        $this->orders     = [];
+        $this->runs->now  = '2026-10-12 11:00:00';
+        $this->clock->now = $until;
+
+        $this->assertSame( 'completed', $this->slice( $id ) );
+        $rows = array_column( $this->runs->steps( $id ), null, 'step_id' );
+        $this->assertSame( [ 'skipped', 'Order no longer exists.' ], [ $rows['a']['status'], $rows['a']['error'] ] );
+        $this->assertSame( [ 'skipped', 'Order no longer exists.' ], [ $rows['n']['status'], $rows['n']['error'] ] );
+        $this->assertSame( [], Diagnostics::recent( 24 ), 'a deleted order is not the extension\'s error' );
     }
 
     public function test_skipped_condition_ends_its_path(): void {

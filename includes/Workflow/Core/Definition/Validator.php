@@ -179,7 +179,7 @@ final class Validator {
             $setup = $trigger_step->setup_issue();
             if ( null !== $setup ) {
                 $errors[] = [
-                    'code'    => 'cart_tracking_off',
+                    'code'    => $trigger_step->setup_issue_code(),
                     'message' => $setup,
                     'nodeId'  => GraphSchema::trigger( $nodes )['id'],
                 ];
@@ -210,6 +210,10 @@ final class Validator {
             $error = self::step_error( $node, $available, $by_id, self::ancestors( $node['id'], $parents ) );
             if ( $error ) {
                 $errors[] = $error + [ 'nodeId' => $node['id'] ];
+            }
+            $setup = Step::KIND_TRIGGER === $node['kind'] ? null : self::node_setup_issue( $node, $workflow );
+            if ( null !== $setup ) {
+                $errors[] = $setup + [ 'nodeId' => $node['id'] ];
             }
         }
         return $errors;
@@ -352,6 +356,29 @@ final class Validator {
     }
 
     /**
+     * A step's setup issue (`code`, `message`), checked like the trigger's: on turning on, or for a step the draft adds.
+     *
+     * @param array $node
+     * @param array $workflow
+     */
+    private static function node_setup_issue( array $node, array $workflow ): ?array {
+        $step = $node['data']['block'] ? StepRegistry::get( $node['data']['block'] ) : null;
+        if ( ! $step ) {
+            return null;
+        }
+        $checked = isset( $workflow['status'] ) && 'active' !== $workflow['status'];
+        if ( ! $checked && isset( $workflow['live_graph'] ) ) {
+            $live    = GraphSchema::by_id( $workflow['live_graph']['nodes'] )[ $node['id'] ] ?? null;
+            $checked = ! $live || $live['data']['block'] !== $node['data']['block'];
+        }
+        $issue = $checked ? $step->setup_issue() : null;
+        return null === $issue ? null : [
+            'code'    => $step->setup_issue_code(),
+            'message' => $issue,
+        ];
+    }
+
+    /**
      * @param array[] $nodes
      */
     private static function trigger_step( array $nodes ): ?Step {
@@ -385,6 +412,10 @@ final class Validator {
                 $issue['rule'] = array_map( 'intval', $rule );
             }
             return $issue;
+        }
+        $context = null === $available ? null : $step->context_error( $config, $available );
+        if ( $context ) {
+            return self::issue( 'invalid_config', $context->get_error_message(), $context->get_error_data()['field'] ?? null );
         }
 
         $tags = self::tag_error( $step, $config, $available, $by_id, $above );

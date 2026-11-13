@@ -236,7 +236,7 @@ export function serverWarning(server: ServerCheck, graph: WorkflowGraph, nodeId:
 }
 
 /**
- * The editor's issues plus the ones only PHP finds (a percentage over 100, cart tracking off), from
+ * The editor's issues plus the ones only PHP finds (a percentage over 100, cart tracking off, a plugin step's setup), from
  * the server's last check. A server issue counts while its step's data is the same object as in the
  * graph that was checked and the editor has no issue of its own for it.
  */
@@ -249,7 +249,7 @@ export function withServerIssues(
   const own = new Set(issues.map((issue) => issue.nodeId));
   const extra = server.issues.filter(
     ({ code, nodeId }) =>
-      (code === 'invalid_config' || code === 'cart_tracking_off') &&
+      (code === 'invalid_config' || code === 'cart_tracking_off' || code === 'setup_issue') &&
       !!nodeId &&
       !own.has(nodeId) &&
       graph.nodes.some((node) => node.id === nodeId && node.data === checked.get(nodeId)),

@@ -20,6 +20,8 @@ export interface HealthCheck {
 export interface HealthExtension {
   id: string;
   label: string;
+  /** The Extension API version the module asks for; null when it gives none. */
+  requiresApi: string | null;
   /** Last 24 hours, newest first; `count` is a lower bound. */
   errors: { callback: string; message: string; count: number; time: string }[];
 }
