@@ -251,4 +251,67 @@ final class RunPresenterTest extends TestCase {
             )
         );
     }
+
+    public function test_detail_shows_the_trigger_facts_with_their_labels(): void {
+        $trigger = \YayMatik\Workflow\Extension\Extensions::collect(
+            [],
+            fn( $registrar ) => $registrar->module(
+                [
+                    'id'    => 'acme',
+                    'label' => 'Acme',
+                ]
+            )->trigger(
+                'acme_points',
+                [
+                    'label'       => 'Points earned',
+                    'description' => 'When points are earned.',
+                    'provides'    => [ 'customer' ],
+                    'facts'       => [
+                        'points' => [
+                            'label' => 'Points earned',
+                            'type'  => 'number',
+                        ],
+                        'tier'   => [
+                            'label'   => 'Tier',
+                            'type'    => 'enum',
+                            'options' => [ 'gold' => 'Gold' ],
+                        ],
+                    ],
+                ]
+            )
+        )[0]->triggers()[0];
+        $steps   = new \ReflectionProperty( \YayMatik\Workflow\Core\Steps\StepRegistry::class, 'steps' );
+        $steps->setAccessible( true );
+        $before = \YayMatik\Workflow\Core\Steps\StepRegistry::all();
+        $steps->setValue( null, $before + [ 'acme_points' => $trigger ] );
+        $row = [
+            'trigger_id' => 'acme_points',
+            'scope'      => [
+                'trigger' => [
+                    'points' => 42,
+                    'tier'   => 'gold',
+                ],
+            ],
+        ] + self::run_row();
+        try {
+            $facts = RunPresenter::detail( $row, [], null )['facts'];
+        } finally {
+            $steps->setValue( null, $before );
+        }
+
+        $this->assertSame(
+            [
+                [
+                    'label' => 'Points earned',
+                    'value' => '42',
+                ],
+                [
+                    'label' => 'Tier',
+                    'value' => 'Gold',
+                ],
+            ],
+            $facts
+        );
+        $this->assertSame( [], RunPresenter::detail( self::run_row(), [], null )['facts'] );
+    }
 }

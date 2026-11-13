@@ -34,10 +34,19 @@ export function availableVariables(graph: WorkflowGraph, nodeId: string): Variab
       ...(triggerBlock ? above.flatMap((id) => providedByAction(block(id))) : []),
     ]),
   ];
-  const list = items.flatMap((id) => {
-    const item = dataItems.find((i) => i.id === id);
-    return item ? itemVariables(item, id, new Set([id])) : [];
-  });
+  const facts = (triggerBlock ? (window.yayMatikMeta.automation.steps[triggerBlock]?.facts ?? []) : []).map((fact) => ({
+    key: fact.key,
+    label: fact.label,
+    type: fact.valueType,
+    block: false,
+  }));
+  const list = [
+    ...facts,
+    ...items.flatMap((id) => {
+      const item = dataItems.find((i) => i.id === id);
+      return item ? itemVariables(item, id, new Set([id])) : [];
+    }),
+  ];
 
   for (const id of above) {
     const stepId = block(id);

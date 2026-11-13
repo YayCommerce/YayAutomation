@@ -278,6 +278,13 @@ final class Validator {
         $items        = array_unique( array_merge( $trigger_step ? $trigger_step->resolved_provides() : [], DataRegistry::ALWAYS ) );
 
         $list = [];
+        foreach ( $trigger_step ? $trigger_step->facts() : [] as $key => $fact ) {
+            $list[] = [
+                'key'   => "trigger.$key",
+                'label' => $fact['label'],
+                'type'  => $fact['value_type']->to_string(),
+            ];
+        }
         foreach ( $items as $id ) {
             $item = DataRegistry::items()[ $id ] ?? null;
             if ( $item ) {
@@ -423,7 +430,12 @@ final class Validator {
             return $tags;
         }
 
-        $missing = null === $available ? [] : array_diff( $step->uses( $config ), $available );
+        $trigger = self::trigger_step( array_values( $by_id ) );
+        $facts   = $trigger instanceof Trigger ? array_map( fn( $key ) => "trigger.$key", array_keys( $trigger->facts() ) ) : [];
+        $missing = null === $available ? [] : array_diff( $step->uses( $config ), $available, $facts );
+        if ( $missing && 0 === strpos( (string) reset( $missing ), 'trigger.' ) ) {
+            return self::issue( 'invalid_config', Messages::get( 'ruleVariable' ), null );
+        }
         if ( $missing ) {
             $item = DataRegistry::items()[ reset( $missing ) ] ?? null;
             // Only a rules field reads data items besides the ones a step always needs.
@@ -484,6 +496,10 @@ final class Validator {
         $segments = explode( '.', $path );
         if ( 'trigger' === $segments[0] ) {
             array_shift( $segments );
+            $step = self::trigger_step( array_values( $by_id ) );
+            if ( 1 === count( $segments ) && $step instanceof Trigger && isset( $step->facts()[ $segments[0] ] ) ) {
+                return null;
+            }
         }
 
         $tag     = '{{ ' . $path . ' }}';

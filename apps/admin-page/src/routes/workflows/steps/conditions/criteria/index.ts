@@ -88,6 +88,8 @@ export const criteriaStep = defineStep<CriteriaConfig>({
     flatRules(rules).flatMap((rule) =>
       [rule.field, rule.valueType === 'variable' && needsValue(rule.operator) ? String(rule.value) : '']
         .filter(Boolean)
+        // A fact (`trigger.<key>`) is the trigger's, not a data item; the server checks it against the trigger.
+        .filter((key) => !key.startsWith('trigger.'))
         .map(itemOf),
     ),
   // The rules on one line, joined by "and" / "or"; blank until a rule has its variable.

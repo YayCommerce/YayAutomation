@@ -48,13 +48,14 @@ function describe(group: VariableGroup, { trigger, steps }: VariableScope) {
     };
   }
   const item = dataItems.find((i) => i.id === group.id);
-  const kind = trigger?.provides.includes(group.id)
-    ? 'trigger'
-    : alwaysAvailable.includes(group.id)
-      ? 'neutral'
-      : 'action';
+  const kind =
+    group.id === 'trigger' || trigger?.provides.includes(group.id)
+      ? 'trigger'
+      : alwaysAvailable.includes(group.id)
+        ? 'neutral'
+        : 'action';
   return {
-    label: item?.label ?? group.id,
+    label: item?.label ?? itemLabel(group.id),
     description: item?.description ?? '',
     tile: <StepTile kind={kind} icon={item?.icon ? stepIcons[item.icon] : undefined} />,
   };

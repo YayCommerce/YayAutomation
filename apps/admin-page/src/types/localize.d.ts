@@ -78,6 +78,8 @@ export interface StepMeta {
   category?: string;
   /** Actions: data items needed whatever the config. */
   requires?: string[];
+  /** Triggers: values true only at event time, keyed `trigger.<key>`, shaped like data fields. */
+  facts?: DataItemMeta['fields'];
 }
 
 /** PHP `Core\Definition\Catalog::step()`: a step PHP has built, with its full contract. */

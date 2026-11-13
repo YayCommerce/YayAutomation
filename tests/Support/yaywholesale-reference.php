@@ -1,7 +1,7 @@
 <?php
 /**
  * YayWholesale's integration class, a reference consumer of the Extension API, as its developer
- * would write it (without its `data_fields` block).
+ * would write it.
  *
  * @package YayMatik
  */
@@ -24,6 +24,19 @@ final class YayWholesale_YayMatik {
                 'label'        => 'YayWholesale',
                 'logo'         => plugins_url( 'assets/yaymatik-logo.svg', YAYWHOLESALE_FILE ),
                 'requires_api' => '1.0',
+            ]
+        );
+
+        // Condition + merge tag: "Customer › Wholesale role is Gold", {{ customer.yaywholesale_role }}.
+        $module->data_fields(
+            'customer',
+            [
+                'yaywholesale_role' => [
+                    'label'   => __( 'Wholesale role', 'yaywholesale' ),
+                    'type'    => 'enum',
+                    'options' => [ $this, 'role_options' ],
+                    'value'   => [ $this, 'customer_role' ],
+                ],
             ]
         );
 

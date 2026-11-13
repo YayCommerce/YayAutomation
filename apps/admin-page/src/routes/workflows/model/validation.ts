@@ -2,7 +2,7 @@ import type { Workflow, WorkflowGraph, WorkflowIssue, WorkflowNode, WorkflowWarn
 import { __, sprintf } from '@wordpress/i18n';
 
 import { stepOf } from '../steps';
-import { alwaysAvailable, isStepPath, itemLabel, pathSegments, variableTag } from '../steps/core/data';
+import { alwaysAvailable, fieldByKey, isStepPath, itemLabel, pathSegments, variableTag } from '../steps/core/data';
 import { ancestors } from '../steps/core/variables';
 import { descendantsOf } from './graph';
 import { messages } from './messages';
@@ -207,6 +207,13 @@ function reachProblem(
     return above.has(node.id)
       ? null
       : { code: 'missing_data', message: sprintf(messages.stepNotAbove, tag, stepDef.label) };
+  }
+  if (path.startsWith('trigger.') && fieldByKey(path)) {
+    const trigger = graph.nodes.find((n) => n.kind === 'trigger')?.data.block;
+    const facts = trigger ? (window.yayMatikMeta.automation.steps[trigger]?.facts ?? []) : [];
+    return facts.some((fact) => fact.key === path)
+      ? null
+      : { code: 'invalid_config', message: sprintf(messages.unknownVariable, tag) };
   }
   if (available === null || available.includes(segments[0])) return null;
   return { code: 'missing_data', message: sprintf(messages.missingData, itemLabel(segments[0])) };

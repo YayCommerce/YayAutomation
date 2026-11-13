@@ -9,6 +9,7 @@ use YayMatik\Workflow\DataItems\OrderData;
 use YayMatik\Workflow\DataItems\OrderItemData;
 use YayMatik\Workflow\DataItems\RefundData;
 use YayMatik\Workflow\DataItems\ReviewData;
+use YayMatik\Workflow\Extension\ExtensionDataItem;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -47,9 +48,15 @@ final class RefResolver {
         return $this->loaded[ $key ];
     }
 
-    /** @return callable[] */
+    /** @return callable[] Core's loaders and other plugins' data items'. */
     public static function default_loaders(): array {
-        return [
+        $loaders = [];
+        foreach ( DataRegistry::entities() as $id => $item ) {
+            if ( $item instanceof ExtensionDataItem ) {
+                $loaders[ $id ] = [ $item, 'load' ];
+            }
+        }
+        return $loaders + [
             OrderData::ID     => fn( string $id ) => self::order( $id ),
             CartData::ID      => fn( string $id ) => SavedCart::find( (int) $id ),
             OrderItemData::ID => function ( string $id ) {

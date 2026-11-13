@@ -2,6 +2,7 @@
 namespace YayMatik\Workflow\Core\Steps;
 
 use YayMatik\Workflow\Core\Data\Scope;
+use YayMatik\Workflow\Core\Definition\Catalog;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -21,6 +22,20 @@ abstract class Trigger extends Step {
 
     /** Data items every run context of this trigger holds. */
     abstract public function provides(): array;
+
+    /**
+     * Plain values true only at event time, read as `trigger.<key>`.
+     *
+     * @return array[] Key => data field definition (`DataItem`), with every default set.
+     */
+    public function facts(): array {
+        return [];
+    }
+
+    /** @return array Fact key => preview value. */
+    public function sample_facts(): array {
+        return [];
+    }
 
     /**
      * Data items available from this trigger, including additions from integrations.
@@ -150,6 +165,19 @@ abstract class Trigger extends Step {
         $meta = [ 'provides' => $this->resolved_provides() ];
         if ( '' !== $this->category() ) {
             $meta['category'] = $this->category();
+        }
+        foreach ( $this->facts() as $key => $fact ) {
+            $client = [
+                'key'         => 'trigger.' . $key,
+                'label'       => $fact['label'],
+                'type'        => $fact['type'],
+                'valueType'   => $fact['value_type']->to_string(),
+                'conditional' => true,
+            ];
+            if ( $fact['options'] ) {
+                $client['options'] = Catalog::options( ( $fact['options'] )() );
+            }
+            $meta['facts'][] = $client;
         }
         return $meta;
     }

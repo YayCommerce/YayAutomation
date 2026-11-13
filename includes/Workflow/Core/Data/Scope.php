@@ -112,13 +112,18 @@ final class Scope implements Values {
     public function timestamp( string $path ): ?int {
         $found = $this->resolve( $path );
         $field = $found['field'] ?? null;
-        if ( ! $field ) {
-            return null;
-        }
-        if ( $field['timestamp'] ) {
+        if ( $field && $field['timestamp'] ) {
             return ( $field['timestamp'] )( $found['object'] );
         }
-        $date = \DateTimeImmutable::createFromFormat( '!Y-m-d', (string) ( $field['value'] )( $found['object'] ), wp_timezone() );
+        if ( $field ) {
+            $day = (string) ( $field['value'] )( $found['object'] );
+        } elseif ( 0 === strpos( $path, 'trigger.' ) && is_string( $found['value'] ?? null ) ) {
+            // A date fact: a plain `Y-m-d` the trigger stored.
+            $day = $found['value'];
+        } else {
+            return null;
+        }
+        $date = \DateTimeImmutable::createFromFormat( '!Y-m-d', $day, wp_timezone() );
         return $date ? $date->getTimestamp() : null;
     }
 

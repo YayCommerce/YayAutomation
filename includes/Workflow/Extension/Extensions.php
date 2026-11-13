@@ -50,6 +50,7 @@ final class Extensions {
      * @return ExtensionModule[]
      */
     public static function collect( array $taken, callable ...$callbacks ): array {
+        Declaration::begin();
         $open      = true;
         $is_open   = function () use ( &$open ) {
             return $open;

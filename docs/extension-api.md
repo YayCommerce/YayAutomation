@@ -161,7 +161,7 @@ $m->trigger( 'yaywholesale_approved', [
 | Key | Required | Meaning |
 |---|---|---|
 | `provides` | yes | Data item ids every run has, from `customer`, `order`, `cart`, `review` and the module's own data items, e.g. `[ 'customer' ]` |
-| `facts` | no | `[ key => [ 'label', 'type', 'options'? ] ]` — values true only at event time (currency from / to, a form's answers), passed in the payload under the same keys; they read as `trigger.<key>` in conditions, Insert variable and run detail. Limits: scalar types only (string, number, money, boolean, date, enum; for an entity use a payload id); at most 10 keys, each value ≤ 1 KB, JSON-safe (over → cut + diagnostic); **no personal data except emails** (emails are indexed by `run_emails`; names / phones would escape erase — reach a person through `user_id` / `order_id`); keys are stored ids, never renamed |
+| `facts` | no | `[ key => [ 'label', 'type', 'options'? ] ]` — values true only at event time (currency from / to, a form's answers), passed in the payload under the same keys; they read as `trigger.<key>` in conditions, Insert variable and run detail. Limits: scalar types only (string, number, money, boolean, date, enum; for an entity use a payload id); at most 10 keys, each value ≤ 1 KB, JSON-safe (over → cut + diagnostic); **no personal data except emails** (emails are indexed by `run_emails`; names / phones would escape erase — reach a person through `user_id` / `order_id`); keys are stored ids, never renamed; not ending in `_id`, not a data item id; one type per key across triggers |
 | `matches` | no | `fn( array $payload, array $config ): bool` — this workflow's settings accept the event |
 | `once_per` | no | `'subject'` = once per workflow per subject (core `trigger_claims`), default none |
 | `sample` | no | Preview values for `facts` |
@@ -311,7 +311,7 @@ $m->data_fields( 'order', [
     ],
 ] );
 ```
-Keys: `label`, `type` (§4.2), `value` (required), `display` `fn( $object, bool $html ): string` (HTML is kses'd), `options` `fn(): array` (enum / list), `help`, `timestamp`, `merge_tag` (default true), `conditional` (default true), `block` (email block, HTML, kses'd), `sample` (preview value).
+Field keys start with the module id + `_`. Keys: `label`, `type` (§4.2), `value` (required), `display` `fn( $object, bool $html ): string` (HTML is kses'd), `options` `fn(): array` (enum / list), `help`, `timestamp`, `merge_tag` (default true), `conditional` (default true), `block` (email block, HTML, kses'd), `sample` (preview value).
 
 What `value` receives per core item (**public object types**):
 

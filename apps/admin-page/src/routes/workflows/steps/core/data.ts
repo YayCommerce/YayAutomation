@@ -1,4 +1,4 @@
-import { sprintf } from '@wordpress/i18n';
+import { __, sprintf } from '@wordpress/i18n';
 
 import type { DataFieldType, DataItemMeta } from '@/types/localize';
 import { messages } from '../../model/messages';
@@ -15,14 +15,22 @@ export const dataItems = meta.data;
 /** Items every workflow has, whatever the trigger supplies. */
 export const alwaysAvailable = meta.always;
 
-const fields = new Map(dataItems.flatMap((item) => item.fields.map((field) => [field.key, field] as const)));
+/** Trigger facts (`trigger.points`): the first trigger with a key defines it, as in PHP `DataRegistry::field()`. */
+const facts = Object.values(meta.steps)
+  .flatMap((step) => step?.facts ?? [])
+  .reverse();
+
+const fields = new Map(
+  [...facts, ...dataItems.flatMap((item) => item.fields)].map((field) => [field.key, field] as const),
+);
 
 export const fieldByKey = (key: string): DataField | undefined => fields.get(key);
 
 /** `order.total` → `order`. */
 export const itemOf = (key: string) => key.split('.')[0];
 
-export const itemLabel = (id: string) => dataItems.find((item) => item.id === id)?.label ?? id;
+export const itemLabel = (id: string) =>
+  dataItems.find((item) => item.id === id)?.label ?? (id === 'trigger' ? __('Trigger', 'yaymatik') : id);
 
 /** Operator ids for a field type, from PHP `Operators::BY_TYPE`. */
 export const operatorsFor = (type: DataFieldType) => meta.operators[type];
@@ -59,6 +67,8 @@ export const isStepPath = (segments: string[]) => segments[0] === 'steps';
  * `Validator::has_field()`.
  */
 function resolvePath(path: string) {
+  const fact = path.startsWith('trigger.') ? fieldByKey(path) : undefined;
+  if (fact) return { field: fact };
   const [first, ...rest] = pathSegments(path);
   let item = dataItems.find((i) => i.id === first);
   for (const [i, segment] of rest.entries()) {

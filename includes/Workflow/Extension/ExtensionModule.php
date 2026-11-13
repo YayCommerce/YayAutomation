@@ -39,6 +39,9 @@ final class ExtensionModule extends Module {
     /** @var string[] Category id => label. */
     private $categories = [];
 
+    /** @var ExtensionDataItem[] By id. */
+    private $data_items = [];
+
     /**
      * @param string      $id
      * @param string      $label
@@ -87,6 +90,51 @@ final class ExtensionModule extends Module {
     /** @return string[] Category id => label. */
     public function categories(): array {
         return $this->categories;
+    }
+
+    /** @return ExtensionDataItem[] By id. */
+    public function data_items(): array {
+        return $this->data_items;
+    }
+
+    /**
+     * @param string $id
+     * @param array  $args
+     */
+    public function add_data_item( string $id, array $args ): bool {
+        if ( ! ( $this->open )() ) {
+            Declaration::too_late( $this->id, "data item {$id}" );
+            return false;
+        }
+        if ( isset( $this->data_items[ $id ] ) ) {
+            Declaration::refuse( $this->id, "data item {$id}", "Data item id \"{$id}\" is already declared by this module." );
+            return false;
+        }
+        $args = Declaration::data_item( $this, $id, $args );
+        if ( null === $args ) {
+            return false;
+        }
+        $this->data_items[ $id ] = new ExtensionDataItem( $this->id, $id, $args );
+        return true;
+    }
+
+    /**
+     * Fields on a core data item or on one of this module's; a key core already has is left alone.
+     *
+     * @param string $item
+     * @param array  $fields
+     */
+    public function add_data_fields( string $item, array $fields ): bool {
+        if ( ! ( $this->open )() ) {
+            Declaration::too_late( $this->id, "data fields {$item}" );
+            return false;
+        }
+        $defs = Declaration::data_fields( $this, $item, $fields );
+        if ( null === $defs ) {
+            return false;
+        }
+        add_filter( "yaymatik_data_item_{$item}_fields", fn( $definitions ) => (array) $definitions + $defs );
+        return true;
     }
 
     /**

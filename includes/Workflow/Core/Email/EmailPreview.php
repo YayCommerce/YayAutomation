@@ -214,7 +214,8 @@ final class EmailPreview {
 
         $scope = new Scope(
             [
-                'trigger' => $refs ?? [],
+                // Facts are only known at event time: previews read the trigger's sample values.
+                'trigger' => ( $refs ?? [] ) + ( $trigger ? $trigger->sample_facts() : [] ),
                 'steps'   => $outputs,
             ],
             $resolver

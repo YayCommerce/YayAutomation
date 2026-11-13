@@ -279,6 +279,45 @@ final class DeclarationTest extends TestCase {
         );
 
         $this->assertSame( [ false, false, false, false, false, true ], $refused );
-        $this->assertSame( '"provides" must list data items a payload gives: customer, order, cart, review.', self::last_diagnostic() );
+        $this->assertSame( '"provides" must list data items a payload gives: customer, order, cart, review (declare a data item before the trigger that provides it).', Diagnostics::recent( 24 )[1]['message'] ?? '' );
+    }
+
+    public function test_fact_keys_are_not_ids_and_keep_one_type_across_triggers(): void {
+        $added = [];
+        Extensions::collect(
+            [],
+            function ( $registrar ) use ( &$added ) {
+                foreach ( [ 'acme', 'other' ] as $id ) {
+                    $module = $registrar->module(
+                        [
+                            'id'    => $id,
+                            'label' => ucfirst( $id ),
+                        ]
+                    );
+                    foreach ( [
+                        'customer' => 'string',
+                        'points'   => 'acme' === $id ? 'number' : 'string',
+                    ] as $key => $type ) {
+                        $added[] = $module->trigger(
+                            "{$id}_{$key}",
+                            [
+                                'label'       => 'T',
+                                'description' => 'T.',
+                                'provides'    => [ 'customer' ],
+                                'facts'       => [
+                                    $key => [
+                                        'label' => 'F',
+                                        'type'  => $type,
+                                    ],
+                                ],
+                            ]
+                        );
+                    }
+                }
+            }
+        );
+
+        $this->assertSame( [ false, true, false, false ], $added );
+        $this->assertSame( 'Fact "points" is already declared by another trigger as number.', self::last_diagnostic() );
     }
 }

@@ -69,6 +69,33 @@ final class FireTest extends TestCase {
                         'matches'     => fn( array $payload, array $config ) => $payload['user_id'] >= $config['min'],
                     ]
                 );
+                $module->data_item(
+                    'acme_reward',
+                    [
+                        'label'       => 'Reward',
+                        'description' => 'A redeemed reward.',
+                        'load'        => fn( string $id ) => (object) [ 'id' => $id ],
+                    ]
+                );
+                $module->trigger(
+                    'acme_redeemed',
+                    [
+                        'label'       => 'Reward redeemed',
+                        'description' => 'When a reward is redeemed.',
+                        'provides'    => [ 'acme_reward' ],
+                        'facts'       => [
+                            'points' => [
+                                'label' => 'Points',
+                                'type'  => 'number',
+                            ],
+                            'note'   => [
+                                'label' => 'Note',
+                                'type'  => 'string',
+                            ],
+                        ],
+                        'sample'      => [ 'points' => 25 ],
+                    ]
+                );
                 $module->trigger(
                     'acme_order',
                     [
@@ -93,6 +120,7 @@ final class FireTest extends TestCase {
         );
         $this->add_workflow( 1, 'acme_points' );
         $this->add_workflow( 2, 'acme_order' );
+        $this->add_workflow( 4, 'acme_redeemed' );
     }
 
     /**
@@ -351,5 +379,109 @@ final class FireTest extends TestCase {
 
         $this->assertSame( [], $this->runs->runs );
         $this->assertSame( [ 'Boom.' ], self::diagnostics() );
+    }
+
+    public function test_a_module_data_item_is_the_subject_when_nothing_else_is(): void {
+        $this->fire( 'acme_redeemed', [ 'acme_reward_id' => 7 ] );
+        $this->fire(
+            'acme_redeemed',
+            [
+                'acme_reward_id' => 8,
+                'user_id'        => 5,
+            ]
+        );
+
+        $this->assertSame( [ 'acme_reward:7', 'user:5' ], array_values( array_column( $this->runs->runs, 'subject' ) ) );
+        $this->assertSame( [ 'acme_reward' => self::ref( 'acme_reward', '7' ) ], $this->scope( 1 ) );
+        $this->assertSame( self::ref( 'customer', 'user:5' ), $this->scope( 2 )['customer'] );
+    }
+
+    public function test_declared_facts_are_kept_as_plain_values(): void {
+        $this->fire(
+            'acme_redeemed',
+            [
+                'acme_reward_id' => 7,
+                'points'         => 25,
+                'note'           => 'Thanks!',
+            ]
+        );
+
+        $this->assertSame(
+            [
+                'acme_reward' => self::ref( 'acme_reward', '7' ),
+                'points'      => 25,
+                'note'        => 'Thanks!',
+            ],
+            $this->scope( 1 )
+        );
+        $this->assertSame( [ 'points' => 25 ], $this->triggers['acme_redeemed']->sample_facts() );
+        $this->assertSame( [], self::diagnostics() );
+    }
+
+    public function test_a_fact_that_is_not_one_value_is_dropped_and_a_long_one_cut(): void {
+        $this->fire(
+            'acme_redeemed',
+            [
+                'acme_reward_id' => 7,
+                'points'         => [ 1, 2 ],
+                'note'           => str_repeat( 'é', 600 ),
+            ]
+        );
+
+        $scope = $this->scope( 1 );
+        $this->assertArrayNotHasKey( 'points', $scope );
+        $this->assertSame( 1024, strlen( $scope['note'] ) );
+        $this->assertSame( 2, Diagnostics::recent( 24 )[0]['count'] );
+        $this->assertSame( 'Fact "points" is not a single value; it was dropped.', Diagnostics::recent( 24 )[0]['message'] );
+    }
+
+    public function test_a_data_item_declared_after_the_trigger_still_maps_its_payload_key(): void {
+        $module = Extensions::collect(
+            [],
+            function ( $registrar ) {
+                $module = $registrar->module(
+                    [
+                        'id'    => 'late',
+                        'label' => 'Late',
+                    ]
+                );
+                $module->trigger(
+                    'late_done',
+                    [
+                        'label'       => 'Done',
+                        'description' => 'Done.',
+                        'provides'    => [ 'customer' ],
+                    ]
+                );
+                $module->data_item(
+                    'late_thing',
+                    [
+                        'label'       => 'Thing',
+                        'description' => 'A thing.',
+                        'load'        => fn() => null,
+                    ]
+                );
+            }
+        )[0];
+
+        $this->assertSame(
+            [
+                'user_id'       => 5,
+                'late_thing_id' => 3,
+            ],
+            $module->triggers()[0]->args(
+                [
+                    'user_id'       => 5,
+                    'late_thing_id' => 3,
+                ]
+            )
+        );
+    }
+
+    public function test_a_date_fact_has_a_moment_for_in_the_last(): void {
+        $scope = new \YayMatik\Workflow\Core\Data\Scope( [ 'trigger' => [ 'expires_on' => '2026-11-14' ] ], null, [] );
+
+        $this->assertSame( ( new \DateTimeImmutable( '2026-11-14', wp_timezone() ) )->getTimestamp(), $scope->timestamp( 'trigger.expires_on' ) );
+        $this->assertNull( $scope->timestamp( 'steps.a.date' ) );
     }
 }

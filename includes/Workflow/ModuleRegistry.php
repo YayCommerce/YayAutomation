@@ -102,7 +102,7 @@ final class ModuleRegistry {
                 if ( ! is_subclass_of( $class, DataItem::class ) ) {
                     continue;
                 }
-                $item = new $class();
+                $item = is_string( $class ) ? new $class() : $class;
                 if ( isset( $items[ $item->id() ] ) ) {
                     self::taken( $module->id(), 'data item', $item->id() );
                     continue;

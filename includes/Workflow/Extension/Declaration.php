@@ -2,9 +2,7 @@
 namespace YayMatik\Workflow\Extension;
 
 use YayMatik\Api\Api;
-use YayMatik\Workflow\Core\Data\DataItem;
 use YayMatik\Workflow\Core\Data\DataRegistry;
-use YayMatik\Workflow\Core\Data\Type;
 use YayMatik\Workflow\Core\Steps\Action;
 use YayMatik\Workflow\Core\Steps\Field;
 use YayMatik\Workflow\Core\Steps\Step;
@@ -36,11 +34,20 @@ final class Declaration {
     /** @var string[]|null Data item ids, read once. */
     private static $items = null;
 
+    /** @var array[] Facts declared in this request, by key. */
+    private static $facts = [];
+
     private const MODULE_KEYS = [ 'id', 'label', 'description', 'logo', 'requires_api' ];
 
     private const STEP_KEYS = [ 'label', 'description', 'icon', 'category', 'fields', 'summary', 'validate', 'setup_issue' ];
 
-    private const TRIGGER_KEYS = [ 'provides', 'matches', 'once_per' ];
+    private const TRIGGER_KEYS = [ 'provides', 'matches', 'once_per', 'facts', 'sample' ];
+
+    private const DATA_ITEM_KEYS = [ 'label', 'description', 'icon', 'load', 'fields', 'sample' ];
+
+    private const DATA_FIELD_KEYS = [ 'label', 'type', 'of', 'item', 'value', 'display', 'options', 'help', 'timestamp', 'merge_tag', 'conditional', 'block', 'sample' ];
+
+    private const MAX_FACTS = 10;
 
     private const ACTION_KEYS = [ 'requires', 'run', 'outputs', 'sample_outputs', 'on_error', 'result', 'emits' ];
 
@@ -57,6 +64,11 @@ final class Declaration {
         Field::NOTICE      => 'text',
         Field::NUMBER_UNIT => 'units',
     ];
+
+    /** A new registration: no fact declared yet. */
+    public static function begin(): void {
+        self::$facts = [];
+    }
 
     /**
      * The module, or null when refused.
@@ -95,8 +107,16 @@ final class Declaration {
         $error = self::step_error( $module, $id, $args, self::TRIGGER_CATEGORIES )
             ?? self::list_error( $args, 'provides', true )
             ?? self::callable_error( $args, [], [ 'matches' ] );
-        if ( null === $error && ( ! $args['provides'] || array_diff( $args['provides'], self::FIRED_ITEMS ) ) ) {
-            $error = '"provides" must list data items a payload gives: ' . implode( ', ', self::FIRED_ITEMS ) . '.';
+        $fired = array_merge( self::FIRED_ITEMS, array_keys( $module->data_items() ) );
+        if ( null === $error && ( ! $args['provides'] || array_diff( $args['provides'], $fired ) ) ) {
+            $error = '"provides" must list data items a payload gives: ' . implode( ', ', $fired ) . ' (declare a data item before the trigger that provides it).';
+        }
+        $facts = null === $error ? self::facts( $module, $args['facts'] ?? [] ) : null;
+        if ( null === $error && is_string( $facts ) ) {
+            $error = $facts;
+        }
+        if ( null === $error && isset( $args['sample'] ) && ! is_array( $args['sample'] ) ) {
+            $error = '"sample" must be fact => value.';
         }
         if ( null === $error && isset( $args['once_per'] ) && 'subject' !== $args['once_per'] ) {
             $error = '"once_per" must be "subject".';
@@ -107,7 +127,11 @@ final class Declaration {
             return null;
         }
         self::unknown_keys( $module->id(), $what, $args, array_merge( self::STEP_KEYS, self::TRIGGER_KEYS ) );
-        return [ 'fields' => $fields ] + $args;
+        return [
+            'fields' => $fields,
+            'facts'  => $facts,
+            'items'  => fn() => array_keys( $module->data_items() ),
+        ] + $args;
     }
 
     /**
@@ -139,6 +163,60 @@ final class Declaration {
             'fields'  => $fields,
             'outputs' => $outputs,
         ] + $args;
+    }
+
+    /**
+     * Normalized data item args, or null when refused.
+     *
+     * @param ExtensionModule $module
+     * @param string          $id
+     * @param array           $args
+     */
+    public static function data_item( ExtensionModule $module, string $id, array $args ): ?array {
+        $what  = "data item {$id}";
+        $error = self::own_id_error( $module->id(), $id );
+        foreach ( [ 'label', 'description' ] as $key ) {
+            if ( null === $error && ( ! is_string( $args[ $key ] ?? null ) || '' === trim( $args[ $key ] ) ) ) {
+                $error = "\"{$key}\" is required.";
+            }
+        }
+        if ( null === $error && isset( $args['icon'] ) && ! in_array( $args['icon'], StepIcons::NAMES, true ) ) {
+            $error = '"icon" must be a name from YayMatik\'s step icon list.';
+        }
+        if ( null === $error && in_array( $id, self::item_ids(), true ) ) {
+            $error = "Data item id \"{$id}\" is already taken.";
+        }
+        $error  = $error ?? self::callable_error( $args, [ 'load' ], [] );
+        $fields = null === $error ? self::data_field_defs( $module, $id, $args['fields'] ?? [], false ) : null;
+        if ( null === $error && isset( $args['sample'] ) && ! is_array( $args['sample'] ) ) {
+            $error = '"sample" must be field => value.';
+        }
+        $error = $error ?? ( is_string( $fields ) ? $fields : null );
+        if ( null !== $error ) {
+            self::refuse( $module->id(), $what, $error );
+            return null;
+        }
+        self::unknown_keys( $module->id(), $what, $args, self::DATA_ITEM_KEYS );
+        return [ 'fields' => $fields ] + $args;
+    }
+
+    /**
+     * Field definitions to add to a data item, or null when refused.
+     *
+     * @param ExtensionModule $module
+     * @param string          $item
+     * @param mixed           $fields
+     */
+    public static function data_fields( ExtensionModule $module, string $item, $fields ): ?array {
+        $what  = "data fields {$item}";
+        $error = in_array( $item, self::item_ids(), true ) || isset( $module->data_items()[ $item ] ) ? null : "Unknown data item \"{$item}\".";
+        $defs  = null === $error ? self::data_field_defs( $module, $item, $fields, true ) : null;
+        $error = $error ?? ( is_string( $defs ) ? $defs : null );
+        if ( null !== $error ) {
+            self::refuse( $module->id(), $what, $error );
+            return null;
+        }
+        return $defs;
     }
 
     /**
@@ -274,8 +352,7 @@ final class Declaration {
      * @param string[] $requires
      */
     private static function items_error( array $requires ): ?string {
-        self::$items = self::$items ?? array_keys( DataRegistry::items() );
-        $unknown     = array_diff( $requires, self::$items );
+        $unknown = array_diff( $requires, self::item_ids() );
         return $unknown ? 'Unknown data item in "requires": ' . implode( ', ', $unknown ) . '.' : null;
     }
 
@@ -380,32 +457,68 @@ final class Declaration {
     }
 
     /**
-     * Core type from a type name (§4.2): `list` reads `of`, `entity` reads `item`. Null when unknown.
-     *
-     * @param array $declared
+     * @param ExtensionModule $module
+     * @param string          $item
+     * @param mixed           $fields
+     * @param bool            $prefixed Keys must start with the module id (fields on another item).
+     * @return array|string
      */
-    private static function type( array $declared ): ?Type {
-        $name = $declared['type'] ?? null;
-        switch ( $name ) {
-            case 'string':
-                return Type::string();
-            case 'number':
-                return Type::from_condition_type( DataItem::TYPE_NUMBER );
-            case 'money':
-                return Type::money();
-            case 'boolean':
-                return Type::boolean();
-            case 'date':
-                return Type::date();
-            case 'enum':
-                return Type::enum();
-            case 'list':
-                $item = self::type( [ 'type' => $declared['of'] ?? 'string' ] );
-                return $item ? Type::list_of( $item ) : null;
-            case 'entity':
-                return is_string( $declared['item'] ?? null ) && preg_match( self::KEY, $declared['item'] ) ? Type::entity( $declared['item'] ) : null;
+    private static function data_field_defs( ExtensionModule $module, string $item, $fields, bool $prefixed ) {
+        if ( ! is_array( $fields ) ) {
+            return '"fields" must be key => field array.';
         }
-        return null;
+        $defs = [];
+        foreach ( $fields as $key => $field ) {
+            $key = (string) $key;
+            if ( $prefixed && 0 !== strpos( $key, $module->id() . '_' ) ) {
+                return "Field key \"{$key}\" must start with \"{$module->id()}_\".";
+            }
+            $def = FieldAdapter::field( $module->id(), $item, $key, $field );
+            if ( is_string( $def ) ) {
+                return $def;
+            }
+            self::unknown_keys( $module->id(), "field {$item}.{$key}", $field, self::DATA_FIELD_KEYS );
+            $defs[ $key ] = $def;
+        }
+        return $defs;
+    }
+
+    /**
+     * Fact definitions, or why they were refused. A key another trigger declared keeps its type:
+     * a condition on `trigger.<key>` reads one definition (`DataRegistry::field()`).
+     *
+     * @param ExtensionModule $module
+     * @param mixed           $facts
+     * @return array|string
+     */
+    private static function facts( ExtensionModule $module, $facts ) {
+        if ( ! is_array( $facts ) || count( $facts ) > self::MAX_FACTS ) {
+            return '"facts" must be key => [ label, type ], at most ' . self::MAX_FACTS . '.';
+        }
+        $defs = [];
+        foreach ( $facts as $key => $fact ) {
+            $key = (string) $key;
+            if ( '_id' === substr( $key, -3 ) || in_array( $key, array_merge( self::FIRED_ITEMS, array_keys( $module->data_items() ) ), true ) ) {
+                return "Fact key \"{$key}\" is a payload id key or a data item id.";
+            }
+            $def = FieldAdapter::fact( $module->id(), $key, $fact );
+            if ( is_string( $def ) ) {
+                return $def . ' Facts are one value: ' . implode( ', ', FieldAdapter::SCALAR_TYPES ) . '.';
+            }
+            $known = DataRegistry::field( "trigger.{$key}" ) ?? ( self::$facts[ $key ] ?? null );
+            if ( $known && $known['value_type']->to_string() !== $def['value_type']->to_string() ) {
+                return "Fact \"{$key}\" is already declared by another trigger as {$known['value_type']->to_string()}.";
+            }
+            $defs[ $key ] = $def;
+        }
+        self::$facts = $defs + self::$facts;
+        return $defs;
+    }
+
+    /** @return string[] Ids of the data items of the class-based modules, read once. */
+    private static function item_ids(): array {
+        self::$items = self::$items ?? array_keys( DataRegistry::items() );
+        return self::$items;
     }
 
     /**
@@ -421,7 +534,7 @@ final class Declaration {
         }
         $built = [];
         foreach ( $outputs as $key => $output ) {
-            $type = is_array( $output ) ? self::type( $output ) : null;
+            $type = is_array( $output ) ? FieldAdapter::type( $output ) : null;
             if ( ! is_string( $key ) || ! preg_match( self::KEY, $key ) || ! is_string( $output['label'] ?? null ) || ! $type ) {
                 return "Output \"{$key}\" must be lowercase key => [ label, type ], with a known type name.";
             }

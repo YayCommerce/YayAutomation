@@ -6,10 +6,12 @@ use YayMatik\Tests\Support\FakeQueue;
 use YayMatik\Tests\Support\FakeRunRepository;
 use YayMatik\Tests\Support\FakeUser;
 use YayMatik\Tests\Support\FakeWorkflows;
+use YayMatik\Workflow\Core\Data\DataItem;
 use YayMatik\Workflow\Core\Data\RefResolver;
 use YayMatik\Workflow\Core\Data\Scope;
 use YayMatik\Workflow\Core\Runtime\Dispatcher;
 use YayMatik\Workflow\DataItems\CustomerData;
+use YayMatik\Workflow\Extension\Diagnostics;
 use YayMatik\Workflow\Extension\Extensions;
 use YayMatik\Workflow\Extension\Fire;
 
@@ -29,7 +31,7 @@ final class ReferenceConsumerTest extends TestCase {
     }
 
     protected function tearDown(): void {
-        unset( $GLOBALS['yaymatik_test_users'] );
+        unset( $GLOBALS['yaymatik_test_users'], $GLOBALS['yaymatik_test_filters']['yaymatik_data_item_customer_fields'] );
     }
 
     public function test_approved_then_set_wholesale_role(): void {
@@ -97,5 +99,12 @@ final class ReferenceConsumerTest extends TestCase {
 
         $this->assertSame( [ 'ok', [ 'role' => 'gold' ] ], [ $result->status(), $result->outputs() ] );
         $this->assertSame( 'gold', $GLOBALS['yaymatik_test_users'][5]->meta['_yaywholesale_role'] );
+        $this->assertSame( 'gold', $scope->get( 'trigger.role' ), 'the fact is kept' );
+        $this->assertSame( [], Diagnostics::recent( 24 ), 'nothing in the payload was dropped' );
+
+        // The data field reads the role through a CustomerView: a condition on it and a merge tag.
+        $field = apply_filters( 'yaymatik_data_item_customer_fields', [] )['yaywholesale_role'];
+        $this->assertSame( 'gold', ( $field['value'] )( new \WC_Customer( [ 'id' => 5 ] ) ) );
+        $this->assertSame( 'Gold', DataItem::display( $field + [ 'display' => null ], new \WC_Customer( [ 'id' => 5 ] ), false ) );
     }
 }

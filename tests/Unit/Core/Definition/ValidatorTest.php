@@ -641,6 +641,12 @@ final class ValidatorTest extends TestCase {
                         'label'       => 'Points earned',
                         'description' => 'When points are earned.',
                         'provides'    => [ 'customer' ],
+                        'facts'       => [
+                            'points' => [
+                                'label' => 'Points earned',
+                                'type'  => 'number',
+                            ],
+                        ],
                     ]
                 );
                 $module->action(
@@ -730,6 +736,119 @@ final class ValidatorTest extends TestCase {
 
         $this->assertSame( [ 'a' => 'This design needs an order.' ], $codes[0] );
         $this->assertSame( [], $codes[1] );
+    }
+
+    public function test_a_fact_is_a_variable_of_its_trigger_only(): void {
+        $note    = [
+            'fields' => [
+                'note' => [
+                    'type'      => 'text',
+                    'label'     => 'Note',
+                    'variables' => true,
+                ],
+            ],
+        ];
+        $graph   = fn( string $trigger, string $text ) => GraphSchema::prepare(
+            [
+                'nodes' => [ self::node( 't', 'trigger', $trigger ), self::node( 'a', 'action', 'acme_act', [ 'note' => $text ] ) ],
+                'edges' => [ self::edge( 't', 'a' ) ],
+            ]
+        );
+        $results = self::with_acme(
+            $note,
+            fn() => [
+                Validator::errors(
+                    [
+                        'name'  => 'A',
+                        'graph' => $graph( 'acme_points', 'You got {{ trigger.points }} points' ),
+                    ]
+                ),
+                array_column(
+                    Validator::errors(
+                        [
+                            'name'  => 'A',
+                            'graph' => $graph( 'acme_points', '{{ trigger.nope }}' ),
+                        ]
+                    ),
+                    'message'
+                ),
+                array_column(
+                    Validator::errors(
+                        [
+                            'name'  => 'A',
+                            'graph' => $graph( 'order_created', '{{ trigger.points }}' ),
+                        ]
+                    ),
+                    'message'
+                ),
+                array_column( Validator::variables( $graph( 'acme_points', '' ), 'a' ), 'key' )[0],
+            ]
+        );
+
+        $this->assertSame( [], $results[0] );
+        $this->assertSame( [ Messages::get( 'unknownVariable', '{{ trigger.nope }}' ) ], $results[1] );
+        $this->assertSame( [ Messages::get( 'unknownVariable', '{{ trigger.points }}' ) ], $results[2] );
+        $this->assertSame( 'trigger.points', $results[3], 'facts are listed first' );
+    }
+
+    public function test_a_condition_rule_on_a_fact(): void {
+        $criteria = new \YayMatik\Workflow\Conditions\Criteria();
+        $config   = $criteria->sanitize(
+            [
+                'match' => 'all',
+                'rules' => [
+                    [
+                        'field'    => 'trigger.points',
+                        'operator' => 'greater_than',
+                        'value'    => '10',
+                    ],
+                ],
+            ]
+        );
+        $results  = self::with_acme(
+            [],
+            fn() => [
+                $criteria->validate( $config ),
+                $criteria->uses( $config ),
+                $criteria->evaluate( new \YayMatik\Workflow\Core\Data\Scope( [ 'trigger' => [ 'points' => 42 ] ], null, [] ), $config ),
+                $criteria->evaluate( new \YayMatik\Workflow\Core\Data\Scope( [ 'trigger' => [ 'points' => 5 ] ], null, [] ), $config ),
+            ]
+        );
+
+        $this->assertSame( [ true, [ 'trigger.points' ], true, false ], $results );
+        $graph  = fn( string $trigger ) => GraphSchema::prepare(
+            [
+                'nodes' => [ self::node( 't', 'trigger', $trigger ), self::node( 'c', 'condition', 'condition', $config ), self::node( 'a', 'action', 'acme_act' ) ],
+                'edges' => [ self::edge( 't', 'c' ), self::edge( 'c', 'a', 'then' ) ],
+            ]
+        );
+        $issues = self::with_acme(
+            [],
+            fn() => [
+                array_column(
+                    Validator::errors(
+                        [
+                            'name'  => 'A',
+                            'graph' => $graph( 'acme_points' ),
+                        ]
+                    ),
+                    'code',
+                    'nodeId'
+                ),
+                array_column(
+                    Validator::errors(
+                        [
+                            'name'  => 'A',
+                            'graph' => $graph( 'order_created' ),
+                        ]
+                    ),
+                    'message',
+                    'nodeId'
+                ),
+            ]
+        );
+        $this->assertArrayNotHasKey( 'c', $issues[0] );
+        $this->assertSame( Messages::get( 'ruleVariable' ), $issues[1]['c'], 'a fact of another trigger' );
     }
 
     public function test_emits_drives_the_may_refire_warning(): void {

@@ -122,7 +122,13 @@ function RunSteps({ run }: { run: RunDetail }) {
   const trigger = steps[run.triggerId as StepId] as (typeof steps)[StepId] | undefined;
   return (
     <ol className="flex flex-col gap-4">
-      <StepLine kind="trigger" icon={trigger?.icon} label={trigger?.label ?? run.triggerId} time={run.startedAt} />
+      <StepLine
+        kind="trigger"
+        icon={trigger?.icon}
+        label={trigger?.label ?? run.triggerId}
+        result={run.facts.map((fact) => `${fact.label}: ${fact.value}`).join(', ')}
+        time={run.startedAt}
+      />
       {run.steps.map((step) => {
         const stepDef = step.stepType ? steps[step.stepType] : undefined;
         return (

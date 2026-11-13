@@ -12,6 +12,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * A `yaymatik_fire` payload's ids as the refs and subject core triggers use: the customer comes
  * from the first of order → cart → review → user, as `customer` + `order:12` (or `cart:9`, `review:3`, `user:5`).
+ * A module's own data item comes under `<item>_id` and is the subject only when nothing else is.
  *
  * @internal
  */
@@ -26,19 +27,36 @@ final class RefMap {
     ];
 
     /**
+     * Payload id key => data item: core's, then the module's own.
+     *
+     * @param string[] $items The module's data item ids.
+     */
+    public static function keys( array $items ): array {
+        $keys = self::IDS;
+        foreach ( $items as $item ) {
+            $keys[ $item . '_id' ] = $item;
+        }
+        return $keys;
+    }
+
+    /**
      * Key => Ref; a `user_id` that isn't the customer stays a plain id, for `Run::user()`.
      *
-     * @param array $args Payload with valid ids.
+     * @param array    $args  Payload with valid ids.
+     * @param string[] $items
      */
-    public static function refs( array $args ): array {
+    public static function refs( array $args, array $items ): array {
         $refs     = [];
         $customer = null;
-        foreach ( self::IDS as $key => $source ) {
+        foreach ( self::keys( $items ) as $key => $source ) {
             if ( ! isset( $args[ $key ] ) ) {
                 continue;
             }
             if ( 'user' !== $source ) {
                 $refs[ $source ] = new Ref( $source, $args[ $key ] );
+            }
+            if ( ! isset( self::IDS[ $key ] ) ) {
+                continue;
             }
             if ( ! $customer ) {
                 $customer = new Ref( CustomerData::ID, $source . ':' . $args[ $key ] );
@@ -53,12 +71,13 @@ final class RefMap {
     }
 
     /**
-     * `order:12`, `cart:9`, `review:3` or `user:5`; '' when the payload has no id.
+     * `order:12`, `cart:9`, `review:3`, `user:5`, or `<item>:<id>`; '' when the payload has no id.
      *
-     * @param array $args
+     * @param array    $args
+     * @param string[] $items
      */
-    public static function subject( array $args ): string {
-        foreach ( self::IDS as $key => $source ) {
+    public static function subject( array $args, array $items ): string {
+        foreach ( self::keys( $items ) as $key => $source ) {
             if ( isset( $args[ $key ] ) ) {
                 return $source . ':' . $args[ $key ];
             }
@@ -69,13 +88,14 @@ final class RefMap {
     /**
      * Whether a payload gives this data item.
      *
-     * @param string $item
-     * @param array  $args
+     * @param string   $item
+     * @param array    $args
+     * @param string[] $items
      */
-    public static function gives( string $item, array $args ): bool {
+    public static function gives( string $item, array $args, array $items ): bool {
         if ( CustomerData::ID === $item ) {
-            return '' !== self::subject( $args );
+            return '' !== self::subject( $args, [] );
         }
-        return isset( self::IDS[ $item . '_id' ], $args[ $item . '_id' ] );
+        return isset( self::keys( $items )[ $item . '_id' ], $args[ $item . '_id' ] );
     }
 }

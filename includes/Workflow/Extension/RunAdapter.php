@@ -2,10 +2,13 @@
 namespace YayMatik\Workflow\Extension;
 
 use YayMatik\Api\Run;
+use YayMatik\Workflow\Core\Cart\SavedCart;
+use YayMatik\Workflow\Core\Data\DataRegistry;
 use YayMatik\Workflow\Core\Data\Ref;
 use YayMatik\Workflow\Core\Data\Scope;
 use YayMatik\Workflow\Core\Data\Template;
 use YayMatik\Workflow\Core\Steps\StepResult;
+use YayMatik\Workflow\DataItems\CartData;
 use YayMatik\Workflow\DataItems\CustomerData;
 use YayMatik\Workflow\DataItems\OrderData;
 
@@ -48,16 +51,17 @@ final class RunAdapter implements Run {
     }
 
     public function cart() {
-        return null;
+        $cart = $this->entity( CartData::ID );
+        return $cart instanceof SavedCart ? new CartViewAdapter( $cart ) : null;
     }
 
     /**
-     * Core items have their own getters; a module's own data items come with `data_item()`.
+     * Only another plugin's own data item: core items have their own getters.
      *
      * @param string $id
      */
-    public function item( string $id ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- the public signature.
-        return null;
+    public function item( string $id ) {
+        return ( DataRegistry::entities()[ $id ] ?? null ) instanceof ExtensionDataItem ? $this->entity( $id ) : null;
     }
 
     /**

@@ -6,7 +6,7 @@ defined( 'ABSPATH' ) || exit;
 /** What `yaymatik_register` passes: the way a plugin adds a module. */
 final class Registrar {
 
-    private const FEATURES = [ 'triggers', 'actions' ];
+    private const FEATURES = [ 'triggers', 'actions', 'data_items', 'data_fields', 'trigger_facts' ];
 
     /** @var callable fn( array $args ): Module */
     private $module;

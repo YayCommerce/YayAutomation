@@ -38,6 +38,7 @@ const run: RunDetail = {
   triggerId: 'order_status_changed',
   subject: 'order:12',
   subjectLabel: 'Order #12',
+  facts: [],
   subjectUrl: 'https://shop.test/wp-admin/post.php?post=12',
   stoppedByOrderUrl: null,
   status: 'completed',
@@ -93,6 +94,19 @@ describe('RunDetailSheet', () => {
     expect(lines[1]).toContain('Sent to a@b.com');
     expect(lines[2]).toContain('Removed step');
     expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('shows the trigger facts under the trigger', async () => {
+    vi.mocked(getRun).mockResolvedValue({
+      ...run,
+      facts: [
+        { label: 'Points earned', value: '42' },
+        { label: 'Tier', value: 'Gold' },
+      ],
+    });
+    await open('31');
+    const sheet = document.body.querySelector('[data-slot="sheet-content"]')!;
+    await vi.waitFor(() => expect(sheet.querySelector('li')?.textContent).toContain('Points earned: 42, Tier: Gold'));
   });
 
   it('links the order that stopped a cart run', async () => {

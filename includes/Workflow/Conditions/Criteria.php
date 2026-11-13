@@ -102,7 +102,8 @@ class Criteria extends Condition {
                 $keys[] = $rule['value'];
             }
         }
-        $items = array_map( [ DataRegistry::class, 'item_of' ], array_filter( $keys ) );
+        // A fact stays `trigger.<key>`: the Validator checks it against the workflow's trigger, not the data items.
+        $items = array_map( fn( string $key ) => 0 === strpos( $key, 'trigger.' ) ? $key : DataRegistry::item_of( $key ), array_filter( $keys ) );
         return array_values( array_diff( array_unique( $items ), DataRegistry::ALWAYS ) );
     }
 
@@ -295,6 +296,6 @@ class Criteria extends Condition {
      * @param string $key
      */
     private static function field_key( string $key ): string {
-        return (string) preg_replace( '/[^a-z_.]/', '', $key );
+        return (string) preg_replace( '/[^a-z0-9_.]/', '', $key );
     }
 }

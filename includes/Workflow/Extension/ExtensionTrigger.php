@@ -15,6 +15,8 @@ final class ExtensionTrigger extends Trigger {
 
     use ExtensionStep;
 
+    private const FACT_BYTES = 1024;
+
     /**
      * @param string $module
      * @param string $id
@@ -30,16 +32,28 @@ final class ExtensionTrigger extends Trigger {
         return $this->args['provides'];
     }
 
+    public function facts(): array {
+        return $this->args['facts'];
+    }
+
     /**
      * The event's args from a payload; null (no run) when it lacks what `provides` needs. Keys it
-     * can't use are dropped with a diagnostic.
+     * can't use are dropped, and a fact over 1 KB is cut, with a diagnostic.
      *
      * @param array $payload
      */
     public function args( array $payload ): ?array {
         $args = [];
+        $ids  = RefMap::keys( ( $this->args['items'] )() );
         foreach ( $payload as $key => $value ) {
-            if ( ! isset( RefMap::IDS[ $key ] ) ) {
+            if ( isset( $this->facts()[ $key ] ) ) {
+                $fact = $this->fact( (string) $key, $value );
+                if ( null !== $fact ) {
+                    $args[ $key ] = $fact;
+                }
+                continue;
+            }
+            if ( ! isset( $ids[ $key ] ) ) {
                 $this->diagnose( 'payload', sprintf( 'Payload key "%s" is not an id or a declared fact; it was dropped.', $key ) );
                 continue;
             }
@@ -51,7 +65,7 @@ final class ExtensionTrigger extends Trigger {
             $args[ $key ] = $id;
         }
         foreach ( $this->provides() as $item ) {
-            if ( ! RefMap::gives( $item, $args ) ) {
+            if ( ! RefMap::gives( $item, $args, ( $this->args['items'] )() ) ) {
                 $this->diagnose( 'fire', sprintf( 'The payload gives no "%s", which this trigger provides; no run was started.', $item ) );
                 return null;
             }
@@ -78,14 +92,18 @@ final class ExtensionTrigger extends Trigger {
      * @param array $args
      */
     public function refs( array $args ): ?array {
-        return RefMap::refs( $args );
+        return RefMap::refs( $args, ( $this->args['items'] )() ) + array_intersect_key( $args, $this->facts() );
     }
 
     /**
      * @param array $args
      */
     public function subject( array $args ): string {
-        return RefMap::subject( $args );
+        return RefMap::subject( $args, ( $this->args['items'] )() );
+    }
+
+    public function sample_facts(): array {
+        return array_intersect_key( (array) ( $this->args['sample'] ?? [] ), $this->facts() );
     }
 
     /**
@@ -106,6 +124,25 @@ final class ExtensionTrigger extends Trigger {
 
     public function claims_per_workflow(): bool {
         return 'subject' === ( $this->args['once_per'] ?? null );
+    }
+
+    /**
+     * A fact's value as stored: a scalar, text cut at 1 KB; null (dropped) for anything else.
+     *
+     * @param string $key
+     * @param mixed  $value
+     * @return string|int|float|bool|null
+     */
+    private function fact( string $key, $value ) {
+        if ( ! is_scalar( $value ) ) {
+            $this->diagnose( 'payload', sprintf( 'Fact "%s" is not a single value; it was dropped.', $key ) );
+            return null;
+        }
+        if ( is_string( $value ) && strlen( $value ) > self::FACT_BYTES ) {
+            $this->diagnose( 'payload', sprintf( 'Fact "%s" is over 1 KB; it was cut.', $key ) );
+            return mb_strcut( $value, 0, self::FACT_BYTES, 'UTF-8' );
+        }
+        return $value;
     }
 
     /**
