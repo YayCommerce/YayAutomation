@@ -370,8 +370,8 @@ $m->template( 'yaymail_order_paid_email', [
 ## 8. Privacy
 
 - Emails written through the run stores are indexed automatically (033 `run_emails`): export / erase find them. **[Certain]**
-- Runs whose `subject` uses a core shape are found already (PersonSubjects.php:17–63).
-- Other subjects: module key `'privacy_subjects' => fn( string $email ): string[]` — the plugin's subjects about that person (e.g. `yaywholesale_request:7`). Called by export and erase.
+- Runs whose `subject` uses a core shape are found already (`PersonSubjects::for_email()`).
+- Other subjects: module key `'privacy_subjects' => fn( string $email ): string[]` — the plugin's subjects about that person (e.g. `yaywholesale_request:7`). Called by export and erase. Only subjects starting with the module id + `_` are kept (core finds its own shapes itself); a throw gives none and a diagnostic.
 
 ## 9. Error isolation and diagnostics
 
@@ -416,7 +416,7 @@ When a plugin is off, its code doesn't run, so core can't ask it for a step's na
 
 ## 12. Core steps usable by extension templates (G4)
 
-Public and semver'd: the **ids, config keys and value shapes** below, the **condition operator ids** (Operators.php:12–17) and the **core data item / field keys** (catalog). The full list is generated from the catalog into `docs/extension-api-core.md`; a PHPUnit snapshot fails when any of them changes.
+Public and semver'd: the **ids, config keys and value shapes** below, the **condition operator ids** (Operators.php:12–17) and the **core data item / field keys** (catalog). The full list is generated from the catalog into [extension-api-core.md](extension-api-core.md) (`./run.sh extension-core`); a PHPUnit snapshot (`tests/Unit/Api/CoreStepsTest.php`) fails when any of them changes, and `SurfaceTest` does the same for the public classes in `includes/Api/`.
 
 | Kind | Id | Config keys |
 |---|---|---|

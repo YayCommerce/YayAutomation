@@ -46,4 +46,14 @@ abstract class Module {
     public function data_items(): array {
         return [];
     }
+
+    /**
+     * Run subjects of this module's own data items about the person with this email, for export and erase.
+     *
+     * @param string $email
+     * @return string[]
+     */
+    public function privacy_subjects( string $email ): array { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter -- for modules with their own subjects.
+        return [];
+    }
 }

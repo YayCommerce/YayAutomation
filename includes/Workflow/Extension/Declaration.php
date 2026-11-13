@@ -37,7 +37,7 @@ final class Declaration {
     /** @var array[] Facts declared in this request, by key. */
     private static $facts = [];
 
-    private const MODULE_KEYS = [ 'id', 'label', 'description', 'logo', 'requires_api' ];
+    private const MODULE_KEYS = [ 'id', 'label', 'description', 'logo', 'requires_api', 'privacy_subjects' ];
 
     private const STEP_KEYS = [ 'label', 'description', 'icon', 'category', 'fields', 'summary', 'validate', 'setup_issue' ];
 
@@ -91,7 +91,8 @@ final class Declaration {
             is_string( $args['description'] ?? null ) ? $args['description'] : '',
             is_string( $args['logo'] ?? null ) ? $args['logo'] : '',
             $args['requires_api'] ?? null,
-            $open
+            $open,
+            $args['privacy_subjects'] ?? null
         );
     }
 
@@ -274,6 +275,9 @@ final class Declaration {
         }
         if ( ! is_string( $args['label'] ?? null ) || '' === trim( $args['label'] ) ) {
             return 'A module needs a label.';
+        }
+        if ( isset( $args['privacy_subjects'] ) && ! is_callable( $args['privacy_subjects'] ) ) {
+            return '"privacy_subjects" must be a callable.';
         }
         if ( isset( $args['requires_api'] ) && ! self::api_met( $args['requires_api'] ) ) {
             return 'Needs YayMatik with Extension API ' . ( is_scalar( $args['requires_api'] ) ? (string) $args['requires_api'] : '?' ) . '.';

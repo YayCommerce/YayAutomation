@@ -30,6 +30,12 @@ final class ExtensionModule extends Module {
     /** @var callable fn(): bool */
     private $open;
 
+    /** @var callable|null fn( string $email ): string[] */
+    private $privacy_subjects;
+
+    /** @var array[] Own subjects by email, for this request. */
+    private $subjects = [];
+
     /** @var ExtensionTrigger[] By id. */
     private $triggers = [];
 
@@ -43,20 +49,39 @@ final class ExtensionModule extends Module {
     private $data_items = [];
 
     /**
-     * @param string      $id
-     * @param string      $label
-     * @param string      $description
-     * @param string      $logo
-     * @param string|null $requires_api
-     * @param callable    $open fn(): bool — false once `yaymatik_register` has run.
+     * @param string        $id
+     * @param string        $label
+     * @param string        $description
+     * @param string        $logo
+     * @param string|null   $requires_api
+     * @param callable      $open fn(): bool — false once `yaymatik_register` has run.
+     * @param callable|null $privacy_subjects
      */
-    public function __construct( string $id, string $label, string $description, string $logo, ?string $requires_api, callable $open ) {
-        $this->id           = $id;
-        $this->label        = $label;
-        $this->description  = $description;
-        $this->logo         = $logo;
-        $this->requires_api = $requires_api;
-        $this->open         = $open;
+    public function __construct( string $id, string $label, string $description, string $logo, ?string $requires_api, callable $open, ?callable $privacy_subjects = null ) {
+        $this->id               = $id;
+        $this->label            = $label;
+        $this->description      = $description;
+        $this->logo             = $logo;
+        $this->requires_api     = $requires_api;
+        $this->open             = $open;
+        $this->privacy_subjects = $privacy_subjects;
+    }
+
+    /**
+     * The plugin's `privacy_subjects`, kept only as `<own data item>:<id>`; once per email per request.
+     *
+     * @param string $email
+     * @return string[]
+     */
+    public function privacy_subjects( string $email ): array {
+        if ( ! $this->privacy_subjects ) {
+            return [];
+        }
+        if ( ! isset( $this->subjects[ $email ] ) ) {
+            $subjects                 = Guard::call( $this->id, 'privacy_subjects', fn() => (array) ( $this->privacy_subjects )( $email ), fn() => [] );
+            $this->subjects[ $email ] = array_values( array_filter( $subjects, [ $this, 'own_subject' ] ) );
+        }
+        return $this->subjects[ $email ];
     }
 
     public function id(): string {
@@ -183,6 +208,17 @@ final class ExtensionModule extends Module {
         }
         $this->categories[ $id ] = $label;
         return true;
+    }
+
+    /**
+     * @param mixed $subject
+     */
+    private function own_subject( $subject ): bool {
+        if ( ! is_string( $subject ) || false === strpos( $subject, ':' ) ) {
+            return false;
+        }
+        list( $item, $id ) = explode( ':', $subject, 2 );
+        return isset( $this->data_items[ $item ] ) && '' !== $id && ! preg_match( '/\s/', $id );
     }
 
     /**

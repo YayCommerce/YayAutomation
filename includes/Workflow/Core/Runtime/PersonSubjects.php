@@ -2,6 +2,7 @@
 namespace YayMatik\Workflow\Core\Runtime;
 
 use YayMatik\Workflow\Core\Storage\CartStore;
+use YayMatik\Workflow\ModuleRegistry;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -9,7 +10,7 @@ defined( 'ABSPATH' ) || exit;
 final class PersonSubjects {
 
     /**
-     * Run subjects of the person's orders, carts, accounts and reviews: by billing email too, as a welcome run sends there.
+     * Run subjects of the person's orders, carts, accounts, reviews and modules' own items: by billing email too, as a welcome run sends there.
      *
      * @param string $email Normalized.
      * @return string[]
@@ -58,6 +59,9 @@ final class PersonSubjects {
             foreach ( (array) $ids as $review_id ) {
                 $subjects[] = 'review:' . (int) $review_id;
             }
+        }
+        foreach ( ModuleRegistry::modules() as $module ) {
+            $subjects = array_merge( $subjects, $module->privacy_subjects( $email ) );
         }
         return array_values( array_unique( $subjects ) );
     }
