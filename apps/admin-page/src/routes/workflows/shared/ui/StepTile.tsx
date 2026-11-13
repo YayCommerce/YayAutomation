@@ -29,7 +29,8 @@ export function StepEyebrow({
   return (
     <div className={cn('text-[11px]/4 font-semibold tracking-wide uppercase', kindText[kind])}>
       {showKind && kindLabel}
-      {plugin && (
+      {/* A plugin that's off isn't in the list: its steps show the kind only. */}
+      {plugin && plugins[plugin] && (
         <span className="text-muted-foreground font-medium tracking-normal normal-case">
           {showKind && ' · '}
           {plugins[plugin].label}

@@ -396,9 +396,9 @@ When a plugin is off, its code doesn't run, so core can't ask it for a step's na
 | Place | Behavior |
 |---|---|
 | Editor | Card greyed: "Needs YayMail — the plugin isn't active." Config is kept as stored, read-only; the step can be deleted. Later merge tags reading its outputs show as "from a step whose plugin is off" (not an error) |
-| Save | Allowed. `GraphSchema::prepare` keeps a node with an unknown step **if the stored draft / live graph already has it** (raw config kept, ≤ 64 KB); a *new* unknown step is still refused (GraphSchema.php:50–53) |
+| Save | Allowed. `GraphSchema::prepare` keeps a node with an unknown step **if the stored draft / live graph already has it**, with its saved config (read-only: what the editor sends for it is ignored); a *new* unknown step is still refused (GraphSchema.php:50–53) |
 | Activate / Update | Blocked with issue `missing_plugin`: "This workflow uses YayMail, which isn't active. Activate YayMail to turn the workflow on." |
-| Already-active workflow | Keeps running. A run reaching the step: **Skipped** with the reason "YayMail isn't active." and goes on (today Failed, Executor.php:280–283). A missing **trigger** fires nothing |
+| Already-active workflow | Keeps running. A run reaching the step: **Skipped** with the reason "YayMail isn't active." and goes on (today Failed, Executor.php:280–283). A missing **trigger** fires nothing. A step a plugin dropped while it stays active is not "inactive": it fails as an unknown step |
 | Health check | New check `missing_plugin`: active workflows with steps from inactive plugins (count, workflow links, Plugins page link; no auto-fix). Fills design §9 row "step from a missing plugin" |
 | Plugin re-activated | Everything works again; nothing was rewritten |
 

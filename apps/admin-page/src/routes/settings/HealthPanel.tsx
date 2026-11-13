@@ -7,6 +7,7 @@ import type {
   HealthExtension,
 } from '@yaymatik/types';
 import { CircleAlert, CircleCheck, ExternalLink, Info, RefreshCw, TriangleAlert } from 'lucide-react';
+import { Link } from 'react-router';
 import { humanTimeDiff } from '@wordpress/date';
 import { __, _n, sprintf } from '@wordpress/i18n';
 
@@ -22,7 +23,14 @@ import { useFixHealthCheck, useHealthQuery } from './api/health.query';
 import { SettingsErrorAlert } from './SettingsErrorAlert';
 
 /** Problems first, then the info row. */
-const ORDER: HealthCheckId[] = ['runs_queued', 'runs_running', 'cleanup_job', 'inactive_sweep_job', 'jobs_late'];
+const ORDER: HealthCheckId[] = [
+  'runs_queued',
+  'runs_running',
+  'cleanup_job',
+  'inactive_sweep_job',
+  'missing_plugin',
+  'jobs_late',
+];
 
 /** A capped scan's count is a lower bound: "1+" still takes the plural. */
 const countText = (check: HealthCheck) => (check.capped ? `${check.count}+` : String(check.count));
@@ -101,7 +109,13 @@ export function HealthPanel() {
             {shown.map((check, index) => (
               <Fragment key={check.id}>
                 {index > 0 && <Separator />}
-                {check.id === 'jobs_late' ? <LateJobsRow check={check} /> : <FixRow check={check} id={check.id} />}
+                {check.id === 'jobs_late' ? (
+                  <LateJobsRow check={check} />
+                ) : check.id === 'missing_plugin' ? (
+                  <MissingPluginRow check={check} />
+                ) : (
+                  <FixRow check={check} id={check.id} />
+                )}
               </Fragment>
             ))}
           </div>
@@ -287,6 +301,45 @@ function LateJobsRow({ check }: { check: HealthCheck }) {
             <ExternalLink className="size-3.5" aria-hidden />
           </a>
         )
+      }
+    />
+  );
+}
+
+/** Active workflows that use a plugin that's off: no fix here, the store owner turns the plugin back on. */
+function MissingPluginRow({ check }: { check: HealthCheck }) {
+  return (
+    <Row
+      icon={<TriangleAlert className="text-warning-accent" />}
+      title={sprintf(
+        /* translators: %d: number of workflows */
+        _n(
+          'Active workflows use a plugin that isn’t active: %d',
+          'Active workflows use a plugin that isn’t active: %d',
+          check.count,
+          'yaymatik',
+        ),
+        check.count,
+      )}
+      help={sprintf(
+        /* translators: %s: plugin names, e.g. "YayMail" */
+        __(
+          'Their runs skip the steps of %s, and one whose trigger is from it doesn’t start. Activate it to run them again.',
+          'yaymatik',
+        ),
+        (check.plugins ?? []).join(', '),
+      )}
+      extra={
+        <span className="flex flex-wrap gap-x-3 gap-y-1 text-sm">
+          {(check.workflowIds ?? []).map((id) => (
+            <Link key={id} to={`/workflows/${id}`} className="text-link font-medium hover:underline">
+              {/* translators: %s: workflow id */ sprintf(__('Workflow #%s', 'yaymatik'), id)}
+            </Link>
+          ))}
+          <a href={`${window.yayMatikMeta.wp.adminUrl}plugins.php`} className="text-link font-medium hover:underline">
+            {__('Plugins', 'yaymatik')}
+          </a>
+        </span>
       }
     />
   );

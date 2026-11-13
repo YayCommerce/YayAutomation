@@ -2,8 +2,10 @@
 namespace YayMatik\Workflow\Core\Runtime;
 
 use YayMatik\Workflow\Core\Storage\RunStore;
+use YayMatik\Workflow\Core\Storage\WorkflowStore;
 use YayMatik\Workflow\Extension\Diagnostics;
 use YayMatik\Workflow\Extension\ExtensionModule;
+use YayMatik\Workflow\Extension\StepIndex;
 use YayMatik\Workflow\ModuleRegistry;
 use YayMatik\Workflow\Modules\WoocommerceModule;
 use YayMatik\Workflow\Modules\YayMatikModule;
@@ -46,6 +48,40 @@ final class HealthCheck {
             self::jobs_late( $now ),
             self::result( 'cleanup_job', self::job( Cleanup::HOOK, self::CLEANUP_LATE, $now ) ),
             self::result( 'inactive_sweep_job', self::job( InactiveSweep::HOOK, self::SWEEP_LATE, $now ) ),
+            self::missing_plugin( WorkflowStore::all() ),
+        ];
+    }
+
+    /**
+     * Active workflows with a step of a plugin that isn't active: they keep running and skip it. No fix.
+     *
+     * @param array[] $workflows `WorkflowStore::all()`.
+     * @return array The check, with `workflowIds` and `plugins` (labels).
+     */
+    public static function missing_plugin( array $workflows ): array {
+        $ids     = [];
+        $plugins = [];
+        foreach ( $workflows as $workflow ) {
+            if ( 'active' !== $workflow['status'] ) {
+                continue;
+            }
+            foreach ( $workflow['graph']['nodes'] ?? [] as $node ) {
+                $block    = (string) ( $node['data']['block'] ?? '' );
+                $inactive = '' === $block ? null : StepIndex::inactive( $block );
+                if ( $inactive ) {
+                    $ids[ (string) $workflow['id'] ] = true;
+                    $plugins[ $inactive['plugin'] ]  = true;
+                }
+            }
+        }
+        return [
+            'id'          => 'missing_plugin',
+            'status'      => $ids ? 'problem' : 'ok',
+            'count'       => count( $ids ),
+            'runIds'      => [],
+            'fix'         => null,
+            'workflowIds' => array_map( 'strval', array_keys( $ids ) ),
+            'plugins'     => array_keys( $plugins ),
         ];
     }
 

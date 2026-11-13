@@ -1,0 +1,107 @@
+<?php
+namespace YayMatik\Workflow\Extension;
+
+use YayMatik\Workflow\Core\Steps\Step;
+use YayMatik\Workflow\Core\Steps\StepRegistry;
+use YayMatik\Workflow\Core\Steps\Trigger;
+use YayMatik\Workflow\ModuleRegistry;
+
+defined( 'ABSPATH' ) || exit;
+
+/**
+ * Other plugins' steps as last seen, so a workflow keeps working while a plugin is off: entries are
+ * added and updated when the registry is built, never removed (docs/extension-api.md §10).
+ *
+ * @internal
+ */
+final class StepIndex {
+
+    public const OPTION = 'yaymatik_extension_steps';
+
+    /** @var array|null The option, read once. */
+    private static $stored = null;
+
+    /**
+     * Writes the index when the modules' steps changed since the last write.
+     *
+     * @param ExtensionModule[] $modules
+     */
+    public static function refresh( array $modules ): void {
+        // Nothing to add, and entries are never removed: no read either.
+        if ( ! $modules ) {
+            return;
+        }
+        $steps = [];
+        foreach ( $modules as $module ) {
+            foreach ( array_merge( $module->triggers(), $module->actions() ) as $step ) {
+                $steps[ $step->id() ] = self::entry( $module, $step );
+            }
+        }
+        $fingerprint = md5( (string) wp_json_encode( $steps ) );
+        $stored      = self::stored();
+        if ( $fingerprint === $stored['fingerprint'] ) {
+            return;
+        }
+        self::$stored = [
+            'fingerprint' => $fingerprint,
+            'steps'       => $steps + $stored['steps'],
+        ];
+        // Autoloaded: the check above runs on every request that builds the registry.
+        update_option( self::OPTION, self::$stored, true );
+    }
+
+    /**
+     * The entry of a step whose plugin isn't active now: not registered, and its module isn't either.
+     * A step a still-active plugin dropped is not one: it fails as an unknown step.
+     *
+     * @param string $step_id
+     */
+    public static function inactive( string $step_id ): ?array {
+        $entry = self::get( $step_id );
+        if ( ! $entry || StepRegistry::get( $step_id ) || isset( ModuleRegistry::modules()[ $entry['module'] ] ) ) {
+            return null;
+        }
+        return $entry;
+    }
+
+    /**
+     * A step another plugin registered at some point: `module`, `plugin` (label), `kind`, `label`, `outputs` and
+     * `facts` (key => label).
+     *
+     * @param string $step_id
+     */
+    public static function get( string $step_id ): ?array {
+        return self::stored()['steps'][ $step_id ] ?? null;
+    }
+
+    /** @return array[] By step id. */
+    public static function all(): array {
+        return self::stored()['steps'];
+    }
+
+    /**
+     * @param ExtensionModule $module
+     * @param Step            $step
+     */
+    private static function entry( ExtensionModule $module, Step $step ): array {
+        return [
+            'module'  => $module->id(),
+            'plugin'  => $module->label(),
+            'kind'    => $step->kind(),
+            'label'   => $step->label(),
+            'outputs' => array_map( fn( array $output ) => (string) $output['label'], $step->outputs() ),
+            'facts'   => $step instanceof Trigger ? array_map( fn( array $fact ) => (string) $fact['label'], $step->facts() ) : [],
+        ];
+    }
+
+    private static function stored(): array {
+        if ( null === self::$stored ) {
+            $stored       = get_option( self::OPTION, [] );
+            self::$stored = [
+                'fingerprint' => (string) ( $stored['fingerprint'] ?? '' ),
+                'steps'       => is_array( $stored['steps'] ?? null ) ? $stored['steps'] : [],
+            ];
+        }
+        return self::$stored;
+    }
+}

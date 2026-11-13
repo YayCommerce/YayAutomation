@@ -12,7 +12,9 @@ use YayMatik\Workflow\Core\Steps\Condition;
 use YayMatik\Workflow\Core\Steps\Step;
 use YayMatik\Workflow\Core\Steps\Trigger;
 use YayMatik\Workflow\Extension\Diagnostics;
+use YayMatik\Workflow\Extension\ExtensionModule;
 use YayMatik\Workflow\Extension\Extensions;
+use YayMatik\Workflow\Extension\StepIndex;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -47,7 +49,9 @@ final class ModuleRegistry {
             return self::from( self::classes() );
         }
         $core          = self::from( self::classes() );
-        self::$modules = self::from( array_merge( array_values( $core ), Extensions::register( array_keys( $core ) ) ) );
+        $extensions    = Extensions::register( array_keys( $core ) );
+        self::$modules = self::from( array_merge( array_values( $core ), $extensions ) );
+        StepIndex::refresh( array_filter( self::$modules, fn( Module $module ) => $module instanceof ExtensionModule ) );
         return self::$modules;
     }
 

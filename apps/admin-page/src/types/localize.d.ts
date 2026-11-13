@@ -67,6 +67,18 @@ export interface StepOutputMeta {
   block?: boolean;
 }
 
+/** A step whose plugin is off: enough to draw it and keep the workflow (docs/extension-api.md §10). */
+export interface InactiveStepMeta {
+  module: string;
+  /** The plugin's name, e.g. "YayMail". */
+  plugin: string;
+  kind: WorkflowNodeKind;
+  label: string;
+  outputs: { key: string; label: string }[];
+  /** A trigger's fact keys, so merge tags reading them stay valid while its plugin is off. */
+  facts: string[];
+}
+
 /** A step's kind and data needs; `CatalogStepMeta` adds the rest of its contract. */
 export interface StepMeta {
   kind: WorkflowNodeKind;
@@ -167,6 +179,8 @@ declare global {
         steps: Partial<Record<StepId, CatalogStepMeta>>;
         /** PHP `Catalog::categories()`: picker section labels by id, core's and other plugins'. */
         categories: Record<string, string>;
+        /** PHP `Catalog::inactive_steps()`: steps of other plugins that aren't active now, by id. */
+        inactiveSteps: Record<string, InactiveStepMeta>;
         data: DataItemMeta[];
         /** Operator ids per field type. */
         operators: Record<DataFieldType, string[]>;

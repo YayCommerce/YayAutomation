@@ -9,6 +9,7 @@ use YayMatik\Workflow\ModuleRegistry;
 use YayMatik\Workflow\Core\Steps\Field;
 use YayMatik\Workflow\Core\Steps\Step;
 use YayMatik\Workflow\Core\Steps\StepRegistry;
+use YayMatik\Workflow\Extension\StepIndex;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -24,12 +25,44 @@ final class Catalog {
             'plugins'        => ModuleRegistry::to_client(),
             'steps'          => self::steps( StepRegistry::all() ),
             'categories'     => self::categories(),
+            'inactiveSteps'  => self::inactive_steps(),
             'data'           => DataRegistry::to_client(),
             'operators'      => Operators::BY_TYPE,
             'operatorLabels' => Operators::labels(),
             'always'         => DataRegistry::ALWAYS,
             'messages'       => Messages::all(),
         ];
+    }
+
+    /**
+     * Steps of other plugins that aren't active now, by id: what the editor shows for them (docs/extension-api.md §10).
+     *
+     * @return array[] `module`, `plugin` (label), `kind`, `label`, `outputs` ([ key, label ]), `facts` (keys).
+     */
+    public static function inactive_steps(): array {
+        $steps = [];
+        foreach ( array_keys( StepIndex::all() ) as $id ) {
+            $entry = StepIndex::inactive( (string) $id );
+            if ( ! $entry ) {
+                continue;
+            }
+            $outputs = [];
+            foreach ( $entry['outputs'] as $key => $label ) {
+                $outputs[] = [
+                    'key'   => (string) $key,
+                    'label' => $label,
+                ];
+            }
+            $steps[ $id ] = [
+                'module'  => $entry['module'],
+                'plugin'  => $entry['plugin'],
+                'kind'    => $entry['kind'],
+                'label'   => $entry['label'],
+                'outputs' => $outputs,
+                'facts'   => array_keys( $entry['facts'] ?? [] ),
+            ];
+        }
+        return $steps;
     }
 
     /**

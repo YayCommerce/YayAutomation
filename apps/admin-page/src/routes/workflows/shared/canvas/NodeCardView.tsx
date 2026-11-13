@@ -73,6 +73,8 @@ export function NodeCardView({
         className={cn(
           'text-card-foreground relative flex min-h-21.5 flex-wrap items-start gap-x-3 rounded-xl border px-3.5 py-3',
           !stepDef ? 'bg-card/70 border-muted-foreground/40 border-dashed' : 'bg-card shadow-xs',
+          // The step's plugin is off: greyed, still selectable and deletable.
+          stepDef?.inactive && 'opacity-60 grayscale',
           // Selected: a primary ring, so the card keeps its size.
           selected
             ? 'border-primary ring-primary shadow-primary/30 border-solid shadow-lg ring-1'

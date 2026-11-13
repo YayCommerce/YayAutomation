@@ -284,7 +284,18 @@ export function StepPanel({
             {warning}
           </WarningBadge>
         )}
-        {stepDef.Form ? (
+        {stepDef.inactive ? (
+          <p className="text-muted-foreground text-sm">
+            {sprintf(
+              /* translators: %s: plugin name, e.g. "YayMail" */
+              __(
+                'You can edit and save this workflow, but you can’t turn it on until %1$s is active. If it’s already on, it keeps running and skips this step.',
+                'yaymatik',
+              ),
+              stepDef.inactive,
+            )}
+          </p>
+        ) : stepDef.Form ? (
           <FeedbackContext.Provider value={feedback}>
             <FieldIssueContext.Provider value={underField}>
               <VariableScopeContext.Provider value={scope}>

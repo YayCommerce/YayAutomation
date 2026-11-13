@@ -18,6 +18,12 @@ export function validateWorkflow({ name, graph }: Pick<Workflow, 'name' | 'graph
   if (!name.replace(/<[^>]*>/g, '').trim()) {
     issues.push({ code: 'name_required', message: messages.nameRequired });
   }
+  // A step of a plugin that's off: the workflow keeps it, but can't be turned on.
+  for (const node of graph.nodes) {
+    const plugin = stepOf(node.data)?.inactive;
+    if (plugin)
+      issues.push({ code: 'missing_plugin', message: sprintf(messages.missingPlugin, plugin), nodeId: node.id });
+  }
   const trigger = graph.nodes.find((node) => node.kind === 'trigger');
   const triggerStep = trigger && stepOf(trigger.data);
   // Workflow-level: there is no step to point at.
@@ -120,7 +126,8 @@ export const stepsNeedingSetup = (issues: WorkflowIssue[]) =>
 export function availableData(graph: WorkflowGraph): ((nodeId: string) => string[]) | null {
   const trigger = graph.nodes.find((node) => node.kind === 'trigger');
   const triggerStep = trigger && stepOf(trigger.data);
-  if (!trigger || !triggerStep) return null;
+  // A trigger whose plugin is off supplies nothing we know of: like an unchosen one, as in PHP.
+  if (!trigger || !triggerStep || triggerStep.inactive) return null;
 
   const base = [...new Set([...triggerStep.provides, ...alwaysAvailable])];
   const nodes = new Map(graph.nodes.map((node) => [node.id, node]));
@@ -161,6 +168,7 @@ function stepIssue(
   if (!stepDef) {
     return node.kind === 'action' ? { code: 'no_block', message: messages.noBlock } : null;
   }
+  if (stepDef.inactive) return null;
 
   const error = stepDef.firstIssue(node.data.config);
   if (error) return { code: 'invalid_config', ...error };
@@ -209,11 +217,14 @@ function reachProblem(
       : { code: 'missing_data', message: sprintf(messages.stepNotAbove, tag, stepDef.label) };
   }
   if (path.startsWith('trigger.') && fieldByKey(path)) {
+    const { steps, inactiveSteps } = window.yayMatikMeta.automation;
     const trigger = graph.nodes.find((n) => n.kind === 'trigger')?.data.block;
-    const facts = trigger ? (window.yayMatikMeta.automation.steps[trigger]?.facts ?? []) : [];
-    return facts.some((fact) => fact.key === path)
-      ? null
-      : { code: 'invalid_config', message: sprintf(messages.unknownVariable, tag) };
+    const facts = trigger
+      ? (steps[trigger]?.facts?.map((fact) => fact.key) ??
+        inactiveSteps[trigger]?.facts.map((key) => `trigger.${key}`) ??
+        [])
+      : [];
+    return facts.includes(path) ? null : { code: 'invalid_config', message: sprintf(messages.unknownVariable, tag) };
   }
   if (available === null || available.includes(segments[0])) return null;
   return { code: 'missing_data', message: sprintf(messages.missingData, itemLabel(segments[0])) };

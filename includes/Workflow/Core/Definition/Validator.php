@@ -11,6 +11,7 @@ use YayMatik\Workflow\Core\Steps\Step;
 use YayMatik\Workflow\Core\Steps\StepRegistry;
 use YayMatik\Workflow\Core\Steps\Trigger;
 use YayMatik\Utils\Logger;
+use YayMatik\Workflow\Extension\StepIndex;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -40,10 +41,11 @@ final class Validator {
     /**
      * Fields present in a PUT body; `status` is ignored (it changes only through activate / deactivate).
      *
-     * @param mixed $input { name?, graph? }.
+     * @param mixed   $input  { name?, graph? }.
+     * @param array[] $stored The workflow's saved nodes, live then draft (`GraphSchema::prepare()`).
      * @return array|\WP_Error [ 'name'? => string, 'graph'? => array ]
      */
-    public static function prepare_changes( $input ) {
+    public static function prepare_changes( $input, array $stored = [] ) {
         if ( ! is_array( $input ) ) {
             return self::error( __( 'Invalid workflow.', 'yaymatik' ) );
         }
@@ -64,7 +66,7 @@ final class Validator {
             }
         }
         if ( array_key_exists( 'graph', $input ) ) {
-            $graph = GraphSchema::prepare( $input['graph'] );
+            $graph = GraphSchema::prepare( $input['graph'], $stored );
             if ( is_wp_error( $graph ) ) {
                 return $graph;
             }
@@ -168,8 +170,21 @@ final class Validator {
                 'message' => Messages::get( 'nameRequired' ),
             ];
         }
+        // A step of a plugin that's off: the workflow keeps it, but can't be turned on.
+        $missing = [];
+        foreach ( $nodes as $node ) {
+            $inactive = self::inactive_step( $node );
+            if ( $inactive ) {
+                $missing[ $node['id'] ] = true;
+                $errors[]               = [
+                    'code'    => 'missing_plugin',
+                    'message' => Messages::get( 'missingPlugin', $inactive['plugin'] ),
+                    'nodeId'  => $node['id'],
+                ];
+            }
+        }
         // Workflow-level: there is no step to point at.
-        if ( ! $trigger_step ) {
+        if ( ! $trigger_step && ! isset( $missing[ GraphSchema::trigger( $nodes )['id'] ?? '' ] ) ) {
             $errors[] = [
                 'code'    => 'no_trigger',
                 'message' => Messages::get( 'noTrigger' ),
@@ -363,6 +378,15 @@ final class Validator {
     }
 
     /**
+     * The step index entry of a node whose step is another plugin's that isn't active now; null otherwise.
+     *
+     * @param array $node
+     */
+    private static function inactive_step( array $node ): ?array {
+        return $node['data']['block'] ? StepIndex::inactive( $node['data']['block'] ) : null;
+    }
+
+    /**
      * A step's setup issue (`code`, `message`), checked like the trigger's: on turning on, or for a step the draft adds.
      *
      * @param array $node
@@ -403,6 +427,9 @@ final class Validator {
      */
     private static function step_error( array $node, ?array $available, array $by_id, array $above ): ?array {
         $step = $node['data']['block'] ? StepRegistry::get( $node['data']['block'] ) : null;
+        if ( ! $step && self::inactive_step( $node ) ) {
+            return null;
+        }
         if ( ! $step ) {
             return Step::KIND_ACTION === $node['kind'] ? [
                 'code'    => 'no_block',
@@ -496,8 +523,11 @@ final class Validator {
         $segments = explode( '.', $path );
         if ( 'trigger' === $segments[0] ) {
             array_shift( $segments );
-            $step = self::trigger_step( array_values( $by_id ) );
-            if ( 1 === count( $segments ) && $step instanceof Trigger && isset( $step->facts()[ $segments[0] ] ) ) {
+            $node     = GraphSchema::trigger( array_values( $by_id ) );
+            $step     = self::trigger_step( array_values( $by_id ) );
+            $inactive = $node ? self::inactive_step( $node ) : null;
+            $facts    = $step instanceof Trigger ? $step->facts() : ( $inactive['facts'] ?? [] );
+            if ( 1 === count( $segments ) && isset( $facts[ $segments[0] ] ) ) {
                 return null;
             }
         }
@@ -513,7 +543,11 @@ final class Validator {
             if ( ! $node ) {
                 return [ 'invalid_config', Messages::get( 'stepGone', $tag ) ];
             }
-            $step = $node['data']['block'] ? StepRegistry::get( $node['data']['block'] ) : null;
+            $step     = $node['data']['block'] ? StepRegistry::get( $node['data']['block'] ) : null;
+            $inactive = $step ? null : self::inactive_step( $node );
+            if ( $inactive && isset( $inactive['outputs'][ $segments[2] ] ) ) {
+                return isset( $above[ $node['id'] ] ) ? null : [ 'missing_data', Messages::get( 'stepNotAbove', $tag, $inactive['label'] ) ];
+            }
             if ( ! $step || ! isset( $step->outputs()[ $segments[2] ] ) ) {
                 return $unknown;
             }

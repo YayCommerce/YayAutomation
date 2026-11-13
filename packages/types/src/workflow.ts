@@ -171,7 +171,8 @@ export type WorkflowIssueCode =
   | 'invalid_config'
   | 'missing_data'
   | 'cart_tracking_off'
-  | 'setup_issue';
+  | 'setup_issue'
+  | 'missing_plugin';
 
 /** Something that blocks Activate or Update. `nodeId` is set when the issue belongs to one step. */
 export interface WorkflowIssue {

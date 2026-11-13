@@ -333,6 +333,44 @@ final class ExecutorTest extends TestCase {
         $this->assertSame( [], Diagnostics::recent( 24 ), 'a deleted order is not the extension\'s error' );
     }
 
+    public function test_a_step_of_a_plugin_that_is_off_is_skipped_and_the_run_goes_on(): void {
+        $GLOBALS['yaymatik_test_options'][ \YayMatik\Workflow\Extension\StepIndex::OPTION ] = [
+            'fingerprint' => 'x',
+            'steps'       => [
+                'acme_add_points' => [
+                    'module'  => 'acme',
+                    'plugin'  => 'Acme Rewards',
+                    'kind'    => 'action',
+                    'label'   => 'Add reward points',
+                    'outputs' => [],
+                ],
+            ],
+        ];
+        $index = new \ReflectionProperty( \YayMatik\Workflow\Extension\StepIndex::class, 'stored' );
+        $index->setAccessible( true );
+        $index->setValue( null, null );
+        $this->graph(
+            [
+                'a' => [ 'acme_add_points', [] ],
+                'b' => [ 'act', [] ],
+                'c' => [ 'gone_step', [] ],
+            ],
+            [ [ 't', 'a' ], [ 'a', 'b' ], [ 'b', 'c' ] ]
+        );
+        $id = $this->new_run();
+
+        try {
+            $this->slice( $id );
+        } finally {
+            $index->setValue( null, null );
+            unset( $GLOBALS['yaymatik_test_options'][ \YayMatik\Workflow\Extension\StepIndex::OPTION ] );
+        }
+        $rows = array_column( $this->runs->steps( $id ), null, 'step_id' );
+        $this->assertSame( [ 'skipped', 'Acme Rewards isn’t active.' ], [ $rows['a']['status'], $rows['a']['error'] ] );
+        $this->assertSame( 'completed', $rows['b']['status'] );
+        $this->assertSame( [ 'failed', 'Step type "gone_step" is not available.' ], [ $rows['c']['status'], $rows['c']['error'] ], 'not in the index: as before' );
+    }
+
     public function test_skipped_condition_ends_its_path(): void {
         $this->steps['condition'] = new class() extends \YayMatik\Workflow\Core\Steps\Condition {
             public function id(): string {

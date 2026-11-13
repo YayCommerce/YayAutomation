@@ -15,10 +15,22 @@ export const dataItems = meta.data;
 /** Items every workflow has, whatever the trigger supplies. */
 export const alwaysAvailable = meta.always;
 
-/** Trigger facts (`trigger.points`): the first trigger with a key defines it, as in PHP `DataRegistry::field()`. */
-const facts = Object.values(meta.steps)
-  .flatMap((step) => step?.facts ?? [])
-  .reverse();
+/**
+ * Trigger facts (`trigger.points`): the first trigger with a key defines it, as in PHP `DataRegistry::field()`.
+ * A trigger whose plugin is off keeps its facts' keys only, read as text.
+ */
+const facts = [
+  ...Object.values(meta.inactiveSteps).flatMap((step) =>
+    step.facts.map((key) => ({
+      key: `trigger.${key}`,
+      label: key,
+      type: 'string' as const,
+      valueType: 'string',
+      conditional: false,
+    })),
+  ),
+  ...Object.values(meta.steps).flatMap((step) => step?.facts ?? []),
+].reverse();
 
 const fields = new Map(
   [...facts, ...dataItems.flatMap((item) => item.fields)].map((field) => [field.key, field] as const),

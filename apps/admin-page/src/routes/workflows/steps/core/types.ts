@@ -66,4 +66,6 @@ export interface Step {
   /** Omitted when the step has nothing to set. */
   Form?: ComponentType<StepFormProps<Config>>;
   Actions?: ComponentType;
+  /** The plugin's name when the step's plugin isn't active: drawn greyed, read-only, kept on save. */
+  inactive?: string;
 }

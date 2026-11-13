@@ -16,6 +16,7 @@ use YayMatik\Workflow\Core\Steps\Trigger;
 use YayMatik\Workflow\Core\Storage\RunStepStore;
 use YayMatik\Workflow\Core\Storage\RunStore;
 use YayMatik\Workflow\DataItems\CustomerData;
+use YayMatik\Workflow\Extension\StepIndex;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -168,8 +169,9 @@ final class Executor {
             if ( RunStepStore::STATUS_COMPLETED === $outcome['status'] ) {
                 $scope->set_step_outputs( $step_id, $outcome['output'] );
                 $queue = array_merge( $queue, self::children( $edges, $step_id, $step instanceof Condition ? self::branch( $outcome['output'] ) : null ) );
-            } elseif ( $step && ! $step instanceof Condition ) {
-                // Skipped, or failed with `continue`: an action's children still run; a condition's path ends.
+            } elseif ( $step ? ! $step instanceof Condition : null !== StepIndex::inactive( (string) ( $node['data']['block'] ?? '' ) ) ) {
+                // Skipped, or failed with `continue`: an action's children still run, also after a step of a plugin
+                // that's off; a condition's path ends.
                 $queue = array_merge( $queue, self::children( $edges, $step_id ) );
             }
 
@@ -279,8 +281,15 @@ final class Executor {
      */
     private static function run_step( ?array $node, ?Step $step, array $config, Scope $scope ): StepResult {
         if ( ! $step ) {
+            $block    = (string) ( $node['data']['block'] ?? '' );
+            $inactive = StepIndex::inactive( $block );
+            if ( $inactive ) {
+                // The plugin is off: the run goes on without this step (docs/extension-api.md §10).
+                /* translators: %s: plugin name, e.g. "YayMail" */
+                return StepResult::skipped( sprintf( __( '%s isn’t active.', 'yaymatik' ), $inactive['plugin'] ) );
+            }
             /* translators: %s: step type id */
-            return StepResult::failed( sprintf( __( 'Step type "%s" is not available.', 'yaymatik' ), (string) ( $node['data']['block'] ?? '' ) ) );
+            return StepResult::failed( sprintf( __( 'Step type "%s" is not available.', 'yaymatik' ), $block ) );
         }
         try {
             $valid = $step->validate( $config );

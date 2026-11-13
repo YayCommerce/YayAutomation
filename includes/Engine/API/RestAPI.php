@@ -280,7 +280,10 @@ class RestAPI {
      * @param \WP_REST_Request $request
      */
     public function update_workflow( \WP_REST_Request $request ) {
-        $changes = Validator::prepare_changes( $request->get_json_params() );
+        // Saved nodes, so a step of a plugin that's off is kept; the lock section below reads the workflow again.
+        $saved   = WorkflowStore::find( (int) $request['id'] );
+        $stored  = $saved ? array_merge( $saved['graph']['nodes'] ?? [], $saved['draft']['nodes'] ?? [] ) : [];
+        $changes = Validator::prepare_changes( $request->get_json_params(), $stored );
         if ( is_wp_error( $changes ) ) {
             return $changes;
         }
