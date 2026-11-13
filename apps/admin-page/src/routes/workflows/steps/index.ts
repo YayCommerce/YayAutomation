@@ -59,10 +59,7 @@ const coreSteps = [
   waitUntilStep,
 ];
 
-/**
- * Another plugin's triggers and actions: PHP only, so their form and checks come from their catalog fields.
- * An email action gets Send email's Preview and Send test; one with an `editor`, its button under the form.
- */
+/** Another plugin's steps, from the catalog: an email action gets Preview / Send test, an `editor` its button. */
 const coreIds = new Set<string>(coreSteps.map((stepDef) => stepDef.id));
 const moduleSteps = Object.entries(window.yayMatikMeta.automation.steps)
   .filter(([id, meta]) => !coreIds.has(id) && (meta?.kind === 'trigger' || meta?.kind === 'action'))

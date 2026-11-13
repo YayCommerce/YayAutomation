@@ -41,12 +41,13 @@ final class TemplateCheckTest extends TestCase {
     /**
      * Acme's module with these templates, its steps registered beside core's.
      *
-     * @param array $templates Id => steps.
+     * @param array $templates       Id => steps.
+     * @param bool  $points_required Whether Add points needs its points.
      */
-    private function acme( array $templates ): ExtensionModule {
+    private function acme( array $templates, bool $points_required = true ): ExtensionModule {
         $modules = Extensions::collect(
             [],
-            function ( $registrar ) use ( $templates ) {
+            function ( $registrar ) use ( $templates, $points_required ) {
                 $other = $registrar->module(
                     [
                         'id'    => 'other',
@@ -77,7 +78,7 @@ final class TemplateCheckTest extends TestCase {
                                 'type'     => 'number',
                                 'label'    => 'Points',
                                 'min'      => 1,
-                                'required' => true,
+                                'required' => $points_required,
                             ],
                         ],
                         'outputs'     => [
@@ -272,5 +273,18 @@ final class TemplateCheckTest extends TestCase {
         )[0];
 
         $this->assertSame( [], $refused->templates(), 'core\'s "abandoned_cart" would list it among core\'s versions' );
+    }
+
+    public function test_a_changed_field_rule_checks_the_templates_again(): void {
+        $templates = [ 'acme_blank_points' => self::chain( self::step( 'bonus', 'acme_add_points', [ 'points' => '' ] ) ) ];
+        StepIndex::refresh( [ $this->acme( $templates, false ) ] );
+        $this->assertSame( [], StepIndex::hidden_templates(), 'blank and optional: nothing wrong' );
+
+        StepIndex::refresh( [ $this->acme( $templates, true ) ] );
+        $this->assertSame( [], StepIndex::hidden_templates(), 'blank and now required: needs setup, still shown' );
+        $this->assertNotSame( '', get_option( StepIndex::OPTION )['checked'] );
+        $checked = get_option( StepIndex::OPTION )['checked'];
+        StepIndex::refresh( [ $this->acme( $templates, false ) ] );
+        $this->assertNotSame( $checked, get_option( StepIndex::OPTION )['checked'], 'the field\'s rule is part of what the check read' );
     }
 }

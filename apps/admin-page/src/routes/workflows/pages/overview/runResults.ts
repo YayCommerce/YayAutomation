@@ -99,8 +99,11 @@ const placeholderText = (value: unknown) =>
 const catalogResult = (step: RunStepRow) => {
   const line = step.stepType ? window.yayMatikMeta.automation.steps[step.stepType]?.result : undefined;
   if (!line) return null;
+  // A config value reads as its option's label, as on the card.
   return line.replace(/%([a-z_][a-z0-9_]*)%/g, (_, key: string) =>
-    placeholderText(key in step.output ? step.output[key] : step.input[key]),
+    key in step.output
+      ? placeholderText(step.output[key])
+      : catalogLabel(step.stepType!, key, placeholderText(step.input[key])),
   );
 };
 

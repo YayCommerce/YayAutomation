@@ -51,6 +51,9 @@ final class ExtensionModule extends Module {
     /** @var array[] By id. */
     private $templates = [];
 
+    /** @var array[] Field keys this module added, by data item id. */
+    private $data_fields = [];
+
     /**
      * @param string        $id
      * @param string        $label
@@ -125,6 +128,11 @@ final class ExtensionModule extends Module {
         return $this->data_items;
     }
 
+    /** @return array[] Field keys this module added to data items, by item id. */
+    public function data_fields(): array {
+        return $this->data_fields;
+    }
+
     /** @return array[] Template args from `Declaration::template()`, by id. */
     public function templates(): array {
         return $this->templates;
@@ -188,6 +196,7 @@ final class ExtensionModule extends Module {
             return false;
         }
         add_filter( "yaymatik_data_item_{$item}_fields", fn( $definitions ) => (array) $definitions + $defs );
+        $this->data_fields[ $item ] = array_merge( $this->data_fields[ $item ] ?? [], array_keys( $defs ) );
         return true;
     }
 

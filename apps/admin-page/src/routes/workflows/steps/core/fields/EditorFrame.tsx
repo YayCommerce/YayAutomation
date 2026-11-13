@@ -33,10 +33,7 @@ export const embedUrl = (url: string, channel: string) => {
   return embedded.toString();
 };
 
-/**
- * A saved value the select doesn't list yet (a design made in the editor) joins its options for this page
- * load, so the form accepts it and shows its label. The server reads the plugin's options afresh.
- */
+/** A saved value the select doesn't list yet (a design made in the editor) joins its options for this page load. */
 const remember = (stepId: string, field: string, value: string | number, label?: string) => {
   const meta = window.yayMatikMeta.automation.steps[stepId as StepId]?.fields.find((f) => f.key === field);
   if (meta?.type !== 'select' || !meta.options) return;

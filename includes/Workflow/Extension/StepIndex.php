@@ -42,8 +42,8 @@ final class StepIndex {
             }
         }
         $fingerprint = md5( (string) wp_json_encode( $steps ) );
-        // What a template's check reads: core's version, the modules (data fields too) and steps, the chains as written.
-        $checked = $templates ? md5( (string) wp_json_encode( [ YAYMATIK_VERSION, array_map( fn( ExtensionModule $module ) => $module->id(), $modules ), array_keys( $steps ), $templates ] ) ) : '';
+        // What a template's check reads, without translated text: core's version, the modules and their steps' shape, the chains as written.
+        $checked = $templates ? md5( (string) wp_json_encode( [ YAYMATIK_VERSION, array_map( [ self::class, 'shape' ], $modules ), $templates ] ) ) : '';
         $stored  = self::stored();
         if ( $fingerprint === $stored['fingerprint'] && $checked === $stored['checked'] ) {
             return;
@@ -90,6 +90,28 @@ final class StepIndex {
     /** @return string[] Hidden extension template id => why, from the last check. */
     public static function hidden_templates(): array {
         return self::stored()['templates'];
+    }
+
+    /**
+     * A module's steps and data fields as the template check reads them: ids, field keys and rules, outputs, needs.
+     *
+     * @param ExtensionModule $module
+     */
+    private static function shape( ExtensionModule $module ): array {
+        $steps = [];
+        foreach ( array_merge( $module->triggers(), $module->actions() ) as $step ) {
+            $steps[ $step->id() ] = [
+                array_map( fn( $field ) => array_intersect_key( $field->to_array(), array_flip( [ 'key', 'type', 'required', 'variables', 'showIf' ] ) ), $step->fields() ),
+                array_keys( $step->outputs() ),
+                $step->kind(),
+                $step instanceof Trigger ? array_keys( $step->facts() ) : $step->requires(),
+            ];
+        }
+        $items = [];
+        foreach ( $module->data_items() as $id => $item ) {
+            $items[ $id ] = array_keys( $item->fields() );
+        }
+        return [ $module->id(), $steps, $items, $module->data_fields() ];
     }
 
     /**

@@ -50,10 +50,6 @@ final class ExtensionEmailAction extends ExtensionAction implements EmailStep {
         return 'customer' === $this->args['email']['recipient'] ? array_values( array_unique( array_merge( $requires, [ 'customer' ] ) ) ) : $requires;
     }
 
-    public function sample_outputs( array $config ): array { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Step's signature.
-        return [];
-    }
-
     public function email_audience(): string {
         return $this->args['email']['audience'];
     }

@@ -159,7 +159,7 @@ final class Declaration {
         $fields  = null === $error ? self::fields( $module->id(), $args['fields'] ?? [] ) : null;
         $outputs = null === $error && ! is_string( $fields ) ? self::outputs( $module->id(), $args['outputs'] ?? [] ) : null;
         $error   = $error ?? ( is_string( $fields ) ? $fields : null ) ?? ( is_string( $outputs ) ? $outputs : null );
-        if ( null === $error && isset( $args['email'] ) && 'customer' !== $args['email']['recipient'] && ! self::has_field( $fields, $args['email']['recipient'] ) ) {
+        if ( null === $error && isset( $args['email'] ) && 'customer' !== $args['email']['recipient'] && null === self::field( $fields, $args['email']['recipient'] ) ) {
             $error = '"email" "recipient" must be "customer" or a key of "fields".';
         }
         if ( null === $error && isset( $args['editor'] ) ) {
@@ -225,14 +225,6 @@ final class Declaration {
             return '"editor" needs a "button" label.';
         }
         return is_callable( $editor['url'] ?? null ) ? null : '"editor" "url" must be a callable.';
-    }
-
-    /**
-     * @param Field[] $fields
-     * @param string  $key
-     */
-    private static function has_field( array $fields, string $key ): bool {
-        return null !== self::field( $fields, $key );
     }
 
     /**
