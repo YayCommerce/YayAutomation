@@ -173,19 +173,7 @@ function TemplateLibrary() {
               onClearFilters={clearFilters}
             />
           ) : (
-            <>
-              <TemplateGrid templates={visible.filter((t) => !t.plugin)} />
-              {/* Another plugin's templates: a group each, under its name and logo. */}
-              {[...new Set(visible.flatMap((t) => (t.plugin ? [t.plugin] : [])))].map((plugin) => (
-                <section key={plugin} className="mt-3 flex flex-col gap-3" aria-label={plugins[plugin].label}>
-                  <h3 className="flex items-center gap-2 text-[15px] font-semibold">
-                    <PluginIcon plugin={plugin} size="sm" noTitle />
-                    {plugins[plugin].label}
-                  </h3>
-                  <TemplateGrid templates={visible.filter((t) => t.plugin === plugin)} />
-                </section>
-              ))}
-            </>
+            <TemplateGrid templates={visible} />
           )}
         </div>
       </div>
@@ -193,9 +181,8 @@ function TemplateLibrary() {
   );
 }
 
-/** As many 280px+ columns as fit, at most 4 (3 gaps of 1rem). Nothing when empty. */
+/** As many 280px+ columns as fit, at most 4 (3 gaps of 1rem). */
 function TemplateGrid({ templates: list }: { templates: WorkflowTemplate[] }) {
-  if (!list.length) return null;
   return (
     <div className="grid grid-cols-[repeat(auto-fill,minmax(max(280px,calc((100%-3rem)/4)),1fr))] gap-4">
       {list.map((template) => (

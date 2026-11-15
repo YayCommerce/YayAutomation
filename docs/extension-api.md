@@ -368,7 +368,7 @@ $m->template( 'yaymail_order_paid_email', [
 - A template may use **core public steps (§12)** and **its own module's steps** only. Templates that combine two plugins belong to YayMatik Pro (design P2).
 - Ready content (subject / body) is translated by the plugin with its own text domain (J8). Store-specific values are never baked in at registration (proposal finding 5): use a variable, or leave the field blank where core fills it at run time (high-value alert: blank recipients = the admin email).
 - Core checks each template **on the server** with the same checks as Use template / Activate (`GraphSchema::prepare` + `Validator::errors`). A template is hidden + diagnostic (under `WP_DEBUG` also `_doing_it_wrong()`) when `prepare` fails or it has a structural issue: no trigger, no action, an unlinked or unknown step, missing data, an unknown variable. A step that still needs setup (`setup_issue`, cart tracking off, a required field the template leaves empty) keeps it shown: Use template creates the draft, and Activate is blocked until the step is set up. The check runs when the plugin's steps or templates change, not on every page load.
-- Browse templates shows each module's templates in **its own group with the plugin's name and logo** (`pluginsOf`, plugins.ts:6). Templates of an inactive plugin are not shown.
+- Browse templates shows a module's templates **in the main grid with core's**, each card with its plugins' logos (`pluginsOf`, plugins.ts:6), in the chosen sort (Most popular: after core's). There is no group heading; the **plugin filter** finds them. Templates of an inactive plugin are not shown.
 
 ## 8. Privacy
 
@@ -442,7 +442,7 @@ Core categories: triggers `order`, `cart`, `customer`, `review`; actions `email`
 | | Item | Gain | Cost |
 |---|---|---|---|
 | Keep | Server-driven fields (no JS for forms) | Extensions need no build step | Complex forms need the iframe |
-| Keep | Module = plugin, logo as one-colour SVG mask | Picker / template groups by plugin | — |
+| Keep | Module = plugin, logo as one-colour SVG mask | Picker groups by plugin; library plugin filter | — |
 | Keep | `StepResult` statuses, Executor's per-step catch, active-trigger listening, first-owner ids | Proven in 1.0 | — |
 | Keep | Refs-only scope, JSON-safe args, loop guard, run ceiling | Same runtime rules for everyone | — |
 | Fix | Inheritance contract → arrays, one `do_action`, one `Run` object; core adapters | Core refactors never fatal an extension; a plugin needs no YayMatik class but `Run` | Adapter layer to maintain; less freedom than subclasses |
@@ -503,7 +503,7 @@ Result: every listed need maps to a contract piece; the gaps are on the plugins'
 | Split | Two PRs (§17) |
 
 ## 16. Changelog
-- 1.0.0 (YayMatik 1.1): first stable version. `yaymatik_register` (`Registrar`, `Module`: triggers, actions, data items, data fields, categories, templates), `yaymatik_fire`, `Run`, `CustomerView`, `CartView`, `Api::VERSION`, `Api::references()`. Features: `triggers`, `actions`, `data_items`, `data_fields`, `trigger_facts`, `privacy_subjects`, `email`, `templates`, `editor_iframe`. postMessage schema v1. Example: `dev/example-extension/`.
+- 1.0.0 (YayMatik 1.1): first stable version. `yaymatik_register` (`Registrar`, `Module`: triggers, actions, data items, data fields, categories, templates), `yaymatik_fire`, `Run`, `CustomerView`, `CartView`, `Api::VERSION`, `Api::references()`. Features: `triggers`, `actions`, `data_items`, `data_fields`, `trigger_facts`, `privacy_subjects`, `email`, `templates`, `editor_iframe`. postMessage schema v1. Example: `dev/example-extension/`. A plugin's templates share the library grid with core's (no group heading), found by the plugin filter.
 
 ## 17. Checkpoints and PRs
 

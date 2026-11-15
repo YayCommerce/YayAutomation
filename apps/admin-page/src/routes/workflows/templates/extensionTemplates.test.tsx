@@ -123,19 +123,29 @@ describe('another plugin’s templates', () => {
     ]);
   });
 
-  it('show in their plugin’s group, with its name and logo', async () => {
-    await withAcme();
+  it('share the library grid, after core’s under Most popular, and the plugin filter shows only them', async () => {
+    const { templates } = await withAcme();
     const { TemplatesDialog } = await import('../pages/list/library/TemplatesDialog');
     const view = render(
       <MemoryRouter>
         <TemplatesDialog open onOpenChange={() => {}} />
       </MemoryRouter>,
     );
+    const cards = () => [...document.querySelectorAll<HTMLAnchorElement>('a[href^="/workflows/templates/"]')];
+    const card = `a[href="/workflows/templates/${welcome.id}"]`;
 
-    const group = document.querySelector('section[aria-label="Acme Rewards"]')!;
-    expect(group.querySelector('h3')!.textContent).toContain('Acme Rewards');
-    expect(group.querySelector('h3 [style*="logo.svg"]')).not.toBeNull();
-    expect(group.textContent).toContain('Welcome bonus points');
+    expect(
+      [...document.querySelectorAll('h2, h3, section')].some((el) => el.textContent?.includes('Acme Rewards')),
+    ).toBe(false);
+    expect(cards()).toHaveLength(templates.templates.length);
+    expect(cards().at(-1)!.matches(card)).toBe(true);
+    expect(document.querySelector(`${card} [style*="logo.svg"]`)).not.toBeNull();
+
+    const acme = [...document.querySelectorAll('aside label')].find((row) =>
+      row.textContent?.includes('Acme Rewards'),
+    )!;
+    act(() => acme.querySelector<HTMLButtonElement>('[role="checkbox"]')!.click());
+    expect(cards().map((a) => a.getAttribute('href'))).toEqual([`/workflows/templates/${welcome.id}`]);
     view.unmount();
   });
 
