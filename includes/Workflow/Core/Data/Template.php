@@ -84,8 +84,7 @@ final class Template {
     }
 
     /**
-     * Fills `{{ name }}` placeholders in catalog text (TS `fillTemplate()`). No filters; an inserted
-     * value is never parsed again; a name not in `$values` stays as written.
+     * Fills `{{ name }}` placeholders in catalog text, never re-parsing a value; TS `fillTemplate()`.
      *
      * @param string               $text
      * @param array<string,string> $values

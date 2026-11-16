@@ -453,10 +453,10 @@ final class Declaration {
     /**
      * Why catalog text has a placeholder other than the allowed ones, or null.
      *
-     * @param string $what    The declaration key, for the message.
+     * @param string $what
      * @param string $text
-     * @param string $pattern Allowed placeholder names.
-     * @param string $allowed The allowed placeholders, for the message.
+     * @param string $pattern
+     * @param string $allowed
      */
     private static function placeholder_error( string $what, string $text, string $pattern, string $allowed ): ?string {
         foreach ( ( new Template() )->placeholders( $text ) as $name ) {

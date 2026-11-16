@@ -102,8 +102,8 @@ const catalogResult = (step: RunStepRow) => {
   if (!line) return null;
   // A config value reads as its option's label, as on the card.
   return fillTemplate(line, (name) => {
-    const [root, key] = name.split('.', 2);
-    if (root === 'output') return placeholderText(step.output[key]);
+    const [, root, key] = /^(output|config)\.([a-z_][a-z0-9_]*)$/.exec(name) ?? [];
+    if (root === 'output') return Object.hasOwn(step.output, key) ? placeholderText(step.output[key]) : '';
     if (root === 'config') return catalogLabel(step.stepType!, key, placeholderText(step.input[key]));
     return undefined;
   });

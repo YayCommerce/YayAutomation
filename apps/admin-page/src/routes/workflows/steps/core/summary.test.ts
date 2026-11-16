@@ -50,6 +50,9 @@ describe('renderSummary', () => {
       renderSummary('{{ config.rules }} {{ config.nope }} {{ order.total }}', [], {}, { rules: () => 'A and B' }),
     ).toBe('A and B {{ config.nope }} {{ order.total }}');
     expect(renderSummary('{{ config.rules }}', [], {}, { rules: () => '' })).toBe(PLACEHOLDER);
+    expect(renderSummary('{{ config.constructor }} {{ config.__proto__ }}', [], {})).toBe(
+      '{{ config.constructor }} {{ config.__proto__ }}',
+    );
   });
 });
 

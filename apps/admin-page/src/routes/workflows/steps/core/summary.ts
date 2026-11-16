@@ -75,7 +75,8 @@ export function renderSummary<TConfig extends Config>(
   return fillTemplate(template, (name) => {
     if (!name.startsWith('config.')) return undefined;
     const key = name.slice('config.'.length);
-    const custom = values[key as Extract<keyof TConfig, string>];
+    // Own keys only: `{{ config.constructor }}` must not reach Object.prototype.
+    const custom = Object.hasOwn(values, key) ? values[key as Extract<keyof TConfig, string>] : undefined;
     if (custom) return custom(config, trigger) || PLACEHOLDER;
     const field = fields.find((f) => f.key === key);
     if (!field) return undefined;

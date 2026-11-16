@@ -69,11 +69,7 @@ export function parseTemplate(text: string): TemplateToken[] {
 /** A tag's name as a placeholder: `{{ config.status }}` → `config.status`, `{{ step }}` → `step`. */
 const placeholderName = (raw: string) => trim(raw.slice(2, -2));
 
-/**
- * Fills `{{ name }}` placeholders in catalog text (a summary, a result line, a required message);
- * PHP `Template::fill()`. No filters; an inserted value is never parsed again; a name `fill` doesn't
- * know (undefined) stays as written.
- */
+/** Fills `{{ name }}` placeholders in catalog text, never re-parsing a value; PHP `Template::fill()`. */
 export const fillTemplate = (text: string, fill: (name: string) => string | undefined) =>
   parseTemplate(text)
     .map((token) => (token.type === 'text' ? token.text : (fill(placeholderName(token.raw)) ?? token.raw)))
