@@ -240,10 +240,21 @@ final class DeclarationTest extends TestCase {
             '"on_error" must be "stop" or "continue".' => [ 'on_error' => 'retry' ],
             '"category" must be a core category or one this module declared first.' => [ 'category' => 'rewards' ],
             'Unknown data item in "requires": ordr.'   => [ 'requires' => [ 'ordr' ] ],
-            '"summary": {{ order.total }} isn\'t a placeholder; use {{ config.<field> }}.' => [ 'summary' => 'Add {{ config.points }} for {{ order.total }}' ],
-            '"summary": {{ config.points | upper }} isn\'t a placeholder; use {{ config.<field> }}.' => [ 'summary' => '{{ config.points | upper }}' ],
-            '"result": {{ steps.a.b }} isn\'t a placeholder; use {{ output.<key> }} or {{ config.<field> }}.' => [ 'result' => '{{ output.balance }} {{ steps.a.b }}' ],
-            'Field "role": "required": {{ config.role }} isn\'t a placeholder; use {{ step }}.' => [
+        ];
+        foreach ( $cases as $message => $args ) {
+            $GLOBALS['yaymatik_test_options'] = [];
+            $this->assertNull( self::action( $args ), $message );
+            $this->assertSame( $message, self::last_diagnostic() );
+        }
+    }
+
+    public function test_a_bad_placeholder_keeps_the_step_with_a_diagnostic(): void {
+        // The check reads translated text: a bad translation must not drop a step.
+        $cases = [
+            '"summary": {{ order.total }} isn\'t a placeholder; use {{ config.<field> }}. Kept as written.' => [ 'summary' => 'Add {{ config.points }} for {{ order.total }}' ],
+            '"summary": {{ config.points | upper }} isn\'t a placeholder; use {{ config.<field> }}. Kept as written.' => [ 'summary' => '{{ config.points | upper }}' ],
+            '"result": {{ steps.a.b }} isn\'t a placeholder; use {{ output.<key> }} or {{ config.<field> }}. Kept as written.' => [ 'result' => '{{ output.balance }} {{ steps.a.b }}' ],
+            'Field "role": "required": {{ config.role }} isn\'t a placeholder; use {{ step }}. Kept as written.' => [
                 'fields' => [
                     'role' => [
                         'type'     => 'text',
@@ -255,9 +266,11 @@ final class DeclarationTest extends TestCase {
         ];
         foreach ( $cases as $message => $args ) {
             $GLOBALS['yaymatik_test_options'] = [];
-            $this->assertNull( self::action( $args ), $message );
+            $action = self::action( $args );
+            $this->assertNotNull( $action, $message );
             $this->assertSame( $message, self::last_diagnostic() );
         }
+        $this->assertSame( '{{ config.points | upper }}', self::action( [ 'summary' => '{{ config.points | upper }}' ] )->summary(), 'the text stays as written' );
     }
 
     public function test_a_trigger_provides_what_a_payload_gives_and_once_per_is_subject(): void {

@@ -130,6 +130,7 @@ final class Declaration {
             return null;
         }
         self::unknown_keys( $module->id(), $what, $args, array_merge( self::STEP_KEYS, self::TRIGGER_KEYS ) );
+        self::check_placeholders( $module->id(), $what, $args );
         return [
             'fields' => $fields,
             'facts'  => $facts,
@@ -154,10 +155,8 @@ final class Declaration {
         if ( null === $error && isset( $args['on_error'] ) && ! in_array( $args['on_error'], [ Step::ON_ERROR_STOP, Step::ON_ERROR_CONTINUE ], true ) ) {
             $error = '"on_error" must be "stop" or "continue".';
         }
-        if ( null === $error && isset( $args['result'] ) ) {
-            $error = is_string( $args['result'] )
-                ? self::placeholder_error( '"result"', $args['result'], '/^(output|config)\.[a-z_][a-z0-9_]*$/', '{{ output.<key> }} or {{ config.<field> }}' )
-                : '"result" must be a string.';
+        if ( null === $error && isset( $args['result'] ) && ! is_string( $args['result'] ) ) {
+            $error = '"result" must be a string.';
         }
         $fields  = null === $error ? self::fields( $module->id(), $args['fields'] ?? [] ) : null;
         $outputs = null === $error && ! is_string( $fields ) ? self::outputs( $module->id(), $args['outputs'] ?? [] ) : null;
@@ -173,6 +172,7 @@ final class Declaration {
             return null;
         }
         self::unknown_keys( $module->id(), $what, $args, array_merge( self::STEP_KEYS, self::ACTION_KEYS ) );
+        self::check_placeholders( $module->id(), $what, $args );
         if ( isset( $args['editor'] ) ) {
             self::unknown_keys( $module->id(), "{$what} editor", $args['editor'], self::EDITOR_KEYS );
         }
@@ -439,32 +439,37 @@ final class Declaration {
         if ( isset( $args['category'] ) && ! in_array( $args['category'], $categories, true ) && ! isset( $module->categories()[ $args['category'] ] ) ) {
             return '"category" must be a core category or one this module declared first.';
         }
-        if ( isset( $args['summary'] ) ) {
-            $error = is_string( $args['summary'] )
-                ? self::placeholder_error( '"summary"', $args['summary'], '/^config\.[a-z_][a-z0-9_]*$/', '{{ config.<field> }}' )
-                : '"summary" must be a string.';
-            if ( null !== $error ) {
-                return $error;
-            }
+        if ( isset( $args['summary'] ) && ! is_string( $args['summary'] ) ) {
+            return '"summary" must be a string.';
         }
         return self::callable_error( $args, [], [ 'validate', 'setup_issue' ] );
     }
 
     /**
-     * Why catalog text has a placeholder other than the allowed ones, or null.
+     * Records each placeholder in `summary`, `result` or a `required` message other than the allowed ones; the text stays as written.
      *
+     * @param string $module
      * @param string $what
-     * @param string $text
-     * @param string $pattern
-     * @param string $allowed
+     * @param array  $args
      */
-    private static function placeholder_error( string $what, string $text, string $pattern, string $allowed ): ?string {
-        foreach ( ( new Template() )->placeholders( $text ) as $name ) {
-            if ( ! preg_match( $pattern, $name ) ) {
-                return $what . ': {{ ' . $name . ' }} isn\'t a placeholder; use ' . $allowed . '.';
+    private static function check_placeholders( string $module, string $what, array $args ): void {
+        $texts = [
+            [ '"summary"', $args['summary'] ?? '', '/^config\.[a-z_][a-z0-9_]*$/', '{{ config.<field> }}' ],
+            [ '"result"', $args['result'] ?? '', '/^(output|config)\.[a-z_][a-z0-9_]*$/', '{{ output.<key> }} or {{ config.<field> }}' ],
+        ];
+        foreach ( $args['fields'] ?? [] as $key => $field ) {
+            $texts[] = [ "Field \"{$key}\": \"required\"", is_string( $field['required'] ?? null ) ? $field['required'] : '', '/^step$/', '{{ step }}' ];
+        }
+        $template = new Template();
+        foreach ( $texts as list( $label, $text, $pattern, $allowed ) ) {
+            foreach ( $template->placeholders( $text ) as $name ) {
+                if ( ! preg_match( $pattern, $name ) ) {
+                    $message = $label . ': {{ ' . $name . ' }} isn\'t a placeholder; use ' . $allowed . '. Kept as written.';
+                    Diagnostics::record( $module, $what, $message );
+                    self::doing_it_wrong( "{$module}, {$what}: {$message}" );
+                }
             }
         }
-        return null;
     }
 
     /**
@@ -568,12 +573,6 @@ final class Declaration {
                 return "Field \"{$key}\" needs \"{$extra}\".";
             }
             $args[] = 'text' !== $extra && is_callable( $value ) ? self::guarded_options( $module, $value ) : $value;
-        }
-        if ( is_string( $field['required'] ?? null ) ) {
-            $error = self::placeholder_error( "Field \"{$key}\": \"required\"", $field['required'], '/^step$/', '{{ step }}' );
-            if ( null !== $error ) {
-                return $error;
-            }
         }
         $core = Field::$type( ...$args );
         if ( ! empty( $field['required'] ) ) {
