@@ -1,4 +1,4 @@
-# Plan: Public Extension API v1 (YayMatik 1.1)
+# Plan: Public Extension API v1 (YayMatik 1.0)
 
 Status: written 2026-11-13 from develop 6be688a, reviewed by Jack the same day (O1 approved as recommended, 6 amendments folded in). Source of truth: `docs/extension-api.md` (agreed contract; §15 decisions, §17 checkpoints), public surface simplified on Nov 13 11:47 (`.claude/local/034-api-simplified.md`: arrays, `yaymatik_fire`, one `Run` object; D16). Reference consumers (gitignored, must work as written): `.claude/local/034-example-acme.php`, `034-example-yaywholesale.php` (PR A), `034-example-yaymail.php` (CP6, CP8). One plan, two PRs, one-pass mode.
 

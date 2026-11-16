@@ -1,6 +1,6 @@
 # YayMatik Extension API v1 — contract
 
-**Status:** **agreed by Jack, Nov 13 10:25; public surface simplified Nov 13 11:47** (arrays, `yaymatik_fire`, `Run`) (written Nov 12 from develop 6be688a). Ships in YayMatik **1.1** (after WordPress.org approves 1.0). Decisions Q1–Q12 in §15, their reasons in [workflow-core-decisions.md § EX](workflow-core-decisions.md); checkpoints and the two PRs in §17 and `.claude/plans/dev/034-extension-api.md`.
+**Status:** **agreed by Jack, Nov 13 10:25; public surface simplified Nov 13 11:47** (arrays, `yaymatik_fire`, `Run`) (written Nov 12 from develop 6be688a). Ships in YayMatik **1.0** (leader's decision, Nov 16). Decisions Q1–Q12 in §15, their reasons in [workflow-core-decisions.md § EX](workflow-core-decisions.md); checkpoints and the two PRs in §17 and `.claude/plans/dev/034-extension-api.md`.
 
 Labels: **[Certain]** = read in code / official docs; **[Likely]** = standard practice or strong inference; **[Guess]** = depends on a plugin's code we have not seen.
 
@@ -505,7 +505,7 @@ Result: every listed need maps to a contract piece; the gaps are on the plugins'
 | Split | Two PRs (§17) |
 
 ## 16. Changelog
-- 1.0.0 (YayMatik 1.1): first stable version. `yaymatik_register` (`Registrar`, `Module`: triggers, actions, data items, data fields, categories, templates), `yaymatik_fire`, `Run`, `CustomerView`, `CartView`, `Api::VERSION`, `Api::references()`. Features: `triggers`, `actions`, `data_items`, `data_fields`, `trigger_facts`, `privacy_subjects`, `email`, `templates`, `editor_iframe`. postMessage schema v1. Example: `dev/example-extension/`. A plugin's templates share the library grid with core's (no group heading), found by the plugin filter. Placeholders in `summary` / `result` / `required` are `{{ config.<field> }}`, `{{ output.<key> }}` and `{{ step }}` (§5.2).
+- 1.0.0 (YayMatik 1.0): first stable version. `yaymatik_register` (`Registrar`, `Module`: triggers, actions, data items, data fields, categories, templates), `yaymatik_fire`, `Run`, `CustomerView`, `CartView`, `Api::VERSION`, `Api::references()`. Features: `triggers`, `actions`, `data_items`, `data_fields`, `trigger_facts`, `privacy_subjects`, `email`, `templates`, `editor_iframe`. postMessage schema v1. Example: `dev/example-extension/`. A plugin's templates share the library grid with core's (no group heading), found by the plugin filter. Placeholders in `summary` / `result` / `required` are `{{ config.<field> }}`, `{{ output.<key> }}` and `{{ step }}` (§5.2).
 
 ## 17. Checkpoints and PRs
 
