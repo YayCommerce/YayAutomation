@@ -4,6 +4,7 @@ import { __, sprintf } from '@wordpress/i18n';
 import { shortDayTime } from '@/lib/helpers/date.helper';
 import { plainSummary, steps } from '../../steps';
 import { optionLabel } from '../../steps/core/summary';
+import { fillTemplate } from '../../steps/core/template';
 
 type RunStepRow = RunDetail['steps'][number];
 
@@ -95,16 +96,17 @@ const results: Partial<Record<StepId, ResultText>> = {
 const placeholderText = (value: unknown) =>
   Array.isArray(value) ? value.map(String).join(', ') : typeof value === 'number' ? String(value) : text(value);
 
-/** Another plugin's `result` line: each `%key%` from the step's output, else its config. */
+/** Another plugin's `result` line: `{{ output.<key> }}` from the step's output, `{{ config.<field> }}` from its config. */
 const catalogResult = (step: RunStepRow) => {
   const line = step.stepType ? window.yayMatikMeta.automation.steps[step.stepType]?.result : undefined;
   if (!line) return null;
   // A config value reads as its option's label, as on the card.
-  return line.replace(/%([a-z_][a-z0-9_]*)%/g, (_, key: string) =>
-    key in step.output
-      ? placeholderText(step.output[key])
-      : catalogLabel(step.stepType!, key, placeholderText(step.input[key])),
-  );
+  return fillTemplate(line, (name) => {
+    const [root, key] = name.split('.', 2);
+    if (root === 'output') return placeholderText(step.output[key]);
+    if (root === 'config') return catalogLabel(step.stepType!, key, placeholderText(step.input[key]));
+    return undefined;
+  });
 };
 
 /** What a step did ("Yes", "Sent to a@b.com"), why it didn't, or else its card summary ("Set to Completed"). */

@@ -206,6 +206,18 @@ final class TemplateTest extends TestCase {
         );
     }
 
+    public function test_fill_reads_placeholders_by_name_and_never_parses_a_value_again(): void {
+        $values = [
+            'step'      => 'Note {{ step }}',
+            'config.to' => 'a@x.com',
+        ];
+        $this->assertSame(
+            'Note {{ step }} to a@x.com, {{ config.to | upper }} {{ x.y }}',
+            $this->template->fill( '{{ step }} to {{config.to}}, {{ config.to | upper }} {{ x.y }}', $values )
+        );
+        $this->assertSame( [ 'step', 'config.to', 'config.to | upper' ], $this->template->placeholders( '{{ step }} {{config.to}} {{ config.to | upper }}' ) );
+    }
+
     public function test_escaped_quotes_and_separators_inside_args(): void {
         $values = new FakeValues( [ 'order.skus' => [ 'A', 'B' ] ] );
         $this->assertSame( 'A | B', $this->template->render( '{{ order.skus | join: " | " }}', $values ) );

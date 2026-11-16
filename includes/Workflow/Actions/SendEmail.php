@@ -59,28 +59,28 @@ class SendEmail extends Action implements EmailStep {
         return [
             Field::notice( 'from', __( 'From', 'yaymatik' ), SendInternalEmail::sender()['fromLine'] ),
             Field::text( 'to', __( 'To', 'yaymatik' ) )
-                /* translators: %s: step name */
-                ->required( __( '%s needs an email address.', 'yaymatik' ) )
+                /* translators: {{ step }}: step name; keep {{ … }} as it is. */
+                ->required( __( '{{ step }} needs an email address.', 'yaymatik' ) )
                 ->variables()
                 ->default( '{{ customer.email }}' )
                 ->help( __( 'One email address, or a variable such as the customer’s email.', 'yaymatik' ) ),
             Field::text( 'subject', __( 'Subject', 'yaymatik' ) )
-                /* translators: %s: step name */
-                ->required( __( '%s needs a subject.', 'yaymatik' ) )
+                /* translators: {{ step }}: step name; keep {{ … }} as it is. */
+                ->required( __( '{{ step }} needs a subject.', 'yaymatik' ) )
                 ->variables(),
             Field::text( 'heading', __( 'Heading', 'yaymatik' ) )
                 ->variables()
                 ->help( __( 'Shown at the top of the email. Leave blank to use the subject.', 'yaymatik' ) ),
             Field::html( 'message', __( 'Message', 'yaymatik' ) )
-                /* translators: %s: step name */
-                ->required( __( '%s needs a message.', 'yaymatik' ) )
+                /* translators: {{ step }}: step name; keep {{ … }} as it is. */
+                ->required( __( '{{ step }} needs a message.', 'yaymatik' ) )
                 ->variables(),
         ];
     }
 
     public function summary(): string {
-        /* translators: %to%: email address or variable; keep the placeholder as it is. */
-        return __( 'Send to %to%', 'yaymatik' );
+        /* translators: {{ config.to }}: email address or variable; keep {{ … }} as it is. */
+        return __( 'Send to {{ config.to }}', 'yaymatik' );
     }
 
     public function outputs(): array {

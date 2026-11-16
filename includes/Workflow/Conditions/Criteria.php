@@ -56,7 +56,7 @@ class Criteria extends Condition {
     }
 
     public function summary(): string {
-        return '%rules%';
+        return '{{ config.rules }}';
     }
 
     /**

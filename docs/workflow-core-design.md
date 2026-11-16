@@ -106,7 +106,7 @@ Step:   id() label() plugin() module()
         setup_issue(): ?string   why the step can't run on this site; blocks Activate (issue `setup_issue`; core's cart triggers keep `cart_tracking_off`)
         outputs(): array         what later steps can use: key => [ label, type, options?, display?, block? ]
         sample_outputs( config ) made-up outputs for previews of later steps (Generate coupon → YMSAMPLE)
-        summary(): string        card text, one short line, e.g. "Send to %recipients%"
+        summary(): string        card text, one short line, e.g. "Send to {{ config.recipients }}"
         run( Scope, config ): StepResult   ok( outputs ) | skipped( reason ) | failed( error )
 Action: emits(): string[]        trigger ids it can set off
 Trigger: fires_for_own_runs( config )   whether its workflow reacts to events its own runs cause

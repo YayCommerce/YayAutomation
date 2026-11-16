@@ -49,21 +49,21 @@ class SendInternalEmail extends Action implements EmailStep {
                 ->placeholder( (string) get_option( 'admin_email' ) )
                 ->help( __( 'Separate addresses with commas. Leave blank to use the site admin email.', 'yaymatik' ) ),
             Field::text( 'subject', __( 'Subject', 'yaymatik' ) )
-                /* translators: %s: step name */
-                ->required( __( '%s needs a subject.', 'yaymatik' ) )
+                /* translators: {{ step }}: step name; keep {{ … }} as it is. */
+                ->required( __( '{{ step }} needs a subject.', 'yaymatik' ) )
                 ->variables()
                 ->default( __( 'Order {{ order.number }} is {{ order.status }}', 'yaymatik' ) ),
             Field::html( 'message', __( 'Message', 'yaymatik' ) )
-                /* translators: %s: step name */
-                ->required( __( '%s needs a message.', 'yaymatik' ) )
+                /* translators: {{ step }}: step name; keep {{ … }} as it is. */
+                ->required( __( '{{ step }} needs a message.', 'yaymatik' ) )
                 ->variables()
                 ->default( self::sample_message() ),
         ];
     }
 
     public function summary(): string {
-        /* translators: %recipients%: email addresses; keep the placeholder as it is. */
-        return __( 'Send to %recipients%', 'yaymatik' );
+        /* translators: {{ config.recipients }}: email addresses; keep {{ … }} as it is. */
+        return __( 'Send to {{ config.recipients }}', 'yaymatik' );
     }
 
     public function outputs(): array {

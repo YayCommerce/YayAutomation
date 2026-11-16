@@ -48,15 +48,15 @@ class AddOrderNote extends Action {
         return [
             Field::select( 'type', __( 'Note type', 'yaymatik' ), self::types() )->default( 'private' ),
             Field::textarea( 'note', __( 'Note', 'yaymatik' ) )
-                /* translators: %s: step name, e.g. "Add order note" */
-                ->required( __( '%s needs a note.', 'yaymatik' ) )
+                /* translators: {{ step }}: step name, e.g. "Add order note"; keep {{ … }} as it is. */
+                ->required( __( '{{ step }} needs a note.', 'yaymatik' ) )
                 ->variables(),
         ];
     }
 
     public function summary(): string {
-        /* translators: %type%: note type (private or to the customer), %note%: the note text; keep the placeholders as they are. */
-        return __( '%type%: %note%', 'yaymatik' );
+        /* translators: {{ config.type }}: note type (private or to the customer), {{ config.note }}: the note text; keep {{ … }} as it is. */
+        return __( '{{ config.type }}: {{ config.note }}', 'yaymatik' );
     }
 
     public function outputs(): array {

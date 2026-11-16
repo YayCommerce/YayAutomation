@@ -174,16 +174,16 @@ final class Acme_Rewards {
                         'required' => true,
                     ],
                 ],
-                /* translators: %points%: a number; keep the placeholder as it is. */
-                'summary'     => __( 'Add %points% points', 'acme-rewards' ),
+                /* translators: {{ config.points }}: a number; keep {{ … }} as it is. */
+                'summary'     => __( 'Add {{ config.points }} points', 'acme-rewards' ),
                 'outputs'     => [
                     'balance' => [
                         'label' => __( 'New balance', 'acme-rewards' ),
                         'type'  => 'number',
                     ],
                 ],
-                /* translators: %balance%: a number; keep the placeholder as it is. */
-                'result'      => __( 'New balance: %balance%', 'acme-rewards' ),
+                /* translators: {{ output.balance }}: a number; keep {{ … }} as it is. */
+                'result'      => __( 'New balance: {{ output.balance }}', 'acme-rewards' ),
                 // Adding points fires our trigger: the editor warns when a workflow could start itself again.
                 'emits'       => [ 'acme_rewards_points_earned' ],
                 'run'         => [ $this, 'run_add_points' ],
@@ -212,8 +212,8 @@ final class Acme_Rewards {
                         'required' => true,
                     ],
                 ],
-                /* translators: %subject%: the email's subject; keep the placeholder as it is. */
-                'summary'     => __( 'Email “%subject%”', 'acme-rewards' ),
+                /* translators: {{ config.subject }}: the email's subject; keep {{ … }} as it is. */
+                'summary'     => __( 'Email “{{ config.subject }}”', 'acme-rewards' ),
                 'validate'    => [ $this, 'validate_design' ],
                 'setup_issue' => [ $this, 'email_setup_issue' ],
                 'email'       => [

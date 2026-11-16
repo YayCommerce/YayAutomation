@@ -47,7 +47,7 @@
                 "label": "Condition",
                 "description": "Take the Yes path when the rules match, otherwise the No path.",
                 "icon": "git-branch",
-                "summary": "%rules%",
+                "summary": "{{ config.rules }}",
                 "onError": "stop",
                 "fields": [
                     {
@@ -100,7 +100,7 @@
                 "label": "Wait",
                 "description": "Pause the workflow for a while before the next step.",
                 "icon": "clock",
-                "summary": "Wait %delay%",
+                "summary": "Wait {{ config.delay }}",
                 "onError": "stop",
                 "fields": [
                     {
@@ -142,7 +142,7 @@
                 "label": "Wait until",
                 "description": "Pause until a time of day, on the days you choose.",
                 "icon": "history",
-                "summary": "Until %time% · %weekdays%",
+                "summary": "Until {{ config.time }} · {{ config.weekdays }}",
                 "onError": "stop",
                 "fields": [
                     {
@@ -226,7 +226,7 @@
                 "label": "Order status changed",
                 "description": "Starts when an order moves to another status. Choose which status changes count.",
                 "icon": "shopping-bag",
-                "summary": "%from% → %to%",
+                "summary": "{{ config.from }} → {{ config.to }}",
                 "onError": "stop",
                 "fields": [
                     {
@@ -367,7 +367,7 @@
                 "label": "Order note added",
                 "description": "Starts when a note is added to an order.",
                 "icon": "message-square",
-                "summary": "%note_type% added to an order",
+                "summary": "{{ config.note_type }} added to an order",
                 "onError": "stop",
                 "fields": [
                     {
@@ -466,7 +466,7 @@
                 "label": "Customer inactive",
                 "description": "A customer has not ordered for a number of days",
                 "icon": "hourglass",
-                "summary": "When %days% days without an order",
+                "summary": "When {{ config.days }} days without an order",
                 "onError": "stop",
                 "fields": [
                     {
@@ -492,7 +492,7 @@
                 "label": "Customer order count reaches",
                 "description": "A customer’s paid orders reach a number",
                 "icon": "activity",
-                "summary": "When a customer reaches %count% paid orders",
+                "summary": "When a customer reaches {{ config.count }} paid orders",
                 "onError": "stop",
                 "fields": [
                     {
@@ -518,7 +518,7 @@
                 "label": "Customer total spend reaches",
                 "description": "A customer’s total spent reaches an amount",
                 "icon": "heart-pulse",
-                "summary": "When a customer’s total spent reaches %amount%",
+                "summary": "When a customer’s total spent reaches {{ config.amount }}",
                 "onError": "stop",
                 "fields": [
                     {
@@ -558,7 +558,7 @@
                 "label": "Send email",
                 "description": "Send an email to a customer in your store’s WooCommerce email style, with an unsubscribe link.",
                 "icon": "send",
-                "summary": "Send to %to%",
+                "summary": "Send to {{ config.to }}",
                 "onError": "stop",
                 "fields": [
                     {
@@ -572,7 +572,7 @@
                         "type": "text",
                         "label": "To",
                         "required": true,
-                        "requiredMessage": "%s needs an email address.",
+                        "requiredMessage": "{{ step }} needs an email address.",
                         "variables": true,
                         "help": "One email address, or a variable such as the customer’s email.",
                         "default": "{{ customer.email }}"
@@ -582,7 +582,7 @@
                         "type": "text",
                         "label": "Subject",
                         "required": true,
-                        "requiredMessage": "%s needs a subject.",
+                        "requiredMessage": "{{ step }} needs a subject.",
                         "variables": true,
                         "default": ""
                     },
@@ -599,7 +599,7 @@
                         "type": "html",
                         "label": "Message",
                         "required": true,
-                        "requiredMessage": "%s needs a message.",
+                        "requiredMessage": "{{ step }} needs a message.",
                         "variables": true,
                         "default": ""
                     }
@@ -621,7 +621,7 @@
                 "label": "Send internal email",
                 "description": "Email your store team, from your WooCommerce store email address.",
                 "icon": "mail",
-                "summary": "Send to %recipients%",
+                "summary": "Send to {{ config.recipients }}",
                 "onError": "stop",
                 "fields": [
                     {
@@ -643,7 +643,7 @@
                         "type": "text",
                         "label": "Subject",
                         "required": true,
-                        "requiredMessage": "%s needs a subject.",
+                        "requiredMessage": "{{ step }} needs a subject.",
                         "variables": true,
                         "default": "Order {{ order.number }} is {{ order.status }}"
                     },
@@ -652,7 +652,7 @@
                         "type": "html",
                         "label": "Message",
                         "required": true,
-                        "requiredMessage": "%s needs a message.",
+                        "requiredMessage": "{{ step }} needs a message.",
                         "variables": true,
                         "default": "<p>Order {{ order.number }} from {{ customer.full_name }} is {{ order.status }}.</p><p>Total: {{ order.total }}</p><p>{{ order.items }}</p>"
                     }
@@ -675,7 +675,7 @@
                 "label": "Resend WooCommerce email",
                 "description": "Send one of WooCommerce’s order emails to the customer again.",
                 "icon": "refresh-cw",
-                "summary": "Resend %email%",
+                "summary": "Resend {{ config.email }}",
                 "onError": "stop",
                 "fields": [
                     {
@@ -683,7 +683,7 @@
                         "type": "select",
                         "label": "Email",
                         "required": true,
-                        "requiredMessage": "%s needs an email.",
+                        "requiredMessage": "{{ step }} needs an email.",
                         "options": [
                             {
                                 "value": "customer_cancelled_order",
@@ -731,7 +731,7 @@
                 "label": "Change order status",
                 "description": "Move the order to another status.",
                 "icon": "tag",
-                "summary": "Set to %status%",
+                "summary": "Set to {{ config.status }}",
                 "onError": "stop",
                 "fields": [
                     {
@@ -869,7 +869,7 @@
                 "label": "Add order note",
                 "description": "Add a private note to the order, or a note the customer gets by email.",
                 "icon": "message-square",
-                "summary": "%type%: %note%",
+                "summary": "{{ config.type }}: {{ config.note }}",
                 "onError": "stop",
                 "fields": [
                     {
@@ -893,7 +893,7 @@
                         "type": "textarea",
                         "label": "Note",
                         "required": true,
-                        "requiredMessage": "%s needs a note.",
+                        "requiredMessage": "{{ step }} needs a note.",
                         "variables": true,
                         "default": ""
                     }
@@ -926,7 +926,7 @@
                 "label": "Update order custom field",
                 "description": "Set a custom field (meta) on the order.",
                 "icon": "list",
-                "summary": "Set %key% to %value%",
+                "summary": "Set {{ config.key }} to {{ config.value }}",
                 "onError": "stop",
                 "fields": [
                     {
@@ -934,7 +934,7 @@
                         "type": "text",
                         "label": "Field name",
                         "required": true,
-                        "requiredMessage": "%s needs a field name.",
+                        "requiredMessage": "{{ step }} needs a field name.",
                         "help": "The meta key, e.g. _vip_order.",
                         "default": ""
                     },
@@ -969,7 +969,7 @@
                 "label": "Update customer custom field",
                 "description": "Set a custom field on the customer’s account.",
                 "icon": "list",
-                "summary": "Set %key% to %value%",
+                "summary": "Set {{ config.key }} to {{ config.value }}",
                 "onError": "stop",
                 "fields": [
                     {
@@ -977,7 +977,7 @@
                         "type": "text",
                         "label": "Field name",
                         "required": true,
-                        "requiredMessage": "%s needs a field name.",
+                        "requiredMessage": "{{ step }} needs a field name.",
                         "suggest": "customer-meta-keys",
                         "default": ""
                     },
@@ -1012,7 +1012,7 @@
                 "label": "Change customer role",
                 "description": "Add, remove or replace a role on the customer’s account.",
                 "icon": "user",
-                "summary": "%mode%: %role%",
+                "summary": "{{ config.mode }}: {{ config.role }}",
                 "onError": "stop",
                 "fields": [
                     {
@@ -1040,7 +1040,7 @@
                         "type": "select",
                         "label": "Role",
                         "required": true,
-                        "requiredMessage": "%s needs a role.",
+                        "requiredMessage": "{{ step }} needs a role.",
                         "help": "Only roles with customer rights are listed: no staff, editing or publishing roles.",
                         "options": [
                             {
@@ -1076,7 +1076,7 @@
                 "label": "Generate coupon",
                 "description": "Create a single-use WooCommerce coupon to send in a later email.",
                 "icon": "ticket",
-                "summary": "%discount_type%, %expiry_days%",
+                "summary": "{{ config.discount_type }}, {{ config.expiry_days }}",
                 "onError": "stop",
                 "fields": [
                     {

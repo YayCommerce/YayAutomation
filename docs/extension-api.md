@@ -98,7 +98,7 @@ A step's form, keyed by config key:
 | `options` | `select` / `multiselect`: value ⇒ label, or a callable returning that |
 | `units` | `number_unit`: unit ⇒ label; the first is the default |
 | `text` | `notice`: the text shown |
-| `required` | `true`, or the message to show when blank (`%s` = the step's label) |
+| `required` | `true`, or the message to show when blank; its only placeholder is `{{ step }}` (the step's label) |
 | `default`, `help`, `placeholder`, `min`, `max` | As named |
 | `variables` | `true`: accepts `{{ … }}` merge tags (Insert variable) |
 | `show_if` | `[ field => value ]` (value or list of values): shown only then; a hidden field is never checked |
@@ -141,9 +141,11 @@ Facts, outputs and data fields name their type as a string: `string`, `number`, 
 | `icon` | no | A name from core's icon list (`StepIcons::NAMES`, published in the docs); default the module logo |
 | `category` | no | A core category or one the module declared with `$m->category()` (open list, labels from the server; StepPicker.tsx:25–33 and localize.d.ts:78 become open) |
 | `fields` | no | The settings form, §4.1 (server-driven, no JS) |
-| `summary` | no | Canvas line with `%field%` placeholders (Step.php:42) |
+| `summary` | no | Canvas line; its only placeholders are `{{ config.<field> }}` (Step.php:42) |
 | `validate` | no | `fn( array $config, array $available ): array` — checks fields can't express. Return `[]` when fine, or `[ field_key => message ]` (`''` as key for a step-level message). `$available` = data item ids the step can read there (from the trigger and steps above), e.g. to say "this design uses order blocks, but this workflow's trigger has no order" |
 | `setup_issue` | no | `fn(): string` — `''` when fine, else why it can't run on this site (shown on Activate) |
+
+**Placeholders.** Every value YayMatik fills in a `summary`, `result` or `required` message is `{{ root.key }}` (`{{ step }}` alone in `required`); `%s` is only for a plugin's own `sprintf()`. No filters, and an inserted value is never read for placeholders again. A placeholder with another root, or with a filter, refuses the declaration (diagnostic, `_doing_it_wrong()` under `WP_DEBUG`). In a translated string, the translators comment says to keep `{{ … }}` as it is, e.g. `/* translators: {{ config.points }}: a number; keep {{ … }} as it is. */`.
 
 ### 5.3 Trigger
 
@@ -200,8 +202,8 @@ $m->action( 'yaywholesale_set_role', [
     'category'    => 'customer',
     'requires'    => [ 'customer' ],
     'fields'      => [ 'role' => [ 'type' => 'select', 'label' => __( 'Role', 'yaywholesale' ), 'options' => [ $this, 'role_options' ], 'required' => true ] ],
-    'summary'     => __( 'Set role to %role%', 'yaywholesale' ),
-    'result'      => __( 'Role is now %role%', 'yaywholesale' ),
+    'summary'     => __( 'Set role to {{ config.role }}', 'yaywholesale' ),
+    'result'      => __( 'Role is now {{ output.role }}', 'yaywholesale' ),
     'outputs'     => [ 'role' => [ 'label' => __( 'New role', 'yaywholesale' ), 'type' => 'enum' ] ],
     'run'         => [ $this, 'run_set_role' ],
 ] );
@@ -223,7 +225,7 @@ public function run_set_role( array $config, $run ) {
 | `outputs` | no | `[ key => [ 'label', 'type', 'options'? ] ]` — readable by later steps at `steps.<node>.<key>`; only declared keys are stored (Executor.php:263) |
 | `sample_outputs` | no | `fn( array $config ): array` for previews of later steps |
 | `on_error` | no | `'stop'` (default) or `'continue'` |
-| `result` | no | Run-detail line with `%output%` / `%field%` placeholders, e.g. `'Sent to %to%'`; default the `summary` (runResults.ts:100) |
+| `result` | no | Run-detail line; its only placeholders are `{{ output.<key> }}` and `{{ config.<field> }}` (a select reads as its option's label), e.g. `'Sent to {{ output.to }}'`; default the `summary` (runResults.ts:100) |
 | `emits` | no | Trigger ids this action can set off; the editor warns (`may_refire`) when one is its workflow's own trigger. The runtime loop guard needs none: a run never restarts its own workflow through its own events |
 | `email` | no | Email capability, §5.5 |
 | `editor` | no | Iframe editor, §5.6 |
@@ -503,7 +505,7 @@ Result: every listed need maps to a contract piece; the gaps are on the plugins'
 | Split | Two PRs (§17) |
 
 ## 16. Changelog
-- 1.0.0 (YayMatik 1.1): first stable version. `yaymatik_register` (`Registrar`, `Module`: triggers, actions, data items, data fields, categories, templates), `yaymatik_fire`, `Run`, `CustomerView`, `CartView`, `Api::VERSION`, `Api::references()`. Features: `triggers`, `actions`, `data_items`, `data_fields`, `trigger_facts`, `privacy_subjects`, `email`, `templates`, `editor_iframe`. postMessage schema v1. Example: `dev/example-extension/`. A plugin's templates share the library grid with core's (no group heading), found by the plugin filter.
+- 1.0.0 (YayMatik 1.1): first stable version. `yaymatik_register` (`Registrar`, `Module`: triggers, actions, data items, data fields, categories, templates), `yaymatik_fire`, `Run`, `CustomerView`, `CartView`, `Api::VERSION`, `Api::references()`. Features: `triggers`, `actions`, `data_items`, `data_fields`, `trigger_facts`, `privacy_subjects`, `email`, `templates`, `editor_iframe`. postMessage schema v1. Example: `dev/example-extension/`. A plugin's templates share the library grid with core's (no group heading), found by the plugin filter. Placeholders in `summary` / `result` / `required` are `{{ config.<field> }}`, `{{ output.<key> }}` and `{{ step }}` (§5.2).
 
 ## 17. Checkpoints and PRs
 

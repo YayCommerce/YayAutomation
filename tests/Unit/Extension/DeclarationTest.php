@@ -66,7 +66,7 @@ final class DeclarationTest extends TestCase {
                         'silver' => 'Silver',
                         'gold'   => 'Gold',
                     ],
-                    'required' => 'Pick a role for %s.',
+                    'required' => 'Pick a role for {{ step }}.',
                     'default'  => 'silver',
                 ],
                 'note'    => [
@@ -109,7 +109,7 @@ final class DeclarationTest extends TestCase {
         );
 
         $this->assertSame( [ 'role', 'note', 'points', 'delay', 'tip', 'notify', 'copy_to' ], array_keys( $fields ) );
-        $this->assertSame( [ 'select', true, 'Pick a role for %s.', 'silver' ], [ $fields['role']['type'], $fields['role']['required'], $fields['role']['requiredMessage'], $fields['role']['default'] ] );
+        $this->assertSame( [ 'select', true, 'Pick a role for {{ step }}.', 'silver' ], [ $fields['role']['type'], $fields['role']['required'], $fields['role']['requiredMessage'], $fields['role']['default'] ] );
         $this->assertSame( [ 'silver', 'gold' ], array_column( $fields['role']['options'], 'value' ) );
         $this->assertSame( [ true, 'Thanks!', 'Shown to the customer.' ], [ $fields['note']['variables'], $fields['note']['placeholder'], $fields['note']['help'] ] );
         $this->assertSame(
@@ -132,7 +132,7 @@ final class DeclarationTest extends TestCase {
                     'points' => [
                         'type'     => 'number',
                         'label'    => 'Points',
-                        'required' => 'Enter the points for %s.',
+                        'required' => 'Enter the points for {{ step }}.',
                     ],
                 ],
             ]
@@ -240,6 +240,18 @@ final class DeclarationTest extends TestCase {
             '"on_error" must be "stop" or "continue".' => [ 'on_error' => 'retry' ],
             '"category" must be a core category or one this module declared first.' => [ 'category' => 'rewards' ],
             'Unknown data item in "requires": ordr.'   => [ 'requires' => [ 'ordr' ] ],
+            '"summary": {{ order.total }} isn\'t a placeholder; use {{ config.<field> }}.' => [ 'summary' => 'Add {{ config.points }} for {{ order.total }}' ],
+            '"summary": {{ config.points | upper }} isn\'t a placeholder; use {{ config.<field> }}.' => [ 'summary' => '{{ config.points | upper }}' ],
+            '"result": {{ steps.a.b }} isn\'t a placeholder; use {{ output.<key> }} or {{ config.<field> }}.' => [ 'result' => '{{ output.balance }} {{ steps.a.b }}' ],
+            'Field "role": "required": {{ config.role }} isn\'t a placeholder; use {{ step }}.' => [
+                'fields' => [
+                    'role' => [
+                        'type'     => 'text',
+                        'label'    => 'Role',
+                        'required' => '{{ config.role }} is blank.',
+                    ],
+                ],
+            ],
         ];
         foreach ( $cases as $message => $args ) {
             $GLOBALS['yaymatik_test_options'] = [];

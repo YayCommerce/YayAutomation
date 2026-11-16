@@ -122,8 +122,8 @@ final class ExtensionEmailAction extends ExtensionAction implements EmailStep {
 
     /** Default "Sent to <address>". */
     protected function result(): string {
-        /* translators: %to%: email address; keep the placeholder as it is. */
-        return $this->args['result'] ?? __( 'Sent to %to%', 'yaymatik' );
+        /* translators: {{ output.to }}: email address; keep {{ … }} as it is. */
+        return $this->args['result'] ?? __( 'Sent to {{ output.to }}', 'yaymatik' );
     }
 
     /**

@@ -21,11 +21,11 @@ const emailStep = {
   category: 'email',
   requires: ['customer'],
   email: 'customer',
-  result: 'Sent to %to%',
+  result: 'Sent to {{ output.to }}',
   label: 'Send rewards email',
   description: 'Sends an email designed in Acme Rewards.',
   icon: '',
-  summary: 'Email “%subject%”',
+  summary: 'Email “{{ config.subject }}”',
   onError: 'stop',
   fields: [
     {
@@ -33,7 +33,7 @@ const emailStep = {
       type: 'text',
       label: 'Subject',
       required: true,
-      requiredMessage: '%s needs a subject.',
+      requiredMessage: '{{ step }} needs a subject.',
       variables: true,
       default: '',
     },

@@ -83,7 +83,7 @@ final class CatalogTest extends TestCase {
             $note[0]['options']
         );
         $this->assertTrue( $note[1]['required'] );
-        $this->assertSame( '%s needs a note.', $note[1]['requiredMessage'] );
+        $this->assertSame( '{{ step }} needs a note.', $note[1]['requiredMessage'] );
         $this->assertTrue( $note[1]['variables'] );
         $this->assertSame( 'notice', $this->steps()['send_internal_email']['fields'][0]['type'] );
         $this->assertSame( 'pending', $this->steps()['change_order_status']['fields'][0]['options'][0]['value'], 'statuses read when the catalog is built' );

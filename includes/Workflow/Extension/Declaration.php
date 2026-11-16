@@ -3,6 +3,7 @@ namespace YayMatik\Workflow\Extension;
 
 use YayMatik\Api\Api;
 use YayMatik\Workflow\Core\Data\DataRegistry;
+use YayMatik\Workflow\Core\Data\Template;
 use YayMatik\Workflow\Core\Steps\Action;
 use YayMatik\Workflow\Core\Steps\Field;
 use YayMatik\Workflow\Core\Steps\Step;
@@ -153,8 +154,10 @@ final class Declaration {
         if ( null === $error && isset( $args['on_error'] ) && ! in_array( $args['on_error'], [ Step::ON_ERROR_STOP, Step::ON_ERROR_CONTINUE ], true ) ) {
             $error = '"on_error" must be "stop" or "continue".';
         }
-        if ( null === $error && isset( $args['result'] ) && ! is_string( $args['result'] ) ) {
-            $error = '"result" must be a string.';
+        if ( null === $error && isset( $args['result'] ) ) {
+            $error = is_string( $args['result'] )
+                ? self::placeholder_error( '"result"', $args['result'], '/^(output|config)\.[a-z_][a-z0-9_]*$/', '{{ output.<key> }} or {{ config.<field> }}' )
+                : '"result" must be a string.';
         }
         $fields  = null === $error ? self::fields( $module->id(), $args['fields'] ?? [] ) : null;
         $outputs = null === $error && ! is_string( $fields ) ? self::outputs( $module->id(), $args['outputs'] ?? [] ) : null;
@@ -436,10 +439,32 @@ final class Declaration {
         if ( isset( $args['category'] ) && ! in_array( $args['category'], $categories, true ) && ! isset( $module->categories()[ $args['category'] ] ) ) {
             return '"category" must be a core category or one this module declared first.';
         }
-        if ( isset( $args['summary'] ) && ! is_string( $args['summary'] ) ) {
-            return '"summary" must be a string.';
+        if ( isset( $args['summary'] ) ) {
+            $error = is_string( $args['summary'] )
+                ? self::placeholder_error( '"summary"', $args['summary'], '/^config\.[a-z_][a-z0-9_]*$/', '{{ config.<field> }}' )
+                : '"summary" must be a string.';
+            if ( null !== $error ) {
+                return $error;
+            }
         }
         return self::callable_error( $args, [], [ 'validate', 'setup_issue' ] );
+    }
+
+    /**
+     * Why catalog text has a placeholder other than the allowed ones, or null.
+     *
+     * @param string $what    The declaration key, for the message.
+     * @param string $text
+     * @param string $pattern Allowed placeholder names.
+     * @param string $allowed The allowed placeholders, for the message.
+     */
+    private static function placeholder_error( string $what, string $text, string $pattern, string $allowed ): ?string {
+        foreach ( ( new Template() )->placeholders( $text ) as $name ) {
+            if ( ! preg_match( $pattern, $name ) ) {
+                return $what . ': {{ ' . $name . ' }} isn\'t a placeholder; use ' . $allowed . '.';
+            }
+        }
+        return null;
     }
 
     /**
@@ -543,6 +568,12 @@ final class Declaration {
                 return "Field \"{$key}\" needs \"{$extra}\".";
             }
             $args[] = 'text' !== $extra && is_callable( $value ) ? self::guarded_options( $module, $value ) : $value;
+        }
+        if ( is_string( $field['required'] ?? null ) ) {
+            $error = self::placeholder_error( "Field \"{$key}\": \"required\"", $field['required'], '/^step$/', '{{ step }}' );
+            if ( null !== $error ) {
+                return $error;
+            }
         }
         $core = Field::$type( ...$args );
         if ( ! empty( $field['required'] ) ) {

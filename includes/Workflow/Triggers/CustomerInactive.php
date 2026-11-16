@@ -45,8 +45,8 @@ class CustomerInactive extends OrderTrigger {
     }
 
     public function summary(): string {
-        /* translators: %days%: number of days; keep the placeholder as it is. */
-        return __( 'When %days% days without an order', 'yaymatik' );
+        /* translators: {{ config.days }}: number of days; keep {{ … }} as it is. */
+        return __( 'When {{ config.days }} days without an order', 'yaymatik' );
     }
 
     /**

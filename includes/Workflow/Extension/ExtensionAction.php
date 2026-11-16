@@ -134,7 +134,7 @@ class ExtensionAction extends Action {
         return null !== $origin( $url ) && $origin( $url ) === $origin( $admin );
     }
 
-    /** Run-detail line with `%output%` / `%field%` placeholders; '' = the summary. */
+    /** Run-detail line with `{{ output.<key> }}` / `{{ config.<field> }}` placeholders; '' = the summary. */
     protected function result(): string {
         return $this->args['result'] ?? '';
     }

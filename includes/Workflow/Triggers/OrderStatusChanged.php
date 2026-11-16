@@ -42,8 +42,8 @@ class OrderStatusChanged extends OrderTrigger {
     }
 
     public function summary(): string {
-        /* translators: %from% and %to%: order statuses; keep the placeholders as they are. */
-        return __( '%from% → %to%', 'yaymatik' );
+        /* translators: {{ config.from }} and {{ config.to }}: order statuses; keep {{ … }} as it is. */
+        return __( '{{ config.from }} → {{ config.to }}', 'yaymatik' );
     }
 
     /**

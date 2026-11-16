@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-13T22:15:43+00:00\n"
+"POT-Creation-Date: 2026-11-16T15:28:03+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: yaymatik\n"
@@ -297,15 +297,14 @@ msgstr ""
 msgid "Note"
 msgstr ""
 
-#. translators: %s: step name, e.g. "Add order note"
+#. translators: {{ step }}: step name, e.g. "Add order note"; keep {{ … }} as it is.
 #: includes/Workflow/Actions/AddOrderNote.php:52
-#, php-format
-msgid "%s needs a note."
+msgid "{{ step }} needs a note."
 msgstr ""
 
-#. translators: %type%: note type (private or to the customer), %note%: the note text; keep the placeholders as they are.
+#. translators: {{ config.type }}: note type (private or to the customer), {{ config.note }}: the note text; keep {{ … }} as it is.
 #: includes/Workflow/Actions/AddOrderNote.php:59
-msgid "%type%: %note%"
+msgid "{{ config.type }}: {{ config.note }}"
 msgstr ""
 
 #: includes/Workflow/Actions/AddOrderNote.php:75
@@ -352,19 +351,18 @@ msgstr ""
 msgid "Role"
 msgstr ""
 
-#. translators: %s: step name, e.g. "Change customer role"
+#. translators: {{ step }}: step name, e.g. "Change customer role"; keep {{ … }} as it is.
 #: includes/Workflow/Actions/ChangeCustomerRole.php:100
-#, php-format
-msgid "%s needs a role."
+msgid "{{ step }} needs a role."
 msgstr ""
 
 #: includes/Workflow/Actions/ChangeCustomerRole.php:101
 msgid "Only roles with customer rights are listed: no staff, editing or publishing roles."
 msgstr ""
 
-#. translators: %mode%: e.g. "Add a role", %role%: a role name; keep the placeholders as they are.
+#. translators: {{ config.mode }}: e.g. "Add a role", {{ config.role }}: a role name; keep {{ … }} as it is.
 #: includes/Workflow/Actions/ChangeCustomerRole.php:107
-msgid "%mode%: %role%"
+msgid "{{ config.mode }}: {{ config.role }}"
 msgstr ""
 
 #: includes/Workflow/Actions/ChangeCustomerRole.php:113
@@ -423,10 +421,9 @@ msgstr ""
 msgid "Choose a status"
 msgstr ""
 
-#. translators: %status%: order status; keep the placeholder as it is.
+#. translators: {{ config.status }}: order status; keep {{ … }} as it is.
 #: includes/Workflow/Actions/ChangeOrderStatus.php:63
-#, php-format
-msgid "Set to %status%"
+msgid "Set to {{ config.status }}"
 msgstr ""
 
 #: includes/Workflow/Actions/ChangeOrderStatus.php:70
@@ -497,86 +494,86 @@ msgstr ""
 msgid "Letters, numbers, - and _. The code is the prefix and 8 random characters."
 msgstr ""
 
-#: includes/Workflow/Actions/GenerateCoupon.php:125
+#: includes/Workflow/Actions/GenerateCoupon.php:123
 msgid "Coupon code"
 msgstr ""
 
-#: includes/Workflow/Actions/GenerateCoupon.php:129
+#: includes/Workflow/Actions/GenerateCoupon.php:127
 msgid "Coupon amount"
 msgstr ""
 
-#: includes/Workflow/Actions/GenerateCoupon.php:133
+#: includes/Workflow/Actions/GenerateCoupon.php:131
 msgid "Coupon expiry date"
 msgstr ""
 
-#: includes/Workflow/Actions/GenerateCoupon.php:138
+#: includes/Workflow/Actions/GenerateCoupon.php:136
 msgid "Coupon box"
 msgstr ""
 
-#: includes/Workflow/Actions/GenerateCoupon.php:174
+#: includes/Workflow/Actions/GenerateCoupon.php:172
 msgid "Enter a percentage from 1 to 100."
 msgstr ""
 
-#: includes/Workflow/Actions/GenerateCoupon.php:177
+#: includes/Workflow/Actions/GenerateCoupon.php:175
 msgid "Enter an amount above 0."
 msgstr ""
 
-#: includes/Workflow/Actions/GenerateCoupon.php:181
+#: includes/Workflow/Actions/GenerateCoupon.php:179
 msgid "Enter a whole number of days, 1 or more, or leave it blank for no expiry."
 msgstr ""
 
 #. translators: %d: maximum length
-#: includes/Workflow/Actions/GenerateCoupon.php:186
+#: includes/Workflow/Actions/GenerateCoupon.php:184
 #, php-format
 msgid "Use up to %d letters, numbers, - and _."
 msgstr ""
 
-#: includes/Workflow/Actions/GenerateCoupon.php:196
+#: includes/Workflow/Actions/GenerateCoupon.php:194
 msgid "The customer has no email address to limit the coupon to."
 msgstr ""
 
-#: includes/Workflow/Actions/GenerateCoupon.php:202
+#: includes/Workflow/Actions/GenerateCoupon.php:200
 msgid "Couldn’t make a unique coupon code. Try a longer or different prefix."
 msgstr ""
 
-#: includes/Workflow/Actions/GenerateCoupon.php:222
+#: includes/Workflow/Actions/GenerateCoupon.php:220
 msgid "Made by a YayMatik workflow."
 msgstr ""
 
 #. translators: %s: customer email
-#: includes/Workflow/Actions/GenerateCoupon.php:224
+#: includes/Workflow/Actions/GenerateCoupon.php:222
 #, php-format
 msgid "Made by a YayMatik workflow for %s."
 msgstr ""
 
-#: includes/Workflow/Actions/GenerateCoupon.php:228
+#: includes/Workflow/Actions/GenerateCoupon.php:226
 msgid "Couldn’t save the coupon."
 msgstr ""
 
 #. translators: %s: discount, e.g. "10%" or "$5.00"
-#: includes/Workflow/Actions/GenerateCoupon.php:270
+#: includes/Workflow/Actions/GenerateCoupon.php:268
 #: assets/dist/admin-page/main.js:69
 #, php-format,js-format
 msgid "%s off"
 msgstr ""
 
 #. translators: %s: date
-#: includes/Workflow/Actions/GenerateCoupon.php:273
+#: includes/Workflow/Actions/GenerateCoupon.php:271
 #, php-format
 msgid "Expires %s"
 msgstr ""
 
-#: includes/Workflow/Actions/GenerateCoupon.php:340
-#: includes/Workflow/Actions/GenerateCoupon.php:361
+#: includes/Workflow/Actions/GenerateCoupon.php:338
+#: includes/Workflow/Actions/GenerateCoupon.php:359
 #: assets/dist/admin-page/main.js:69
 msgid "Free shipping"
 msgstr ""
 
-#: includes/Workflow/Actions/GenerateCoupon.php:359
+#: includes/Workflow/Actions/GenerateCoupon.php:357
 msgid "Percentage discount"
 msgstr ""
 
-#: includes/Workflow/Actions/GenerateCoupon.php:360
+#: includes/Workflow/Actions/GenerateCoupon.php:358
 msgid "Fixed amount off the cart"
 msgstr ""
 
@@ -588,16 +585,14 @@ msgstr ""
 msgid "Send one of WooCommerce’s order emails to the customer again."
 msgstr ""
 
-#. translators: %s: step name, e.g. "Resend WooCommerce email"
+#. translators: {{ step }}: step name, e.g. "Resend WooCommerce email"; keep {{ … }} as it is.
 #: includes/Workflow/Actions/ResendWcEmail.php:60
-#, php-format
-msgid "%s needs an email."
+msgid "{{ step }} needs an email."
 msgstr ""
 
-#. translators: %email%: a WooCommerce email's name, e.g. "Completed order"; keep the placeholder as it is.
+#. translators: {{ config.email }}: a WooCommerce email's name, e.g. "Completed order"; keep {{ … }} as it is.
 #: includes/Workflow/Actions/ResendWcEmail.php:66
-#, php-format
-msgid "Resend %email%"
+msgid "Resend {{ config.email }}"
 msgstr ""
 
 #: includes/Workflow/Actions/ResendWcEmail.php:86
@@ -638,10 +633,9 @@ msgstr ""
 msgid "To"
 msgstr ""
 
-#. translators: %s: step name
+#. translators: {{ step }}: step name; keep {{ … }} as it is.
 #: includes/Workflow/Actions/SendEmail.php:63
-#, php-format
-msgid "%s needs an email address."
+msgid "{{ step }} needs an email address."
 msgstr ""
 
 #: includes/Workflow/Actions/SendEmail.php:66
@@ -654,11 +648,10 @@ msgstr ""
 msgid "Subject"
 msgstr ""
 
-#. translators: %s: step name
+#. translators: {{ step }}: step name; keep {{ … }} as it is.
 #: includes/Workflow/Actions/SendEmail.php:69
 #: includes/Workflow/Actions/SendInternalEmail.php:53
-#, php-format
-msgid "%s needs a subject."
+msgid "{{ step }} needs a subject."
 msgstr ""
 
 #: includes/Workflow/Actions/SendEmail.php:71
@@ -674,16 +667,15 @@ msgstr ""
 msgid "Message"
 msgstr ""
 
-#. translators: %s: step name
+#. translators: {{ step }}: step name; keep {{ … }} as it is.
 #: includes/Workflow/Actions/SendEmail.php:76
 #: includes/Workflow/Actions/SendInternalEmail.php:58
-#, php-format
-msgid "%s needs a message."
+msgid "{{ step }} needs a message."
 msgstr ""
 
-#. translators: %to%: email address or variable; keep the placeholder as it is.
+#. translators: {{ config.to }}: email address or variable; keep {{ … }} as it is.
 #: includes/Workflow/Actions/SendEmail.php:83
-msgid "Send to %to%"
+msgid "Send to {{ config.to }}"
 msgstr ""
 
 #: includes/Workflow/Actions/SendEmail.php:107
@@ -706,9 +698,9 @@ msgstr ""
 msgid "Order {{ order.number }} is {{ order.status }}"
 msgstr ""
 
-#. translators: %recipients%: email addresses; keep the placeholder as it is.
+#. translators: {{ config.recipients }}: email addresses; keep {{ … }} as it is.
 #: includes/Workflow/Actions/SendInternalEmail.php:66
-msgid "Send to %recipients%"
+msgid "Send to {{ config.recipients }}"
 msgstr ""
 
 #: includes/Workflow/Actions/SendInternalEmail.php:91
@@ -740,11 +732,10 @@ msgstr ""
 msgid "Field name"
 msgstr ""
 
-#. translators: %s: step name
+#. translators: {{ step }}: step name; keep {{ … }} as it is.
 #: includes/Workflow/Actions/UpdateCustomerMeta.php:47
 #: includes/Workflow/Actions/UpdateOrderMeta.php:52
-#, php-format
-msgid "%s needs a field name."
+msgid "{{ step }} needs a field name."
 msgstr ""
 
 #: includes/Workflow/Actions/UpdateCustomerMeta.php:49
@@ -753,10 +744,10 @@ msgstr ""
 msgid "Value"
 msgstr ""
 
-#. translators: %key%: custom field name, %value%: its value; keep the placeholders as they are.
+#. translators: {{ config.key }}: custom field name, {{ config.value }}: its value; keep {{ … }} as it is.
 #: includes/Workflow/Actions/UpdateCustomerMeta.php:55
 #: includes/Workflow/Actions/UpdateOrderMeta.php:60
-msgid "Set %key% to %value%"
+msgid "Set {{ config.key }} to {{ config.value }}"
 msgstr ""
 
 #: includes/Workflow/Actions/UpdateCustomerMeta.php:65
@@ -816,10 +807,9 @@ msgstr ""
 msgid "Then the workflow continues with the next step."
 msgstr ""
 
-#. translators: %delay%: how long, e.g. "7 days"; keep the placeholder as it is.
+#. translators: {{ config.delay }}: how long, e.g. "7 days"; keep {{ … }} as it is.
 #: includes/Workflow/Actions/Wait.php:71
-#, php-format
-msgid "Wait %delay%"
+msgid "Wait {{ config.delay }}"
 msgstr ""
 
 #: includes/Workflow/Actions/Wait.php:81
@@ -878,9 +868,9 @@ msgstr ""
 msgid "Leave empty for any day."
 msgstr ""
 
-#. translators: %time%: a time, e.g. "9:15 AM", %weekdays%: days, e.g. "Mon–Fri"; keep the placeholders as they are.
+#. translators: {{ config.time }}: a time, e.g. "9:15 AM", {{ config.weekdays }}: days, e.g. "Mon–Fri"; keep {{ … }} as it is.
 #: includes/Workflow/Actions/WaitUntil.php:57
-msgid "Until %time% · %weekdays%"
+msgid "Until {{ config.time }} · {{ config.weekdays }}"
 msgstr ""
 
 #: includes/Workflow/Actions/WaitUntil.php:63
@@ -953,7 +943,7 @@ msgid "This condition reads the trigger’s values, but the trigger’s plugin i
 msgstr ""
 
 #: includes/Workflow/Core/Data/DataItem.php:128
-#: includes/Workflow/Core/Data/Template.php:280
+#: includes/Workflow/Core/Data/Template.php:324
 #: includes/Workflow/Core/Steps/Condition.php:23
 #: assets/dist/admin-page/main.js:104
 #: assets/dist/admin-page/main.js:124
@@ -962,7 +952,7 @@ msgid "Yes"
 msgstr ""
 
 #: includes/Workflow/Core/Data/DataItem.php:128
-#: includes/Workflow/Core/Data/Template.php:280
+#: includes/Workflow/Core/Data/Template.php:324
 #: includes/Workflow/Core/Steps/Condition.php:24
 #: assets/dist/admin-page/main.js:124
 #: assets/dist/admin-page/main.js:165
@@ -1954,13 +1944,13 @@ msgstr ""
 msgid "This step’s editor couldn’t be opened. Details are in Settings › Health check."
 msgstr ""
 
-#: includes/Workflow/Extension/ExtensionEmailAction.php:106
+#: includes/Workflow/Extension/ExtensionEmailAction.php:102
 msgid "Couldn’t build the email."
 msgstr ""
 
-#. translators: %to%: email address; keep the placeholder as it is.
-#: includes/Workflow/Extension/ExtensionEmailAction.php:130
-msgid "Sent to %to%"
+#. translators: {{ output.to }}: email address; keep {{ … }} as it is.
+#: includes/Workflow/Extension/ExtensionEmailAction.php:126
+msgid "Sent to {{ output.to }}"
 msgstr ""
 
 #: includes/Workflow/Extension/ExtensionStep.php:90
@@ -2041,10 +2031,9 @@ msgstr ""
 msgid "Days without an order"
 msgstr ""
 
-#. translators: %days%: number of days; keep the placeholder as it is.
+#. translators: {{ config.days }}: number of days; keep {{ … }} as it is.
 #: includes/Workflow/Triggers/CustomerInactive.php:49
-#, php-format
-msgid "When %days% days without an order"
+msgid "When {{ config.days }} days without an order"
 msgstr ""
 
 #: includes/Workflow/Triggers/CustomerOrderCountReaches.php:18
@@ -2063,10 +2052,9 @@ msgstr ""
 msgid "Starts once per customer, on the paid order that reaches this number. Guests count by billing email."
 msgstr ""
 
-#. translators: %count%: number of paid orders; keep the placeholder as it is.
+#. translators: {{ config.count }}: number of paid orders; keep {{ … }} as it is.
 #: includes/Workflow/Triggers/CustomerOrderCountReaches.php:41
-#, php-format
-msgid "When a customer reaches %count% paid orders"
+msgid "When a customer reaches {{ config.count }} paid orders"
 msgstr ""
 
 #: includes/Workflow/Triggers/CustomerTotalSpendReaches.php:18
@@ -2081,9 +2069,9 @@ msgstr ""
 msgid "Paid orders minus refunds. Orders in other currencies are added as they are, without converting."
 msgstr ""
 
-#. translators: %amount%: an amount of money; keep the placeholder as it is.
+#. translators: {{ config.amount }}: an amount of money; keep {{ … }} as it is.
 #: includes/Workflow/Triggers/CustomerTotalSpendReaches.php:40
-msgid "When a customer’s total spent reaches %amount%"
+msgid "When a customer’s total spent reaches {{ config.amount }}"
 msgstr ""
 
 #: includes/Workflow/Triggers/OrderCreated.php:19
@@ -2126,9 +2114,9 @@ msgstr ""
 msgid "Keeps a workflow from starting itself when a step adds a note or changes the order status."
 msgstr ""
 
-#. translators: %note_type%: which notes count, e.g. "Private note" or "Any note"; keep the placeholder as it is.
+#. translators: {{ config.note_type }}: which notes count, e.g. "Private note" or "Any note"; keep {{ … }} as it is.
 #: includes/Workflow/Triggers/OrderNoteAdded.php:44
-msgid "%note_type% added to an order"
+msgid "{{ config.note_type }} added to an order"
 msgstr ""
 
 #: includes/Workflow/Triggers/OrderNoteAdded.php:114
@@ -2196,10 +2184,9 @@ msgstr ""
 msgid "Skips orders created by admin, REST API, import tools, and other non-checkout sources."
 msgstr ""
 
-#. translators: %from% and %to%: order statuses; keep the placeholders as they are.
+#. translators: {{ config.from }} and {{ config.to }}: order statuses; keep {{ … }} as it is.
 #: includes/Workflow/Triggers/OrderStatusChanged.php:46
-#, php-format
-msgid "%from% → %to%"
+msgid "{{ config.from }} → {{ config.to }}"
 msgstr ""
 
 #: includes/Workflow/Triggers/ReviewPosted.php:22

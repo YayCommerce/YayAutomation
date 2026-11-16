@@ -56,22 +56,24 @@ describe('stepResult', () => {
     ).toBe('Set to Completed');
   });
 
-  it('fills another plugin’s result line from the step’s output, then its config', () => {
+  it('fills another plugin’s result line from the step’s output and config', () => {
     const steps = window.yayMatikMeta.automation.steps;
     const stepType = 'acme_add_points' as Row['stepType'];
     steps[stepType!] = {
       ...steps.add_order_note!,
       plugin: 'acme',
-      summary: 'Add %points%',
-      result: 'New balance: %balance% (+%points%) in %tier%',
+      summary: 'Add {{ config.points }}',
+      result: 'New balance: {{ output.balance }} (+{{ config.points }}) in {{ config.tier }} {{ order.total }}',
       fields: [{ key: 'tier', type: 'select', label: 'Tier', options: [{ value: 'gold_2', label: 'Gold' }] }],
     };
     try {
       // A select's value reads as its label.
       expect(stepResult(row({ stepType, input: { points: 10, tier: 'gold_2' }, output: { balance: 35 } }), run)).toBe(
-        'New balance: 35 (+10) in Gold',
+        'New balance: 35 (+10) in Gold {{ order.total }}',
       );
-      expect(stepResult(row({ stepType, output: { balance: [1, 2] } }), run)).toBe('New balance: 1, 2 (+) in ');
+      expect(stepResult(row({ stepType, output: { balance: [1, 2] } }), run)).toBe(
+        'New balance: 1, 2 (+) in  {{ order.total }}',
+      );
       steps[stepType!] = { ...steps[stepType!]!, result: '' };
       // No result line: the card summary (none here: the step isn't in this test's registry).
       expect(stepResult(row({ stepType, input: { points: 10 } }), run)).toBe('');

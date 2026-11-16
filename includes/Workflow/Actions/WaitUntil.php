@@ -53,8 +53,8 @@ class WaitUntil extends Action {
     }
 
     public function summary(): string {
-        /* translators: %time%: a time, e.g. "9:15 AM", %weekdays%: days, e.g. "Mon–Fri"; keep the placeholders as they are. */
-        return __( 'Until %time% · %weekdays%', 'yaymatik' );
+        /* translators: {{ config.time }}: a time, e.g. "9:15 AM", {{ config.weekdays }}: days, e.g. "Mon–Fri"; keep {{ … }} as it is. */
+        return __( 'Until {{ config.time }} · {{ config.weekdays }}', 'yaymatik' );
     }
 
     public function outputs(): array {

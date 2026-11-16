@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-import { parseTemplate, templateErrors, templatePaths } from './template';
+import { fillTemplate, parseTemplate, templateErrors, templatePaths } from './template';
 
 /** Shared with PHP `TemplateTest`: same text, same errors and paths. */
 const { cases } = JSON.parse(
@@ -27,6 +27,13 @@ describe('template parser', () => {
       },
       { type: 'text', text: '!' },
     ]);
+  });
+
+  it('fills placeholders by name, never parsing a value again, and keeps unknown ones', () => {
+    const values: Record<string, string> = { step: 'Note {{ step }}', 'config.to': 'a@x.com' };
+    expect(fillTemplate('{{ step }} to {{config.to}}, {{ config.to | upper }} {{ x.y }}', (name) => values[name])).toBe(
+      'Note {{ step }} to a@x.com, {{ config.to | upper }} {{ x.y }}',
+    );
   });
 
   it('reads C escapes in quoted arguments, like PHP stripcslashes()', () => {

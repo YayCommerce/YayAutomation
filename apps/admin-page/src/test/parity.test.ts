@@ -8,7 +8,6 @@ import { resolve } from 'node:path';
 import type { StepId, WorkflowPlugin } from '@yaymatik/types';
 import { icons } from 'lucide-react';
 import { describe, expect, it } from 'vitest';
-import { sprintf } from '@wordpress/i18n';
 
 import type { DataFieldType } from '@/types/localize';
 import { messages } from '../routes/workflows/model/messages';
@@ -157,7 +156,7 @@ describe('PHP ↔ TS parity', () => {
         );
         const config = { ...steps[id].defaults(), ...filled, [field.key]: '' };
         expect(steps[id].firstError(config), `${id}.${field.key}`).toBe(
-          sprintf(field.requiredMessage as '%s', meta.label),
+          String(field.requiredMessage).replace('{{ step }}', meta.label),
         );
         checked++;
       }

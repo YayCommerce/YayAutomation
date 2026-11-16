@@ -20,7 +20,7 @@ const fields: StepFieldMeta[] = [
     type: 'textarea',
     label: 'Note',
     required: true,
-    requiredMessage: '%s needs a note.',
+    requiredMessage: '{{ step }} needs a note.',
     variables: true,
     default: '',
   },

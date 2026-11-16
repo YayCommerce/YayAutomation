@@ -28,7 +28,7 @@ export interface StepSpec<TConfig extends Config> {
   uses?: (config: TConfig) => string[];
   /** Checks that need the workflow's trigger (its step id). Mirrors the PHP step's `context_error()`. */
   contextIssue?: (config: TConfig, trigger: string) => { message: string; field?: string } | null;
-  /** Catalog summary placeholders a field can't write on its own (e.g. a condition's `%rules%`). */
+  /** Catalog summary placeholders a field can't write on its own (e.g. a condition's `{{ config.rules }}`). */
   summaryValues?: SummaryValues<TConfig>;
   /** A custom form, for what catalog fields can't draw. */
   Form?: ComponentType<StepFormProps<TConfig>>;

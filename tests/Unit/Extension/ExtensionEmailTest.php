@@ -258,7 +258,7 @@ final class ExtensionEmailTest extends TestCase {
         $this->assertSame( 'customer', $action->email_audience() );
         $this->assertSame( [ 'customer' ], $action->requires(), '{{ customer.email }} needs a customer' );
         $this->assertSame( [ 'to' ], array_keys( $action->outputs() ) );
-        $this->assertSame( 'Sent to %to%', $action->client_meta()['result'] );
+        $this->assertSame( 'Sent to {{ output.to }}', $action->client_meta()['result'] );
         $this->assertSame( 'Mailed', $this->action( [], [], [ 'result' => 'Mailed' ] )->client_meta()['result'] );
     }
 }

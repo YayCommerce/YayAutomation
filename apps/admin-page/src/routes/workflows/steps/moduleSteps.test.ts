@@ -11,7 +11,7 @@ const moduleStep = {
   label: 'Send example email',
   description: 'Send an email built with an example template.',
   icon: 'mail',
-  summary: 'Send %template%',
+  summary: 'Send {{ config.template }}',
   onError: 'stop',
   fields: [
     {
@@ -30,7 +30,7 @@ const emailStep = {
   ...moduleStep,
   requires: [],
   email: 'customer',
-  result: 'Sent to %to%',
+  result: 'Sent to {{ output.to }}',
 };
 
 async function loadSteps() {
