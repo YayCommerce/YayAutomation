@@ -120,7 +120,7 @@ Trigger: fires_for_own_runs( config )   whether its workflow reacts to events it
 - **Forms.**
   - No custom form → the generic `StepForm` draws one from the fields. A simple step from a Yay plugin needs PHP only.
   - Core step with a complex form (Condition rules) → `defineStep( { id, Form } )`, imported directly. No global call, fully typed.
-  - Plugin step with a custom form → an iframe editor through the public Extension API ([extension-api.md](extension-api.md) §5.6, 1.1): the catalog's `editor` (`field`, `button`) puts a button and the note "Design changes apply to live emails at once." under the drawn form (`steps/core/fields/EditorFrame.tsx`). `POST /workflows/{id}/editor` builds the plugin's URL and refuses another origin than `admin_url()`'s; the modal adds `yaymatik_embed=1&yaymatik_channel=<random>` and talks postMessage v1 (`useEditorChannel`: exact origin, iframe window, channel and version; posts to this origin only). A `save` writes the field and the form starts again from the new config.
+  - Plugin step with a custom form → an iframe editor through the public Extension API ([extension-api.md](extension-api.md) §5.6, 1.0): the catalog's `editor` (`field`, `button`) puts a button and the note "Design changes apply to live emails at once." under the drawn form (`steps/core/fields/EditorFrame.tsx`). `POST /workflows/{id}/editor` builds the plugin's URL and refuses another origin than `admin_url()`'s; the modal adds `yaymatik_embed=1&yaymatik_channel=<random>` and talks postMessage v1 (`useEditorChannel`: exact origin, iframe window, channel and version; posts to this origin only). A `save` writes the field and the form starts again from the new config.
   - A custom `Form` gets `{ config, onChange }` (`StepFormProps`).
   - Beside any form, `defineStep` takes `Footer` (under the form, with its latest config, e.g. Send email's unsubscribe note) and `Actions` (panel header, e.g. Send email's Preview / Send test). Send email and Generate coupon use the generic form plus these.
 - **Icons (L5).** A step's `icon()` is a name from a fixed list in core (lucide icons, about 40), never an SVG. The editor draws it in the step's tile, tinted by kind (trigger, condition, action), on the canvas, in the picker, the panel header, template cards and the preview. A missing icon is added to core's list, not shipped by the plugin.
@@ -168,7 +168,7 @@ Our own small template module. **No Liquid or other template library, now or lat
   - Other plugins register on `yaymatik_register` (fired once, when the registry is first built) and start their triggers with `do_action( 'yaymatik_fire', $trigger_id, $payload )`, handled by `Workflow\Extension\Fire` through `Dispatcher::collect()`. The filter `yaymatik_modules` (module classes, before `init`) is internal, for Pro. A taken id (module, step, data item) keeps its first owner and the second claim is a diagnostic.
   - Filters for extending core's steps and data: `yaymatik_data_item_{id}_fields` (a data item's fields, `DataItem::fields()`), `yaymatik_trigger_provides` (the data items a trigger provides, `Trigger::resolved_provides()`), `yaymatik_trigger_refs` (a trigger's scope refs, `Trigger::resolved_refs()`; a null native ref stays null).
   - Action `yaymatik_cart_abandoned( $cart_id, $kind )`: a cart was abandoned, on every abandon; `$kind` is `cart_abandoned` or `checkout_abandoned`.
-- **Frozen by Extension API v1 (1.1), see [extension-api.md](extension-api.md).** Other plugins integrate through `yaymatik_register` and its registrar; the filters and actions above stay internal (Pro uses them) or experimental, as its §11 lists. Classes under `YayMatik\Workflow\` are internal, including the base classes (`Step`, `Module`, `DataItem`, marked `@internal`).
+- **Frozen by Extension API v1 (1.0, leader's decision, Nov 16), see [extension-api.md](extension-api.md).** Other plugins integrate through `yaymatik_register` and its registrar; the filters and actions above stay internal (Pro uses them) or experimental, as its §11 lists. Classes under `YayMatik\Workflow\` are internal, including the base classes (`Step`, `Module`, `DataItem`, marked `@internal`).
 - **Each Yay plugin owns its steps, templates and data types**, registered into Workflow Core. **YayMatik Pro** owns templates that combine several plugins.
 - **Plugin logo (L5).** Each module gives one logo, a one-colour SVG: a URL, or for core's modules a `data:` URI of an inline SVG, so it loads when assets come from a CDN. The admin app draws it as a CSS mask in the tile's text colour. It marks who provides a step or template (template cards, library sidebar, picker), never what a step does. One per plugin, not per step.
 - **Feature directory:** a static list in core of every known step and template, its plugin, and where to install it. The editor shows "Install X to use this"; the AI uses it to suggest features.
@@ -198,7 +198,7 @@ Built: (a)–(e) in `Core/Runtime/HealthCheck.php`; REST `GET /health/checks` an
 | ID | Topic | Decision |
 |---|---|---|
 | P3 | Waiting runs on Update | Always cancel in v1.0. Revisit after v1.0 |
-| P4 | Public extension API | 1.1, plan 034: [extension-api.md](extension-api.md). The registry and step contract stay internal behind it |
+| P4 | Public extension API | 1.0 (leader's decision, Nov 16), plan 034: [extension-api.md](extension-api.md). The registry and step contract stay internal behind it |
 | P5 | AI provider | Not decided. v1.0 only keeps a provider interface open |
 
 ## §11 Decision log
@@ -225,7 +225,7 @@ All confirmed 2026-10-07, except L5 (2026-10-08), M7 (2026-10-27), M8, M3–M5, 
 | P1 | Runtime free; Free vs Pro by folder | §8 |
 | P2 | Yay plugins own their steps; Pro owns multi-plugin templates; feature directory | §8 |
 | P3 | Cancel waiting runs on Update in v1.0 | §10 |
-| P4 | Public extension API in 1.1 (plan 034) | §10 |
+| P4 | Public extension API in 1.0 (plan 034) | §10 |
 | P5 | AI provider deferred | §10 |
 | P6 | Settings → Health check | §9 |
 | P7 | Tree + container steps; no merge | §7 |
