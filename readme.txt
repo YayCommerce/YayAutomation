@@ -8,30 +8,28 @@ Stable tag: 1.0.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Automate your WooCommerce store's emails and routine work: recover abandoned carts, thank first-time buyers, ask for reviews, win back customers.
+Automate WooCommerce with visual workflows, triggers, conditions, and actions. Build your own or start with ready-made templates.
 
 == Description ==
 
 YayMatik runs workflows for your WooCommerce store. A workflow starts on a store event, such as an order being completed or a cart being left behind, checks its conditions, and then acts: it sends an email, creates a coupon, waits, or updates an order.
 
-Start from one of 18 ready-made templates, or build your own on a visual canvas.
+Start from one of 8 ready-made templates, or build your own on a visual canvas. No limit on the number of workflows.
 
 **Ready-made workflows**
 
-* Abandoned cart: a reminder, or a 3-email series, with or without a coupon.
+* Abandoned cart reminder.
 * Abandoned checkout: a reminder, with or without a coupon.
 * First-order thank-you, with a discount or free shipping on the next order.
-* Cross-sell and upsell emails after an order.
-* Review requests, with an optional reminder.
-* Welcome emails for new accounts.
-* Win-back emails for customers who haven't ordered in 90 days.
+* Review request.
+* Welcome email for new accounts.
 * An alert to your team about large orders.
 
 **Build your own**
 
-* Triggers: order created, paid, status changed, refunded, note added; cart or checkout abandoned; account created; review posted; customer inactive; order count or total spend reached.
-* Conditions on the order, the customer, the cart and its products, with groups and relative dates.
-* Actions: send an email to the customer in your store's WooCommerce email style, email your team, generate a personal coupon, wait for a time or until a date, add an order note, change the order status, update order or customer custom fields, change a customer's role, resend a WooCommerce email.
+* Triggers: order created, paid, status changed, refunded, note added; cart or checkout abandoned; account created; review posted.
+* Conditions on the order, the customer, the cart and its products, with fixed values and relative dates, matching all or any.
+* Actions: send an email to the customer in your store's WooCommerce email style, email your team, generate a personal coupon, wait, add an order note, change the order status.
 
 **Run history**
 

@@ -87,8 +87,8 @@ Check the field ids against `DataItems/*::define()` and the template ids against
 | ✅ **CP4** (b727c33) | D11, D12. | Lite library 8, Pro 18; core list has tiers; CoreStepsTest green in both |
 | ✅ **CP5** (2f05d6d) | D7. | Lite shows 2 retention fields, no abandon field; values stored on Pro keep working on Lite (test) |
 | ✅ **CP6** (823a220) | D5, D6. | `check-edition.sh`: on Pro create 4 workflows (Pro trigger, Pro action, Pro condition, Pro merge tag) + 1 waiting run; switch to Lite: none starts, none activates, the waiting run stops with the reason, saving keeps config; back to Pro: all work |
-| ✅ **CP7** (see below) | D13. | Teaser shows in Lite only, opens the upgrade URL |
-| CP8 | readme.txt features = Lite; docs; mark `yaymatik_modules`, `yaymatik_trigger_refs`, `yaymatik_trigger_provides`, `yaymatik_data_item_{id}_fields` `@internal` in their docblocks; fix `docs/workflow-core-decisions.md` (~line 345: other plugins use `yaymatik_register`, not `yaymatik_modules`); `check-all` both editions; e2e; Plugin Check on the Lite zip; `.pot` last. | All green; PR text with results and browser steps |
+| ✅ **CP7** (55c6c56) | D13. | Teaser shows in Lite only, opens the upgrade URL |
+| ✅ **CP8** (see below) | readme.txt features = Lite; docs; mark `yaymatik_modules`, `yaymatik_trigger_refs`, `yaymatik_trigger_provides`, `yaymatik_data_item_{id}_fields` `@internal` in their docblocks; fix `docs/workflow-core-decisions.md` (~line 345: other plugins use `yaymatik_register`, not `yaymatik_modules`); `check-all` both editions; e2e; Plugin Check on the Lite zip; `.pot` last. | All green; PR text with results and browser steps |
 
 ## Rules for Claude Code
 
@@ -120,4 +120,6 @@ One-run mode, commit locally per CP. No push, no `gh pr create`, no `git stash`,
 - CP6: besides save, the read path keeps Pro config too: `WorkflowStore::decode_graph()` sanitized every stored config on read, which turned a group into an empty rule in Lite. A step that needs Pro is now read as stored. Save keeps the stored config only when the stored one needs Pro, so a Pro merge tag typed in Lite is saved as typed (then blocked by `needs_pro`).
 - CP6: the Dispatcher drops workflows needing Pro when it loads the active ones for a trigger; the Executor cancels a run before a step that needs Pro ("Needs YayMatik Pro.", status cancelled). Health: `needs_pro` row; `missing_plugin` leaves those workflows out (they don't start at all).
 - CP7: `@edition/teaser` (Lite: `ProTeaser`, Pro: null); upgrade URL `https://yaycommerce.com/yaymatik/` (one constant, `src/lite/ProTeaser.tsx`; it can't contain `yaymatik-pro`, which the zip check refuses). Shown last in the plugin list of both pickers and under the library grid when no search or filter is set. There is no AI box in the app, so nothing to hide.
+- CP8: the e2e smoke of the free zip (install `release/yaymatik.zip` in place of the checkout, free template, activate, run) gets a 403 on `admin.php?page=yaymatik` in the Playwright browser, also after a fresh login, while a logged-in curl after the same swap gets 200. Stopped after two attempts; not committed (open question in the PR text). `check-edition` and `check-plugin-lifecycle` cover the free edition server-side.
+- CP8: Plugin Check on the free zip: 0 errors, 35 pre-existing warnings.
 

@@ -23,6 +23,7 @@ defined( 'ABSPATH' ) || exit;
  */
 final class ModuleRegistry {
 
+    /** @internal YayMatik Pro's filter, not the Extension API: other plugins use `yaymatik_register`. */
     public const HOOK = 'yaymatik_modules';
 
     /** @var Module[]|null */
