@@ -52,6 +52,11 @@ class Criteria extends Condition {
         ];
     }
 
+    /** @return string[] What its rules may do besides a flat list of fixed values, as `ProCatalog::FEATURES` names them. */
+    public function features(): array {
+        return [];
+    }
+
     public function summary(): string {
         return '{{ config.rules }}';
     }

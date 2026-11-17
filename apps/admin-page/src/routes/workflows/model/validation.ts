@@ -14,6 +14,7 @@ import {
 import { ancestors } from '../steps/core/variables';
 import { descendantsOf, triggerOf } from './graph';
 import { messages } from './messages';
+import { needsPro } from './proUsage';
 
 /**
  * Everything that blocks Activate or Update (saves allow them). Same rules and codes as PHP
@@ -26,10 +27,12 @@ export function validateWorkflow({ name, graph }: Pick<Workflow, 'name' | 'graph
   if (!name.replace(/<[^>]*>/g, '').trim()) {
     issues.push({ code: 'name_required', message: messages.nameRequired });
   }
-  // A step of a plugin that's off: the workflow keeps it, but can't be turned on.
+  // A step of a plugin that's off, or one that needs YayMatik Pro: the workflow keeps it, but can't be turned on.
+  const pro = new Set(graph.nodes.filter(needsPro).map((node) => node.id));
   for (const node of graph.nodes) {
     const plugin = stepOf(node.data)?.inactive;
-    if (plugin)
+    if (pro.has(node.id)) issues.push({ code: 'needs_pro', message: messages.needsPro, nodeId: node.id });
+    else if (plugin)
       issues.push({ code: 'missing_plugin', message: sprintf(messages.missingPlugin, plugin), nodeId: node.id });
   }
   const trigger = graph.nodes.find((node) => node.kind === 'trigger');
@@ -57,6 +60,8 @@ export function validateWorkflow({ name, graph }: Pick<Workflow, 'name' | 'graph
   // Data each step can read. Unknown until a trigger is chosen; no_trigger covers that case.
   const availableAt = availableData(graph);
   for (const node of graph.nodes) {
+    // Its settings are YayMatik Pro's to check.
+    if (pro.has(node.id)) continue;
     const issue = stepIssue(node, availableAt?.(node.id) ?? null, graph, new Set(ancestors(graph, node.id)));
     if (issue) issues.push({ ...issue, nodeId: node.id });
   }

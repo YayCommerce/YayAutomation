@@ -20,6 +20,10 @@ class CriteriaPro extends Criteria {
     /** Types whose value may be another variable. Option lists keep their own options. */
     private const VARIABLE_VALUE_TYPES = [ DataItem::TYPE_NUMBER, DataItem::TYPE_STRING, DataItem::TYPE_DATE ];
 
+    public function features(): array {
+        return [ 'groups', 'variables' ];
+    }
+
     /**
      * Custom field names the config's rules on a meta field, e.g. `customer.meta`, read.
      *

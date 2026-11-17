@@ -5729,6 +5729,7 @@
             "noBlock": "Choose an action.",
             "missingPlugin": "This workflow uses %1$s, which isn’t active. Activate %1$s to turn the workflow on.",
             "deleteActive": "Deactivate this workflow before you delete it.",
+            "needsPro": "Needs YayMatik Pro. Activate YayMatik Pro to turn the workflow on.",
             "missingData": "%s data isn’t available at this step.",
             "mayRefire": "This step can set off this workflow’s own trigger. The workflow won’t start again from it.",
             "unknownVariable": "%s isn’t an available variable.",
@@ -5756,6 +5757,11 @@
             "ruleAmount": "Enter a whole number of 1 or more.",
             "ruleKeyRequired": "Enter the custom field name.",
             "ruleMetaKey": "This custom field is protected. Choose another one."
+        },
+        "proMissing": {
+            "steps": [],
+            "fields": [],
+            "features": []
         },
         "templates": [],
         "email": {

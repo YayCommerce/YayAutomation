@@ -1,6 +1,7 @@
 <?php
 namespace YayMatik\Workflow\Core\Runtime;
 
+use YayMatik\Workflow\Core\Definition\ProUsage;
 use YayMatik\Workflow\Core\Storage\RunStore;
 use YayMatik\Workflow\Core\Storage\WorkflowStore;
 use YayMatik\Workflow\Extension\Diagnostics;
@@ -38,9 +39,10 @@ final class HealthCheck {
 
     /** @return array[] Every check: `id`, `status` (ok|problem|info), `count`, `runIds`, `fix` (null unless a problem), `capped` (count is a lower bound). */
     public static function run(): array {
-        $now   = time();
-        $runs  = self::runs( $now );
-        $daily = [];
+        $now       = time();
+        $runs      = self::runs( $now );
+        $workflows = WorkflowStore::all();
+        $daily     = [];
         foreach ( DailyJobs::all() as $check => $job ) {
             $daily[] = self::result( $check, self::job( $job['hook'], $job['late'], $now ) );
         }
@@ -52,7 +54,7 @@ final class HealthCheck {
                 self::result( 'cleanup_job', self::job( Cleanup::HOOK, self::CLEANUP_LATE, $now ) ),
             ],
             $daily,
-            [ self::missing_plugin( WorkflowStore::all() ) ]
+            [ self::missing_plugin( $workflows ), self::needs_pro( $workflows ) ]
         );
     }
 
@@ -71,7 +73,8 @@ final class HealthCheck {
         $ids     = [];
         $plugins = [];
         foreach ( $workflows as $workflow ) {
-            if ( 'active' !== $workflow['status'] ) {
+            // One that needs YayMatik Pro doesn't start at all: `needs_pro` lists it.
+            if ( 'active' !== $workflow['status'] || ProUsage::of( $workflow['graph'] ?? [] ) ) {
                 continue;
             }
             foreach ( $workflow['graph']['nodes'] ?? [] as $node ) {
@@ -98,6 +101,32 @@ final class HealthCheck {
                 $ids
             ),
             'plugins'   => array_keys( $plugins ),
+        ];
+    }
+
+    /**
+     * Active workflows that use YayMatik Pro while it isn't here: they don't start. No fix.
+     *
+     * @param array[] $workflows `WorkflowStore::all()`.
+     * @return array The check, with `workflows` (`id`, `name`).
+     */
+    public static function needs_pro( array $workflows ): array {
+        $found = array_filter( $workflows, fn( array $workflow ) => 'active' === $workflow['status'] && ProUsage::of( $workflow['graph'] ?? [] ) );
+        return [
+            'id'        => 'needs_pro',
+            'status'    => $found ? 'problem' : 'ok',
+            'count'     => count( $found ),
+            'runIds'    => [],
+            'fix'       => null,
+            'workflows' => array_values(
+                array_map(
+                    fn( array $workflow ) => [
+                        'id'   => (string) $workflow['id'],
+                        'name' => (string) ( $workflow['name'] ?? '' ),
+                    ],
+                    $found
+                )
+            ),
         ];
     }
 

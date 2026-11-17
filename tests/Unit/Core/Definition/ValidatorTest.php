@@ -947,6 +947,7 @@ final class ValidatorTest extends TestCase {
             ],
             [ self::edge( 't', 'note' ) ]
         );
-        $this->assertSame( Messages::get( 'unknownVariable', '{{ order.meta }}' ), $errors[0]['message'] );
+        // In the free edition the field is YayMatik Pro's.
+        $this->assertSame( YAYMATIK_TEST_LITE ? Messages::get( 'needsPro' ) : Messages::get( 'unknownVariable', '{{ order.meta }}' ), $errors[0]['message'] );
     }
 }

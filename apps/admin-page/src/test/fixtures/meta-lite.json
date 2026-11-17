@@ -834,7 +834,109 @@
             "customer": "Customers",
             "review": "Reviews"
         },
-        "inactiveSteps": [],
+        "inactiveSteps": {
+            "customer_inactive": {
+                "module": "woocommerce",
+                "plugin": "YayMatik Pro",
+                "kind": "trigger",
+                "label": "Customer inactive",
+                "outputs": [],
+                "facts": []
+            },
+            "customer_order_count_reaches": {
+                "module": "woocommerce",
+                "plugin": "YayMatik Pro",
+                "kind": "trigger",
+                "label": "Customer order count reaches",
+                "outputs": [],
+                "facts": []
+            },
+            "customer_total_spend_reaches": {
+                "module": "woocommerce",
+                "plugin": "YayMatik Pro",
+                "kind": "trigger",
+                "label": "Customer total spend reaches",
+                "outputs": [],
+                "facts": []
+            },
+            "wait_until": {
+                "module": "yaymatik",
+                "plugin": "YayMatik Pro",
+                "kind": "action",
+                "label": "Wait until",
+                "outputs": [
+                    {
+                        "key": "until",
+                        "label": "Waited until"
+                    }
+                ],
+                "facts": []
+            },
+            "resend_wc_email": {
+                "module": "woocommerce",
+                "plugin": "YayMatik Pro",
+                "kind": "action",
+                "label": "Resend WooCommerce email",
+                "outputs": [
+                    {
+                        "key": "email",
+                        "label": "Email"
+                    }
+                ],
+                "facts": []
+            },
+            "update_order_meta": {
+                "module": "woocommerce",
+                "plugin": "YayMatik Pro",
+                "kind": "action",
+                "label": "Update order custom field",
+                "outputs": [
+                    {
+                        "key": "key",
+                        "label": "Field name"
+                    },
+                    {
+                        "key": "changed",
+                        "label": "Value changed"
+                    }
+                ],
+                "facts": []
+            },
+            "update_customer_meta": {
+                "module": "woocommerce",
+                "plugin": "YayMatik Pro",
+                "kind": "action",
+                "label": "Update customer custom field",
+                "outputs": [
+                    {
+                        "key": "key",
+                        "label": "Field name"
+                    },
+                    {
+                        "key": "changed",
+                        "label": "Value changed"
+                    }
+                ],
+                "facts": []
+            },
+            "change_customer_role": {
+                "module": "woocommerce",
+                "plugin": "YayMatik Pro",
+                "kind": "action",
+                "label": "Change customer role",
+                "outputs": [
+                    {
+                        "key": "from",
+                        "label": "Roles before"
+                    },
+                    {
+                        "key": "to",
+                        "label": "Roles after"
+                    }
+                ],
+                "facts": []
+            }
+        },
         "data": [
             {
                 "id": "site",
@@ -4434,6 +4536,7 @@
             "noBlock": "Choose an action.",
             "missingPlugin": "This workflow uses %1$s, which isn’t active. Activate %1$s to turn the workflow on.",
             "deleteActive": "Deactivate this workflow before you delete it.",
+            "needsPro": "Needs YayMatik Pro. Activate YayMatik Pro to turn the workflow on.",
             "missingData": "%s data isn’t available at this step.",
             "mayRefire": "This step can set off this workflow’s own trigger. The workflow won’t start again from it.",
             "unknownVariable": "%s isn’t an available variable.",
@@ -4461,6 +4564,41 @@
             "ruleAmount": "Enter a whole number of 1 or more.",
             "ruleKeyRequired": "Enter the custom field name.",
             "ruleMetaKey": "This custom field is protected. Choose another one."
+        },
+        "proMissing": {
+            "steps": [
+                "customer_inactive",
+                "customer_order_count_reaches",
+                "customer_total_spend_reaches",
+                "wait_until",
+                "resend_wc_email",
+                "update_order_meta",
+                "update_customer_meta",
+                "change_customer_role"
+            ],
+            "fields": [
+                "customer.paid_order_count",
+                "customer.total_spent",
+                "customer.last_order_date",
+                "customer.registered_date",
+                "customer.role",
+                "customer.purchased_product_ids",
+                "customer.meta",
+                "order.discount_total",
+                "order.shipping_total",
+                "order.refunded_total",
+                "order.created_via",
+                "order.currency",
+                "order.has_cross_sells",
+                "order.has_upsells",
+                "order.cross_sell_products",
+                "order.upsell_products",
+                "order.meta"
+            ],
+            "features": [
+                "groups",
+                "variables"
+            ]
         },
         "templates": [],
         "email": {

@@ -30,6 +30,7 @@ const ORDER: HealthCheckId[] = [
   'cleanup_job',
   ...(Object.keys(healthJobs) as HealthCheckId[]),
   'missing_plugin',
+  'needs_pro',
   'jobs_late',
 ];
 
@@ -114,6 +115,8 @@ export function HealthPanel() {
                   <LateJobsRow check={check} />
                 ) : check.id === 'missing_plugin' ? (
                   <MissingPluginRow check={check} />
+                ) : check.id === 'needs_pro' ? (
+                  <NeedsProRow check={check} />
                 ) : (
                   <FixRow check={check} id={check.id} />
                 )}
@@ -348,6 +351,30 @@ function MissingPluginRow({ check }: { check: HealthCheck }) {
           <a href={`${window.yayMatikMeta.wp.adminUrl}plugins.php`} className="text-link font-medium hover:underline">
             {__('Plugins', 'yaymatik')}
           </a>
+        </span>
+      }
+    />
+  );
+}
+
+/** Active workflows that use YayMatik Pro while it isn't here: they don't start. */
+function NeedsProRow({ check }: { check: HealthCheck }) {
+  return (
+    <Row
+      icon={<TriangleAlert className="text-warning-accent" />}
+      title={sprintf(
+        /* translators: %d: number of workflows */
+        _n('Active workflows need YayMatik Pro: %d', 'Active workflows need YayMatik Pro: %d', check.count, 'yaymatik'),
+        check.count,
+      )}
+      help={__('They don’t start until YayMatik Pro is active. Nothing in them was changed.', 'yaymatik')}
+      extra={
+        <span className="flex flex-wrap gap-x-3 gap-y-1 text-sm">
+          {(check.workflows ?? []).map(({ id, name }) => (
+            <Link key={id} to={`/workflows/${id}`} className="text-link font-medium hover:underline">
+              {name || /* translators: %s: workflow id */ sprintf(__('Workflow #%s', 'yaymatik'), id)}
+            </Link>
+          ))}
         </span>
       }
     />

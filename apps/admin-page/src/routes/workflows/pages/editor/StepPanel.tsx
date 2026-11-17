@@ -20,6 +20,7 @@ import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { openStepEditor, previewEmail, sendTestEmail } from '../../api/workflow.api';
 import { updateNodeConfig } from '../../model/graph';
+import { needsPro } from '../../model/proUsage';
 import { availableData, sameItems } from '../../model/validation';
 import { kindMeta } from '../../shared/canvas/NodeCardView';
 import { StepEyebrow } from '../../shared/ui/StepTile';
@@ -310,7 +311,14 @@ export function StepPanel({
               {warning}
             </WarningBadge>
           )}
-          {stepDef.inactive ? (
+          {needsPro(node) ? (
+            <p className="text-muted-foreground text-sm">
+              {__(
+                'Needs YayMatik Pro. You can save this workflow as it is, but it can’t be turned on, and doesn’t start, until YayMatik Pro is active.',
+                'yaymatik',
+              )}
+            </p>
+          ) : stepDef.inactive ? (
             <p className="text-muted-foreground text-sm">
               {sprintf(
                 /* translators: %s: plugin name, e.g. "YayMail" */
