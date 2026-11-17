@@ -1,3 +1,4 @@
+import { steps as editionSteps } from '@edition';
 import type { StepId } from '@yaymatik/types';
 
 import { addOrderNoteStep } from './actions/add-order-note';
@@ -57,6 +58,7 @@ const coreSteps = [
   generateCouponStep,
   waitStep,
   waitUntilStep,
+  ...editionSteps,
 ];
 
 /** Another plugin's steps, from the catalog: an email action gets Preview / Send test, an `editor` its button. */
@@ -74,6 +76,7 @@ const moduleSteps = Object.entries(window.yayMatikMeta.automation.steps)
 
 /**
  * Every step the editor knows. To add a core one: create its folder under triggers/, conditions/ or
- * actions/ (named after the step id in kebab-case), add its PHP class, and list it here.
+ * actions/ (named after the step id in kebab-case), add its PHP class, and list it here; a Pro one goes in
+ * `src/pro/` and its list.
  */
 export const { steps, newNodeData, withStep, stepOf } = createRegistry([...coreSteps, ...moduleSteps], 'condition');

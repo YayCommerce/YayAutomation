@@ -2,10 +2,9 @@
 namespace YayMatik\Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
-use YayMatik\Pro\Workflow\Modules\WoocommerceProModule;
-use YayMatik\Pro\Workflow\Modules\YayMatikProModule;
 use YayMatik\Tests\Support\FakeCondition;
 use YayMatik\Tests\Support\FakeModule;
+use YayMatik\Tests\Support\YayMatikModuleCopy;
 use YayMatik\Workflow\Conditions\Criteria;
 use YayMatik\Workflow\Core\Data\DataRegistry;
 use YayMatik\Workflow\DataItems\SiteData;
@@ -76,14 +75,6 @@ final class ModuleRegistryTest extends TestCase {
         );
     }
 
-    public function test_pro_set_loads_when_its_classes_exist_and_registers_the_same(): void {
-        $this->assertSame( [ YayMatikProModule::class, WoocommerceProModule::class ], ModuleRegistry::classes() );
-
-        $pro = ModuleRegistry::from( ModuleRegistry::classes() );
-        $this->assertSame( [ 'yaymatik', 'woocommerce' ], array_keys( $pro ) );
-        $this->assertSame( ModuleRegistry::plugins( ModuleRegistry::from( self::FREE ) ), ModuleRegistry::plugins( $pro ) );
-    }
-
     public function test_the_registries_read_the_loaded_modules(): void {
         $this->assertSame( ModuleRegistry::plugins( ModuleRegistry::modules() ), ModuleRegistry::plugins( ModuleRegistry::from( ModuleRegistry::classes() ) ) );
         $this->assertEqualsCanonicalizing( self::STEPS, array_keys( StepRegistry::all() ) );
@@ -117,9 +108,9 @@ final class ModuleRegistryTest extends TestCase {
     }
 
     public function test_a_taken_id_keeps_its_first_owner(): void {
-        $modules = ModuleRegistry::from( [ YayMatikModule::class, YayMatikProModule::class, FakeModule::class ] );
+        $modules = ModuleRegistry::from( [ YayMatikModule::class, YayMatikModuleCopy::class, FakeModule::class ] );
         $this->assertInstanceOf( YayMatikModule::class, $modules['yaymatik'] );
-        $this->assertNotInstanceOf( YayMatikProModule::class, $modules['yaymatik'] );
+        $this->assertNotInstanceOf( YayMatikModuleCopy::class, $modules['yaymatik'] );
 
         $steps   = ModuleRegistry::steps( $modules );
         $plugins = ModuleRegistry::plugins( $modules );
@@ -132,13 +123,13 @@ final class ModuleRegistryTest extends TestCase {
 
     public function test_a_second_claim_is_a_diagnostic_of_the_refused_module(): void {
         $GLOBALS['yaymatik_test_options'] = [];
-        $modules                          = ModuleRegistry::from( [ YayMatikModule::class, YayMatikProModule::class, FakeModule::class ] );
+        $modules                          = ModuleRegistry::from( [ YayMatikModule::class, YayMatikModuleCopy::class, FakeModule::class ] );
         ModuleRegistry::steps( $modules );
         ModuleRegistry::data( $modules );
 
         $this->assertEqualsCanonicalizing(
             [
-                YayMatikProModule::class . ' module yaymatik' => 'Module id "yaymatik" is already taken by another module; this one was left out.',
+                YayMatikModuleCopy::class . ' module yaymatik' => 'Module id "yaymatik" is already taken by another module; this one was left out.',
                 'fake step condition' => 'Step id "condition" is already taken by another module; this one was left out.',
                 'fake data item site' => 'Data item id "site" is already taken by another module; this one was left out.',
             ],

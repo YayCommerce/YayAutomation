@@ -28,7 +28,6 @@ final class YayMatik {
         \YayMatik\Engine\API\HealthRoutes::get_instance();
         \YayMatik\Engine\API\SearchRoutes::get_instance();
 
-        $this->register_admin_menu();
         // Orders are only read through WC_Order, so HPOS (custom order tables) is safe.
         add_action( 'before_woocommerce_init', [ $this, 'before_woocommerce_init' ] );
     }
@@ -39,13 +38,13 @@ final class YayMatik {
         }
     }
 
-    private function register_admin_menu() {
-        \YayMatikScoped\YayCommerce\AdminShell\AdminShell::register_plugin(
-            new YayMatikMenuAdapter()
-        );
-    }
-
+    /** YayMatik Pro registers its own menu, with its license, and its modules before anything reads them. */
     public static function initialize() {
+        if ( class_exists( \YayMatik\Pro\Boot::class ) ) {
+            \YayMatik\Pro\Boot::register();
+        } else {
+            \YayMatikScoped\YayCommerce\AdminShell\AdminShell::register_plugin( new YayMatikMenuAdapter() );
+        }
         self::get_instance();
     }
 

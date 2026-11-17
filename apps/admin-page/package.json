@@ -14,6 +14,7 @@
     "preinstall": "npx only-allow pnpm",
     "build": "tsc --noEmit && vite build",
     "test": "vitest run",
+    "test:lite": "YAYMATIK_EDITION=lite vitest run",
     "lint": "eslint . && prettier --check .",
     "lint:fix": "eslint . --fix --ignore-pattern 'src/components/ui/**' && prettier --write .",
     "format": "prettier --write .",

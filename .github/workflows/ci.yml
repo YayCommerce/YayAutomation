@@ -52,8 +52,14 @@ jobs:
       - name: Test (vitest)
         run: pnpm test
 
+      - name: Test the free edition (vitest)
+        run: pnpm test:lite
+
       - name: Test PHP (phpunit)
         run: pnpm test:php
+
+      - name: Test PHP, the free edition (phpunit)
+        run: pnpm test:php:lite
 
       - name: Build
         run: pnpm build

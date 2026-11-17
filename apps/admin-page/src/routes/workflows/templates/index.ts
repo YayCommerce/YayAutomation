@@ -1,3 +1,5 @@
+import { templates as editionTemplates } from '@edition';
+
 import { cartReminder, cartSeries, cartSeriesCoupon } from './abandoned-cart';
 import { checkoutReminder, checkoutReminderCoupon } from './abandoned-checkout';
 import { createTemplateRegistry } from './core/registry';
@@ -37,6 +39,7 @@ export const { templates, findTemplate, versionsOf } = createTemplateRegistry(
     welcomeSeries,
     winBackDiscount,
     winBackFreeShipping,
+    ...editionTemplates,
   ],
   window.yayMatikMeta.automation.templates,
 );

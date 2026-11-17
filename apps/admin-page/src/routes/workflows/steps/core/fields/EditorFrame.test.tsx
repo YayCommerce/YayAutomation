@@ -1,9 +1,9 @@
 import { act } from 'react';
+import meta from '@test-meta';
 import type { StepId } from '@yaymatik/types';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import meta from '../../../../../test/fixtures/meta.json';
 import { editorFooter, EditorFrame, embedUrl } from './EditorFrame';
 import { EditorToolsContext } from './editorTools';
 

@@ -1,10 +1,9 @@
 import { act } from 'react';
+import meta from '@test-meta';
 import type { WorkflowTemplate } from '@yaymatik/types';
 import { createRoot } from 'react-dom/client';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-
-import meta from '../../../test/fixtures/meta.json';
 
 vi.mock('../shared/canvas/ReadOnlyCanvas', () => ({ ReadOnlyCanvas: () => null }));
 vi.mock('../pages/template-preview/useCreateDraft', () => ({

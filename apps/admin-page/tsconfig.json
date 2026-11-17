@@ -20,7 +20,8 @@
 
     "baseUrl": "./",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@test-meta": ["./src/test/fixtures/meta.json"]
     }
   },
   "include": ["src", "types"],
