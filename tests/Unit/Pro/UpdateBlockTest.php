@@ -14,8 +14,8 @@ final class UpdateBlockTest extends TestCase {
     }
 
     public function test_an_update_of_this_plugin_moves_to_no_update(): void {
-        $other                                         = (object) [ 'new_version' => '2.0' ];
-        $value                                         = (object) [
+        $other = (object) [ 'new_version' => '2.0' ];
+        $value = (object) [
             'response'  => [
                 'yaymatik-pro/yaymatik-pro.php' => (object) [ 'new_version' => '3.3.5' ],
                 'other/other.php'               => $other,

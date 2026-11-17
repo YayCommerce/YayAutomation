@@ -24,7 +24,7 @@ final class CoreStepsTest extends TestCase {
     }
 
     public function test_core_steps_and_data_are_unchanged_and_documented(): void {
-        $core = yaymatik_extension_core(
+        $core   = yaymatik_extension_core(
             [
                 'automation' => [
                     'steps'      => Catalog::steps( StepRegistry::all() ),

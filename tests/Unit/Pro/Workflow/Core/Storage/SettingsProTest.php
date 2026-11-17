@@ -87,4 +87,5 @@ final class SettingsProTest extends TestCase {
         $built = new \ReflectionProperty( Settings::class, 'all' );
         $built->setAccessible( true );
         $built->setValue( null, null );
-    }}
+    }
+}

@@ -1,11 +1,11 @@
 <?php
 /**
- * admin-shell's license contracts and LicenseState when vendor-prefixed isn't built (CI).
+ * Admin-shell's license contracts and LicenseState when vendor-prefixed isn't built (CI).
  *
  * @package YayMatik
  */
 
-// phpcs:disable Generic.Files.OneObjectStructurePerFile, Universal.Namespaces.DisallowCurlyBraceSyntax, Universal.Namespaces.OneDeclarationPerFile -- stand-ins for one package.
+// phpcs:disable Squiz.Classes.ClassFileName.NoMatch, Generic.Files.OneObjectStructurePerFile, Universal.Namespaces.DisallowCurlyBraceSyntax, Universal.Namespaces.OneDeclarationPerFile -- stand-ins for one package.
 
 namespace YayMatikScoped\YayCommerce\AdminShell\Contracts {
 

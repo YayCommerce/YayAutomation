@@ -204,4 +204,5 @@ final class CriteriaTest extends TestCase {
             'rules' => [ self::rule( 'order.total', 'equal', '1' ) ],
         ];
         $this->assertSame( $config, ( new Criteria() )->sanitize( $config ) );
-    }}
+    }
+}

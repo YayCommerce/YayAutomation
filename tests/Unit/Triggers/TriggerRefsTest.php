@@ -209,4 +209,5 @@ final class TriggerRefsTest extends TestCase {
             remove_filter( 'yaymatik_trigger_provides', $first );
             remove_filter( 'yaymatik_trigger_provides', $second );
         }
-    }}
+    }
+}

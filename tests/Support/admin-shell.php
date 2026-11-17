@@ -1,13 +1,13 @@
 <?php
 /**
- * admin-shell for the tests. AdminShell only records what registers. The license contracts and LicenseState are the
+ * Admin-shell for the tests. AdminShell only records what registers. The license contracts and LicenseState are the
  * real ones when `./run.sh setup` built vendor-prefixed; CI can't reach that package, so stand-ins take their place
  * there (`STAND_IN`), and tests of the license policy itself are skipped.
  *
  * @package YayMatik
  */
 
-// phpcs:disable Generic.Files.OneObjectStructurePerFile, Universal.Namespaces.DisallowCurlyBraceSyntax, Universal.Namespaces.OneDeclarationPerFile -- stand-ins for one package.
+// phpcs:disable Squiz.Classes.ClassFileName.NoMatch, Generic.Files.OneObjectStructurePerFile, Universal.Namespaces.DisallowCurlyBraceSyntax, Universal.Namespaces.OneDeclarationPerFile -- stand-ins for one package.
 
 namespace YayMatikScoped\YayCommerce\AdminShell {
 

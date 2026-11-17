@@ -20,9 +20,9 @@ final class BootTest extends TestCase {
     private $filters = [];
 
     protected function setUp(): void {
-        $this->filters                   = $GLOBALS['yaymatik_test_filters'] ?? [];
+        $this->filters                    = $GLOBALS['yaymatik_test_filters'] ?? [];
         $GLOBALS['yaymatik_test_filters'] = [];
-        AdminShell::$registered          = [];
+        AdminShell::$registered           = [];
     }
 
     protected function tearDown(): void {

@@ -64,4 +64,5 @@ final class CustomerInactiveTest extends TestCase {
         $this->assertTrue( $trigger->validate( [ 'days' => 730 ] ) );
         $this->assertNotTrue( $trigger->validate( [ 'days' => 6 ] ) );
         $this->assertNotTrue( $trigger->validate( [ 'days' => 731 ] ) );
-    }}
+    }
+}

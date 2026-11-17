@@ -27,10 +27,10 @@ final class ConditionConfigsTest extends TestCase {
     /** @return array */
     public function configs(): array {
         return [
-            'bad variable'    => [ [ self::rule( 'order.total', 'equal', 'order.status', 'variable' ) ], 'Choose data to compare with.' ],
-            'valid variable'  => [ [ self::rule( 'order.status', 'is', 'processing' ), self::rule( 'order.total', 'greater_than', 'order.subtotal', 'variable' ) ], true ],
-            'no-value op'     => [ [ self::rule( 'order.total', 'equal', 'order.subtotal', 'variable' ), self::rule( 'customer.email', 'is_not_empty', 'order.foo', 'variable' ) ], true ],
-            'later rule bad'  => [ [ self::rule( 'order.total', 'less_than', 'order.subtotal', 'variable' ), self::rule( 'order.total', 'less_than', 'x' ) ], 'Enter a number.' ],
+            'bad variable'   => [ [ self::rule( 'order.total', 'equal', 'order.status', 'variable' ) ], 'Choose data to compare with.' ],
+            'valid variable' => [ [ self::rule( 'order.status', 'is', 'processing' ), self::rule( 'order.total', 'greater_than', 'order.subtotal', 'variable' ) ], true ],
+            'no-value op'    => [ [ self::rule( 'order.total', 'equal', 'order.subtotal', 'variable' ), self::rule( 'customer.email', 'is_not_empty', 'order.foo', 'variable' ) ], true ],
+            'later rule bad' => [ [ self::rule( 'order.total', 'less_than', 'order.subtotal', 'variable' ), self::rule( 'order.total', 'less_than', 'x' ) ], 'Enter a number.' ],
         ];
     }
 

@@ -254,4 +254,5 @@ final class StepRunTest extends TestCase {
 
         $this->expectException( GoneEntity::class );
         ( new AddOrderNote() )->run( $scope, ( new AddOrderNote() )->sanitize( [ 'note' => 'n' ] ) );
-    }}
+    }
+}

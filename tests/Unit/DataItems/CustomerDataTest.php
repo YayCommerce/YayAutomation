@@ -240,4 +240,5 @@ final class CustomerDataTest extends TestCase {
 
         $this->assertTrue( $value( $this->order( 10, 0, 'Ann@x.com' ) ) );
         $this->assertFalse( $value( $this->order( 11, 0, 'bob@x.com' ) ) );
-    }}
+    }
+}

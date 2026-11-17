@@ -174,4 +174,5 @@ final class CustomerProDataTest extends TestCase {
             ),
             $account
         );
-    }}
+    }
+}

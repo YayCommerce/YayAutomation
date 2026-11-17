@@ -388,4 +388,5 @@ final class CriteriaProTest extends TestCase {
         $this->assertFalse( $scope( [ self::group( 'all', [ $no, $yes ] ), $yes ], 'all' ), 'all inside all' );
         $this->assertTrue( $scope( [ self::group( 'all', [ $no, $yes ] ), $yes ], 'any' ), 'the rule beside it' );
         $this->assertFalse( $scope( [ self::group( 'all', [ $no, $yes ] ), $no ], 'any' ), 'neither' );
-    }}
+    }
+}

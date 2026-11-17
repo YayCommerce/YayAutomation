@@ -103,19 +103,19 @@ final class StepContractTest extends TestCase {
 
         $this->assertSame(
             [
-                'order_created'                => [],
-                'order_status_changed'         => [],
-                'order_paid'                   => [],
-                'order_refunded'               => [],
-                'order_note_added'             => [],
-                'review_posted'                => [],
-                'condition'                    => [ 'result' ],
-                'send_email'                   => [ 'to' ],
-                'send_internal_email'          => [ 'to' ],
-                'change_order_status'          => [ 'from', 'to' ],
-                'add_order_note'               => [ 'type' ],
-                'generate_coupon'              => [ 'code', 'amount', 'expires_at', 'box' ],
-                'wait'                         => [],
+                'order_created'        => [],
+                'order_status_changed' => [],
+                'order_paid'           => [],
+                'order_refunded'       => [],
+                'order_note_added'     => [],
+                'review_posted'        => [],
+                'condition'            => [ 'result' ],
+                'send_email'           => [ 'to' ],
+                'send_internal_email'  => [ 'to' ],
+                'change_order_status'  => [ 'from', 'to' ],
+                'add_order_note'       => [ 'type' ],
+                'generate_coupon'      => [ 'code', 'amount', 'expires_at', 'box' ],
+                'wait'                 => [],
             ],
             $outputs
         );
