@@ -88,7 +88,7 @@ Check the field ids against `DataItems/*::define()` and the template ids against
 | ✅ **CP5** (2f05d6d) | D7. | Lite shows 2 retention fields, no abandon field; values stored on Pro keep working on Lite (test) |
 | ✅ **CP6** (823a220) | D5, D6. | `check-edition.sh`: on Pro create 4 workflows (Pro trigger, Pro action, Pro condition, Pro merge tag) + 1 waiting run; switch to Lite: none starts, none activates, the waiting run stops with the reason, saving keeps config; back to Pro: all work |
 | ✅ **CP7** (55c6c56) | D13. | Teaser shows in Lite only, opens the upgrade URL |
-| ✅ **CP8** (see below) | readme.txt features = Lite; docs; mark `yaymatik_modules`, `yaymatik_trigger_refs`, `yaymatik_trigger_provides`, `yaymatik_data_item_{id}_fields` `@internal` in their docblocks; fix `docs/workflow-core-decisions.md` (~line 345: other plugins use `yaymatik_register`, not `yaymatik_modules`); `check-all` both editions; e2e; Plugin Check on the Lite zip; `.pot` last. | All green; PR text with results and browser steps |
+| ✅ **CP8** (b1c1af6) | readme.txt features = Lite; docs; mark `yaymatik_modules`, `yaymatik_trigger_refs`, `yaymatik_trigger_provides`, `yaymatik_data_item_{id}_fields` `@internal` in their docblocks; fix `docs/workflow-core-decisions.md` (~line 345: other plugins use `yaymatik_register`, not `yaymatik_modules`); `check-all` both editions; e2e; Plugin Check on the Lite zip; `.pot` last. | All green; PR text with results and browser steps |
 
 ## Rules for Claude Code
 
