@@ -1,10 +1,13 @@
-import type { MouseEventHandler, ReactNode } from 'react';
+import { useEffect, type MouseEventHandler, type ReactNode } from 'react';
 import { Workflow, X } from 'lucide-react';
 import { Link } from 'react-router';
 import { __ } from '@wordpress/i18n';
 
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+
+/** On `<html>` while an editor is open: the page doesn't scroll (preflight.css). */
+const EDITOR_OPEN_CLASS = 'yaymatik-editor-open';
 
 export interface EditorCloseProps {
   closeTo?: string;
@@ -25,6 +28,14 @@ export function EditorLayout({
   closeLabel = __('Close', 'yaymatik'),
   onClose,
 }: EditorCloseProps & { title: ReactNode; actions?: ReactNode; children: ReactNode }) {
+  useEffect(() => {
+    // WP's admin menu, when taller than the window, makes the page scroll; a click on the canvas then
+    // scrolls the editor's header under the plugin header. The editor fills the window, so the page stays put.
+    document.documentElement.classList.add(EDITOR_OPEN_CLASS);
+    window.scrollTo(0, 0);
+    return () => document.documentElement.classList.remove(EDITOR_OPEN_CLASS);
+  }, []);
+
   return (
     // Fill the viewport below the WP admin bar (--wp-admin--admin-bar--height) and plugin header (h-13.5).
     <div className="flex h-[calc(100vh-var(--wp-admin--admin-bar--height,32px)-3.375rem)] flex-col">

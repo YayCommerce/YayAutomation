@@ -27,23 +27,33 @@ abstract class Module {
         return true;
     }
 
-    /** @return string[] Trigger classes, in picker order. */
+    /** @return array Trigger classes (or triggers), in picker order. */
     public function triggers(): array {
         return [];
     }
 
-    /** @return string[] Condition classes, in picker order. */
+    /** @return array Condition classes (or conditions), in picker order. */
     public function conditions(): array {
         return [];
     }
 
-    /** @return string[] Action classes, in picker order. */
+    /** @return array Action classes (or actions), in picker order. */
     public function actions(): array {
         return [];
     }
 
     /** @return string[] Data item classes. */
     public function data_items(): array {
+        return [];
+    }
+
+    /**
+     * Run subjects of this module's own data items about the person with this email, for export and erase.
+     *
+     * @param string $email
+     * @return string[]
+     */
+    public function privacy_subjects( string $email ): array { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter -- for modules with their own subjects.
         return [];
     }
 }

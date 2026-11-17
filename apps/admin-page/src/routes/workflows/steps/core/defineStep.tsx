@@ -2,10 +2,11 @@ import { useState, type ReactNode } from 'react';
 import * as v from 'valibot';
 
 import type { CatalogStepMeta } from '@/types/localize';
-import { alwaysAvailable } from './data';
+import { alwaysAvailable, checkedTrigger } from './data';
 import { defaultsFromFields, schemaFromFields } from './fields/catalogSchema';
 import { StepForm } from './fields/StepForm';
 import { stepIcons } from './icons';
+import { logoIcon } from './logoIcon';
 import { MARKED } from './marks';
 import { renderSummary } from './summary';
 import { templatePaths } from './template';
@@ -43,6 +44,7 @@ export function defineStep<TConfig extends Config>({
   defaults: ownDefaults,
   normalize: ownNormalize,
   uses,
+  contextIssue,
   summaryValues,
   Form,
   Footer,
@@ -68,12 +70,15 @@ export function defineStep<TConfig extends Config>({
         : [],
     );
 
-  const firstIssue = (config: Config) => {
+  const firstIssue = (config: Config, trigger?: string | null) => {
     const result = v.safeParse(schema, normalize(config));
-    if (result.success) return null;
-    const [{ message, path }] = result.issues;
-    const field = path?.[0]?.key;
-    return typeof field === 'string' ? { message, field } : { message };
+    if (!result.success) {
+      const [{ message, path }] = result.issues;
+      const field = path?.[0]?.key;
+      return typeof field === 'string' ? { message, field } : { message };
+    }
+    const checked = checkedTrigger(trigger);
+    return checked && contextIssue ? contextIssue(normalize(config), checked) : null;
   };
 
   // Its own form, else one drawn from the fields. Nothing when there's nothing to set.
@@ -106,7 +111,7 @@ export function defineStep<TConfig extends Config>({
     ...spec,
     label: catalog.label,
     description: catalog.description,
-    icon: stepIcons[catalog.icon],
+    icon: catalog.icon ? stepIcons[catalog.icon] : logoIcon(catalog.plugin),
     plugin: catalog.plugin,
     provides: catalog.provides ?? [],
     requires,
@@ -115,7 +120,7 @@ export function defineStep<TConfig extends Config>({
     defaults,
     normalize,
     firstIssue,
-    firstError: (config) => firstIssue(config)?.message ?? null,
+    firstError: (config, trigger) => firstIssue(config, trigger)?.message ?? null,
     tags: (config) => tags(normalize(config)),
     // An issue about one of these shows under it; a custom form draws its own fields.
     drawsField: (key) =>
@@ -124,7 +129,7 @@ export function defineStep<TConfig extends Config>({
       const items = uses ? uses(normalize(config)) : requires;
       return [...new Set(items)].filter((item) => !alwaysAvailable.includes(item));
     },
-    summary: (config) => renderSummary(catalog.summary, fields, normalize(config), summaryValues),
+    summary: (config, trigger) => renderSummary(catalog.summary, fields, normalize(config), summaryValues, trigger),
     Form: hasForm ? StepConfigForm : undefined,
   };
 }

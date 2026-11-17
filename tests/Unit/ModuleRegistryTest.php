@@ -9,6 +9,7 @@ use YayMatik\Tests\Support\FakeModule;
 use YayMatik\Workflow\Conditions\Criteria;
 use YayMatik\Workflow\Core\Data\DataRegistry;
 use YayMatik\Workflow\DataItems\SiteData;
+use YayMatik\Workflow\Extension\Diagnostics;
 use YayMatik\Workflow\ModuleRegistry;
 use YayMatik\Workflow\Modules\Module;
 use YayMatik\Workflow\Modules\WoocommerceModule;
@@ -127,6 +128,26 @@ final class ModuleRegistryTest extends TestCase {
         $this->assertSame( 'fake', $plugins['fake_condition'], 'a condition listed under actions is left out, not registered twice' );
         $this->assertInstanceOf( SiteData::class, ModuleRegistry::data( $modules )['site'] );
         $this->assertCount( 1, ModuleRegistry::data( $modules ) );
+    }
+
+    public function test_a_second_claim_is_a_diagnostic_of_the_refused_module(): void {
+        $GLOBALS['yaymatik_test_options'] = [];
+        $modules                          = ModuleRegistry::from( [ YayMatikModule::class, YayMatikProModule::class, FakeModule::class ] );
+        ModuleRegistry::steps( $modules );
+        ModuleRegistry::data( $modules );
+
+        $this->assertEqualsCanonicalizing(
+            [
+                YayMatikProModule::class . ' module yaymatik' => 'Module id "yaymatik" is already taken by another module; this one was left out.',
+                'fake step condition' => 'Step id "condition" is already taken by another module; this one was left out.',
+                'fake data item site' => 'Data item id "site" is already taken by another module; this one was left out.',
+            ],
+            array_column(
+                array_map( fn( array $entry ) => $entry + [ 'key' => $entry['module'] . ' ' . $entry['callback'] ], Diagnostics::recent( 24 ) ),
+                'message',
+                'key'
+            )
+        );
     }
 
     public function test_to_client_keeps_its_keys(): void {

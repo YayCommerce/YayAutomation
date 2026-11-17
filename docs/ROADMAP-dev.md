@@ -36,7 +36,7 @@ Changes from the ROADMAP-v1.0 order:
 | v1.1 | Control flow | L+ | 3 | v1.0 | — |
 | v1.2 | Yay ecosystem + Pro connectors | L+ | 3 | v1.1 | — |
 | v2.0 | AI | L+ | 3 | v1.2 | — |
-| API | Public extension API | M | 2 | v1.2 stable | — |
+| API | Public extension API (1.1, plan 034) | M | 2 | v1.0 | In progress |
 
 Status: ✅ done (merged into `develop`, CI green) · ⏳ done, merge pending · In progress · Next · — not started. Mark a phase and its items ✅ when it lands in `develop`.
 
@@ -307,7 +307,7 @@ Shop owners build their own workflows from New Workflow. Why: [decisions CT](wor
 ## v1.2 — Yay ecosystem + Pro connectors · L+
 
 - **V12.1 Pro modules** — YayMatik Pro registers its modules and multi-plugin templates. *(§8)*
-- **V12.2 Yay plugins** — register their steps (through their module) and templates; custom forms wait for P4. Handle steps from an inactive plugin softly; today they fail as "Unknown step type." *(§5, §8)*
+- **V12.2 Yay plugins** — register their steps (through their module) and templates; custom forms through the Extension API's iframe editor (P4, 1.1, plan 034). Steps from an inactive plugin are handled softly in plan 034 CP4 ([extension-api.md](extension-api.md) §10). *(§5, §8)*
 - **V12.3 Feature directory** — "Install X to use this" in the pickers and the template library. *(§8)*
 - **V12.4 Connector basics** — credentials store, connector settings UI.
 - **V12.5 Connectors** — webhook in, HTTP request, Slack, Google Sheets, SMS; CSV source and export.
@@ -323,9 +323,9 @@ Shop owners build their own workflows from New Workflow. Why: [decisions CT](wor
 
 ## Public extension API · M
 
-After the Pro connectors and Yay integrations are stable. *(§10)*
+In 1.1, plan 034. Contract: [extension-api.md](extension-api.md). *(§10 P4)*
 
-- Freeze the registry and the step contract as v1; plugin steps get custom forms.
+- A declarative registrar (`yaymatik_register`) over the internal registry and step contract; plugin steps get an iframe editor.
 - Developer docs and an example add-on.
 
 ---

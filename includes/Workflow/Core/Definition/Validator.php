@@ -11,6 +11,7 @@ use YayMatik\Workflow\Core\Steps\Step;
 use YayMatik\Workflow\Core\Steps\StepRegistry;
 use YayMatik\Workflow\Core\Steps\Trigger;
 use YayMatik\Utils\Logger;
+use YayMatik\Workflow\Extension\StepIndex;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -40,10 +41,11 @@ final class Validator {
     /**
      * Fields present in a PUT body; `status` is ignored (it changes only through activate / deactivate).
      *
-     * @param mixed $input { name?, graph? }.
+     * @param mixed   $input  { name?, graph? }.
+     * @param array[] $stored The workflow's saved nodes, live then draft (`GraphSchema::prepare()`).
      * @return array|\WP_Error [ 'name'? => string, 'graph'? => array ]
      */
-    public static function prepare_changes( $input ) {
+    public static function prepare_changes( $input, array $stored = [] ) {
         if ( ! is_array( $input ) ) {
             return self::error( __( 'Invalid workflow.', 'yaymatik' ) );
         }
@@ -64,7 +66,7 @@ final class Validator {
             }
         }
         if ( array_key_exists( 'graph', $input ) ) {
-            $graph = GraphSchema::prepare( $input['graph'] );
+            $graph = GraphSchema::prepare( $input['graph'], $stored );
             if ( is_wp_error( $graph ) ) {
                 return $graph;
             }
@@ -168,8 +170,21 @@ final class Validator {
                 'message' => Messages::get( 'nameRequired' ),
             ];
         }
+        // A step of a plugin that's off: the workflow keeps it, but can't be turned on.
+        $missing = [];
+        foreach ( $nodes as $node ) {
+            $inactive = self::inactive_step( $node );
+            if ( $inactive ) {
+                $missing[ $node['id'] ] = true;
+                $errors[]               = [
+                    'code'    => 'missing_plugin',
+                    'message' => Messages::get( 'missingPlugin', $inactive['plugin'] ),
+                    'nodeId'  => $node['id'],
+                ];
+            }
+        }
         // Workflow-level: there is no step to point at.
-        if ( ! $trigger_step ) {
+        if ( ! $trigger_step && ! isset( $missing[ GraphSchema::trigger( $nodes )['id'] ?? '' ] ) ) {
             $errors[] = [
                 'code'    => 'no_trigger',
                 'message' => Messages::get( 'noTrigger' ),
@@ -179,7 +194,7 @@ final class Validator {
             $setup = $trigger_step->setup_issue();
             if ( null !== $setup ) {
                 $errors[] = [
-                    'code'    => 'cart_tracking_off',
+                    'code'    => $trigger_step->setup_issue_code(),
                     'message' => $setup,
                     'nodeId'  => GraphSchema::trigger( $nodes )['id'],
                 ];
@@ -207,9 +222,13 @@ final class Validator {
         $by_id     = GraphSchema::by_id( $nodes );
         $parents   = GraphSchema::parents( $workflow['graph']['edges'] );
         foreach ( $nodes as $node ) {
-            $error = self::step_error( $node, $available, $by_id, self::ancestors( $node['id'], $parents ) );
+            $error = self::step_error( $node, $available, $trigger_step instanceof Trigger ? $trigger_step : null, $by_id, self::ancestors( $node['id'], $parents ) );
             if ( $error ) {
                 $errors[] = $error + [ 'nodeId' => $node['id'] ];
+            }
+            $setup = Step::KIND_TRIGGER === $node['kind'] ? null : self::node_setup_issue( $node, $workflow );
+            if ( null !== $setup ) {
+                $errors[] = $setup + [ 'nodeId' => $node['id'] ];
             }
         }
         return $errors;
@@ -274,6 +293,13 @@ final class Validator {
         $items        = array_unique( array_merge( $trigger_step ? $trigger_step->resolved_provides() : [], DataRegistry::ALWAYS ) );
 
         $list = [];
+        foreach ( $trigger_step ? $trigger_step->facts() : [] as $key => $fact ) {
+            $list[] = [
+                'key'   => "trigger.$key",
+                'label' => $fact['label'],
+                'type'  => $fact['value_type']->to_string(),
+            ];
+        }
         foreach ( $items as $id ) {
             $item = DataRegistry::items()[ $id ] ?? null;
             if ( $item ) {
@@ -352,6 +378,38 @@ final class Validator {
     }
 
     /**
+     * The step index entry of a node whose step is another plugin's that isn't active now; null otherwise.
+     *
+     * @param array $node
+     */
+    private static function inactive_step( array $node ): ?array {
+        return $node['data']['block'] ? StepIndex::inactive( $node['data']['block'] ) : null;
+    }
+
+    /**
+     * A step's setup issue (`code`, `message`), checked like the trigger's: on turning on, or for a step the draft adds.
+     *
+     * @param array $node
+     * @param array $workflow
+     */
+    private static function node_setup_issue( array $node, array $workflow ): ?array {
+        $step = $node['data']['block'] ? StepRegistry::get( $node['data']['block'] ) : null;
+        if ( ! $step ) {
+            return null;
+        }
+        $checked = isset( $workflow['status'] ) && 'active' !== $workflow['status'];
+        if ( ! $checked && isset( $workflow['live_graph'] ) ) {
+            $live    = GraphSchema::by_id( $workflow['live_graph']['nodes'] )[ $node['id'] ] ?? null;
+            $checked = ! $live || $live['data']['block'] !== $node['data']['block'];
+        }
+        $issue = $checked ? $step->setup_issue() : null;
+        return null === $issue ? null : [
+            'code'    => $step->setup_issue_code(),
+            'message' => $issue,
+        ];
+    }
+
+    /**
      * @param array[] $nodes
      */
     private static function trigger_step( array $nodes ): ?Step {
@@ -362,13 +420,17 @@ final class Validator {
     /**
      * The one issue of a step, or null: its settings first, then its merge tags, then data it needs.
      *
-     * @param array      $node
-     * @param array|null $available Data item ids; null without a trigger.
-     * @param array[]    $by_id
-     * @param array      $above     Step ids => true.
+     * @param array        $node
+     * @param array|null   $available Data item ids; null without a trigger.
+     * @param Trigger|null $trigger
+     * @param array[]      $by_id
+     * @param array        $above     Step ids => true.
      */
-    private static function step_error( array $node, ?array $available, array $by_id, array $above ): ?array {
+    private static function step_error( array $node, ?array $available, ?Trigger $trigger, array $by_id, array $above ): ?array {
         $step = $node['data']['block'] ? StepRegistry::get( $node['data']['block'] ) : null;
+        if ( ! $step && self::inactive_step( $node ) ) {
+            return null;
+        }
         if ( ! $step ) {
             return Step::KIND_ACTION === $node['kind'] ? [
                 'code'    => 'no_block',
@@ -379,12 +441,11 @@ final class Validator {
         $config = $node['data']['config'];
         $valid  = $step->validate( $config );
         if ( is_wp_error( $valid ) ) {
-            $issue = self::issue( 'invalid_config', $valid->get_error_message(), $valid->get_error_data()['field'] ?? null );
-            $rule  = $valid->get_error_data()['rule'] ?? null;
-            if ( is_array( $rule ) ) {
-                $issue['rule'] = array_map( 'intval', $rule );
-            }
-            return $issue;
+            return self::config_issue( $valid );
+        }
+        $context = null === $available ? null : $step->context_error( $config, $available, $trigger );
+        if ( $context ) {
+            return self::config_issue( $context );
         }
 
         $tags = self::tag_error( $step, $config, $available, $by_id, $above );
@@ -453,6 +514,13 @@ final class Validator {
         $segments = explode( '.', $path );
         if ( 'trigger' === $segments[0] ) {
             array_shift( $segments );
+            $node     = GraphSchema::trigger( array_values( $by_id ) );
+            $step     = self::trigger_step( array_values( $by_id ) );
+            $inactive = $node ? self::inactive_step( $node ) : null;
+            $facts    = $step instanceof Trigger ? $step->facts() : ( $inactive['facts'] ?? [] );
+            if ( 1 === count( $segments ) && isset( $facts[ $segments[0] ] ) ) {
+                return null;
+            }
         }
 
         $tag     = '{{ ' . $path . ' }}';
@@ -466,7 +534,11 @@ final class Validator {
             if ( ! $node ) {
                 return [ 'invalid_config', Messages::get( 'stepGone', $tag ) ];
             }
-            $step = $node['data']['block'] ? StepRegistry::get( $node['data']['block'] ) : null;
+            $step     = $node['data']['block'] ? StepRegistry::get( $node['data']['block'] ) : null;
+            $inactive = $step ? null : self::inactive_step( $node );
+            if ( $inactive && isset( $inactive['outputs'][ $segments[2] ] ) ) {
+                return isset( $above[ $node['id'] ] ) ? null : [ 'missing_data', Messages::get( 'stepNotAbove', $tag, $inactive['label'] ) ];
+            }
             if ( ! $step || ! isset( $step->outputs()[ $segments[2] ] ) ) {
                 return $unknown;
             }
@@ -529,6 +601,20 @@ final class Validator {
 
     private static function missing_message( string $label ): string {
         return Messages::get( 'missingData', $label );
+    }
+
+    /**
+     * A settings error as an invalid_config issue, with the field and condition rule it is about.
+     *
+     * @param \WP_Error $error
+     */
+    private static function config_issue( \WP_Error $error ): array {
+        $issue = self::issue( 'invalid_config', $error->get_error_message(), $error->get_error_data()['field'] ?? null );
+        $rule  = $error->get_error_data()['rule'] ?? null;
+        if ( is_array( $rule ) ) {
+            $issue['rule'] = array_map( 'intval', $rule );
+        }
+        return $issue;
     }
 
     private static function issue( string $code, string $message, ?string $field ): array {

@@ -1,8 +1,11 @@
 <?php
 namespace YayMatik\Workflow\Core\Runtime;
 
+use YayMatik\Workflow\Core\Data\DataItem;
 use YayMatik\Workflow\Core\Data\RefResolver;
 use YayMatik\Workflow\Core\Storage\CartStore;
+use YayMatik\Workflow\Core\Steps\StepRegistry;
+use YayMatik\Workflow\Core\Steps\Trigger;
 use YayMatik\Workflow\Core\Storage\RunStore;
 
 defined( 'ABSPATH' ) || exit;
@@ -107,12 +110,34 @@ final class RunPresenter {
             }
         }
         return self::run( $run ) + self::subject( (string) $run['subject'] ) + [
+            'facts'             => self::facts( $run ),
             'stoppedByOrderUrl' => self::stopped_by_order_url( $run ),
             'steps'             => array_map(
                 fn( array $step ) => self::step( $step ) + [ 'stepType' => $types[ (string) $step['step_id'] ] ?? null ],
                 $steps
             ),
         ];
+    }
+
+    /**
+     * The trigger's facts as stored at event time, with their labels.
+     *
+     * @param array $run
+     * @return array[] [ [ 'label', 'value' ], … ]
+     */
+    private static function facts( array $run ): array {
+        $trigger = StepRegistry::get( (string) $run['trigger_id'] );
+        $values  = (array) ( $run['scope']['trigger'] ?? [] );
+        $facts   = [];
+        foreach ( $trigger instanceof Trigger ? $trigger->facts() : [] as $key => $fact ) {
+            if ( isset( $values[ $key ] ) && is_scalar( $values[ $key ] ) ) {
+                $facts[] = [
+                    'label' => $fact['label'],
+                    'value' => DataItem::display( [ 'value' => fn() => $values[ $key ] ] + $fact, null, false ),
+                ];
+            }
+        }
+        return $facts;
     }
 
     /**

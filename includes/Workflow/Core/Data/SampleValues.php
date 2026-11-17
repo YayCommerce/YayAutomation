@@ -71,7 +71,8 @@ final class SampleValues implements Values {
             if ( $i !== $last ) {
                 return null;
             }
-            $raw = $entity->sample()[ $key ] ?? null;
+            // Another plugin's field on a core item carries its own preview value.
+            $raw = $entity->sample()[ $key ] ?? $field['sample'] ?? null;
             if ( is_array( $raw ) && array_key_exists( 'value', $raw ) ) {
                 return [
                     'value' => $raw['value'],

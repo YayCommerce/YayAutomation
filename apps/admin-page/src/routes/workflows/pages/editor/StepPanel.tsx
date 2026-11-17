@@ -131,7 +131,7 @@ export function StepPanel({
             label: def.label,
             kind: n.kind,
             icon: def.icon,
-            summary: plainSummary(def.summary(n.data.config)),
+            summary: plainSummary(def.summary(n.data.config, triggerStep?.id)),
           };
         }
       }
@@ -141,6 +141,7 @@ export function StepPanel({
   );
   const scope = useMemo<VariableScope>(() => {
     const trigger = triggerStep && {
+      id: triggerStep.id,
       label: triggerStep.label,
       kind: 'trigger' as const,
       icon: triggerStep.icon,
@@ -234,7 +235,9 @@ export function StepPanel({
   // Shown while the form shows its errors. The form shows its own first error itself (under a field,
   // or in a condition's rule); anything else goes under its field, or at the top.
   const shown =
-    feedback !== 'none' && issue && issue.message !== stepDef.firstError(node.data.config) ? issue : undefined;
+    feedback !== 'none' && issue && issue.message !== stepDef.firstError(node.data.config, triggerStep?.id)
+      ? issue
+      : undefined;
   // A condition draws its own rules: an issue that names its rule goes under that rule.
   const underField = shown?.field && (stepDef.drawsField(shown.field) || shown.rule) ? shown : undefined;
   // The cart trigger's notes already warn about tracking, with a link to fix it.
@@ -284,7 +287,18 @@ export function StepPanel({
             {warning}
           </WarningBadge>
         )}
-        {stepDef.Form ? (
+        {stepDef.inactive ? (
+          <p className="text-muted-foreground text-sm">
+            {sprintf(
+              /* translators: %s: plugin name, e.g. "YayMail" */
+              __(
+                'You can edit and save this workflow, but you can’t turn it on until %1$s is active. If it’s already on, it keeps running and skips this step.',
+                'yaymatik',
+              ),
+              stepDef.inactive,
+            )}
+          </p>
+        ) : stepDef.Form ? (
           <FeedbackContext.Provider value={feedback}>
             <FieldIssueContext.Provider value={underField}>
               <VariableScopeContext.Provider value={scope}>

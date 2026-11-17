@@ -110,6 +110,11 @@ abstract class CartTrigger extends Trigger {
         return null;
     }
 
+    /** The editor links it to Settings › Cart tracking. */
+    public function setup_issue_code(): string {
+        return 'cart_tracking_off';
+    }
+
     public function setup_issue(): ?string {
         if ( Settings::get( 'cart_tracking' ) ) {
             return null;

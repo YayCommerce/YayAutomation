@@ -2,6 +2,13 @@
 namespace YayMatik\Workflow\Core\Runtime;
 
 use YayMatik\Workflow\Core\Storage\RunStore;
+use YayMatik\Workflow\Core\Storage\WorkflowStore;
+use YayMatik\Workflow\Extension\Diagnostics;
+use YayMatik\Workflow\Extension\ExtensionModule;
+use YayMatik\Workflow\Extension\StepIndex;
+use YayMatik\Workflow\ModuleRegistry;
+use YayMatik\Workflow\Modules\WoocommerceModule;
+use YayMatik\Workflow\Modules\YayMatikModule;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -41,7 +48,67 @@ final class HealthCheck {
             self::jobs_late( $now ),
             self::result( 'cleanup_job', self::job( Cleanup::HOOK, self::CLEANUP_LATE, $now ) ),
             self::result( 'inactive_sweep_job', self::job( InactiveSweep::HOOK, self::SWEEP_LATE, $now ) ),
+            self::missing_plugin( WorkflowStore::all() ),
         ];
+    }
+
+    /**
+     * Active workflows with a step of a plugin that isn't active: they keep running and skip it. No fix.
+     *
+     * @param array[] $workflows `WorkflowStore::all()`.
+     * @return array The check, with `workflowIds` and `plugins` (labels).
+     */
+    public static function missing_plugin( array $workflows ): array {
+        $ids     = [];
+        $plugins = [];
+        foreach ( $workflows as $workflow ) {
+            if ( 'active' !== $workflow['status'] ) {
+                continue;
+            }
+            foreach ( $workflow['graph']['nodes'] ?? [] as $node ) {
+                $block    = (string) ( $node['data']['block'] ?? '' );
+                $inactive = '' === $block ? null : StepIndex::inactive( $block );
+                if ( $inactive ) {
+                    $ids[ (string) $workflow['id'] ] = true;
+                    $plugins[ $inactive['plugin'] ]  = true;
+                }
+            }
+        }
+        return [
+            'id'          => 'missing_plugin',
+            'status'      => $ids ? 'problem' : 'ok',
+            'count'       => count( $ids ),
+            'runIds'      => [],
+            'fix'         => null,
+            'workflowIds' => array_map( 'strval', array_keys( $ids ) ),
+            'plugins'     => array_keys( $plugins ),
+        ];
+    }
+
+    /**
+     * Other plugins' modules, and any module with an error in the last 24 hours (a refused one included).
+     *
+     * @return array[] `id`, `label`, `requiresApi` (null when not given), `errors` (newest first: `callback`, `message`, `count` (at least), `time` ISO 8601).
+     */
+    public static function extensions(): array {
+        $modules = ModuleRegistry::modules();
+        $rows    = [];
+        foreach ( $modules as $id => $module ) {
+            if ( YayMatikModule::ID !== $id && WoocommerceModule::ID !== $id ) {
+                $rows[ $id ] = self::extension( $id, $module->label(), $module instanceof ExtensionModule ? $module->requires_api() : null );
+            }
+        }
+        foreach ( Diagnostics::recent( 24 ) as $entry ) {
+            $id                      = $entry['module'];
+            $rows[ $id ]           ??= self::extension( $id, isset( $modules[ $id ] ) ? $modules[ $id ]->label() : $id );
+            $rows[ $id ]['errors'][] = [
+                'callback' => $entry['callback'],
+                'message'  => $entry['message'],
+                'count'    => $entry['count'],
+                'time'     => gmdate( 'c', $entry['time'] ),
+            ];
+        }
+        return array_values( $rows );
     }
 
     /**
@@ -184,6 +251,20 @@ final class HealthCheck {
             'runIds' => $found['ids'],
             'fix'    => $found['count'] ? self::FIXES[ $id ] : null,
         ] + ( empty( $found['capped'] ) ? [] : [ 'capped' => true ] );
+    }
+
+    /**
+     * @param string      $id
+     * @param string      $label
+     * @param string|null $requires_api
+     */
+    private static function extension( string $id, string $label, ?string $requires_api = null ): array {
+        return [
+            'id'          => $id,
+            'label'       => $label,
+            'requiresApi' => $requires_api,
+            'errors'      => [],
+        ];
     }
 
     /**

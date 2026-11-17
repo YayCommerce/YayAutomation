@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useContext, type ReactNode } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import type { WorkflowBranch, WorkflowNodeData, WorkflowNodeKind } from '@yaymatik/types';
 import { Check, CircleAlert, X, type LucideIcon } from 'lucide-react';
@@ -9,7 +9,7 @@ import { CARD_WIDTH } from '../../model/graph';
 import { plainSummary, stepOf, SummaryText } from '../../steps';
 import { kindIcons, StepTile } from '../../steps/core/StepTile';
 import { StepEyebrow } from '../ui/StepTile';
-import { sourceHandleStyle, targetHandleStyle, type FlowNode } from './flow';
+import { CanvasTriggerContext, sourceHandleStyle, targetHandleStyle, type FlowNode } from './flow';
 
 /**
  * How a step card marks an issue: amber "Needs setup" (its panel was left unfinished) or red "Error"
@@ -62,8 +62,9 @@ export function NodeCardView({
   children?: ReactNode;
 }) {
   const { label: kindLabel, choose } = kindMeta[type];
+  const trigger = useContext(CanvasTriggerContext);
   const stepDef = stepOf(data);
-  const summary = stepDef?.summary(data.config);
+  const summary = stepDef?.summary(data.config, trigger);
 
   return (
     <div className={cn('group relative', className)} style={{ width: CARD_WIDTH }}>
@@ -73,6 +74,8 @@ export function NodeCardView({
         className={cn(
           'text-card-foreground relative flex min-h-21.5 flex-wrap items-start gap-x-3 rounded-xl border px-3.5 py-3',
           !stepDef ? 'bg-card/70 border-muted-foreground/40 border-dashed' : 'bg-card shadow-xs',
+          // The step's plugin is off: greyed, still selectable and deletable.
+          stepDef?.inactive && 'opacity-60 grayscale',
           // Selected: a primary ring, so the card keeps its size.
           selected
             ? 'border-primary ring-primary shadow-primary/30 border-solid shadow-lg ring-1'

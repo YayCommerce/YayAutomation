@@ -2,9 +2,17 @@ import type { Workflow, WorkflowGraph, WorkflowIssue, WorkflowNode, WorkflowWarn
 import { __, sprintf } from '@wordpress/i18n';
 
 import { stepOf } from '../steps';
-import { alwaysAvailable, isStepPath, itemLabel, pathSegments, variableTag } from '../steps/core/data';
+import {
+  alwaysAvailable,
+  fieldByKey,
+  isFactPath,
+  isStepPath,
+  itemLabel,
+  pathSegments,
+  variableTag,
+} from '../steps/core/data';
 import { ancestors } from '../steps/core/variables';
-import { descendantsOf } from './graph';
+import { descendantsOf, triggerOf } from './graph';
 import { messages } from './messages';
 
 /**
@@ -17,6 +25,12 @@ export function validateWorkflow({ name, graph }: Pick<Workflow, 'name' | 'graph
   // The server runs sanitize_text_field(), which drops tags, so `<b></b>` counts as empty there too.
   if (!name.replace(/<[^>]*>/g, '').trim()) {
     issues.push({ code: 'name_required', message: messages.nameRequired });
+  }
+  // A step of a plugin that's off: the workflow keeps it, but can't be turned on.
+  for (const node of graph.nodes) {
+    const plugin = stepOf(node.data)?.inactive;
+    if (plugin)
+      issues.push({ code: 'missing_plugin', message: sprintf(messages.missingPlugin, plugin), nodeId: node.id });
   }
   const trigger = graph.nodes.find((node) => node.kind === 'trigger');
   const triggerStep = trigger && stepOf(trigger.data);
@@ -120,7 +134,8 @@ export const stepsNeedingSetup = (issues: WorkflowIssue[]) =>
 export function availableData(graph: WorkflowGraph): ((nodeId: string) => string[]) | null {
   const trigger = graph.nodes.find((node) => node.kind === 'trigger');
   const triggerStep = trigger && stepOf(trigger.data);
-  if (!trigger || !triggerStep) return null;
+  // A trigger whose plugin is off supplies nothing we know of: like an unchosen one, as in PHP.
+  if (!trigger || !triggerStep || triggerStep.inactive) return null;
 
   const base = [...new Set([...triggerStep.provides, ...alwaysAvailable])];
   const nodes = new Map(graph.nodes.map((node) => [node.id, node]));
@@ -161,8 +176,10 @@ function stepIssue(
   if (!stepDef) {
     return node.kind === 'action' ? { code: 'no_block', message: messages.noBlock } : null;
   }
+  if (stepDef.inactive) return null;
 
-  const error = stepDef.firstIssue(node.data.config);
+  // Like PHP `context_error()`: only with a trigger whose plugin is active.
+  const error = stepDef.firstIssue(node.data.config, available === null ? undefined : triggerOf(graph));
   if (error) return { code: 'invalid_config', ...error };
 
   // Each names the field that holds the tag, like PHP.
@@ -208,6 +225,11 @@ function reachProblem(
       ? null
       : { code: 'missing_data', message: sprintf(messages.stepNotAbove, tag, stepDef.label) };
   }
+  if (isFactPath(path)) {
+    return fieldByKey(path, triggerOf(graph))
+      ? null
+      : { code: 'invalid_config', message: sprintf(messages.unknownVariable, tag) };
+  }
   if (available === null || available.includes(segments[0])) return null;
   return { code: 'missing_data', message: sprintf(messages.missingData, itemLabel(segments[0])) };
 }
@@ -236,7 +258,7 @@ export function serverWarning(server: ServerCheck, graph: WorkflowGraph, nodeId:
 }
 
 /**
- * The editor's issues plus the ones only PHP finds (a percentage over 100, cart tracking off), from
+ * The editor's issues plus the ones only PHP finds (a percentage over 100, cart tracking off, a plugin step's setup), from
  * the server's last check. A server issue counts while its step's data is the same object as in the
  * graph that was checked and the editor has no issue of its own for it.
  */
@@ -249,7 +271,7 @@ export function withServerIssues(
   const own = new Set(issues.map((issue) => issue.nodeId));
   const extra = server.issues.filter(
     ({ code, nodeId }) =>
-      (code === 'invalid_config' || code === 'cart_tracking_off') &&
+      (code === 'invalid_config' || code === 'cart_tracking_off' || code === 'setup_issue') &&
       !!nodeId &&
       !own.has(nodeId) &&
       graph.nodes.some((node) => node.id === nodeId && node.data === checked.get(nodeId)),

@@ -13,6 +13,7 @@ export const sendInternalEmailStep = defineStep<{ recipients: string; subject: s
   kind: 'action',
   // Blank sends to the site admin (PHP `run()`), so the card names that address.
   summaryValues: {
-    recipients: ({ recipients }) => value(variableNames(splitRecipients(recipients).join(', ')) || adminEmail),
+    recipients: ({ recipients }, trigger) =>
+      value(variableNames(splitRecipients(recipients).join(', '), trigger) || adminEmail),
   },
 });

@@ -12,10 +12,10 @@ import {
   type NodeChange,
 } from '@xyflow/react';
 
-import { moveNode } from '../../model/graph';
+import { moveNode, triggerOf } from '../../model/graph';
 import { edgeTypes } from '../../shared/canvas/CurvedEdge';
 import { EdgeArrowDefs } from '../../shared/canvas/EdgeArrow';
-import { canvasStyle, toFlowEdges, toFlowNodes, type FlowNode } from '../../shared/canvas/flow';
+import { canvasStyle, CanvasTriggerContext, toFlowEdges, toFlowNodes, type FlowNode } from '../../shared/canvas/flow';
 import { useEditorContext } from './editor.context';
 import { revealViewport } from './revealViewport';
 import { useWorkflowFormContext } from './useWorkflowForm';
@@ -82,34 +82,36 @@ export function WorkflowCanvas({ panelInset, onPaneClick }: { panelInset: number
   };
 
   return (
-    <ReactFlow
-      nodes={nodes}
-      edges={edges}
-      nodeTypes={nodeTypes}
-      edgeTypes={edgeTypes}
-      onNodesChange={onNodesChange}
-      onNodeClick={(_, node) => openPanel(node.id)}
-      onPaneClick={onPaneClick}
-      // Backspace: same delete as the card's button (edges out of the form too), not ReactFlow's own.
-      onBeforeDelete={async ({ nodes }) => {
-        if (nodes.length) requestDelete(nodes.map((node) => node.id));
-        return false;
-      }}
-      style={canvasStyle}
-      nodesConnectable={false}
-      // Wheel and trackpad move around a long workflow; Ctrl/Cmd + wheel and pinch zoom.
-      panOnScroll
-      zoomOnScroll={false}
-      zoomOnPinch
-      zoomActivationKeyCode={['Meta', 'Control']}
-      fitView
-      fitViewOptions={fitViewOptions}
-    >
-      <Background />
-      <EdgeArrowDefs />
-      <Controls showInteractive={false} style={panelInset ? { left: panelInset } : undefined} />
-      <ViewKeeper panelInset={panelInset} openNodeId={openNodeId} />
-    </ReactFlow>
+    <CanvasTriggerContext.Provider value={triggerOf(graph)}>
+      <ReactFlow
+        nodes={nodes}
+        edges={edges}
+        nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
+        onNodesChange={onNodesChange}
+        onNodeClick={(_, node) => openPanel(node.id)}
+        onPaneClick={onPaneClick}
+        // Backspace: same delete as the card's button (edges out of the form too), not ReactFlow's own.
+        onBeforeDelete={async ({ nodes }) => {
+          if (nodes.length) requestDelete(nodes.map((node) => node.id));
+          return false;
+        }}
+        style={canvasStyle}
+        nodesConnectable={false}
+        // Wheel and trackpad move around a long workflow; Ctrl/Cmd + wheel and pinch zoom.
+        panOnScroll
+        zoomOnScroll={false}
+        zoomOnPinch
+        zoomActivationKeyCode={['Meta', 'Control']}
+        fitView
+        fitViewOptions={fitViewOptions}
+      >
+        <Background />
+        <EdgeArrowDefs />
+        <Controls showInteractive={false} style={panelInset ? { left: panelInset } : undefined} />
+        <ViewKeeper panelInset={panelInset} openNodeId={openNodeId} />
+      </ReactFlow>
+    </CanvasTriggerContext.Provider>
   );
 }
 

@@ -23,10 +23,14 @@ export function useFixHealthCheck(check: FixableHealthCheckId) {
   return useMutation({
     mutationFn: () => fixHealthCheck(check),
     // A scan still running may have read the runs before this fix, so it's cancelled. The fix
-    // response has no `checkedAt`: its checks ran just now.
+    // response has no `checkedAt`: its checks ran just now. It has no `extensions` either; a fix doesn't change them.
     onSuccess: async ({ checks }) => {
       await queryClient.cancelQueries({ queryKey: healthKey });
-      queryClient.setQueryData<HealthChecksResponse>(healthKey, { checks, checkedAt: new Date().toISOString() });
+      queryClient.setQueryData<HealthChecksResponse>(healthKey, (old) => ({
+        checks,
+        extensions: old?.extensions ?? [],
+        checkedAt: new Date().toISOString(),
+      }));
     },
   });
 }

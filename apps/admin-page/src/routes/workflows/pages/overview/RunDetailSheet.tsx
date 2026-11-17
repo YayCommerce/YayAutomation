@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import type { RunDetail, StepId, WorkflowNodeKind } from '@yaymatik/types';
-import type { LucideIcon } from 'lucide-react';
 import { __, sprintf } from '@wordpress/i18n';
 
 import { shortDayTime } from '@/lib/helpers/date.helper';
@@ -11,7 +10,7 @@ import { toast } from '@/components/ui/sonner';
 import { ApiError } from '../../api/workflow.api';
 import { useRunQuery } from '../../api/workflow.query';
 import { RunStatusBadge } from '../../shared/ui/RunStatus';
-import { steps } from '../../steps';
+import { stepOf, type Step } from '../../steps';
 import { StepTile } from '../../steps/core/StepTile';
 import { stepResult } from './runResults';
 
@@ -119,18 +118,23 @@ function RunTimes({ run }: { run: RunDetail }) {
 
 /** The trigger, then each step that ran; steps not reached aren't listed. */
 function RunSteps({ run }: { run: RunDetail }) {
-  const trigger = steps[run.triggerId as StepId] as (typeof steps)[StepId] | undefined;
+  const trigger = stepNamed(run.triggerId);
   return (
     <ol className="flex flex-col gap-4">
-      <StepLine kind="trigger" icon={trigger?.icon} label={trigger?.label ?? run.triggerId} time={run.startedAt} />
+      <StepLine
+        kind="trigger"
+        stepDef={trigger}
+        label={trigger?.label ?? run.triggerId}
+        result={run.facts.map((fact) => `${fact.label}: ${fact.value}`).join(', ')}
+        time={run.startedAt}
+      />
       {run.steps.map((step) => {
-        const stepDef = step.stepType ? steps[step.stepType] : undefined;
+        const stepDef = step.stepType ? stepNamed(step.stepType) : undefined;
         return (
           <StepLine
             key={step.id}
             kind={stepDef?.kind ?? 'action'}
-            icon={stepDef?.icon}
-            empty={!stepDef}
+            stepDef={stepDef}
             label={stepDef?.label ?? __('Removed step', 'yaymatik')}
             result={stepResult(step, run)}
             time={step.finishedAt ?? step.startedAt}
@@ -141,17 +145,18 @@ function RunSteps({ run }: { run: RunDetail }) {
   );
 }
 
+/** A step by id, as the canvas finds it: a step of a plugin that is off included. */
+const stepNamed = (id: string) => stepOf({ block: id as StepId, config: {} });
+
 function StepLine({
   kind,
-  icon,
-  empty,
+  stepDef,
   label,
   result,
   time,
 }: {
   kind: WorkflowNodeKind;
-  icon?: LucideIcon;
-  empty?: boolean;
+  stepDef: Step | undefined;
   label: string;
   result?: string;
   time: string | null;
@@ -159,7 +164,12 @@ function StepLine({
   return (
     // A row with no detail line centres its title on the tile; with one, both lines start at its top.
     <li className={cn('flex gap-3', result ? 'items-start' : 'items-center')}>
-      <StepTile kind={kind} icon={icon} empty={empty} />
+      <StepTile
+        kind={kind}
+        icon={stepDef?.icon}
+        empty={!stepDef}
+        className={stepDef?.inactive ? 'opacity-60 grayscale' : undefined}
+      />
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline justify-between gap-3">
           <span className="truncate text-sm font-medium">{label}</span>

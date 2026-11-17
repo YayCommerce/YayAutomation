@@ -26,6 +26,8 @@ export interface StepSpec<TConfig extends Config> {
   normalize?: (config: Config) => TConfig;
   /** Data items the step reads besides its merge tags. Mirrors the PHP step's `uses()`. */
   uses?: (config: TConfig) => string[];
+  /** Checks that need the workflow's trigger (its step id). Mirrors the PHP step's `context_error()`. */
+  contextIssue?: (config: TConfig, trigger: string) => { message: string; field?: string } | null;
   /** Catalog summary placeholders a field can't write on its own (e.g. a condition's `%rules%`). */
   summaryValues?: SummaryValues<TConfig>;
   /** A custom form, for what catalog fields can't draw. */
@@ -52,18 +54,21 @@ export interface Step {
   category?: StepMeta['category'];
   defaults: () => Config;
   normalize: (config: Config) => Config;
-  firstIssue: (config: Config) => { message: string; field?: string } | null;
-  firstError: (config: Config) => string | null;
+  /** With the workflow's trigger (its step id), also the checks that need it. */
+  firstIssue: (config: Config, trigger?: string | null) => { message: string; field?: string } | null;
+  firstError: (config: Config, trigger?: string | null) => string | null;
   /** Well-formed merge tags in the fields that accept them. */
   tags: (config: Config) => { field: string; path: string }[];
   /** Whether the step's form draws this field, so an issue about it can show under it. */
   drawsField: (key: string) => boolean;
   /** Data items the step reads besides its merge tags, `site` excluded. */
   uses: (config: Config) => string[];
-  /** Card text, with `SummaryText` marks. */
-  summary: (config: Config) => string;
+  /** Card text, with `SummaryText` marks; `trigger` (its step id) names its facts. */
+  summary: (config: Config, trigger?: string | null) => string;
   icon?: LucideIcon;
   /** Omitted when the step has nothing to set. */
   Form?: ComponentType<StepFormProps<Config>>;
   Actions?: ComponentType;
+  /** The plugin's name when the step's plugin isn't active: drawn greyed, read-only, kept on save. */
+  inactive?: string;
 }

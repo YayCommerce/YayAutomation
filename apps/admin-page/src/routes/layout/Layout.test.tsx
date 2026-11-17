@@ -25,7 +25,7 @@ vi.mock('@/routes/settings/api/settings.api', async (original) => ({
   })),
 }));
 vi.mock('@/routes/settings/api/health.api', () => ({
-  getHealthChecks: vi.fn(async () => ({ checks: [], checkedAt: new Date().toISOString() })),
+  getHealthChecks: vi.fn(async () => ({ checks: [], extensions: [], checkedAt: new Date().toISOString() })),
   fixHealthCheck: vi.fn(),
 }));
 

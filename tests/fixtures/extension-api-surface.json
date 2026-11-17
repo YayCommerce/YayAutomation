@@ -1,0 +1,167 @@
+{
+    "YayMatik\\Api\\Api": {
+        "kind": "final class",
+        "constants": {
+            "VERSION": "1.0.0"
+        },
+        "methods": []
+    },
+    "YayMatik\\Api\\CartView": {
+        "kind": "interface",
+        "constants": [],
+        "methods": {
+            "currency": "(): string",
+            "email": "(): string",
+            "id": "(): int",
+            "items": "(): array",
+            "total": "(): float",
+            "user_id": "(): int"
+        }
+    },
+    "YayMatik\\Api\\CustomerView": {
+        "kind": "interface",
+        "constants": [],
+        "methods": {
+            "email": "(): string",
+            "first_name": "(): string",
+            "last_name": "(): string",
+            "order_id": "(): int",
+            "user_id": "(): int"
+        }
+    },
+    "YayMatik\\Api\\Module": {
+        "kind": "final class",
+        "constants": [],
+        "methods": {
+            "action": "(string $id, array $args): bool",
+            "category": "(string $id, string $label): bool",
+            "data_fields": "(string $item_id, array $fields): bool",
+            "data_item": "(string $id, array $args): bool",
+            "ok": "(): bool",
+            "trigger": "(string $id, array $args): bool"
+        }
+    },
+    "YayMatik\\Api\\Registrar": {
+        "kind": "final class",
+        "constants": [],
+        "methods": {
+            "api_version": "(): string",
+            "module": "(array $args): YayMatik\\Api\\Module",
+            "supports": "(string $feature): bool"
+        }
+    },
+    "YayMatik\\Api\\Run": {
+        "kind": "interface",
+        "constants": [],
+        "methods": {
+            "cart": "()",
+            "customer_email": "(): string",
+            "done": "(array $outputs = array (\n))",
+            "fail": "(string $reason)",
+            "get": "(string $path)",
+            "is_preview": "(): bool",
+            "item": "(string $id)",
+            "order": "()",
+            "render": "(string $text, bool $html = false): string",
+            "skip": "(string $reason)",
+            "user": "()"
+        }
+    },
+    "keys": {
+        "features": [
+            "triggers",
+            "actions",
+            "data_items",
+            "data_fields",
+            "trigger_facts",
+            "privacy_subjects"
+        ],
+        "module_keys": [
+            "id",
+            "label",
+            "description",
+            "logo",
+            "requires_api",
+            "privacy_subjects"
+        ],
+        "step_keys": [
+            "label",
+            "description",
+            "icon",
+            "category",
+            "fields",
+            "summary",
+            "validate",
+            "setup_issue"
+        ],
+        "trigger_keys": [
+            "provides",
+            "matches",
+            "once_per",
+            "facts",
+            "sample"
+        ],
+        "action_keys": [
+            "requires",
+            "run",
+            "outputs",
+            "sample_outputs",
+            "on_error",
+            "result",
+            "emits"
+        ],
+        "data_item_keys": [
+            "label",
+            "description",
+            "icon",
+            "load",
+            "fields",
+            "sample"
+        ],
+        "data_field_keys": [
+            "label",
+            "type",
+            "of",
+            "item",
+            "value",
+            "display",
+            "options",
+            "help",
+            "timestamp",
+            "merge_tag",
+            "conditional",
+            "block",
+            "sample"
+        ],
+        "field_types": [
+            "text",
+            "textarea",
+            "html",
+            "number",
+            "select",
+            "multiselect",
+            "toggle",
+            "emails",
+            "notice",
+            "number_unit"
+        ],
+        "type_names": [
+            "string",
+            "number",
+            "money",
+            "boolean",
+            "date",
+            "enum",
+            "list",
+            "entity"
+        ],
+        "fact_types": [
+            "string",
+            "number",
+            "money",
+            "boolean",
+            "date",
+            "enum"
+        ]
+    }
+}

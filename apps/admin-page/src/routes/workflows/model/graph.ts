@@ -161,3 +161,7 @@ export function stepsInOrder(graph: WorkflowGraph): WorkflowGraph['nodes'] {
   graph.nodes.filter((node) => node.kind === 'trigger').forEach((node) => visit(node.id));
   return [...ordered, ...graph.nodes.filter((node) => !seen.has(node.id))];
 }
+
+/** The workflow's trigger step id, or null: it defines `trigger.<fact>`. */
+export const triggerOf = (graph: WorkflowGraph) =>
+  graph.nodes.find((node) => node.kind === 'trigger')?.data.block ?? null;

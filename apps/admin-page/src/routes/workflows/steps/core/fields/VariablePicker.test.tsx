@@ -42,7 +42,7 @@ const graph: WorkflowGraph = {
 };
 const scope: VariableScope = {
   variables: availableVariables(graph, 'm'),
-  trigger: { label: 'Order created', kind: 'trigger', provides: ['order', 'customer'] },
+  trigger: { id: 'order_created', label: 'Order created', kind: 'trigger', provides: ['order', 'customer'] },
   steps: { c: { label: 'Generate coupon', kind: 'action', summary: '10% off' } },
 };
 

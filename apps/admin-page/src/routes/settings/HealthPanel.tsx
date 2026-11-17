@@ -1,6 +1,13 @@
 import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react';
-import type { FixableHealthCheckId, HealthCheck, HealthCheckId, HealthChecksResponse } from '@yaymatik/types';
+import type {
+  FixableHealthCheckId,
+  HealthCheck,
+  HealthCheckId,
+  HealthChecksResponse,
+  HealthExtension,
+} from '@yaymatik/types';
 import { CircleAlert, CircleCheck, ExternalLink, Info, RefreshCw, TriangleAlert } from 'lucide-react';
+import { Link } from 'react-router';
 import { humanTimeDiff } from '@wordpress/date';
 import { __, _n, sprintf } from '@wordpress/i18n';
 
@@ -16,7 +23,14 @@ import { useFixHealthCheck, useHealthQuery } from './api/health.query';
 import { SettingsErrorAlert } from './SettingsErrorAlert';
 
 /** Problems first, then the info row. */
-const ORDER: HealthCheckId[] = ['runs_queued', 'runs_running', 'cleanup_job', 'inactive_sweep_job', 'jobs_late'];
+const ORDER: HealthCheckId[] = [
+  'runs_queued',
+  'runs_running',
+  'cleanup_job',
+  'inactive_sweep_job',
+  'missing_plugin',
+  'jobs_late',
+];
 
 /** A capped scan's count is a lower bound: "1+" still takes the plural. */
 const countText = (check: HealthCheck) => (check.capped ? `${check.count}+` : String(check.count));
@@ -95,7 +109,13 @@ export function HealthPanel() {
             {shown.map((check, index) => (
               <Fragment key={check.id}>
                 {index > 0 && <Separator />}
-                {check.id === 'jobs_late' ? <LateJobsRow check={check} /> : <FixRow check={check} id={check.id} />}
+                {check.id === 'jobs_late' ? (
+                  <LateJobsRow check={check} />
+                ) : check.id === 'missing_plugin' ? (
+                  <MissingPluginRow check={check} />
+                ) : (
+                  <FixRow check={check} id={check.id} />
+                )}
               </Fragment>
             ))}
           </div>
@@ -115,6 +135,7 @@ export function HealthPanel() {
             </EmptyHeader>
           </Empty>
         )}
+        {data && !failed && <ExtensionsBlock extensions={data.extensions} />}
       </CardContent>
     </Card>
   );
@@ -282,6 +303,105 @@ function LateJobsRow({ check }: { check: HealthCheck }) {
         )
       }
     />
+  );
+}
+
+/** Active workflows that use a plugin that's off: no fix here, the store owner turns the plugin back on. */
+function MissingPluginRow({ check }: { check: HealthCheck }) {
+  return (
+    <Row
+      icon={<TriangleAlert className="text-warning-accent" />}
+      title={sprintf(
+        /* translators: %d: number of workflows */
+        _n(
+          'Active workflows use a plugin that isn’t active: %d',
+          'Active workflows use a plugin that isn’t active: %d',
+          check.count,
+          'yaymatik',
+        ),
+        check.count,
+      )}
+      help={sprintf(
+        /* translators: %s: plugin names, e.g. "YayMail" */
+        __(
+          'Their runs skip the steps of %s, and one whose trigger is from it doesn’t start. Activate it to run them again.',
+          'yaymatik',
+        ),
+        (check.plugins ?? []).join(', '),
+      )}
+      extra={
+        <span className="flex flex-wrap gap-x-3 gap-y-1 text-sm">
+          {(check.workflowIds ?? []).map((id) => (
+            <Link key={id} to={`/workflows/${id}`} className="text-link font-medium hover:underline">
+              {/* translators: %s: workflow id */ sprintf(__('Workflow #%s', 'yaymatik'), id)}
+            </Link>
+          ))}
+          <a href={`${window.yayMatikMeta.wp.adminUrl}plugins.php`} className="text-link font-medium hover:underline">
+            {__('Plugins', 'yaymatik')}
+          </a>
+        </span>
+      }
+    />
+  );
+}
+
+/** Other plugins' modules: core's own are never listed. */
+function ExtensionsBlock({ extensions }: { extensions: HealthExtension[] }) {
+  return (
+    <section aria-label={__('Extensions', 'yaymatik')} className="mt-4 flex flex-col gap-3 border-t pt-4">
+      <h3 className="text-sm font-medium">{__('Extensions', 'yaymatik')}</h3>
+      {extensions.length ? (
+        extensions.map((extension) => <ExtensionRow key={extension.id} extension={extension} />)
+      ) : (
+        <p className="text-muted-foreground text-sm">{__('No other plugin adds to YayMatik.', 'yaymatik')}</p>
+      )}
+    </section>
+  );
+}
+
+function ExtensionRow({ extension }: { extension: HealthExtension }) {
+  const name = extension.requiresApi
+    ? sprintf(
+        /* translators: 1: plugin name, 2: Extension API version, e.g. "1.0" */
+        __('%1$s (needs Extension API %2$s)', 'yaymatik'),
+        extension.label,
+        extension.requiresApi,
+      )
+    : extension.label;
+  return (
+    <div className="flex gap-3 [&>svg]:mt-0.5 [&>svg]:size-4 [&>svg]:shrink-0" data-extension={extension.id}>
+      {extension.errors.length ? (
+        <CircleAlert className="text-destructive" />
+      ) : (
+        <CircleCheck className="text-success-soft-foreground" />
+      )}
+      <div className="flex min-w-0 flex-col gap-1">
+        <span className="text-sm font-medium">{name}</span>
+        {extension.errors.length ? (
+          <ul className="flex flex-col gap-1">
+            {extension.errors.map((error) => (
+              <li key={`${error.callback}|${error.time}`} className="text-muted-foreground text-sm">
+                <span className="text-foreground">{error.message}</span>{' '}
+                {sprintf(
+                  /* translators: 1: where it failed, e.g. "listen", 2: how many times, 3: when, e.g. "5 minutes ago" */
+                  _n(
+                    '(%1$s, at least %2$d time, last %3$s)',
+                    '(%1$s, at least %2$d times, last %3$s)',
+                    error.count,
+                    'yaymatik',
+                  ),
+                  error.callback,
+                  error.count,
+                  humanTimeDiff(error.time),
+                )}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <span className="text-muted-foreground text-sm">{__('No problems', 'yaymatik')}</span>
+        )}
+      </div>
+    </div>
   );
 }
 

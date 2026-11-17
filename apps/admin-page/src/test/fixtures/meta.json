@@ -1174,6 +1174,16 @@
                 ]
             }
         },
+        "categories": {
+            "email": "Email",
+            "order": "Order",
+            "coupon": "Coupons",
+            "flow": "Flow",
+            "cart": "Carts",
+            "customer": "Customers",
+            "review": "Reviews"
+        },
+        "inactiveSteps": [],
         "data": [
             {
                 "id": "site",
@@ -5715,6 +5725,7 @@
             "noAction": "Add at least one action.",
             "unlinked": "Some steps aren’t connected. Connect them or remove them.",
             "noBlock": "Choose an action.",
+            "missingPlugin": "This workflow uses %1$s, which isn’t active. Activate %1$s to turn the workflow on.",
             "deleteActive": "Deactivate this workflow before you delete it.",
             "missingData": "%s data isn’t available at this step.",
             "mayRefire": "This step can set off this workflow’s own trigger. The workflow won’t start again from it.",

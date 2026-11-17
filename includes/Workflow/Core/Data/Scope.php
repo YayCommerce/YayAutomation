@@ -1,6 +1,7 @@
 <?php
 namespace YayMatik\Workflow\Core\Data;
 
+use YayMatik\Workflow\Core\Steps\Trigger;
 use YayMatik\Workflow\DataItems\SiteData;
 
 defined( 'ABSPATH' ) || exit;
@@ -23,6 +24,9 @@ final class Scope implements Values {
 
     /** @var callable|null fn( string $step_id, string $key, array $outputs, bool $html ): ?string */
     private $output_display = null;
+
+    /** @var Trigger|null The run's trigger: it defines the `trigger.<fact>` values. */
+    private $trigger = null;
 
     /**
      * @param array            $data     Section => values; values may hold Refs.
@@ -78,6 +82,19 @@ final class Scope implements Values {
     }
 
     /**
+     * The run's trigger.
+     *
+     * @param Trigger|null $trigger
+     */
+    public function set_trigger( ?Trigger $trigger ): void {
+        $this->trigger = $trigger;
+    }
+
+    public function trigger(): ?Trigger {
+        return $this->trigger;
+    }
+
+    /**
      * The run and the step running now, as `run.id` and `run.step`.
      *
      * @param int    $run_id
@@ -112,13 +129,18 @@ final class Scope implements Values {
     public function timestamp( string $path ): ?int {
         $found = $this->resolve( $path );
         $field = $found['field'] ?? null;
-        if ( ! $field ) {
-            return null;
-        }
-        if ( $field['timestamp'] ) {
+        if ( $field && $field['timestamp'] ) {
             return ( $field['timestamp'] )( $found['object'] );
         }
-        $date = \DateTimeImmutable::createFromFormat( '!Y-m-d', (string) ( $field['value'] )( $found['object'] ), wp_timezone() );
+        if ( $field ) {
+            $day = (string) ( $field['value'] )( $found['object'] );
+        } elseif ( DataItem::TYPE_DATE === ( DataRegistry::field( $path, $this->trigger )['type'] ?? null ) && is_string( $found['value'] ?? null ) ) {
+            // A date fact of the run's trigger: a plain `Y-m-d` it stored.
+            $day = $found['value'];
+        } else {
+            return null;
+        }
+        $date = \DateTimeImmutable::createFromFormat( '!Y-m-d', $day, wp_timezone() );
         return $date ? $date->getTimestamp() : null;
     }
 

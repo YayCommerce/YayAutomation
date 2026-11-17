@@ -4,10 +4,12 @@ namespace YayMatik\Workflow\Core\Definition;
 use YayMatik\Workflow\Core\Data\DataRegistry;
 use YayMatik\Workflow\Core\Data\Operators;
 use YayMatik\Workflow\Core\Data\Type;
+use YayMatik\Workflow\Extension\ExtensionModule;
 use YayMatik\Workflow\ModuleRegistry;
 use YayMatik\Workflow\Core\Steps\Field;
 use YayMatik\Workflow\Core\Steps\Step;
 use YayMatik\Workflow\Core\Steps\StepRegistry;
+use YayMatik\Workflow\Extension\StepIndex;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -22,12 +24,45 @@ final class Catalog {
         return [
             'plugins'        => ModuleRegistry::to_client(),
             'steps'          => self::steps( StepRegistry::all() ),
+            'categories'     => self::categories(),
+            'inactiveSteps'  => self::inactive_steps(),
             'data'           => DataRegistry::to_client(),
             'operators'      => Operators::BY_TYPE,
             'operatorLabels' => Operators::labels(),
             'always'         => DataRegistry::ALWAYS,
             'messages'       => Messages::all(),
         ];
+    }
+
+    /**
+     * Steps of other plugins that aren't active now, by id: what the editor shows for them (docs/extension-api.md §10).
+     *
+     * @return array[] `module`, `plugin` (label), `kind`, `label`, `outputs` ([ key, label ]), `facts` (keys).
+     */
+    public static function inactive_steps(): array {
+        $steps = [];
+        foreach ( array_keys( StepIndex::all() ) as $id ) {
+            $entry = StepIndex::inactive( (string) $id );
+            if ( ! $entry ) {
+                continue;
+            }
+            $outputs = [];
+            foreach ( $entry['outputs'] as $key => $label ) {
+                $outputs[] = [
+                    'key'   => (string) $key,
+                    'label' => $label,
+                ];
+            }
+            $steps[ $id ] = [
+                'module'  => $entry['module'],
+                'plugin'  => $entry['plugin'],
+                'kind'    => $entry['kind'],
+                'label'   => $entry['label'],
+                'outputs' => $outputs,
+                'facts'   => array_keys( $entry['facts'] ?? [] ),
+            ];
+        }
+        return $steps;
     }
 
     /**
@@ -42,6 +77,25 @@ final class Catalog {
             $meta[ $id ] = self::step( $step, $plugins[ $id ] );
         }
         return $meta;
+    }
+
+    /** Picker section labels by id: core's, then the ones extension modules declared. */
+    public static function categories(): array {
+        $categories = [
+            'email'    => __( 'Email', 'yaymatik' ),
+            'order'    => __( 'Order', 'yaymatik' ),
+            'coupon'   => __( 'Coupons', 'yaymatik' ),
+            'flow'     => __( 'Flow', 'yaymatik' ),
+            'cart'     => __( 'Carts', 'yaymatik' ),
+            'customer' => __( 'Customers', 'yaymatik' ),
+            'review'   => __( 'Reviews', 'yaymatik' ),
+        ];
+        foreach ( ModuleRegistry::modules() as $module ) {
+            if ( $module instanceof ExtensionModule ) {
+                $categories += $module->categories();
+            }
+        }
+        return $categories;
     }
 
     /**

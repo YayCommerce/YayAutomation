@@ -75,6 +75,11 @@ body.yay-ui {
   }
 }
 
+/* On <html> only: on <body> it would become the sticky header's scroller and shift the header down by the admin bar. */
+html.yaymatik-editor-open {
+  overflow: hidden;
+}
+
 #screen-meta,
 #screen-meta-links {
   display: none;

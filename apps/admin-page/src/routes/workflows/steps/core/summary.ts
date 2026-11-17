@@ -7,7 +7,9 @@ import { parseTemplate } from './template';
 import type { Config } from './types';
 
 /** Writes one summary placeholder for a step: returns marked text (`value()`, `PLACEHOLDER`); blank → `PLACEHOLDER`. */
-export type SummaryValues<TConfig> = Partial<Record<Extract<keyof TConfig, string>, (config: TConfig) => string>>;
+export type SummaryValues<TConfig> = Partial<
+  Record<Extract<keyof TConfig, string>, (config: TConfig, trigger?: string | null) => string>
+>;
 
 /** "A", "A or B", "A, B or C". */
 function orList(values: string[]) {
@@ -23,11 +25,11 @@ function orList(values: string[]) {
  * Text with each merge tag as the name of what it reads: "Order {{ order.number }}" → "Order Order
  * number". A malformed tag, a step output or a path nothing defines stays as typed.
  */
-export const variableNames = (text: string) =>
+export const variableNames = (text: string, trigger?: string | null) =>
   parseTemplate(text)
     .map((token) => {
       if (token.type === 'text') return token.text;
-      return (token.error === null && pathLabel(token.path)) || token.raw;
+      return (token.error === null && pathLabel(token.path, trigger)) || token.raw;
     })
     .join('');
 
@@ -36,8 +38,8 @@ export const optionLabel = (field: StepFieldMeta, raw: unknown) =>
   field.options?.find((option) => option.value === raw)?.label ?? String(raw);
 
 /** A field's value as plain card text: option labels, lists joined, whitespace collapsed, merge tags by name. */
-function fieldText(field: StepFieldMeta, raw: unknown): string {
-  const names = (text: string) => (field.variables ? variableNames(text) : text);
+function fieldText(field: StepFieldMeta, raw: unknown, trigger?: string | null): string {
+  const names = (text: string) => (field.variables ? variableNames(text, trigger) : text);
   if (raw === undefined || raw === null) return '';
   switch (field.type) {
     case 'select':
@@ -68,13 +70,14 @@ export function renderSummary<TConfig extends Config>(
   fields: StepFieldMeta[],
   config: TConfig,
   values: SummaryValues<TConfig> = {},
+  trigger?: string | null,
 ) {
   return template.replace(/%([a-z_]+)%/g, (whole, key: string) => {
     const custom = values[key as Extract<keyof TConfig, string>];
-    if (custom) return custom(config) || PLACEHOLDER;
+    if (custom) return custom(config, trigger) || PLACEHOLDER;
     const field = fields.find((f) => f.key === key);
     if (!field) return whole;
-    const text = fieldText(field, config[key]);
+    const text = fieldText(field, config[key], trigger);
     return value(text || (field.type === 'multiselect' ? (field.placeholder ?? '') : ''));
   });
 }

@@ -5,7 +5,9 @@ use PHPUnit\Framework\TestCase;
 use YayMatik\Workflow\Core\Definition\GraphSchema;
 use YayMatik\Workflow\Core\Definition\Messages;
 use YayMatik\Workflow\Core\Definition\Validator;
+use YayMatik\Workflow\Core\Steps\StepRegistry;
 use YayMatik\Workflow\Core\Storage\Settings;
+use YayMatik\Workflow\Extension\Extensions;
 
 require_once dirname( __DIR__, 3 ) . '/Support/woocommerce-stubs.php';
 
@@ -613,6 +615,256 @@ final class ValidatorTest extends TestCase {
             ]
         );
         $this->assertSame( [], array_values( array_filter( $errors, fn( array $error ) => 'may_refire' === $error['code'] ) ) );
+    }
+
+    /**
+     * Runs `$check` with module `acme`'s steps registered: trigger `acme_points` (customer) and
+     * action `acme_act` with these args.
+     *
+     * @param array    $action
+     * @param callable $check
+     * @return mixed What `$check` returns.
+     */
+    private static function with_acme( array $action, callable $check ) {
+        $module = Extensions::collect(
+            [],
+            function ( $registrar ) use ( $action ) {
+                $module = $registrar->module(
+                    [
+                        'id'    => 'acme',
+                        'label' => 'Acme',
+                    ]
+                );
+                $module->trigger(
+                    'acme_points',
+                    [
+                        'label'       => 'Points earned',
+                        'description' => 'When points are earned.',
+                        'provides'    => [ 'customer' ],
+                        'facts'       => [
+                            'points' => [
+                                'label' => 'Points earned',
+                                'type'  => 'number',
+                            ],
+                        ],
+                    ]
+                );
+                $module->action(
+                    'acme_act',
+                    $action + [
+                        'label'       => 'Act',
+                        'description' => 'Does it.',
+                        'run'         => fn( array $config, $run ) => $run->done(),
+                    ]
+                );
+            }
+        )[0];
+        $steps  = new \ReflectionProperty( StepRegistry::class, 'steps' );
+        $steps->setAccessible( true );
+        $before = StepRegistry::all();
+        $steps->setValue(
+            null,
+            $before + [
+                'acme_points' => $module->triggers()[0],
+                'acme_act'    => $module->actions()[0],
+            ]
+        );
+        try {
+            return $check();
+        } finally {
+            $steps->setValue( null, $before );
+        }
+    }
+
+    /**
+     * Prepared "trigger → acme_act" graph.
+     *
+     * @param string $trigger
+     */
+    private static function acme_graph( string $trigger ): array {
+        return GraphSchema::prepare(
+            [
+                'nodes' => [ self::node( 't', 'trigger', $trigger ), self::node( 'a', 'action', 'acme_act' ) ],
+                'edges' => [ self::edge( 't', 'a' ) ],
+            ]
+        );
+    }
+
+    public function test_an_action_setup_issue_blocks_activating(): void {
+        $issues = self::with_acme(
+            [ 'setup_issue' => fn() => 'Create a design in Acme first.' ],
+            fn() => [
+                Validator::errors(
+                    [
+                        'name'   => 'Alert',
+                        'status' => 'inactive',
+                        'graph'  => self::acme_graph( 'acme_points' ),
+                    ]
+                ),
+                Validator::errors(
+                    [
+                        'name'   => 'Alert',
+                        'status' => 'active',
+                        'graph'  => self::acme_graph( 'acme_points' ),
+                    ]
+                ),
+            ]
+        );
+
+        $this->assertSame(
+            [
+                [
+                    'code'    => 'setup_issue',
+                    'message' => 'Create a design in Acme first.',
+                    'nodeId'  => 'a',
+                ],
+            ],
+            $issues[0]
+        );
+        $this->assertSame( [], $issues[1], 'an active workflow keeps running' );
+    }
+
+    public function test_validate_gets_the_data_items_the_trigger_gives(): void {
+        $validate = fn( array $config, array $available ) => in_array( 'order', $available, true ) ? [] : [ '' => 'This design needs an order.' ];
+        $codes    = self::with_acme(
+            [ 'validate' => $validate ],
+            fn() => [
+                array_column( self::issues( self::acme_graph( 'acme_points' )['nodes'], self::acme_graph( 'acme_points' )['edges'] ), 'message', 'nodeId' ),
+                array_column( self::issues( self::acme_graph( 'order_created' )['nodes'], self::acme_graph( 'order_created' )['edges'] ), 'message', 'nodeId' ),
+            ]
+        );
+
+        $this->assertSame( [ 'a' => 'This design needs an order.' ], $codes[0] );
+        $this->assertSame( [], $codes[1] );
+    }
+
+    public function test_a_fact_is_a_variable_of_its_trigger_only(): void {
+        $note    = [
+            'fields' => [
+                'note' => [
+                    'type'      => 'text',
+                    'label'     => 'Note',
+                    'variables' => true,
+                ],
+            ],
+        ];
+        $graph   = fn( string $trigger, string $text ) => GraphSchema::prepare(
+            [
+                'nodes' => [ self::node( 't', 'trigger', $trigger ), self::node( 'a', 'action', 'acme_act', [ 'note' => $text ] ) ],
+                'edges' => [ self::edge( 't', 'a' ) ],
+            ]
+        );
+        $results = self::with_acme(
+            $note,
+            fn() => [
+                Validator::errors(
+                    [
+                        'name'  => 'A',
+                        'graph' => $graph( 'acme_points', 'You got {{ trigger.points }} points' ),
+                    ]
+                ),
+                array_column(
+                    Validator::errors(
+                        [
+                            'name'  => 'A',
+                            'graph' => $graph( 'acme_points', '{{ trigger.nope }}' ),
+                        ]
+                    ),
+                    'message'
+                ),
+                array_column(
+                    Validator::errors(
+                        [
+                            'name'  => 'A',
+                            'graph' => $graph( 'order_created', '{{ trigger.points }}' ),
+                        ]
+                    ),
+                    'message'
+                ),
+                array_column( Validator::variables( $graph( 'acme_points', '' ), 'a' ), 'key' )[0],
+            ]
+        );
+
+        $this->assertSame( [], $results[0] );
+        $this->assertSame( [ Messages::get( 'unknownVariable', '{{ trigger.nope }}' ) ], $results[1] );
+        $this->assertSame( [ Messages::get( 'unknownVariable', '{{ trigger.points }}' ) ], $results[2] );
+        $this->assertSame( 'trigger.points', $results[3], 'facts are listed first' );
+    }
+
+    public function test_a_condition_rule_on_a_fact(): void {
+        $criteria = new \YayMatik\Workflow\Conditions\Criteria();
+        $config   = $criteria->sanitize(
+            [
+                'match' => 'all',
+                'rules' => [
+                    [
+                        'field'    => 'trigger.points',
+                        'operator' => 'greater_than',
+                        'value'    => '10',
+                    ],
+                ],
+            ]
+        );
+        $scope    = function ( int $points ) {
+            $scope = new \YayMatik\Workflow\Core\Data\Scope( [ 'trigger' => [ 'points' => $points ] ], null, [] );
+            $scope->set_trigger( StepRegistry::get( 'acme_points' ) );
+            return $scope;
+        };
+        $results  = self::with_acme(
+            [],
+            fn() => [
+                $criteria->validate( $config ),
+                $criteria->uses( $config ),
+                $criteria->context_error( $config, [], StepRegistry::get( 'acme_points' ) ),
+                $criteria->evaluate( $scope( 42 ), $config ),
+                $criteria->evaluate( $scope( 5 ), $config ),
+            ]
+        );
+
+        $this->assertSame( [ true, [], null, true, false ], $results );
+        $graph  = fn( string $trigger ) => GraphSchema::prepare(
+            [
+                'nodes' => [ self::node( 't', 'trigger', $trigger ), self::node( 'c', 'condition', 'condition', $config ), self::node( 'a', 'action', 'acme_act' ) ],
+                'edges' => [ self::edge( 't', 'c' ), self::edge( 'c', 'a', 'then' ) ],
+            ]
+        );
+        $issues = self::with_acme(
+            [],
+            fn() => [
+                array_column(
+                    Validator::errors(
+                        [
+                            'name'  => 'A',
+                            'graph' => $graph( 'acme_points' ),
+                        ]
+                    ),
+                    'code',
+                    'nodeId'
+                ),
+                array_column(
+                    Validator::errors(
+                        [
+                            'name'  => 'A',
+                            'graph' => $graph( 'order_created' ),
+                        ]
+                    ),
+                    'message',
+                    'nodeId'
+                ),
+            ]
+        );
+        $this->assertArrayNotHasKey( 'c', $issues[0] );
+        $this->assertSame( Messages::get( 'ruleVariable' ), $issues[1]['c'], 'a fact of another trigger' );
+    }
+
+    public function test_emits_drives_the_may_refire_warning(): void {
+        $warnings = self::with_acme(
+            [ 'emits' => [ 'acme_points' ] ],
+            fn() => [ Validator::warnings( self::acme_graph( 'acme_points' ) ), Validator::warnings( self::acme_graph( 'order_created' ) ) ]
+        );
+
+        $this->assertSame( [ 'may_refire' ], array_column( $warnings[0], 'code' ) );
+        $this->assertSame( [], $warnings[1] );
     }
 
     public function test_note_trigger_warns_only_with_skip_off(): void {

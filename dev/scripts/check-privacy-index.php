@@ -227,6 +227,13 @@ $ok( 200 === $rest( 'DELETE', "workflows/{$flow}" )->get_status(), 'skipped run:
 RunStore::delete_with_steps( array_map( 'intval', $wpdb->get_col( $wpdb->prepare( 'SELECT id FROM %i WHERE subject = %s', RunStore::table(), 'cart:' . (int) $cart['id'] ) ) ) );
 Settings::update( [ 'cart_tracking' => $settings['cart_tracking'] ] );
 
+// Another plugin's own subject: found through its module's `privacy_subjects`, a core shape it returns is ignored.
+$ext   = "ext@{$domain}";
+$about = $run( [], 'pidx_ext_thing:7' );
+RunStore::save( $about, [ 'status' => RunStore::STATUS_COMPLETED ] );
+$ok( in_array( 'pidx_ext_thing:7', PersonSubjects::for_email( $ext ), true ) && ! in_array( 'order:1', PersonSubjects::for_email( $ext ), true ), 'module subjects: its own kept, a core shape ignored' );
+$ok( in_array( "yaymatik-run-{$about}", array_column( $privacy->export( $ext, 1 )['data'], 'item_id' ), true ), 'module subjects: export lists the run about it' );
+
 $cleanup();
 echo $fails ? "{$fails} failed\n" : "All passed\n"; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 exit( $fails ? 1 : 0 );

@@ -1,5 +1,5 @@
 import { createContext, useContext } from 'react';
-import type { WorkflowNodeKind } from '@yaymatik/types';
+import type { StepId, WorkflowNodeKind } from '@yaymatik/types';
 import type { LucideIcon } from 'lucide-react';
 
 import { availableVariables, type Variable } from '../variables';
@@ -17,8 +17,8 @@ interface ScopeStep {
 export interface VariableScope {
   /** `availableVariables()` for the step. */
   variables: Variable[];
-  /** The workflow's trigger and the data items it supplies; null until one is chosen. */
-  trigger: (Omit<ScopeStep, 'summary'> & { provides: string[] }) | null;
+  /** The workflow's trigger (its step `id` defines `trigger.<fact>`) and the data items it supplies; null until one is chosen. */
+  trigger: (Omit<ScopeStep, 'summary'> & { id: StepId; provides: string[] }) | null;
   /** The steps above, by node id: their outputs are grouped under them. */
   steps: Record<string, ScopeStep>;
 }

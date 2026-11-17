@@ -14,6 +14,7 @@ import { KeySuggestInput } from '../../core/fields/KeySuggestInput';
 import { MultiSelect } from '../../core/fields/MultiSelect';
 import { SearchSelect } from '../../core/fields/SearchSelect';
 import { VariablePicker } from '../../core/fields/VariablePicker';
+import { useVariableScope } from '../../core/fields/variableScope';
 import { comparableWith, VARIABLE_VALUE_TYPES, type Rule, type RuleUnit } from './schema';
 
 /** For the picker's "Types: …" line. */
@@ -81,6 +82,7 @@ export function ValueInput({
   rule: Rule;
   onChange: (rule: Rule) => void;
 }) {
+  const trigger = useVariableScope().trigger?.id;
   const setValue = (value: string) => onChange({ ...rule, value, valueType: 'value' });
   const setVariable = (key: string) => onChange({ ...rule, value: key, valueType: 'variable' });
   const text = typeof rule.value === 'string' ? rule.value : '';
@@ -154,7 +156,12 @@ export function ValueInput({
     return (
       <div className="flex min-w-0 items-center gap-1">
         <VariablePicker {...variables} onSelect={setVariable}>
-          <DataSelect id={id} field={fieldByKey(text)} placeholder={__('Choose data', 'yaymatik')} invalid={invalid} />
+          <DataSelect
+            id={id}
+            field={fieldByKey(text, trigger)}
+            placeholder={__('Choose data', 'yaymatik')}
+            invalid={invalid}
+          />
         </VariablePicker>
         <Button
           variant="ghost"

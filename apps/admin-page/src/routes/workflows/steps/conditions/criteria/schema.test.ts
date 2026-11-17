@@ -109,7 +109,7 @@ describe('changing a comparison', () => {
 
 describe('changing a rule’s field', () => {
   it('keeps value and unit on a field of the same type', () => {
-    const next = ruleForField(rule({ operator: 'in_last', value: '3', unit: 'hours' }), 'order.paid_date');
+    const next = ruleForField(rule({ operator: 'in_last', value: '3', unit: 'hours' }), 'order.paid_date', null);
     expect(next).toMatchObject({ field: 'order.paid_date', operator: 'in_last', value: '3', unit: 'hours' });
   });
 
@@ -117,11 +117,13 @@ describe('changing a rule’s field', () => {
     const next = ruleForField(
       rule({ field: 'order.product_ids', operator: 'matches_any', value: ['4'] }),
       'order.category_ids',
+      null,
     );
     expect(next).toMatchObject({ operator: 'matches_any', value: [] });
     const same = ruleForField(
       rule({ field: 'order.product_ids', operator: 'matches_any', value: ['4'] }),
       'customer.purchased_product_ids',
+      null,
     );
     expect(same.value).toEqual(['4']);
   });
@@ -130,14 +132,15 @@ describe('changing a rule’s field', () => {
     const next = ruleForField(
       rule({ field: 'order.meta', operator: 'equal', value: 'yes', key: '_gift' }),
       'customer.meta',
+      null,
     );
     expect(next.key).toBe('');
   });
 
   it('starts another type with its first comparison, in its shape', () => {
-    const next = ruleForField(rule({ operator: 'in_last', value: '3', unit: 'hours' }), 'order.product_ids');
+    const next = ruleForField(rule({ operator: 'in_last', value: '3', unit: 'hours' }), 'order.product_ids', null);
     expect(next).toEqual({ field: 'order.product_ids', operator: 'matches_any', value: [], valueType: 'value' });
-    expect(ruleForField(rule({ field: 'order.total', operator: 'equal', value: '1' }), 'order.meta')).toEqual({
+    expect(ruleForField(rule({ field: 'order.total', operator: 'equal', value: '1' }), 'order.meta', null)).toEqual({
       field: 'order.meta',
       operator: 'equal',
       value: '',

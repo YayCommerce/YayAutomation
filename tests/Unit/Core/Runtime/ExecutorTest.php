@@ -10,6 +10,7 @@ use YayMatik\Tests\Support\FakeRunRepository;
 use YayMatik\Tests\Support\FakeStep;
 use YayMatik\Tests\Support\FakeTrigger;
 use YayMatik\Tests\Support\FakeWorkflows;
+use YayMatik\Workflow\Conditions\Criteria;
 use YayMatik\Workflow\Core\Data\GoneEntity;
 use YayMatik\Workflow\Core\Data\Ref;
 use YayMatik\Workflow\Core\Data\RefResolver;
@@ -17,6 +18,8 @@ use YayMatik\Workflow\Core\Data\Scope;
 use YayMatik\Workflow\Core\Runtime\Executor;
 use YayMatik\Workflow\Core\Steps\Step;
 use YayMatik\Workflow\Core\Steps\StepResult;
+use YayMatik\Workflow\Extension\Diagnostics;
+use YayMatik\Workflow\Extension\Extensions;
 
 /** The Executor over fakes: cursor, branches, error policy, waits, slices and safe resume. */
 final class ExecutorTest extends TestCase {
@@ -40,6 +43,9 @@ final class ExecutorTest extends TestCase {
 
     /** @var Step[] Step type id => step. */
     private $steps = [];
+
+    /** @var object[] Order id => order the resolver finds. */
+    private $orders = [];
 
     protected function setUp(): void {
         $this->runs                    = new FakeRunRepository();
@@ -129,7 +135,7 @@ final class ExecutorTest extends TestCase {
             $this->workflows,
             $this->clock,
             fn( string $block ) => $this->steps[ $block ] ?? null,
-            fn() => new RefResolver( [] )
+            fn() => new RefResolver( [ 'order' => fn( string $order_id ) => $this->orders[ (int) $order_id ] ?? null ] )
         );
         return $executor->run( $this->runs->find_run( $id ) );
     }
@@ -274,6 +280,96 @@ final class ExecutorTest extends TestCase {
         $this->assertSame( 'skipped', $rows[0]['status'] );
         $this->assertSame( 'Order no longer exists.', $rows[0]['error'] );
         $this->assertSame( 'completed', $rows[1]['status'] );
+    }
+
+    public function test_an_order_deleted_while_the_run_waits_skips_core_and_extension_steps(): void {
+        $GLOBALS['yaymatik_test_options'] = [];
+        $this->orders                     = [ 12 => new \stdClass() ];
+        $until                            = $this->clock->now + 3600;
+        $this->steps['wait']              = new FakeStep( 'wait', fn() => StepResult::wait( $until ) );
+        $this->steps['note']              = new FakeStep(
+            'note',
+            function ( Scope $scope ) {
+                $scope->entity( 'order' );
+                return StepResult::ok();
+            }
+        );
+        $this->steps['acme']              = Extensions::collect(
+            [],
+            function ( $registrar ) {
+                $registrar->module(
+                    [
+                        'id'    => 'acme',
+                        'label' => 'Acme',
+                    ]
+                )->action(
+                    'acme_act',
+                    [
+                        'label'       => 'Act',
+                        'description' => 'Reads the order.',
+                        'run'         => fn( array $config, $run ) => $run->order() ? $run->done() : $run->fail( 'No order.' ),
+                    ]
+                );
+            }
+        )[0]->actions()[0];
+        $this->graph(
+            [
+                'w' => [ 'wait', [] ],
+                'a' => [ 'acme', [] ],
+                'n' => [ 'note', [] ],
+            ],
+            [ [ 't', 'w' ], [ 'w', 'a' ], [ 'a', 'n' ] ]
+        );
+        $id = $this->new_run( ( new Scope( [ 'trigger' => [ 'order' => new Ref( 'order', 12 ) ] ], null, [] ) )->to_array() );
+
+        $this->assertSame( 'waiting', $this->slice( $id ) );
+        $this->orders     = [];
+        $this->runs->now  = '2026-10-12 11:00:00';
+        $this->clock->now = $until;
+
+        $this->assertSame( 'completed', $this->slice( $id ) );
+        $rows = array_column( $this->runs->steps( $id ), null, 'step_id' );
+        $this->assertSame( [ 'skipped', 'Order no longer exists.' ], [ $rows['a']['status'], $rows['a']['error'] ] );
+        $this->assertSame( [ 'skipped', 'Order no longer exists.' ], [ $rows['n']['status'], $rows['n']['error'] ] );
+        $this->assertSame( [], Diagnostics::recent( 24 ), 'a deleted order is not the extension\'s error' );
+    }
+
+    public function test_a_step_of_a_plugin_that_is_off_is_skipped_and_the_run_goes_on(): void {
+        $GLOBALS['yaymatik_test_options'][ \YayMatik\Workflow\Extension\StepIndex::OPTION ] = [
+            'fingerprint' => 'x',
+            'steps'       => [
+                'acme_add_points' => [
+                    'module'  => 'acme',
+                    'plugin'  => 'Acme Rewards',
+                    'kind'    => 'action',
+                    'label'   => 'Add reward points',
+                    'outputs' => [],
+                ],
+            ],
+        ];
+        $index = new \ReflectionProperty( \YayMatik\Workflow\Extension\StepIndex::class, 'stored' );
+        $index->setAccessible( true );
+        $index->setValue( null, null );
+        $this->graph(
+            [
+                'a' => [ 'acme_add_points', [] ],
+                'b' => [ 'act', [] ],
+                'c' => [ 'gone_step', [] ],
+            ],
+            [ [ 't', 'a' ], [ 'a', 'b' ], [ 'b', 'c' ] ]
+        );
+        $id = $this->new_run();
+
+        try {
+            $this->slice( $id );
+        } finally {
+            $index->setValue( null, null );
+            unset( $GLOBALS['yaymatik_test_options'][ \YayMatik\Workflow\Extension\StepIndex::OPTION ] );
+        }
+        $rows = array_column( $this->runs->steps( $id ), null, 'step_id' );
+        $this->assertSame( [ 'skipped', 'Acme Rewards isn’t active.' ], [ $rows['a']['status'], $rows['a']['error'] ] );
+        $this->assertSame( 'completed', $rows['b']['status'] );
+        $this->assertSame( [ 'failed', 'Step type "gone_step" is not available.' ], [ $rows['c']['status'], $rows['c']['error'] ], 'not in the index: as before' );
     }
 
     public function test_skipped_condition_ends_its_path(): void {
@@ -877,5 +973,83 @@ final class ExecutorTest extends TestCase {
         $this->assertSame( 'completed', $this->slice( $id ) );
         $this->assertSame( [ 'c', 'yes' ], array_keys( $this->statuses( $id ) ) );
         $this->assertSame( [ 'result' => 'yes' ], $this->runs->steps( $id )[0]['output'] );
+    }
+
+    public function test_a_condition_on_a_fact_reads_the_runs_trigger_type(): void {
+        $GLOBALS['yaymatik_test_options'] = [];
+        foreach ( Extensions::collect(
+            [],
+            function ( $registrar ) {
+                foreach ( [
+                    'acme'  => 'money',
+                    'other' => 'string',
+                ] as $id => $type ) {
+                    $registrar->module(
+                        [
+                            'id'    => $id,
+                            'label' => ucfirst( $id ),
+                        ]
+                    )->trigger(
+                        "{$id}_paid",
+                        [
+                            'label'       => 'T',
+                            'description' => 'T.',
+                            'provides'    => [ 'customer' ],
+                            'facts'       => [
+                                'amount' => [
+                                    'label' => 'Amount',
+                                    'type'  => $type,
+                                ],
+                            ],
+                        ]
+                    );
+                }
+            }
+        ) as $module ) {
+            $this->steps[ $module->triggers()[0]->id() ] = $module->triggers()[0];
+        }
+        $this->steps['condition'] = new Criteria();
+        $rule                     = [
+            'field'     => 'trigger.amount',
+            'operator'  => 'equal',
+            'value'     => '10',
+            'valueType' => 'value',
+        ];
+        $this->graph(
+            [
+                'c' => [
+                    'condition',
+                    [
+                        'match' => 'all',
+                        'rules' => [ $rule ],
+                    ],
+                ],
+            ],
+            [ [ 't', 'c' ] ]
+        );
+
+        $results = [];
+        foreach ( [ 'acme_paid', 'other_paid' ] as $trigger ) {
+            $id = $this->runs->create_run(
+                [
+                    'workflow_id' => 9,
+                    'version_id'  => self::VERSION,
+                    'trigger_id'  => $trigger,
+                    'scope'       => [ 'trigger' => [ 'amount' => '10.0' ] ],
+                ]
+            );
+            $this->runs->claim_run( $id, [ 'queued' ] );
+            $this->assertSame( 'completed', $this->slice( $id ) );
+            $results[ $trigger ] = $this->runs->steps( $id )[0]['output']['result'] ?? null;
+        }
+
+        $this->assertSame(
+            [
+                'acme_paid'  => 'yes',
+                'other_paid' => 'no',
+            ],
+            $results,
+            'money: 10.0 is 10; text: "10.0" isn\'t "10"'
+        );
     }
 }

@@ -67,6 +67,18 @@ export interface StepOutputMeta {
   block?: boolean;
 }
 
+/** A step whose plugin is off: enough to draw it and keep the workflow (docs/extension-api.md §10). */
+export interface InactiveStepMeta {
+  module: string;
+  /** The plugin's name, e.g. "YayMail". */
+  plugin: string;
+  kind: WorkflowNodeKind;
+  label: string;
+  outputs: { key: string; label: string }[];
+  /** A trigger's fact keys, so merge tags reading them stay valid while its plugin is off. */
+  facts: string[];
+}
+
 /** A step's kind and data needs; `CatalogStepMeta` adds the rest of its contract. */
 export interface StepMeta {
   kind: WorkflowNodeKind;
@@ -74,10 +86,12 @@ export interface StepMeta {
   plugin?: WorkflowPlugin;
   /** Data items the step adds: a trigger's for every run, an action's for the steps below it. */
   provides?: string[];
-  /** Picker section. */
-  category?: 'email' | 'order' | 'coupon' | 'flow' | 'cart' | 'customer' | 'review';
+  /** Picker section: a key of `automation.categories`. */
+  category?: string;
   /** Actions: data items needed whatever the config. */
   requires?: string[];
+  /** Triggers: values true only at event time, keyed `trigger.<key>`, shaped like data fields. */
+  facts?: DataItemMeta['fields'];
 }
 
 /** PHP `Core\Definition\Catalog::step()`: a step PHP has built, with its full contract. */
@@ -85,7 +99,7 @@ export interface CatalogStepMeta extends StepMeta {
   plugin: WorkflowPlugin;
   label: string;
   description: string;
-  /** A name from PHP `StepIcons::NAMES` (lucide). */
+  /** A name from PHP `StepIcons::NAMES` (lucide); '' for another plugin's step that names none (its logo is drawn). */
   icon: string;
   /** Card text with `%field key%` placeholders. */
   summary: string;
@@ -163,6 +177,10 @@ declare global {
         plugins: PluginMeta[];
         /** By step id; another plugin's ids too. */
         steps: Partial<Record<StepId, CatalogStepMeta>>;
+        /** PHP `Catalog::categories()`: picker section labels by id, core's and other plugins'. */
+        categories: Record<string, string>;
+        /** PHP `Catalog::inactive_steps()`: steps of other plugins that aren't active now, by id. */
+        inactiveSteps: Record<string, InactiveStepMeta>;
         data: DataItemMeta[];
         /** Operator ids per field type. */
         operators: Record<DataFieldType, string[]>;

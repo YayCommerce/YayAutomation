@@ -18,12 +18,33 @@ final class GraphSchema {
     private const KINDS = [ Step::KIND_TRIGGER, Step::KIND_CONDITION, Step::KIND_ACTION ];
 
     /**
+     * The saved config of a node whose step isn't registered, when a saved node has the same id, kind
+     * and step; null otherwise. The draft's wins over the live one: it is listed after.
+     *
+     * @param array[] $stored
+     * @param string  $id
+     * @param string  $kind
+     * @param string  $step_id
+     */
+    private static function kept_config( array $stored, string $id, string $kind, string $step_id ): ?array {
+        $config = null;
+        foreach ( $stored as $node ) {
+            if ( ( $node['id'] ?? null ) === $id && ( $node['kind'] ?? null ) === $kind && ( $node['data']['block'] ?? null ) === $step_id ) {
+                $config = (array) ( $node['data']['config'] ?? [] );
+            }
+        }
+        return $config;
+    }
+
+    /**
      * The normalized graph: fixed key order and types, configs sanitized, unknown keys dropped.
      *
-     * @param mixed $graph
+     * @param mixed   $graph
+     * @param array[] $stored Saved nodes (live, then draft): a node whose step isn't registered is kept with its
+     *                        saved config when one of them has it, so a workflow using a plugin that's off still saves.
      * @return array|\WP_Error 400 for a malformed graph.
      */
-    public static function prepare( $graph ) {
+    public static function prepare( $graph, array $stored = [] ) {
         if ( ! is_array( $graph ) || ! is_array( $graph['nodes'] ?? null ) || ! is_array( $graph['edges'] ?? null ) ) {
             return self::error( __( 'Invalid workflow graph.', 'yaymatik' ) );
         }
@@ -49,7 +70,8 @@ final class GraphSchema {
             // A trigger or action may be added before its step is chosen; a condition has just one step.
             $step  = null === $step_id ? null : StepRegistry::get( (string) $step_id );
             $known = $step ? $step->kind() === $kind : ( null === $step_id && Step::KIND_CONDITION !== $kind );
-            if ( ! in_array( $kind, self::KINDS, true ) || ! $known ) {
+            $kept  = ! $step && null !== $step_id ? self::kept_config( $stored, $id, $kind, (string) $step_id ) : null;
+            if ( ! in_array( $kind, self::KINDS, true ) || ( ! $known && null === $kept ) ) {
                 return self::error( __( 'Unknown step type.', 'yaymatik' ), $id );
             }
             if ( Step::KIND_TRIGGER === $kind ) {
@@ -65,8 +87,8 @@ final class GraphSchema {
                     'y' => is_numeric( $position['y'] ?? null ) ? (float) $position['y'] : 0.0,
                 ],
                 'data'     => [
-                    'block'  => $step ? $step->id() : null,
-                    'config' => $step ? $step->sanitize( $data['config'] ?? [] ) : [],
+                    'block'  => $step ? $step->id() : ( null === $kept ? null : (string) $step_id ),
+                    'config' => $step ? $step->sanitize( $data['config'] ?? [] ) : ( $kept ?? [] ),
                 ],
             ];
         }
@@ -154,8 +176,9 @@ final class GraphSchema {
         }
         // After `prepare()` strict === holds: unlike ==, '500' and '5e2' or '' and null stay different. A missing
         // `schemaVersion` is filled in, so a graph with and without it compares equal.
-        $a = self::prepare( $a );
-        $b = self::prepare( $b );
+        // Both are saved graphs: a node of a plugin that's off is kept as it is.
+        $a = self::prepare( $a, (array) ( $a['nodes'] ?? [] ) );
+        $b = self::prepare( $b, (array) ( $b['nodes'] ?? [] ) );
         return ! is_wp_error( $a ) && ! is_wp_error( $b ) && self::logic( $a ) === self::logic( $b );
     }
 

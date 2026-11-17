@@ -170,7 +170,9 @@ export type WorkflowIssueCode =
   | 'no_block'
   | 'invalid_config'
   | 'missing_data'
-  | 'cart_tracking_off';
+  | 'cart_tracking_off'
+  | 'setup_issue'
+  | 'missing_plugin';
 
 /** Something that blocks Activate or Update. `nodeId` is set when the issue belongs to one step. */
 export interface WorkflowIssue {
@@ -278,6 +280,8 @@ export interface WorkflowRunsPage {
 
 /** `GET /runs/{id}`. */
 export interface RunDetail extends Run, RunSubject {
+  /** The trigger's facts at event time, e.g. "Points earned: 42". */
+  facts: { label: string; value: string }[];
   /** Admin URL of the order that ended a cancelled cart run; null for anything else. */
   stoppedByOrderUrl: string | null;
   steps: (RunStep & {

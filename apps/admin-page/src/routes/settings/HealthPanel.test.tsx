@@ -1,6 +1,6 @@
 import { act } from 'react';
 import { focusManager, QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import type { HealthCheck, HealthChecksResponse, HealthFixResponse } from '@yaymatik/types';
+import type { HealthCheck, HealthChecksResponse, HealthExtension, HealthFixResponse } from '@yaymatik/types';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -41,7 +41,11 @@ const late = (count: number): HealthCheck => ({
   guide: GUIDE,
 });
 const allOk = [ok('runs_queued'), ok('runs_running'), ok('jobs_late'), ok('cleanup_job'), ok('inactive_sweep_job')];
-const scan = (checks: HealthCheck[]): HealthChecksResponse => ({ checks, checkedAt: new Date().toISOString() });
+const scan = (checks: HealthCheck[], extensions: HealthExtension[] = []): HealthChecksResponse => ({
+  checks,
+  extensions,
+  checkedAt: new Date().toISOString(),
+});
 
 let container: HTMLDivElement;
 let root: Root;
@@ -64,8 +68,8 @@ afterEach(() => {
 
 const tick = (ms = 0) => act(() => new Promise((resolve) => setTimeout(resolve, ms)));
 
-async function render(checks: HealthCheck[]) {
-  vi.mocked(getHealthChecks).mockResolvedValue(scan(checks));
+async function render(checks: HealthCheck[], extensions: HealthExtension[] = []) {
+  vi.mocked(getHealthChecks).mockResolvedValue(scan(checks, extensions));
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   await act(async () =>
     root.render(
@@ -79,6 +83,7 @@ async function render(checks: HealthCheck[]) {
 
 const titles = () => [...container.querySelectorAll('.font-semibold.text-sm')].map((node) => node.textContent);
 const summary = () => container.querySelector('[data-slot="card-description"]')?.textContent;
+const extensionsBlock = () => container.querySelector('section[aria-label="Extensions"]');
 const button = (name: string) =>
   [...container.querySelectorAll('button')].find((b) => b.textContent?.trim() === name) as
     HTMLButtonElement | undefined;
@@ -343,5 +348,40 @@ describe('HealthPanel', () => {
     await tick();
     expect(container.querySelector('[role="alert"]')).toBeNull();
     expect(titles()).toEqual(['The daily cleanup isn’t running on time']);
+  });
+
+  it('says no other plugin adds to YayMatik when no module is listed', async () => {
+    await render(allOk);
+
+    expect(extensionsBlock()?.textContent).toBe('ExtensionsNo other plugin adds to YayMatik.');
+  });
+
+  it('lists each module with no problems or its errors', async () => {
+    const time = new Date().toISOString();
+    await render(allOk, [
+      { id: 'acme_rewards', label: 'Acme Rewards', requiresApi: '1.0', errors: [] },
+      {
+        id: 'acme_broken',
+        label: 'Acme Broken',
+        requiresApi: null,
+        errors: [{ callback: 'listen', message: 'Boom.', count: 3, time }],
+      },
+    ]);
+
+    const rows = [...extensionsBlock()!.querySelectorAll('[data-extension]')];
+    expect(rows.map((row) => row.getAttribute('data-extension'))).toEqual(['acme_rewards', 'acme_broken']);
+    expect(rows[0].textContent).toBe('Acme Rewards (needs Extension API 1.0)No problems');
+    expect(rows[1].textContent).toMatch(/^Acme BrokenBoom\. \(listen, at least 3 times, last .+\)$/);
+  });
+
+  it('keeps the modules after a fix, whose response has none', async () => {
+    await render([cleanup], [{ id: 'acme_rewards', label: 'Acme Rewards', requiresApi: null, errors: [] }]);
+    const finish = deferredFix();
+
+    await act(async () => button('Schedule again')!.click());
+    await finish({ fixed: 1, checks: allOk });
+    await tick();
+
+    expect(container.querySelector('[data-extension="acme_rewards"]')).not.toBeNull();
   });
 });

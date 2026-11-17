@@ -1,6 +1,6 @@
-import type { StepId, WorkflowGraph } from '@yaymatik/types';
+import type { WorkflowGraph } from '@yaymatik/types';
 
-import { steps } from '../steps';
+import { stepOf } from '../steps';
 
 const ID = /^[A-Za-z0-9_-]{1,200}$/;
 const BRANCHES = ['then', 'otherwise'];
@@ -22,7 +22,7 @@ export function structureErrors(graph: WorkflowGraph): string[] {
   for (const node of graph.nodes) {
     if (!ID.test(node.id) || kinds.has(node.id)) errors.push(`Invalid or duplicate step id "${node.id}"`);
     // A trigger or action may be added before its step is chosen; a condition has just one step.
-    const stepDef = node.data.block === null ? null : (steps[node.data.block] as (typeof steps)[StepId] | undefined);
+    const stepDef = node.data.block === null ? null : stepOf(node.data);
     if (stepDef === undefined) errors.push(`Step "${node.id}": unknown step "${node.data.block}"`);
     else if (stepDef === null && node.kind === 'condition')
       errors.push(`Step "${node.id}": a condition needs its step`);

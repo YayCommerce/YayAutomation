@@ -3,6 +3,7 @@ namespace YayMatik\Tests\Unit\Core\Runtime;
 
 use PHPUnit\Framework\TestCase;
 use YayMatik\Workflow\Core\Runtime\HealthCheck;
+use YayMatik\Workflow\Extension\Diagnostics;
 
 /** Which runs count as stuck: overdue, and no job that would take them. */
 final class HealthCheckTest extends TestCase {
@@ -114,5 +115,42 @@ final class HealthCheckTest extends TestCase {
         $this->assertTrue( $found['runs_queued']['capped'] );
         $this->assertTrue( $found['runs_running']['capped'] );
         $this->assertArrayNotHasKey( 'capped', self::classify( array_slice( $runs, 0, 499 ) )['runs_queued'] );
+    }
+
+    public function test_extensions_list_other_modules_and_errors_but_not_core(): void {
+        $time                             = time() - 60;
+        $GLOBALS['yaymatik_test_options'] = [
+            Diagnostics::OPTION => [
+                'acme_gone|register' => [
+                    'module'   => 'acme_gone',
+                    'callback' => 'register',
+                    'message'  => 'Needs YayMatik with Extension API 2.0.',
+                    'time'     => $time,
+                    'count'    => 3,
+                ],
+            ],
+        ];
+
+        $this->assertSame(
+            [
+                [
+                    'id'          => 'acme_gone',
+                    'label'       => 'acme_gone',
+                    'requiresApi' => null,
+                    'errors'      => [
+                        [
+                            'callback' => 'register',
+                            'message'  => 'Needs YayMatik with Extension API 2.0.',
+                            'count'    => 3,
+                            'time'     => gmdate( 'c', $time ),
+                        ],
+                    ],
+                ],
+            ],
+            HealthCheck::extensions()
+        );
+
+        $GLOBALS['yaymatik_test_options'] = [];
+        $this->assertSame( [], HealthCheck::extensions(), 'core modules are not listed' );
     }
 }

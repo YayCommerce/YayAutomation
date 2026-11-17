@@ -22,15 +22,8 @@ import { StepTile } from '../../steps/core/StepTile';
 
 type PickableKind = 'trigger' | 'action';
 
-const categoryLabels: Record<NonNullable<Step['category']>, string> = {
-  email: __('Email', 'yaymatik'),
-  order: __('Order', 'yaymatik'),
-  coupon: __('Coupons', 'yaymatik'),
-  flow: __('Flow', 'yaymatik'),
-  cart: __('Carts', 'yaymatik'),
-  customer: __('Customers', 'yaymatik'),
-  review: __('Reviews', 'yaymatik'),
-};
+/** Labels by id from PHP, other plugins' sections included. */
+const categoryLabels = window.yayMatikMeta.automation.categories;
 
 const searchLabels: Record<PickableKind, string> = {
   trigger: __('Search plugins and triggers', 'yaymatik'),
@@ -96,7 +89,7 @@ export function StepPicker({
       <section key={category ?? 'all'}>
         {category && (
           <h3 className="text-muted-foreground px-2 pt-2.5 pb-1 text-[11px] font-semibold tracking-wider uppercase">
-            {categoryLabels[category]}
+            {categoryLabels[category] ?? category}
           </h3>
         )}
         {stepRows(own.filter((stepDef) => stepDef.category === category))}

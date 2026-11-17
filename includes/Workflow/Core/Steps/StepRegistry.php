@@ -1,6 +1,7 @@
 <?php
 namespace YayMatik\Workflow\Core\Steps;
 
+use YayMatik\Workflow\Extension\Extensions;
 use YayMatik\Workflow\ModuleRegistry;
 
 defined( 'ABSPATH' ) || exit;
@@ -13,10 +14,15 @@ final class StepRegistry {
 
     /** @return Step[] */
     public static function all(): array {
-        if ( null === self::$steps ) {
-            self::$steps = ModuleRegistry::steps( ModuleRegistry::modules() );
+        if ( null !== self::$steps ) {
+            return self::$steps;
         }
-        return self::$steps;
+        $steps = ModuleRegistry::steps( ModuleRegistry::modules() );
+        // Read from a `yaymatik_register` callback: other plugins' modules are still missing, so not kept.
+        if ( ! Extensions::registering() ) {
+            self::$steps = $steps;
+        }
+        return $steps;
     }
 
     public static function get( string $id ): ?Step {

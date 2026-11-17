@@ -17,6 +17,7 @@ use YayMatik\Workflow\Actions\SendInternalEmail;
 use YayMatik\Workflow\Core\Steps\Step;
 use YayMatik\Workflow\Core\Steps\StepRegistry;
 use YayMatik\Workflow\Core\Steps\Trigger;
+use YayMatik\Workflow\Extension\StepIndex;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -103,7 +104,9 @@ final class EmailPreview {
      * @return array|\WP_Error Compose output + `to`, `sample`, `order`, `sample_products`.
      */
     private static function compose( $graph, string $node_id, $config, ?int $order_id ) {
-        $graph = GraphSchema::prepare( is_array( $graph ) ? self::with_config( $graph, $node_id, $config ) : $graph );
+        $graph = is_array( $graph ) ? self::with_config( $graph, $node_id, $config ) : $graph;
+        // A step of a plugin that's off stays in the graph, as in the saved workflow.
+        $graph = GraphSchema::prepare( $graph, is_array( $graph['nodes'] ?? null ) ? array_filter( $graph['nodes'], fn( $node ) => is_array( $node ) && null !== StepIndex::inactive( (string) ( $node['data']['block'] ?? '' ) ) ) : [] );
         if ( is_wp_error( $graph ) ) {
             return $graph;
         }
@@ -214,7 +217,8 @@ final class EmailPreview {
 
         $scope = new Scope(
             [
-                'trigger' => $refs ?? [],
+                // Facts are only known at event time: previews read the trigger's sample values.
+                'trigger' => ( $refs ?? [] ) + ( $trigger ? $trigger->sample_facts() : [] ),
                 'steps'   => $outputs,
             ],
             $resolver

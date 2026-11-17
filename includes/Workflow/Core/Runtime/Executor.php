@@ -4,6 +4,7 @@ namespace YayMatik\Workflow\Core\Runtime;
 use YayMatik\Utils\Logger;
 use YayMatik\Workflow\Core\Data\DataRegistry;
 use YayMatik\Workflow\Core\Data\GoneEntity;
+use YayMatik\Workflow\Core\Data\Ref;
 use YayMatik\Workflow\Core\Data\RefResolver;
 use YayMatik\Workflow\Core\Data\Scope;
 use YayMatik\Workflow\Core\Definition\GraphSchema;
@@ -15,6 +16,7 @@ use YayMatik\Workflow\Core\Steps\Trigger;
 use YayMatik\Workflow\Core\Storage\RunStepStore;
 use YayMatik\Workflow\Core\Storage\RunStore;
 use YayMatik\Workflow\DataItems\CustomerData;
+use YayMatik\Workflow\Extension\StepIndex;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -127,9 +129,11 @@ final class Executor {
         if ( ! $graph || ! is_array( $graph['nodes'] ?? null ) ) {
             return $this->fail( $id, null, null, __( 'The workflow version this run started on no longer exists.', 'yaymatik' ) );
         }
-        $nodes = GraphSchema::by_id( $graph['nodes'] );
-        $edges = is_array( $graph['edges'] ?? null ) ? $graph['edges'] : [];
-        $scope = Scope::from_array( is_array( $run['scope'] ?? null ) ? $run['scope'] : [], ( $this->resolver )() );
+        $nodes   = GraphSchema::by_id( $graph['nodes'] );
+        $edges   = is_array( $graph['edges'] ?? null ) ? $graph['edges'] : [];
+        $scope   = Scope::from_array( is_array( $run['scope'] ?? null ) ? $run['scope'] : [], ( $this->resolver )() );
+        $trigger = ( $this->steps )( (string) ( $run['trigger_id'] ?? '' ) );
+        $scope->set_trigger( $trigger instanceof Trigger ? $trigger : null );
         $scope->set_output_display( self::output_display( $nodes, $this->steps ) );
         // The cursor is the pending step ids; the graph is a tree, so no visited set.
         $queue = is_array( $run['position']['queue'] ?? null )
@@ -167,8 +171,9 @@ final class Executor {
             if ( RunStepStore::STATUS_COMPLETED === $outcome['status'] ) {
                 $scope->set_step_outputs( $step_id, $outcome['output'] );
                 $queue = array_merge( $queue, self::children( $edges, $step_id, $step instanceof Condition ? self::branch( $outcome['output'] ) : null ) );
-            } elseif ( $step && ! $step instanceof Condition ) {
-                // Skipped, or failed with `continue`: an action's children still run; a condition's path ends.
+            } elseif ( $step ? ! $step instanceof Condition : null !== StepIndex::inactive( (string) ( $node['data']['block'] ?? '' ) ) ) {
+                // Skipped, or failed with `continue`: an action's children still run, also after a step of a plugin
+                // that's off; a condition's path ends.
                 $queue = array_merge( $queue, self::children( $edges, $step_id ) );
             }
 
@@ -278,11 +283,21 @@ final class Executor {
      */
     private static function run_step( ?array $node, ?Step $step, array $config, Scope $scope ): StepResult {
         if ( ! $step ) {
+            $block    = (string) ( $node['data']['block'] ?? '' );
+            $inactive = StepIndex::inactive( $block );
+            if ( $inactive ) {
+                // The plugin is off: the run goes on without this step (docs/extension-api.md §10).
+                /* translators: %s: plugin name, e.g. "YayMail" */
+                return StepResult::skipped( sprintf( __( '%s isn’t active.', 'yaymatik' ), $inactive['plugin'] ) );
+            }
             /* translators: %s: step type id */
-            return StepResult::failed( sprintf( __( 'Step type "%s" is not available.', 'yaymatik' ), (string) ( $node['data']['block'] ?? '' ) ) );
+            return StepResult::failed( sprintf( __( 'Step type "%s" is not available.', 'yaymatik' ), $block ) );
         }
         try {
             $valid = $step->validate( $config );
+            if ( true === $valid ) {
+                $valid = $step->context_error( $config, self::available( $scope ), $scope->trigger() ) ?? true;
+            }
             if ( true !== $valid ) {
                 /* translators: %s: what is wrong with the step's settings */
                 return StepResult::failed( sprintf( __( 'Invalid settings: %s', 'yaymatik' ), is_wp_error( $valid ) ? $valid->get_error_message() : '' ) );
@@ -293,6 +308,16 @@ final class Executor {
         } catch ( \Throwable $e ) {
             return StepResult::failed( self::message( $e ) );
         }
+    }
+
+    /**
+     * Data item ids the run's trigger holds a ref for, plus the ones always there.
+     *
+     * @param Scope $scope
+     */
+    private static function available( Scope $scope ): array {
+        $refs = array_filter( (array) $scope->get( 'trigger' ), fn( $value ) => $value instanceof Ref );
+        return array_values( array_unique( array_merge( array_keys( $refs ), DataRegistry::ALWAYS ) ) );
     }
 
     /**

@@ -87,17 +87,23 @@ Table names below omit the prefix: each is `{prefix}yaymatik_<name>`, e.g. `wp_y
 - **Customer stats.** `Core/Data/CustomerStats` is the query behind `customer.paid_order_count`, `total_spent`, `last_order_date` and `purchased_product_ids`: paid statuses (`wc_get_is_paid_statuses()`), an account plus a billing email, on either order store, with refunds subtracted and currencies summed as stored. It runs only when something reads those fields, once per customer object; a slice loads a new object, so numbers are fresh after a Wait. Known limit: a step that pays an order and a later step in the same slice with no Wait between read the same numbers. On a posts store it scans the unindexed `_billing_email`.
 - **Search lists.** A list field with `search` (`product`, `category`, `coupon`) gets its choices from `GET /search/products|categories|coupons` (20 a page), never from `yayMatikMeta`. It's a prop on the data field, not a step `Field`. Products are parents, so a variation matches a rule on its product. A rule's summary never calls REST: it reads "3 selected"; the form loads names through `include[]`, and a deleted id shows `#12`.
 - **Custom fields in rules.** `order.meta` and `customer.meta` compare a custom field the rule names, so they have `merge_tag` false: not in "Insert variable", not a known tag. `MetaKeys` refuses WooCommerce's own order fields, keys it hides, and the user meta that holds access or sessions, on read as well as when checking a rule.
+- **Trigger facts.** `Trigger::facts()` declares plain values true only at event time (another plugin's `facts`), stored in the run's `trigger` section and read as `trigger.<key>`: listed first in "Insert variable", accepted by the Validator for that trigger only, comparable in a condition (`DataRegistry::field( 'trigger.<key>', $trigger )` reads the workflow's own trigger: keys are per trigger, so two triggers may declare one key with different types; at run time the Executor gives the Scope the run's trigger), shown on the trigger line of run detail (`RunPresenter`), and in previews from `sample_facts()`.
+- **Other plugins' data.** Their data fields and data items reach core as field definitions through `Workflow\Extension\FieldAdapter`: every callback runs under `Guard`, `customer` and `cart` callbacks get `CustomerView` / `CartView` (`CustomerViewAdapter`, `CartViewAdapter`) instead of the internal object, and display HTML is kses'd. Fields on a core item come through `yaymatik_data_item_{id}_fields`; a module's own item (`ExtensionDataItem`) loads through `RefResolver::default_loaders()`.
 - **Available variables per step.** Each step declares outputs. The Validator walks the steps above each step to list what it can use. "Insert variable" and the template checks use the same list.
 
 ## §5 Step contract · L2
 
 **PHP is the one source of truth for a step's settings.** The editor builds its checks from it, so PHP and TS can't disagree.
 
+This contract is internal. Other plugins use the public Extension API ([extension-api.md](extension-api.md)): args arrays and callables that core wraps in its own step classes (`Workflow\Extension\ExtensionTrigger`, `ExtensionAction`; a throw in a callback is caught there by `Guard`, recorded as a diagnostic, and never reaches core).
+
 ```
 Step:   id() label() plugin() module()
         icon(): string           a name from core's step icon list, e.g. "mail" (L5)
         fields(): Field[]        settings, rules, widgets
         validate( config )       optional extra checks the field rules can't express
+        context_error( config, available )   checks that need the data items the step can read there (Validator and Executor); null when fine
+        setup_issue(): ?string   why the step can't run on this site; blocks Activate (issue `setup_issue`; core's cart triggers keep `cart_tracking_off`)
         outputs(): array         what later steps can use: key => [ label, type, options?, display?, block? ]
         sample_outputs( config ) made-up outputs for previews of later steps (Generate coupon → YMSAMPLE)
         summary(): string        card text, one short line, e.g. "Send to %recipients%"
@@ -108,13 +114,13 @@ Trigger: fires_for_own_runs( config )   whether its workflow reacts to events it
 
 - **Field vocabulary** (kept small; a rule value's search list is a data field's `search`, see §4, not a word here): text, textarea, html (rich text, cleaned with `wp_kses_post`; drawn as WordPress's classic editor, Visual / Code tabs, stored as WordPress saves it: paragraphs as blank lines or `<p>`, `wpautop` puts them back), emails, select, multiselect, toggle, number, number_unit, notice, rules (core only). Modifiers: `required`, `variables`, `placeholder`, `help`, `show_if`, `suggest` (names under a text input that the app loads, e.g. `customer-meta-keys`: custom field names other workflows read or write; any other text can be typed). A form that needs more gets a custom panel, not a new word.
 - **Catalog.** Steps, fields, outputs and data types go to the admin app through `yayMatikMeta` (and to the AI in v2.0).
-- **Picker sections.** `Action::category()` and `Trigger::category()` put a step under a heading in its plugin's list (Email, Order, Carts, Customers, Reviews). A trigger's is optional: one without a category has no heading.
+- **Picker sections.** `Action::category()` and `Trigger::category()` put a step under a heading in its plugin's list (Email, Order, Carts, Customers, Reviews). A trigger's is optional: one without a category has no heading. Labels come from the catalog (`automation.categories`), so another plugin's own categories show with theirs.
 - **Warnings.** `Validator::warnings()` lists what never blocks Activate: `may_refire`, an action whose `emits()` holds its workflow's trigger, when the trigger's `fires_for_own_runs()` is true. REST sends `warnings: { live, draft }` with every workflow; the step's panel shows the line from the last save.
 - **Editor checks.** Automation builds valibot rules from the PHP fields. Validation always runs in Automation, never in a panel. Rules only in PHP `validate()` show up as the step's issue after a save (under its field when the form draws it, or under its rule for a condition, else at the top of the panel; "Needs setup" on the card), and still block Activate.
 - **Forms.**
   - No custom form → the generic `StepForm` draws one from the fields. A simple step from a Yay plugin needs PHP only.
   - Core step with a complex form (Condition rules) → `defineStep( { id, Form } )`, imported directly. No global call, fully typed.
-  - Plugin step with a custom form → planned, through the public extension API (§10 P4).
+  - Plugin step with a custom form → an iframe editor through the public Extension API ([extension-api.md](extension-api.md) §5.6, 1.1).
   - A custom `Form` gets `{ config, onChange }` (`StepFormProps`).
   - Beside any form, `defineStep` takes `Footer` (under the form, with its latest config, e.g. Send email's unsubscribe note) and `Actions` (panel header, e.g. Send email's Preview / Send test). Send email and Generate coupon use the generic form plus these.
 - **Icons (L5).** A step's `icon()` is a name from a fixed list in core (lucide icons, about 40), never an SVG. The editor draws it in the step's tile, tinted by kind (trigger, condition, action), on the canvas, in the picker, the panel header, template cards and the preview. A missing icon is added to core's list, not shipped by the plugin.
@@ -156,10 +162,10 @@ Our own small template module. **No Liquid or other template library, now or lat
 - Steps and data items belong to **modules**, one per plugin (`ModuleRegistry`, `Modules/`). A module lists its triggers, conditions, actions and data items by class name; the catalog sends its id as each step's `plugin`.
   - **Free vs Pro is the folder.** `includes/Pro/` holds Pro modules that extend the free ones; the free zip leaves it out, and the registry loads the Pro modules only when their classes exist.
   - An unfinished step is not registered, so it stays out of a release. No tier checks inside steps.
-  - Another plugin adds its module class on the filter `yaymatik_modules`, before `init` (the registry is first read on `init`). A taken id (module, step, data item) keeps its first owner.
+  - Other plugins register on `yaymatik_register` (fired once, when the registry is first built) and start their triggers with `do_action( 'yaymatik_fire', $trigger_id, $payload )`, handled by `Workflow\Extension\Fire` through `Dispatcher::collect()`. The filter `yaymatik_modules` (module classes, before `init`) is internal, for Pro. A taken id (module, step, data item) keeps its first owner and the second claim is a diagnostic.
   - Filters for extending core's steps and data: `yaymatik_data_item_{id}_fields` (a data item's fields, `DataItem::fields()`), `yaymatik_trigger_provides` (the data items a trigger provides, `Trigger::resolved_provides()`), `yaymatik_trigger_refs` (a trigger's scope refs, `Trigger::resolved_refs()`; a null native ref stays null).
   - Action `yaymatik_cart_abandoned( $cart_id, $kind )`: a cart was abandoned, on every abandon; `$kind` is `cart_abandoned` or `checkout_abandoned`.
-- **Experimental until Extension API v1 (v1.1).** v1.0 ships the filters and actions above as experimental: they may change before v1.1. Classes under `YayMatik\Workflow\` are internal, including the base classes an extension subclasses (`Step`, `Module`, `DataItem`, marked `@internal`).
+- **Frozen by Extension API v1 (1.1), see [extension-api.md](extension-api.md).** Other plugins integrate through `yaymatik_register` and its registrar; the filters and actions above stay internal (Pro uses them) or experimental, as its §11 lists. Classes under `YayMatik\Workflow\` are internal, including the base classes (`Step`, `Module`, `DataItem`, marked `@internal`).
 - **Each Yay plugin owns its steps, templates and data types**, registered into Workflow Core. **YayMatik Pro** owns templates that combine several plugins.
 - **Plugin logo (L5).** Each module gives one logo, a one-colour SVG: a URL, or for core's modules a `data:` URI of an inline SVG, so it loads when assets come from a CDN. The admin app draws it as a CSS mask in the tile's text colour. It marks who provides a step or template (template cards, library sidebar, picker), never what a step does. One per plugin, not per step.
 - **Feature directory:** a static list in core of every known step and template, its plugin, and where to install it. The editor shows "Install X to use this"; the AI uses it to suggest features.
@@ -174,26 +180,27 @@ Settings → Health check finds problems and proposes a fix the site owner can a
 | Large tables (runs, Action Scheduler) | Shorter retention; cleanup now |
 | Slow query triggers on big stores | Smaller batch size |
 | Email delivery not configured | Suggest an SMTP plugin (YaySMTP) |
-| Active workflow uses a step from a missing plugin | Install link from the feature directory |
+| `missing_plugin`: active workflows use a step from an inactive plugin. Such a workflow can be opened, edited and saved, but not activated or updated; an active one keeps running and skips that step with a reason ([extension-api.md](extension-api.md) §10) | None: count, workflow links, Plugins page link |
 | (a) `runs_queued`: queued over 5 min, or waiting 15 min past `wait_until`, with no pending or in-progress `yaymatik_run` or `yaymatik_recover_run` job (an overdue job still counts: that is (c)) | Queue them again |
 | (b) `runs_running`: running with no `yaymatik_run` and no `yaymatik_recover_run` job | Queue recovery; the interrupted step fails, it never runs twice |
 | (c) `jobs_late`: pending `yaymatik` jobs over 15 min past due | Info only: server cron guide link |
 | (d) `cleanup_job`: `yaymatik_cleanup` not scheduled, or over 1 h past due | Schedule it again |
 | (e) `inactive_sweep_job`: `yaymatik_inactive_sweep` not scheduled, or over 1 day past due | Schedule it again |
+| Extensions: other plugins' modules and their errors in the last 24 h (`Extension/Diagnostics`, autoloaded option `yaymatik_extension_errors`: last 50, one write per module and callback per 10 minutes, so a count is a lower bound; also logged); a second claim of a taken module, step or data item id is one, a refused module named by its class | None: listed only |
 
-Built: (a)–(e) in `Core/Runtime/HealthCheck.php`; REST `GET /health/checks` and `POST /health/fix { check }` in `Engine/API/HealthRoutes.php` (`manage_options`). Responses carry data only (`id`, `status`, `count`, `runIds` (the 50 oldest), `fix`); the admin app words them. The run checks read at most the 500 oldest candidate runs; a full read adds `capped: true` and `count` means "at least". A fix runs its check again on the server and fixes what it finds then (at most 50 runs per call), never ids from the client. Panel (M7.7, `routes/settings/HealthPanel.tsx`): the last card of Settings; it words the checks and offers one click per fixable check (at most 50 runs each).
+Built: (a)–(e) in `Core/Runtime/HealthCheck.php`; REST `GET /health/checks` and `POST /health/fix { check }` in `Engine/API/HealthRoutes.php` (`manage_options`). Responses carry data only (`id`, `status`, `count`, `runIds` (the 50 oldest), `fix`), plus `extensions` (`HealthCheck::extensions()`: `id`, `label`, `errors`) on the GET; the admin app words them. The run checks read at most the 500 oldest candidate runs; a full read adds `capped: true` and `count` means "at least". A fix runs its check again on the server and fixes what it finds then (at most 50 runs per call), never ids from the client. Panel (M7.7, `routes/settings/HealthPanel.tsx`): the last card of Settings; it words the checks and offers one click per fixable check (at most 50 runs each).
 
 ## §10 Deferred decisions
 
 | ID | Topic | Decision |
 |---|---|---|
 | P3 | Waiting runs on Update | Always cancel in v1.0. Revisit after v1.0 |
-| P4 | Public extension API | Last: after Pro connectors and Yay integrations are stable. Until then the registry and step contract are internal, and plugin steps have no custom forms |
+| P4 | Public extension API | 1.1, plan 034: [extension-api.md](extension-api.md). The registry and step contract stay internal behind it |
 | P5 | AI provider | Not decided. v1.0 only keeps a provider interface open |
 
 ## §11 Decision log
 
-All confirmed 2026-10-07, except L5 (2026-10-08), M7 (2026-10-27), M8, M3–M5, M6 and CT. Reasons, rejected options and costs: [workflow-core-decisions.md](workflow-core-decisions.md).
+All confirmed 2026-10-07, except L5 (2026-10-08), M7 (2026-10-27), M8, M3–M5, M6, CT and EX (2026-11-13). Reasons, rejected options and costs: [workflow-core-decisions.md](workflow-core-decisions.md).
 
 | ID | Decision | Section |
 |---|---|---|
@@ -215,7 +222,7 @@ All confirmed 2026-10-07, except L5 (2026-10-08), M7 (2026-10-27), M8, M3–M5, 
 | P1 | Runtime free; Free vs Pro by folder | §8 |
 | P2 | Yay plugins own their steps; Pro owns multi-plugin templates; feature directory | §8 |
 | P3 | Cancel waiting runs on Update in v1.0 | §10 |
-| P4 | Public extension API last | §10 |
+| P4 | Public extension API in 1.1 (plan 034) | §10 |
 | P5 | AI provider deferred | §10 |
 | P6 | Settings → Health check | §9 |
 | P7 | Tree + container steps; no merge | §7 |
@@ -224,3 +231,4 @@ All confirmed 2026-10-07, except L5 (2026-10-08), M7 (2026-10-27), M8, M3–M5, 
 | M3–M5 | High-value on a status change; reviews read when the step runs; account trigger refuses saved `WC_Customer`s; billing fill in memory | §4, §6 |
 | M6 | Win-back on a person's last real order, in a 7-day window, once per workflow and order through `trigger_claims` | §2, §3 |
 | CT | Custom workflow catalog: customer stats, Order paid, milestones, Review posted, guarded role change, condition groups | §3, §4, §5 |
+| EX | Extension API v1: declarative registrar, inactive plugin's steps kept but block Activate | §5, §8, §9 |

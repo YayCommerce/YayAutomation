@@ -1,0 +1,385 @@
+{
+    "steps": {
+        "add_order_note": {
+            "kind": "action",
+            "category": "order",
+            "config": [
+                "type",
+                "note"
+            ],
+            "outputs": [
+                "type"
+            ]
+        },
+        "cart_abandoned": {
+            "kind": "trigger",
+            "category": "cart",
+            "config": [],
+            "outputs": []
+        },
+        "change_customer_role": {
+            "kind": "action",
+            "category": "customer",
+            "config": [
+                "mode",
+                "role"
+            ],
+            "outputs": [
+                "from",
+                "to"
+            ]
+        },
+        "change_order_status": {
+            "kind": "action",
+            "category": "order",
+            "config": [
+                "status"
+            ],
+            "outputs": [
+                "from",
+                "to"
+            ]
+        },
+        "checkout_abandoned": {
+            "kind": "trigger",
+            "category": "cart",
+            "config": [],
+            "outputs": []
+        },
+        "condition": {
+            "kind": "condition",
+            "category": "",
+            "config": [
+                "match",
+                "rules"
+            ],
+            "outputs": [
+                "result"
+            ]
+        },
+        "customer_account_created": {
+            "kind": "trigger",
+            "category": "customer",
+            "config": [],
+            "outputs": []
+        },
+        "customer_inactive": {
+            "kind": "trigger",
+            "category": "customer",
+            "config": [
+                "days"
+            ],
+            "outputs": []
+        },
+        "customer_order_count_reaches": {
+            "kind": "trigger",
+            "category": "customer",
+            "config": [
+                "count"
+            ],
+            "outputs": []
+        },
+        "customer_total_spend_reaches": {
+            "kind": "trigger",
+            "category": "customer",
+            "config": [
+                "amount"
+            ],
+            "outputs": []
+        },
+        "generate_coupon": {
+            "kind": "action",
+            "category": "coupon",
+            "config": [
+                "discount_type",
+                "amount",
+                "expiry_days",
+                "minimum_spend",
+                "individual_use",
+                "limit_to_customer",
+                "code_prefix"
+            ],
+            "outputs": [
+                "code",
+                "amount",
+                "expires_at",
+                "box"
+            ]
+        },
+        "order_created": {
+            "kind": "trigger",
+            "category": "order",
+            "config": [],
+            "outputs": []
+        },
+        "order_note_added": {
+            "kind": "trigger",
+            "category": "order",
+            "config": [
+                "note_type",
+                "contains",
+                "skip_yaymatik"
+            ],
+            "outputs": []
+        },
+        "order_paid": {
+            "kind": "trigger",
+            "category": "order",
+            "config": [],
+            "outputs": []
+        },
+        "order_refunded": {
+            "kind": "trigger",
+            "category": "order",
+            "config": [],
+            "outputs": []
+        },
+        "order_status_changed": {
+            "kind": "trigger",
+            "category": "order",
+            "config": [
+                "from",
+                "to",
+                "only_checkout"
+            ],
+            "outputs": []
+        },
+        "resend_wc_email": {
+            "kind": "action",
+            "category": "email",
+            "config": [
+                "email"
+            ],
+            "outputs": [
+                "email"
+            ]
+        },
+        "review_posted": {
+            "kind": "trigger",
+            "category": "review",
+            "config": [],
+            "outputs": []
+        },
+        "send_email": {
+            "kind": "action",
+            "category": "email",
+            "config": [
+                "from",
+                "to",
+                "subject",
+                "heading",
+                "message"
+            ],
+            "outputs": [
+                "to"
+            ]
+        },
+        "send_internal_email": {
+            "kind": "action",
+            "category": "email",
+            "config": [
+                "from",
+                "recipients",
+                "subject",
+                "message"
+            ],
+            "outputs": [
+                "to"
+            ]
+        },
+        "update_customer_meta": {
+            "kind": "action",
+            "category": "customer",
+            "config": [
+                "key",
+                "value"
+            ],
+            "outputs": [
+                "key",
+                "changed"
+            ]
+        },
+        "update_order_meta": {
+            "kind": "action",
+            "category": "order",
+            "config": [
+                "key",
+                "value"
+            ],
+            "outputs": [
+                "key",
+                "changed"
+            ]
+        },
+        "wait": {
+            "kind": "action",
+            "category": "flow",
+            "config": [
+                "delay"
+            ],
+            "outputs": []
+        },
+        "wait_until": {
+            "kind": "action",
+            "category": "flow",
+            "config": [
+                "time",
+                "weekdays"
+            ],
+            "outputs": [
+                "until"
+            ]
+        }
+    },
+    "operators": {
+        "number": [
+            "equal",
+            "not_equal",
+            "greater_than",
+            "greater_or_equal",
+            "less_than",
+            "less_or_equal"
+        ],
+        "string": [
+            "equal",
+            "not_equal",
+            "contains",
+            "not_contains",
+            "starts_with",
+            "ends_with",
+            "is_empty",
+            "is_not_empty"
+        ],
+        "enum": [
+            "is",
+            "is_not",
+            "is_any_of"
+        ],
+        "date": [
+            "before",
+            "after",
+            "in_last",
+            "not_in_last",
+            "is_set",
+            "is_not_set"
+        ],
+        "boolean": [
+            "is_true",
+            "is_false"
+        ],
+        "list": [
+            "matches_any",
+            "matches_all",
+            "matches_none"
+        ],
+        "meta": [
+            "equal",
+            "not_equal",
+            "contains",
+            "not_contains",
+            "starts_with",
+            "ends_with",
+            "is_empty",
+            "is_not_empty",
+            "greater_than",
+            "greater_or_equal",
+            "less_than",
+            "less_or_equal"
+        ]
+    },
+    "data": {
+        "cart": [
+            "cart.email",
+            "cart.first_name",
+            "cart.total",
+            "cart.item_count",
+            "cart.product_names",
+            "cart.last_activity",
+            "cart.restore_url",
+            "cart.items",
+            "cart.restore_button"
+        ],
+        "customer": [
+            "customer.email",
+            "customer.first_name",
+            "customer.last_name",
+            "customer.full_name",
+            "customer.phone",
+            "customer.billing_country",
+            "customer.is_first_order",
+            "customer.paid_order_count",
+            "customer.total_spent",
+            "customer.last_order_date",
+            "customer.registered_date",
+            "customer.role",
+            "customer.is_guest",
+            "customer.purchased_product_ids",
+            "customer.meta",
+            "customer.unsubscribed"
+        ],
+        "order": [
+            "order.number",
+            "order.total",
+            "order.subtotal",
+            "order.status",
+            "order.payment_method",
+            "order.shipping_method",
+            "order.item_count",
+            "order.created_date",
+            "order.paid_date",
+            "order.completed_date",
+            "order.product_ids",
+            "order.category_ids",
+            "order.coupon_codes",
+            "order.billing_country",
+            "order.shipping_country",
+            "order.created_via",
+            "order.currency",
+            "order.customer_note",
+            "order.discount_total",
+            "order.shipping_total",
+            "order.refunded_total",
+            "order.is_guest",
+            "order.meta",
+            "order.admin_url",
+            "order.items",
+            "order.has_cross_sells",
+            "order.has_upsells",
+            "order.cross_sell_products",
+            "order.upsell_products",
+            "order.has_products_not_reviewed",
+            "order.review_products",
+            "order.customer"
+        ],
+        "refund": [
+            "refund.amount",
+            "refund.reason",
+            "refund.is_full"
+        ],
+        "review": [
+            "review.rating",
+            "review.content",
+            "review.is_verified",
+            "review.product_name"
+        ],
+        "site": [
+            "site.name",
+            "site.url",
+            "site.account_url",
+            "site.shop_url",
+            "site.welcome_links",
+            "site.shop_button",
+            "site.account_button",
+            "site.new_products"
+        ]
+    },
+    "categories": [
+        "email",
+        "order",
+        "coupon",
+        "flow",
+        "cart",
+        "customer",
+        "review"
+    ]
+}

@@ -11,12 +11,17 @@ use YayMatik\Workflow\Core\Steps\Action;
 use YayMatik\Workflow\Core\Steps\Condition;
 use YayMatik\Workflow\Core\Steps\Step;
 use YayMatik\Workflow\Core\Steps\Trigger;
+use YayMatik\Workflow\Extension\Diagnostics;
+use YayMatik\Workflow\Extension\ExtensionModule;
+use YayMatik\Workflow\Extension\Extensions;
+use YayMatik\Workflow\Extension\StepIndex;
 
 defined( 'ABSPATH' ) || exit;
 
 /**
- * The modules, and the steps and data items they register. Another plugin adds a module class
- * on `HOOK`. An id that is already taken (module, step or data item) keeps its first owner.
+ * The modules, and the steps and data items they register. Other plugins register on
+ * `yaymatik_register` (`Extension\Extensions`); Pro adds module classes on `HOOK`. An id that is already taken (module, step or data item) keeps its first owner; the
+ * second claim is a diagnostic.
  */
 final class ModuleRegistry {
 
@@ -34,28 +39,42 @@ final class ModuleRegistry {
         return (array) apply_filters( self::HOOK, $modules );
     }
 
-    /** @return Module[] Keyed by id. */
+    /** @return Module[] Keyed by id. The first call fires `yaymatik_register`. */
     public static function modules(): array {
-        if ( null === self::$modules ) {
-            self::$modules = self::from( self::classes() );
+        if ( null !== self::$modules ) {
+            return self::$modules;
         }
+        // Read from a `yaymatik_register` callback: what is there so far, not kept.
+        if ( Extensions::registering() ) {
+            return self::from( self::classes() );
+        }
+        $core          = self::from( self::classes() );
+        $extensions    = Extensions::register( array_keys( $core ) );
+        self::$modules = self::from( array_merge( array_values( $core ), $extensions ) );
+        StepIndex::refresh( array_filter( self::$modules, fn( Module $module ) => $module instanceof ExtensionModule ) );
         return self::$modules;
     }
 
     /**
-     * @param array $classes
+     * @param array $classes Module class names, or modules.
      * @return Module[] Keyed by id; anything that isn't a Module subclass is left out.
      */
     public static function from( array $classes ): array {
         $modules = [];
         foreach ( $classes as $class ) {
-            if ( ! is_string( $class ) || ! is_subclass_of( $class, Module::class ) ) {
+            if ( $class instanceof Module ) {
+                $module = $class;
+            } elseif ( is_string( $class ) && is_subclass_of( $class, Module::class ) ) {
+                $module = new $class();
+            } else {
                 continue;
             }
-            $module = new $class();
-            if ( ! isset( $modules[ $module->id() ] ) ) {
-                $modules[ $module->id() ] = $module;
+            if ( isset( $modules[ $module->id() ] ) ) {
+                // Named by its class: the id is the winner's.
+                self::taken( get_class( $module ), 'module', $module->id() );
+                continue;
             }
+            $modules[ $module->id() ] = $module;
         }
         return $modules;
     }
@@ -87,10 +106,12 @@ final class ModuleRegistry {
                 if ( ! is_subclass_of( $class, DataItem::class ) ) {
                     continue;
                 }
-                $item = new $class();
-                if ( ! isset( $items[ $item->id() ] ) ) {
-                    $items[ $item->id() ] = $item;
+                $item = is_string( $class ) ? new $class() : $class;
+                if ( isset( $items[ $item->id() ] ) ) {
+                    self::taken( $module->id(), 'data item', $item->id() );
+                    continue;
                 }
+                $items[ $item->id() ] = $item;
             }
         }
         return $items;
@@ -143,14 +164,25 @@ final class ModuleRegistry {
                     if ( ! is_subclass_of( $class, $kind ) ) {
                         continue;
                     }
-                    $step = new $class();
-                    if ( ! isset( $steps[ $step->id() ] ) ) {
-                        $steps[ $step->id() ]   = $step;
-                        $plugins[ $step->id() ] = $module->id();
+                    $step = is_string( $class ) ? new $class() : $class;
+                    if ( isset( $steps[ $step->id() ] ) ) {
+                        self::taken( $module->id(), 'step', $step->id() );
+                        continue;
                     }
+                    $steps[ $step->id() ]   = $step;
+                    $plugins[ $step->id() ] = $module->id();
                 }
             }
         }
         return [ $steps, $plugins ];
+    }
+
+    /**
+     * @param string $module
+     * @param string $what
+     * @param string $id
+     */
+    private static function taken( string $module, string $what, string $id ): void {
+        Diagnostics::record( $module, "{$what} {$id}", sprintf( '%s id "%s" is already taken by another module; this one was left out.', ucfirst( $what ), $id ) );
     }
 }

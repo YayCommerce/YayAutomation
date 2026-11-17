@@ -1,5 +1,6 @@
 import type { StepId, WorkflowNodeData, WorkflowNodeKind } from '@yaymatik/types';
 
+import { inactiveSteps } from './inactiveStep';
 import type { Step } from './types';
 
 /**
@@ -25,7 +26,9 @@ export function createRegistry(list: Step[], conditionStep: StepId) {
   }
 
   /** The step's step, or undefined while it isn't chosen. */
-  const stepOf = (data: WorkflowNodeData): Step | undefined => (data.block ? steps[data.block] : undefined);
+  const inactive = inactiveSteps();
+  const stepOf = (data: WorkflowNodeData): Step | undefined =>
+    data.block ? (steps[data.block] ?? inactive[data.block]) : undefined;
 
   return { steps, newNodeData, withStep, stepOf };
 }
