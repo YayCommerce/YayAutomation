@@ -7,13 +7,13 @@
  */
 
 /**
- * Steps by id (kind, category, config and output keys, tier), operators, data keys by item, categories.
- * A step's tier is `pro` when it ships only with YayMatik Pro.
+ * Steps (kind, category, config and output keys, tier `lite` / `pro`), operators, data keys with their tier, categories.
  *
  * @param array $meta
- * @param array $pro_steps ProCatalog::STEPS.
+ * @param array $pro_steps
+ * @param array $pro_fields
  */
-function yaymatik_extension_core( array $meta, array $pro_steps ): array {
+function yaymatik_extension_core( array $meta, array $pro_steps, array $pro_fields ): array {
     $automation = $meta['automation'];
     $steps      = [];
     foreach ( $automation['steps'] as $id => $step ) {
@@ -31,7 +31,9 @@ function yaymatik_extension_core( array $meta, array $pro_steps ): array {
     ksort( $steps );
     $data = [];
     foreach ( $automation['data'] as $item ) {
-        $data[ $item['id'] ] = array_merge( array_column( $item['fields'], 'key' ), array_column( $item['relations'] ?? [], 'key' ) );
+        foreach ( array_merge( array_column( $item['fields'], 'key' ), array_column( $item['relations'] ?? [], 'key' ) ) as $key ) {
+            $data[ $item['id'] ][ $key ] = in_array( $key, $pro_fields, true ) ? 'pro' : 'lite';
+        }
     }
     ksort( $data );
     return [
@@ -66,9 +68,9 @@ function yaymatik_extension_core_md( array $core ): string {
     foreach ( $core['operators'] as $type => $operators ) {
         $lines[] = "| `{$type}` | " . $code( $operators ) . ' |';
     }
-    array_push( $lines, '', '## Data items', '', '| Item | Fields and relations |', '|---|---|' );
+    array_push( $lines, '', '## Data items', '', '| Item | Fields and relations | Tier `pro` |', '|---|---|---|' );
     foreach ( $core['data'] as $item => $keys ) {
-        $lines[] = "| `{$item}` | " . $code( $keys ) . ' |';
+        $lines[] = "| `{$item}` | " . $code( array_keys( array_filter( $keys, fn( string $tier ) => 'lite' === $tier ) ) ) . ' | ' . $code( array_keys( array_filter( $keys, fn( string $tier ) => 'pro' === $tier ) ) ) . ' |';
     }
     array_push( $lines, '', '## Categories', '', $code( $core['categories'] ), '' );
     return implode( "\n", $lines );

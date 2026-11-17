@@ -2,6 +2,7 @@
 namespace YayMatik\Tests\Unit\Core\Definition;
 
 use PHPUnit\Framework\TestCase;
+use YayMatik\Tests\Support\Edition;
 use YayMatik\Workflow\Core\Definition\GraphSchema;
 use YayMatik\Workflow\Core\Definition\Messages;
 use YayMatik\Workflow\Core\Definition\Validator;
@@ -303,10 +304,18 @@ final class ValidatorTest extends TestCase {
                 ],
             ],
         ];
+        if ( YAYMATIK_TEST_LITE ) {
+            // No custom field and no group in the free edition: the second rule is a plain rule with a bad value.
+            $rules[1] = [
+                'field'    => 'order.total',
+                'operator' => 'greater_than',
+                'value'    => 'x',
+            ];
+        }
         $issue = self::issue_of( 'c', [], $rules );
-        $this->assertSame( 'This custom field is protected. Choose another one.', $issue['message'] );
+        $this->assertSame( YAYMATIK_TEST_LITE ? 'Enter a number.' : 'This custom field is protected. Choose another one.', $issue['message'] );
         $this->assertSame( 'rules', $issue['field'] );
-        $this->assertSame( [ 1, 0 ], $issue['rule'] );
+        $this->assertSame( YAYMATIK_TEST_LITE ? [ 1 ] : [ 1, 0 ], $issue['rule'] );
     }
 
     /**
@@ -489,7 +498,7 @@ final class ValidatorTest extends TestCase {
      * @param string[] $keys    Expected keys, in order.
      */
     public function test_variables_a_step_can_use( array $graph, string $node_id, array $keys ): void {
-        $this->assertSame( $keys, array_column( Validator::variables( GraphSchema::prepare( $graph ), $node_id ), 'key' ) );
+        $this->assertSame( Edition::keys( $keys ), array_column( Validator::variables( GraphSchema::prepare( $graph ), $node_id ), 'key' ) );
     }
 
     public function test_variables_carry_label_and_type(): void {

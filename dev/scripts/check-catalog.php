@@ -13,6 +13,7 @@
 
 use Automattic\WooCommerce\Utilities\OrderUtil;
 use YayMatik\Pro\Workflow\Actions\UpdateOrderMeta;
+use YayMatik\Pro\Workflow\DataItems\CustomerProData;
 use YayMatik\Workflow\Conditions\Criteria;
 use YayMatik\Workflow\Core\Data\CustomerStats;
 use YayMatik\Workflow\Core\Data\Ref;
@@ -22,11 +23,11 @@ use YayMatik\Workflow\Core\Definition\Messages;
 use YayMatik\Workflow\Core\Runtime\ActionSchedulerQueue;
 use YayMatik\Workflow\Core\Runtime\Cleanup;
 use YayMatik\Workflow\Core\Runtime\Runtime;
+use YayMatik\Workflow\Core\Steps\StepRegistry;
 use YayMatik\Workflow\Core\Steps\Trigger;
 use YayMatik\Workflow\Core\Steps\StepResult;
 use YayMatik\Workflow\Core\Storage\RunStore;
 use YayMatik\Workflow\Core\Storage\WorkflowStore;
-use YayMatik\Workflow\DataItems\CustomerData;
 
 if ( ! function_exists( 'WC' ) ) {
     WP_CLI::error( 'WooCommerce is not active.' );
@@ -531,7 +532,8 @@ $again = $meta_step->run(
 $ok( false === $again->outputs()['changed'] && count( $notes ) === count( wc_get_order_notes( [ 'order_id' => $saved ] ) ), 'update_order_meta: the same value reads unchanged, no second note' );
 
 // Rules on a real order, on this order store.
-$criteria = new Criteria();
+// The registered condition: YayMatik Pro's, with custom field rules.
+$criteria = StepRegistry::get( Criteria::ID );
 $matches  = fn( array $rule ) => $criteria->evaluate(
     $scope,
     $criteria->sanitize(
@@ -928,7 +930,7 @@ $refused = $criteria->validate(
     )
 );
 $ok( is_wp_error( $refused ) && Messages::get( 'ruleMetaKey' ) === $refused->get_error_message(), 'rule: session_tokens is refused' );
-$ok( '' === CustomerData::custom_field( new WC_Customer( (int) $user ), 'session_tokens' ), 'and reads empty if a rule gets through' );
+$ok( '' === CustomerProData::custom_field( new WC_Customer( (int) $user ), 'session_tokens' ), 'and reads empty if a rule gets through' );
 $real_prefix = $wpdb->base_prefix . 'capabilities';
 $refused     = $criteria->validate(
     $criteria->sanitize(

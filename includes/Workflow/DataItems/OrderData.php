@@ -2,7 +2,6 @@
 namespace YayMatik\Workflow\DataItems;
 
 use YayMatik\Workflow\Core\Data\DataItem;
-use YayMatik\Workflow\Core\Data\MetaKeys;
 use YayMatik\Workflow\Core\Data\Ref;
 use YayMatik\Workflow\Core\Data\Type;
 use YayMatik\Workflow\Core\Email\ProductGrid;
@@ -11,7 +10,7 @@ use YayMatik\Workflow\Core\Email\ReviewProducts;
 defined( 'ABSPATH' ) || exit;
 
 /** A WooCommerce order (\WC_Order). */
-final class OrderData extends DataItem {
+class OrderData extends DataItem {
 
     public const ID = 'order';
 
@@ -131,38 +130,15 @@ final class OrderData extends DataItem {
             ],
             'billing_country'           => self::country_field( __( 'Billing country', 'yaymatik' ), fn( \WC_Order $order ) => $order->get_billing_country() ),
             'shipping_country'          => self::country_field( __( 'Shipping country', 'yaymatik' ), fn( \WC_Order $order ) => $order->get_shipping_country() ),
-            'created_via'               => [
-                'label'   => __( 'Created via', 'yaymatik' ),
-                'type'    => self::TYPE_ENUM,
-                'value'   => fn( \WC_Order $order ) => $order->get_created_via(),
-                'options' => [ self::class, 'created_via_options' ],
-            ],
-            'currency'                  => [
-                'label'   => __( 'Currency', 'yaymatik' ),
-                'type'    => self::TYPE_ENUM,
-                'value'   => fn( \WC_Order $order ) => $order->get_currency(),
-                'options' => [ self::class, 'currencies' ],
-            ],
             'customer_note'             => [
                 'label' => __( 'Customer note', 'yaymatik' ),
                 'type'  => self::TYPE_STRING,
                 'value' => fn( \WC_Order $order ) => $order->get_customer_note(),
             ],
-            'discount_total'            => self::money_field( __( 'Discount total', 'yaymatik' ), fn( \WC_Order $order ) => (float) $order->get_discount_total() ),
-            'shipping_total'            => self::money_field( __( 'Shipping total', 'yaymatik' ), fn( \WC_Order $order ) => (float) $order->get_shipping_total() ),
-            'refunded_total'            => self::money_field( __( 'Refunded total', 'yaymatik' ), fn( \WC_Order $order ) => (float) $order->get_total_refunded() ),
             'is_guest'                  => [
                 'label' => __( 'Is guest', 'yaymatik' ),
                 'type'  => self::TYPE_BOOLEAN,
                 'value' => fn( \WC_Order $order ) => 0 === (int) $order->get_customer_id(),
-            ],
-            'meta'                      => [
-                'label'        => __( 'Custom field', 'yaymatik' ),
-                'type'         => self::TYPE_META,
-                'value'        => fn() => '',
-                'merge_tag'    => false,
-                'meta'         => [ self::class, 'custom_field' ],
-                'meta_blocked' => fn( string $key ) => MetaKeys::order_blocked( new \WC_Order(), $key ),
             ],
             'customer'                  => [
                 'label'       => __( 'Customer', 'yaymatik' ),
@@ -188,18 +164,6 @@ final class OrderData extends DataItem {
                 'display'     => [ self::class, 'items' ],
                 'conditional' => false,
             ],
-            'has_cross_sells'           => [
-                'label' => __( 'Order has cross-sell products', 'yaymatik' ),
-                'type'  => self::TYPE_BOOLEAN,
-                'value' => fn( \WC_Order $order ) => (bool) ProductGrid::for_order( $order, ProductGrid::CROSS_SELLS ),
-            ],
-            'has_upsells'               => [
-                'label' => __( 'Order has upsell products', 'yaymatik' ),
-                'type'  => self::TYPE_BOOLEAN,
-                'value' => fn( \WC_Order $order ) => (bool) ProductGrid::for_order( $order, ProductGrid::UPSELLS ),
-            ],
-            'cross_sell_products'       => self::grid_field( __( 'Cross-sell products', 'yaymatik' ), ProductGrid::CROSS_SELLS ),
-            'upsell_products'           => self::grid_field( __( 'Upsell products', 'yaymatik' ), ProductGrid::UPSELLS ),
             'has_products_not_reviewed' => [
                 'label' => __( 'Order has products not reviewed', 'yaymatik' ),
                 'type'  => self::TYPE_BOOLEAN,
@@ -217,23 +181,6 @@ final class OrderData extends DataItem {
     }
 
     /**
-     * A product grid email block.
-     *
-     * @param string $label
-     * @param string $kind  `ProductGrid` CROSS_SELLS or UPSELLS.
-     */
-    private static function grid_field( string $label, string $kind ): array {
-        return [
-            'label'       => $label,
-            'type'        => self::TYPE_STRING,
-            'value'       => fn( \WC_Order $order ) => ProductGrid::render( ProductGrid::for_block( $order, $kind ), false ),
-            'display'     => fn( \WC_Order $order, bool $html ) => ProductGrid::render( ProductGrid::for_block( $order, $kind ), $html ),
-            'conditional' => false,
-            'block'       => true,
-        ];
-    }
-
-    /**
      * A date with its real time, so "in the last 3 hours" works.
      *
      * @param string   $label
@@ -246,20 +193,6 @@ final class OrderData extends DataItem {
             'value'     => fn( \WC_Order $order ) => $date( $order ) ? $date( $order )->date( 'Y-m-d' ) : '',
             'timestamp' => fn( \WC_Order $order ) => $date( $order ) ? $date( $order )->getTimestamp() : null,
             'display'   => fn( \WC_Order $order, bool $html ) => self::text( wc_format_datetime( $date( $order ) ), $html ),
-        ];
-    }
-
-    /**
-     * @param string   $label
-     * @param callable $amount
-     */
-    private static function money_field( string $label, callable $amount ): array {
-        return [
-            'label'      => $label,
-            'type'       => self::TYPE_NUMBER,
-            'value_type' => Type::money(),
-            'value'      => $amount,
-            'display'    => fn( \WC_Order $order, bool $html ) => self::price( $order, $amount( $order ), $html ),
         ];
     }
 
@@ -288,35 +221,6 @@ final class OrderData extends DataItem {
             $ids = array_merge( $ids, wc_get_product_cat_ids( $item->get_product_id() ) );
         }
         return array_values( array_unique( array_map( 'strval', $ids ) ) );
-    }
-
-    /**
-     * A custom field as text; '' for a blocked key, or an array or object value.
-     *
-     * @param \WC_Order $order
-     * @param string    $key
-     */
-    public static function custom_field( \WC_Order $order, string $key ): string {
-        if ( MetaKeys::order_blocked( $order, $key ) ) {
-            return '';
-        }
-        $value = $order->get_meta( $key );
-        return is_scalar( $value ) ? (string) $value : '';
-    }
-
-    /** Where WooCommerce says an order came from, as value => label. */
-    public static function created_via_options(): array {
-        return [
-            'checkout'  => __( 'Classic checkout', 'yaymatik' ),
-            'store-api' => __( 'Block checkout', 'yaymatik' ),
-            'admin'     => __( 'Admin', 'yaymatik' ),
-            'rest-api'  => __( 'REST API', 'yaymatik' ),
-        ];
-    }
-
-    /** Code => name; empty without WooCommerce. */
-    public static function currencies(): array {
-        return function_exists( 'get_woocommerce_currencies' ) ? get_woocommerce_currencies() : [];
     }
 
     /** Enabled payment gateways as id => title. */
@@ -382,11 +286,7 @@ final class OrderData extends DataItem {
 
     /** @return array Field key => value, or [ 'value', 'text', 'html'? ] when it reads differently. */
     public function sample(): array {
-        $price = fn( float $amount ) => [
-            'value' => $amount,
-            'text'  => html_entity_decode( wp_strip_all_tags( wc_price( $amount ) ), ENT_QUOTES, 'UTF-8' ),
-            'html'  => wc_price( $amount ),
-        ];
+        $price = [ self::class, 'sample_price' ];
         $lines = [
             [ __( 'Sample product', 'yaymatik' ), 1, 29.0 ],
             [ __( 'Another sample product', 'yaymatik' ), 2, 20.0 ],
@@ -457,18 +357,7 @@ final class OrderData extends DataItem {
                 'value' => 'US',
                 'text'  => CustomerData::countries()['US'] ?? 'United States (US)',
             ],
-            'created_via'               => [
-                'value' => 'checkout',
-                'text'  => self::created_via_options()['checkout'],
-            ],
-            'currency'                  => [
-                'value' => 'USD',
-                'text'  => self::currencies()['USD'] ?? 'United States (US) dollar',
-            ],
             'customer_note'             => __( 'Please leave it at the door.', 'yaymatik' ),
-            'discount_total'            => $price( 0.0 ),
-            'shipping_total'            => $price( 5.0 ),
-            'refunded_total'            => $price( 0.0 ),
             'is_guest'                  => false,
             'admin_url'                 => admin_url( 'admin.php?page=wc-orders' ),
             'items'                     => [
@@ -476,25 +365,22 @@ final class OrderData extends DataItem {
                 'text'  => implode( "\n", $text ),
                 'html'  => self::items_table( $rows, $totals ),
             ],
-            'has_cross_sells'           => (bool) ProductGrid::newest(),
-            'has_upsells'               => (bool) ProductGrid::newest(),
             'has_products_not_reviewed' => (bool) ProductGrid::newest(),
             'review_products'           => self::sample_reviews(),
-        ] + array_fill_keys( [ 'cross_sell_products', 'upsell_products' ], self::sample_grid() );
+        ];
     }
 
-    /** The store's newest products as a grid: what a suggestion block looks like; built once per request. */
-    private static function sample_grid(): array {
-        static $grid = null;
-        if ( null === $grid ) {
-            $text = ProductGrid::render( ProductGrid::newest(), false );
-            $grid = [
-                'value' => $text,
-                'text'  => $text,
-                'html'  => ProductGrid::render( ProductGrid::newest(), true ),
-            ];
-        }
-        return $grid;
+    /**
+     * A sample amount as a field reads it.
+     *
+     * @param float $amount
+     */
+    protected static function sample_price( float $amount ): array {
+        return [
+            'value' => $amount,
+            'text'  => html_entity_decode( wp_strip_all_tags( wc_price( $amount ) ), ENT_QUOTES, 'UTF-8' ),
+            'html'  => wc_price( $amount ),
+        ];
     }
 
     /** The store's newest products as review rows; built once per request. */

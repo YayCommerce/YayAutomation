@@ -87,6 +87,8 @@ final class SampleValuesTest extends TestCase {
         $this->assertSame( [ '1', '2' ], $values->get( 'order.product_ids' ) );
         $this->assertSame( 'Sample product, Another sample product', $values->text( 'order.product_ids', false ) );
         $this->assertFalse( $values->get( 'order.is_guest' ) );
-        $this->assertSame( 54.0, $values->get( 'customer.total_spent' ) );
+        if ( ! YAYMATIK_TEST_LITE ) {
+            $this->assertSame( 54.0, $values->get( 'customer.total_spent' ) );
+        }
     }
 }

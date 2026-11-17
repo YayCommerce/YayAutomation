@@ -3,9 +3,14 @@ namespace YayMatik\Tests\Unit\Pro\Workflow;
 
 use PHPUnit\Framework\TestCase;
 use YayMatik\Pro\Workflow\Core\Runtime\InactiveSweep;
+use YayMatik\Pro\Workflow\DataItems\CustomerProData;
+use YayMatik\Pro\Workflow\DataItems\OrderProData;
+use YayMatik\Workflow\Core\Data\DataItem;
 use YayMatik\Workflow\Core\Definition\ProCatalog;
 use YayMatik\Workflow\Core\Runtime\DailyJobs;
 use YayMatik\Workflow\Core\Steps\StepRegistry;
+use YayMatik\Workflow\DataItems\CustomerData;
+use YayMatik\Workflow\DataItems\OrderData;
 
 require_once dirname( __DIR__, 3 ) . '/Support/woocommerce-stubs.php';
 
@@ -40,5 +45,13 @@ final class ProStepsTest extends TestCase {
 
     public function test_the_free_plugin_unschedules_the_sweep_by_its_hook_names(): void {
         $this->assertSame( [ InactiveSweep::HOOK => [ InactiveSweep::HOOK, InactiveSweep::BATCH_HOOK ] ], DailyJobs::LEFT_OVER );
+    }
+
+    public function test_the_catalog_names_every_field_pro_adds(): void {
+        $keys = fn( array $items ) => array_merge( ...array_map( fn( DataItem $item ) => array_map( fn( string $key ) => $item->id() . '.' . $key, array_keys( $item->fields() ) ), $items ) );
+        $pro  = $keys( [ new CustomerProData(), new OrderProData() ] );
+        $core = $keys( [ new CustomerData(), new OrderData() ] );
+
+        $this->assertEqualsCanonicalizing( ProCatalog::FIELDS, array_values( array_diff( $pro, $core ) ) );
     }
 }

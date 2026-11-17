@@ -17,4 +17,25 @@ final class ProCatalog {
         'update_customer_meta'         => 'action',
         'change_customer_role'         => 'action',
     ];
+
+    /** Data field keys. */
+    public const FIELDS = [
+        'customer.paid_order_count',
+        'customer.total_spent',
+        'customer.last_order_date',
+        'customer.registered_date',
+        'customer.role',
+        'customer.purchased_product_ids',
+        'customer.meta',
+        'order.discount_total',
+        'order.shipping_total',
+        'order.refunded_total',
+        'order.created_via',
+        'order.currency',
+        'order.has_cross_sells',
+        'order.has_upsells',
+        'order.cross_sell_products',
+        'order.upsell_products',
+        'order.meta',
+    ];
 }

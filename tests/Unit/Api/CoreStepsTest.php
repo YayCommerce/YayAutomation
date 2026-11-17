@@ -33,12 +33,14 @@ final class CoreStepsTest extends TestCase {
                     'categories' => Catalog::categories(),
                 ],
             ],
-            ProCatalog::STEPS
+            ProCatalog::STEPS,
+            ProCatalog::FIELDS
         );
         $listed = json_decode( self::read( 'tests/fixtures/extension-api-core.json' ), true );
 
         if ( YAYMATIK_TEST_LITE ) {
             $listed['steps'] = array_filter( $listed['steps'], fn( array $step ) => 'lite' === $step['tier'] );
+            $listed['data']  = array_map( fn( array $keys ) => array_filter( $keys, fn( string $tier ) => 'lite' === $tier ), $listed['data'] );
             $this->assertSame( $listed, $core );
             return;
         }

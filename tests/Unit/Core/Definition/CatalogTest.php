@@ -2,6 +2,7 @@
 namespace YayMatik\Tests\Unit\Core\Definition;
 
 use PHPUnit\Framework\TestCase;
+use YayMatik\Tests\Support\Edition;
 use YayMatik\Workflow\Core\Data\DataRegistry;
 use YayMatik\Workflow\Core\Definition\Catalog;
 use YayMatik\Workflow\Core\Steps\StepIcons;
@@ -152,11 +153,13 @@ final class CatalogTest extends TestCase {
         }
         $blocks = array_keys( array_filter( $fields, fn( array $field ) => ! empty( $field['block'] ) ) );
 
-        $this->assertSame( [ 'site.welcome_links', 'site.shop_button', 'site.account_button', 'site.new_products', 'order.cross_sell_products', 'order.upsell_products', 'order.review_products', 'cart.items', 'cart.restore_button' ], $blocks );
-        $this->assertFalse( $fields['order.cross_sell_products']['conditional'] );
-        $this->assertSame( 'boolean', $fields['order.has_cross_sells']['type'] );
-        $this->assertTrue( $fields['order.has_cross_sells']['conditional'] );
-        $this->assertSame( 'number', $fields['customer.paid_order_count']['type'] );
+        $this->assertSame( Edition::keys( [ 'site.welcome_links', 'site.shop_button', 'site.account_button', 'site.new_products', 'order.cross_sell_products', 'order.upsell_products', 'order.review_products', 'cart.items', 'cart.restore_button' ] ), $blocks );
+        $this->assertFalse( $fields['order.review_products']['conditional'] );
+        if ( ! YAYMATIK_TEST_LITE ) {
+            $this->assertSame( 'boolean', $fields['order.has_cross_sells']['type'] );
+            $this->assertTrue( $fields['order.has_cross_sells']['conditional'] );
+            $this->assertSame( 'number', $fields['customer.paid_order_count']['type'] );
+        }
     }
 
     public function test_search_lists_send_their_kind_and_no_values(): void {
@@ -164,12 +167,13 @@ final class CatalogTest extends TestCase {
         foreach ( DataRegistry::to_client() as $item ) {
             $fields += array_column( $item['fields'], null, 'key' );
         }
-        foreach ( [
+        $searched = [
             'order.product_ids'              => 'product',
             'order.category_ids'             => 'category',
             'order.coupon_codes'             => 'coupon',
             'customer.purchased_product_ids' => 'product',
-        ] as $key => $search ) {
+        ];
+        foreach ( array_intersect_key( $searched, array_flip( Edition::keys( array_keys( $searched ) ) ) ) as $key => $search ) {
             $this->assertSame( $search, $fields[ $key ]['search'], $key );
             $this->assertArrayNotHasKey( 'options', $fields[ $key ], $key );
         }

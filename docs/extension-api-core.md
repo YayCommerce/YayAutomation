@@ -47,14 +47,14 @@ Tier `pro`: the entry exists only with YayMatik Pro (with an active license). A 
 
 ## Data items
 
-| Item | Fields and relations |
-|---|---|
-| `cart` | `cart.email`, `cart.first_name`, `cart.total`, `cart.item_count`, `cart.product_names`, `cart.last_activity`, `cart.restore_url`, `cart.items`, `cart.restore_button` |
-| `customer` | `customer.email`, `customer.first_name`, `customer.last_name`, `customer.full_name`, `customer.phone`, `customer.billing_country`, `customer.is_first_order`, `customer.paid_order_count`, `customer.total_spent`, `customer.last_order_date`, `customer.registered_date`, `customer.role`, `customer.is_guest`, `customer.purchased_product_ids`, `customer.meta`, `customer.unsubscribed` |
-| `order` | `order.number`, `order.total`, `order.subtotal`, `order.status`, `order.payment_method`, `order.shipping_method`, `order.item_count`, `order.created_date`, `order.paid_date`, `order.completed_date`, `order.product_ids`, `order.category_ids`, `order.coupon_codes`, `order.billing_country`, `order.shipping_country`, `order.created_via`, `order.currency`, `order.customer_note`, `order.discount_total`, `order.shipping_total`, `order.refunded_total`, `order.is_guest`, `order.meta`, `order.admin_url`, `order.items`, `order.has_cross_sells`, `order.has_upsells`, `order.cross_sell_products`, `order.upsell_products`, `order.has_products_not_reviewed`, `order.review_products`, `order.customer` |
-| `refund` | `refund.amount`, `refund.reason`, `refund.is_full` |
-| `review` | `review.rating`, `review.content`, `review.is_verified`, `review.product_name` |
-| `site` | `site.name`, `site.url`, `site.account_url`, `site.shop_url`, `site.welcome_links`, `site.shop_button`, `site.account_button`, `site.new_products` |
+| Item | Fields and relations | Tier `pro` |
+|---|---|---|
+| `cart` | `cart.email`, `cart.first_name`, `cart.total`, `cart.item_count`, `cart.product_names`, `cart.last_activity`, `cart.restore_url`, `cart.items`, `cart.restore_button` | — |
+| `customer` | `customer.email`, `customer.first_name`, `customer.last_name`, `customer.full_name`, `customer.phone`, `customer.billing_country`, `customer.is_first_order`, `customer.is_guest`, `customer.unsubscribed` | `customer.paid_order_count`, `customer.total_spent`, `customer.last_order_date`, `customer.registered_date`, `customer.role`, `customer.purchased_product_ids`, `customer.meta` |
+| `order` | `order.number`, `order.total`, `order.subtotal`, `order.status`, `order.payment_method`, `order.shipping_method`, `order.item_count`, `order.created_date`, `order.paid_date`, `order.completed_date`, `order.product_ids`, `order.category_ids`, `order.coupon_codes`, `order.billing_country`, `order.shipping_country`, `order.customer_note`, `order.is_guest`, `order.admin_url`, `order.items`, `order.has_products_not_reviewed`, `order.review_products`, `order.customer` | `order.created_via`, `order.currency`, `order.discount_total`, `order.shipping_total`, `order.refunded_total`, `order.meta`, `order.has_cross_sells`, `order.has_upsells`, `order.cross_sell_products`, `order.upsell_products` |
+| `refund` | `refund.amount`, `refund.reason`, `refund.is_full` | — |
+| `review` | `review.rating`, `review.content`, `review.is_verified`, `review.product_name` | — |
+| `site` | `site.name`, `site.url`, `site.account_url`, `site.shop_url`, `site.welcome_links`, `site.shop_button`, `site.account_button`, `site.new_products` | — |
 
 ## Categories
 

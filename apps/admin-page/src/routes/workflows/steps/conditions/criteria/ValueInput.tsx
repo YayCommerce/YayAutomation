@@ -1,4 +1,5 @@
 import { forwardRef, type ComponentProps } from 'react';
+import { criteriaFeatures } from '@edition/criteria';
 import { ChevronDown, Code, X } from 'lucide-react';
 import { __ } from '@wordpress/i18n';
 
@@ -148,7 +149,7 @@ export function ValueInput({
   }
 
   const variables =
-    field && VARIABLE_VALUE_TYPES.includes(field.type)
+    criteriaFeatures.variables && field && VARIABLE_VALUE_TYPES.includes(field.type)
       ? { filter: comparableWith(field), types: typeLabels[field.type] }
       : null;
 

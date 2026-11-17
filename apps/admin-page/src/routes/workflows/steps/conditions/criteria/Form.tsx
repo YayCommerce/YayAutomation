@@ -1,4 +1,5 @@
 import { useContext, useState } from 'react';
+import { criteriaFeatures } from '@edition/criteria';
 import { Check, CircleAlert, Info, Plus, Trash2 } from 'lucide-react';
 import { __ } from '@wordpress/i18n';
 
@@ -138,10 +139,12 @@ export function CriteriaForm({ config, onChange }: StepFormProps<CriteriaConfig>
           <Plus />
           {__('Add rule', 'yaymatik')}
         </Button>
-        <Button variant="outline" size="sm" onClick={addGroup}>
-          <Plus />
-          {__('Add group', 'yaymatik')}
-        </Button>
+        {criteriaFeatures.groups && (
+          <Button variant="outline" size="sm" onClick={addGroup}>
+            <Plus />
+            {__('Add group', 'yaymatik')}
+          </Button>
+        )}
       </div>
 
       <p className="text-muted-foreground flex items-center gap-1.5 text-[12.5px]">

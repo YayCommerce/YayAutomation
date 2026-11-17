@@ -130,13 +130,13 @@ final class StepRunTest extends TestCase {
 
     public function test_condition_outputs_yes_or_no(): void {
         $step = new Criteria();
-        $rule = fn( string $op, string $value, string $type = 'value' ) => [
+        $rule = fn( string $op, string $value ) => [
             'rules' => [
                 [
                     'field'     => 'order.total',
                     'operator'  => $op,
                     'value'     => $value,
-                    'valueType' => $type,
+                    'valueType' => 'value',
                 ],
             ],
         ];
@@ -145,7 +145,6 @@ final class StepRunTest extends TestCase {
         $this->assert_ok_outputs( $step, $yes );
         $this->assertSame( 'yes', $yes->outputs()['result'] );
         $this->assertSame( 'no', $this->run_step( $step, $rule( 'less_than', '50' ) )->outputs()['result'] );
-        $this->assertSame( 'yes', $this->run_step( $step, $rule( 'greater_than', 'order.subtotal', 'variable' ) )->outputs()['result'] );
     }
 
     public function test_add_order_note_renders_tags_and_outputs_its_type(): void {

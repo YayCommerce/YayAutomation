@@ -14,16 +14,13 @@ use YayMatik\Workflow\Core\Steps\Trigger;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * The one condition step. Rule: [ 'field', 'operator', 'value' (a list for list comparisons, a whole number with `unit` for relative dates), 'valueType' => 'value'|'variable' (`value` is another field's key), 'unit'?, 'key'? (a meta field's custom field) ]. A rule in `rules` may be a group, [ 'match', 'rules' ], one level deep.
+ * The one condition step: a flat list of rules with fixed values. Rule: [ 'field', 'operator', 'value' (a list for list comparisons, a whole number with `unit` for relative dates), 'valueType' => 'value', 'unit'? ].
  */
 class Criteria extends Condition {
 
     public const ID = 'condition';
 
-    private const MATCHES = [ 'all', 'any' ];
-
-    /** Types whose value may be another variable. Option lists keep their own options. */
-    private const VARIABLE_VALUE_TYPES = [ DataItem::TYPE_NUMBER, DataItem::TYPE_STRING, DataItem::TYPE_DATE ];
+    protected const MATCHES = [ 'all', 'any' ];
 
     public function id(): string {
         return self::ID;
@@ -68,8 +65,7 @@ class Criteria extends Condition {
         $config = is_array( $config ) ? $config : [];
         $rules  = [];
         foreach ( is_array( $config['rules'] ?? null ) ? $config['rules'] : [] as $rule ) {
-            $rule    = is_array( $rule ) ? $rule : [];
-            $rules[] = self::is_group( $rule ) ? self::sanitize_group( $rule ) : self::sanitize_rule( $rule );
+            $rules[] = $this->sanitize_item( is_array( $rule ) ? $rule : [] );
         }
         return [
             'match' => in_array( $config['match'] ?? '', self::MATCHES, true ) ? $config['match'] : 'all',
@@ -78,7 +74,7 @@ class Criteria extends Condition {
     }
 
     public function validate( array $config ) {
-        if ( ! array_filter( array_column( self::flat_rules( $config['rules'] ), 'field' ) ) ) {
+        if ( ! array_filter( array_column( $this->flat_rules( $config['rules'] ), 'field' ) ) ) {
             return $this->invalid( Messages::get( 'rulesRequired' ), 'rules' );
         }
         return $this->rules_error( $config, false, null ) ?? true;
@@ -96,7 +92,7 @@ class Criteria extends Condition {
     }
 
     /**
-     * The first broken rule, either those on trigger facts or the others; an empty group counts with the others.
+     * The first broken rule, either those on trigger facts or the others.
      *
      * @param array        $config
      * @param bool         $facts
@@ -108,37 +104,51 @@ class Criteria extends Condition {
             return null;
         }
         foreach ( $config['rules'] as $index => $item ) {
-            if ( ! $facts && self::is_group( $item ) && ! array_filter( array_column( $item['rules'], 'field' ) ) ) {
-                return $this->invalid( Messages::get( 'groupRulesRequired' ), 'rules', [ 'rule' => [ $index ] ] );
-            }
-            foreach ( self::is_group( $item ) ? $item['rules'] : [ $item ] as $inner => $rule ) {
-                $error = self::reads_fact( $rule ) === $facts ? $this->rule_error( $rule, $trigger ) : null;
-                if ( $error ) {
-                    // Where the form draws it: [ item ] at the top level, [ group, rule ] inside a group.
-                    return $this->invalid( $error, 'rules', [ 'rule' => self::is_group( $item ) ? [ $index, $inner ] : [ $index ] ] );
-                }
+            $error = $this->item_error( $index, $item, $facts, $trigger );
+            if ( $error ) {
+                return $error;
             }
         }
         return null;
     }
 
     /**
-     * Whether a rule reads a trigger fact, as its variable or as the one it compares with.
+     * The first broken rule of one item of `rules`.
+     *
+     * @param int          $index
+     * @param array        $item
+     * @param bool         $facts
+     * @param Trigger|null $trigger
+     */
+    protected function item_error( int $index, array $item, bool $facts, ?Trigger $trigger ): ?\WP_Error {
+        $error = $this->reads_fact( $item ) === $facts ? $this->rule_error( $item, $trigger ) : null;
+        // Where the form draws it.
+        return $error ? $this->invalid( $error, 'rules', [ 'rule' => [ $index ] ] ) : null;
+    }
+
+    /**
+     * Whether a rule reads a trigger fact.
      *
      * @param array $rule
      */
-    private static function reads_fact( array $rule ): bool {
-        $other = 'variable' === $rule['valueType'] ? (string) $rule['value'] : '';
-        return 0 === strpos( $rule['field'], 'trigger.' ) || 0 === strpos( $other, 'trigger.' );
+    protected function reads_fact( array $rule ): bool {
+        return 0 === strpos( $rule['field'], 'trigger.' );
+    }
+
+    /**
+     * Data keys a rule reads.
+     *
+     * @param array $rule
+     * @return string[]
+     */
+    protected function reads( array $rule ): array {
+        return [ $rule['field'] ];
     }
 
     public function uses( array $config ): array {
         $keys = [];
-        foreach ( self::flat_rules( $config['rules'] ) as $rule ) {
-            $keys[] = $rule['field'];
-            if ( 'variable' === $rule['valueType'] && Operators::needs_value( $rule['operator'] ) ) {
-                $keys[] = $rule['value'];
-            }
+        foreach ( $this->flat_rules( $config['rules'] ) as $rule ) {
+            $keys = array_merge( $keys, $this->reads( $rule ) );
         }
         // A fact isn't a data item: `context_error()` checks it against the workflow's trigger.
         $keys  = array_filter( $keys, fn( string $key ) => '' !== $key && 0 !== strpos( $key, 'trigger.' ) );
@@ -146,25 +156,8 @@ class Criteria extends Condition {
         return array_values( array_diff( array_unique( $items ), DataRegistry::ALWAYS ) );
     }
 
-    /**
-     * Custom field names the config's rules on a meta field, e.g. `customer.meta`, read.
-     *
-     * @param array  $config
-     * @param string $field
-     * @return string[]
-     */
-    public static function meta_keys( array $config, string $field ): array {
-        $keys = [];
-        foreach ( self::flat_rules( $config['rules'] ?? [] ) as $rule ) {
-            if ( ( $rule['field'] ?? '' ) === $field && '' !== ( $rule['key'] ?? '' ) ) {
-                $keys[] = $rule['key'];
-            }
-        }
-        return $keys;
-    }
-
     public function run( Scope $scope, array $config ): StepResult {
-        if ( ! $scope->trigger() && array_filter( self::flat_rules( $config['rules'] ), [ self::class, 'reads_fact' ] ) ) {
+        if ( ! $scope->trigger() && array_filter( $this->flat_rules( $config['rules'] ), [ $this, 'reads_fact' ] ) ) {
             return StepResult::failed( __( 'This condition reads the trigger’s values, but the trigger’s plugin isn’t active.', 'yaymatik' ) );
         }
         return parent::run( $scope, $config );
@@ -172,7 +165,7 @@ class Criteria extends Condition {
 
     public function evaluate( Scope $scope, array $config ): bool {
         foreach ( $config['rules'] as $item ) {
-            $result = self::is_group( $item ) ? $this->evaluate( $scope, $item ) : self::rule_matches( $scope, $item );
+            $result = $this->item_matches( $scope, $item );
             if ( 'any' === $config['match'] && $result ) {
                 return true;
             }
@@ -184,50 +177,52 @@ class Criteria extends Condition {
     }
 
     /**
-     * @param array $item
+     * @param Scope $scope
+     * @param array $item One of `rules`.
      */
-    private static function is_group( array $item ): bool {
-        return is_array( $item['rules'] ?? null );
+    protected function item_matches( Scope $scope, array $item ): bool {
+        return $this->rule_matches( $scope, $item );
     }
 
     /**
-     * The rules themselves, those inside groups in their place.
+     * The rules of one item of `rules`.
+     *
+     * @param array $item
+     * @return array[]
+     */
+    protected function rules_in( array $item ): array {
+        return [ $item ];
+    }
+
+    /**
+     * Every rule, in order.
      *
      * @param array[] $items
      */
-    private static function flat_rules( array $items ): array {
+    protected function flat_rules( array $items ): array {
         $rules = [];
         foreach ( $items as $item ) {
-            $rules = array_merge( $rules, self::is_group( $item ) ? $item['rules'] : [ $item ] );
+            $rules = array_merge( $rules, $this->rules_in( $item ) );
         }
         return $rules;
     }
 
     /**
-     * One level deep: a group inside a group is dropped.
-     *
-     * @param array $group
+     * @param array $item One of `rules`.
      */
-    private static function sanitize_group( array $group ): array {
-        $rules = array_filter( $group['rules'], fn( $rule ) => is_array( $rule ) && ! self::is_group( $rule ) );
-        return [
-            'match' => in_array( $group['match'] ?? '', self::MATCHES, true ) ? $group['match'] : 'all',
-            'rules' => array_values( array_map( [ self::class, 'sanitize_rule' ], $rules ) ),
-        ];
+    protected function sanitize_item( array $item ): array {
+        return $this->sanitize_rule( $item );
     }
 
     /**
      * @param Scope $scope
      * @param array $rule
      */
-    private static function rule_matches( Scope $scope, array $rule ): bool {
+    protected function rule_matches( Scope $scope, array $rule ): bool {
         $operator = $rule['operator'];
         $field    = DataRegistry::field( $rule['field'], $scope->trigger() );
         if ( ! $field ) {
             return false;
-        }
-        if ( DataItem::TYPE_META === $field['type'] ) {
-            return Operators::compare( DataItem::TYPE_META, $operator, $scope->meta( $rule['field'], $rule['key'] ), $rule['value'] );
         }
         if ( Operators::is_relative( $operator ) ) {
             $at = $scope->timestamp( $rule['field'] );
@@ -235,12 +230,7 @@ class Criteria extends Condition {
                 ? Operators::in_last( $at, (int) $rule['value'], $rule['unit'], time() )
                 : Operators::not_in_last( $at, (int) $rule['value'], $rule['unit'], time() );
         }
-        $expected = 'variable' === $rule['valueType'] && Operators::needs_value( $operator )
-            ? $scope->get( $rule['value'] )
-            : $rule['value'];
-        // Comparing with a variable that has no value (e.g. no paid date yet) never matches.
-        return null !== $expected
-            && Operators::compare( $field['type'], $operator, $scope->get( $rule['field'] ), $expected );
+        return Operators::compare( $field['type'], $operator, $scope->get( $rule['field'] ), $rule['value'] );
     }
 
     /**
@@ -248,18 +238,13 @@ class Criteria extends Condition {
      *
      * @param array $rule
      */
-    private static function sanitize_rule( array $rule ): array {
-        $key      = self::field_key( self::scalar( $rule['field'] ?? '' ) );
-        $meta     = DataItem::TYPE_META === ( DataRegistry::field( $key )['type'] ?? '' );
+    protected function sanitize_rule( array $rule ): array {
         $operator = sanitize_key( self::scalar( $rule['operator'] ?? '' ) );
-        $fixed    = $meta || Operators::takes_list( $operator ) || Operators::is_relative( $operator );
-        $variable = ! $fixed && 'variable' === ( $rule['valueType'] ?? '' );
-        $value    = self::scalar( $rule['value'] ?? '' );
         $clean    = [
-            'field'     => $key,
+            'field'     => self::field_key( self::scalar( $rule['field'] ?? '' ) ),
             'operator'  => $operator,
-            'value'     => $variable ? self::field_key( $value ) : sanitize_text_field( $value ),
-            'valueType' => $variable ? 'variable' : 'value',
+            'value'     => sanitize_text_field( self::scalar( $rule['value'] ?? '' ) ),
+            'valueType' => 'value',
         ];
         if ( Operators::takes_list( $operator ) ) {
             $items          = array_map( [ self::class, 'scalar' ], (array) ( $rule['value'] ?? [] ) );
@@ -267,9 +252,6 @@ class Criteria extends Condition {
         }
         if ( Operators::is_relative( $operator ) ) {
             $clean['unit'] = in_array( $rule['unit'] ?? '', Operators::units(), true ) ? $rule['unit'] : 'days';
-        }
-        if ( $meta ) {
-            $clean['key'] = sanitize_text_field( self::scalar( $rule['key'] ?? '' ) );
         }
         return $clean;
     }
@@ -280,21 +262,13 @@ class Criteria extends Condition {
      * @param array        $rule
      * @param Trigger|null $trigger
      */
-    private function rule_error( array $rule, ?Trigger $trigger ): ?string {
+    protected function rule_error( array $rule, ?Trigger $trigger ): ?string {
         $field = DataRegistry::field( $rule['field'], $trigger );
         if ( ! $field || ! $field['conditional'] ) {
             return Messages::get( 'ruleVariable' );
         }
         if ( ! Operators::supports( $field['type'], $rule['operator'] ) ) {
             return Messages::get( 'ruleComparison' );
-        }
-        if ( DataItem::TYPE_META === $field['type'] ) {
-            if ( '' === $rule['key'] ) {
-                return Messages::get( 'ruleKeyRequired' );
-            }
-            if ( $field['meta_blocked'] && ( $field['meta_blocked'] )( $rule['key'] ) ) {
-                return Messages::get( 'ruleMetaKey' );
-            }
         }
         if ( ! Operators::needs_value( $rule['operator'] ) ) {
             return null;
@@ -309,13 +283,6 @@ class Criteria extends Condition {
         }
         if ( Operators::is_relative( $rule['operator'] ) ) {
             return preg_match( '/^[1-9]\d*$/', $rule['value'] ) ? null : Messages::get( 'ruleAmount' );
-        }
-
-        if ( 'variable' === $rule['valueType'] ) {
-            $other = DataRegistry::field( $rule['value'], $trigger );
-            $fits  = $other && $other['conditional'] && $other['type'] === $field['type']
-                && in_array( $field['type'], self::VARIABLE_VALUE_TYPES, true );
-            return $fits ? null : Messages::get( 'ruleCompareWith' );
         }
 
         $value = $rule['value'];
@@ -345,7 +312,7 @@ class Criteria extends Condition {
      *
      * @param string $key
      */
-    private static function field_key( string $key ): string {
+    protected static function field_key( string $key ): string {
         return (string) preg_replace( '/[^a-z0-9_.]/', '', $key );
     }
 }

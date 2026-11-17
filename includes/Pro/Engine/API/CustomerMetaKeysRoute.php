@@ -3,7 +3,7 @@ namespace YayMatik\Pro\Engine\API;
 
 use YayMatik\Engine\API\RestAPI;
 use YayMatik\Pro\Workflow\Actions\UpdateCustomerMeta;
-use YayMatik\Workflow\Conditions\Criteria;
+use YayMatik\Pro\Workflow\Conditions\CriteriaPro;
 use YayMatik\Workflow\Core\Data\MetaKeys;
 use YayMatik\Workflow\Core\Storage\WorkflowStore;
 
@@ -35,8 +35,8 @@ final class CustomerMetaKeysRoute {
             foreach ( [ $workflow['graph'], $workflow['draft'] ?? [] ] as $graph ) {
                 foreach ( $graph['nodes'] ?? [] as $node ) {
                     $block = $node['data']['block'] ?? '';
-                    if ( Criteria::ID === $block ) {
-                        $keys = array_merge( $keys, Criteria::meta_keys( $node['data']['config'], 'customer.meta' ) );
+                    if ( CriteriaPro::ID === $block ) {
+                        $keys = array_merge( $keys, CriteriaPro::meta_keys( $node['data']['config'], 'customer.meta' ) );
                     } elseif ( UpdateCustomerMeta::ID === $block && is_string( $node['data']['config']['key'] ?? null ) && '' !== $node['data']['config']['key'] ) {
                         $keys[] = $node['data']['config']['key'];
                     }

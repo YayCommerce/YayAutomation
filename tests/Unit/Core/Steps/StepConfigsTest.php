@@ -122,14 +122,12 @@ final class StepConfigsTest extends TestCase {
             'condition: not a number'       => [ 'condition', self::criteria( [ self::rule( 'order.total', 'greater_than', 'abc' ) ] ), null, 'Enter a number.' ],
             'condition: not a date'         => [ 'condition', self::criteria( [ self::rule( 'order.created_date', 'before', '2026/01/01' ) ] ), null, 'Enter a date (YYYY-MM-DD).' ],
             'condition: unknown option'     => [ 'condition', self::criteria( [ self::rule( 'order.status', 'is', 'gone' ) ] ), null, 'Choose a value from the list.' ],
-            'condition: bad variable'       => [ 'condition', self::criteria( [ self::rule( 'order.total', 'equal', 'order.status', 'variable' ) ] ), null, 'Choose data to compare with.' ],
             'condition: later rule bad'     => [ 'condition', self::criteria( [ self::rule( 'order.status', 'is', 'processing' ), self::rule( 'order.total', 'less_than', 'x' ) ], 'any' ), null, 'Enter a number.' ],
             'condition: valid'              => [
                 'condition',
                 self::criteria(
                     [
                         self::rule( 'order.status', 'is', 'processing' ),
-                        self::rule( 'order.total', 'greater_than', 'order.subtotal', 'variable' ),
                         self::rule( 'order.shipping_method', 'is_empty' ),
                         self::rule( 'order.created_date', 'after', '2026-01-01' ),
                         self::rule( 'customer.email', 'ends_with', '<b>@x.com</b>' ),
@@ -139,7 +137,6 @@ final class StepConfigsTest extends TestCase {
                 self::criteria(
                     [
                         self::rule( 'order.status', 'is', 'processing' ),
-                        self::rule( 'order.total', 'greater_than', 'order.subtotal', 'variable' ),
                         self::rule( 'order.shipping_method', 'is_empty' ),
                         self::rule( 'order.created_date', 'after', '2026-01-01' ),
                         self::rule( 'customer.email', 'ends_with', '@x.com' ),
@@ -148,7 +145,6 @@ final class StepConfigsTest extends TestCase {
                 ),
                 self::OK,
             ],
-            'condition: no-value op'        => [ 'condition', self::criteria( [ self::rule( 'order.total', 'equal', 'order.subtotal', 'variable' ), self::rule( 'customer.email', 'is_not_empty', 'order.foo', 'variable' ) ] ), null, self::OK ],
 
             // Send internal email.
             'email: empty'                  => [
