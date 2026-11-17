@@ -8,7 +8,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
-      '@edition': path.resolve(__dirname, lite ? './src/lite/index.ts' : './src/pro/index.ts'),
+      '@edition': path.resolve(__dirname, lite ? './src/lite' : './src/pro'),
       '@test-meta': path.resolve(
         __dirname,
         lite ? './src/test/fixtures/meta-lite.json' : './src/test/fixtures/meta.json',
@@ -19,6 +19,7 @@ export default defineConfig({
     environment: 'happy-dom',
     setupFiles: ['./src/test/setup.ts'],
     include: ['src/**/*.test.{ts,tsx}'],
-    exclude: lite ? ['src/pro/**'] : [],
+    // Each edition's own tests: src/lite and src/pro are never both loaded.
+    exclude: lite ? ['src/pro/**'] : ['src/lite/**'],
   },
 });

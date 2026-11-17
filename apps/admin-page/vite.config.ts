@@ -66,7 +66,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
-      '@edition': path.resolve(__dirname, `./src/${edition}/index.ts`),
+      '@edition': path.resolve(__dirname, `./src/${edition}`),
     },
   },
   build: {
