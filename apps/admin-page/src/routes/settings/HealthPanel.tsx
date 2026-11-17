@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react';
+import { healthJobs } from '@edition/health';
 import type {
   FixableHealthCheckId,
   HealthCheck,
@@ -27,7 +28,7 @@ const ORDER: HealthCheckId[] = [
   'runs_queued',
   'runs_running',
   'cleanup_job',
-  'inactive_sweep_job',
+  ...(Object.keys(healthJobs) as HealthCheckId[]),
   'missing_plugin',
   'jobs_late',
 ];
@@ -158,16 +159,16 @@ function summary(shown: HealthCheck[], checkedAt: string) {
   return sprintf(/* translators: %s: when, e.g. "5 minutes ago" */ __('Checked %s', 'yaymatik'), time);
 }
 
-const fixRows: Record<
-  FixableHealthCheckId,
-  {
-    icon: ReactNode;
-    title: (check: HealthCheck) => string;
-    help: (check: HealthCheck) => string;
-    fix: (check: HealthCheck) => string;
-    button: string;
-  }
-> = {
+interface FixRowText {
+  icon: ReactNode;
+  title: (check: HealthCheck) => string;
+  help: (check: HealthCheck) => string;
+  fix: (check: HealthCheck) => string;
+  button: string;
+}
+
+/** Core's fixable checks, each with its text; the edition's daily jobs share one wording. */
+const coreRows: Record<'runs_queued' | 'runs_running' | 'cleanup_job', FixRowText> = {
   runs_queued: {
     icon: <TriangleAlert className="text-warning-soft-foreground" />,
     title: (check) =>
@@ -228,19 +229,27 @@ const fixRows: Record<
     fix: () => __('Fix: schedule it again.', 'yaymatik'),
     button: __('Schedule again', 'yaymatik'),
   },
-  inactive_sweep_job: {
-    icon: <TriangleAlert className="text-warning-soft-foreground" />,
-    title: () => __('The daily inactive-customer check isn’t running on time', 'yaymatik'),
-    help: () =>
-      __('It’s missing or more than a day late, so customers may start their win-back late or miss it.', 'yaymatik'),
-    fix: () => __('Fix: schedule it again.', 'yaymatik'),
-    button: __('Schedule again', 'yaymatik'),
-  },
+};
+
+const fixRows: Record<string, FixRowText> = {
+  ...coreRows,
+  ...Object.fromEntries(
+    Object.entries(healthJobs).map(([id, job]): [string, FixRowText] => [
+      id,
+      {
+        icon: <TriangleAlert className="text-warning-soft-foreground" />,
+        title: job.title,
+        help: job.help,
+        fix: () => __('Fix: schedule it again.', 'yaymatik'),
+        button: __('Schedule again', 'yaymatik'),
+      },
+    ]),
+  ),
 };
 
 function fixedMessage(id: FixableHealthCheckId, fixed: number) {
   if (id === 'cleanup_job') return __('The daily cleanup is scheduled again.', 'yaymatik');
-  if (id === 'inactive_sweep_job') return __('The daily inactive-customer check is scheduled again.', 'yaymatik');
+  if (healthJobs[id]) return healthJobs[id].fixed();
   return id === 'runs_queued'
     ? /* translators: %d: number of runs */
       sprintf(_n('%d run queued again.', '%d runs queued again.', fixed, 'yaymatik'), fixed)

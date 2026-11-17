@@ -30,7 +30,7 @@ final class CatalogTest extends TestCase {
     }
 
     public function test_plugins_and_step_identity_match_the_app_fixture(): void {
-        $fixture = json_decode( (string) file_get_contents( dirname( __DIR__, 4 ) . '/apps/admin-page/src/test/fixtures/meta.json' ), true )['automation']; // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- reading a fixture in a test.
+        $fixture = json_decode( (string) file_get_contents( dirname( __DIR__, 4 ) . '/apps/admin-page/src/test/fixtures/' . ( YAYMATIK_TEST_LITE ? 'meta-lite.json' : 'meta.json' ) ), true )['automation']; // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- reading a fixture in a test.
         $catalog = Catalog::to_client();
 
         $without_active = fn( array $plugins ) => array_map( fn( array $plugin ) => array_diff_key( $plugin, [ 'active' => true ] ), $plugins );

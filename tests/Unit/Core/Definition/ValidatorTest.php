@@ -266,7 +266,7 @@ final class ValidatorTest extends TestCase {
                 self::node( 't', 'trigger', 'order_status_changed', [ 'to' => [ 'gone' ] ] ),
                 self::node( 'c', 'condition', 'condition', [ 'rules' => [] ] ),
                 self::note( 'Hi {{ order.foo }}' ),
-                self::node( 'meta', 'action', 'update_order_meta', [ 'key' => '' ] ),
+                self::node( 'meta', 'action', 'change_order_status', [ 'status' => '' ] ),
             ],
             [ self::edge( 't', 'c' ), self::edge( 'c', 'note', 'then' ), self::edge( 'c', 'meta', 'otherwise' ) ]
         );
@@ -276,11 +276,11 @@ final class ValidatorTest extends TestCase {
                 [ 'invalid_config', 'Choose options from the list.', 't' ],
                 [ 'invalid_config', 'Add a rule, or remove this condition.', 'c' ],
                 [ 'invalid_config', '{{ order.foo }} isn’t an available variable.', 'note' ],
-                [ 'invalid_config', 'Update order custom field needs a field name.', 'meta' ],
+                [ 'invalid_config', 'Choose the new status.', 'meta' ],
             ],
             array_map( fn( array $issue ) => [ $issue['code'], $issue['message'], $issue['nodeId'] ], $issues )
         );
-        $this->assertSame( [ 'to', 'rules', 'note', 'key' ], array_column( $issues, 'field' ), 'each step issue names its field' );
+        $this->assertSame( [ 'to', 'rules', 'note', 'status' ], array_column( $issues, 'field' ), 'each step issue names its field' );
         $this->assertArrayNotHasKey( 'rule', $issues[1], 'a condition with no rule names none' );
     }
 
@@ -314,7 +314,7 @@ final class ValidatorTest extends TestCase {
      * Texts go into the email's subject, the note and the meta value.
      *
      * @param string $id      Step whose issue to return.
-     * @param array  $texts   [ 'email' => subject, 'note' => note, 'meta' => value ].
+     * @param array  $texts   [ 'email' => subject, 'note' => note, 'meta' => the other branch's note ].
      * @param array  $rules   Condition rules.
      * @param string $note_id Id of the note step.
      */
@@ -340,15 +340,7 @@ final class ValidatorTest extends TestCase {
                     ]
                 ),
                 self::note( $texts['note'] ?? 'n', $note_id ),
-                self::node(
-                    'meta',
-                    'action',
-                    'update_order_meta',
-                    [
-                        'key'   => 'k',
-                        'value' => $texts['meta'] ?? '',
-                    ]
-                ),
+                self::note( $texts['meta'] ?? 'n', 'meta' ),
             ],
             [ self::edge( 't', 'c' ), self::edge( 'c', 'email', 'then' ), self::edge( 'email', $note_id ), self::edge( 'c', 'meta', 'otherwise' ) ]
         );
@@ -372,7 +364,7 @@ final class ValidatorTest extends TestCase {
     public function test_unknown_merge_tags_keep_their_message_and_name_the_field(): void {
         $this->assertSame( self::expect( 'invalid_config', '{{ order.foo }} isn’t an available variable.', 'subject' ), self::issue_of( 'email', [ 'email' => 'Hi {{ order.foo }}' ] ) );
         $this->assertSame( self::expect( 'invalid_config', '{{ customer.bar }} isn’t an available variable.', 'note' ), self::issue_of( 'note', [ 'note' => '{{ customer.bar }}' ] ) );
-        $this->assertSame( self::expect( 'invalid_config', '{{ order.foo }} isn’t an available variable.', 'value' ), self::issue_of( 'meta', [ 'meta' => '{{ order.foo }}' ] ) );
+        $this->assertSame( self::expect( 'invalid_config', '{{ order.foo }} isn’t an available variable.', 'note' ), self::issue_of( 'meta', [ 'meta' => '{{ order.foo }}' ] ) );
     }
 
     public function test_deep_paths_resolve_through_the_catalog(): void {
@@ -390,7 +382,7 @@ final class ValidatorTest extends TestCase {
         $this->assertNull( self::issue_of( 'action-mv0pf42q0l81', [ 'note' => '{{ steps.email.to }}' ], [], 'action-mv0pf42q0l81' ), 'any step id' );
 
         $this->assertSame(
-            self::expect( 'missing_data', '{{ steps.email.to }} needs the Send internal email step above this one. Move it above, or remove the variable.', 'value' ),
+            self::expect( 'missing_data', '{{ steps.email.to }} needs the Send internal email step above this one. Move it above, or remove the variable.', 'note' ),
             self::issue_of( 'meta', [ 'meta' => '{{ steps.email.to }}' ] ),
             'the other branch'
         );

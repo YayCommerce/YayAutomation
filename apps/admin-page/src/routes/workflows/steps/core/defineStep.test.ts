@@ -5,7 +5,7 @@ import { steps } from '..';
 describe('normalize', () => {
   it('keeps only the fields of a built step, like PHP sanitize_all()', () => {
     expect(steps.order_created.normalize({ x: 1 })).toEqual({});
-    expect(steps.update_order_meta.normalize({ key: '_vip', junk: 1 })).toEqual({ key: '_vip', value: '' });
+    expect(steps.change_order_status.normalize({ status: 'completed', junk: 1 })).toEqual({ status: 'completed' });
   });
 
   it('stores status slugs like PHP OrderData::status_slug()', () => {

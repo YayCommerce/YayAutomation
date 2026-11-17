@@ -2,7 +2,6 @@
 namespace YayMatik\Workflow\Modules;
 
 use YayMatik\Workflow\Actions\Wait;
-use YayMatik\Workflow\Actions\WaitUntil;
 use YayMatik\Workflow\Conditions\Criteria;
 use YayMatik\Workflow\DataItems\SiteData;
 
@@ -37,7 +36,7 @@ class YayMatikModule extends Module {
     }
 
     public function actions(): array {
-        return [ Wait::class, WaitUntil::class ];
+        return [ Wait::class ];
     }
 
     public function data_items(): array {

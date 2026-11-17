@@ -2,8 +2,11 @@
 namespace YayMatik\Pro;
 
 use YayMatik\Engine\Register\ScriptName;
+use YayMatik\Pro\Engine\API\CustomerMetaKeysRoute;
+use YayMatik\Pro\Workflow\Core\Runtime\InactiveSweep;
 use YayMatik\Pro\Workflow\Modules\WoocommerceProModule;
 use YayMatik\Pro\Workflow\Modules\YayMatikProModule;
+use YayMatik\Workflow\Core\Runtime\DailyJobs;
 use YayMatik\Workflow\ModuleRegistry;
 use YayMatik\Workflow\Modules\WoocommerceModule;
 use YayMatik\Workflow\Modules\YayMatikModule;
@@ -20,6 +23,9 @@ final class Boot {
         WoocommerceModule::class => WoocommerceProModule::class,
     ];
 
+    /** @var bool Read once, in `register()`. */
+    private static $licensed = false;
+
     /** Before the plugin boots: the license, then Pro's hooks when it allows them. */
     public static function register(): void {
         AdminShell::register_plugin( new YayMatikProLicenseAdapter() );
@@ -28,10 +34,21 @@ final class Boot {
         }
         // After AdminPage enqueues the app.
         add_action( 'admin_enqueue_scripts', [ self::class, 'localize' ], 20 );
-        if ( ! YayMatikProLicenseAdapter::is_licensed() ) {
+        self::$licensed = YayMatikProLicenseAdapter::is_licensed();
+        if ( ! self::$licensed ) {
             return;
         }
         add_filter( ModuleRegistry::HOOK, [ self::class, 'modules' ] );
+        CustomerMetaKeysRoute::register();
+    }
+
+    /** On `init`: Pro's jobs. */
+    public static function boot(): void {
+        if ( ! self::$licensed ) {
+            return;
+        }
+        InactiveSweep::boot();
+        DailyJobs::add( 'inactive_sweep_job', InactiveSweep::HOOK, InactiveSweep::LATE, [ InactiveSweep::class, 'schedule' ] );
     }
 
     /**
@@ -47,6 +64,6 @@ final class Boot {
         if ( ! wp_script_is( ScriptName::PAGE_ADMIN, 'enqueued' ) ) {
             return;
         }
-        wp_localize_script( ScriptName::PAGE_ADMIN, 'yayMatikPro', [ 'licensed' => YayMatikProLicenseAdapter::is_licensed() ] );
+        wp_localize_script( ScriptName::PAGE_ADMIN, 'yayMatikPro', [ 'licensed' => self::$licensed ] );
     }
 }

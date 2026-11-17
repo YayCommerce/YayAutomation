@@ -1,18 +1,13 @@
-import { steps as editionSteps } from '@edition';
+import { steps as editionSteps } from '@edition/steps';
 import type { StepId } from '@yaymatik/types';
 
 import { addOrderNoteStep } from './actions/add-order-note';
-import { changeCustomerRoleStep } from './actions/change-customer-role';
 import { changeOrderStatusStep } from './actions/change-order-status';
 import { generateCouponStep } from './actions/generate-coupon';
-import { resendWcEmailStep } from './actions/resend-wc-email';
 import { sendEmailStep } from './actions/send-email';
 import { EmailActions } from './actions/send-email/EmailActions';
 import { sendInternalEmailStep } from './actions/send-internal-email';
-import { updateCustomerMetaStep } from './actions/update-customer-meta';
-import { updateOrderMetaStep } from './actions/update-order-meta';
 import { waitStep } from './actions/wait';
-import { waitUntilStep } from './actions/wait-until';
 import { criteriaStep } from './conditions/criteria';
 import { defineStep } from './core/defineStep';
 import { editorFooter } from './core/fields/EditorFrame';
@@ -20,9 +15,6 @@ import { createRegistry } from './core/registry';
 import { cartAbandonedStep } from './triggers/cart-abandoned';
 import { checkoutAbandonedStep } from './triggers/checkout-abandoned';
 import { customerAccountCreatedStep } from './triggers/customer-account-created';
-import { customerInactiveStep } from './triggers/customer-inactive';
-import { customerOrderCountReachesStep } from './triggers/customer-order-count-reaches';
-import { customerTotalSpendReachesStep } from './triggers/customer-total-spend-reaches';
 import { orderCreatedStep } from './triggers/order-created';
 import { orderNoteAddedStep } from './triggers/order-note-added';
 import { orderPaidStep } from './triggers/order-paid';
@@ -42,22 +34,14 @@ const coreSteps = [
   cartAbandonedStep,
   checkoutAbandonedStep,
   customerAccountCreatedStep,
-  customerInactiveStep,
-  customerOrderCountReachesStep,
-  customerTotalSpendReachesStep,
   reviewPostedStep,
   criteriaStep,
   sendEmailStep,
   sendInternalEmailStep,
-  resendWcEmailStep,
   changeOrderStatusStep,
   addOrderNoteStep,
-  updateOrderMetaStep,
-  updateCustomerMetaStep,
-  changeCustomerRoleStep,
   generateCouponStep,
   waitStep,
-  waitUntilStep,
   ...editionSteps,
 ];
 

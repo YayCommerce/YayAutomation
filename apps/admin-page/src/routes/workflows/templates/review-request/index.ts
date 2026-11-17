@@ -23,13 +23,8 @@ const first = customerEmail(__('How did your order go?', 'yaymatik'), __('Tell u
   __('It takes a minute and helps a lot.', 'yaymatik'),
 ]);
 
-const second = customerEmail(__('A quick review?', 'yaymatik'), __('Still have a minute?', 'yaymatik'), [
-  __('You haven’t reviewed these yet:', 'yaymatik'),
-  '{{ order.review_products }}',
-]);
-
 /** Something to review → wait → check again with fresh data → email; the reminder repeats the last three. */
-function graph(reminder?: SendEmailConfig): WorkflowGraph {
+export function graph(reminder?: SendEmailConfig): WorkflowGraph {
   // Each "then" branch steps left, like steps added in the editor.
   const step = (
     id: string,
@@ -73,7 +68,7 @@ function graph(reminder?: SendEmailConfig): WorkflowGraph {
   return { nodes, edges };
 }
 
-const shared = { category: 'post_purchase', workflow: 'review_request', createdAt: '2026-11-03' } as const;
+export const shared = { category: 'post_purchase', workflow: 'review_request', createdAt: '2026-11-03' } as const;
 
 export const reviewRequest = defineTemplate({
   ...shared,
@@ -84,15 +79,4 @@ export const reviewRequest = defineTemplate({
     'yaymatik',
   ),
   graph: graph(),
-});
-
-export const reviewRequestReminder = defineTemplate({
-  ...shared,
-  id: 'review-request-reminder',
-  name: __('Review request + reminder', 'yaymatik'),
-  description: __(
-    '7 days after an order is completed, ask for a review of each product; a week later, remind once about the ones still not reviewed.',
-    'yaymatik',
-  ),
-  graph: graph(second),
 });

@@ -9,13 +9,15 @@
             ],
             "outputs": [
                 "type"
-            ]
+            ],
+            "tier": "lite"
         },
         "cart_abandoned": {
             "kind": "trigger",
             "category": "cart",
             "config": [],
-            "outputs": []
+            "outputs": [],
+            "tier": "lite"
         },
         "change_customer_role": {
             "kind": "action",
@@ -27,7 +29,8 @@
             "outputs": [
                 "from",
                 "to"
-            ]
+            ],
+            "tier": "pro"
         },
         "change_order_status": {
             "kind": "action",
@@ -38,13 +41,15 @@
             "outputs": [
                 "from",
                 "to"
-            ]
+            ],
+            "tier": "lite"
         },
         "checkout_abandoned": {
             "kind": "trigger",
             "category": "cart",
             "config": [],
-            "outputs": []
+            "outputs": [],
+            "tier": "lite"
         },
         "condition": {
             "kind": "condition",
@@ -55,13 +60,15 @@
             ],
             "outputs": [
                 "result"
-            ]
+            ],
+            "tier": "lite"
         },
         "customer_account_created": {
             "kind": "trigger",
             "category": "customer",
             "config": [],
-            "outputs": []
+            "outputs": [],
+            "tier": "lite"
         },
         "customer_inactive": {
             "kind": "trigger",
@@ -69,7 +76,8 @@
             "config": [
                 "days"
             ],
-            "outputs": []
+            "outputs": [],
+            "tier": "pro"
         },
         "customer_order_count_reaches": {
             "kind": "trigger",
@@ -77,7 +85,8 @@
             "config": [
                 "count"
             ],
-            "outputs": []
+            "outputs": [],
+            "tier": "pro"
         },
         "customer_total_spend_reaches": {
             "kind": "trigger",
@@ -85,7 +94,8 @@
             "config": [
                 "amount"
             ],
-            "outputs": []
+            "outputs": [],
+            "tier": "pro"
         },
         "generate_coupon": {
             "kind": "action",
@@ -104,13 +114,15 @@
                 "amount",
                 "expires_at",
                 "box"
-            ]
+            ],
+            "tier": "lite"
         },
         "order_created": {
             "kind": "trigger",
             "category": "order",
             "config": [],
-            "outputs": []
+            "outputs": [],
+            "tier": "lite"
         },
         "order_note_added": {
             "kind": "trigger",
@@ -120,19 +132,22 @@
                 "contains",
                 "skip_yaymatik"
             ],
-            "outputs": []
+            "outputs": [],
+            "tier": "lite"
         },
         "order_paid": {
             "kind": "trigger",
             "category": "order",
             "config": [],
-            "outputs": []
+            "outputs": [],
+            "tier": "lite"
         },
         "order_refunded": {
             "kind": "trigger",
             "category": "order",
             "config": [],
-            "outputs": []
+            "outputs": [],
+            "tier": "lite"
         },
         "order_status_changed": {
             "kind": "trigger",
@@ -142,7 +157,8 @@
                 "to",
                 "only_checkout"
             ],
-            "outputs": []
+            "outputs": [],
+            "tier": "lite"
         },
         "resend_wc_email": {
             "kind": "action",
@@ -152,13 +168,15 @@
             ],
             "outputs": [
                 "email"
-            ]
+            ],
+            "tier": "pro"
         },
         "review_posted": {
             "kind": "trigger",
             "category": "review",
             "config": [],
-            "outputs": []
+            "outputs": [],
+            "tier": "lite"
         },
         "send_email": {
             "kind": "action",
@@ -172,7 +190,8 @@
             ],
             "outputs": [
                 "to"
-            ]
+            ],
+            "tier": "lite"
         },
         "send_internal_email": {
             "kind": "action",
@@ -185,7 +204,8 @@
             ],
             "outputs": [
                 "to"
-            ]
+            ],
+            "tier": "lite"
         },
         "update_customer_meta": {
             "kind": "action",
@@ -197,7 +217,8 @@
             "outputs": [
                 "key",
                 "changed"
-            ]
+            ],
+            "tier": "pro"
         },
         "update_order_meta": {
             "kind": "action",
@@ -209,7 +230,8 @@
             "outputs": [
                 "key",
                 "changed"
-            ]
+            ],
+            "tier": "pro"
         },
         "wait": {
             "kind": "action",
@@ -217,7 +239,8 @@
             "config": [
                 "delay"
             ],
-            "outputs": []
+            "outputs": [],
+            "tier": "lite"
         },
         "wait_until": {
             "kind": "action",
@@ -228,7 +251,8 @@
             ],
             "outputs": [
                 "until"
-            ]
+            ],
+            "tier": "pro"
         }
     },
     "operators": {

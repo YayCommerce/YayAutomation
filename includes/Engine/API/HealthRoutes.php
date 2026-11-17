@@ -37,7 +37,7 @@ class HealthRoutes {
                         'required' => true,
                         'type'     => 'string',
                         // `jobs_late` has no fix: a 400 like an unknown check.
-                        'enum'     => array_keys( HealthCheck::FIXES ),
+                        'enum'     => array_keys( HealthCheck::fixes() ),
                     ],
                 ],
             ]

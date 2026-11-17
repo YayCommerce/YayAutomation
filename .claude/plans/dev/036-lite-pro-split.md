@@ -80,9 +80,9 @@ Check the field ids against `DataItems/*::define()` and the template ids against
 
 | CP | Work | Done when |
 |---|---|---|
-| CP0 | Branch from develop (034b merged). Confirm develop HEAD is `1a58c38` (or list what came after). List `git log --oneline 32823b1..1a58c38` in the report (D18, already reviewed). Run lint, lint:php, test, test:php, build, `check-all --wp-env`, e2e. (`check-all --wp-env-min` from a dev checkout is a known failure, plan 035: don't fix it here.) Check the split table (fields, steps, template ids) against the code. | Baseline recorded in the PR text; mismatches reported |
-| CP1 | D1–D4, D14, D15, D16 plumbing; no feature moves. | Both zips build; Lite zip check passes; tests green in both editions; Pro zip installs as `yaymatik-pro`, Lite deactivates when both are on; license activates with 7761; no Update / View details offered for yaymatik-pro |
-| CP2 | 3 triggers, 5 actions (PHP to `includes/Pro`, JS to `src/pro`, as D0), including their abstract base `CustomerMilestone` (parent of the two milestone triggers); `CustomerStats` stays Lite (shared storage). D8. | Lite pickers show 9 / 6; Pro 12 / 11; zip check finds no Pro step id in Lite |
+| ✅ **CP0** (df68676) | Branch from develop (034b merged). Confirm develop HEAD is `1a58c38` (or list what came after). List `git log --oneline 32823b1..1a58c38` in the report (D18, already reviewed). Run lint, lint:php, test, test:php, build, `check-all --wp-env`, e2e. (`check-all --wp-env-min` from a dev checkout is a known failure, plan 035: don't fix it here.) Check the split table (fields, steps, template ids) against the code. | Baseline recorded in the PR text; mismatches reported |
+| ✅ **CP1** (9538cb5) | D1–D4, D14, D15, D16 plumbing; no feature moves. | Both zips build; Lite zip check passes; tests green in both editions; Pro zip installs as `yaymatik-pro`, Lite deactivates when both are on; license activates with 7761; no Update / View details offered for yaymatik-pro |
+| ✅ **CP2** (see below) | 3 triggers, 5 actions (PHP to `includes/Pro`, JS to `src/pro`, as D0), including their abstract base `CustomerMilestone` (parent of the two milestone triggers); `CustomerStats` stays Lite (shared storage). D8. | Lite pickers show 9 / 6; Pro 12 / 11; zip check finds no Pro step id in Lite |
 | CP3 | D9, D10; Pro merge tags out of Lite's variable picker. | Lite condition form has no group / variable / custom field; Pro unchanged |
 | CP4 | D11, D12. | Lite library 8, Pro 18; core list has tiers; CoreStepsTest green in both |
 | CP5 | D7. | Lite shows 2 retention fields, no abandon field; values stored on Pro keep working on Lite (test) |
@@ -93,3 +93,21 @@ Check the field ids against `DataItems/*::define()` and the template ids against
 ## Rules for Claude Code
 
 One-run mode, commit locally per CP. No push, no `gh pr create`, no `git stash`, no amend / rebase / force push. Stage by path; never commit `.claude/settings*.json`. Author `Jack Tran <107062939+jack9x@users.noreply.github.com>`, no Co-Authored-By / Claude-Session lines. `.pot` (makepot) runs last. If something in this plan does not match the code, stop that CP and report instead of guessing.
+
+## Deviations
+
+- CP0: e2e runs in the Playwright Docker image (Playwright 1.64 has no macOS 12 build); check-extension needed a wp-env restart to mount `acme-rewards`, check-catalog a reset-data (a leftover user). After that all green.
+- CP1: admin-shell differs from YayCurrency's (2.8.6, no `LicenseState`, so its `is_licensed()` has a `class_exists` fallback); YayMatik bundles 2.12.0, so `is_licensed()` calls `LicenseState::allows_features()` directly.
+- CP1: PHPUnit has no vendor-prefixed in CI, so `tests/Support/admin-shell.php` loads the real contracts and `LicenseState` when built and stand-ins otherwise; the four license-policy cases skip on the stand-ins. `AdminShell` is always a stand-in that records registrations.
+- CP1: the Pro main file is made in `release.sh` (copy of `yaymatik.php` renamed, Plugin Name and Update URI rewritten), so no Pro file lives outside the Pro folders. The free release rebuilds the Pro bundle on exit, as the checkout runs Pro.
+- CP1: wp-env gets its license from `dev/wp/mu-plugins/yaymatik-dev-license.php` (option filters, as the daily license check would remove a stored fake key); `wp option update yaymatik_dev_edition lite` runs the checkout as Lite. Vitest reads `meta.json` (Pro) or `meta-lite.json` through the `@test-meta` alias; `meta-fixture` writes both and takes `--wp-env`.
+- CP1: `check-plugin-lifecycle` installs both zips from `release/` (SKIP when missing) and runs only the plugin's own `admin_init` closure, as WooCommerce's needs wp-admin under wp-cli. It refuses a checkout folder named `yaymatik` / `yaymatik-pro`.
+- CP1 review: kept `TODO(036)` (text set by D16, although CLAUDE.md bans plan numbers in comments); Guard 1 also matches `ITEM_ID_IS_TEMPORARY = true`.
+- CP2: the edition entry is three modules, `@edition/steps`, `@edition/templates`, `@edition/health` (alias to `src/lite/` or `src/pro/`), not one `index.ts`: one module made a cycle (templates → model → step registry → edition). Pro steps are factories, built only with a license (an unlicensed catalog has none of them, and `defineStep` throws on an unknown id).
+- CP2: D11's template moves done here, not in CP4: the Lite library can't validate while it holds Pro templates. D12's step tiers too (CoreStepsTest must pass in both editions); data key tiers come with CP3.
+- CP2: `ProCatalog` started here with `STEPS` (id => kind), for the zip check; labels and outputs come with CP6.
+- CP2: D8 through a small Lite `DailyJobs` list (Cleanup schedules each, HealthCheck reports it); Pro adds the sweep in `Pro\Boot::boot()` (init priority 0, before Action Scheduler's init). The JS health row comes from `@edition/health`. `HealthCheckId` admits `<name>_job`.
+- CP2: the customer-meta-keys route moved to Pro (`Pro\Engine\API\CustomerMetaKeysRoute`): only Pro steps and Pro meta rules use it. Run-history lines of Pro steps moved onto the steps (`Step.result`).
+- CP2: `ChangeOrderStatus::emits()` drops the milestone ids with no replacement: milestones never warn (`fires_for_own_runs()` is false, from `OrderPaidTrigger`), so they were dead.
+- CP2: the checkout's Composer autoloader stays classmap-authoritative after `release.sh` (`yaycommerce-prerelease`), so new classes don't load until `composer dump-autoload`. Pre-existing; not changed here.
+

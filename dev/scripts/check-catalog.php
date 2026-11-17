@@ -12,7 +12,7 @@
 // phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.WP.GlobalVariablesOverride.Prohibited
 
 use Automattic\WooCommerce\Utilities\OrderUtil;
-use YayMatik\Workflow\Actions\UpdateOrderMeta;
+use YayMatik\Pro\Workflow\Actions\UpdateOrderMeta;
 use YayMatik\Workflow\Conditions\Criteria;
 use YayMatik\Workflow\Core\Data\CustomerStats;
 use YayMatik\Workflow\Core\Data\Ref;

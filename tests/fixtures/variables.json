@@ -575,7 +575,7 @@
                             "y": 0
                         },
                         "data": {
-                            "block": "update_order_meta",
+                            "block": "change_order_status",
                             "config": []
                         }
                     }

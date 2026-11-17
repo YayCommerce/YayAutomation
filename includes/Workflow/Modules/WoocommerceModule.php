@@ -2,14 +2,10 @@
 namespace YayMatik\Workflow\Modules;
 
 use YayMatik\Workflow\Actions\AddOrderNote;
-use YayMatik\Workflow\Actions\ChangeCustomerRole;
 use YayMatik\Workflow\Actions\ChangeOrderStatus;
 use YayMatik\Workflow\Actions\GenerateCoupon;
-use YayMatik\Workflow\Actions\ResendWcEmail;
 use YayMatik\Workflow\Actions\SendEmail;
 use YayMatik\Workflow\Actions\SendInternalEmail;
-use YayMatik\Workflow\Actions\UpdateCustomerMeta;
-use YayMatik\Workflow\Actions\UpdateOrderMeta;
 use YayMatik\Workflow\DataItems\CartData;
 use YayMatik\Workflow\DataItems\CustomerData;
 use YayMatik\Workflow\DataItems\OrderData;
@@ -19,9 +15,6 @@ use YayMatik\Workflow\DataItems\ReviewData;
 use YayMatik\Workflow\Triggers\CartAbandoned;
 use YayMatik\Workflow\Triggers\CheckoutAbandoned;
 use YayMatik\Workflow\Triggers\CustomerAccountCreated;
-use YayMatik\Workflow\Triggers\CustomerInactive;
-use YayMatik\Workflow\Triggers\CustomerOrderCountReaches;
-use YayMatik\Workflow\Triggers\CustomerTotalSpendReaches;
 use YayMatik\Workflow\Triggers\OrderCreated;
 use YayMatik\Workflow\Triggers\OrderNoteAdded;
 use YayMatik\Workflow\Triggers\OrderPaid;
@@ -69,9 +62,6 @@ class WoocommerceModule extends Module {
             CartAbandoned::class,
             CheckoutAbandoned::class,
             CustomerAccountCreated::class,
-            CustomerInactive::class,
-            CustomerOrderCountReaches::class,
-            CustomerTotalSpendReaches::class,
             ReviewPosted::class,
         ];
     }
@@ -80,12 +70,8 @@ class WoocommerceModule extends Module {
         return [
             SendEmail::class,
             SendInternalEmail::class,
-            ResendWcEmail::class,
             ChangeOrderStatus::class,
             AddOrderNote::class,
-            UpdateOrderMeta::class,
-            UpdateCustomerMeta::class,
-            ChangeCustomerRole::class,
             GenerateCoupon::class,
         ];
     }

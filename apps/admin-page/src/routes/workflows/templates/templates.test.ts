@@ -79,70 +79,6 @@ describe('templates', () => {
     },
   );
 
-  describe('win-back', () => {
-    const node = (id: string, block: string) => findTemplate(id)!.graph.nodes.find((n) => n.data.block === block)!;
-    const ids = ['win-back-discount', 'win-back-free-shipping'];
-
-    it('links its two versions', () => {
-      expect(versionsOf(findTemplate(ids[0])!).map((t) => t.id)).toEqual([ids[1]]);
-      expect(versionsOf(findTemplate(ids[1])!).map((t) => t.id)).toEqual([ids[0]]);
-    });
-
-    it.each(ids)('%s waits 90 days, checks the unsubscribe, and hangs the coupon from Yes', (id) => {
-      const { graph } = findTemplate(id)!;
-      expect(graph.nodes.map((n) => n.data.block)).toEqual([
-        'customer_inactive',
-        'condition',
-        'generate_coupon',
-        'send_email',
-      ]);
-      expect(graph.nodes[0].data.config).toEqual({ days: 90 });
-      expect(graph.nodes[1].data.config).toEqual({
-        match: 'all',
-        rules: [{ field: 'customer.unsubscribed', operator: 'is_false', value: '', valueType: 'value' }],
-      });
-      expect(graph.edges.find((edge) => edge.target === 'coupon')).toMatchObject({
-        source: 'condition',
-        sourceHandle: 'then',
-      });
-    });
-
-    it('offers 15% off or free shipping, 14 days, limited to the customer', () => {
-      expect(node(ids[0], 'generate_coupon').data.config).toMatchObject({
-        discount_type: 'percent',
-        amount: 15,
-        expiry_days: 14,
-        limit_to_customer: true,
-      });
-      expect(node(ids[1], 'generate_coupon').data.config).toMatchObject({
-        discount_type: 'free_shipping',
-        amount: null,
-        expiry_days: 14,
-        limit_to_customer: true,
-      });
-    });
-
-    it.each([
-      [ids[0], 'Here’s {{ steps.coupon.amount }} off your next one:'],
-      [ids[1], 'Here’s free shipping on your next order:'],
-    ])('%s writes the email with each block on its own paragraph', (id, offer) => {
-      const { config } = node(id, 'send_email').data;
-      expect(sendsCustomerEmail(findTemplate(id)!.graph)).toBe(true);
-      expect(config.to).toBe('{{ customer.email }}');
-      expect(config.subject).toBe('We miss you at {{ site.name }}');
-      expect(config.heading).toBe('It’s been a while');
-      expect(config.message).toBe(
-        emailMessage([
-          'Hi {{ customer.first_name | default: "there" }},',
-          `It’s been a while since your last order. ${offer}`,
-          '{{ steps.coupon.box }}',
-          '{{ site.shop_button }}',
-          'See you soon,\n{{ site.name }}',
-        ]),
-      );
-    });
-  });
-
   it('staff-only templates send no customer email', () => {
     expect(sendsCustomerEmail(findTemplate('high-value-order-alert')!.graph)).toBe(false);
   });
@@ -182,44 +118,36 @@ describe('cart and checkout templates', () => {
       .map((n) => n.data.config);
 
   it('links the versions of each workflow', () => {
-    expect(versionsOf(findTemplate('cart-reminder')!).map((t) => t.id)).toEqual(['cart-series', 'cart-series-coupon']);
     expect(versionsOf(findTemplate('checkout-reminder')!).map((t) => t.id)).toEqual(['checkout-reminder-coupon']);
   });
 
   it.each([
     ['cart-reminder', 1],
-    ['cart-series', 72],
-    ['cart-series-coupon', 72],
     ['checkout-reminder', 1],
     ['checkout-reminder-coupon', 24],
   ])('%s sends its last email %d hours after the start', (id, total) => {
     expect(hours(id)).toBe(total);
   });
 
-  it.each(['cart-series-coupon', 'checkout-reminder-coupon'])(
-    '%s makes a 10%% coupon for 7 days right before its last email',
-    (id) => {
-      const { nodes, edges } = findTemplate(id)!.graph;
-      const coupon = nodes.find((node) => node.data.block === 'generate_coupon')!;
-      expect(coupon.data.config).toMatchObject({ discount_type: 'percent', amount: 10, expiry_days: 7 });
-      const next = nodes.find((node) => node.id === edges.find((edge) => edge.source === coupon.id)!.target)!;
-      expect(next.data.block).toBe('send_email');
-      expect(next.data.config.message).toContain('<p>{{ steps.coupon.box }}</p>');
-      expect(edges.some((edge) => edge.source === next.id)).toBe(false);
-    },
-  );
+  it.each(['checkout-reminder-coupon'])('%s makes a 10%% coupon for 7 days right before its last email', (id) => {
+    const { nodes, edges } = findTemplate(id)!.graph;
+    const coupon = nodes.find((node) => node.data.block === 'generate_coupon')!;
+    expect(coupon.data.config).toMatchObject({ discount_type: 'percent', amount: 10, expiry_days: 7 });
+    const next = nodes.find((node) => node.id === edges.find((edge) => edge.source === coupon.id)!.target)!;
+    expect(next.data.block).toBe('send_email');
+    expect(next.data.config.message).toContain('<p>{{ steps.coupon.box }}</p>');
+    expect(edges.some((edge) => edge.source === next.id)).toBe(false);
+  });
 
   it.each([
     ['cart-reminder', 'cart_abandoned'],
-    ['cart-series', 'cart_abandoned'],
-    ['cart-series-coupon', 'cart_abandoned'],
     ['checkout-reminder', 'checkout_abandoned'],
     ['checkout-reminder-coupon', 'checkout_abandoned'],
   ])('%s starts from %s', (id, trigger) => {
     expect(findTemplate(id)!.graph.nodes[0].data.block).toBe(trigger);
   });
 
-  it.each(['cart-reminder', 'cart-series', 'cart-series-coupon', 'checkout-reminder', 'checkout-reminder-coupon'])(
+  it.each(['cart-reminder', 'checkout-reminder', 'checkout-reminder-coupon'])(
     '%s emails the cart to the shopper in every email',
     (id) => {
       const emails = emailsOf(id);
@@ -235,22 +163,6 @@ describe('cart and checkout templates', () => {
 
   it.each([
     ['cart-reminder', [['You left something in your cart', 'Your cart is saved']]],
-    [
-      'cart-series',
-      [
-        ['You left something in your cart', 'Your cart is saved'],
-        ['Still thinking it over?', 'Your cart is waiting'],
-        ['Last reminder about your cart', 'Your cart is still here'],
-      ],
-    ],
-    [
-      'cart-series-coupon',
-      [
-        ['You left something in your cart', 'Your cart is saved'],
-        ['Still thinking it over?', 'Your cart is waiting'],
-        ['{{ steps.coupon.amount }} off the cart you left', 'A little something to help you decide'],
-      ],
-    ],
     ['checkout-reminder', [['Did something go wrong at checkout?', 'Finish your order']]],
     [
       'checkout-reminder-coupon',
@@ -279,11 +191,6 @@ describe('review and welcome templates', () => {
   ];
   const parentOf = (id: string, child: string) => graphOf(id).edges.find((edge) => edge.target === child);
 
-  it('links the versions of each workflow', () => {
-    expect(versionsOf(findTemplate('review-request')!).map((t) => t.id)).toEqual(['review-request-reminder']);
-    expect(versionsOf(findTemplate('welcome-email')!).map((t) => t.id)).toEqual(['welcome-series']);
-  });
-
   it('checks for products, waits 7 days, then checks again before the review email', () => {
     const { nodes } = graphOf('review-request');
     expect(nodes.map((node) => node.id)).toEqual(['trigger', 'condition', 'wait', 'still-valid', 'email']);
@@ -298,63 +205,16 @@ describe('review and welcome templates', () => {
     expect(parentOf('review-request', 'email')).toMatchObject({ source: 'still-valid', sourceHandle: 'then' });
   });
 
-  it('sends the reminder only after the first email, after another wait and check', () => {
-    const { nodes } = graphOf('review-request-reminder');
-    expect(nodes.map((node) => node.id)).toEqual([
-      'trigger',
-      'condition',
-      'wait',
-      'still-valid',
-      'email',
-      'wait-2',
-      'still-valid-2',
-      'email-2',
-    ]);
-    expect(parentOf('review-request-reminder', 'wait-2')?.source).toBe('email');
-    expect((nodes[5].data.config as WaitConfig).delay).toEqual({ value: 7, unit: 'days' });
-    expect(nodes[6].data.config).toEqual({ match: 'all', rules: stillValid });
-    expect(parentOf('review-request-reminder', 'email-2')).toMatchObject({
-      source: 'still-valid-2',
-      sourceHandle: 'then',
-    });
-  });
-
-  it('welcomes right away, then waits 3 and 4 days, with no condition or coupon', () => {
+  it('welcomes right away, with no condition or coupon', () => {
     expect(graphOf('welcome-email').nodes.map((node) => node.data.block)).toEqual([
       'customer_account_created',
       'send_email',
     ]);
-    const { nodes } = graphOf('welcome-series');
-    expect(nodes.map((node) => node.data.block)).toEqual([
-      'customer_account_created',
-      'send_email',
-      'wait',
-      'send_email',
-      'wait',
-      'send_email',
-    ]);
-    expect((nodes[2].data.config as WaitConfig).delay).toEqual({ value: 3, unit: 'days' });
-    expect((nodes[4].data.config as WaitConfig).delay).toEqual({ value: 4, unit: 'days' });
   });
 
   it.each([
     ['review-request', [['How did your order go?', 'Tell us what you think', ['{{ order.review_products }}']]]],
-    [
-      'review-request-reminder',
-      [
-        ['How did your order go?', 'Tell us what you think', ['{{ order.review_products }}']],
-        ['A quick review?', 'Still have a minute?', ['{{ order.review_products }}']],
-      ],
-    ],
     ['welcome-email', [['Welcome to {{ site.name }}', 'Welcome to {{ site.name }}', ['{{ site.welcome_links }}']]]],
-    [
-      'welcome-series',
-      [
-        ['Welcome to {{ site.name }}', 'Welcome to {{ site.name }}', ['{{ site.welcome_links }}']],
-        ['New in the shop', 'New in the shop', ['{{ site.new_products }}', '{{ site.shop_button }}']],
-        ['Anything we can help with?', 'Anything we can help with?', ['{{ site.account_button }}']],
-      ],
-    ],
   ] as const)('%s has the agreed emails, with blocks on their own paragraphs', (id, expected) => {
     const emails = emailsOf(id);
     expect(emails.map((email) => [email.subject, email.heading])).toEqual(expected.map(([s, h]) => [s, h]));
@@ -371,13 +231,6 @@ describe('review and welcome templates', () => {
       'Thanks again for order {{ order.number }}. If you have a minute',
     );
   });
-
-  it.each(['cross-sell-first-time-buyers', 'cross-sell-repeat-buyers', 'cross-sell-coupon', 'upsell-after-30-days'])(
-    '%s greets a customer with no first name',
-    (id) => {
-      expect(emailsOf(id)[0].message).toContain(greeting);
-    },
-  );
 });
 
 describe('needsProductReviews', () => {
@@ -391,7 +244,6 @@ describe('needsProductReviews', () => {
   it('holds for the review templates while reviews are off', () => {
     wc.reviewsEnabled = false;
     expect(needsProductReviews(findTemplate('review-request')!.graph)).toBe(true);
-    expect(needsProductReviews(findTemplate('review-request-reminder')!.graph)).toBe(true);
   });
 
   it('goes away when reviews are on', () => {
@@ -408,7 +260,6 @@ describe('needsProductReviews', () => {
   it('skips other templates', () => {
     wc.reviewsEnabled = false;
     expect(needsProductReviews(findTemplate('welcome-email')!.graph)).toBe(false);
-    expect(needsProductReviews(findTemplate('cross-sell-coupon')!.graph)).toBe(false);
   });
 });
 

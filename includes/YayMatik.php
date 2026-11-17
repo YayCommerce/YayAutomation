@@ -23,7 +23,6 @@ final class YayMatik {
         // Not behind cart tracking either: carts saved before it was turned off still expire and can be erased.
         \YayMatik\Workflow\Core\Runtime\Cleanup::boot();
         \YayMatik\Workflow\Core\Cart\CartSweep::boot();
-        \YayMatik\Workflow\Core\Runtime\InactiveSweep::boot();
         \YayMatik\Engine\Privacy\PersonalData::get_instance();
         \YayMatik\Engine\API\HealthRoutes::get_instance();
         \YayMatik\Engine\API\SearchRoutes::get_instance();
@@ -42,6 +41,8 @@ final class YayMatik {
     public static function initialize() {
         if ( class_exists( \YayMatik\Pro\Boot::class ) ) {
             \YayMatik\Pro\Boot::register();
+            // Before Action Scheduler's init (priority 1), where Cleanup schedules the daily jobs.
+            add_action( 'init', [ \YayMatik\Pro\Boot::class, 'boot' ], 0 );
         } else {
             \YayMatikScoped\YayCommerce\AdminShell\AdminShell::register_plugin( new YayMatikMenuAdapter() );
         }

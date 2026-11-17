@@ -15,12 +15,11 @@ defined( 'ABSPATH' ) || exit;
 /** Finds runs and jobs Action Scheduler left behind; each check reports data only, the admin app words it. */
 final class HealthCheck {
 
-    /** Check id => fix id; `jobs_late` has none (the server's cron is the fix). */
-    public const FIXES = [
-        'runs_queued'        => 'enqueue',
-        'runs_running'       => 'recover',
-        'cleanup_job'        => 'schedule',
-        'inactive_sweep_job' => 'schedule',
+    /** Check id => fix id; `jobs_late` has none (the server's cron is the fix). Each `DailyJobs` check has `schedule`. */
+    private const FIXES = [
+        'runs_queued'  => 'enqueue',
+        'runs_running' => 'recover',
+        'cleanup_job'  => 'schedule',
     ];
 
     private const CRON_GUIDE = 'https://developer.wordpress.org/plugins/cron/hooking-wp-cron-into-the-system-task-scheduler/';
@@ -36,20 +35,30 @@ final class HealthCheck {
     private const WAITING_AFTER = 900;
     private const LATE_AFTER    = 900;
     private const CLEANUP_LATE  = 3600;
-    private const SWEEP_LATE    = 86400;
 
     /** @return array[] Every check: `id`, `status` (ok|problem|info), `count`, `runIds`, `fix` (null unless a problem), `capped` (count is a lower bound). */
     public static function run(): array {
-        $now  = time();
-        $runs = self::runs( $now );
-        return [
-            self::result( 'runs_queued', $runs['runs_queued'] ),
-            self::result( 'runs_running', $runs['runs_running'] ),
-            self::jobs_late( $now ),
-            self::result( 'cleanup_job', self::job( Cleanup::HOOK, self::CLEANUP_LATE, $now ) ),
-            self::result( 'inactive_sweep_job', self::job( InactiveSweep::HOOK, self::SWEEP_LATE, $now ) ),
-            self::missing_plugin( WorkflowStore::all() ),
-        ];
+        $now   = time();
+        $runs  = self::runs( $now );
+        $daily = [];
+        foreach ( DailyJobs::all() as $check => $job ) {
+            $daily[] = self::result( $check, self::job( $job['hook'], $job['late'], $now ) );
+        }
+        return array_merge(
+            [
+                self::result( 'runs_queued', $runs['runs_queued'] ),
+                self::result( 'runs_running', $runs['runs_running'] ),
+                self::jobs_late( $now ),
+                self::result( 'cleanup_job', self::job( Cleanup::HOOK, self::CLEANUP_LATE, $now ) ),
+            ],
+            $daily,
+            [ self::missing_plugin( WorkflowStore::all() ) ]
+        );
+    }
+
+    /** @return string[] Fix id by check id. */
+    public static function fixes(): array {
+        return self::FIXES + array_fill_keys( array_keys( DailyJobs::all() ), 'schedule' );
     }
 
     /**
@@ -121,7 +130,7 @@ final class HealthCheck {
     /**
      * Runs the check again and fixes what it finds now.
      *
-     * @param string $check A key of `FIXES`.
+     * @param string $check A key of `fixes()`.
      * @return int Runs queued or recovered; 1 when a daily job was scheduled again.
      */
     public static function fix( string $check ): int {
@@ -133,11 +142,13 @@ final class HealthCheck {
             Cleanup::reschedule();
             return 1;
         }
-        if ( 'inactive_sweep_job' === $check ) {
-            if ( ! self::job( InactiveSweep::HOOK, self::SWEEP_LATE, $now )['count'] ) {
+        $job = DailyJobs::all()[ $check ] ?? null;
+        if ( $job ) {
+            if ( ! self::job( $job['hook'], $job['late'], $now )['count'] ) {
                 return 0;
             }
-            InactiveSweep::reschedule();
+            as_unschedule_all_actions( $job['hook'], [], ActionSchedulerQueue::GROUP );
+            ( $job['schedule'] )();
             return 1;
         }
         $queue = new ActionSchedulerQueue();
@@ -256,7 +267,7 @@ final class HealthCheck {
             'status' => $found['count'] ? 'problem' : 'ok',
             'count'  => $found['count'],
             'runIds' => $found['ids'],
-            'fix'    => $found['count'] ? self::FIXES[ $id ] : null,
+            'fix'    => $found['count'] ? self::fixes()[ $id ] : null,
         ] + ( empty( $found['capped'] ) ? [] : [ 'capped' => true ] );
     }
 

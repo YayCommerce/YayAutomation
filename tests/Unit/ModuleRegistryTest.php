@@ -7,6 +7,7 @@ use YayMatik\Tests\Support\FakeModule;
 use YayMatik\Tests\Support\YayMatikModuleCopy;
 use YayMatik\Workflow\Conditions\Criteria;
 use YayMatik\Workflow\Core\Data\DataRegistry;
+use YayMatik\Workflow\Core\Definition\ProCatalog;
 use YayMatik\Workflow\DataItems\SiteData;
 use YayMatik\Workflow\Extension\Diagnostics;
 use YayMatik\Workflow\ModuleRegistry;
@@ -31,22 +32,14 @@ final class ModuleRegistryTest extends TestCase {
         'cart_abandoned',
         'checkout_abandoned',
         'customer_account_created',
-        'customer_inactive',
-        'customer_order_count_reaches',
-        'customer_total_spend_reaches',
         'review_posted',
         'send_email',
         'send_internal_email',
-        'resend_wc_email',
         'change_order_status',
         'add_order_note',
-        'update_order_meta',
-        'update_customer_meta',
-        'change_customer_role',
         'generate_coupon',
         'condition',
         'wait',
-        'wait_until',
     ];
 
     /** @var callable|null */
@@ -68,8 +61,8 @@ final class ModuleRegistryTest extends TestCase {
         $this->assertSame( 'yaymatik', $plugins['condition'] );
         $this->assertSame(
             [
-                'yaymatik'    => 3,
-                'woocommerce' => 21,
+                'yaymatik'    => 2,
+                'woocommerce' => 14,
             ],
             array_count_values( $plugins )
         );
@@ -77,7 +70,7 @@ final class ModuleRegistryTest extends TestCase {
 
     public function test_the_registries_read_the_loaded_modules(): void {
         $this->assertSame( ModuleRegistry::plugins( ModuleRegistry::modules() ), ModuleRegistry::plugins( ModuleRegistry::from( ModuleRegistry::classes() ) ) );
-        $this->assertEqualsCanonicalizing( self::STEPS, array_keys( StepRegistry::all() ) );
+        $this->assertEqualsCanonicalizing( array_merge( self::STEPS, YAYMATIK_TEST_LITE ? [] : array_keys( ProCatalog::STEPS ) ), array_keys( StepRegistry::all() ) );
         $this->assertSame( [ 'site', 'order', 'cart', 'customer', 'refund', 'review' ], array_keys( DataRegistry::items() ), 'order_item only through order.items' );
         $this->assertArrayHasKey( 'order_item', DataRegistry::entities() );
     }

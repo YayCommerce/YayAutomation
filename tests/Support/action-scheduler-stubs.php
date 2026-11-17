@@ -26,7 +26,8 @@ if ( ! function_exists( 'as_enqueue_async_action' ) ) {
     function as_get_scheduled_actions( $query = [], $return_format = 'OBJECT' ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- same signature as Action Scheduler.
         $found = [];
         foreach ( $GLOBALS['yay_test_as'] ?? [] as $i => $job ) {
-            if ( $job['hook'] === $query['hook'] && $job['args'] === $query['args'] && $job['group'] === $query['group'] && in_array( $job['status'], (array) $query['status'], true ) ) {
+            // Null args and an empty group: any, as in Action Scheduler.
+            if ( $job['hook'] === $query['hook'] && ( null === $query['args'] || $job['args'] === $query['args'] ) && ( '' === $query['group'] || $job['group'] === $query['group'] ) && in_array( $job['status'], (array) $query['status'], true ) ) {
                 $found[] = $i + 1;
             }
         }
@@ -41,5 +42,14 @@ if ( ! function_exists( 'as_enqueue_async_action' ) ) {
             'status' => [ 'pending', 'in-progress' ],
         ];
         return (bool) as_get_scheduled_actions( $query );
+    }
+
+    // Only the call without args or group, which cancels every action of the hook.
+    function as_unschedule_all_actions( $hook ) {
+        foreach ( $GLOBALS['yay_test_as'] ?? [] as $i => $job ) {
+            if ( $job['hook'] === $hook && 'pending' === $job['status'] ) {
+                $GLOBALS['yay_test_as'][ $i ]['status'] = 'canceled';
+            }
+        }
     }
 }//end if

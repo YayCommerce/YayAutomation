@@ -1,11 +1,11 @@
-/** PHP `HealthRoutes`: `GET /health/checks`, `POST /health/fix`. */
+/** PHP `HealthRoutes`: `GET /health/checks`, `POST /health/fix`. A daily job the edition adds (PHP `DailyJobs`) is `<name>_job`. */
 export type HealthCheckId =
   | 'runs_queued'
   | 'runs_running'
   | 'jobs_late'
   | 'cleanup_job'
-  | 'inactive_sweep_job'
-  | 'missing_plugin';
+  | 'missing_plugin'
+  | `${string}_job`;
 
 export type FixableHealthCheckId = Exclude<HealthCheckId, 'jobs_late' | 'missing_plugin'>;
 

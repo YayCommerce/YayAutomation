@@ -5,8 +5,6 @@ use PHPUnit\Framework\TestCase;
 use YayMatik\Workflow\Actions\AddOrderNote;
 use YayMatik\Workflow\Actions\ChangeOrderStatus;
 use YayMatik\Workflow\Actions\SendInternalEmail;
-use YayMatik\Workflow\Actions\UpdateCustomerMeta;
-use YayMatik\Workflow\Actions\UpdateOrderMeta;
 use YayMatik\Workflow\Actions\Wait;
 use YayMatik\Workflow\Conditions\Criteria;
 use YayMatik\Workflow\Core\Steps\Step;
@@ -31,8 +29,6 @@ final class StepConfigsTest extends TestCase {
             SendInternalEmail::ID  => SendInternalEmail::class,
             ChangeOrderStatus::ID  => ChangeOrderStatus::class,
             AddOrderNote::ID       => AddOrderNote::class,
-            UpdateOrderMeta::ID    => UpdateOrderMeta::class,
-            UpdateCustomerMeta::ID => UpdateCustomerMeta::class,
             Wait::ID               => Wait::class,
         ];
         return new $classes[ $id ]();
@@ -261,56 +257,6 @@ final class StepConfigsTest extends TestCase {
             ],
             'note: unknown tag'             => [ 'add_order_note', [ 'note' => '{{ order.foo }}' ], null, self::OK ],
 
-            // Update order meta.
-            'meta: empty'                   => [
-                'update_order_meta',
-                null,
-                [
-                    'key'   => '',
-                    'value' => '',
-                ],
-                'Update order custom field needs a field name.',
-            ],
-            'meta: clean key'               => [
-                'update_order_meta',
-                [
-                    'key'   => ' <b>_vip</b> ',
-                    'value' => "a\nb",
-                ],
-                [
-                    'key'   => '_vip',
-                    'value' => 'a b',
-                ],
-                self::OK,
-            ],
-            'meta: empty value ok'          => [ 'update_order_meta', [ 'key' => '_vip' ], null, self::OK ],
-            'meta: internal key'            => [ 'update_order_meta', [ 'key' => '_order_total' ], null, 'WooCommerce or YayMatik manages this field. Choose another field name.' ],
-            'meta: internal key, upper'     => [ 'update_order_meta', [ 'key' => '_ORDER_TOTAL' ], null, 'WooCommerce or YayMatik manages this field. Choose another field name.' ],
-            'meta: own prefix'              => [ 'update_order_meta', [ 'key' => '_yaymatik_x' ], null, 'WooCommerce or YayMatik manages this field. Choose another field name.' ],
-            'meta: unknown tag'             => [
-                'update_order_meta',
-                [
-                    'key'   => '_vip',
-                    'value' => '{{ order.foo }}',
-                ],
-                null,
-                self::OK,
-            ],
-            // Update customer meta.
-            'customer meta: empty'          => [
-                'update_customer_meta',
-                null,
-                [
-                    'key'   => '',
-                    'value' => '',
-                ],
-                'Update customer custom field needs a field name.',
-            ],
-            'customer meta: ok'             => [ 'update_customer_meta', [ 'key' => 'vip' ], null, self::OK ],
-            'customer meta: capabilities'   => [ 'update_customer_meta', [ 'key' => 'wp_capabilities' ], null, 'This custom field is protected and can’t be changed.' ],
-            'customer meta: a network site' => [ 'update_customer_meta', [ 'key' => 'WP_2_USER_LEVEL' ], null, 'This custom field is protected and can’t be changed.' ],
-            'customer meta: sessions'       => [ 'update_customer_meta', [ 'key' => 'session_tokens' ], null, 'This custom field is protected and can’t be changed.' ],
-            'customer meta: own prefix'     => [ 'update_customer_meta', [ 'key' => '_yaymatik_x' ], null, 'This custom field is protected and can’t be changed.' ],
             'wait: default'                 => [ 'wait', null, self::delay( 1, 'days' ), self::OK ],
             'wait: unknown unit'            => [ 'wait', self::delay( 3, 'years' ), self::delay( 3, 'days' ), self::OK ],
             'wait: blank value'             => [ 'wait', self::delay( '', 'hours' ), self::delay( 1, 'hours' ), self::OK ],

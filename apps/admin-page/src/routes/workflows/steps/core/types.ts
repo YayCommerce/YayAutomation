@@ -1,5 +1,5 @@
 import type { ComponentType } from 'react';
-import type { StepId, WorkflowNodeKind, WorkflowPlugin } from '@yaymatik/types';
+import type { Run, RunDetail, StepId, WorkflowNodeKind, WorkflowPlugin } from '@yaymatik/types';
 import type { LucideIcon } from 'lucide-react';
 import type * as v from 'valibot';
 
@@ -7,6 +7,14 @@ import type { CatalogStepMeta, StepMeta, StepOutputMeta } from '@/types/localize
 import type { SummaryValues } from './summary';
 
 export type Config = Record<string, unknown>;
+
+/** A step of a run, as run history shows it. */
+export type RunStepRow = RunDetail['steps'][number];
+
+export type RunContext = Pick<Run, 'waitUntil' | 'triggerId'>;
+
+/** What the step did, for run history ("Sent Completed order"); `summary` is its card text. */
+export type StepResultText = (step: RunStepRow, run: RunContext, summary: string) => string;
 
 export interface StepFormProps<TConfig> {
   /** Initial values. The form owns its state after mount. */
@@ -36,6 +44,8 @@ export interface StepSpec<TConfig extends Config> {
   Footer?: ComponentType<{ config: TConfig }>;
   /** Drawn in the panel header under the title. */
   Actions?: ComponentType;
+  /** Its run history line, when the card summary doesn't say what it did. */
+  result?: StepResultText;
 }
 
 /** A step with its config type erased. Every method normalizes first. */
@@ -71,6 +81,7 @@ export interface Step {
   /** Omitted when the step has nothing to set. */
   Form?: ComponentType<StepFormProps<Config>>;
   Actions?: ComponentType;
+  result?: StepResultText;
   /** The plugin's name when the step's plugin isn't active: drawn greyed, read-only, kept on save. */
   inactive?: string;
 }

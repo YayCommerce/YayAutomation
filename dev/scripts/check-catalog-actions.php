@@ -8,10 +8,10 @@
 
 // phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.WP.GlobalVariablesOverride.Prohibited
 
-use YayMatik\Workflow\Actions\ChangeCustomerRole;
-use YayMatik\Workflow\Actions\ResendWcEmail;
-use YayMatik\Workflow\Actions\UpdateCustomerMeta;
-use YayMatik\Workflow\Actions\WaitUntil;
+use YayMatik\Pro\Workflow\Actions\ChangeCustomerRole;
+use YayMatik\Pro\Workflow\Actions\ResendWcEmail;
+use YayMatik\Pro\Workflow\Actions\UpdateCustomerMeta;
+use YayMatik\Pro\Workflow\Actions\WaitUntil;
 use YayMatik\Workflow\Core\Data\Ref;
 use YayMatik\Workflow\Core\Data\Scope;
 use YayMatik\Workflow\Core\Definition\Validator;

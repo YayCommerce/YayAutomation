@@ -28,7 +28,7 @@ final class Cleanup {
         add_action( self::HOOK, [ self::class, 'run' ] );
     }
 
-    /** Schedules this job, the cart sweep and the inactive sweep when missing, checked at most hourly. */
+    /** Schedules this job, the cart sweep and the added daily jobs when missing, checked at most hourly. */
     public static function ensure(): void {
         if ( ! function_exists( 'as_has_scheduled_action' ) ) {
             return;
@@ -42,8 +42,10 @@ final class Cleanup {
         if ( ! as_has_scheduled_action( CartSweep::HOOK, [], ActionSchedulerQueue::GROUP ) ) {
             CartSweep::schedule();
         }
-        if ( ! as_has_scheduled_action( InactiveSweep::HOOK, [], ActionSchedulerQueue::GROUP ) ) {
-            InactiveSweep::schedule();
+        foreach ( DailyJobs::all() as $job ) {
+            if ( ! as_has_scheduled_action( $job['hook'], [], ActionSchedulerQueue::GROUP ) ) {
+                ( $job['schedule'] )();
+            }
         }
         update_option( self::CHECKED_OPTION, time(), true );
     }
@@ -59,9 +61,26 @@ final class Cleanup {
         as_schedule_recurring_action( time() + HOUR_IN_SECONDS, DAY_IN_SECONDS, self::HOOK, [], ActionSchedulerQueue::GROUP, true );
     }
 
+    /** A job nothing runs would fail every day in Action Scheduler's log. */
+    public static function unschedule_left_over(): void {
+        $added = array_column( DailyJobs::all(), 'hook' );
+        foreach ( DailyJobs::LEFT_OVER as $job => $hooks ) {
+            if ( in_array( $job, $added, true ) ) {
+                continue;
+            }
+            foreach ( $hooks as $hook ) {
+                // No group: with one, only actions without args would go, and the batches have args.
+                if ( as_has_scheduled_action( $hook ) ) {
+                    as_unschedule_all_actions( $hook );
+                }
+            }
+        }
+    }
+
     public static function run(): void {
         // Repairs a list a lost race or a lock timeout left wrong.
         WorkflowStore::refresh_active_triggers();
+        self::unschedule_left_over();
         $deadline = microtime( true ) + self::BUDGET;
         // Carts first: they hold emails, and the privacy text promises their deletion; runs get what's left.
         $carts = gmdate( 'Y-m-d H:i:s', time() - (int) Settings::get( 'cart_retention_days' ) * DAY_IN_SECONDS );

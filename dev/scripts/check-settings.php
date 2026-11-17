@@ -9,7 +9,7 @@
 
 use YayMatik\Workflow\Core\Runtime\ActionSchedulerQueue;
 use YayMatik\Workflow\Core\Runtime\Cleanup;
-use YayMatik\Workflow\Core\Runtime\InactiveSweep;
+use YayMatik\Pro\Workflow\Core\Runtime\InactiveSweep;
 use YayMatik\Workflow\Core\Storage\RunStore;
 
 require_once __DIR__ . '/check-run.php';

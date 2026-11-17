@@ -7,6 +7,7 @@ use YayMatik\Pro\Workflow\Modules\WoocommerceProModule;
 use YayMatik\Pro\Workflow\Modules\YayMatikProModule;
 use YayMatik\Pro\YayMatikProLicenseAdapter;
 use YayMatik\Tests\Support\ProLicense;
+use YayMatik\Workflow\Core\Definition\ProCatalog;
 use YayMatik\Workflow\ModuleRegistry;
 use YayMatik\Workflow\Modules\WoocommerceModule;
 use YayMatik\Workflow\Modules\YayMatikModule;
@@ -35,12 +36,14 @@ final class BootTest extends TestCase {
         $this->assertSame( [ YayMatikProModule::class, WoocommerceProModule::class ], ModuleRegistry::classes() );
     }
 
-    public function test_pro_modules_register_the_same_steps_as_core(): void {
-        $core = ModuleRegistry::from( [ YayMatikModule::class, WoocommerceModule::class ] );
+    public function test_pro_modules_register_cores_steps_and_pros_under_the_same_plugins(): void {
+        $core = ModuleRegistry::plugins( ModuleRegistry::from( [ YayMatikModule::class, WoocommerceModule::class ] ) );
         $pro  = ModuleRegistry::from( Boot::modules( [ YayMatikModule::class, WoocommerceModule::class ] ) );
 
         $this->assertSame( [ 'yaymatik', 'woocommerce' ], array_keys( $pro ) );
-        $this->assertSame( ModuleRegistry::plugins( $core ), ModuleRegistry::plugins( $pro ) );
+        $this->assertSame( $core, array_intersect_key( ModuleRegistry::plugins( $pro ), $core ) );
+        $this->assertEqualsCanonicalizing( array_keys( ProCatalog::STEPS ), array_keys( array_diff_key( ModuleRegistry::plugins( $pro ), $core ) ) );
+        $this->assertSame( 'yaymatik', ModuleRegistry::plugins( $pro )['wait_until'] );
     }
 
     public function test_another_plugins_module_is_kept(): void {
