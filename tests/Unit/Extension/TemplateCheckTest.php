@@ -210,6 +210,38 @@ final class TemplateCheckTest extends TestCase {
         $this->assertContains( 'Hidden from Browse templates: Step "ghost": unknown step "acme_nope".', array_column( Diagnostics::recent( 24 ), 'message' ) );
     }
 
+    public function test_a_template_using_a_pro_step_or_field_is_hidden_in_the_free_edition_only(): void {
+        $acme = $this->acme(
+            [
+                'acme_pro_step'  => self::chain(
+                    self::step(
+                        'wait',
+                        'wait_until',
+                        [
+                            'time'     => '09:00',
+                            'weekdays' => [],
+                        ]
+                    ),
+                    self::step( 'bonus', 'acme_add_points', [ 'points' => 100 ] )
+                ),
+                'acme_pro_field' => self::chain(
+                    self::step(
+                        'email',
+                        'acme_mail',
+                        [
+                            'subject'   => 'You spent {{ customer.total_spent }}',
+                            'design_id' => 'd1',
+                        ]
+                    )
+                ),
+            ]
+        );
+
+        StepIndex::refresh( [ $acme ] );
+
+        $this->assertSame( YAYMATIK_TEST_LITE ? [ 'acme_pro_step', 'acme_pro_field' ] : [], array_keys( StepIndex::hidden_templates() ) );
+    }
+
     public function test_the_check_runs_again_only_when_the_steps_or_templates_change(): void {
         $acme = $this->acme( [ 'acme_no_action' => self::chain() ] );
         StepIndex::refresh( [ $acme ] );

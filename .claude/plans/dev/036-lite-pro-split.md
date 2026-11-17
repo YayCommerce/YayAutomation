@@ -83,8 +83,8 @@ Check the field ids against `DataItems/*::define()` and the template ids against
 | ✅ **CP0** (df68676) | Branch from develop (034b merged). Confirm develop HEAD is `1a58c38` (or list what came after). List `git log --oneline 32823b1..1a58c38` in the report (D18, already reviewed). Run lint, lint:php, test, test:php, build, `check-all --wp-env`, e2e. (`check-all --wp-env-min` from a dev checkout is a known failure, plan 035: don't fix it here.) Check the split table (fields, steps, template ids) against the code. | Baseline recorded in the PR text; mismatches reported |
 | ✅ **CP1** (9538cb5) | D1–D4, D14, D15, D16 plumbing; no feature moves. | Both zips build; Lite zip check passes; tests green in both editions; Pro zip installs as `yaymatik-pro`, Lite deactivates when both are on; license activates with 7761; no Update / View details offered for yaymatik-pro |
 | ✅ **CP2** (f18c326, 7a7bec7) | 3 triggers, 5 actions (PHP to `includes/Pro`, JS to `src/pro`, as D0), including their abstract base `CustomerMilestone` (parent of the two milestone triggers); `CustomerStats` stays Lite (shared storage). D8. | Lite pickers show 9 / 6; Pro 12 / 11; zip check finds no Pro step id in Lite |
-| ✅ **CP3** (see below) | D9, D10; Pro merge tags out of Lite's variable picker. | Lite condition form has no group / variable / custom field; Pro unchanged |
-| CP4 | D11, D12. | Lite library 8, Pro 18; core list has tiers; CoreStepsTest green in both |
+| ✅ **CP3** (e0ecdd4) | D9, D10; Pro merge tags out of Lite's variable picker. | Lite condition form has no group / variable / custom field; Pro unchanged |
+| ✅ **CP4** (see below) | D11, D12. | Lite library 8, Pro 18; core list has tiers; CoreStepsTest green in both |
 | CP5 | D7. | Lite shows 2 retention fields, no abandon field; values stored on Pro keep working on Lite (test) |
 | CP6 | D5, D6. | `check-edition.sh`: on Pro create 4 workflows (Pro trigger, Pro action, Pro condition, Pro merge tag) + 1 waiting run; switch to Lite: none starts, none activates, the waiting run stops with the reason, saving keeps config; back to Pro: all work |
 | CP7 | D13. | Teaser shows in Lite only, opens the upgrade URL |
@@ -114,4 +114,4 @@ One-run mode, commit locally per CP. No push, no `gh pr create`, no `git stash`,
 - CP3: `CustomerProData` / `OrderProData` place Pro fields by an `ORDER` list of all keys (Pro pickers unchanged); a test ties `ProCatalog::FIELDS` to the fields they add. The core list (D12) marks data keys `lite` / `pro`.
 - CP3: the JS form reads `@edition/criteria` (`groups`, `variables`, both = license); tests of those features in Lite components run with `it.runIf`. Lite variable tests filter expectations by the edition's meta.
 - CP3 open: `EmailPreview::GRID_TAGS` and `ProductGrid::for_order()` / `for_block()` serve only Pro merge tags now; they stay Lite as shared email code that does nothing without them.
-
+- CP4: only the plugin-template test was left (moves and tiers came with CP2/CP3): a template using a Pro step or Pro merge tag is hidden in the free edition, shown in Pro. Library counts: `src/lite/templates.test.ts` (8), `src/pro/routes/workflows/templates/templates.test.ts` (18).
