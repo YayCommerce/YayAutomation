@@ -1,4 +1,4 @@
-import type { StepId, WorkflowNodeKind, WorkflowPlugin } from '@yaymatik/types';
+import type { StepId, WorkflowNodeKind, WorkflowPlugin, WorkflowTemplate } from '@yaymatik/types';
 
 /** PHP `Workflow\ModuleRegistry::to_client()`. */
 export interface PluginMeta {
@@ -36,7 +36,7 @@ export interface StepFieldMeta {
   type: FieldWidget;
   label: string;
   required?: true;
-  /** What a blank required field says, with `%s` for the step's label, e.g. "%s needs a note.". */
+  /** What a blank required field says, with `{{ step }}` for the step's label, e.g. "{{ step }} needs a note.". */
   requiredMessage?: string;
   /** Accepts merge tags. */
   variables?: true;
@@ -107,6 +107,12 @@ export interface CatalogStepMeta extends StepMeta {
   /** In form order. */
   fields: StepFieldMeta[];
   outputs: StepOutputMeta[];
+  /** Sends an email (PHP `EmailStep`): Preview and Send test; `customer` has an unsubscribe link. */
+  email?: 'customer' | 'staff';
+  /** Another plugin's action: its run-detail line with `{{ output.<key> }}` / `{{ config.<field> }}` placeholders; '' = the summary. */
+  result?: string;
+  /** Another plugin's iframe editor: the config field its `save` fills, and the button's label. */
+  editor?: { field: string; button: string };
 }
 
 export type DataFieldType = 'number' | 'string' | 'enum' | 'date' | 'boolean' | 'list' | 'meta';
@@ -190,6 +196,8 @@ declare global {
         always: string[];
         /** PHP `Core\Definition\Messages::all()`. Same as `model/messages.ts`. */
         messages: Record<string, string>;
+        /** PHP `Catalog::templates()`: active plugins' templates, built and checked on the server. */
+        templates: WorkflowTemplate[];
         /** WooCommerce's sender. `fromName` is plain text, may be blank. */
         email: { fromLine: string; fromName: string; fromAddress: string };
       };

@@ -48,16 +48,16 @@ class UpdateOrderMeta extends Action {
     public function fields(): array {
         return [
             Field::text( 'key', __( 'Field name', 'yaymatik' ) )
-                /* translators: %s: step name */
-                ->required( __( '%s needs a field name.', 'yaymatik' ) )
+                /* translators: {{ step }}: step name; keep {{ … }} as it is. */
+                ->required( __( '{{ step }} needs a field name.', 'yaymatik' ) )
                 ->help( __( 'The meta key, e.g. _vip_order.', 'yaymatik' ) ),
             Field::text( 'value', __( 'Value', 'yaymatik' ) )->variables(),
         ];
     }
 
     public function summary(): string {
-        /* translators: %key%: custom field name, %value%: its value; keep the placeholders as they are. */
-        return __( 'Set %key% to %value%', 'yaymatik' );
+        /* translators: {{ config.key }}: custom field name, {{ config.value }}: its value; keep {{ … }} as it is. */
+        return __( 'Set {{ config.key }} to {{ config.value }}', 'yaymatik' );
     }
 
     public function outputs(): array {

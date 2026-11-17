@@ -75,8 +75,8 @@ final class YayWholesale_YayMatik {
                         'required' => true,
                     ],
                 ],
-                'summary'     => __( 'Set role to %role%', 'yaywholesale' ),
-                'result'      => __( 'Role is now %role%', 'yaywholesale' ),
+                'summary'     => __( 'Set role to {{ config.role }}', 'yaywholesale' ),
+                'result'      => __( 'Role is now {{ output.role }}', 'yaywholesale' ),
                 'outputs'     => [
                     'role' => [ 'label' => __( 'New role', 'yaywholesale' ), 'type' => 'enum' ],
                 ],

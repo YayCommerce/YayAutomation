@@ -106,7 +106,7 @@ Step:   id() label() plugin() module()
         setup_issue(): ?string   why the step can't run on this site; blocks Activate (issue `setup_issue`; core's cart triggers keep `cart_tracking_off`)
         outputs(): array         what later steps can use: key => [ label, type, options?, display?, block? ]
         sample_outputs( config ) made-up outputs for previews of later steps (Generate coupon → YMSAMPLE)
-        summary(): string        card text, one short line, e.g. "Send to %recipients%"
+        summary(): string        card text, one short line, e.g. "Send to {{ config.recipients }}"
         run( Scope, config ): StepResult   ok( outputs ) | skipped( reason ) | failed( error )
 Action: emits(): string[]        trigger ids it can set off
 Trigger: fires_for_own_runs( config )   whether its workflow reacts to events its own runs cause
@@ -120,13 +120,14 @@ Trigger: fires_for_own_runs( config )   whether its workflow reacts to events it
 - **Forms.**
   - No custom form → the generic `StepForm` draws one from the fields. A simple step from a Yay plugin needs PHP only.
   - Core step with a complex form (Condition rules) → `defineStep( { id, Form } )`, imported directly. No global call, fully typed.
-  - Plugin step with a custom form → an iframe editor through the public Extension API ([extension-api.md](extension-api.md) §5.6, 1.1).
+  - Plugin step with a custom form → an iframe editor through the public Extension API ([extension-api.md](extension-api.md) §5.6, 1.0): the catalog's `editor` (`field`, `button`) puts a button and the note "Design changes apply to live emails at once." under the drawn form (`steps/core/fields/EditorFrame.tsx`). `POST /workflows/{id}/editor` builds the plugin's URL and refuses another origin than `admin_url()`'s; the modal adds `yaymatik_embed=1&yaymatik_channel=<random>` and talks postMessage v1 (`useEditorChannel`: exact origin, iframe window, channel and version; posts to this origin only). A `save` writes the field and the form starts again from the new config.
   - A custom `Form` gets `{ config, onChange }` (`StepFormProps`).
   - Beside any form, `defineStep` takes `Footer` (under the form, with its latest config, e.g. Send email's unsubscribe note) and `Actions` (panel header, e.g. Send email's Preview / Send test). Send email and Generate coupon use the generic form plus these.
 - **Icons (L5).** A step's `icon()` is a name from a fixed list in core (lucide icons, about 40), never an SVG. The editor draws it in the step's tile, tinted by kind (trigger, condition, action), on the canvas, in the picker, the panel header, template cards and the preview. A missing icon is added to core's list, not shipped by the plugin.
 - The `rules` field type is ours: its checks are written in PHP (`Criteria`) and TS. Plugins never write validation in JS. Which custom field names are protected only PHP knows, so that one shows after a save: the issue carries the rule's place (`rule`: `[item]`, or `[group, rule]` inside a group) and the form draws it under that rule; an issue with no place shows at the top of the panel. A comparison of another shape clears the value (`withOperator`); another field keeps it only if it still fits (`ruleForField`).
 - **Custom field writes.** Update order / customer custom field refuse a protected key (`MetaKeys`) at save and again at run time, as a stored config may never have passed the panel. A customer write also asks the database which stored keys match (`MetaKeys::user_collides()`), since the `meta_key` collation can match `WP_CAPABILITIES` or `wp_capabilitiés` to `wp_capabilities`. A customer without an account is skipped.
 - **Condition groups.** `rules` is usually a flat list; an item may also be a group, `{ match, rules }`, one level deep: `sanitize` drops a group inside a group, and a flat old rule comes out unchanged, so old drafts don't read as edited. Top-level items join with the condition's `match`, a group's rules with its own. An empty group is a `groupRulesRequired` issue ("Add a rule, or remove this group.", "Needs setup") until it's removed. The summary reads "(A or B) and C".
+- **Email capability.** A step that sends an email implements `Core\Email\EmailStep` (`email_audience()` `customer` | `staff`, `compose_email( config, values, unsubscribe, test )`, `email_recipient()`): Send email, Send internal email and another plugin's action with `email` (`Workflow\Extension\ExtensionEmailAction`). Preview / Send test (`EmailPreview`) and the catalog's `email` key (Preview buttons, "Review the emails" on Use template) read the capability, not step ids; in run detail another plugin's email action reads "Sent to …" from its default `result`. `EmailDelivery` sends at run time: recipient → unsubscribed (customer only, Skipped) → link → send through WooCommerce's mailer → output `to`. A plugin's own HTML document (`wrap` false) is sent as built: no WooCommerce styles inlined, merge tags rendered by `Template::render_html()`, the unsubscribe footer added before `</body>` when the HTML has no link to `unsubscribe_url()` (in Preview, where the link is `#`: when `build` never asked for it). A trigger whose only data is the customer previews the newest customer account.
 - **Output display.** An output may have its own display text, built from the step's other outputs when read and never stored (`display`), e.g. a coupon's expiry in the site's date format. `block: true` marks a ready-made email block (the coupon box). `Scope::set_output_display()`; the Executor and Preview wire it from the graph.
 
 ## §6 Templates · L3
@@ -150,6 +151,8 @@ Our own small template module. **No Liquid or other template library, now or lat
 - Every customer email has an "Unsubscribe" link under the message and `List-Unsubscribe` / `List-Unsubscribe-Post` (one-click) headers. The link carries base64url(email) and an HMAC of it (own secret, no expiry). Unsubscribes are per address, for all YayMatik customer emails; the step is skipped ("The customer unsubscribed from these emails." in run history) and the run goes on. Staff email ignores them.
 - **Preview / Send test** render only, from the editor's unsaved step and graph: the latest paid order (its number shown), for a cart trigger the newest cart with its restore link going nowhere (`#`), or made-up data (`DataItem::sample()`, flagged for the "Sample data" badge); steps above give sample outputs. The unsubscribe link goes nowhere (`#`) and there are no List-Unsubscribe headers. A test goes to the logged-in admin, subject prefixed `[Test]`. A step with issues is refused (400 with `issues`), listed in the panel.
 
+**Workflow templates from other plugins** (Browse templates): a plugin declares one as a chain of steps ([extension-api.md](extension-api.md) §7). `Extension\TemplateBuilder` turns the chain into a graph on the editor's grid (rows 170 apart, `then` 200 left, `otherwise` 200 right, as `model/graph.ts`); a condition ends its list. `Extension\TemplateCheck` runs Use template's and Activate's checks when the step index changes (`StepIndex`: its fingerprint covers the steps and the templates' shape) and stores the hidden ids with why; a page load only reads that list. Hidden: a chain that isn't a graph, a step of another plugin, a shape `GraphSchema::prepare()` refuses, or an issue other than setup (`setup_issue`, `cart_tracking_off`, a field the template left blank). The catalog sends the rest as `automation.templates`; the library shows them in the same grid as core's (Most popular: after core's; the plugin filter finds them), and "Before you start" adds the plugin's lines and "Set up <step> before you activate." for a step the editor finds unset.
+
 ## §7 Graph · P7
 
 - One parent per step. Condition branches `then` / `otherwise`; Switch has N handles; For each has `body` and `done`.
@@ -165,7 +168,7 @@ Our own small template module. **No Liquid or other template library, now or lat
   - Other plugins register on `yaymatik_register` (fired once, when the registry is first built) and start their triggers with `do_action( 'yaymatik_fire', $trigger_id, $payload )`, handled by `Workflow\Extension\Fire` through `Dispatcher::collect()`. The filter `yaymatik_modules` (module classes, before `init`) is internal, for Pro. A taken id (module, step, data item) keeps its first owner and the second claim is a diagnostic.
   - Filters for extending core's steps and data: `yaymatik_data_item_{id}_fields` (a data item's fields, `DataItem::fields()`), `yaymatik_trigger_provides` (the data items a trigger provides, `Trigger::resolved_provides()`), `yaymatik_trigger_refs` (a trigger's scope refs, `Trigger::resolved_refs()`; a null native ref stays null).
   - Action `yaymatik_cart_abandoned( $cart_id, $kind )`: a cart was abandoned, on every abandon; `$kind` is `cart_abandoned` or `checkout_abandoned`.
-- **Frozen by Extension API v1 (1.1), see [extension-api.md](extension-api.md).** Other plugins integrate through `yaymatik_register` and its registrar; the filters and actions above stay internal (Pro uses them) or experimental, as its §11 lists. Classes under `YayMatik\Workflow\` are internal, including the base classes (`Step`, `Module`, `DataItem`, marked `@internal`).
+- **Frozen by Extension API v1 (1.0, leader's decision, Nov 16), see [extension-api.md](extension-api.md).** Other plugins integrate through `yaymatik_register` and its registrar; the filters and actions above stay internal (Pro uses them) or experimental, as its §11 lists. Classes under `YayMatik\Workflow\` are internal, including the base classes (`Step`, `Module`, `DataItem`, marked `@internal`).
 - **Each Yay plugin owns its steps, templates and data types**, registered into Workflow Core. **YayMatik Pro** owns templates that combine several plugins.
 - **Plugin logo (L5).** Each module gives one logo, a one-colour SVG: a URL, or for core's modules a `data:` URI of an inline SVG, so it loads when assets come from a CDN. The admin app draws it as a CSS mask in the tile's text colour. It marks who provides a step or template (template cards, library sidebar, picker), never what a step does. One per plugin, not per step.
 - **Feature directory:** a static list in core of every known step and template, its plugin, and where to install it. The editor shows "Install X to use this"; the AI uses it to suggest features.
@@ -195,7 +198,7 @@ Built: (a)–(e) in `Core/Runtime/HealthCheck.php`; REST `GET /health/checks` an
 | ID | Topic | Decision |
 |---|---|---|
 | P3 | Waiting runs on Update | Always cancel in v1.0. Revisit after v1.0 |
-| P4 | Public extension API | 1.1, plan 034: [extension-api.md](extension-api.md). The registry and step contract stay internal behind it |
+| P4 | Public extension API | 1.0 (leader's decision, Nov 16), plan 034: [extension-api.md](extension-api.md). The registry and step contract stay internal behind it |
 | P5 | AI provider | Not decided. v1.0 only keeps a provider interface open |
 
 ## §11 Decision log
@@ -222,7 +225,7 @@ All confirmed 2026-10-07, except L5 (2026-10-08), M7 (2026-10-27), M8, M3–M5, 
 | P1 | Runtime free; Free vs Pro by folder | §8 |
 | P2 | Yay plugins own their steps; Pro owns multi-plugin templates; feature directory | §8 |
 | P3 | Cancel waiting runs on Update in v1.0 | §10 |
-| P4 | Public extension API in 1.1 (plan 034) | §10 |
+| P4 | Public extension API in 1.0 (plan 034) | §10 |
 | P5 | AI provider deferred | §10 |
 | P6 | Settings → Health check | §9 |
 | P7 | Tree + container steps; no merge | §7 |

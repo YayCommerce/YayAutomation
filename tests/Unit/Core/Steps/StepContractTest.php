@@ -2,6 +2,7 @@
 namespace YayMatik\Tests\Unit\Core\Steps;
 
 use PHPUnit\Framework\TestCase;
+use YayMatik\Workflow\Core\Data\Template;
 use YayMatik\Workflow\Core\Data\Type;
 use YayMatik\Workflow\Actions\AddOrderNote;
 use YayMatik\Workflow\Actions\ChangeCustomerRole;
@@ -84,9 +85,9 @@ final class StepContractTest extends TestCase {
         $keys = array_map( fn( Field $field ) => $field->key(), $step->fields() );
         $this->assertSame( array_unique( $keys ), $keys );
 
-        preg_match_all( '/%([a-z_]+)%/', $step->summary(), $placeholders );
-        $this->assertSame( [], array_diff( $placeholders[1], $keys ), 'summary placeholders are field keys' );
-        $this->assertDoesNotMatchRegularExpression( '/%\d+\$/', $step->summary(), 'no sprintf positions: the editor fills only %key%' );
+        $config = array_map( fn( string $key ) => 'config.' . $key, $keys );
+        $this->assertSame( [], array_diff( ( new Template() )->placeholders( $step->summary() ), $config ), 'summary placeholders are {{ config.<field key> }}' );
+        $this->assertStringNotContainsString( '%', $step->summary(), 'no % placeholders' );
     }
 
     /**

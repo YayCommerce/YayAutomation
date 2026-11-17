@@ -96,15 +96,15 @@ class ChangeCustomerRole extends Action {
                 ]
             )->default( 'add' ),
             Field::select( 'role', __( 'Role', 'yaymatik' ), [ self::class, 'assignable_roles' ] )
-                /* translators: %s: step name, e.g. "Change customer role" */
-                ->required( __( '%s needs a role.', 'yaymatik' ) )
+                /* translators: {{ step }}: step name, e.g. "Change customer role"; keep {{ … }} as it is. */
+                ->required( __( '{{ step }} needs a role.', 'yaymatik' ) )
                 ->help( __( 'Only roles with customer rights are listed: no staff, editing or publishing roles.', 'yaymatik' ) ),
         ];
     }
 
     public function summary(): string {
-        /* translators: %mode%: e.g. "Add a role", %role%: a role name; keep the placeholders as they are. */
-        return __( '%mode%: %role%', 'yaymatik' );
+        /* translators: {{ config.mode }}: e.g. "Add a role", {{ config.role }}: a role name; keep {{ … }} as it is. */
+        return __( '{{ config.mode }}: {{ config.role }}', 'yaymatik' );
     }
 
     public function outputs(): array {

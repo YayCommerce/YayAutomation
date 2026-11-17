@@ -3,6 +3,7 @@ namespace YayMatik\Workflow\Extension;
 
 use YayMatik\Api\Api;
 use YayMatik\Workflow\Core\Data\DataRegistry;
+use YayMatik\Workflow\Core\Data\Template;
 use YayMatik\Workflow\Core\Steps\Action;
 use YayMatik\Workflow\Core\Steps\Field;
 use YayMatik\Workflow\Core\Steps\Step;
@@ -46,7 +47,16 @@ final class Declaration {
 
     private const MAX_FACTS = 10;
 
-    private const ACTION_KEYS = [ 'requires', 'run', 'outputs', 'sample_outputs', 'on_error', 'result', 'emits' ];
+    private const ACTION_KEYS = [ 'requires', 'run', 'outputs', 'sample_outputs', 'on_error', 'result', 'emits', 'email', 'editor' ];
+
+    private const EDITOR_KEYS = [ 'field', 'button', 'url' ];
+
+    private const EMAIL_KEYS = [ 'audience', 'recipient', 'build' ];
+
+    private const TEMPLATE_KEYS = [ 'name', 'description', 'category', 'workflow', 'created', 'before', 'steps' ];
+
+    /** Browse templates' categories (TS `TemplateCategory`). */
+    private const TEMPLATE_CATEGORIES = [ 'recover_carts', 'post_purchase', 'customer_lifecycle', 'alerts' ];
 
     /** Field type => whether its third argument (`options`, `units` or `text`) is required. */
     private const FIELD_TYPES = [
@@ -120,6 +130,7 @@ final class Declaration {
             return null;
         }
         self::unknown_keys( $module->id(), $what, $args, array_merge( self::STEP_KEYS, self::TRIGGER_KEYS ) );
+        self::check_placeholders( $module->id(), $what, $args );
         return [
             'fields' => $fields,
             'facts'  => $facts,
@@ -140,21 +151,137 @@ final class Declaration {
             ?? self::list_error( $args, 'requires', false )
             ?? self::items_error( $args['requires'] ?? [] )
             ?? self::list_error( $args, 'emits', false )
-            ?? self::callable_error( $args, [ 'run' ], [ 'sample_outputs' ] );
+            ?? ( isset( $args['email'] ) ? self::email_error( $args ) : self::callable_error( $args, [ 'run' ], [ 'sample_outputs' ] ) );
         if ( null === $error && isset( $args['on_error'] ) && ! in_array( $args['on_error'], [ Step::ON_ERROR_STOP, Step::ON_ERROR_CONTINUE ], true ) ) {
             $error = '"on_error" must be "stop" or "continue".';
+        }
+        if ( null === $error && isset( $args['result'] ) && ! is_string( $args['result'] ) ) {
+            $error = '"result" must be a string.';
         }
         $fields  = null === $error ? self::fields( $module->id(), $args['fields'] ?? [] ) : null;
         $outputs = null === $error && ! is_string( $fields ) ? self::outputs( $module->id(), $args['outputs'] ?? [] ) : null;
         $error   = $error ?? ( is_string( $fields ) ? $fields : null ) ?? ( is_string( $outputs ) ? $outputs : null );
+        if ( null === $error && isset( $args['email'] ) && 'customer' !== $args['email']['recipient'] && null === self::field( $fields, $args['email']['recipient'] ) ) {
+            $error = '"email" "recipient" must be "customer" or a key of "fields".';
+        }
+        if ( null === $error && isset( $args['editor'] ) ) {
+            $error = self::editor_error( $args['editor'], $fields );
+        }
         if ( null !== $error ) {
             self::refuse( $module->id(), $what, $error );
             return null;
         }
         self::unknown_keys( $module->id(), $what, $args, array_merge( self::STEP_KEYS, self::ACTION_KEYS ) );
+        self::check_placeholders( $module->id(), $what, $args );
+        if ( isset( $args['editor'] ) ) {
+            self::unknown_keys( $module->id(), "{$what} editor", $args['editor'], self::EDITOR_KEYS );
+        }
+        if ( isset( $args['email'] ) ) {
+            self::unknown_keys( $module->id(), "{$what} email", $args['email'], self::EMAIL_KEYS );
+            $args['email'] += [ 'audience' => 'customer' ];
+        }
         return [
             'fields'  => $fields,
             'outputs' => $outputs,
+        ] + $args;
+    }
+
+    /**
+     * An email action: core runs it, so it has no `run` or `outputs` of its own (docs/extension-api.md §5.5).
+     *
+     * @param array $args
+     */
+    private static function email_error( array $args ): ?string {
+        $email = $args['email'];
+        if ( ! is_array( $email ) ) {
+            return '"email" must be [ audience, recipient, build ].';
+        }
+        foreach ( [ 'run', 'outputs', 'sample_outputs' ] as $key ) {
+            if ( isset( $args[ $key ] ) ) {
+                return "An email action has no \"{$key}\": core sends it and outputs \"to\".";
+            }
+        }
+        if ( isset( $email['audience'] ) && ! in_array( $email['audience'], [ 'customer', 'staff' ], true ) ) {
+            return '"email" "audience" must be "customer" or "staff".';
+        }
+        if ( ! is_string( $email['recipient'] ?? null ) ) {
+            return '"email" needs "recipient": "customer" or a field key.';
+        }
+        return is_callable( $email['build'] ?? null ) ? null : '"email" "build" must be a callable.';
+    }
+
+    /**
+     * The iframe editor (docs/extension-api.md §5.6): its URL is checked each time it's built, not here.
+     *
+     * @param mixed   $editor
+     * @param Field[] $fields
+     */
+    private static function editor_error( $editor, array $fields ): ?string {
+        if ( ! is_array( $editor ) ) {
+            return '"editor" must be [ field, button, url ].';
+        }
+        $field = is_string( $editor['field'] ?? null ) ? self::field( $fields, $editor['field'] ) : null;
+        if ( ! $field || ! in_array( $field->type(), [ Field::TEXT, Field::SELECT ], true ) ) {
+            return '"editor" "field" must be a text or select field of this action.';
+        }
+        if ( ! is_string( $editor['button'] ?? null ) || '' === trim( $editor['button'] ) ) {
+            return '"editor" needs a "button" label.';
+        }
+        return is_callable( $editor['url'] ?? null ) ? null : '"editor" "url" must be a callable.';
+    }
+
+    /**
+     * @param Field[] $fields
+     * @param string  $key
+     */
+    private static function field( array $fields, string $key ): ?Field {
+        foreach ( $fields as $field ) {
+            if ( $field->key() === $key ) {
+                return $field;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Normalized template args, or null when refused. The chain is checked when the registry is built (`TemplateCheck`).
+     *
+     * @param ExtensionModule $module
+     * @param string          $id
+     * @param array           $args
+     */
+    public static function template( ExtensionModule $module, string $id, array $args ): ?array {
+        $what  = "template {$id}";
+        $error = self::own_id_error( $module->id(), $id );
+        foreach ( [ 'name', 'description' ] as $key ) {
+            if ( null === $error && ( ! is_string( $args[ $key ] ?? null ) || '' === trim( $args[ $key ] ) ) ) {
+                $error = "\"{$key}\" is required.";
+            }
+        }
+        if ( null === $error && ! in_array( $args['category'] ?? null, self::TEMPLATE_CATEGORIES, true ) ) {
+            $error = '"category" must be one of: ' . implode( ', ', self::TEMPLATE_CATEGORIES ) . '.';
+        }
+        if ( null === $error && isset( $args['workflow'] ) && ( ! is_string( $args['workflow'] ) || null !== self::own_id_error( $module->id(), $args['workflow'] ) ) ) {
+            $error = "\"workflow\" must start with \"{$module->id()}_\" and be 3–64 lowercase letters, digits or underscores.";
+        }
+        if ( null === $error && isset( $args['created'] ) && ( ! is_string( $args['created'] ) || ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $args['created'] ) ) ) {
+            $error = '"created" must be a date, YYYY-MM-DD.';
+        }
+        if ( null === $error && isset( $args['before'] ) && ( ! is_array( $args['before'] ) || count( array_filter( $args['before'], 'is_string' ) ) !== count( $args['before'] ) ) ) {
+            $error = '"before" must be a list of strings.';
+        }
+        if ( null === $error && ( ! is_array( $args['steps'] ?? null ) || ! $args['steps'] ) ) {
+            $error = '"steps" must be a list of steps, the trigger first.';
+        }
+        if ( null !== $error ) {
+            self::refuse( $module->id(), $what, $error );
+            return null;
+        }
+        self::unknown_keys( $module->id(), $what, $args, self::TEMPLATE_KEYS );
+        return [
+            'workflow' => $args['workflow'] ?? $id,
+            'created'  => $args['created'] ?? '',
+            'before'   => array_values( $args['before'] ?? [] ),
         ] + $args;
     }
 
@@ -316,6 +443,33 @@ final class Declaration {
             return '"summary" must be a string.';
         }
         return self::callable_error( $args, [], [ 'validate', 'setup_issue' ] );
+    }
+
+    /**
+     * Records each placeholder in `summary`, `result` or a `required` message other than the allowed ones; the text stays as written.
+     *
+     * @param string $module
+     * @param string $what
+     * @param array  $args
+     */
+    private static function check_placeholders( string $module, string $what, array $args ): void {
+        $texts = [
+            [ '"summary"', $args['summary'] ?? '', '/^config\.[a-z_][a-z0-9_]*$/', '{{ config.<field> }}' ],
+            [ '"result"', $args['result'] ?? '', '/^(output|config)\.[a-z_][a-z0-9_]*$/', '{{ output.<key> }} or {{ config.<field> }}' ],
+        ];
+        foreach ( $args['fields'] ?? [] as $key => $field ) {
+            $texts[] = [ "Field \"{$key}\": \"required\"", is_string( $field['required'] ?? null ) ? $field['required'] : '', '/^step$/', '{{ step }}' ];
+        }
+        $template = new Template();
+        foreach ( $texts as list( $label, $text, $pattern, $allowed ) ) {
+            foreach ( $template->placeholders( $text ) as $name ) {
+                if ( ! preg_match( $pattern, $name ) ) {
+                    $message = $label . ': {{ ' . $name . ' }} isn\'t a placeholder; use ' . $allowed . '. Kept as written.';
+                    Diagnostics::record( $module, $what, $message );
+                    self::doing_it_wrong( "{$module}, {$what}: {$message}" );
+                }
+            }
+        }
     }
 
     /**

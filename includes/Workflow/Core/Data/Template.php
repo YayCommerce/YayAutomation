@@ -69,6 +69,49 @@ final class Template {
     }
 
     /**
+     * Names of the `{{ name }}` placeholders in catalog text (a summary, a result line, a required message).
+     *
+     * @param string $text
+     */
+    public function placeholders( string $text ): array {
+        $names = [];
+        foreach ( $this->parse( $text ) as $token ) {
+            if ( 'tag' === $token['type'] ) {
+                $names[] = self::placeholder_name( $token['raw'] );
+            }
+        }
+        return $names;
+    }
+
+    /**
+     * Fills `{{ name }}` placeholders in catalog text, never re-parsing a value; TS `fillTemplate()`.
+     *
+     * @param string               $text
+     * @param array<string,string> $values
+     */
+    public function fill( string $text, array $values ): string {
+        $out = '';
+        foreach ( $this->parse( $text ) as $token ) {
+            if ( 'text' === $token['type'] ) {
+                $out .= $token['text'];
+                continue;
+            }
+            $name = self::placeholder_name( $token['raw'] );
+            $out .= array_key_exists( $name, $values ) ? $values[ $name ] : $token['raw'];
+        }
+        return $out;
+    }
+
+    /**
+     * `{{ config.status }}` → `config.status`, `{{ step }}` → `step`.
+     *
+     * @param string $raw
+     */
+    private static function placeholder_name( string $raw ): string {
+        return trim( substr( $raw, 2, -2 ) );
+    }
+
+    /**
      * Malformed tags and unknown filters, one message each.
      *
      * @param string $text

@@ -66,7 +66,7 @@ final class DeclarationTest extends TestCase {
                         'silver' => 'Silver',
                         'gold'   => 'Gold',
                     ],
-                    'required' => 'Pick a role for %s.',
+                    'required' => 'Pick a role for {{ step }}.',
                     'default'  => 'silver',
                 ],
                 'note'    => [
@@ -109,7 +109,7 @@ final class DeclarationTest extends TestCase {
         );
 
         $this->assertSame( [ 'role', 'note', 'points', 'delay', 'tip', 'notify', 'copy_to' ], array_keys( $fields ) );
-        $this->assertSame( [ 'select', true, 'Pick a role for %s.', 'silver' ], [ $fields['role']['type'], $fields['role']['required'], $fields['role']['requiredMessage'], $fields['role']['default'] ] );
+        $this->assertSame( [ 'select', true, 'Pick a role for {{ step }}.', 'silver' ], [ $fields['role']['type'], $fields['role']['required'], $fields['role']['requiredMessage'], $fields['role']['default'] ] );
         $this->assertSame( [ 'silver', 'gold' ], array_column( $fields['role']['options'], 'value' ) );
         $this->assertSame( [ true, 'Thanks!', 'Shown to the customer.' ], [ $fields['note']['variables'], $fields['note']['placeholder'], $fields['note']['help'] ] );
         $this->assertSame(
@@ -132,7 +132,7 @@ final class DeclarationTest extends TestCase {
                     'points' => [
                         'type'     => 'number',
                         'label'    => 'Points',
-                        'required' => 'Enter the points for %s.',
+                        'required' => 'Enter the points for {{ step }}.',
                     ],
                 ],
             ]
@@ -246,6 +246,31 @@ final class DeclarationTest extends TestCase {
             $this->assertNull( self::action( $args ), $message );
             $this->assertSame( $message, self::last_diagnostic() );
         }
+    }
+
+    public function test_a_bad_placeholder_keeps_the_step_with_a_diagnostic(): void {
+        // The check reads translated text: a bad translation must not drop a step.
+        $cases = [
+            '"summary": {{ order.total }} isn\'t a placeholder; use {{ config.<field> }}. Kept as written.' => [ 'summary' => 'Add {{ config.points }} for {{ order.total }}' ],
+            '"summary": {{ config.points | upper }} isn\'t a placeholder; use {{ config.<field> }}. Kept as written.' => [ 'summary' => '{{ config.points | upper }}' ],
+            '"result": {{ steps.a.b }} isn\'t a placeholder; use {{ output.<key> }} or {{ config.<field> }}. Kept as written.' => [ 'result' => '{{ output.balance }} {{ steps.a.b }}' ],
+            'Field "role": "required": {{ config.role }} isn\'t a placeholder; use {{ step }}. Kept as written.' => [
+                'fields' => [
+                    'role' => [
+                        'type'     => 'text',
+                        'label'    => 'Role',
+                        'required' => '{{ config.role }} is blank.',
+                    ],
+                ],
+            ],
+        ];
+        foreach ( $cases as $message => $args ) {
+            $GLOBALS['yaymatik_test_options'] = [];
+            $action = self::action( $args );
+            $this->assertNotNull( $action, $message );
+            $this->assertSame( $message, self::last_diagnostic() );
+        }
+        $this->assertSame( '{{ config.points | upper }}', self::action( [ 'summary' => '{{ config.points | upper }}' ] )->summary(), 'the text stays as written' );
     }
 
     public function test_a_trigger_provides_what_a_payload_gives_and_once_per_is_subject(): void {

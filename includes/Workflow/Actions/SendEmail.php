@@ -6,32 +6,29 @@ use YayMatik\Workflow\Core\Data\Template;
 use YayMatik\Workflow\Core\Data\Values;
 use YayMatik\Workflow\Core\Data\Type;
 use YayMatik\Workflow\Core\Email\EmailBody;
+use YayMatik\Workflow\Core\Email\EmailDelivery;
+use YayMatik\Workflow\Core\Email\EmailStep;
 use YayMatik\Workflow\Core\Email\UnsubscribeLink;
 use YayMatik\Workflow\Core\Steps\Action;
 use YayMatik\Workflow\Core\Steps\Field;
 use YayMatik\Workflow\Core\Steps\StepResult;
-use YayMatik\Workflow\Core\Storage\UnsubscribeStore;
 
 defined( 'ABSPATH' ) || exit;
 
 /** Email to a customer in the WooCommerce email template, with an unsubscribe link. */
-class SendEmail extends Action {
+class SendEmail extends Action implements EmailStep {
 
     public const ID = 'send_email';
 
-    /** @var UnsubscribeLink|null Null = from the stored secret, when first needed. */
-    private $links;
-
-    /** @var callable fn( string $email ): bool */
-    private $unsubscribed;
+    /** @var EmailDelivery */
+    private $delivery;
 
     /**
      * @param UnsubscribeLink|null $links        Null = with the stored secret.
      * @param callable|null        $unsubscribed fn( string $email ): bool; null = `UnsubscribeStore::has()`.
      */
     public function __construct( ?UnsubscribeLink $links = null, ?callable $unsubscribed = null ) {
-        $this->links        = $links;
-        $this->unsubscribed = $unsubscribed ?? [ UnsubscribeStore::class, 'has' ];
+        $this->delivery = new EmailDelivery( $links, $unsubscribed );
     }
 
     public function id(): string {
@@ -62,28 +59,28 @@ class SendEmail extends Action {
         return [
             Field::notice( 'from', __( 'From', 'yaymatik' ), SendInternalEmail::sender()['fromLine'] ),
             Field::text( 'to', __( 'To', 'yaymatik' ) )
-                /* translators: %s: step name */
-                ->required( __( '%s needs an email address.', 'yaymatik' ) )
+                /* translators: {{ step }}: step name; keep {{ … }} as it is. */
+                ->required( __( '{{ step }} needs an email address.', 'yaymatik' ) )
                 ->variables()
                 ->default( '{{ customer.email }}' )
                 ->help( __( 'One email address, or a variable such as the customer’s email.', 'yaymatik' ) ),
             Field::text( 'subject', __( 'Subject', 'yaymatik' ) )
-                /* translators: %s: step name */
-                ->required( __( '%s needs a subject.', 'yaymatik' ) )
+                /* translators: {{ step }}: step name; keep {{ … }} as it is. */
+                ->required( __( '{{ step }} needs a subject.', 'yaymatik' ) )
                 ->variables(),
             Field::text( 'heading', __( 'Heading', 'yaymatik' ) )
                 ->variables()
                 ->help( __( 'Shown at the top of the email. Leave blank to use the subject.', 'yaymatik' ) ),
             Field::html( 'message', __( 'Message', 'yaymatik' ) )
-                /* translators: %s: step name */
-                ->required( __( '%s needs a message.', 'yaymatik' ) )
+                /* translators: {{ step }}: step name; keep {{ … }} as it is. */
+                ->required( __( '{{ step }} needs a message.', 'yaymatik' ) )
                 ->variables(),
         ];
     }
 
     public function summary(): string {
-        /* translators: %to%: email address or variable; keep the placeholder as it is. */
-        return __( 'Send to %to%', 'yaymatik' );
+        /* translators: {{ config.to }}: email address or variable; keep {{ … }} as it is. */
+        return __( 'Send to {{ config.to }}', 'yaymatik' );
     }
 
     public function outputs(): array {
@@ -117,19 +114,11 @@ class SendEmail extends Action {
      * @param array $config
      */
     public function run( Scope $scope, array $config ): StepResult {
-        $to = self::recipient( $config, $scope );
-        if ( '' === $to ) {
-            return StepResult::failed( __( 'No valid email address.', 'yaymatik' ) );
-        }
-        if ( ( $this->unsubscribed )( $to ) ) {
-            return StepResult::skipped( __( 'The customer unsubscribed from these emails.', 'yaymatik' ) );
-        }
+        return $this->delivery->deliver( $this, $config, $scope );
+    }
 
-        $email = $this->compose( $config, $scope, $this->links()->url( $to ) );
-        if ( ! WC()->mailer()->send( $to, $email['subject'], $email['body'], $email['headers'] ) ) {
-            return StepResult::failed( __( 'Couldn’t send the email.', 'yaymatik' ) );
-        }
-        return StepResult::ok( [ 'to' => $to ] );
+    public function email_audience(): string {
+        return self::AUDIENCE_CUSTOMER;
     }
 
     /**
@@ -138,9 +127,10 @@ class SendEmail extends Action {
      * @param array       $config
      * @param Values      $values
      * @param string|null $unsubscribe Null = a link to `#` and no List-Unsubscribe headers.
-     * @return array [ 'subject' => string, 'heading' => string, 'body' => HTML, 'headers' => string ]
+     * @param bool        $test        Not used: Send test gets the same email.
+     * @return array [ 'subject' => string, 'heading' => string, 'body' => HTML, 'headers' => string, 'raw' => false ]
      */
-    public function compose( array $config, Values $values, ?string $unsubscribe ): array {
+    public function compose_email( array $config, Values $values, ?string $unsubscribe, bool $test = false ): array { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- EmailStep's signature.
         $subject = self::plain_line( $config['subject'], $values );
         $heading = self::plain_line( $config['heading'], $values );
         $heading = '' === $heading ? $subject : $heading;
@@ -152,6 +142,7 @@ class SendEmail extends Action {
             // WooCommerce's template; the mailer inlines its styles when it sends.
             'body'    => WC()->mailer()->wrap_message( $heading, $body ),
             'headers' => self::headers( (string) $unsubscribe ),
+            'raw'     => false,
         ];
     }
 
@@ -161,7 +152,7 @@ class SendEmail extends Action {
      * @param array  $config
      * @param Values $values
      */
-    public static function recipient( array $config, Values $values ): string {
+    public function email_recipient( array $config, Values $values ): string {
         return UnsubscribeLink::normalize( Field::single_line( self::render( $config['to'], $values ) ) );
     }
 
@@ -180,11 +171,11 @@ class SendEmail extends Action {
     }
 
     /**
-     * The unsubscribe link under the message, inside the WooCommerce wrapper.
+     * The unsubscribe link under the message.
      *
      * @param string $url
      */
-    private static function footer( string $url ): string {
+    public static function footer( string $url ): string {
         if ( '' === $url ) {
             return '';
         }
@@ -208,10 +199,5 @@ class SendEmail extends Action {
                 : $token['raw'];
         }
         return Field::single_line( $template->render( $stripped, $scope ) );
-    }
-
-    private function links(): UnsubscribeLink {
-        $this->links = $this->links ?? UnsubscribeLink::from_options();
-        return $this->links;
     }
 }

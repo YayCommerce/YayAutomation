@@ -4,6 +4,8 @@ namespace YayMatik\Tests\Unit\Core\Email;
 use PHPUnit\Framework\TestCase;
 use YayMatik\Tests\Support\FakeMailer;
 use YayMatik\Workflow\Core\Email\EmailPreview;
+use YayMatik\Workflow\Core\Steps\StepRegistry;
+use YayMatik\Workflow\Extension\Extensions;
 
 require_once dirname( __DIR__, 3 ) . '/Support/woocommerce-stubs.php';
 require_once dirname( __DIR__, 3 ) . '/Support/fake-wc.php';
@@ -15,7 +17,15 @@ final class EmailPreviewTest extends TestCase {
         FakeMailer::$current = new FakeMailer();
     }
 
-    private function graph(): array {
+    protected function tearDown(): void {
+        unset( $GLOBALS['yaymatik_test_users'] );
+    }
+
+    /**
+     * @param string $trigger
+     * @param string $action
+     */
+    private function graph( string $trigger = 'order_created', string $action = 'send_email' ): array {
         $node = fn( string $id, string $kind, string $block ) => [
             'id'       => $id,
             'kind'     => $kind,
@@ -29,7 +39,7 @@ final class EmailPreviewTest extends TestCase {
             ],
         ];
         return [
-            'nodes' => [ $node( 't', 'trigger', 'order_created' ), $node( 'm', 'action', 'send_email' ) ],
+            'nodes' => [ $node( 't', 'trigger', $trigger ), $node( 'm', 'action', $action ) ],
             'edges' => [
                 [
                     'id'     => 't-m',
@@ -63,6 +73,91 @@ final class EmailPreviewTest extends TestCase {
         $this->assertNull( $preview['order'] );
         $this->assertSame( [], $preview['sampleProducts'] );
         $this->assertSame( [], $sent['sampleProducts'] );
+    }
+
+    public function test_another_plugins_email_step_previews_and_sends_its_own_document(): void {
+        $declare = function ( $registrar ) {
+            $registrar->module(
+                [
+                    'id'    => 'acme',
+                    'label' => 'Acme',
+                ]
+            )->action(
+                'acme_mail',
+                [
+                    'label'       => 'Mail',
+                    'description' => 'Sends.',
+                    'email'       => [
+                        'recipient' => 'customer',
+                        'build'     => fn( array $config, $run ) => [
+                            'subject' => 'Hi {{ customer.first_name }}',
+                            'html'    => '<html><head><style>p{color:red}</style></head><body><p>' . ( $run->is_preview() ? 'preview' : 'live' ) . '</p></body></html>',
+                        ],
+                    ],
+                ]
+            );
+        };
+        $steps   = new \ReflectionProperty( StepRegistry::class, 'steps' );
+        $steps->setAccessible( true );
+        $before = StepRegistry::all();
+        $steps->setValue( null, $before + [ 'acme_mail' => Extensions::collect( [], $declare )[0]->actions()[0] ] );
+        try {
+            $preview = EmailPreview::render( $this->graph( 'order_created', 'acme_mail' ), 'm', [], 0 );
+            $sent    = EmailPreview::send_test( $this->graph( 'order_created', 'acme_mail' ), 'm', [], 'you@example.test', 0 );
+        } finally {
+            $steps->setValue( null, $before );
+        }
+
+        $this->assertIsArray( $preview );
+        $this->assertIsArray( $sent );
+        $this->assertTrue( $preview['sample'] );
+        $this->assertStringStartsWith( '<html><head><style>p{color:red}</style></head><body><p>preview</p><p style=', $preview['html'], 'as built, footer added, no styles inlined' );
+        $this->assertStringContainsString( '<a href="#">Unsubscribe</a>', $preview['html'] );
+        $this->assertSame( $preview['html'], FakeMailer::$current->sent[0][2], 'Send test sends what Preview shows' );
+        $this->assertSame( '[Test] ' . $preview['subject'], FakeMailer::$current->sent[0][1] );
+    }
+
+    public function test_a_customer_only_trigger_previews_the_newest_customer_account(): void {
+        $GLOBALS['yaymatik_test_users'] = [
+            3 => (object) [
+                'ID'              => 3,
+                'roles'           => [ 'customer' ],
+                'user_registered' => '2026-01-02 10:00:00',
+                'display_name'    => 'Old Customer',
+            ],
+            8 => (object) [
+                'ID'              => 8,
+                'roles'           => [ 'customer' ],
+                'user_registered' => '2026-03-04 10:00:00',
+                'display_name'    => 'Ann Lee',
+            ],
+            9 => (object) [
+                'ID'              => 9,
+                'roles'           => [ 'administrator' ],
+                'user_registered' => '2026-05-06 10:00:00',
+                'display_name'    => 'Admin',
+            ],
+        ];
+
+        $preview = EmailPreview::render( $this->graph( 'customer_account_created' ), 'm', self::CONFIG );
+        unset( $GLOBALS['yaymatik_test_users'] );
+        $none = EmailPreview::render( $this->graph( 'customer_account_created' ), 'm', self::CONFIG );
+
+        $this->assertFalse( $preview['sample'] );
+        $this->assertSame( 'Ann Lee', $preview['customer'] );
+        $this->assertNull( $preview['order'] );
+        $this->assertTrue( $none['sample'], 'no customer account: made-up data' );
+        $this->assertNull( $none['customer'] );
+        $GLOBALS['yaymatik_test_users'] = [
+            8 => (object) [
+                'ID'              => 8,
+                'roles'           => [ 'customer' ],
+                'user_registered' => '2026-03-04 10:00:00',
+                'display_name'    => 'Ann Lee',
+            ],
+        ];
+        $review                         = EmailPreview::render( $this->graph( 'review_posted' ), 'm', self::CONFIG );
+        $this->assertTrue( $review['sample'], 'a review trigger also has the review: made-up data, as before' );
     }
 
     public function test_grid_kinds_come_from_the_merge_tags_the_email_uses(): void {

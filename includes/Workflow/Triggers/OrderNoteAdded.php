@@ -40,8 +40,8 @@ class OrderNoteAdded extends OrderTrigger {
     }
 
     public function summary(): string {
-        /* translators: %note_type%: which notes count, e.g. "Private note" or "Any note"; keep the placeholder as it is. */
-        return __( '%note_type% added to an order', 'yaymatik' );
+        /* translators: {{ config.note_type }}: which notes count, e.g. "Private note" or "Any note"; keep {{ … }} as it is. */
+        return __( '{{ config.note_type }} added to an order', 'yaymatik' );
     }
 
     /**

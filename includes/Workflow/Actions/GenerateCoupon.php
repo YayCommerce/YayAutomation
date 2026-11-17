@@ -114,9 +114,7 @@ class GenerateCoupon extends Action {
     }
 
     public function summary(): string {
-        // Core's translated separator instead of a translatable '%discount_type%, %expiry_days%': make-pot reads
-        // `%d` and `%e` in it as two unordered sprintf placeholders.
-        return '%discount_type%' . wp_get_list_item_separator() . '%expiry_days%';
+        return '{{ config.discount_type }}' . wp_get_list_item_separator() . '{{ config.expiry_days }}';
     }
 
     public function outputs(): array {

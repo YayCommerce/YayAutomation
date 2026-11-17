@@ -13,6 +13,8 @@ use YayMatik\Workflow\Core\Runtime\VersionGraphSource;
 use YayMatik\Workflow\Core\Storage\RunStepStore;
 use YayMatik\Workflow\Core\Storage\RunStore;
 use YayMatik\Workflow\Core\Storage\WorkflowStore;
+use YayMatik\Workflow\Core\Steps\StepRegistry;
+use YayMatik\Workflow\Extension\ExtensionAction;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -156,6 +158,17 @@ class RestAPI {
             );
         }
 
+        // Body: { nodeId, config, graph? } — as for preview: the URL of the step's iframe editor (docs/extension-api.md §5.6).
+        register_rest_route(
+            self::REST_NAMESPACE,
+            '/workflows/(?P<id>\d+)/editor',
+            [
+                'methods'             => \WP_REST_Server::CREATABLE,
+                'callback'            => [ $this, 'open_editor' ],
+                'permission_callback' => [ $this, 'can_email' ],
+            ]
+        );
+
         register_rest_route(
             self::REST_NAMESPACE,
             '/runs/(?P<id>\d+)',
@@ -198,6 +211,45 @@ class RestAPI {
         }
         list( $graph, $node_id, $config ) = $input;
         return rest_ensure_response( EmailPreview::send_test( $graph, $node_id, $config, (string) wp_get_current_user()->user_email ) );
+    }
+
+    /**
+     * Another plugin's editor for a step: `{ url, sample: { orderId, userId } }`.
+     *
+     * @param \WP_REST_Request $request
+     */
+    public function open_editor( \WP_REST_Request $request ) {
+        $input = $this->email_input( $request );
+        if ( is_wp_error( $input ) ) {
+            return $input;
+        }
+        list( $graph, $node_id, $config ) = $input;
+        $node                             = is_array( $graph['nodes'] ?? null ) ? ( GraphSchema::by_id( array_filter( $graph['nodes'], 'is_array' ) )[ $node_id ] ?? null ) : null;
+        $step                             = is_string( $node['data']['block'] ?? null ) ? StepRegistry::get( $node['data']['block'] ) : null;
+        $field                            = $step instanceof ExtensionAction ? ( $step->client_meta()['editor']['field'] ?? '' ) : '';
+        if ( '' === $field ) {
+            return new \WP_Error( 'yaymatik_no_editor', __( 'This step has no editor.', 'yaymatik' ), [ 'status' => 400 ] );
+        }
+        // As Preview and a run read it: only the step's fields, cleaned.
+        $config = $step->sanitize( is_array( $config ) ? $config : [] );
+        $url    = $step->editor_url(
+            [
+                'value'       => is_scalar( $config[ $field ] ?? null ) ? (string) $config[ $field ] : '',
+                'workflow_id' => (int) $request['id'],
+                'node_id'     => $node_id,
+                'step'        => $step->id(),
+                'config'      => $config,
+            ]
+        );
+        if ( is_wp_error( $url ) ) {
+            return $url;
+        }
+        return rest_ensure_response(
+            [
+                'url'    => $url,
+                'sample' => EmailPreview::sample_ids( $graph ),
+            ]
+        );
     }
 
     /**

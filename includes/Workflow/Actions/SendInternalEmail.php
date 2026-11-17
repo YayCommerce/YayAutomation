@@ -5,6 +5,8 @@ use YayMatik\Workflow\Core\Data\Scope;
 use YayMatik\Workflow\Core\Data\Type;
 use YayMatik\Workflow\Core\Data\Values;
 use YayMatik\Workflow\Core\Email\EmailBody;
+use YayMatik\Workflow\Core\Email\EmailDelivery;
+use YayMatik\Workflow\Core\Email\EmailStep;
 use YayMatik\Workflow\Core\Steps\Action;
 use YayMatik\Workflow\Core\Steps\Field;
 use YayMatik\Workflow\Core\Steps\StepResult;
@@ -12,7 +14,7 @@ use YayMatik\Workflow\Core\Steps\StepResult;
 defined( 'ABSPATH' ) || exit;
 
 /** Email to the store team in the WooCommerce email template; unsubscribes don't apply. */
-class SendInternalEmail extends Action {
+class SendInternalEmail extends Action implements EmailStep {
 
     public const ID = 'send_internal_email';
 
@@ -47,21 +49,21 @@ class SendInternalEmail extends Action {
                 ->placeholder( (string) get_option( 'admin_email' ) )
                 ->help( __( 'Separate addresses with commas. Leave blank to use the site admin email.', 'yaymatik' ) ),
             Field::text( 'subject', __( 'Subject', 'yaymatik' ) )
-                /* translators: %s: step name */
-                ->required( __( '%s needs a subject.', 'yaymatik' ) )
+                /* translators: {{ step }}: step name; keep {{ … }} as it is. */
+                ->required( __( '{{ step }} needs a subject.', 'yaymatik' ) )
                 ->variables()
                 ->default( __( 'Order {{ order.number }} is {{ order.status }}', 'yaymatik' ) ),
             Field::html( 'message', __( 'Message', 'yaymatik' ) )
-                /* translators: %s: step name */
-                ->required( __( '%s needs a message.', 'yaymatik' ) )
+                /* translators: {{ step }}: step name; keep {{ … }} as it is. */
+                ->required( __( '{{ step }} needs a message.', 'yaymatik' ) )
                 ->variables()
                 ->default( self::sample_message() ),
         ];
     }
 
     public function summary(): string {
-        /* translators: %recipients%: email addresses; keep the placeholder as it is. */
-        return __( 'Send to %recipients%', 'yaymatik' );
+        /* translators: {{ config.recipients }}: email addresses; keep {{ … }} as it is. */
+        return __( 'Send to {{ config.recipients }}', 'yaymatik' );
     }
 
     public function outputs(): array {
@@ -85,28 +87,45 @@ class SendInternalEmail extends Action {
             $recipients = [ (string) get_option( 'admin_email' ) ];
         }
 
-        $email = $this->compose( $config, $scope );
-        if ( ! WC()->mailer()->send( $recipients, $email['subject'], $email['body'] ) ) {
+        if ( ! EmailDelivery::send( $recipients, $this->compose_email( $config, $scope, null ) ) ) {
             return StepResult::failed( __( 'Couldn’t send the email.', 'yaymatik' ) );
         }
         return StepResult::ok( [ 'to' => $recipients ] );
     }
 
+    public function email_audience(): string {
+        return self::AUDIENCE_STAFF;
+    }
+
     /**
      * The email as it goes out. The subject is also the heading.
      *
-     * @param array  $config
-     * @param Values $values
-     * @return array [ 'subject' => string, 'heading' => string, 'body' => HTML in the WooCommerce wrapper ]
+     * @param array       $config
+     * @param Values      $values
+     * @param string|null $unsubscribe Not used: staff emails have no unsubscribe link.
+     * @param bool        $test        Not used: Send test gets the same email.
+     * @return array [ 'subject' => string, 'heading' => string, 'body' => HTML in the WooCommerce wrapper, 'headers', 'raw' => false ]
      */
-    public function compose( array $config, Values $values ): array {
+    public function compose_email( array $config, Values $values, ?string $unsubscribe, bool $test = false ): array { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- EmailStep's signature.
         // Merged values may contain line breaks; a subject must stay one line.
         $subject = Field::single_line( self::render( $config['subject'], $values ) );
         return [
             'subject' => $subject,
             'heading' => $subject,
             'body'    => WC()->mailer()->wrap_message( $subject, EmailBody::render( $config['message'], $values ) ),
+            'headers' => "Content-Type: text/html\r\n",
+            'raw'     => false,
         ];
+    }
+
+    /**
+     * As typed: blank reads as the placeholder (the site admin email).
+     *
+     * @param array  $config
+     * @param Values $values
+     */
+    public function email_recipient( array $config, Values $values ): string { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- EmailStep's signature.
+        return (string) $config['recipients'];
     }
 
     /** A new step's message: who ordered, the total and the items. */

@@ -22,6 +22,7 @@ const preview = (changes: Partial<EmailPreview> = {}): EmailPreview => ({
   to: 'jane@example.test',
   sample: false,
   order: '1745',
+  customer: null,
   sampleProducts: [],
   ...changes,
 });
@@ -129,6 +130,13 @@ describe('EmailActions', () => {
 
     expect(dialog()!.textContent).toContain('Sample data');
     expect(dialog()!.textContent).not.toContain('Order #');
+  });
+
+  it('names the customer account a customer-only trigger previews with', async () => {
+    renderActions({ preview: vi.fn(async () => preview({ order: null, customer: 'Ann Lee' })) });
+    await click(button('Preview'));
+
+    expect(dialog()!.textContent).toContain('Customer Ann Lee data · nothing is sent');
   });
 
   it('says when a grid shows sample products because no recent order has any', async () => {

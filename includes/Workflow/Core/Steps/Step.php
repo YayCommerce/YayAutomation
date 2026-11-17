@@ -38,7 +38,7 @@ abstract class Step {
     /** @return Field[] In form order. */
     abstract public function fields(): array;
 
-    /** Card text with `%field key%` placeholders, e.g. "Change the order status to %status%". */
+    /** Card text with `{{ config.<field key> }}` placeholders, e.g. "Set to {{ config.status }}". */
     abstract public function summary(): string;
 
     /**

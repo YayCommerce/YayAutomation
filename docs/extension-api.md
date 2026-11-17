@@ -1,6 +1,6 @@
 # YayMatik Extension API v1 — contract
 
-**Status:** **agreed by Jack, Nov 13 10:25; public surface simplified Nov 13 11:47** (arrays, `yaymatik_fire`, `Run`) (written Nov 12 from develop 6be688a). Ships in YayMatik **1.1** (after WordPress.org approves 1.0). Decisions Q1–Q12 in §15, their reasons in [workflow-core-decisions.md § EX](workflow-core-decisions.md); checkpoints and the two PRs in §17 and `.claude/plans/dev/034-extension-api.md`.
+**Status:** **agreed by Jack, Nov 13 10:25; public surface simplified Nov 13 11:47** (arrays, `yaymatik_fire`, `Run`) (written Nov 12 from develop 6be688a). Ships in YayMatik **1.0** (leader's decision, Nov 16). Decisions Q1–Q12 in §15, their reasons in [workflow-core-decisions.md § EX](workflow-core-decisions.md); checkpoints and the two PRs in §17 and `.claude/plans/dev/034-extension-api.md`.
 
 Labels: **[Certain]** = read in code / official docs; **[Likely]** = standard practice or strong inference; **[Guess]** = depends on a plugin's code we have not seen.
 
@@ -13,6 +13,8 @@ Labels: **[Certain]** = read in code / official docs; **[Likely]** = standard pr
 - **Stable and narrow** (J2, G6): everything in this file is semver'd. Anything not in this file is internal, even when it is technically reachable (`YayMatik\Workflow\*`, every `yaymatik_*` hook not listed in §11).
 - **A broken extension never breaks core** (§9); **a deactivated extension never breaks a workflow** (§10, J9).
 - **Runs look the same** for core and extension steps: canvas summary, run detail, Skipped / Failed reasons, unsubscribe, mail log, privacy export / erase (G2, G5).
+
+**Example:** [`dev/example-extension/`](../dev/example-extension/acme-rewards.php) uses every piece of this contract (an imaginary loyalty plugin, "Acme Rewards"); `./run.sh check-extension` runs it end to end.
 
 ## 2. Entry point
 
@@ -96,7 +98,7 @@ A step's form, keyed by config key:
 | `options` | `select` / `multiselect`: value ⇒ label, or a callable returning that |
 | `units` | `number_unit`: unit ⇒ label; the first is the default |
 | `text` | `notice`: the text shown |
-| `required` | `true`, or the message to show when blank (`%s` = the step's label) |
+| `required` | `true`, or the message to show when blank; its only placeholder is `{{ step }}` (the step's label) |
 | `default`, `help`, `placeholder`, `min`, `max` | As named |
 | `variables` | `true`: accepts `{{ … }}` merge tags (Insert variable) |
 | `show_if` | `[ field => value ]` (value or list of values): shown only then; a hidden field is never checked |
@@ -139,9 +141,11 @@ Facts, outputs and data fields name their type as a string: `string`, `number`, 
 | `icon` | no | A name from core's icon list (`StepIcons::NAMES`, published in the docs); default the module logo |
 | `category` | no | A core category or one the module declared with `$m->category()` (open list, labels from the server; StepPicker.tsx:25–33 and localize.d.ts:78 become open) |
 | `fields` | no | The settings form, §4.1 (server-driven, no JS) |
-| `summary` | no | Canvas line with `%field%` placeholders (Step.php:42) |
+| `summary` | no | Canvas line; its only placeholders are `{{ config.<field> }}` (Step.php:42) |
 | `validate` | no | `fn( array $config, array $available ): array` — checks fields can't express. Return `[]` when fine, or `[ field_key => message ]` (`''` as key for a step-level message). `$available` = data item ids the step can read there (from the trigger and steps above), e.g. to say "this design uses order blocks, but this workflow's trigger has no order" |
 | `setup_issue` | no | `fn(): string` — `''` when fine, else why it can't run on this site (shown on Activate) |
+
+**Placeholders.** Every value YayMatik fills in a `summary`, `result` or `required` message is `{{ root.key }}` (`{{ step }}` alone in `required`); `%s` is only for a plugin's own `sprintf()`. No filters, and an inserted value is never read for placeholders again. A placeholder with another root, or with a filter, writes a diagnostic (and `_doing_it_wrong()` under `WP_DEBUG`) and stays as written; the step is kept, since the check reads translated text and a translation must not drop a step. In a translated string, the translators comment says to keep `{{ … }}` as it is, e.g. `/* translators: {{ config.points }}: a number; keep {{ … }} as it is. */`.
 
 ### 5.3 Trigger
 
@@ -198,8 +202,8 @@ $m->action( 'yaywholesale_set_role', [
     'category'    => 'customer',
     'requires'    => [ 'customer' ],
     'fields'      => [ 'role' => [ 'type' => 'select', 'label' => __( 'Role', 'yaywholesale' ), 'options' => [ $this, 'role_options' ], 'required' => true ] ],
-    'summary'     => __( 'Set role to %role%', 'yaywholesale' ),
-    'result'      => __( 'Role is now %role%', 'yaywholesale' ),
+    'summary'     => __( 'Set role to {{ config.role }}', 'yaywholesale' ),
+    'result'      => __( 'Role is now {{ output.role }}', 'yaywholesale' ),
     'outputs'     => [ 'role' => [ 'label' => __( 'New role', 'yaywholesale' ), 'type' => 'enum' ] ],
     'run'         => [ $this, 'run_set_role' ],
 ] );
@@ -221,7 +225,7 @@ public function run_set_role( array $config, $run ) {
 | `outputs` | no | `[ key => [ 'label', 'type', 'options'? ] ]` — readable by later steps at `steps.<node>.<key>`; only declared keys are stored (Executor.php:263) |
 | `sample_outputs` | no | `fn( array $config ): array` for previews of later steps |
 | `on_error` | no | `'stop'` (default) or `'continue'` |
-| `result` | no | Run-detail line with `%output%` / `%field%` placeholders, e.g. `'Sent to %to%'`; default the `summary` (runResults.ts:100) |
+| `result` | no | Run-detail line; its only placeholders are `{{ output.<key> }}` and `{{ config.<field> }}` (a select reads as its option's label), e.g. `'Sent to {{ output.to }}'`; default the `summary` (runResults.ts:100) |
 | `emits` | no | Trigger ids this action can set off; the editor warns (`may_refire`) when one is its workflow's own trigger. The runtime loop guard needs none: a run never restarts its own workflow through its own events |
 | `email` | no | Email capability, §5.5 |
 | `editor` | no | Iframe editor, §5.6 |
@@ -263,7 +267,8 @@ Rules:
 - **Order of rendering:** the plugin renders its own blocks / shortcodes in `build` → core renders YayMatik merge tags → core adds the unsubscribe footer if the HTML has no `unsubscribe_url()` → send. Merge tags inside the plugin's design are not seen by YayMatik's Validator: a wrong tag renders empty (accepted, Q4b).
 - **`build` runs in a background job** (Action Scheduler) when a run sends: no request, no logged-in user, no global `$post`. Blocks and shortcodes take the order / customer from `$run->order()` / `$run->user()`, never from globals. Preview runs in the admin and can hide this bug: test a real run.
 - **No order needed:** an email action works with any trigger. Say what a design needs through `validate( $config, $available )` (order blocks need `order` in `$available`).
-- **Unsubscribe link:** put `$run->unsubscribe_url()` in your footer (`#` in Preview / Send test; `$run->is_test()` is true in Send test). If the HTML doesn't contain it, core inserts the standard footer before `</body>` (or at the end when `wrap` is true). (Q6, agreed)
+- **Unsubscribe link:** put `$run->unsubscribe_url()` in your footer (`#` in Preview / Send test; `$run->is_test()` is true in Send test). If the HTML doesn't contain it, core inserts the standard footer before `</body>` (or at the end when `wrap` is true). In Preview / Send test, where the link is `#` and a design may use `#` elsewhere, core goes by whether `build` called `unsubscribe_url()`. (Q6, agreed)
+- **Recipient** `'customer'` makes the action need the `customer` data item, as if `requires` listed it: the picker and Activate say so on a trigger without one.
 - **HTML trust:** email HTML from `build` is **not** run through kses — it comes from the plugin's own PHP, like a WooCommerce email, and a full document needs `<style>` / `<head>`. kses applies to values core inserts into **other** emails (data-field `display` HTML, block values; proposal N3). (Q7, agreed)
 - `build` runs inside the isolation of §9: a throw → Preview shows the error, a run step Fails with "Couldn't build the email." + diagnostic.
 - Plugins that only re-send their own WooCommerce emails need nothing: core **Resend WooCommerce email** + filter `yaymatik_resendable_emails` already sends any `WC_Email` (ResendWcEmail.php:18), which YayMail already styles. **[Likely]**
@@ -279,7 +284,7 @@ Rules:
 ```
 
 - The URL **must be same-origin** with the admin (`admin_url()`). `url` is a callable, so core checks its result each time it builds the URL: another origin is refused + diagnostic (at registration core only checks that `url` is callable). No cross-origin editors in v1 (no SaaS), so origin checks are exact. **[Certain]** on the browser rule; **[Likely]** that this fits YayMail / YayMagic (both are WP admin apps).
-- `$ctx`: `value` (current reference, `''` when none), `workflow_id`, `node_id`, `step` (id), `config` (unsaved config). Core appends `yaymatik_embed=1&yaymatik_channel=<random>`.
+- `$ctx`: `value` (current reference, `''` when none), `workflow_id`, `node_id`, `step` (id), `config` (unsaved config). Core appends `yaymatik_embed=1&yaymatik_channel=<random>`. Another origin, a throw or a non-string → the editor doesn't open ("This step's editor couldn't be opened.") + diagnostic.
 - Core opens the URL in a **full-screen modal** iframe (no `sandbox`: the page is the plugin's own trusted admin page; WP admin's `X-Frame-Options: SAMEORIGIN` allows it).
 
 **postMessage schema v1** — every message is `{ source: 'yaymatik-editor', version: 1, channel, type, … }`:
@@ -346,7 +351,7 @@ $m->template( 'yaymail_order_paid_email', [
     'name'        => __( 'Thank-you email designed in YayMail', 'yaymail' ),
     'description' => __( '…', 'yaymail' ),
     'category'    => 'post_purchase',            // core template categories: recover_carts, post_purchase, customer_lifecycle, alerts
-    'workflow'    => 'yaymail_thank_you',        // optional, default the template id; groups versions ("Other versions")
+    'workflow'    => 'yaymail_thank_you',        // optional, default the template id; groups versions ("Other versions"); starts with the module id + _
     'created'     => '2026-12-01',               // "Newest" sort
     'before'      => [ __( 'Design the email in YayMail after you add the template.', 'yaymail' ) ], // "Before you start" lines
     'steps'       => [
@@ -361,11 +366,11 @@ $m->template( 'yaymail_order_paid_email', [
 ] );
 ```
 
-- **Chain format**, not nodes / edges / positions: core builds the graph and lays it out (as TS `flow.ts` does for core templates). A condition takes `then` / `otherwise`.
+- **Chain format**, not nodes / edges / positions: core builds the graph and lays it out (as TS `flow.ts` does for core templates). A condition takes `then` / `otherwise` and ends its list: the steps after it go under those. Each step has an `id`, unique in the template (lowercase letters, digits, `_` or `-`).
 - A template may use **core public steps (§12)** and **its own module's steps** only. Templates that combine two plugins belong to YayMatik Pro (design P2).
 - Ready content (subject / body) is translated by the plugin with its own text domain (J8). Store-specific values are never baked in at registration (proposal finding 5): use a variable, or leave the field blank where core fills it at run time (high-value alert: blank recipients = the admin email).
-- Core checks each template **on the server** with the same checks as Use template / Activate (`GraphSchema::prepare` + `Validator::errors`). A template is hidden + diagnostic (under `WP_DEBUG` also `_doing_it_wrong()`) when `prepare` fails or it has a structural issue: no trigger, no action, an unlinked or unknown step, missing data, an unknown variable. A step that still needs setup (`setup_issue`, cart tracking off, a required field the template leaves empty) keeps it shown: Use template creates the draft, and Activate is blocked until the step is set up.
-- Browse templates shows each module's templates in **its own group with the plugin's name and logo** (`pluginsOf`, plugins.ts:6). Templates of an inactive plugin are not shown.
+- Core checks each template **on the server** with the same checks as Use template / Activate (`GraphSchema::prepare` + `Validator::errors`). A template is hidden + diagnostic (under `WP_DEBUG` also `_doing_it_wrong()`) when `prepare` fails or it has a structural issue: no trigger, no action, an unlinked or unknown step, missing data, an unknown variable. A step that still needs setup (`setup_issue`, cart tracking off, a required field the template leaves empty) keeps it shown: Use template creates the draft, and Activate is blocked until the step is set up. The check runs when the plugin's steps or templates change, not on every page load.
+- Browse templates shows a module's templates **in the main grid with core's**, each card with its plugins' logos (`pluginsOf`, plugins.ts:6), in the chosen sort (Most popular: after core's). There is no group heading; the **plugin filter** finds them. Templates of an inactive plugin are not shown.
 
 ## 8. Privacy
 
@@ -439,7 +444,7 @@ Core categories: triggers `order`, `cart`, `customer`, `review`; actions `email`
 | | Item | Gain | Cost |
 |---|---|---|---|
 | Keep | Server-driven fields (no JS for forms) | Extensions need no build step | Complex forms need the iframe |
-| Keep | Module = plugin, logo as one-colour SVG mask | Picker / template groups by plugin | — |
+| Keep | Module = plugin, logo as one-colour SVG mask | Picker groups by plugin; library plugin filter | — |
 | Keep | `StepResult` statuses, Executor's per-step catch, active-trigger listening, first-owner ids | Proven in 1.0 | — |
 | Keep | Refs-only scope, JSON-safe args, loop guard, run ceiling | Same runtime rules for everyone | — |
 | Fix | Inheritance contract → arrays, one `do_action`, one `Run` object; core adapters | Core refactors never fatal an extension; a plugin needs no YayMatik class but `Run` | Adapter layer to maintain; less freedom than subclasses |
@@ -500,7 +505,7 @@ Result: every listed need maps to a contract piece; the gaps are on the plugins'
 | Split | Two PRs (§17) |
 
 ## 16. Changelog
-- 1.0.0 (YayMatik 1.1): first stable version.
+- 1.0.0 (YayMatik 1.0): first stable version. `yaymatik_register` (`Registrar`, `Module`: triggers, actions, data items, data fields, categories, templates), `yaymatik_fire`, `Run`, `CustomerView`, `CartView`, `Api::VERSION`, `Api::references()`. Features: `triggers`, `actions`, `data_items`, `data_fields`, `trigger_facts`, `privacy_subjects`, `email`, `templates`, `editor_iframe`. postMessage schema v1. Example: `dev/example-extension/`. A plugin's templates share the library grid with core's (no group heading), found by the plugin filter. Placeholders in `summary` / `result` / `required` are `{{ config.<field> }}`, `{{ output.<key> }}` and `{{ step }}` (§5.2).
 
 ## 17. Checkpoints and PRs
 

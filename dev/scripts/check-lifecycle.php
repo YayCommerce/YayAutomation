@@ -594,17 +594,30 @@ $welcome_graph = [
         ],
     ],
 ];
-$preview       = EmailPreview::render(
-    json_decode( wp_json_encode( $welcome_graph ), true ),
-    'mail',
-    [
-        'to'      => '{{ customer.email }}',
-        'subject' => 'Welcome to {{ site.name }}',
-        'heading' => 'Welcome',
-        'message' => '<p>Hi {{ customer.first_name }},</p><p>{{ site.welcome_links }}</p>',
-    ]
-);
+$welcome_mail  = [
+    'to'      => '{{ customer.email }}',
+    'subject' => 'Welcome to {{ site.name }}',
+    'heading' => 'Welcome',
+    'message' => '<p>Hi {{ customer.first_name }},</p><p>{{ site.welcome_links }}</p>',
+];
+$preview       = EmailPreview::render( json_decode( wp_json_encode( $welcome_graph ), true ), 'mail', $welcome_mail, 0 );
 $ok( ! is_wp_error( $preview ) && true === $preview['sample'] && false !== strpos( $preview['html'], 'Hi Jane,' ) && false !== strpos( $preview['subject'], wp_specialchars_decode( get_bloginfo( 'name' ), ENT_QUOTES ) ) && false !== strpos( $preview['html'], esc_url( $account ) ), 'preview of a customer email: sample data, Jane, the real site name and links' );
+// Without a sample asked for, a customer-only trigger previews the newest customer account (made-up data when there is none).
+$newest_customer = get_users(
+    [
+        'role'    => 'customer',
+        'orderby' => 'registered',
+        'order'   => 'DESC',
+        'number'  => 1,
+    ]
+)[0] ?? null;
+$preview         = EmailPreview::render( json_decode( wp_json_encode( $welcome_graph ), true ), 'mail', $welcome_mail );
+$ok(
+    ! is_wp_error( $preview ) && ( $newest_customer
+        ? false === $preview['sample'] && $newest_customer->display_name === $preview['customer'] && false !== strpos( $preview['html'], 'Hi ' . esc_html( $newest_customer->first_name ) . ',' )
+        : true === $preview['sample'] ),
+    'preview of a customer email: the newest customer account, by name'
+);
 
 // High-value alert: the template's trigger and condition on real orders.
 $alert_flow = $new_flow(

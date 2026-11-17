@@ -56,7 +56,7 @@ final class HealthCheck {
      * Active workflows with a step of a plugin that isn't active: they keep running and skip it. No fix.
      *
      * @param array[] $workflows `WorkflowStore::all()`.
-     * @return array The check, with `workflowIds` and `plugins` (labels).
+     * @return array The check, with `workflows` (`id`, `name`) and `plugins` (labels).
      */
     public static function missing_plugin( array $workflows ): array {
         $ids     = [];
@@ -69,19 +69,26 @@ final class HealthCheck {
                 $block    = (string) ( $node['data']['block'] ?? '' );
                 $inactive = '' === $block ? null : StepIndex::inactive( $block );
                 if ( $inactive ) {
-                    $ids[ (string) $workflow['id'] ] = true;
+                    $ids[ (string) $workflow['id'] ] = (string) ( $workflow['name'] ?? '' );
                     $plugins[ $inactive['plugin'] ]  = true;
                 }
             }
         }
         return [
-            'id'          => 'missing_plugin',
-            'status'      => $ids ? 'problem' : 'ok',
-            'count'       => count( $ids ),
-            'runIds'      => [],
-            'fix'         => null,
-            'workflowIds' => array_map( 'strval', array_keys( $ids ) ),
-            'plugins'     => array_keys( $plugins ),
+            'id'        => 'missing_plugin',
+            'status'    => $ids ? 'problem' : 'ok',
+            'count'     => count( $ids ),
+            'runIds'    => [],
+            'fix'       => null,
+            'workflows' => array_map(
+                fn( $id, string $name ) => [
+                    'id'   => (string) $id,
+                    'name' => $name,
+                ],
+                array_keys( $ids ),
+                $ids
+            ),
+            'plugins'   => array_keys( $plugins ),
         ];
     }
 

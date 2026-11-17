@@ -37,8 +37,8 @@ class CustomerOrderCountReaches extends CustomerMilestone {
     }
 
     public function summary(): string {
-        /* translators: %count%: number of paid orders; keep the placeholder as it is. */
-        return __( 'When a customer reaches %count% paid orders', 'yaymatik' );
+        /* translators: {{ config.count }}: number of paid orders; keep {{ … }} as it is. */
+        return __( 'When a customer reaches {{ config.count }} paid orders', 'yaymatik' );
     }
 
     /**

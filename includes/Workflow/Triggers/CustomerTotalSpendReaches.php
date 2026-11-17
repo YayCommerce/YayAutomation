@@ -36,8 +36,8 @@ class CustomerTotalSpendReaches extends CustomerMilestone {
     }
 
     public function summary(): string {
-        /* translators: %amount%: an amount of money; keep the placeholder as it is. */
-        return __( 'When a customer’s total spent reaches %amount%', 'yaymatik' );
+        /* translators: {{ config.amount }}: an amount of money; keep {{ … }} as it is. */
+        return __( 'When a customer’s total spent reaches {{ config.amount }}', 'yaymatik' );
     }
 
     protected function progress( array $context ): array {

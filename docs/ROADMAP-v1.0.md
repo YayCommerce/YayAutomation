@@ -299,7 +299,7 @@ Picked Oct 26 and Nov 9 (WordPress.org submission). The acceptance list is `.cla
 | First-run onboarding | No |
 | User documentation | No |
 
-**API freeze:** v1.0 ships its hooks and actions as experimental; Extension API v1 in v1.1 freezes the public surface: [extension-api.md](extension-api.md). Classes under `YayMatik\Workflow\` are internal. See [workflow-core-design.md §8](workflow-core-design.md).
+**API freeze:** Extension API v1 ships in v1.0 and freezes the public surface: [extension-api.md](extension-api.md). The other hooks and actions stay internal or experimental (its §11). Classes under `YayMatik\Workflow\` are internal. See [workflow-core-design.md §8](workflow-core-design.md).
 
 ## Main risks
 

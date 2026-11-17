@@ -137,9 +137,10 @@ export type TemplateCategory = 'recover_carts' | 'post_purchase' | 'customer_lif
 
 /**
  * The workflow a template is a version of (e.g. the abandoned cart versions). Versions show each
- * other under "Other versions"; "Most popular" sorts by workflow.
+ * other under "Other versions"; "Most popular" sorts by workflow. Another plugin's template names its own.
  */
 export type TemplateWorkflow =
+  | (string & {})
   | 'abandoned_cart'
   | 'abandoned_checkout'
   | 'first_order_thank_you'
@@ -159,6 +160,10 @@ export interface WorkflowTemplate {
   /** ISO date. Sort key for "Newest". */
   createdAt: string;
   graph: WorkflowGraph;
+  /** Another plugin's template (PHP `Module::template()`): its module id, for its own group in the library. */
+  plugin?: WorkflowPlugin;
+  /** "Before you start" lines the plugin wrote. */
+  before?: string[];
 }
 
 /** Codes shared by the TS `validateWorkflow()` and PHP `Validator::errors()`. */
@@ -191,7 +196,7 @@ export interface WorkflowIssue {
 export interface EmailPreview {
   subject: string;
   heading: string;
-  /** The whole email (WooCommerce wrapper, styles inlined), for an iframe. */
+  /** The whole email as sent (WooCommerce wrapper with styles inlined, or a plugin's own document), for an iframe. */
   html: string;
   /** Who it goes to, variables filled in. */
   to: string;
@@ -199,6 +204,8 @@ export interface EmailPreview {
   sample: boolean;
   /** The number of the order whose data it shows; null with made-up values. */
   order: string | null;
+  /** A trigger with a customer but no order or cart: the account whose data it shows; else null. */
+  customer: string | null;
   /** Product grids the email shows filled with the store's newest products: no recent order has any. */
   sampleProducts: ProductGridKind[];
 }

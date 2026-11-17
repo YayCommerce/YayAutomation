@@ -1,6 +1,7 @@
 <?php
 namespace YayMatik\Workflow\Core\Steps;
 
+use YayMatik\Workflow\Core\Data\Template;
 use YayMatik\Workflow\Core\Definition\Catalog;
 use YayMatik\Workflow\Core\Definition\Messages;
 
@@ -35,7 +36,7 @@ final class Field {
     /** @var bool */
     private $required = false;
 
-    /** @var string What a blank required field says; `%s` is the step's label. */
+    /** @var string What a blank required field says; `{{ step }}` is the step's label. */
     private $required_message = '';
 
     /** @var bool Accepts merge tags. */
@@ -199,7 +200,7 @@ final class Field {
     /**
      * Must not be blank.
      *
-     * @param string $message `%s` is the step's label, filled when shown so a renamed step never leaves a stale name; '' = a generic one.
+     * @param string $message `{{ step }}` is the step's label, filled when shown so a renamed step never leaves a stale name; '' = a generic one.
      */
     public function required( string $message = '' ): self {
         $this->required         = true;
@@ -560,7 +561,7 @@ final class Field {
     private function required_text( string $step ): string {
         return '' === $this->required_message
             ? Messages::get( 'fieldRequired' )
-            : sprintf( $this->required_message, $step );
+            : ( new Template() )->fill( $this->required_message, [ 'step' => $step ] );
     }
 
     /**

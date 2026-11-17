@@ -6,6 +6,7 @@ import { validateWorkflow } from '../model/validation';
 import { steps } from '../steps';
 import type { WaitConfig } from '../steps/actions/wait/schema';
 import { emailMessage } from './core/email';
+import { workflowRank } from './core/meta';
 import {
   findTemplate,
   needsCartTracking,
@@ -13,7 +14,6 @@ import {
   sendsCustomerEmail,
   templates,
   versionsOf,
-  workflowRank,
 } from './index';
 
 describe('templates', () => {
@@ -45,7 +45,7 @@ describe('templates', () => {
   );
 
   it('ranks "Most popular" by the fixed workflow order', () => {
-    const ranked = Object.entries(workflowRank).sort(([, a], [, b]) => a - b);
+    const ranked = Object.entries(workflowRank).sort(([, a], [, b]) => a! - b!);
     expect(ranked.map(([workflow]) => workflow)).toEqual([
       'abandoned_cart',
       'abandoned_checkout',

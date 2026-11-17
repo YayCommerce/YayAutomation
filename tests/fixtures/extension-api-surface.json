@@ -4,7 +4,9 @@
         "constants": {
             "VERSION": "1.0.0"
         },
-        "methods": []
+        "methods": {
+            "references": "static (string $step_id, string $field): array"
+        }
     },
     "YayMatik\\Api\\CartView": {
         "kind": "interface",
@@ -38,6 +40,7 @@
             "data_fields": "(string $item_id, array $fields): bool",
             "data_item": "(string $id, array $args): bool",
             "ok": "(): bool",
+            "template": "(string $id, array $args): bool",
             "trigger": "(string $id, array $args): bool"
         }
     },
@@ -60,10 +63,12 @@
             "fail": "(string $reason)",
             "get": "(string $path)",
             "is_preview": "(): bool",
+            "is_test": "(): bool",
             "item": "(string $id)",
             "order": "()",
             "render": "(string $text, bool $html = false): string",
             "skip": "(string $reason)",
+            "unsubscribe_url": "(): string",
             "user": "()"
         }
     },
@@ -74,7 +79,10 @@
             "data_items",
             "data_fields",
             "trigger_facts",
-            "privacy_subjects"
+            "privacy_subjects",
+            "email",
+            "templates",
+            "editor_iframe"
         ],
         "module_keys": [
             "id",
@@ -108,7 +116,28 @@
             "sample_outputs",
             "on_error",
             "result",
-            "emits"
+            "emits",
+            "email",
+            "editor"
+        ],
+        "email_keys": [
+            "audience",
+            "recipient",
+            "build"
+        ],
+        "editor_keys": [
+            "field",
+            "button",
+            "url"
+        ],
+        "template_keys": [
+            "name",
+            "description",
+            "category",
+            "workflow",
+            "created",
+            "before",
+            "steps"
         ],
         "data_item_keys": [
             "label",

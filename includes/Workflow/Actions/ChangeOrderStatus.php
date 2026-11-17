@@ -59,8 +59,8 @@ class ChangeOrderStatus extends Action {
     }
 
     public function summary(): string {
-        /* translators: %status%: order status; keep the placeholder as it is. */
-        return __( 'Set to %status%', 'yaymatik' );
+        /* translators: {{ config.status }}: order status; keep {{ … }} as it is. */
+        return __( 'Set to {{ config.status }}', 'yaymatik' );
     }
 
     public function outputs(): array {

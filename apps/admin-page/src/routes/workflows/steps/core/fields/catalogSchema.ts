@@ -4,6 +4,7 @@ import { sprintf } from '@wordpress/i18n';
 import type { StepFieldMeta } from '@/types/localize';
 import { messages } from '../../../model/messages';
 import { tagError } from '../data';
+import { fillTemplate } from '../template';
 import type { Config } from '../types';
 import { isWpEmail, splitRecipients } from './email';
 
@@ -68,15 +69,16 @@ const known = (field: StepFieldMeta, values: unknown[]) =>
 
 /**
  * Why one field's value can't be used, or null. Mirrors PHP `Field::validate()`, same messages.
- * `stepLabel` fills the required message's `%s`.
+ * `stepLabel` fills the required message's `{{ step }}`.
  */
 function fieldError(field: StepFieldMeta, config: Config, stepLabel: string): string | null {
   if (field.type === 'notice' || !isFieldVisible(field, config)) return null;
   const value = config[field.key];
   if (isBlank(field, value)) {
     if (!field.required) return null;
-    // The message holds one %s; the cast tells sprintf's types to expect one argument.
-    return field.requiredMessage ? sprintf(field.requiredMessage as '%s', stepLabel) : messages.fieldRequired;
+    return field.requiredMessage
+      ? fillTemplate(field.requiredMessage, (name) => (name === 'step' ? stepLabel : undefined))
+      : messages.fieldRequired;
   }
   switch (field.type) {
     case 'emails': {

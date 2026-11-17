@@ -51,7 +51,7 @@ final class FieldTest extends TestCase {
     }
 
     public function test_an_emptied_rich_editor_is_blank(): void {
-        $field = Field::html( 'message', 'Message' )->required( '%s needs a message.' );
+        $field = Field::html( 'message', 'Message' )->required( '{{ step }} needs a message.' );
 
         $this->assertSame( 'Email needs a message.', $field->validate( '<p>&nbsp;</p>', [], 'Email' ) );
         $this->assertSame( 'Email needs a message.', $field->validate( "<p>\u{00A0}</p><p></p>", [], 'Email' ) );
@@ -372,10 +372,11 @@ final class FieldTest extends TestCase {
     }
 
     public function test_a_required_message_names_the_step(): void {
-        $field = Field::textarea( 'note', 'Note' )->required( '%s needs a note.' );
+        $field = Field::textarea( 'note', 'Note' )->required( '{{ step }} needs a note.' );
 
         $this->assertSame( 'Add order note needs a note.', $field->validate( '', [], 'Add order note' ) );
-        $this->assertSame( '%s needs a note.', $field->to_array()['requiredMessage'], 'the catalog gets the template' );
+        $this->assertSame( '100% {{ step }} needs a note.', $field->validate( '', [], '100% {{ step }}' ), 'the label is never parsed again' );
+        $this->assertSame( '{{ step }} needs a note.', $field->to_array()['requiredMessage'], 'the catalog gets the template' );
         $this->assertArrayNotHasKey( 'requiredMessage', Field::text( 'a', 'A' )->required()->to_array() );
         $this->assertSame( 'This field is required.', Field::text( 'a', 'A' )->required()->validate( '' ), 'without a message' );
     }

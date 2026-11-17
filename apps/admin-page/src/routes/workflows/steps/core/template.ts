@@ -66,6 +66,15 @@ export function parseTemplate(text: string): TemplateToken[] {
   return tokens;
 }
 
+/** A tag's name as a placeholder: `{{ config.status }}` → `config.status`, `{{ step }}` → `step`. */
+const placeholderName = (raw: string) => trim(raw.slice(2, -2));
+
+/** Fills `{{ name }}` placeholders in catalog text, never re-parsing a value; PHP `Template::fill()`. */
+export const fillTemplate = (text: string, fill: (name: string) => string | undefined) =>
+  parseTemplate(text)
+    .map((token) => (token.type === 'text' ? token.text : (fill(placeholderName(token.raw)) ?? token.raw)))
+    .join('');
+
 /** Paths of the well-formed tags, in order, without duplicates. */
 export const templatePaths = (text: string) => [
   ...new Set(

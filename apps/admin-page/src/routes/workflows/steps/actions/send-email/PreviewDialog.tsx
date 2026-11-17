@@ -75,7 +75,13 @@ export function PreviewDialog({
                           __('Order #%s data · nothing is sent', 'yaymatik'),
                           preview.order,
                         )
-                      : __('Nothing is sent', 'yaymatik')}
+                      : preview.customer
+                        ? sprintf(
+                            /* translators: %s: customer name */
+                            __('Customer %s data · nothing is sent', 'yaymatik'),
+                            preview.customer,
+                          )
+                        : __('Nothing is sent', 'yaymatik')}
                 </DialogDescription>
                 {!preview.sample && preview.sampleProducts.length > 0 && (
                   <span className="bg-warning-soft text-warning-soft-foreground truncate rounded-full px-2 py-0.5 text-[11px] font-semibold">

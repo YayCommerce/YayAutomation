@@ -6,6 +6,7 @@ import { changeOrderStatusStep } from './actions/change-order-status';
 import { generateCouponStep } from './actions/generate-coupon';
 import { resendWcEmailStep } from './actions/resend-wc-email';
 import { sendEmailStep } from './actions/send-email';
+import { EmailActions } from './actions/send-email/EmailActions';
 import { sendInternalEmailStep } from './actions/send-internal-email';
 import { updateCustomerMetaStep } from './actions/update-customer-meta';
 import { updateOrderMetaStep } from './actions/update-order-meta';
@@ -13,6 +14,7 @@ import { waitStep } from './actions/wait';
 import { waitUntilStep } from './actions/wait-until';
 import { criteriaStep } from './conditions/criteria';
 import { defineStep } from './core/defineStep';
+import { editorFooter } from './core/fields/EditorFrame';
 import { createRegistry } from './core/registry';
 import { cartAbandonedStep } from './triggers/cart-abandoned';
 import { checkoutAbandonedStep } from './triggers/checkout-abandoned';
@@ -57,11 +59,18 @@ const coreSteps = [
   waitUntilStep,
 ];
 
-/** Another plugin's triggers and actions: PHP only, so their form and checks come from their catalog fields. */
+/** Another plugin's steps, from the catalog: an email action gets Preview / Send test, an `editor` its button. */
 const coreIds = new Set<string>(coreSteps.map((stepDef) => stepDef.id));
 const moduleSteps = Object.entries(window.yayMatikMeta.automation.steps)
   .filter(([id, meta]) => !coreIds.has(id) && (meta?.kind === 'trigger' || meta?.kind === 'action'))
-  .map(([id, meta]) => defineStep({ id: id as StepId, kind: meta!.kind }));
+  .map(([id, meta]) =>
+    defineStep({
+      id: id as StepId,
+      kind: meta!.kind,
+      ...(meta?.email ? { Actions: EmailActions } : {}),
+      ...(meta?.editor ? { Footer: editorFooter(id, meta.editor, meta.label) } : {}),
+    }),
+  );
 
 /**
  * Every step the editor knows. To add a core one: create its folder under triggers/, conditions/ or

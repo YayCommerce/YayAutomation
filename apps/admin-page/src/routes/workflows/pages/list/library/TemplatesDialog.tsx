@@ -15,7 +15,7 @@ import { PluginIcon, plugins } from '../../../shared/ui/PluginIcon';
 import { WarningBadge } from '../../../shared/ui/WarningBadge';
 import { stepOf } from '../../../steps';
 import { StepTile } from '../../../steps/core/StepTile';
-import { categoryLabels, needsCartTracking, pluginsOf, templates, workflowRank } from '../../../templates';
+import { categoryLabels, needsCartTracking, pluginsOf, rankOf, templates } from '../../../templates';
 import { usesAnyOf } from './filter';
 import { countLabel, FilterChip, LibrarySidebar } from './LibraryFilters';
 import { SearchInput } from './SearchInput';
@@ -30,7 +30,7 @@ const sortOptions: { value: SortKey; label: string }[] = [
 
 const compare: Record<SortKey, (a: WorkflowTemplate, b: WorkflowTemplate) => number> = {
   // Versions of one workflow keep their list order (a stable sort).
-  popular: (a, b) => workflowRank[a.workflow] - workflowRank[b.workflow],
+  popular: (a, b) => rankOf(a.workflow) - rankOf(b.workflow),
   newest: (a, b) => b.createdAt.localeCompare(a.createdAt),
   name: (a, b) => a.name.localeCompare(b.name),
 };
@@ -173,16 +173,22 @@ function TemplateLibrary() {
               onClearFilters={clearFilters}
             />
           ) : (
-            // As many 280px+ columns as fit, at most 4 (3 gaps of 1rem).
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(max(280px,calc((100%-3rem)/4)),1fr))] gap-4">
-              {visible.map((template) => (
-                <TemplateCard key={template.id} template={template} />
-              ))}
-            </div>
+            <TemplateGrid templates={visible} />
           )}
         </div>
       </div>
     </>
+  );
+}
+
+/** As many 280px+ columns as fit, at most 4 (3 gaps of 1rem). */
+function TemplateGrid({ templates: list }: { templates: WorkflowTemplate[] }) {
+  return (
+    <div className="grid grid-cols-[repeat(auto-fill,minmax(max(280px,calc((100%-3rem)/4)),1fr))] gap-4">
+      {list.map((template) => (
+        <TemplateCard key={template.id} template={template} />
+      ))}
+    </div>
   );
 }
 

@@ -162,13 +162,28 @@ final class MissingPluginTest extends TestCase {
     }
 
     public function test_health_check_lists_active_workflows_using_it(): void {
-        $workflow = fn( int $id, string $status ) => [
+        $workflow = fn( int $id, string $status, string $name = '' ) => [
             'id'     => (string) $id,
+            'name'   => $name,
             'status' => $status,
             'graph'  => self::graph(),
         ];
-        $check    = HealthCheck::missing_plugin( [ $workflow( 3, 'active' ), $workflow( 4, 'inactive' ), $workflow( 5, 'draft' ), $workflow( 6, 'active' ) ] );
+        $check    = HealthCheck::missing_plugin( [ $workflow( 3, 'active', 'Points thank-you' ), $workflow( 4, 'inactive' ), $workflow( 5, 'draft' ), $workflow( 6, 'active' ) ] );
 
-        $this->assertSame( [ 'problem', 2, [ '3', '6' ], [ 'Acme Rewards' ], null ], [ $check['status'], $check['count'], $check['workflowIds'], $check['plugins'], $check['fix'] ] );
+        $this->assertSame( [ 'problem', 2, [ 'Acme Rewards' ], null ], [ $check['status'], $check['count'], $check['plugins'], $check['fix'] ] );
+        $this->assertSame(
+            [
+                [
+                    'id'   => '3',
+                    'name' => 'Points thank-you',
+                ],
+                [
+                    'id'   => '6',
+                    'name' => '',
+                ],
+            ],
+            $check['workflows'],
+            'the panel names each, "Workflow #6" when it has no name'
+        );
     }
 }

@@ -2,6 +2,7 @@ import { act } from 'react';
 import { focusManager, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { HealthCheck, HealthChecksResponse, HealthExtension, HealthFixResponse } from '@yaymatik/types';
 import { createRoot, type Root } from 'react-dom/client';
+import { MemoryRouter } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { toast } from '@/components/ui/sonner';
@@ -71,11 +72,14 @@ const tick = (ms = 0) => act(() => new Promise((resolve) => setTimeout(resolve, 
 async function render(checks: HealthCheck[], extensions: HealthExtension[] = []) {
   vi.mocked(getHealthChecks).mockResolvedValue(scan(checks, extensions));
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  // A router for the rows that link to a workflow.
   await act(async () =>
     root.render(
-      <QueryClientProvider client={client}>
-        <HealthPanel />
-      </QueryClientProvider>,
+      <MemoryRouter>
+        <QueryClientProvider client={client}>
+          <HealthPanel />
+        </QueryClientProvider>
+      </MemoryRouter>,
     ),
   );
   await tick();
@@ -348,6 +352,28 @@ describe('HealthPanel', () => {
     await tick();
     expect(container.querySelector('[role="alert"]')).toBeNull();
     expect(titles()).toEqual(['The daily cleanup isn’t running on time']);
+  });
+
+  it('names each active workflow using a plugin that is off, "Workflow #id" when it has no name', async () => {
+    await render([
+      ...allOk,
+      {
+        id: 'missing_plugin',
+        status: 'problem',
+        count: 2,
+        runIds: [],
+        fix: null,
+        plugins: ['Acme Rewards'],
+        workflows: [
+          { id: '3', name: 'Points thank-you' },
+          { id: '6', name: '' },
+        ],
+      },
+    ]);
+
+    const links = [...container.querySelectorAll('a')].map((a) => [a.textContent, a.getAttribute('href')]);
+    expect(links).toContainEqual(['Points thank-you', '/workflows/3']);
+    expect(links).toContainEqual(['Workflow #6', '/workflows/6']);
   });
 
   it('says no other plugin adds to YayMatik when no module is listed', async () => {

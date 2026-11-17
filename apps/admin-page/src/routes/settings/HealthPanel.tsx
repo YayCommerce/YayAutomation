@@ -331,9 +331,9 @@ function MissingPluginRow({ check }: { check: HealthCheck }) {
       )}
       extra={
         <span className="flex flex-wrap gap-x-3 gap-y-1 text-sm">
-          {(check.workflowIds ?? []).map((id) => (
+          {(check.workflows ?? []).map(({ id, name }) => (
             <Link key={id} to={`/workflows/${id}`} className="text-link font-medium hover:underline">
-              {/* translators: %s: workflow id */ sprintf(__('Workflow #%s', 'yaymatik'), id)}
+              {name || /* translators: %s: workflow id */ sprintf(__('Workflow #%s', 'yaymatik'), id)}
             </Link>
           ))}
           <a href={`${window.yayMatikMeta.wp.adminUrl}plugins.php`} className="text-link font-medium hover:underline">

@@ -13,13 +13,13 @@ defined( 'ABSPATH' ) || exit;
 trait ExtensionStep {
 
     /** @var string */
-    private $module;
+    protected $module;
 
     /** @var string */
-    private $id;
+    protected $id;
 
     /** @var array From `Declaration`. */
-    private $args;
+    protected $args;
 
     public function id(): string {
         return $this->id;

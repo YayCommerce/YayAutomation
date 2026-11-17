@@ -3,7 +3,7 @@ import { __, sprintf } from '@wordpress/i18n';
 import type { StepFieldMeta } from '@/types/localize';
 import { pathLabel } from './data';
 import { PLACEHOLDER, value } from './marks';
-import { parseTemplate } from './template';
+import { fillTemplate, parseTemplate } from './template';
 import type { Config } from './types';
 
 /** Writes one summary placeholder for a step: returns marked text (`value()`, `PLACEHOLDER`); blank → `PLACEHOLDER`. */
@@ -60,8 +60,8 @@ function fieldText(field: StepFieldMeta, raw: unknown, trigger?: string | null):
 }
 
 /**
- * Card text from PHP's summary template (`Step::summary()`, e.g. "Change the order status to
- * %status%"): each `%key%` becomes that field's value in bold, or the italic "Not set" when blank.
+ * Card text from PHP's summary template (`Step::summary()`, e.g. "Set to {{ config.status }}"):
+ * each `{{ config.<key> }}` becomes that field's value in bold, or the italic "Not set" when blank.
  * A blank multiselect means "any", so it shows its placeholder (e.g. "Any status") instead.
  * `values` writes keys a field can't describe on its own (a condition's rules).
  */
@@ -72,11 +72,14 @@ export function renderSummary<TConfig extends Config>(
   values: SummaryValues<TConfig> = {},
   trigger?: string | null,
 ) {
-  return template.replace(/%([a-z_]+)%/g, (whole, key: string) => {
-    const custom = values[key as Extract<keyof TConfig, string>];
+  return fillTemplate(template, (name) => {
+    if (!name.startsWith('config.')) return undefined;
+    const key = name.slice('config.'.length);
+    // Own keys only: `{{ config.constructor }}` must not reach Object.prototype.
+    const custom = Object.hasOwn(values, key) ? values[key as Extract<keyof TConfig, string>] : undefined;
     if (custom) return custom(config, trigger) || PLACEHOLDER;
     const field = fields.find((f) => f.key === key);
-    if (!field) return whole;
+    if (!field) return undefined;
     const text = fieldText(field, config[key], trigger);
     return value(text || (field.type === 'multiselect' ? (field.placeholder ?? '') : ''));
   });

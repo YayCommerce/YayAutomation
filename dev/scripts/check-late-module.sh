@@ -151,7 +151,7 @@ foreach ( WorkflowStore::all() as $workflow ) {
         $flow = (int) $workflow["id"];
     }
 }
-$ok( in_array( (string) $flow, HealthCheck::missing_plugin( WorkflowStore::all() )["workflowIds"], true ), "plugin off: Health check lists the active workflow" );
+$ok( in_array( (string) $flow, array_column( HealthCheck::missing_plugin( WorkflowStore::all() )["workflows"], "id" ), true ), "plugin off: Health check lists the active workflow" );
 WorkflowStore::deactivate( $flow );
 $graph   = WorkflowStore::find( $flow )["graph"];
 $request = new WP_REST_Request( "PUT", "/yaymatik/v1/workflows/{$flow}" );

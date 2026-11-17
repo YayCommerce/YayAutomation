@@ -3,7 +3,7 @@ import type { StepId, WorkflowNodeKind, WorkflowPlugin } from '@yaymatik/types';
 import type { LucideIcon } from 'lucide-react';
 import type * as v from 'valibot';
 
-import type { StepMeta, StepOutputMeta } from '@/types/localize';
+import type { CatalogStepMeta, StepMeta, StepOutputMeta } from '@/types/localize';
 import type { SummaryValues } from './summary';
 
 export type Config = Record<string, unknown>;
@@ -28,7 +28,7 @@ export interface StepSpec<TConfig extends Config> {
   uses?: (config: TConfig) => string[];
   /** Checks that need the workflow's trigger (its step id). Mirrors the PHP step's `context_error()`. */
   contextIssue?: (config: TConfig, trigger: string) => { message: string; field?: string } | null;
-  /** Catalog summary placeholders a field can't write on its own (e.g. a condition's `%rules%`). */
+  /** Catalog summary placeholders a field can't write on its own (e.g. a condition's `{{ config.rules }}`). */
   summaryValues?: SummaryValues<TConfig>;
   /** A custom form, for what catalog fields can't draw. */
   Form?: ComponentType<StepFormProps<TConfig>>;
@@ -52,6 +52,8 @@ export interface Step {
   /** What later steps can read at `steps.<id>.<key>`. */
   outputs: StepOutputMeta[];
   category?: StepMeta['category'];
+  /** Sends an email (PHP `EmailStep`): `customer` has an unsubscribe link, `staff` none. */
+  email?: CatalogStepMeta['email'];
   defaults: () => Config;
   normalize: (config: Config) => Config;
   /** With the workflow's trigger (its step id), also the checks that need it. */

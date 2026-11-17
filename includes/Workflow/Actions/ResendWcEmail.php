@@ -56,14 +56,14 @@ class ResendWcEmail extends Action {
     public function fields(): array {
         return [
             Field::select( 'email', __( 'Email', 'yaymatik' ), [ self::class, 'emails' ] )
-                /* translators: %s: step name, e.g. "Resend WooCommerce email" */
-                ->required( __( '%s needs an email.', 'yaymatik' ) ),
+                /* translators: {{ step }}: step name, e.g. "Resend WooCommerce email"; keep {{ … }} as it is. */
+                ->required( __( '{{ step }} needs an email.', 'yaymatik' ) ),
         ];
     }
 
     public function summary(): string {
-        /* translators: %email%: a WooCommerce email's name, e.g. "Completed order"; keep the placeholder as it is. */
-        return __( 'Resend %email%', 'yaymatik' );
+        /* translators: {{ config.email }}: a WooCommerce email's name, e.g. "Completed order"; keep {{ … }} as it is. */
+        return __( 'Resend {{ config.email }}', 'yaymatik' );
     }
 
     public function outputs(): array {

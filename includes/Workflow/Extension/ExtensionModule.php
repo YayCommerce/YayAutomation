@@ -48,6 +48,12 @@ final class ExtensionModule extends Module {
     /** @var ExtensionDataItem[] By id. */
     private $data_items = [];
 
+    /** @var array[] By id. */
+    private $templates = [];
+
+    /** @var array[] Field keys this module added, by data item id. */
+    private $data_fields = [];
+
     /**
      * @param string        $id
      * @param string        $label
@@ -122,6 +128,37 @@ final class ExtensionModule extends Module {
         return $this->data_items;
     }
 
+    /** @return array[] Field keys this module added to data items, by item id. */
+    public function data_fields(): array {
+        return $this->data_fields;
+    }
+
+    /** @return array[] Template args from `Declaration::template()`, by id. */
+    public function templates(): array {
+        return $this->templates;
+    }
+
+    /**
+     * @param string $id
+     * @param array  $args
+     */
+    public function add_template( string $id, array $args ): bool {
+        if ( ! ( $this->open )() ) {
+            Declaration::too_late( $this->id, "template {$id}" );
+            return false;
+        }
+        if ( isset( $this->templates[ $id ] ) ) {
+            Declaration::refuse( $this->id, "template {$id}", "Template id \"{$id}\" is already declared by this module." );
+            return false;
+        }
+        $args = Declaration::template( $this, $id, $args );
+        if ( null === $args ) {
+            return false;
+        }
+        $this->templates[ $id ] = $args;
+        return true;
+    }
+
     /**
      * @param string $id
      * @param array  $args
@@ -159,6 +196,7 @@ final class ExtensionModule extends Module {
             return false;
         }
         add_filter( "yaymatik_data_item_{$item}_fields", fn( $definitions ) => (array) $definitions + $defs );
+        $this->data_fields[ $item ] = array_merge( $this->data_fields[ $item ] ?? [], array_keys( $defs ) );
         return true;
     }
 
@@ -190,7 +228,7 @@ final class ExtensionModule extends Module {
         if ( null === $args ) {
             return false;
         }
-        $this->actions[ $id ] = new ExtensionAction( $this->id, $id, $args );
+        $this->actions[ $id ] = isset( $args['email'] ) ? new ExtensionEmailAction( $this->id, $id, $args ) : new ExtensionAction( $this->id, $id, $args );
         return true;
     }
 

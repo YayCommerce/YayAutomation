@@ -22,7 +22,7 @@ final class StepIndex {
     private static $stored = null;
 
     /**
-     * Writes the index when the modules' steps changed since the last write.
+     * Writes the index when the modules' steps changed, and checks their templates when those or the steps changed.
      *
      * @param ExtensionModule[] $modules
      */
@@ -31,20 +31,28 @@ final class StepIndex {
         if ( ! $modules ) {
             return;
         }
-        $steps = [];
+        $steps     = [];
+        $templates = [];
         foreach ( $modules as $module ) {
             foreach ( array_merge( $module->triggers(), $module->actions() ) as $step ) {
                 $steps[ $step->id() ] = self::entry( $module, $step );
             }
+            foreach ( $module->templates() as $id => $template ) {
+                $templates[ $id ] = $template['steps'];
+            }
         }
         $fingerprint = md5( (string) wp_json_encode( $steps ) );
-        $stored      = self::stored();
-        if ( $fingerprint === $stored['fingerprint'] ) {
+        // What a template's check reads, without translated text: core's version, the modules and their steps' shape, the chains as written.
+        $checked = $templates ? md5( (string) wp_json_encode( [ YAYMATIK_VERSION, array_map( [ self::class, 'shape' ], $modules ), $templates ] ) ) : '';
+        $stored  = self::stored();
+        if ( $fingerprint === $stored['fingerprint'] && $checked === $stored['checked'] ) {
             return;
         }
         self::$stored = [
             'fingerprint' => $fingerprint,
             'steps'       => $steps + $stored['steps'],
+            'checked'     => $checked,
+            'templates'   => $checked === $stored['checked'] ? $stored['templates'] : ( $templates ? TemplateCheck::hidden( $modules ) : [] ),
         ];
         // Autoloaded: the check above runs on every request that builds the registry.
         update_option( self::OPTION, self::$stored, true );
@@ -79,6 +87,33 @@ final class StepIndex {
         return self::stored()['steps'];
     }
 
+    /** @return string[] Hidden extension template id => why, from the last check. */
+    public static function hidden_templates(): array {
+        return self::stored()['templates'];
+    }
+
+    /**
+     * A module's steps and data fields as the template check reads them: ids, field keys and rules, outputs, needs.
+     *
+     * @param ExtensionModule $module
+     */
+    private static function shape( ExtensionModule $module ): array {
+        $steps = [];
+        foreach ( array_merge( $module->triggers(), $module->actions() ) as $step ) {
+            $steps[ $step->id() ] = [
+                array_map( fn( $field ) => array_intersect_key( $field->to_array(), array_flip( [ 'key', 'type', 'required', 'variables', 'showIf' ] ) ), $step->fields() ),
+                array_keys( $step->outputs() ),
+                $step->kind(),
+                $step instanceof Trigger ? array_keys( $step->facts() ) : $step->requires(),
+            ];
+        }
+        $items = [];
+        foreach ( $module->data_items() as $id => $item ) {
+            $items[ $id ] = array_keys( $item->fields() );
+        }
+        return [ $module->id(), $steps, $items, $module->data_fields() ];
+    }
+
     /**
      * @param ExtensionModule $module
      * @param Step            $step
@@ -100,6 +135,8 @@ final class StepIndex {
             self::$stored = [
                 'fingerprint' => (string) ( $stored['fingerprint'] ?? '' ),
                 'steps'       => is_array( $stored['steps'] ?? null ) ? $stored['steps'] : [],
+                'checked'     => (string) ( $stored['checked'] ?? '' ),
+                'templates'   => is_array( $stored['templates'] ?? null ) ? $stored['templates'] : [],
             ];
         }
         return self::$stored;

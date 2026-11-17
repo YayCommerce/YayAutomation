@@ -4,6 +4,7 @@ import { __, sprintf } from '@wordpress/i18n';
 import { shortDayTime } from '@/lib/helpers/date.helper';
 import { plainSummary, steps } from '../../steps';
 import { optionLabel } from '../../steps/core/summary';
+import { fillTemplate } from '../../steps/core/template';
 
 type RunStepRow = RunDetail['steps'][number];
 
@@ -92,12 +93,32 @@ const results: Partial<Record<StepId, ResultText>> = {
   },
 };
 
+const placeholderText = (value: unknown) =>
+  Array.isArray(value) ? value.map(String).join(', ') : typeof value === 'number' ? String(value) : text(value);
+
+/** Another plugin's `result` line: `{{ output.<key> }}` from the step's output, `{{ config.<field> }}` from its config. */
+const catalogResult = (step: RunStepRow) => {
+  const line = step.stepType ? window.yayMatikMeta.automation.steps[step.stepType]?.result : undefined;
+  if (!line) return null;
+  // A config value reads as its option's label, as on the card.
+  return fillTemplate(line, (name) => {
+    const [, root, key] = /^(output|config)\.([a-z_][a-z0-9_]*)$/.exec(name) ?? [];
+    if (root === 'output') return Object.hasOwn(step.output, key) ? placeholderText(step.output[key]) : '';
+    if (root === 'config') return catalogLabel(step.stepType!, key, placeholderText(step.input[key]));
+    return undefined;
+  });
+};
+
 /** What a step did ("Yes", "Sent to a@b.com"), why it didn't, or else its card summary ("Set to Completed"). */
 export function stepResult(step: RunStepRow, run: RunContext): string {
   if (step.status === 'skipped' || step.status === 'failed' || step.status === 'cancelled') return step.error ?? '';
   if (step.status !== 'running') {
     const result = step.stepType && results[step.stepType];
     if (result) return result(step, run);
+    if (step.status === 'completed') {
+      const line = catalogResult(step);
+      if (line) return line;
+    }
   }
   return summary(step, run);
 }

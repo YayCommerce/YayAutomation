@@ -117,6 +117,7 @@ export function defineStep<TConfig extends Config>({
     requires,
     outputs: catalog.outputs,
     category: catalog.category,
+    email: catalog.email,
     defaults,
     normalize,
     firstIssue,

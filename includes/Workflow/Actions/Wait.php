@@ -67,8 +67,8 @@ class Wait extends Action {
     }
 
     public function summary(): string {
-        /* translators: %delay%: how long, e.g. "7 days"; keep the placeholder as it is. */
-        return __( 'Wait %delay%', 'yaymatik' );
+        /* translators: {{ config.delay }}: how long, e.g. "7 days"; keep {{ … }} as it is. */
+        return __( 'Wait {{ config.delay }}', 'yaymatik' );
     }
 
     public function validate( array $config ) {

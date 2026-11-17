@@ -16,7 +16,7 @@ describe('renderSummary', () => {
   };
 
   it('bolds a value and shows its option label', () => {
-    expect(renderSummary('Change to %status%', [status], { status: 'completed' })).toBe(
+    expect(renderSummary('Change to {{ config.status }}', [status], { status: 'completed' })).toBe(
       `Change to ${value('Completed')}`,
     );
   });
@@ -24,10 +24,10 @@ describe('renderSummary', () => {
   it('shows "Not set" for a blank value, and the field placeholder when it has one', () => {
     // A select's placeholder is a prompt ("Choose a status"), not a value.
     const prompt = { ...status, placeholder: 'Choose a status' };
-    expect(renderSummary('Change to %status%', [prompt], { status: '' })).toBe(`Change to ${PLACEHOLDER}`);
+    expect(renderSummary('Change to {{ config.status }}', [prompt], { status: '' })).toBe(`Change to ${PLACEHOLDER}`);
     expect(plain(PLACEHOLDER)).toBe('Not set');
     const from = { ...status, type: 'multiselect', placeholder: 'Any status' } satisfies StepFieldMeta;
-    expect(renderSummary('From %status%', [from], { status: [] })).toBe(`From ${value('Any status')}`);
+    expect(renderSummary('From {{ config.status }}', [from], { status: [] })).toBe(`From ${value('Any status')}`);
   });
 
   it('joins lists with "or" and collapses line breaks', () => {
@@ -36,14 +36,23 @@ describe('renderSummary', () => {
       type: 'multiselect',
       options: [...status.options!, { value: 'x', label: 'X' }],
     } satisfies StepFieldMeta;
-    expect(plain(renderSummary('%status%', [multi], { status: ['completed', 'x', 'y'] }))).toBe('Completed, X or y');
+    expect(plain(renderSummary('{{ config.status }}', [multi], { status: ['completed', 'x', 'y'] }))).toBe(
+      'Completed, X or y',
+    );
     const note: StepFieldMeta = { key: 'note', type: 'textarea', label: 'Note' };
-    expect(plain(renderSummary('%note%', [note], { note: 'Thanks\n\nfor  ordering ' }))).toBe('Thanks for ordering');
+    expect(plain(renderSummary('{{ config.note }}', [note], { note: 'Thanks\n\nfor  ordering ' }))).toBe(
+      'Thanks for ordering',
+    );
   });
 
   it('lets the step write a placeholder, and keeps unknown ones as they are', () => {
-    expect(renderSummary('%rules% %nope%', [], {}, { rules: () => 'A and B' })).toBe('A and B %nope%');
-    expect(renderSummary('%rules%', [], {}, { rules: () => '' })).toBe(PLACEHOLDER);
+    expect(
+      renderSummary('{{ config.rules }} {{ config.nope }} {{ order.total }}', [], {}, { rules: () => 'A and B' }),
+    ).toBe('A and B {{ config.nope }} {{ order.total }}');
+    expect(renderSummary('{{ config.rules }}', [], {}, { rules: () => '' })).toBe(PLACEHOLDER);
+    expect(renderSummary('{{ config.constructor }} {{ config.__proto__ }}', [], {})).toBe(
+      '{{ config.constructor }} {{ config.__proto__ }}',
+    );
   });
 });
 
@@ -60,11 +69,11 @@ describe('variableNames', () => {
 
   it('applies to fields that take merge tags only', () => {
     const note: StepFieldMeta = { key: 'note', type: 'textarea', label: 'Note', variables: true };
-    expect(plain(renderSummary('%note%', [note], { note: 'New order {{ order.number }}' }))).toBe(
+    expect(plain(renderSummary('{{ config.note }}', [note], { note: 'New order {{ order.number }}' }))).toBe(
       'New order Order number',
     );
     const key: StepFieldMeta = { key: 'key', type: 'text', label: 'Key' };
-    expect(plain(renderSummary('%key%', [key], { key: '{{ order.number }}' }))).toBe('{{ order.number }}');
+    expect(plain(renderSummary('{{ config.key }}', [key], { key: '{{ order.number }}' }))).toBe('{{ order.number }}');
   });
 });
 

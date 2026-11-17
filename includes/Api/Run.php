@@ -46,7 +46,14 @@ interface Run {
      */
     public function render( string $text, bool $html = false ): string;
 
+    /** True in Preview and Send test. */
     public function is_preview(): bool;
+
+    /** An email action's unsubscribe link for its footer: `#` in Preview and Send test, '' outside an email's `build`. */
+    public function unsubscribe_url(): string;
+
+    /** True in Send test. */
+    public function is_test(): bool;
 
     /**
      * Return it from `run`: the step is done.

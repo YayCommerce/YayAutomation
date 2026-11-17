@@ -283,7 +283,7 @@ final class ExtensionActionTest extends TestCase {
                 'requires' => [ 'customer' ],
                 'emits'    => [ 'acme_points' ],
                 'on_error' => 'continue',
-                'summary'  => 'Add %points% points',
+                'summary'  => 'Add {{ config.points }} points',
                 'outputs'  => [
                     'balance' => [
                         'label' => 'Balance',
@@ -293,7 +293,7 @@ final class ExtensionActionTest extends TestCase {
             ]
         );
 
-        $this->assertSame( [ 'customer', [ 'customer' ], [ 'acme_points' ], 'continue', 'Add %points% points', '' ], [ $action->category(), $action->requires(), $action->emits(), $action->on_error(), $action->summary(), $action->icon() ] );
+        $this->assertSame( [ 'customer', [ 'customer' ], [ 'acme_points' ], 'continue', 'Add {{ config.points }} points', '' ], [ $action->category(), $action->requires(), $action->emits(), $action->on_error(), $action->summary(), $action->icon() ] );
         $this->assertSame( 'number', $action->outputs()['balance']['type']->to_string() );
     }
 }

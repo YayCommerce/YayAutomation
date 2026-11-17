@@ -10,7 +10,7 @@ Sizes are proposals until Jack estimates after M1, as ROADMAP-v1.0 says. **S** �
 
 ## Build order
 
-**F0 → F1 (+ identity phases 1–2) → M1 → M2 → F2 → M7 → M8 → M3 → M4 → M5 → M6 → CT → M9** → v1.1 → v1.2 → v2.0 → Public API
+**F0 → F1 (+ identity phases 1–2) → M1 → M2 → F2 → M7 → M8 → M3 → M4 → M5 → M6 → CT → Public API → M9** → v1.1 → v1.2 → v2.0
 
 Changes from the ROADMAP-v1.0 order:
 - **F0 and F1 come first.** M1 needs step outputs, templates and the new step contract. M2 needs stored runs. Building M1/M2 on the v0.1 runner means building them twice.
@@ -36,7 +36,7 @@ Changes from the ROADMAP-v1.0 order:
 | v1.1 | Control flow | L+ | 3 | v1.0 | — |
 | v1.2 | Yay ecosystem + Pro connectors | L+ | 3 | v1.1 | — |
 | v2.0 | AI | L+ | 3 | v1.2 | — |
-| API | Public extension API (1.1, plan 034) | M | 2 | v1.0 | In progress |
+| API | Public extension API (1.0, plan 034) | M | 2 | CT | ⏳ Done, merge pending |
 
 Status: ✅ done (merged into `develop`, CI green) · ⏳ done, merge pending · In progress · Next · — not started. Mark a phase and its items ✅ when it lands in `develop`.
 
@@ -307,7 +307,7 @@ Shop owners build their own workflows from New Workflow. Why: [decisions CT](wor
 ## v1.2 — Yay ecosystem + Pro connectors · L+
 
 - **V12.1 Pro modules** — YayMatik Pro registers its modules and multi-plugin templates. *(§8)*
-- **V12.2 Yay plugins** — register their steps (through their module) and templates; custom forms through the Extension API's iframe editor (P4, 1.1, plan 034). Steps from an inactive plugin are handled softly in plan 034 CP4 ([extension-api.md](extension-api.md) §10). *(§5, §8)*
+- **V12.2 Yay plugins** — register their steps (through their module) and templates; custom forms through the Extension API's iframe editor (P4, 1.0, plan 034). Steps from an inactive plugin are handled softly in plan 034 CP4 ([extension-api.md](extension-api.md) §10). ⏳ The API side is done (plan 034: registrar, templates, iframe editor, missing plugin); each plugin's connector is its owner's task. *(§5, §8)*
 - **V12.3 Feature directory** — "Install X to use this" in the pickers and the template library. *(§8)*
 - **V12.4 Connector basics** — credentials store, connector settings UI.
 - **V12.5 Connectors** — webhook in, HTTP request, Slack, Google Sheets, SMS; CSV source and export.
@@ -323,10 +323,10 @@ Shop owners build their own workflows from New Workflow. Why: [decisions CT](wor
 
 ## Public extension API · M
 
-In 1.1, plan 034. Contract: [extension-api.md](extension-api.md). *(§10 P4)*
+In 1.0 (leader's decision), plan 034. Contract: [extension-api.md](extension-api.md). *(§10 P4)*
 
-- A declarative registrar (`yaymatik_register`) over the internal registry and step contract; plugin steps get an iframe editor.
-- Developer docs and an example add-on.
+- ⏳ A declarative registrar (`yaymatik_register`) over the internal registry and step contract; plugin steps get an iframe editor.
+- ⏳ Developer docs and an example add-on (`dev/example-extension/`, checked by `./run.sh check-extension`).
 
 ---
 
