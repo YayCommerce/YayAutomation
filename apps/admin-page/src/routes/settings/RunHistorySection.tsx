@@ -1,4 +1,5 @@
-import { __ } from '@wordpress/i18n';
+import { settingRanges } from '@edition/settings';
+import { __, sprintf } from '@wordpress/i18n';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { FieldGroup } from '@/components/ui/field';
@@ -20,13 +21,17 @@ export function RunHistorySection({ form, serverErrors }: { form: SettingsForm; 
             form={form}
             name="runRetentionDays"
             label={__('Keep run history for', 'yaymatik')}
-            description={__(
-              'Finished runs older than this are deleted once a day, including runs of deleted workflows, 7 to 730 days. Queued, running and waiting runs are kept.',
-              'yaymatik',
+            description={sprintf(
+              /* translators: 1: smallest number, 2: largest number */
+              __(
+                'Finished runs older than this are deleted once a day, including runs of deleted workflows, %1$d to %2$d days. Queued, running and waiting runs are kept.',
+                'yaymatik',
+              ),
+              ...settingRanges.runRetentionDays,
             )}
             unit={__('days', 'yaymatik')}
-            min={7}
-            max={730}
+            min={settingRanges.runRetentionDays[0]}
+            max={settingRanges.runRetentionDays[1]}
             serverErrors={serverErrors}
           />
         </FieldGroup>

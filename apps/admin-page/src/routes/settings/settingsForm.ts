@@ -1,3 +1,4 @@
+import { settingRanges } from '@edition/settings';
 import { useForm } from '@tanstack/react-form';
 import type { Settings } from '@yaymatik/types';
 import * as v from 'valibot';
@@ -8,25 +9,32 @@ type NumberKey = 'abandonMinutes' | 'cartRetentionDays' | 'runRetentionDays';
 /** What the form edits: a number field holds null while it's blank. */
 export type SettingsValues = Omit<Settings, NumberKey> & Record<NumberKey, number | null>;
 
-/** PHP `Settings::check()`: a whole number in `[min, max]`, with its message. */
-const wholeNumber = (min: number, max: number) => {
+/** PHP `Settings::check()`: a whole number in `[min, max]`, with its message. The stored value passes as is: a save sends changes only. */
+const wholeNumber = ([min, max]: [number, number], stored: number | null) => {
   /* translators: 1: smallest number, 2: largest number */
   const message = sprintf(__('Enter a whole number from %1$d to %2$d.', 'yaymatik'), min, max);
   return v.pipe(
     v.nullable(v.number(message)),
-    v.check((value) => value !== null && Number.isInteger(value) && value >= min && value <= max, message),
+    v.check(
+      (value) => value === stored || (value !== null && Number.isInteger(value) && value >= min && value <= max),
+      message,
+    ),
   );
 };
 
-/** Ranges match PHP `Settings::RANGES`. */
-export const settingsSchema = v.object({
-  cartTracking: v.boolean(),
-  abandonMinutes: wholeNumber(15, 1440),
-  captureGuestEmail: v.boolean(),
-  cartRetentionDays: wholeNumber(7, 365),
-  runRetentionDays: wholeNumber(7, 730),
-  unsubscribeText: v.string(),
-});
+/** Ranges match PHP `Settings`' save ranges for this edition. */
+export const settingsSchema = (saved: SettingsValues) =>
+  v.object({
+    cartTracking: v.boolean(),
+    // Not shown in the free edition: it stays as stored.
+    abandonMinutes: settingRanges.abandonMinutes
+      ? wholeNumber(settingRanges.abandonMinutes, saved.abandonMinutes)
+      : v.any(),
+    captureGuestEmail: v.boolean(),
+    cartRetentionDays: wholeNumber(settingRanges.cartRetentionDays, saved.cartRetentionDays),
+    runRetentionDays: wholeNumber(settingRanges.runRetentionDays, saved.runRetentionDays),
+    unsubscribeText: v.string(),
+  });
 
 /** Drops the response's read-only keys. */
 export const toValues = (settings: Settings): SettingsValues => ({
@@ -61,7 +69,7 @@ export function useSettingsForm(
 ) {
   return useForm({
     defaultValues: saved,
-    validators: { onChange: settingsSchema },
+    validators: { onChange: settingsSchema(saved) },
     listeners: {
       onChange: ({ fieldApi }) => {
         onFieldChange(fieldApi.name as keyof Settings);

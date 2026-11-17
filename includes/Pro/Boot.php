@@ -7,6 +7,7 @@ use YayMatik\Pro\Workflow\Core\Runtime\InactiveSweep;
 use YayMatik\Pro\Workflow\Modules\WoocommerceProModule;
 use YayMatik\Pro\Workflow\Modules\YayMatikProModule;
 use YayMatik\Workflow\Core\Runtime\DailyJobs;
+use YayMatik\Workflow\Core\Storage\Settings;
 use YayMatik\Workflow\ModuleRegistry;
 use YayMatik\Workflow\Modules\WoocommerceModule;
 use YayMatik\Workflow\Modules\YayMatikModule;
@@ -40,6 +41,13 @@ final class Boot {
         }
         add_filter( ModuleRegistry::HOOK, [ self::class, 'modules' ] );
         CustomerMetaKeysRoute::register();
+        Settings::allow(
+            [
+                'abandon_minutes'     => [ 15, 1440 ],
+                'cart_retention_days' => [ 7, 365 ],
+                'run_retention_days'  => [ 7, 730 ],
+            ]
+        );
     }
 
     /** On `init`: Pro's jobs. */

@@ -18,6 +18,15 @@ declare module '@edition/criteria' {
   export const criteriaFeatures: { groups: boolean; variables: boolean };
 }
 
+declare module '@edition/settings' {
+  /** What a save may set, [ min, max ]; null: not shown. */
+  export const settingRanges: {
+    abandonMinutes: [number, number] | null;
+    cartRetentionDays: [number, number];
+    runRetentionDays: [number, number];
+  };
+}
+
 declare module '@edition/health' {
   /** Health check rows of the daily jobs the edition adds, by check id (`<name>_job`). */
   export const healthJobs: Record<string, { title: () => string; help: () => string; fixed: () => string }>;

@@ -1,5 +1,6 @@
+import { settingRanges } from '@edition/settings';
 import { useStore } from '@tanstack/react-form';
-import { __ } from '@wordpress/i18n';
+import { __, sprintf } from '@wordpress/i18n';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { FieldGroup, FieldSeparator } from '@/components/ui/field';
@@ -39,20 +40,28 @@ export function CartTrackingSection({ form, serverErrors }: { form: SettingsForm
           />
           {tracking && (
             <>
-              <FieldSeparator />
-              <NumberSetting
-                form={form}
-                name="abandonMinutes"
-                label={__('Count a cart as abandoned after', 'yaymatik')}
-                description={__(
-                  'Minutes without activity, 15 to 1440. Reminder times in cart workflows count from then.',
-                  'yaymatik',
-                )}
-                unit={__('minutes', 'yaymatik')}
-                min={15}
-                max={1440}
-                serverErrors={serverErrors}
-              />
+              {settingRanges.abandonMinutes && (
+                <>
+                  <FieldSeparator />
+                  <NumberSetting
+                    form={form}
+                    name="abandonMinutes"
+                    label={__('Count a cart as abandoned after', 'yaymatik')}
+                    description={sprintf(
+                      /* translators: 1: smallest number, 2: largest number */
+                      __(
+                        'Minutes without activity, %1$d to %2$d. Reminder times in cart workflows count from then.',
+                        'yaymatik',
+                      ),
+                      ...settingRanges.abandonMinutes,
+                    )}
+                    unit={__('minutes', 'yaymatik')}
+                    min={settingRanges.abandonMinutes[0]}
+                    max={settingRanges.abandonMinutes[1]}
+                    serverErrors={serverErrors}
+                  />
+                </>
+              )}
               <FieldSeparator />
               <SwitchSetting
                 form={form}
@@ -71,13 +80,17 @@ export function CartTrackingSection({ form, serverErrors }: { form: SettingsForm
             form={form}
             name="cartRetentionDays"
             label={__('Delete old carts after', 'yaymatik')}
-            description={__(
-              'Carts with no activity for this long are deleted, with their email, 7 to 365 days. Applies even while tracking is off.',
-              'yaymatik',
+            description={sprintf(
+              /* translators: 1: smallest number, 2: largest number */
+              __(
+                'Carts with no activity for this long are deleted, with their email, %1$d to %2$d days. Applies even while tracking is off.',
+                'yaymatik',
+              ),
+              ...settingRanges.cartRetentionDays,
             )}
             unit={__('days', 'yaymatik')}
-            min={7}
-            max={365}
+            min={settingRanges.cartRetentionDays[0]}
+            max={settingRanges.cartRetentionDays[1]}
             serverErrors={serverErrors}
           />
         </FieldGroup>
