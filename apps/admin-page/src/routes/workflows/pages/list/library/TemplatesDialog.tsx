@@ -1,4 +1,5 @@
 import { useMemo, useState, type ReactNode } from 'react';
+import { ProTeaser } from '@edition/teaser';
 import type { TemplateCategory, WorkflowNode, WorkflowPlugin, WorkflowTemplate } from '@yaymatik/types';
 import { SearchX } from 'lucide-react';
 import { Link } from 'react-router';
@@ -175,6 +176,7 @@ function TemplateLibrary() {
           ) : (
             <TemplateGrid templates={visible} />
           )}
+          {ProTeaser && !filtered && !search.trim() && <ProTeaser place="library" />}
         </div>
       </div>
     </>

@@ -27,6 +27,13 @@ declare module '@edition/settings' {
   };
 }
 
+declare module '@edition/teaser' {
+  import type { ComponentType } from 'react';
+
+  /** The free edition's "PRO" group; null in YayMatik Pro. */
+  export const ProTeaser: ComponentType<{ place: 'library' | 'trigger' | 'action' }> | null;
+}
+
 declare module '@edition/health' {
   /** Health check rows of the daily jobs the edition adds, by check id (`<name>_job`). */
   export const healthJobs: Record<string, { title: () => string; help: () => string; fixed: () => string }>;

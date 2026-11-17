@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from 'react';
+import { ProTeaser } from '@edition/teaser';
 import type { StepId, WorkflowPlugin } from '@yaymatik/types';
 import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import { __, sprintf } from '@wordpress/i18n';
@@ -161,6 +162,7 @@ export function StepPicker({
         {Array.isArray(list) && !list.length && (
           <p className="text-muted-foreground p-2 text-sm">{__('Nothing found.', 'yaymatik')}</p>
         )}
+        {ProTeaser && !plugin && !query.trim() && <ProTeaser place={kind} />}
       </div>
     </div>
   );

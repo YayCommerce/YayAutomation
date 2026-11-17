@@ -1,0 +1,1 @@
+export { ProTeaser } from './ProTeaser';
