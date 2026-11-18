@@ -2,14 +2,14 @@
 # This file is distributed under the GPLv2 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: YayMatik - Automation for WooCommerce 1.0.0\n"
+"Project-Id-Version: YayMatik - Automation for WooCommerce 1.0\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/yaymatik\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-17T08:31:44+00:00\n"
+"POT-Creation-Date: 2026-11-18T04:32:32+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.8.1\n"
 "X-Domain: yaymatik\n"
@@ -34,28 +34,28 @@ msgstr ""
 msgid "https://yaycommerce.com"
 msgstr ""
 
-#: includes/Engine/API/RestAPI.php:231
+#: includes/Engine/API/RestAPI.php:257
 msgid "This step has no editor."
 msgstr ""
 
-#: includes/Engine/API/RestAPI.php:269
+#: includes/Engine/API/RestAPI.php:295
 msgid "Choose an email step to preview."
 msgstr ""
 
-#: includes/Engine/API/RestAPI.php:444
+#: includes/Engine/API/RestAPI.php:470
 msgid "There are no draft changes to update."
 msgstr ""
 
-#: includes/Engine/API/RestAPI.php:536
+#: includes/Engine/API/RestAPI.php:562
 #: assets/dist/admin-page/main.js:188
 msgid "Run not found."
 msgstr ""
 
-#: includes/Engine/API/RestAPI.php:585
+#: includes/Engine/API/RestAPI.php:611
 msgid "Couldn’t delete the workflow. Try again."
 msgstr ""
 
-#: includes/Engine/API/RestAPI.php:627
+#: includes/Engine/API/RestAPI.php:653
 #: assets/dist/admin-page/main.js:1
 msgid "Workflow not found."
 msgstr ""
@@ -135,11 +135,12 @@ msgstr ""
 
 #: includes/Engine/Privacy/PersonalData.php:84
 #: includes/Engine/Privacy/PersonalData.php:211
-#: includes/Pro/Workflow/Actions/ResendWcEmail.php:58
-#: includes/Pro/Workflow/Actions/ResendWcEmail.php:72
+#: includes/Pro/Workflow/Actions/ResendWcEmail.php:55
+#: includes/Pro/Workflow/Actions/ResendWcEmail.php:69
 #: includes/Workflow/Core/Definition/Catalog.php:126
 #: includes/Workflow/Core/Definition/ProCatalog.php:69
 #: includes/Workflow/DataItems/CartData.php:36
+#: assets/dist/admin-page/main.js:101
 msgid "Email"
 msgstr ""
 
@@ -264,119 +265,119 @@ msgstr ""
 msgid "Read more details."
 msgstr ""
 
-#: includes/Pro/Workflow/Actions/ChangeCustomerRole.php:68
+#: includes/Pro/Workflow/Actions/ChangeCustomerRole.php:65
 #: includes/Workflow/Core/Definition/ProCatalog.php:85
 msgid "Change customer role"
 msgstr ""
 
-#: includes/Pro/Workflow/Actions/ChangeCustomerRole.php:72
+#: includes/Pro/Workflow/Actions/ChangeCustomerRole.php:69
 msgid "Add, remove or replace a role on the customer’s account."
 msgstr ""
 
-#: includes/Pro/Workflow/Actions/ChangeCustomerRole.php:91
+#: includes/Pro/Workflow/Actions/ChangeCustomerRole.php:88
 #: assets/dist/admin-page/main.js:150
 msgid "Change"
 msgstr ""
 
-#: includes/Pro/Workflow/Actions/ChangeCustomerRole.php:93
+#: includes/Pro/Workflow/Actions/ChangeCustomerRole.php:90
 msgid "Add a role"
 msgstr ""
 
-#: includes/Pro/Workflow/Actions/ChangeCustomerRole.php:94
+#: includes/Pro/Workflow/Actions/ChangeCustomerRole.php:91
 msgid "Remove a role"
 msgstr ""
 
-#: includes/Pro/Workflow/Actions/ChangeCustomerRole.php:95
+#: includes/Pro/Workflow/Actions/ChangeCustomerRole.php:92
 msgid "Replace roles"
 msgstr ""
 
-#: includes/Pro/Workflow/Actions/ChangeCustomerRole.php:98
+#: includes/Pro/Workflow/Actions/ChangeCustomerRole.php:95
 #: includes/Pro/Workflow/DataItems/CustomerProData.php:76
 msgid "Role"
 msgstr ""
 
 #. translators: {{ step }}: step name, e.g. "Change customer role"; keep {{ … }} as it is.
-#: includes/Pro/Workflow/Actions/ChangeCustomerRole.php:100
+#: includes/Pro/Workflow/Actions/ChangeCustomerRole.php:97
 msgid "{{ step }} needs a role."
 msgstr ""
 
-#: includes/Pro/Workflow/Actions/ChangeCustomerRole.php:101
+#: includes/Pro/Workflow/Actions/ChangeCustomerRole.php:98
 msgid "Only roles with customer rights are listed: no staff, editing or publishing roles."
 msgstr ""
 
 #. translators: {{ config.mode }}: e.g. "Add a role", {{ config.role }}: a role name; keep {{ … }} as it is.
-#: includes/Pro/Workflow/Actions/ChangeCustomerRole.php:107
+#: includes/Pro/Workflow/Actions/ChangeCustomerRole.php:104
 msgid "{{ config.mode }}: {{ config.role }}"
 msgstr ""
 
-#: includes/Pro/Workflow/Actions/ChangeCustomerRole.php:113
+#: includes/Pro/Workflow/Actions/ChangeCustomerRole.php:110
 #: includes/Workflow/Core/Definition/ProCatalog.php:87
 msgid "Roles before"
 msgstr ""
 
-#: includes/Pro/Workflow/Actions/ChangeCustomerRole.php:117
+#: includes/Pro/Workflow/Actions/ChangeCustomerRole.php:114
 #: includes/Workflow/Core/Definition/ProCatalog.php:88
 msgid "Roles after"
 msgstr ""
 
-#: includes/Pro/Workflow/Actions/ChangeCustomerRole.php:139
+#: includes/Pro/Workflow/Actions/ChangeCustomerRole.php:136
 #: includes/Pro/Workflow/Actions/UpdateCustomerMeta.php:89
 msgid "This customer has no account."
 msgstr ""
 
-#: includes/Pro/Workflow/Actions/ChangeCustomerRole.php:144
+#: includes/Pro/Workflow/Actions/ChangeCustomerRole.php:141
 msgid "This customer has a protected role."
 msgstr ""
 
 #. translators: %s: role slug
-#: includes/Pro/Workflow/Actions/ChangeCustomerRole.php:152
+#: includes/Pro/Workflow/Actions/ChangeCustomerRole.php:149
 msgid "The role %s no longer exists."
 msgstr ""
 
 #. translators: %s: role name
-#: includes/Pro/Workflow/Actions/ChangeCustomerRole.php:156
+#: includes/Pro/Workflow/Actions/ChangeCustomerRole.php:153
 msgid "%s can now manage the site, so it can’t be given."
 msgstr ""
 
 #. translators: %s: role name
-#: includes/Pro/Workflow/Actions/ChangeCustomerRole.php:160
+#: includes/Pro/Workflow/Actions/ChangeCustomerRole.php:157
 msgid "%s is their only role."
 msgstr ""
 
-#: includes/Pro/Workflow/Actions/ResendWcEmail.php:37
+#: includes/Pro/Workflow/Actions/ResendWcEmail.php:34
 #: includes/Workflow/Core/Definition/ProCatalog.php:69
 msgid "Resend WooCommerce email"
 msgstr ""
 
-#: includes/Pro/Workflow/Actions/ResendWcEmail.php:41
+#: includes/Pro/Workflow/Actions/ResendWcEmail.php:38
 msgid "Send one of WooCommerce’s order emails to the customer again."
 msgstr ""
 
 #. translators: {{ step }}: step name, e.g. "Resend WooCommerce email"; keep {{ … }} as it is.
-#: includes/Pro/Workflow/Actions/ResendWcEmail.php:60
+#: includes/Pro/Workflow/Actions/ResendWcEmail.php:57
 msgid "{{ step }} needs an email."
 msgstr ""
 
 #. translators: {{ config.email }}: a WooCommerce email's name, e.g. "Completed order"; keep {{ … }} as it is.
-#: includes/Pro/Workflow/Actions/ResendWcEmail.php:66
+#: includes/Pro/Workflow/Actions/ResendWcEmail.php:63
 msgid "Resend {{ config.email }}"
 msgstr ""
 
-#: includes/Pro/Workflow/Actions/ResendWcEmail.php:86
+#: includes/Pro/Workflow/Actions/ResendWcEmail.php:83
 msgid "There is no order to send it for."
 msgstr ""
 
 #. translators: %s: email id
-#: includes/Pro/Workflow/Actions/ResendWcEmail.php:92
+#: includes/Pro/Workflow/Actions/ResendWcEmail.php:89
 msgid "The WooCommerce email %s can’t be resent here any more."
 msgstr ""
 
 #. translators: %s: email name, e.g. "Completed order"
-#: includes/Pro/Workflow/Actions/ResendWcEmail.php:97
+#: includes/Pro/Workflow/Actions/ResendWcEmail.php:94
 msgid "%s is turned off in WooCommerce."
 msgstr ""
 
-#: includes/Pro/Workflow/Actions/ResendWcEmail.php:100
+#: includes/Pro/Workflow/Actions/ResendWcEmail.php:97
 msgid "This order has no billing email."
 msgstr ""
 
@@ -563,7 +564,7 @@ msgid "Products bought"
 msgstr ""
 
 #: includes/Pro/Workflow/DataItems/CustomerProData.php:93
-#: includes/Pro/Workflow/DataItems/OrderProData.php:35
+#: includes/Pro/Workflow/DataItems/OrderProData.php:36
 msgid "Custom field"
 msgstr ""
 
@@ -581,55 +582,55 @@ msgstr ""
 msgid "Sample product"
 msgstr ""
 
-#: includes/Pro/Workflow/DataItems/OrderProData.php:20
+#: includes/Pro/Workflow/DataItems/OrderProData.php:21
 msgid "Created via"
 msgstr ""
 
-#: includes/Pro/Workflow/DataItems/OrderProData.php:26
+#: includes/Pro/Workflow/DataItems/OrderProData.php:27
 msgid "Currency"
 msgstr ""
 
-#: includes/Pro/Workflow/DataItems/OrderProData.php:31
+#: includes/Pro/Workflow/DataItems/OrderProData.php:32
 msgid "Discount total"
 msgstr ""
 
-#: includes/Pro/Workflow/DataItems/OrderProData.php:32
+#: includes/Pro/Workflow/DataItems/OrderProData.php:33
 msgid "Shipping total"
 msgstr ""
 
-#: includes/Pro/Workflow/DataItems/OrderProData.php:33
+#: includes/Pro/Workflow/DataItems/OrderProData.php:34
 msgid "Refunded total"
 msgstr ""
 
-#: includes/Pro/Workflow/DataItems/OrderProData.php:43
+#: includes/Pro/Workflow/DataItems/OrderProData.php:44
 msgid "Order has cross-sell products"
 msgstr ""
 
-#: includes/Pro/Workflow/DataItems/OrderProData.php:48
+#: includes/Pro/Workflow/DataItems/OrderProData.php:49
 msgid "Order has upsell products"
 msgstr ""
 
-#: includes/Pro/Workflow/DataItems/OrderProData.php:52
+#: includes/Pro/Workflow/DataItems/OrderProData.php:53
 msgid "Cross-sell products"
 msgstr ""
 
-#: includes/Pro/Workflow/DataItems/OrderProData.php:53
+#: includes/Pro/Workflow/DataItems/OrderProData.php:54
 msgid "Upsell products"
 msgstr ""
 
-#: includes/Pro/Workflow/DataItems/OrderProData.php:125
+#: includes/Pro/Workflow/DataItems/OrderProData.php:126
 msgid "Classic checkout"
 msgstr ""
 
-#: includes/Pro/Workflow/DataItems/OrderProData.php:126
+#: includes/Pro/Workflow/DataItems/OrderProData.php:127
 msgid "Block checkout"
 msgstr ""
 
-#: includes/Pro/Workflow/DataItems/OrderProData.php:127
+#: includes/Pro/Workflow/DataItems/OrderProData.php:128
 msgid "Admin"
 msgstr ""
 
-#: includes/Pro/Workflow/DataItems/OrderProData.php:128
+#: includes/Pro/Workflow/DataItems/OrderProData.php:129
 msgid "REST API"
 msgstr ""
 
@@ -1504,20 +1505,24 @@ msgstr ""
 msgid "The customer unsubscribed from these emails."
 msgstr ""
 
-#: includes/Workflow/Core/Email/EmailPreview.php:82
+#: includes/Workflow/Core/Email/EmailPreview.php:79
 msgid "Your account has no valid email address."
 msgstr ""
 
-#: includes/Workflow/Core/Email/EmailPreview.php:90
+#: includes/Workflow/Core/Email/EmailPreview.php:87
 msgid "Couldn’t send the test email."
 msgstr ""
 
-#: includes/Workflow/Core/Email/EmailPreview.php:119
+#: includes/Workflow/Core/Email/EmailPreview.php:116
 msgid "Only email steps can be previewed."
 msgstr ""
 
 #: includes/Workflow/Core/Email/ReviewProducts.php:108
 msgid "Leave a review"
+msgstr ""
+
+#: includes/Workflow/Core/Email/TestRecipient.php:55
+msgid "Enter a valid email address."
 msgstr ""
 
 #: includes/Workflow/Core/Runtime/Cancellation.php:14
@@ -2494,10 +2499,6 @@ msgstr ""
 msgid "Extensions"
 msgstr ""
 
-#: assets/dist/admin-page/main.js:35
-msgid "No other plugin adds to YayMatik."
-msgstr ""
-
 #. translators: 1: plugin name, 2: Extension API version, e.g. "1.0"
 #: assets/dist/admin-page/main.js:37
 msgid "%1$s (needs Extension API %2$s)"
@@ -2509,10 +2510,6 @@ msgid "(%1$s, at least %2$d time, last %3$s)"
 msgid_plural "(%1$s, at least %2$d times, last %3$s)"
 msgstr[0] ""
 msgstr[1] ""
-
-#: assets/dist/admin-page/main.js:39
-msgid "No problems"
-msgstr ""
 
 #: assets/dist/admin-page/main.js:39
 msgid "Run history"
@@ -2551,7 +2548,7 @@ msgid "Save changes"
 msgstr ""
 
 #: assets/dist/admin-page/main.js:45
-#: assets/dist/admin-page/main.js:125
+#: assets/dist/admin-page/main.js:91
 msgid "Save"
 msgstr ""
 
@@ -2885,6 +2882,12 @@ msgstr[0] ""
 msgstr[1] ""
 
 #: assets/dist/admin-page/main.js:91
+#: assets/dist/admin-page/main.js:127
+#: assets/dist/admin-page/main.js:150
+msgid "Cancel"
+msgstr ""
+
+#: assets/dist/admin-page/main.js:91
 #: assets/dist/admin-page/main.js:97
 msgid "Email preview"
 msgstr ""
@@ -2952,6 +2955,10 @@ msgid "Test goes to %s"
 msgstr ""
 
 #: assets/dist/admin-page/main.js:101
+msgid "Change test recipient"
+msgstr ""
+
+#: assets/dist/admin-page/main.js:101
 msgid "Preview"
 msgstr ""
 
@@ -2968,11 +2975,19 @@ msgid "Send test email"
 msgstr ""
 
 #: assets/dist/admin-page/main.js:101
-msgid "To you, subject starts with [Test]"
+msgid "Subject starts with [Test]"
 msgstr ""
 
 #: assets/dist/admin-page/main.js:101
 msgid "Fix this step first"
+msgstr ""
+
+#: assets/dist/admin-page/main.js:101
+msgid "Send test to"
+msgstr ""
+
+#: assets/dist/admin-page/main.js:101
+msgid "Enter the email address test emails go to."
 msgstr ""
 
 #: assets/dist/admin-page/main.js:101
@@ -3254,10 +3269,6 @@ msgid "Delete"
 msgstr ""
 
 #: assets/dist/admin-page/main.js:125
-msgid "Workflow renamed"
-msgstr ""
-
-#: assets/dist/admin-page/main.js:125
 #: assets/dist/admin-page/main.js:141
 msgid "Rename workflow"
 msgstr ""
@@ -3272,9 +3283,7 @@ msgid "Name"
 msgstr ""
 
 #: assets/dist/admin-page/main.js:125
-#: assets/dist/admin-page/main.js:127
-#: assets/dist/admin-page/main.js:150
-msgid "Cancel"
+msgid "Workflow renamed"
 msgstr ""
 
 #. translators: %s: workflow name
