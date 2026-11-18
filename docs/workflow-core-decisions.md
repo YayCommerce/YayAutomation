@@ -332,7 +332,7 @@ Today errors only go to the WooCommerce log, which merchants never open.
 
 ## P1. Runtime free; Free vs Pro by folder
 
-**Decision.** The runtime is 100% free. Steps and data items belong to modules, one per plugin. Free vs Pro is the folder: Pro modules live in `includes/Pro/`, extend the free ones, and the free zip leaves the folder out. An unfinished step is simply not registered.
+**Decision.** The runtime is 100% free. Steps and data items belong to modules, one per plugin. Free vs Pro is the folder: Pro modules live in `includes/Pro/`, extend the free ones, and the free zip leaves the folder out. `Pro\Boot` swaps them in, only while the YayMatik Pro license allows features. An unfinished step is simply not registered.
 
 **Why.**
 - A free runtime keeps Lite useful and makes Yay plugins' steps work for everyone.
@@ -342,7 +342,7 @@ Today errors only go to the WooCommerce log, which merchants never open.
 
 **Rejected.** A manifest with a tier and an on/off switch per module (F1): Pro code still shipped in the free zip, and the switches duplicated what registering already says.
 
-**For devs.** Every new step is listed in its module. A Pro step goes in `includes/Pro/` and its Pro module. Never check "is Pro" inside a step. Another plugin adds its module on `yaymatik_modules` before `init`.
+**For devs.** Every new step is listed in its module. A Pro step goes in `includes/Pro/` and its Pro module, and its name in `ProCatalog`. Never check "is Pro" inside a step. Another plugin registers on `yaymatik_register` (the Extension API); `yaymatik_modules` is YayMatik Pro's own, internal filter.
 
 ## P2. Yay plugins own their steps
 

@@ -22,6 +22,7 @@ Without it, WP loads the prod build in `assets/dist/admin-page/`.
 
 - Stop hook (`.claude/hooks/stop-check.sh`) checks the branch's changes and blocks on failure: `pnpm build` + `pnpm lint` + `pnpm test` when `apps/` or `packages/` change, `php -l` + PHPUnit + phpcs when PHP changes.
 - `pnpm lint:fix` (skips ESLint fixes in `components/ui/`, the YayUiKits copies) and `pnpm lint:php:fix` before commit. CI: `.github/workflows/ci.yml`.
+- Two editions: YayMatik Pro code lives only in `includes/Pro/` and `apps/admin-page/src/pro/` (mirroring the free paths); free code never imports it. `pnpm test:lite` / `pnpm test:php:lite` run as the free plugin (meta fixture `meta-lite.json`). wp-env runs Pro with a license from `dev/wp/mu-plugins/yaymatik-dev-license.php`; `wp option update yaymatik_dev_edition lite` runs it as the free plugin.
 - A change in behavior adds or updates a test: Vitest (`*.test.ts` next to the code) or PHPUnit (`tests/Unit/`, mirrors `includes/`, no WordPress loaded; WP-bound code is checked with wp-cli). Tests read PHP's meta from `apps/admin-page/src/test/fixtures/meta.json`; run `./run.sh meta-fixture` after changing what PHP sends.
 - UI change → `/wcheck`. REST change → `fetch('/wp-json/yaymatik/v1/…')` in console.
 - Extension API: `dev/example-extension/` is a plugin using every piece of it (installed as `acme-rewards` on wp-env; `pnpm wp-env start` after pulling a `.wp-env.json` change). `./run.sh check-extension --wp-env` runs it end to end (part of `check-all --wp-env`).

@@ -1,4 +1,5 @@
 import { act } from 'react';
+import { criteriaFeatures } from '@edition/criteria';
 import { useStore } from '@tanstack/react-form';
 import type { Workflow, WorkflowGraph, WorkflowIssue } from '@yaymatik/types';
 import { createRoot, type Root } from 'react-dom/client';
@@ -12,6 +13,9 @@ import highValueOrderAlert from '../../templates/high-value-order-alert';
 import { StepPanel } from './StepPanel';
 import { useStepPanel } from './useStepPanel';
 import { useWorkflowForm, WorkflowFormContext, type WorkflowForm } from './useWorkflowForm';
+
+// Pro features of the form, the schema and the pickers: groups, comparing with another field, custom field rules.
+const pro = criteriaFeatures.groups;
 
 // Tells React this is a test, so `act()` flushes updates without warnings.
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -298,7 +302,7 @@ describe('a step issue in its panel', () => {
     expect(notice()).toBe(issue.message);
   });
 
-  it('shows an issue that names its rule under that rule, not at the top', () => {
+  it.runIf(pro)('shows an issue that names its rule under that rule, not at the top', () => {
     const graph = live();
     graph.nodes.find((node) => node.id === 'condition')!.data.config = {
       match: 'all',

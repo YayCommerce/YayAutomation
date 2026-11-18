@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react';
+import { healthJobs } from '@edition/health';
 import type {
   FixableHealthCheckId,
   HealthCheck,
@@ -27,8 +28,9 @@ const ORDER: HealthCheckId[] = [
   'runs_queued',
   'runs_running',
   'cleanup_job',
-  'inactive_sweep_job',
+  ...(Object.keys(healthJobs) as HealthCheckId[]),
   'missing_plugin',
+  'needs_pro',
   'jobs_late',
 ];
 
@@ -113,6 +115,8 @@ export function HealthPanel() {
                   <LateJobsRow check={check} />
                 ) : check.id === 'missing_plugin' ? (
                   <MissingPluginRow check={check} />
+                ) : check.id === 'needs_pro' ? (
+                  <NeedsProRow check={check} />
                 ) : (
                   <FixRow check={check} id={check.id} />
                 )}
@@ -158,16 +162,16 @@ function summary(shown: HealthCheck[], checkedAt: string) {
   return sprintf(/* translators: %s: when, e.g. "5 minutes ago" */ __('Checked %s', 'yaymatik'), time);
 }
 
-const fixRows: Record<
-  FixableHealthCheckId,
-  {
-    icon: ReactNode;
-    title: (check: HealthCheck) => string;
-    help: (check: HealthCheck) => string;
-    fix: (check: HealthCheck) => string;
-    button: string;
-  }
-> = {
+interface FixRowText {
+  icon: ReactNode;
+  title: (check: HealthCheck) => string;
+  help: (check: HealthCheck) => string;
+  fix: (check: HealthCheck) => string;
+  button: string;
+}
+
+/** Core's fixable checks, each with its text; the edition's daily jobs share one wording. */
+const coreRows: Record<'runs_queued' | 'runs_running' | 'cleanup_job', FixRowText> = {
   runs_queued: {
     icon: <TriangleAlert className="text-warning-soft-foreground" />,
     title: (check) =>
@@ -228,19 +232,27 @@ const fixRows: Record<
     fix: () => __('Fix: schedule it again.', 'yaymatik'),
     button: __('Schedule again', 'yaymatik'),
   },
-  inactive_sweep_job: {
-    icon: <TriangleAlert className="text-warning-soft-foreground" />,
-    title: () => __('The daily inactive-customer check isn’t running on time', 'yaymatik'),
-    help: () =>
-      __('It’s missing or more than a day late, so customers may start their win-back late or miss it.', 'yaymatik'),
-    fix: () => __('Fix: schedule it again.', 'yaymatik'),
-    button: __('Schedule again', 'yaymatik'),
-  },
+};
+
+const fixRows: Record<string, FixRowText> = {
+  ...coreRows,
+  ...Object.fromEntries(
+    Object.entries(healthJobs).map(([id, job]): [string, FixRowText] => [
+      id,
+      {
+        icon: <TriangleAlert className="text-warning-soft-foreground" />,
+        title: job.title,
+        help: job.help,
+        fix: () => __('Fix: schedule it again.', 'yaymatik'),
+        button: __('Schedule again', 'yaymatik'),
+      },
+    ]),
+  ),
 };
 
 function fixedMessage(id: FixableHealthCheckId, fixed: number) {
   if (id === 'cleanup_job') return __('The daily cleanup is scheduled again.', 'yaymatik');
-  if (id === 'inactive_sweep_job') return __('The daily inactive-customer check is scheduled again.', 'yaymatik');
+  if (healthJobs[id]) return healthJobs[id].fixed();
   return id === 'runs_queued'
     ? /* translators: %d: number of runs */
       sprintf(_n('%d run queued again.', '%d runs queued again.', fixed, 'yaymatik'), fixed)
@@ -339,6 +351,30 @@ function MissingPluginRow({ check }: { check: HealthCheck }) {
           <a href={`${window.yayMatikMeta.wp.adminUrl}plugins.php`} className="text-link font-medium hover:underline">
             {__('Plugins', 'yaymatik')}
           </a>
+        </span>
+      }
+    />
+  );
+}
+
+/** Active workflows that use YayMatik Pro while it isn't here: they don't start. */
+function NeedsProRow({ check }: { check: HealthCheck }) {
+  return (
+    <Row
+      icon={<TriangleAlert className="text-warning-accent" />}
+      title={sprintf(
+        /* translators: %d: number of workflows */
+        _n('Active workflows need YayMatik Pro: %d', 'Active workflows need YayMatik Pro: %d', check.count, 'yaymatik'),
+        check.count,
+      )}
+      help={__('They don’t start until YayMatik Pro is active. Nothing in them was changed.', 'yaymatik')}
+      extra={
+        <span className="flex flex-wrap gap-x-3 gap-y-1 text-sm">
+          {(check.workflows ?? []).map(({ id, name }) => (
+            <Link key={id} to={`/workflows/${id}`} className="text-link font-medium hover:underline">
+              {name || /* translators: %s: workflow id */ sprintf(__('Workflow #%s', 'yaymatik'), id)}
+            </Link>
+          ))}
         </span>
       }
     />

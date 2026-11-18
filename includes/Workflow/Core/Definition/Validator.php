@@ -170,11 +170,19 @@ final class Validator {
                 'message' => Messages::get( 'nameRequired' ),
             ];
         }
-        // A step of a plugin that's off: the workflow keeps it, but can't be turned on.
+        // A step of a plugin that's off, or one that needs YayMatik Pro: the workflow keeps it, but can't be turned on.
         $missing = [];
+        $pro     = ProUsage::of( $workflow['graph'] );
         foreach ( $nodes as $node ) {
-            $inactive = self::inactive_step( $node );
-            if ( $inactive ) {
+            $inactive = in_array( $node['id'], $pro, true ) ? null : self::inactive_step( $node );
+            if ( in_array( $node['id'], $pro, true ) ) {
+                $missing[ $node['id'] ] = true;
+                $errors[]               = [
+                    'code'    => 'needs_pro',
+                    'message' => Messages::get( 'needsPro' ),
+                    'nodeId'  => $node['id'],
+                ];
+            } elseif ( $inactive ) {
                 $missing[ $node['id'] ] = true;
                 $errors[]               = [
                     'code'    => 'missing_plugin',
@@ -222,6 +230,10 @@ final class Validator {
         $by_id     = GraphSchema::by_id( $nodes );
         $parents   = GraphSchema::parents( $workflow['graph']['edges'] );
         foreach ( $nodes as $node ) {
+            // Its settings are YayMatik Pro's to check.
+            if ( in_array( $node['id'], $pro, true ) ) {
+                continue;
+            }
             $error = self::step_error( $node, $available, $trigger_step instanceof Trigger ? $trigger_step : null, $by_id, self::ancestors( $node['id'], $parents ) );
             if ( $error ) {
                 $errors[] = $error + [ 'nodeId' => $node['id'] ];
@@ -378,12 +390,19 @@ final class Validator {
     }
 
     /**
-     * The step index entry of a node whose step is another plugin's that isn't active now; null otherwise.
+     * The step index entry of a node whose step is another plugin's that isn't active now, or YayMatik Pro's; null otherwise.
      *
      * @param array $node
      */
     private static function inactive_step( array $node ): ?array {
-        return $node['data']['block'] ? StepIndex::inactive( $node['data']['block'] ) : null;
+        $block = (string) $node['data']['block'];
+        if ( '' === $block ) {
+            return null;
+        }
+        $inactive = StepIndex::inactive( $block );
+        $pro      = $inactive || ! in_array( $block, ProCatalog::missing()['steps'], true ) ? null : ProCatalog::step( $block );
+        // YayMatik Pro's step, kept while Pro isn't here: its outputs read like an inactive plugin's.
+        return $pro ? [ 'outputs' => array_column( $pro['outputs'], 'label', 'key' ) ] + $pro : $inactive;
     }
 
     /**

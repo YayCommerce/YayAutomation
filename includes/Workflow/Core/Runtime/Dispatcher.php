@@ -4,6 +4,7 @@ namespace YayMatik\Workflow\Core\Runtime;
 use YayMatik\Utils\Logger;
 use YayMatik\Workflow\Core\Data\Scope;
 use YayMatik\Workflow\Core\Definition\GraphSchema;
+use YayMatik\Workflow\Core\Definition\ProUsage;
 use YayMatik\Workflow\Core\Steps\Trigger;
 use YayMatik\Workflow\Core\Storage\RunStore;
 
@@ -195,7 +196,8 @@ final class Dispatcher {
     private function dispatch( Trigger $trigger, array $args, ?array $parent_run ): void {
         try {
             // Cheapest check first: most events have no workflow, so skip claiming (a write) and loading.
-            $this->active[ $trigger->id() ] ??= $this->workflows->active_for_trigger( $trigger->id() );
+            // A workflow that needs YayMatik Pro while it isn't here doesn't start: a skipped rule would read as true.
+            $this->active[ $trigger->id() ] ??= array_values( array_filter( $this->workflows->active_for_trigger( $trigger->id() ), fn( array $workflow ) => ! ProUsage::of( $workflow['graph'] ) ) );
 
             $workflows = $this->active[ $trigger->id() ];
             if ( ! $workflows ) {

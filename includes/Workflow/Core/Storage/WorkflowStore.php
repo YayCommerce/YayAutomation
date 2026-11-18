@@ -3,6 +3,7 @@ namespace YayMatik\Workflow\Core\Storage;
 
 use YayMatik\Utils\Logger;
 use YayMatik\Workflow\Core\Definition\GraphSchema;
+use YayMatik\Workflow\Core\Definition\ProUsage;
 use YayMatik\Workflow\Core\Steps\StepRegistry;
 
 defined( 'ABSPATH' ) || exit;
@@ -548,10 +549,10 @@ final class WorkflowStore {
             ];
         }
         // Stored configs go through their step's sanitize() on read, so the editor and the runner get
-        // the shape today's step defines.
+        // the shape today's step defines; one that needs YayMatik Pro stays as YayMatik Pro saved it.
         foreach ( $graph['nodes'] as &$node ) {
             $step = StepRegistry::get( (string) ( $node['data']['block'] ?? '' ) );
-            if ( $step ) {
+            if ( $step && ! ProUsage::node( $node ) ) {
                 $node['data']['config'] = $step->sanitize( $node['data']['config'] ?? [] );
             }
         }

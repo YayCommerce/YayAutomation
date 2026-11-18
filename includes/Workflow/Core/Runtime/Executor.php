@@ -8,6 +8,7 @@ use YayMatik\Workflow\Core\Data\Ref;
 use YayMatik\Workflow\Core\Data\RefResolver;
 use YayMatik\Workflow\Core\Data\Scope;
 use YayMatik\Workflow\Core\Definition\GraphSchema;
+use YayMatik\Workflow\Core\Definition\ProUsage;
 use YayMatik\Workflow\Core\Steps\Condition;
 use YayMatik\Workflow\Core\Steps\Step;
 use YayMatik\Workflow\Core\Steps\StepRegistry;
@@ -158,6 +159,10 @@ final class Executor {
             $node    = $nodes[ $step_id ] ?? null;
             $step    = $node ? ( $this->steps )( (string) ( $node['data']['block'] ?? '' ) ) : null;
             $step    = $step instanceof Step && Step::KIND_TRIGGER !== $step->kind() ? $step : null;
+            // A run that started on YayMatik Pro stops before a step this site can't run as written.
+            if ( $node && ! isset( $rows[ $step_id ] ) && ProUsage::node( $node ) ) {
+                return $this->cancel( $id, $queue, $scope, __( 'Needs YayMatik Pro.', 'yaymatik' ) );
+            }
             $outcome = $this->outcome( $run, $step_id, $node, $step, $rows[ $step_id ] ?? null, $scope );
 
             if ( RunStepStore::STATUS_WAITING === $outcome['status'] ) {

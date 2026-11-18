@@ -1,8 +1,12 @@
+import { criteriaFeatures } from '@edition/criteria';
 import { describe, expect, it } from 'vitest';
 
 import { messages } from '../../../model/messages';
 import { needsValue } from '../../core/data';
 import { criteriaErrors, flatRules, normalize, ruleForField, withOperator, type Group, type Rule } from './schema';
+
+// Pro features of the form, the schema and the pickers: groups, comparing with another field, custom field rules.
+const pro = criteriaFeatures.groups;
 
 const rule = (over: Partial<Rule>): Rule => ({
   field: 'order.created_date',
@@ -32,7 +36,7 @@ describe('rule checks, same messages and order as PHP', () => {
     expect(error({ field: 'order.total', operator: 'in_last', value: 'abc' })).toBe(messages.ruleComparison);
   });
 
-  it('needs a custom field name on a custom field rule', () => {
+  it.runIf(pro)('needs a custom field name on a custom field rule', () => {
     const meta = { field: 'order.meta', operator: 'equal', value: 'x' };
     expect(error(meta)).toBe(messages.ruleKeyRequired);
     expect(error({ ...meta, key: ' ' })).toBe(messages.ruleKeyRequired);
@@ -58,7 +62,7 @@ describe('normalize, the shape PHP stores', () => {
     ]);
   });
 
-  it('keeps a key on a custom field rule only, with no variable', () => {
+  it.runIf(pro)('keeps a key on a custom field rule only, with no variable', () => {
     expect(one({ field: 'order.meta', operator: 'equal', value: 'x', valueType: 'variable', key: ' _vip ' })).toEqual({
       field: 'order.meta',
       operator: 'equal',
@@ -113,7 +117,7 @@ describe('changing a rule’s field', () => {
     expect(next).toMatchObject({ field: 'order.paid_date', operator: 'in_last', value: '3', unit: 'hours' });
   });
 
-  it('clears a list moved to another kind of search', () => {
+  it.runIf(pro)('clears a list moved to another kind of search', () => {
     const next = ruleForField(
       rule({ field: 'order.product_ids', operator: 'matches_any', value: ['4'] }),
       'order.category_ids',
@@ -128,7 +132,7 @@ describe('changing a rule’s field', () => {
     expect(same.value).toEqual(['4']);
   });
 
-  it('clears a custom field name moved between order and customer', () => {
+  it.runIf(pro)('clears a custom field name moved between order and customer', () => {
     const next = ruleForField(
       rule({ field: 'order.meta', operator: 'equal', value: 'yes', key: '_gift' }),
       'customer.meta',
@@ -137,7 +141,7 @@ describe('changing a rule’s field', () => {
     expect(next.key).toBe('');
   });
 
-  it('starts another type with its first comparison, in its shape', () => {
+  it.runIf(pro)('starts another type with its first comparison, in its shape', () => {
     const next = ruleForField(rule({ operator: 'in_last', value: '3', unit: 'hours' }), 'order.product_ids', null);
     expect(next).toEqual({ field: 'order.product_ids', operator: 'matches_any', value: [], valueType: 'value' });
     expect(ruleForField(rule({ field: 'order.total', operator: 'equal', value: '1' }), 'order.meta', null)).toEqual({

@@ -1,6 +1,5 @@
+import meta from '@test-meta';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-
-import meta from '../../../test/fixtures/meta.json';
 
 /** A step another plugin's module sends in PHP's catalog: no TS folder of its own. */
 const moduleStep = {

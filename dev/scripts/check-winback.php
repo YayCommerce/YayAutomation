@@ -16,7 +16,7 @@ use YayMatik\Workflow\Core\Email\EmailPreview;
 use YayMatik\Workflow\Core\Runtime\ActionSchedulerQueue;
 use YayMatik\Workflow\Core\Runtime\Cleanup;
 use YayMatik\Workflow\Core\Runtime\HealthCheck;
-use YayMatik\Workflow\Core\Runtime\InactiveSweep;
+use YayMatik\Pro\Workflow\Core\Runtime\InactiveSweep;
 use YayMatik\Workflow\Core\Runtime\Runtime;
 use YayMatik\Workflow\Core\Steps\StepRegistry;
 use YayMatik\Workflow\Core\Storage\RunStepStore;

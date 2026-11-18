@@ -1,13 +1,14 @@
-/** PHP `HealthRoutes`: `GET /health/checks`, `POST /health/fix`. */
+/** PHP `HealthRoutes`: `GET /health/checks`, `POST /health/fix`. A daily job the edition adds (PHP `DailyJobs`) is `<name>_job`. */
 export type HealthCheckId =
   | 'runs_queued'
   | 'runs_running'
   | 'jobs_late'
   | 'cleanup_job'
-  | 'inactive_sweep_job'
-  | 'missing_plugin';
+  | 'missing_plugin'
+  | 'needs_pro'
+  | `${string}_job`;
 
-export type FixableHealthCheckId = Exclude<HealthCheckId, 'jobs_late' | 'missing_plugin'>;
+export type FixableHealthCheckId = Exclude<HealthCheckId, 'jobs_late' | 'missing_plugin' | 'needs_pro'>;
 
 export interface HealthCheck {
   id: HealthCheckId;
@@ -20,7 +21,7 @@ export interface HealthCheck {
   capped?: boolean;
   /** `jobs_late` only: the server cron guide. */
   guide?: string;
-  /** `missing_plugin` only: the active workflows with such a step, and the plugins' names. */
+  /** `missing_plugin` and `needs_pro`: the active workflows concerned; `missing_plugin`: the plugins' names. */
   workflows?: { id: string; name: string }[];
   plugins?: string[];
 }

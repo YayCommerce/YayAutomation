@@ -7,13 +7,21 @@ use YayMatik\Workflow\Core\Storage\Settings;
 /** Settings read from and saved to the option. */
 final class SettingsTest extends TestCase {
 
+    /** @var array[] The save ranges the run started with: YayMatik Pro widens them in the bootstrap. */
+    private $editable = [];
+
     protected function setUp(): void {
         $this->forget_built();
+        $ranges         = new \ReflectionProperty( Settings::class, 'editable' );
+        $this->editable = $ranges->getValue();
+        // The free edition's.
+        $ranges->setValue( null, $ranges->getDeclaringClass()->getDefaultProperties()['editable'] );
     }
 
     protected function tearDown(): void {
         unset( $GLOBALS['yaymatik_test_options'] );
         $this->forget_built();
+        ( new \ReflectionProperty( Settings::class, 'editable' ) )->setValue( null, $this->editable );
     }
 
     public function test_settings_are_built_once_and_update_starts_from_the_stored_option(): void {
@@ -85,63 +93,36 @@ final class SettingsTest extends TestCase {
         $this->assertNull( Settings::get( 'nope' ) );
     }
 
-    public function test_update_saves_valid_changes_and_keeps_the_rest(): void {
-        $result = Settings::update(
+    public function test_the_free_edition_saves_retention_up_to_60_and_90_days(): void {
+        $this->assertSame( 60, Settings::update( [ 'cart_retention_days' => 60 ] )['cart_retention_days'] );
+        $this->assertSame( 90, Settings::update( [ 'run_retention_days' => 90 ] )['run_retention_days'] );
+
+        $error = Settings::update(
             [
-                'abandon_minutes'  => 30,
-                'cart_tracking'    => true,
-                'unsubscribe_text' => " <i>Bye</i>\nSee you ",
-                'old_key'          => 'x',
+                'cart_retention_days' => 61,
+                'run_retention_days'  => 91,
             ]
         );
-
-        $this->assertSame( 30, $result['abandon_minutes'] );
-        $this->assertTrue( $result['cart_tracking'] );
-        $this->assertSame( "Bye\nSee you", $result['unsubscribe_text'] );
-        $this->assertSame( 90, $result['run_retention_days'] );
-        $this->assertSame( $result, Settings::all() );
-        $this->assertArrayNotHasKey( 'old_key', $GLOBALS['yaymatik_test_options']['yaymatik_settings'] );
+        $this->assertSame( [ 'Enter a whole number from 7 to 60.', 'Enter a whole number from 7 to 90.' ], array_column( $error->get_error_data()['errors'], 'message' ) );
     }
 
-    public function test_update_accepts_the_range_ends(): void {
-        $result = Settings::update(
-            [
-                'abandon_minutes'     => 1440,
-                'cart_retention_days' => 7,
-                'run_retention_days'  => 730,
-            ]
-        );
+    public function test_the_free_edition_leaves_abandon_minutes_as_stored(): void {
+        $GLOBALS['yaymatik_test_options']['yaymatik_settings'] = [ 'abandon_minutes' => 30 ];
 
-        $this->assertSame( 1440, $result['abandon_minutes'] );
-        $this->assertSame( 7, $result['cart_retention_days'] );
-        $this->assertSame( 730, $result['run_retention_days'] );
+        $this->assertSame( 30, Settings::update( [ 'abandon_minutes' => 120 ] )['abandon_minutes'] );
     }
 
-    public function test_update_with_an_invalid_value_saves_nothing_and_names_each_field(): void {
-        Settings::update( [ 'abandon_minutes' => 30 ] );
+    public function test_values_stored_by_pro_keep_working_until_the_owner_saves_a_new_one(): void {
+        $GLOBALS['yaymatik_test_options']['yaymatik_settings'] = [
+            'abandon_minutes'     => 240,
+            'cart_retention_days' => 365,
+            'run_retention_days'  => 730,
+        ];
 
-        $result = Settings::update(
-            [
-                'abandon_minutes'     => 5,
-                'cart_retention_days' => 366,
-                'run_retention_days'  => '90',
-                'cart_tracking'       => 'yes',
-                'capture_guest_email' => 1,
-                'unsubscribe_text'    => 12,
-            ]
-        );
+        $saved = Settings::update( [ 'unsubscribe_text' => 'Bye' ] );
 
-        $this->assertInstanceOf( \WP_Error::class, $result );
-        $data = $result->get_error_data();
-        $this->assertSame( 400, $data['status'] );
-        $this->assertSame(
-            [ 'abandon_minutes', 'cart_retention_days', 'run_retention_days', 'cart_tracking', 'capture_guest_email', 'unsubscribe_text' ],
-            array_column( $data['errors'], 'field' )
-        );
-        $this->assertSame( 'Enter a whole number from 15 to 1440.', $data['errors'][0]['message'] );
-        $this->assertSame( 'Choose on or off.', $data['errors'][3]['message'] );
-        $this->assertSame( 'Enter text.', $data['errors'][5]['message'] );
-        $this->assertSame( 30, Settings::get( 'abandon_minutes' ) );
+        $this->assertSame( [ 240, 365, 730 ], [ $saved['abandon_minutes'], $saved['cart_retention_days'], $saved['run_retention_days'] ] );
+        $this->assertSame( 365, Settings::get( 'cart_retention_days' ) );
     }
 
     /**

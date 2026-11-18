@@ -1,3 +1,4 @@
+import type { StepId } from '@yaymatik/types';
 import { __, sprintf } from '@wordpress/i18n';
 
 import type { StepFieldMeta } from '@/types/localize';
@@ -84,3 +85,9 @@ export function renderSummary<TConfig extends Config>(
     return value(text || (field.type === 'multiselect' ? (field.placeholder ?? '') : ''));
   });
 }
+
+/** A select's label from the catalog, e.g. a role's name; a value gone since reads as itself. */
+export const catalogLabel = (stepId: StepId, key: string, raw: string) => {
+  const field = window.yayMatikMeta.automation.steps[stepId]?.fields.find((f) => f.key === key);
+  return field ? optionLabel(field, raw) : raw;
+};

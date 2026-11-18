@@ -1,11 +1,12 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { criteriaFeatures } from '@edition/criteria';
 import type { StepId, WorkflowGraph } from '@yaymatik/types';
 import { describe, expect, it } from 'vitest';
 import { sprintf } from '@wordpress/i18n';
 
 import { messages } from '../../model/messages';
-import { tagError } from './data';
+import { fieldByPath, tagError } from './data';
 import { availableVariables, groupVariables, ruleOnlyVariables } from './variables';
 
 /** Shared with PHP `ValidatorTest::test_variables_a_step_can_use`. */
@@ -13,9 +14,12 @@ const { cases } = JSON.parse(
   readFileSync(resolve(__dirname, '../../../../../../../tests/fixtures/variables.json'), 'utf8'),
 ) as { cases: { name: string; graph: WorkflowGraph; nodeId: string; keys: string[] }[] };
 
+/** The keys this edition has: the free one has none of Pro's data fields. */
+const inEdition = (keys: string[]) => keys.filter((key) => key.startsWith('steps.') || fieldByPath(key));
+
 describe('availableVariables', () => {
   it.each(cases.map((c) => [c.name, c] as const))('%s', (_name, { graph, nodeId, keys }) => {
-    expect(availableVariables(graph, nodeId).map((variable) => variable.key)).toEqual(keys);
+    expect(availableVariables(graph, nodeId).map((variable) => variable.key)).toEqual(inEdition(keys));
   });
 
   it('carries label and type', () => {
@@ -54,18 +58,20 @@ describe('availableVariables', () => {
       ],
     };
     const variables = availableVariables(graph, 'm');
-    expect(variables.filter((variable) => variable.block).map((variable) => variable.key)).toEqual([
-      'order.cross_sell_products',
-      'order.upsell_products',
-      'order.review_products',
-      'site.welcome_links',
-      'site.shop_button',
-      'site.account_button',
-      'site.new_products',
-      'steps.c.box',
-    ]);
+    expect(variables.filter((variable) => variable.block).map((variable) => variable.key)).toEqual(
+      inEdition([
+        'order.cross_sell_products',
+        'order.upsell_products',
+        'order.review_products',
+        'site.welcome_links',
+        'site.shop_button',
+        'site.account_button',
+        'site.new_products',
+        'steps.c.box',
+      ]),
+    );
     expect(variables.find((variable) => variable.key === 'steps.c.code')?.block).toBe(false);
-    expect(variables.find((variable) => variable.key === 'order.has_cross_sells')?.block).toBe(false);
+    expect(variables.find((variable) => variable.key === 'order.has_products_not_reviewed')?.block).toBe(false);
   });
 });
 
@@ -92,7 +98,8 @@ describe('custom fields', () => {
   });
 });
 
-describe('ruleOnlyVariables', () => {
+// Custom field rules come with Pro's data.
+describe.runIf(criteriaFeatures.groups)('ruleOnlyVariables', () => {
   const variable = (key: string) => ({ key, label: key, type: 'string', block: false });
 
   it('offers the custom fields of the items a step has, for rules', () => {

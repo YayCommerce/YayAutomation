@@ -1,4 +1,5 @@
 import { act } from 'react';
+import { settingRanges } from '@edition/settings';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { SettingsResponse } from '@yaymatik/types';
 import { createRoot, type Root } from 'react-dom/client';
@@ -121,14 +122,14 @@ describe('SettingsPage', () => {
   });
 
   it('sends only the changed keys, numbers as numbers', async () => {
-    vi.mocked(saveSettings).mockResolvedValue({ ...settings, abandonMinutes: 30, captureGuestEmail: false });
+    vi.mocked(saveSettings).mockResolvedValue({ ...settings, runRetentionDays: 30, captureGuestEmail: false });
     await render();
 
-    type(field<HTMLInputElement>('abandonMinutes'), '30');
+    type(field<HTMLInputElement>('runRetentionDays'), '30');
     await click(field<HTMLButtonElement>('captureGuestEmail'));
     await click(saveButton());
 
-    expect(sentBody(0)).toEqual({ abandonMinutes: 30, captureGuestEmail: false });
+    expect(sentBody(0)).toEqual({ runRetentionDays: 30, captureGuestEmail: false });
     expect(toast.success).toHaveBeenCalledWith('Settings saved');
   });
 
@@ -160,26 +161,26 @@ describe('SettingsPage', () => {
   it('shows a 400’s errors under their fields and keeps the edits', async () => {
     vi.mocked(saveSettings).mockRejectedValue(
       new SettingsError('Fix the highlighted settings.', [
-        { field: 'abandonMinutes', message: 'Enter a whole number from 15 to 1440.' },
+        { field: 'runRetentionDays', message: 'Enter a whole number from 15 to 1440.' },
         { field: 'unsubscribeText', message: 'Enter text.' },
       ]),
     );
     await render();
 
-    type(field<HTMLInputElement>('abandonMinutes'), '30');
+    type(field<HTMLInputElement>('runRetentionDays'), '30');
     type(field<HTMLTextAreaElement>('unsubscribeText'), 'Bye');
     await click(saveButton());
 
-    expect(errorOf('abandonMinutes')).toBe('Enter a whole number from 15 to 1440.');
+    expect(errorOf('runRetentionDays')).toBe('Enter a whole number from 15 to 1440.');
     expect(errorOf('unsubscribeText')).toBe('Enter text.');
-    expect(errorOf('runRetentionDays')).toBeUndefined();
+    expect(errorOf('cartRetentionDays')).toBeUndefined();
     expect(saveAlert()?.textContent).toBe('Couldn’t save your settings. Fix the highlighted settings.');
     expect(button('Try again')).toBeUndefined();
-    expect(field<HTMLInputElement>('abandonMinutes').value).toBe('30');
+    expect(field<HTMLInputElement>('runRetentionDays').value).toBe('30');
     expect(field<HTMLTextAreaElement>('unsubscribeText').value).toBe('Bye');
 
-    type(field<HTMLInputElement>('abandonMinutes'), '31');
-    expect(errorOf('abandonMinutes')).toBeUndefined();
+    type(field<HTMLInputElement>('runRetentionDays'), '31');
+    expect(errorOf('runRetentionDays')).toBeUndefined();
     expect(errorOf('unsubscribeText')).toBe('Enter text.');
     expect(saveAlert()).not.toBeNull();
 
@@ -191,12 +192,12 @@ describe('SettingsPage', () => {
     const finish = deferredSave();
     await render();
 
-    type(field<HTMLInputElement>('abandonMinutes'), '30');
+    type(field<HTMLInputElement>('runRetentionDays'), '30');
     await click(saveButton());
     type(field<HTMLTextAreaElement>('unsubscribeText'), 'Bye');
-    await finish({ ...settings, abandonMinutes: 30 });
+    await finish({ ...settings, runRetentionDays: 30 });
 
-    expect(field<HTMLInputElement>('abandonMinutes').value).toBe('30');
+    expect(field<HTMLInputElement>('runRetentionDays').value).toBe('30');
     expect(field<HTMLTextAreaElement>('unsubscribeText').value).toBe('Bye');
     expect(promptsOnUnload()).toBe(true);
   });
@@ -220,14 +221,14 @@ describe('SettingsPage', () => {
   it('doesn’t send a value out of range', async () => {
     await render();
 
-    type(field<HTMLInputElement>('abandonMinutes'), '5');
+    type(field<HTMLInputElement>('runRetentionDays'), '5');
     await click(saveButton());
 
     expect(saveSettings).not.toHaveBeenCalled();
-    expect(errorOf('abandonMinutes')).toBe('Enter a whole number from 15 to 1440.');
+    expect(errorOf('runRetentionDays')).toBe(`Enter a whole number from 7 to ${settingRanges.runRetentionDays[1]}.`);
   });
 
-  it('hides the tracking fields while tracking is off', async () => {
+  it('hides the tracking fields while tracking is off; abandon minutes only in Pro', async () => {
     vi.mocked(getSettings).mockResolvedValue({ ...settings, cartTracking: false });
     await render();
     expect(field('abandonMinutes')).toBeNull();
@@ -235,11 +236,11 @@ describe('SettingsPage', () => {
     expect(field('cartRetentionDays')).not.toBeNull();
 
     await click(field<HTMLButtonElement>('cartTracking'));
-    expect(field('abandonMinutes')).not.toBeNull();
+    expect(field('abandonMinutes') !== null).toBe(settingRanges.abandonMinutes !== null);
     expect(field('captureGuestEmail')).not.toBeNull();
   });
 
-  it('turning tracking off drops its fields’ edits and errors', async () => {
+  it.runIf(settingRanges.abandonMinutes)('turning tracking off drops its fields’ edits and errors', async () => {
     vi.mocked(saveSettings).mockResolvedValue({ ...settings, cartTracking: false });
     await render();
 
@@ -261,9 +262,9 @@ describe('SettingsPage', () => {
 
   describe('leaving with unsaved changes', () => {
     it('leaves without asking when nothing changed, or after a save', async () => {
-      vi.mocked(saveSettings).mockResolvedValue({ ...settings, abandonMinutes: 30 });
+      vi.mocked(saveSettings).mockResolvedValue({ ...settings, runRetentionDays: 30 });
       await render();
-      type(field<HTMLInputElement>('abandonMinutes'), '30');
+      type(field<HTMLInputElement>('runRetentionDays'), '30');
       await click(saveButton());
 
       await leave();
@@ -274,7 +275,7 @@ describe('SettingsPage', () => {
 
     it('Discard changes leaves', async () => {
       await render();
-      type(field<HTMLInputElement>('abandonMinutes'), '30');
+      type(field<HTMLInputElement>('runRetentionDays'), '30');
 
       await leave();
       expect(dialog()?.textContent).toContain('Unsaved changes');
@@ -286,26 +287,26 @@ describe('SettingsPage', () => {
     });
 
     it('Save changes saves, then leaves', async () => {
-      vi.mocked(saveSettings).mockResolvedValue({ ...settings, abandonMinutes: 30 });
+      vi.mocked(saveSettings).mockResolvedValue({ ...settings, runRetentionDays: 30 });
       await render();
-      type(field<HTMLInputElement>('abandonMinutes'), '30');
+      type(field<HTMLInputElement>('runRetentionDays'), '30');
 
       await leave();
       await click(button('Save changes', dialog()!)!);
 
-      expect(sentBody(0)).toEqual({ abandonMinutes: 30 });
+      expect(sentBody(0)).toEqual({ runRetentionDays: 30 });
       expect(document.getElementById('workflows')).not.toBeNull();
     });
 
     it('Save changes during a running save waits for it, then leaves', async () => {
       const finish = deferredSave();
       await render();
-      type(field<HTMLInputElement>('abandonMinutes'), '30');
+      type(field<HTMLInputElement>('runRetentionDays'), '30');
       await click(saveButton());
 
       await leave();
       await click(button('Save changes', dialog()!)!);
-      await finish({ ...settings, abandonMinutes: 30 });
+      await finish({ ...settings, runRetentionDays: 30 });
 
       expect(saveSettings).toHaveBeenCalledTimes(1);
       expect(document.getElementById('workflows')).not.toBeNull();
@@ -314,7 +315,7 @@ describe('SettingsPage', () => {
     it('Save changes that fails stays and shows the error', async () => {
       vi.mocked(saveSettings).mockRejectedValue(new SettingsError('The server didn’t answer.'));
       await render();
-      type(field<HTMLInputElement>('abandonMinutes'), '30');
+      type(field<HTMLInputElement>('runRetentionDays'), '30');
 
       await leave();
       await click(button('Save changes', dialog()!)!);
@@ -322,27 +323,27 @@ describe('SettingsPage', () => {
       expect(dialog()).toBeNull();
       expect(document.getElementById('workflows')).toBeNull();
       expect(saveAlert()?.textContent).toContain('The server didn’t answer.');
-      expect(field<HTMLInputElement>('abandonMinutes').value).toBe('30');
+      expect(field<HTMLInputElement>('runRetentionDays').value).toBe('30');
     });
 
     it('Close stays', async () => {
       await render();
-      type(field<HTMLInputElement>('abandonMinutes'), '30');
+      type(field<HTMLInputElement>('runRetentionDays'), '30');
 
       await leave();
       await click(dialog()!.querySelector('button[aria-label="Close"]') as HTMLButtonElement);
 
       expect(dialog()).toBeNull();
       expect(document.getElementById('workflows')).toBeNull();
-      expect(field<HTMLInputElement>('abandonMinutes').value).toBe('30');
+      expect(field<HTMLInputElement>('runRetentionDays').value).toBe('30');
     });
 
     it('asks the browser to confirm only while there are unsaved changes', async () => {
-      vi.mocked(saveSettings).mockResolvedValue({ ...settings, abandonMinutes: 30 });
+      vi.mocked(saveSettings).mockResolvedValue({ ...settings, runRetentionDays: 30 });
       await render();
       expect(promptsOnUnload()).toBe(false);
 
-      type(field<HTMLInputElement>('abandonMinutes'), '30');
+      type(field<HTMLInputElement>('runRetentionDays'), '30');
       expect(promptsOnUnload()).toBe(true);
 
       await click(saveButton());

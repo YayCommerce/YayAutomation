@@ -9,7 +9,7 @@
 
 use YayMatik\Workflow\Core\Runtime\ActionSchedulerQueue;
 use YayMatik\Workflow\Core\Runtime\Cleanup;
-use YayMatik\Workflow\Core\Runtime\InactiveSweep;
+use YayMatik\Pro\Workflow\Core\Runtime\InactiveSweep;
 use YayMatik\Workflow\Core\Storage\RunStore;
 
 require_once __DIR__ . '/check-run.php';
@@ -136,7 +136,7 @@ $check = function ( string $id ) use ( $call ) {
 };
 
 $res = $call( 'GET', 'health/checks' );
-$ok( 200 === $res->get_status() && [ 'runs_queued', 'runs_running', 'jobs_late', 'cleanup_job', 'inactive_sweep_job', 'missing_plugin' ] === array_column( $res->get_data()['checks'], 'id' ) && false !== strtotime( $res->get_data()['checkedAt'] ), 'GET /health/checks: the 6 checks and checkedAt' );
+$ok( 200 === $res->get_status() && [ 'runs_queued', 'runs_running', 'jobs_late', 'cleanup_job', 'inactive_sweep_job', 'missing_plugin', 'needs_pro' ] === array_column( $res->get_data()['checks'], 'id' ) && false !== strtotime( $res->get_data()['checkedAt'] ), 'GET /health/checks: the 7 checks and checkedAt' );
 $ok( is_array( $res->get_data()['extensions'] ?? null ) && ! array_intersect( [ 'yaymatik', 'woocommerce' ], array_column( $res->get_data()['extensions'], 'id' ) ), 'GET /health/checks: extensions, core modules not listed' );
 foreach ( [ 'jobs_late', 'nope', '' ] as $check_id ) {
     $ok( 400 === $call( 'POST', 'health/fix', [ 'check' => $check_id ] )->get_status(), "fix \"{$check_id}\" → 400" );

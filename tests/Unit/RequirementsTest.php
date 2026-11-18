@@ -7,8 +7,18 @@ use YayMatik\Requirements;
 /** The minimum WordPress, PHP and WooCommerce versions, checked before YayMatik loads. */
 final class RequirementsTest extends TestCase {
 
+    /** @var array */
+    private $filters = [];
+
+    protected function setUp(): void {
+        // The notices are counted from none; the bootstrap's filters (Pro's modules) come back afterwards.
+        $this->filters = $GLOBALS['yaymatik_test_filters'] ?? [];
+        unset( $GLOBALS['yaymatik_test_filters'] );
+    }
+
     protected function tearDown(): void {
-        unset( $GLOBALS['yaymatik_test_filters'], $GLOBALS['wp_version'] );
+        $GLOBALS['yaymatik_test_filters'] = $this->filters;
+        unset( $GLOBALS['wp_version'] );
     }
 
     /**

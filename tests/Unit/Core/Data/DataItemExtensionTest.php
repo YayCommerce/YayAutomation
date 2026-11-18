@@ -57,6 +57,5 @@ final class DataItemExtensionTest extends TestCase {
     public function test_a_field_is_a_merge_tag_by_default(): void {
         $fields = ( new OrderData() )->fields();
         $this->assertTrue( $fields['total']['merge_tag'] );
-        $this->assertFalse( $fields['meta']['merge_tag'] );
     }
 }

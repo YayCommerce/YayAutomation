@@ -79,12 +79,11 @@ final class OrderDataTest extends TestCase {
     public function test_plain_fields(): void {
         $this->assertSame( 'US', self::read( 'billing_country', [ 'billing_country' => 'US' ] ) );
         $this->assertSame( 'CA', self::read( 'shipping_country', [ 'shipping_country' => 'CA' ] ) );
-        $this->assertSame( 'admin', self::read( 'created_via', [ 'created_via' => 'admin' ] ) );
-        $this->assertSame( 'EUR', self::read( 'currency', [ 'currency' => 'EUR' ] ) );
         $this->assertSame( 'Hi', self::read( 'customer_note', [ 'customer_note' => 'Hi' ] ) );
-        $this->assertSame( 5.5, self::read( 'discount_total', [ 'discount_total' => '5.5' ] ) );
-        $this->assertSame( 4.0, self::read( 'shipping_total', [ 'shipping_total' => '4' ] ) );
-        $this->assertSame( 2.0, self::read( 'refunded_total', [ 'total_refunded' => '2' ] ) );
+    }
+
+    public function test_the_free_edition_has_no_totals_origin_currency_custom_or_suggestion_fields(): void {
+        $this->assertSame( [], array_intersect( [ 'discount_total', 'shipping_total', 'refunded_total', 'created_via', 'currency', 'has_cross_sells', 'has_upsells', 'cross_sell_products', 'upsell_products', 'meta' ], array_keys( ( new OrderData() )->fields() ) ) );
     }
 
     public function test_a_guest_has_no_account(): void {
@@ -109,25 +108,5 @@ final class OrderDataTest extends TestCase {
         $this->assertSame( $at->getTimestamp(), ( $fields['paid_date']['timestamp'] )( $paid ) );
         $this->assertSame( '', ( $fields['completed_date']['value'] )( new FakeOrder( [] ) ) );
         $this->assertNull( ( $fields['completed_date']['timestamp'] )( new FakeOrder( [] ) ) );
-    }
-
-    public function test_custom_field_reads_text_and_refuses_blocked_keys(): void {
-        $order       = new FakeOrder( [] );
-        $order->meta = [
-            '_vip'         => 'yes',
-            '_list'        => [ 'a' ],
-            '_order_total' => '9',
-            '_yaymatik_x'  => '1',
-        ];
-        $meta        = ( new OrderData() )->fields()['meta']['meta'];
-
-        $this->assertSame( 'yes', $meta( $order, '_vip' ) );
-        $this->assertSame( '', $meta( $order, '_list' ) );
-        $this->assertSame( '', $meta( $order, '_order_total' ) );
-        $this->assertSame( '', $meta( $order, '_yaymatik_x' ) );
-    }
-
-    public function test_custom_field_is_not_a_merge_tag(): void {
-        $this->assertFalse( ( new OrderData() )->fields()['meta']['merge_tag'] );
     }
 }

@@ -1,7 +1,6 @@
+import meta from '@test-meta';
 import type { WorkflowGraph } from '@yaymatik/types';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-
-import meta from '../../../../test/fixtures/meta.json';
 
 /** Another plugin's trigger with a fact, as PHP's catalog sends it. */
 const pointsTrigger = {

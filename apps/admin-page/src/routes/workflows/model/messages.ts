@@ -14,6 +14,7 @@ export const messages = {
   /* translators: %s: plugin name, e.g. "YayMail" */
   missingPlugin: __('This workflow uses %1$s, which isn’t active. Activate %1$s to turn the workflow on.', 'yaymatik'),
   deleteActive: __('Deactivate this workflow before you delete it.', 'yaymatik'),
+  needsPro: __('Needs YayMatik Pro. Activate YayMatik Pro to turn the workflow on.', 'yaymatik'),
   /* translators: %s: data item or step, e.g. "Order" */
   missingData: __('%s data isn’t available at this step.', 'yaymatik'),
   mayRefire: __(

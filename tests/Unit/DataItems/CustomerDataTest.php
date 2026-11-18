@@ -9,14 +9,11 @@ use YayMatik\Workflow\DataItems\CustomerData;
 
 require_once dirname( __DIR__, 2 ) . '/Support/woocommerce-stubs.php';
 
-/** The customer fields, with the order lookups and stats faked. */
+/** The customer fields, with the order lookups faked. */
 final class CustomerDataTest extends TestCase {
 
     /** @var array[] Queries the lookup got. */
     private $queries = [];
-
-    /** @var array[] [ user id, email ] per stats call. */
-    private $stats_calls = [];
 
     /** @var mixed */
     private $wpdb;
@@ -47,15 +44,7 @@ final class CustomerDataTest extends TestCase {
                 $ids             = isset( $query['customer_id'] ) ? ( $by_user[ $query['customer_id'] ] ?? [] ) : ( $by_email[ $query['billing_email'] ] ?? [] );
                 return array_slice( $ids, 0, $query['limit'] );
             },
-            fn( string $email ) => in_array( strtolower( $email ), $unsubscribed, true ),
-            function ( int $user_id, string $email ) {
-                $this->stats_calls[] = [ $user_id, $email ];
-                return [
-                    'count'     => 4,
-                    'spent'     => 120.5,
-                    'last_paid' => 1700000000,
-                ];
-            }
+            fn( string $email ) => in_array( strtolower( $email ), $unsubscribed, true )
         );
     }
 
@@ -82,10 +71,21 @@ final class CustomerDataTest extends TestCase {
         $this->assertSame( '', $value( 'first_name' ) );
         $this->assertSame( '', $value( 'full_name' ) );
         $this->assertTrue( $value( 'is_guest' ) );
-        $this->assertSame( [], $value( 'role' ) );
-        $this->assertSame( 4.0, $value( 'paid_order_count' ), 'stats by the email' );
-        $this->assertSame( [ [ 0, 'Rev@x.com' ] ], $this->stats_calls );
         $this->assertTrue( $value( 'unsubscribed' ) );
+    }
+
+    public function test_the_free_edition_has_no_history_account_or_custom_fields(): void {
+        $this->assertSame(
+            [ 'email', 'first_name', 'last_name', 'full_name', 'phone', 'billing_country', 'is_first_order', 'is_guest', 'unsubscribed' ],
+            array_keys( $this->item( [], [] )->fields() )
+        );
+    }
+
+    public function test_is_guest_reads_the_account(): void {
+        $fields = $this->item( [], [] )->fields();
+
+        $this->assertFalse( ( $fields['is_guest']['value'] )( $this->order( 10, 5, 'a@x.com' ) ) );
+        $this->assertTrue( ( $fields['is_guest']['value'] )( $this->order( 11, 0, 'g@x.com' ) ) );
     }
 
     public function test_a_guest_with_only_this_paid_order(): void {
@@ -150,82 +150,6 @@ final class CustomerDataTest extends TestCase {
 
         $this->assertTrue( $this->first( $item, $this->order( 10, 0, '' ) ), 'nothing to find, so no other paid order' );
         $this->assertSame( [], $this->queries );
-    }
-
-    public function test_paid_order_count_comes_from_the_stats_as_a_float(): void {
-        $item = $this->item( [], [] );
-
-        $this->assertSame( 4.0, ( $item->fields()['paid_order_count']['value'] )( $this->order( 10, 5, 'ann@x.com' ) ) );
-        $this->assertSame( 'Paid order count', $item->fields()['paid_order_count']['label'] );
-        $this->assertSame( [ [ 5, 'ann@x.com' ] ], $this->stats_calls );
-    }
-
-    public function test_total_spent_and_last_order_date_come_from_the_stats(): void {
-        $fields = $this->item( [], [] )->fields();
-        $order  = $this->order( 10, 5, 'ann@x.com' );
-
-        $this->assertSame( 120.5, ( $fields['total_spent']['value'] )( $order ) );
-        $this->assertSame( 1700000000, ( $fields['last_order_date']['timestamp'] )( $order ) );
-        $this->assertSame( 'money', $fields['total_spent']['value_type']->to_string() );
-    }
-
-    public function test_stats_are_read_once_per_customer_object(): void {
-        $fields = $this->item( [], [] )->fields();
-        $order  = $this->order( 10, 5, 'ann@x.com' );
-
-        ( $fields['paid_order_count']['value'] )( $order );
-        ( $fields['total_spent']['value'] )( $order );
-        $this->assertCount( 1, $this->stats_calls, 'two reads, one call' );
-
-        ( $fields['total_spent']['value'] )( $this->order( 10, 5, 'ann@x.com' ) );
-        $this->assertCount( 2, $this->stats_calls, 'a new object reads again, as after a Wait' );
-    }
-
-    public function test_stats_know_each_kind_of_customer(): void {
-        $fields  = $this->item( [], [] )->fields();
-        $account = new \WC_Customer(
-            [
-                'id'            => 7,
-                'billing_email' => 'a@x.com',
-            ]
-        );
-        $cart    = $this->cart_customer( [ 'email' => 'c@x.com' ], null );
-
-        ( $fields['total_spent']['value'] )( $account );
-        ( $fields['total_spent']['value'] )( $cart );
-        ( $fields['total_spent']['value'] )( $this->order( 10, 0, 'g@x.com' ) );
-
-        $this->assertSame( [ [ 7, 'a@x.com' ], [ 0, 'c@x.com' ], [ 0, 'g@x.com' ] ], $this->stats_calls );
-    }
-
-    public function test_guest_and_account_fields(): void {
-        $GLOBALS['yaymatik_test_users'] = [
-            5 => (object) [
-                'roles'           => [ 'customer' ],
-                'user_registered' => '2026-01-02 03:04:05',
-                'meta'            => [
-                    'tier'           => 'gold',
-                    'list'           => [ 'a' ],
-                    'session_tokens' => 'secret',
-                ],
-            ],
-        ];
-        $fields                         = $this->item( [], [] )->fields();
-        $user                           = $this->order( 10, 5, 'a@x.com' );
-        $guest                          = $this->order( 11, 0, 'g@x.com' );
-
-        $this->assertFalse( ( $fields['is_guest']['value'] )( $user ) );
-        $this->assertTrue( ( $fields['is_guest']['value'] )( $guest ) );
-        $this->assertSame( [ 'customer' ], ( $fields['role']['value'] )( $user ) );
-        $this->assertSame( [], ( $fields['role']['value'] )( $guest ) );
-        $this->assertSame( gmmktime( 3, 4, 5, 1, 2, 2026 ), ( $fields['registered_date']['timestamp'] )( $user ) );
-        $this->assertNull( ( $fields['registered_date']['timestamp'] )( $guest ) );
-
-        $meta = $fields['meta']['meta'];
-        $this->assertSame( 'gold', $meta( $user, 'tier' ) );
-        $this->assertSame( '', $meta( $user, 'list' ), 'an array reads as empty' );
-        $this->assertSame( '', $meta( $guest, 'tier' ) );
-        $this->assertSame( '', $meta( $user, 'session_tokens' ), 'blocked on read too' );
     }
 
     /**

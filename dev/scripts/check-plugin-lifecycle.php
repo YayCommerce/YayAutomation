@@ -71,6 +71,16 @@ switch ( $args[0] ?? '' ) {
         $ok( ! class_exists( 'YayMatikScoped\YayCommerce\AdminShell\AdminShell', false ), 'the autoloader never ran (admin-shell not loaded)' );
         break;
 
+    case 'second-copy':
+        foreach ( $GLOBALS['wp_filter']['admin_init']->callbacks ?? [] as $callbacks ) {
+            foreach ( $callbacks as $callback ) {
+                if ( $callback['function'] instanceof Closure && preg_match( '#/plugins/yaymatik(-pro)?/yaymatik(-pro)?\.php$#', ( new ReflectionFunction( $callback['function'] ) )->getFileName() ) ) {
+                    $callback['function']();
+                }
+            }
+        }
+        break;
+
     case 'schedule':
         delete_option( 'yaymatik_cleanup_checked_at' );
         \YayMatik\Workflow\Core\Runtime\Cleanup::ensure();

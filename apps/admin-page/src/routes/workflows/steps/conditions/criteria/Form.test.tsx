@@ -1,4 +1,5 @@
 import { act } from 'react';
+import { criteriaFeatures } from '@edition/criteria';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -10,6 +11,9 @@ import { FieldIssueContext } from '../../core/fields/feedback';
 import { plainSummary } from '../../core/marks';
 import { CriteriaForm } from './Form';
 import type { CriteriaConfig, CriteriaItem, Rule } from './schema';
+
+// Pro features of the form, the schema and the pickers: groups, comparing with another field, custom field rules.
+const pro = criteriaFeatures.groups;
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -78,14 +82,14 @@ describe('each rule draws what its comparison takes', () => {
     expect(container.querySelector('input')).toBeNull();
   });
 
-  it('a custom field: its name, then the value', async () => {
+  it.runIf(pro)('a custom field: its name, then the value', async () => {
     await mount([rule({ field: 'order.meta', operator: 'equal', value: 'yes', key: '_gift' })]);
     const values = [...container.querySelectorAll('input')].map((input) => input.value);
     expect(values).toEqual(['_gift', 'yes']);
     expect(container.querySelector('input[role="combobox"]')).toBeNull();
   });
 
-  it('a customer custom field: suggests the names other workflows use', async () => {
+  it.runIf(pro)('a customer custom field: suggests the names other workflows use', async () => {
     await mount([rule({ field: 'customer.meta', operator: 'equal', value: '', key: '' })]);
     act(() => container.querySelector<HTMLInputElement>('input[role="combobox"]')!.focus());
     await settle();
@@ -94,13 +98,20 @@ describe('each rule draws what its comparison takes', () => {
     expect(options).toEqual(['vip', 'vip_since']);
   });
 
-  it('a note on the field shows under its rule', async () => {
+  it.runIf(pro)('a note on the field shows under its rule', async () => {
     await mount([rule({ field: 'customer.total_spent', operator: 'greater_than', value: '1' })]);
     expect(container.textContent).toContain('added as stored');
   });
 });
 
-describe('groups in the form', () => {
+it.runIf(!pro)('the free edition offers no group and no comparing with another field', async () => {
+  await mount([total()]);
+  expect(buttons('Add group')).toHaveLength(0);
+  expect(container.querySelectorAll('[aria-label="Compare with other data"]')).toHaveLength(0);
+  expect(buttons('Add rule')).toHaveLength(1);
+});
+
+describe.runIf(pro)('groups in the form', () => {
   it('a condition with no group looks as it did, with Add group beside Add rule', async () => {
     await mount([total()]);
     expect(buttons('Add group')).toHaveLength(1);
@@ -155,7 +166,7 @@ describe('canvas summaries', () => {
     );
   });
 
-  it('reads a custom field with its name', () => {
+  it.runIf(pro)('reads a custom field with its name', () => {
     expect(summary([rule({ field: 'customer.meta', operator: 'equal', value: 'yes', key: 'vip' })])).toBe(
       'Custom field vip is equal to yes',
     );
@@ -210,19 +221,19 @@ describe('a server issue that names its rule', () => {
     return !!box && !box.querySelector(`#${otherId}`);
   };
 
-  it('shows under that rule at the top level, once', async () => {
+  it.runIf(pro)('shows under that rule at the top level, once', async () => {
     await mountWith([total(), protectedKey], [1]);
     expect(container.textContent?.split(message).length).toBe(2);
     expect(shownUnder('rule-1-key', 'rule-0-value')).toBe(true);
   });
 
-  it('shows under that rule inside a group', async () => {
+  it.runIf(pro)('shows under that rule inside a group', async () => {
     await mountWith([total(), { match: 'any', rules: [total(), protectedKey] }], [1, 1]);
     expect(container.textContent?.split(message).length).toBe(2);
     expect(shownUnder('group-1-rule-1-key', 'group-1-rule-0-value')).toBe(true);
   });
 
-  it('gives way to the form’s own error there', async () => {
+  it.runIf(pro)('gives way to the form’s own error there', async () => {
     await mountWith([rule({ field: 'customer.meta', key: '', operator: 'is_not_empty' })], [0]);
     expect(container.textContent).toContain('Enter the custom field name.');
     expect(container.textContent).not.toContain(message);

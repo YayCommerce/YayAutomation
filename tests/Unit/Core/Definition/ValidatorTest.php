@@ -2,6 +2,7 @@
 namespace YayMatik\Tests\Unit\Core\Definition;
 
 use PHPUnit\Framework\TestCase;
+use YayMatik\Tests\Support\Edition;
 use YayMatik\Workflow\Core\Definition\GraphSchema;
 use YayMatik\Workflow\Core\Definition\Messages;
 use YayMatik\Workflow\Core\Definition\Validator;
@@ -266,7 +267,7 @@ final class ValidatorTest extends TestCase {
                 self::node( 't', 'trigger', 'order_status_changed', [ 'to' => [ 'gone' ] ] ),
                 self::node( 'c', 'condition', 'condition', [ 'rules' => [] ] ),
                 self::note( 'Hi {{ order.foo }}' ),
-                self::node( 'meta', 'action', 'update_order_meta', [ 'key' => '' ] ),
+                self::node( 'meta', 'action', 'change_order_status', [ 'status' => '' ] ),
             ],
             [ self::edge( 't', 'c' ), self::edge( 'c', 'note', 'then' ), self::edge( 'c', 'meta', 'otherwise' ) ]
         );
@@ -276,11 +277,11 @@ final class ValidatorTest extends TestCase {
                 [ 'invalid_config', 'Choose options from the list.', 't' ],
                 [ 'invalid_config', 'Add a rule, or remove this condition.', 'c' ],
                 [ 'invalid_config', '{{ order.foo }} isn’t an available variable.', 'note' ],
-                [ 'invalid_config', 'Update order custom field needs a field name.', 'meta' ],
+                [ 'invalid_config', 'Choose the new status.', 'meta' ],
             ],
             array_map( fn( array $issue ) => [ $issue['code'], $issue['message'], $issue['nodeId'] ], $issues )
         );
-        $this->assertSame( [ 'to', 'rules', 'note', 'key' ], array_column( $issues, 'field' ), 'each step issue names its field' );
+        $this->assertSame( [ 'to', 'rules', 'note', 'status' ], array_column( $issues, 'field' ), 'each step issue names its field' );
         $this->assertArrayNotHasKey( 'rule', $issues[1], 'a condition with no rule names none' );
     }
 
@@ -303,10 +304,18 @@ final class ValidatorTest extends TestCase {
                 ],
             ],
         ];
+        if ( YAYMATIK_TEST_LITE ) {
+            // No custom field and no group in the free edition: the second rule is a plain rule with a bad value.
+            $rules[1] = [
+                'field'    => 'order.total',
+                'operator' => 'greater_than',
+                'value'    => 'x',
+            ];
+        }
         $issue = self::issue_of( 'c', [], $rules );
-        $this->assertSame( 'This custom field is protected. Choose another one.', $issue['message'] );
+        $this->assertSame( YAYMATIK_TEST_LITE ? 'Enter a number.' : 'This custom field is protected. Choose another one.', $issue['message'] );
         $this->assertSame( 'rules', $issue['field'] );
-        $this->assertSame( [ 1, 0 ], $issue['rule'] );
+        $this->assertSame( YAYMATIK_TEST_LITE ? [ 1 ] : [ 1, 0 ], $issue['rule'] );
     }
 
     /**
@@ -314,7 +323,7 @@ final class ValidatorTest extends TestCase {
      * Texts go into the email's subject, the note and the meta value.
      *
      * @param string $id      Step whose issue to return.
-     * @param array  $texts   [ 'email' => subject, 'note' => note, 'meta' => value ].
+     * @param array  $texts   [ 'email' => subject, 'note' => note, 'meta' => the other branch's note ].
      * @param array  $rules   Condition rules.
      * @param string $note_id Id of the note step.
      */
@@ -340,15 +349,7 @@ final class ValidatorTest extends TestCase {
                     ]
                 ),
                 self::note( $texts['note'] ?? 'n', $note_id ),
-                self::node(
-                    'meta',
-                    'action',
-                    'update_order_meta',
-                    [
-                        'key'   => 'k',
-                        'value' => $texts['meta'] ?? '',
-                    ]
-                ),
+                self::note( $texts['meta'] ?? 'n', 'meta' ),
             ],
             [ self::edge( 't', 'c' ), self::edge( 'c', 'email', 'then' ), self::edge( 'email', $note_id ), self::edge( 'c', 'meta', 'otherwise' ) ]
         );
@@ -372,7 +373,7 @@ final class ValidatorTest extends TestCase {
     public function test_unknown_merge_tags_keep_their_message_and_name_the_field(): void {
         $this->assertSame( self::expect( 'invalid_config', '{{ order.foo }} isn’t an available variable.', 'subject' ), self::issue_of( 'email', [ 'email' => 'Hi {{ order.foo }}' ] ) );
         $this->assertSame( self::expect( 'invalid_config', '{{ customer.bar }} isn’t an available variable.', 'note' ), self::issue_of( 'note', [ 'note' => '{{ customer.bar }}' ] ) );
-        $this->assertSame( self::expect( 'invalid_config', '{{ order.foo }} isn’t an available variable.', 'value' ), self::issue_of( 'meta', [ 'meta' => '{{ order.foo }}' ] ) );
+        $this->assertSame( self::expect( 'invalid_config', '{{ order.foo }} isn’t an available variable.', 'note' ), self::issue_of( 'meta', [ 'meta' => '{{ order.foo }}' ] ) );
     }
 
     public function test_deep_paths_resolve_through_the_catalog(): void {
@@ -390,7 +391,7 @@ final class ValidatorTest extends TestCase {
         $this->assertNull( self::issue_of( 'action-mv0pf42q0l81', [ 'note' => '{{ steps.email.to }}' ], [], 'action-mv0pf42q0l81' ), 'any step id' );
 
         $this->assertSame(
-            self::expect( 'missing_data', '{{ steps.email.to }} needs the Send internal email step above this one. Move it above, or remove the variable.', 'value' ),
+            self::expect( 'missing_data', '{{ steps.email.to }} needs the Send internal email step above this one. Move it above, or remove the variable.', 'note' ),
             self::issue_of( 'meta', [ 'meta' => '{{ steps.email.to }}' ] ),
             'the other branch'
         );
@@ -497,7 +498,7 @@ final class ValidatorTest extends TestCase {
      * @param string[] $keys    Expected keys, in order.
      */
     public function test_variables_a_step_can_use( array $graph, string $node_id, array $keys ): void {
-        $this->assertSame( $keys, array_column( Validator::variables( GraphSchema::prepare( $graph ), $node_id ), 'key' ) );
+        $this->assertSame( Edition::keys( $keys ), array_column( Validator::variables( GraphSchema::prepare( $graph ), $node_id ), 'key' ) );
     }
 
     public function test_variables_carry_label_and_type(): void {
@@ -946,6 +947,7 @@ final class ValidatorTest extends TestCase {
             ],
             [ self::edge( 't', 'note' ) ]
         );
-        $this->assertSame( Messages::get( 'unknownVariable', '{{ order.meta }}' ), $errors[0]['message'] );
+        // In the free edition the field is YayMatik Pro's.
+        $this->assertSame( YAYMATIK_TEST_LITE ? Messages::get( 'needsPro' ) : Messages::get( 'unknownVariable', '{{ order.meta }}' ), $errors[0]['message'] );
     }
 }

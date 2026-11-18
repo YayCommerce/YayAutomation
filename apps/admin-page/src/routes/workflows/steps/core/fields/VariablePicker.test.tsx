@@ -1,4 +1,5 @@
 import { act } from 'react';
+import { criteriaFeatures } from '@edition/criteria';
 import type { StepId, WorkflowGraph } from '@yaymatik/types';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -6,6 +7,9 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { availableVariables } from '../variables';
 import { VariablePicker } from './VariablePicker';
 import { VariableScopeContext, type VariableScope } from './variableScope';
+
+// Pro features of the form, the schema and the pickers: groups, comparing with another field, custom field rules.
+const pro = criteriaFeatures.groups;
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -65,7 +69,7 @@ const rowNamed = (dialog: HTMLElement, label: string) =>
   [...dialog.querySelectorAll('button')].find((b) => b.querySelector('.font-medium')?.textContent === label);
 
 describe('VariablePicker blocks', () => {
-  it('lists the product grids under their data item and the coupon box under its step', () => {
+  it.runIf(pro)('lists the product grids under their data item and the coupon box under its step', () => {
     const dialog = open(true);
     act(() => rowNamed(dialog, 'Blocks')!.click());
     const headings = [...dialog.querySelectorAll('p.uppercase')].map((p) => p.textContent);

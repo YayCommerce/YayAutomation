@@ -33,6 +33,8 @@ final class Catalog {
             'operatorLabels' => Operators::labels(),
             'always'         => DataRegistry::ALWAYS,
             'messages'       => Messages::all(),
+            // What a workflow may use that isn't here without YayMatik Pro: drawn read-only as "Needs YayMatik Pro".
+            'proMissing'     => ProCatalog::missing(),
             'templates'      => self::templates(),
         ];
     }
@@ -71,7 +73,7 @@ final class Catalog {
     }
 
     /**
-     * Steps of other plugins that aren't active now, by id: what the editor shows for them (docs/extension-api.md §10).
+     * Steps of other plugins that aren't active now, and YayMatik Pro's when it isn't, by id: what the editor shows for them (docs/extension-api.md §10).
      *
      * @return array[] `module`, `plugin` (label), `kind`, `label`, `outputs` ([ key, label ]), `facts` (keys).
      */
@@ -97,6 +99,9 @@ final class Catalog {
                 'outputs' => $outputs,
                 'facts'   => array_keys( $entry['facts'] ?? [] ),
             ];
+        }
+        foreach ( ProCatalog::missing()['steps'] as $id ) {
+            $steps[ $id ] = ProCatalog::step( $id );
         }
         return $steps;
     }

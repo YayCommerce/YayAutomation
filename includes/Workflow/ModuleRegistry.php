@@ -1,8 +1,6 @@
 <?php
 namespace YayMatik\Workflow;
 
-use YayMatik\Pro\Workflow\Modules\WoocommerceProModule;
-use YayMatik\Pro\Workflow\Modules\YayMatikProModule;
 use YayMatik\Workflow\Core\Data\DataItem;
 use YayMatik\Workflow\Modules\Module;
 use YayMatik\Workflow\Modules\WoocommerceModule;
@@ -20,11 +18,12 @@ defined( 'ABSPATH' ) || exit;
 
 /**
  * The modules, and the steps and data items they register. Other plugins register on
- * `yaymatik_register` (`Extension\Extensions`); Pro adds module classes on `HOOK`. An id that is already taken (module, step or data item) keeps its first owner; the
+ * `yaymatik_register` (`Extension\Extensions`); YayMatik Pro swaps in its modules on `HOOK`. An id that is already taken (module, step or data item) keeps its first owner; the
  * second claim is a diagnostic.
  */
 final class ModuleRegistry {
 
+    /** @internal YayMatik Pro's filter, not the Extension API: other plugins use `yaymatik_register`. */
     public const HOOK = 'yaymatik_modules';
 
     /** @var Module[]|null */
@@ -33,10 +32,9 @@ final class ModuleRegistry {
     /** @var array|null */
     private static $built = null;
 
-    /** Module classes: the Pro ones when the Pro folder ships, then the filter's. */
+    /** Module classes: core's, through the filter. */
     public static function classes(): array {
-        $modules = class_exists( YayMatikProModule::class ) ? [ YayMatikProModule::class, WoocommerceProModule::class ] : [ YayMatikModule::class, WoocommerceModule::class ];
-        return (array) apply_filters( self::HOOK, $modules );
+        return (array) apply_filters( self::HOOK, [ YayMatikModule::class, WoocommerceModule::class ] );
     }
 
     /** @return Module[] Keyed by id. The first call fires `yaymatik_register`. */

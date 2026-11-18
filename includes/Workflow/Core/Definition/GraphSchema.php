@@ -40,8 +40,8 @@ final class GraphSchema {
      * The normalized graph: fixed key order and types, configs sanitized, unknown keys dropped.
      *
      * @param mixed   $graph
-     * @param array[] $stored Saved nodes (live, then draft): a node whose step isn't registered is kept with its
-     *                        saved config when one of them has it, so a workflow using a plugin that's off still saves.
+     * @param array[] $stored Saved nodes (live, then draft): a node whose step isn't registered, or whose settings need
+     *                        YayMatik Pro, is kept with its saved config when one of them has it.
      * @return array|\WP_Error 400 for a malformed graph.
      */
     public static function prepare( $graph, array $stored = [] ) {
@@ -70,7 +70,18 @@ final class GraphSchema {
             // A trigger or action may be added before its step is chosen; a condition has just one step.
             $step  = null === $step_id ? null : StepRegistry::get( (string) $step_id );
             $known = $step ? $step->kind() === $kind : ( null === $step_id && Step::KIND_CONDITION !== $kind );
-            $kept  = ! $step && null !== $step_id ? self::kept_config( $stored, $id, $kind, (string) $step_id ) : null;
+            // A step this site can't read, or saved settings that need YayMatik Pro: kept as saved, so moving back to Pro loses nothing.
+            $kept = null === $step_id ? null : self::kept_config( $stored, $id, $kind, (string) $step_id );
+            if ( $step && null !== $kept && ! ProUsage::node(
+                [
+                    'data' => [
+                        'block'  => (string) $step_id,
+                        'config' => $kept,
+                    ],
+                ]
+            ) ) {
+                $kept = null;
+            }
             if ( ! in_array( $kind, self::KINDS, true ) || ( ! $known && null === $kept ) ) {
                 return self::error( __( 'Unknown step type.', 'yaymatik' ), $id );
             }
@@ -88,7 +99,7 @@ final class GraphSchema {
                 ],
                 'data'     => [
                     'block'  => $step ? $step->id() : ( null === $kept ? null : (string) $step_id ),
-                    'config' => $step ? $step->sanitize( $data['config'] ?? [] ) : ( $kept ?? [] ),
+                    'config' => $kept ?? ( $step ? $step->sanitize( $data['config'] ?? [] ) : [] ),
                 ],
             ];
         }

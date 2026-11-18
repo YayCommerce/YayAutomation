@@ -1,9 +1,8 @@
 import { act } from 'react';
+import meta from '@test-meta';
 import type { StepId, WorkflowGraph } from '@yaymatik/types';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
-import meta from '../../../../test/fixtures/meta.json';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 

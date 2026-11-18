@@ -73,6 +73,7 @@ abstract class DataItem {
              * The dynamic portion is the data item id, for example
              * `yaymatik_data_item_site_fields`.
              *
+             * @internal Not the Extension API: other plugins use `yaymatik_register`.
              * @param array[]  $definitions Field definitions keyed by field key.
              * @param DataItem $item        The data item being built.
              */

@@ -455,6 +455,22 @@
                 "fields": [],
                 "outputs": []
             },
+            "review_posted": {
+                "kind": "trigger",
+                "plugin": "woocommerce",
+                "provides": [
+                    "review",
+                    "customer"
+                ],
+                "category": "review",
+                "label": "Review posted",
+                "description": "A product review is approved",
+                "icon": "star",
+                "summary": "When a product review is approved",
+                "onError": "stop",
+                "fields": [],
+                "outputs": []
+            },
             "customer_inactive": {
                 "kind": "trigger",
                 "plugin": "woocommerce",
@@ -531,22 +547,6 @@
                         "min": 0.01
                     }
                 ],
-                "outputs": []
-            },
-            "review_posted": {
-                "kind": "trigger",
-                "plugin": "woocommerce",
-                "provides": [
-                    "review",
-                    "customer"
-                ],
-                "category": "review",
-                "label": "Review posted",
-                "description": "A product review is approved",
-                "icon": "star",
-                "summary": "When a product review is approved",
-                "onError": "stop",
-                "fields": [],
                 "outputs": []
             },
             "send_email": {
@@ -662,62 +662,6 @@
                         "key": "to",
                         "label": "Sent to",
                         "type": "list<string>"
-                    }
-                ]
-            },
-            "resend_wc_email": {
-                "kind": "action",
-                "plugin": "woocommerce",
-                "category": "email",
-                "requires": [
-                    "order"
-                ],
-                "label": "Resend WooCommerce email",
-                "description": "Send one of WooCommerce’s order emails to the customer again.",
-                "icon": "refresh-cw",
-                "summary": "Resend {{ config.email }}",
-                "onError": "stop",
-                "fields": [
-                    {
-                        "key": "email",
-                        "type": "select",
-                        "label": "Email",
-                        "required": true,
-                        "requiredMessage": "{{ step }} needs an email.",
-                        "options": [
-                            {
-                                "value": "customer_cancelled_order",
-                                "label": "Cancelled order"
-                            },
-                            {
-                                "value": "customer_failed_order",
-                                "label": "Failed order"
-                            },
-                            {
-                                "value": "customer_on_hold_order",
-                                "label": "Order on-hold"
-                            },
-                            {
-                                "value": "customer_processing_order",
-                                "label": "Processing order"
-                            },
-                            {
-                                "value": "customer_completed_order",
-                                "label": "Completed order"
-                            },
-                            {
-                                "value": "customer_invoice",
-                                "label": "Order details"
-                            }
-                        ],
-                        "default": ""
-                    }
-                ],
-                "outputs": [
-                    {
-                        "key": "email",
-                        "label": "Email",
-                        "type": "string"
                     }
                 ]
             },
@@ -916,6 +860,169 @@
                     }
                 ]
             },
+            "generate_coupon": {
+                "kind": "action",
+                "plugin": "woocommerce",
+                "category": "coupon",
+                "requires": [],
+                "label": "Generate coupon",
+                "description": "Create a single-use WooCommerce coupon to send in a later email.",
+                "icon": "ticket",
+                "summary": "{{ config.discount_type }}, {{ config.expiry_days }}",
+                "onError": "stop",
+                "fields": [
+                    {
+                        "key": "discount_type",
+                        "type": "select",
+                        "label": "Discount type",
+                        "options": [
+                            {
+                                "value": "percent",
+                                "label": "Percentage discount"
+                            },
+                            {
+                                "value": "fixed_cart",
+                                "label": "Fixed amount off the cart"
+                            },
+                            {
+                                "value": "free_shipping",
+                                "label": "Free shipping"
+                            }
+                        ],
+                        "default": "percent"
+                    },
+                    {
+                        "key": "amount",
+                        "type": "number",
+                        "label": "Amount",
+                        "help": "A percentage from 1 to 100, or an amount in your store currency.",
+                        "showIf": {
+                            "field": "discount_type",
+                            "value": [
+                                "percent",
+                                "fixed_cart"
+                            ]
+                        },
+                        "default": 10,
+                        "min": 0.01
+                    },
+                    {
+                        "key": "expiry_days",
+                        "type": "number",
+                        "label": "Expires after (days)",
+                        "help": "The coupon ends at the end of that day, in your store’s timezone. Leave blank for no expiry.",
+                        "default": 30,
+                        "min": 1
+                    },
+                    {
+                        "key": "minimum_spend",
+                        "type": "number",
+                        "label": "Minimum spend",
+                        "help": "Leave blank for none.",
+                        "default": null,
+                        "min": 0
+                    },
+                    {
+                        "key": "individual_use",
+                        "type": "toggle",
+                        "label": "Can’t be combined with other coupons",
+                        "default": false
+                    },
+                    {
+                        "key": "limit_to_customer",
+                        "type": "toggle",
+                        "label": "Only the customer can use it",
+                        "help": "Limited to the customer’s billing email.",
+                        "default": true
+                    },
+                    {
+                        "key": "code_prefix",
+                        "type": "text",
+                        "label": "Code prefix",
+                        "help": "Letters, numbers, - and _. The code is the prefix and 8 random characters.",
+                        "default": "YM"
+                    }
+                ],
+                "outputs": [
+                    {
+                        "key": "code",
+                        "label": "Coupon code",
+                        "type": "string"
+                    },
+                    {
+                        "key": "amount",
+                        "label": "Coupon amount",
+                        "type": "string"
+                    },
+                    {
+                        "key": "expires_at",
+                        "label": "Coupon expiry date",
+                        "type": "date"
+                    },
+                    {
+                        "key": "box",
+                        "label": "Coupon box",
+                        "type": "string",
+                        "block": true
+                    }
+                ]
+            },
+            "resend_wc_email": {
+                "kind": "action",
+                "plugin": "woocommerce",
+                "category": "email",
+                "requires": [
+                    "order"
+                ],
+                "label": "Resend WooCommerce email",
+                "description": "Send one of WooCommerce’s order emails to the customer again.",
+                "icon": "refresh-cw",
+                "summary": "Resend {{ config.email }}",
+                "onError": "stop",
+                "fields": [
+                    {
+                        "key": "email",
+                        "type": "select",
+                        "label": "Email",
+                        "required": true,
+                        "requiredMessage": "{{ step }} needs an email.",
+                        "options": [
+                            {
+                                "value": "customer_cancelled_order",
+                                "label": "Cancelled order"
+                            },
+                            {
+                                "value": "customer_failed_order",
+                                "label": "Failed order"
+                            },
+                            {
+                                "value": "customer_on_hold_order",
+                                "label": "Order on-hold"
+                            },
+                            {
+                                "value": "customer_processing_order",
+                                "label": "Processing order"
+                            },
+                            {
+                                "value": "customer_completed_order",
+                                "label": "Completed order"
+                            },
+                            {
+                                "value": "customer_invoice",
+                                "label": "Order details"
+                            }
+                        ],
+                        "default": ""
+                    }
+                ],
+                "outputs": [
+                    {
+                        "key": "email",
+                        "label": "Email",
+                        "type": "string"
+                    }
+                ]
+            },
             "update_order_meta": {
                 "kind": "action",
                 "plugin": "woocommerce",
@@ -1065,113 +1172,6 @@
                         "key": "to",
                         "label": "Roles after",
                         "type": "string"
-                    }
-                ]
-            },
-            "generate_coupon": {
-                "kind": "action",
-                "plugin": "woocommerce",
-                "category": "coupon",
-                "requires": [],
-                "label": "Generate coupon",
-                "description": "Create a single-use WooCommerce coupon to send in a later email.",
-                "icon": "ticket",
-                "summary": "{{ config.discount_type }}, {{ config.expiry_days }}",
-                "onError": "stop",
-                "fields": [
-                    {
-                        "key": "discount_type",
-                        "type": "select",
-                        "label": "Discount type",
-                        "options": [
-                            {
-                                "value": "percent",
-                                "label": "Percentage discount"
-                            },
-                            {
-                                "value": "fixed_cart",
-                                "label": "Fixed amount off the cart"
-                            },
-                            {
-                                "value": "free_shipping",
-                                "label": "Free shipping"
-                            }
-                        ],
-                        "default": "percent"
-                    },
-                    {
-                        "key": "amount",
-                        "type": "number",
-                        "label": "Amount",
-                        "help": "A percentage from 1 to 100, or an amount in your store currency.",
-                        "showIf": {
-                            "field": "discount_type",
-                            "value": [
-                                "percent",
-                                "fixed_cart"
-                            ]
-                        },
-                        "default": 10,
-                        "min": 0.01
-                    },
-                    {
-                        "key": "expiry_days",
-                        "type": "number",
-                        "label": "Expires after (days)",
-                        "help": "The coupon ends at the end of that day, in your store’s timezone. Leave blank for no expiry.",
-                        "default": 30,
-                        "min": 1
-                    },
-                    {
-                        "key": "minimum_spend",
-                        "type": "number",
-                        "label": "Minimum spend",
-                        "help": "Leave blank for none.",
-                        "default": null,
-                        "min": 0
-                    },
-                    {
-                        "key": "individual_use",
-                        "type": "toggle",
-                        "label": "Can’t be combined with other coupons",
-                        "default": false
-                    },
-                    {
-                        "key": "limit_to_customer",
-                        "type": "toggle",
-                        "label": "Only the customer can use it",
-                        "help": "Limited to the customer’s billing email.",
-                        "default": true
-                    },
-                    {
-                        "key": "code_prefix",
-                        "type": "text",
-                        "label": "Code prefix",
-                        "help": "Letters, numbers, - and _. The code is the prefix and 8 random characters.",
-                        "default": "YM"
-                    }
-                ],
-                "outputs": [
-                    {
-                        "key": "code",
-                        "label": "Coupon code",
-                        "type": "string"
-                    },
-                    {
-                        "key": "amount",
-                        "label": "Coupon amount",
-                        "type": "string"
-                    },
-                    {
-                        "key": "expires_at",
-                        "label": "Coupon expiry date",
-                        "type": "date"
-                    },
-                    {
-                        "key": "box",
-                        "label": "Coupon box",
-                        "type": "string",
-                        "block": true
                     }
                 ]
             }
@@ -5729,6 +5729,7 @@
             "noBlock": "Choose an action.",
             "missingPlugin": "This workflow uses %1$s, which isn’t active. Activate %1$s to turn the workflow on.",
             "deleteActive": "Deactivate this workflow before you delete it.",
+            "needsPro": "Needs YayMatik Pro. Activate YayMatik Pro to turn the workflow on.",
             "missingData": "%s data isn’t available at this step.",
             "mayRefire": "This step can set off this workflow’s own trigger. The workflow won’t start again from it.",
             "unknownVariable": "%s isn’t an available variable.",
@@ -5756,6 +5757,11 @@
             "ruleAmount": "Enter a whole number of 1 or more.",
             "ruleKeyRequired": "Enter the custom field name.",
             "ruleMetaKey": "This custom field is protected. Choose another one."
+        },
+        "proMissing": {
+            "steps": [],
+            "fields": [],
+            "features": []
         },
         "templates": [],
         "email": {

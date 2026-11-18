@@ -10,12 +10,27 @@ final class Settings {
 
     private const TEXT_MAX = 1000;
 
-    /** Integer settings: [ min, max ]. */
+    /** Integer settings: [ min, max ], as read: a value stored by YayMatik Pro keeps working. */
     private const RANGES = [
         'abandon_minutes'     => [ 15, 1440 ],
         'cart_retention_days' => [ 7, 365 ],
         'run_retention_days'  => [ 7, 730 ],
     ];
+
+    /** @var array[] What a save may set: the free edition's ranges, unless `allow()` widened them. Abandon minutes is Pro's. */
+    private static $editable = [
+        'cart_retention_days' => [ 7, 60 ],
+        'run_retention_days'  => [ 7, 90 ],
+    ];
+
+    /**
+     * Wider save ranges, by key.
+     *
+     * @param array[] $ranges
+     */
+    public static function allow( array $ranges ): void {
+        self::$editable = $ranges + self::$editable;
+    }
 
     public static function defaults(): array {
         return [
@@ -56,7 +71,7 @@ final class Settings {
     }
 
     /**
-     * Saves only when every given value is valid; unknown keys are ignored.
+     * Saves only when every given value is valid; unknown keys and integer settings this edition can't set are ignored.
      *
      * @param array $changes
      * @return array|\WP_Error All settings after the save, or errors[{ field, message }] with status 400.
@@ -65,7 +80,8 @@ final class Settings {
         self::$all = null;
         $values    = self::all();
         $errors    = [];
-        foreach ( array_intersect_key( $changes, $values ) as $key => $value ) {
+        $settable  = array_diff_key( $values, array_diff_key( self::RANGES, self::$editable ) );
+        foreach ( array_intersect_key( $changes, $settable ) as $key => $value ) {
             $checked = self::check( $key, $value );
             if ( $checked instanceof \WP_Error ) {
                 $errors[] = [
@@ -120,8 +136,8 @@ final class Settings {
         if ( is_bool( self::defaults()[ $key ] ) ) {
             return is_bool( $value ) ? $value : new \WP_Error( 'invalid', __( 'Choose on or off.', 'yaymatik' ) );
         }
-        if ( isset( self::RANGES[ $key ] ) ) {
-            list( $min, $max ) = self::RANGES[ $key ];
+        if ( isset( self::$editable[ $key ] ) ) {
+            list( $min, $max ) = self::$editable[ $key ];
             return is_int( $value ) && $value >= $min && $value <= $max
                 ? $value
                 /* translators: 1: smallest number, 2: largest number */

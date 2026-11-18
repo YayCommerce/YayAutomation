@@ -38,10 +38,9 @@ abstract class Trigger extends Step {
     }
 
     /**
-     * Data items available from this trigger, including additions from integrations.
+     * Data items available from this trigger, including additions on `yaymatik_trigger_provides`.
      *
-     * Integrations should append their item ids on `yaymatik_trigger_provides`
-     * instead of replacing this trigger class.
+     * @internal The filter isn't the Extension API: other plugins use `yaymatik_register`.
      */
     final public function resolved_provides(): array {
         $items = (array) apply_filters( 'yaymatik_trigger_provides', $this->provides(), $this );
@@ -71,9 +70,9 @@ abstract class Trigger extends Step {
     abstract public function refs( array $args ): ?array;
 
     /**
-     * The trigger scope after integrations have added their refs or snapshots.
-     * A missing native subject stays missing and is never revived by a filter.
+     * The trigger scope after `yaymatik_trigger_refs` added refs or snapshots; a missing subject stays missing.
      *
+     * @internal The filter isn't the Extension API: other plugins use `yaymatik_register`.
      * @param array $args
      */
     final public function resolved_refs( array $args ): ?array {

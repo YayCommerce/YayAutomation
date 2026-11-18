@@ -8,11 +8,22 @@ cd "$(dirname "$0")/../.." || exit 1
 # check-orders and check-status-flow print JSON to diff before / after a change, so they are not here.
 # extension needs dev/example-extension as a plugin (mapped by .wp-env.json).
 # plugin-lifecycle uninstalls the plugin and reseeds the site, so it runs last and on wp-env only.
-checks=(storage runs late-module carts privacy-index lifecycle winback catalog settings extension plugin-lifecycle)
-wp_env_only=(extension plugin-lifecycle)
+checks=(storage runs late-module carts privacy-index lifecycle winback catalog settings extension edition plugin-lifecycle)
+wp_env_only=(extension edition plugin-lifecycle)
 logs=$(mktemp -d -t yaymatik-check-all.XXXXXX) || exit 1
 results=()
 failed=0
+# PHPUnit as YayMatik Pro and as the free YayMatik (no includes/Pro).
+for edition in pro lite; do
+  echo "=== phpunit $edition"
+  if pnpm "test:php$([[ $edition == lite ]] && echo :lite)" > "$logs/phpunit-$edition.log" 2>&1; then
+    results+=("PASS phpunit $edition")
+  else
+    results+=("FAIL phpunit $edition")
+    failed=1
+    tail -20 "$logs/phpunit-$edition.log"
+  fi
+done
 for name in "${checks[@]}"; do
   if [[ $1 != --wp-env* && " ${wp_env_only[*]} " == *" $name "* ]]; then
     results+=("SKIP check-$name (wp-env only)")

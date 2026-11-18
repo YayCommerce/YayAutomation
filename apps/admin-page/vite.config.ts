@@ -9,6 +9,9 @@ process.env = { ...process.env, ...loadEnv(process.env.mode || 'development', pr
 
 const port = Number(process.env.VITE_PORT) || 3020;
 
+// Which edition `@edition` loads: release.sh builds the free zip with `lite`.
+const edition = process.env.YAYMATIK_EDITION === 'lite' ? 'lite' : 'pro';
+
 const terserOptions = {
   output: {
     comments: /translators:/i,
@@ -63,6 +66,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      '@edition': path.resolve(__dirname, `./src/${edition}`),
     },
   },
   build: {

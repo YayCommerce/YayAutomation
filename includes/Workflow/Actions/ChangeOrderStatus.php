@@ -7,8 +7,6 @@ use YayMatik\Workflow\Core\Data\Type;
 use YayMatik\Workflow\Core\Steps\Action;
 use YayMatik\Workflow\Core\Steps\Field;
 use YayMatik\Workflow\Core\Steps\StepResult;
-use YayMatik\Workflow\Triggers\CustomerOrderCountReaches;
-use YayMatik\Workflow\Triggers\CustomerTotalSpendReaches;
 use YayMatik\Workflow\Triggers\OrderNoteAdded;
 use YayMatik\Workflow\Triggers\OrderPaid;
 use YayMatik\Workflow\Triggers\OrderRefunded;
@@ -47,7 +45,7 @@ class ChangeOrderStatus extends Action {
 
     public function emits(): array {
         // WooCommerce adds a note for each status change, and refunds the rest when the status becomes Refunded.
-        return [ OrderStatusChanged::ID, OrderPaid::ID, OrderRefunded::ID, OrderNoteAdded::ID, CustomerOrderCountReaches::ID, CustomerTotalSpendReaches::ID ];
+        return [ OrderStatusChanged::ID, OrderPaid::ID, OrderRefunded::ID, OrderNoteAdded::ID ];
     }
 
     public function fields(): array {

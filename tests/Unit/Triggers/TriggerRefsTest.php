@@ -7,7 +7,6 @@ use YayMatik\Workflow\Core\Data\Ref;
 use YayMatik\Workflow\Core\Data\Scope;
 use YayMatik\Workflow\Core\Steps\Trigger;
 use YayMatik\Workflow\Triggers\CustomerAccountCreated;
-use YayMatik\Workflow\Triggers\CustomerInactive;
 use YayMatik\Workflow\Triggers\OrderCreated;
 use YayMatik\Workflow\Triggers\OrderNoteAdded;
 use YayMatik\Workflow\Triggers\OrderPaid;
@@ -60,41 +59,6 @@ final class TriggerRefsTest extends TestCase {
         $this->assertSame( 'customer', $trigger->category() );
         $this->assertNull( $trigger->refs( [ 'customer_id' => 7 ] ) );
         $this->assertNull( $trigger->context( [ 'customer_id' => 7 ] ) );
-    }
-
-    public function test_customer_inactive_is_about_the_order_and_claims_per_workflow(): void {
-        $trigger = new CustomerInactive();
-
-        $this->assertSame( 'order:12', $trigger->subject( [ 'order_id' => 12 ] ) );
-        $this->assertSame( 'customer', $trigger->category() );
-        $this->assertTrue( $trigger->claims_per_workflow() );
-        $this->assertSame( [ 'order', 'customer' ], array_keys( $trigger->refs( [ 'order_id' => 12 ] ) ), 'days is not offered as a variable; preview has none' );
-    }
-
-    public function test_customer_inactive_matches_only_its_days(): void {
-        $trigger = new CustomerInactive();
-        $context = $trigger->context(
-            [
-                'order_id' => 12,
-                'days'     => 90,
-            ]
-        );
-
-        $this->assertSame( 90, $context['days'] );
-        $this->assertTrue( $trigger->matches( $context, [ 'days' => 90 ] ) );
-        $this->assertFalse( $trigger->matches( $context, [ 'days' => 120 ] ) );
-    }
-
-    public function test_customer_inactive_saves_whole_days_in_range(): void {
-        $trigger = new CustomerInactive();
-
-        $this->assertSame( [ 'days' => 91 ], $trigger->sanitize( [ 'days' => 90.5 ] ) );
-        $this->assertSame( [ 'days' => 90 ], $trigger->sanitize( [ 'days' => '90' ] ) );
-        $this->assertSame( [ 'days' => 90 ], $trigger->sanitize( [] ), 'the default' );
-        $this->assertTrue( $trigger->validate( [ 'days' => 7 ] ) );
-        $this->assertTrue( $trigger->validate( [ 'days' => 730 ] ) );
-        $this->assertNotTrue( $trigger->validate( [ 'days' => 6 ] ) );
-        $this->assertNotTrue( $trigger->validate( [ 'days' => 731 ] ) );
     }
 
     public function test_order_created_refs_the_order_and_its_billing_customer(): void {

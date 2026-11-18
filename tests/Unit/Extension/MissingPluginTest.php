@@ -3,6 +3,7 @@ namespace YayMatik\Tests\Unit\Extension;
 
 use PHPUnit\Framework\TestCase;
 use YayMatik\Workflow\Core\Definition\Catalog;
+use YayMatik\Workflow\Core\Definition\ProCatalog;
 use YayMatik\Workflow\Core\Definition\GraphSchema;
 use YayMatik\Workflow\Core\Definition\Messages;
 use YayMatik\Workflow\Core\Definition\Validator;
@@ -158,7 +159,7 @@ final class MissingPluginTest extends TestCase {
             $issues
         );
         $this->assertSame( 'This workflow uses Acme Rewards, which isn’t active. Activate Acme Rewards to turn the workflow on.', $issues[0]['message'] );
-        $this->assertSame( [ 'acme_add_points' ], array_keys( Catalog::inactive_steps() ) );
+        $this->assertSame( [ 'acme_add_points' ], array_keys( array_diff_key( Catalog::inactive_steps(), ProCatalog::STEPS ) ) );
     }
 
     public function test_health_check_lists_active_workflows_using_it(): void {

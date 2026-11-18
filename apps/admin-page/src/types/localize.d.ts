@@ -187,6 +187,8 @@ declare global {
         categories: Record<string, string>;
         /** PHP `Catalog::inactive_steps()`: steps of other plugins that aren't active now, by id. */
         inactiveSteps: Record<string, InactiveStepMeta>;
+        /** PHP `ProCatalog::missing()`: what a workflow may use that this site has without YayMatik Pro; all empty with it. */
+        proMissing: { steps: string[]; fields: string[]; features: string[] };
         data: DataItemMeta[];
         /** Operator ids per field type. */
         operators: Record<DataFieldType, string[]>;
