@@ -19,6 +19,9 @@ composer.lock
 /dev/e2e/test-results
 /dev/e2e/report
 /dev/e2e/.auth
+# The PHP 7.4 site's vendor/ without dev packages (dev/scripts/lib/wp-env-min-vendor.sh).
+/dev/wp-env-min/build
+/dev/wp-env-min/.wp-env.override.json
 # check-late-module's and check-privacy-index's temp files, if the script is killed before it removes them.
 /dev/.late-module.*
 /dev/.privacy-module.*

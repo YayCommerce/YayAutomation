@@ -22,6 +22,22 @@ PROJECT_PATH=$(pwd)
 BUILD_PATH="${PROJECT_PATH}/release"
 DEST_PATH="$BUILD_PATH/$PLUGIN_SLUG"
 
+# One EXIT trap for both editions (a second `trap … EXIT` replaces the first): it puts the checkout back however the release ends.
+LITE_BUILT=false
+EXCLUDES_TMP=""
+cleanup() {
+    cd "$PROJECT_PATH" || return
+    [[ -n $EXCLUDES_TMP ]] && rm -f "$EXCLUDES_TMP"
+    # The checkout runs the Pro code.
+    if $LITE_BUILT; then
+        echo "Restoring the Pro build in assets/dist..."
+        pnpm build >/dev/null
+    fi
+    # yaycommerce-prerelease leaves the checkout's classmap authoritative: a new class in includes/ wouldn't load.
+    [[ -f vendor/autoload.php ]] && composer dump-autoload -q
+}
+trap cleanup EXIT
+
 # The license item id is a stand-in until YayMatik Pro has its own: only test builds may ship it.
 if [[ $EDITION == pro ]] && ! $RC && grep -qE 'TODO\(036\)|ITEM_ID_IS_TEMPORARY = true' includes/Pro/YayMatikProLicenseAdapter.php; then
     echo "includes/Pro/YayMatikProLicenseAdapter.php still has the temporary item id (TODO(036), ITEM_ID_IS_TEMPORARY): use --rc for a test build."
@@ -56,15 +72,14 @@ mkdir -p "$DEST_PATH"
 echo "Installing JS dependencies..."
 pnpm install --frozen-lockfile
 echo "Running JS Build..."
-# The checkout runs the Pro code, so it gets the Pro build back however the free release ends.
-[[ $EDITION == free ]] && trap 'echo "Restoring the Pro build in assets/dist..."; pnpm build >/dev/null' EXIT
+[[ $EDITION == free ]] && LITE_BUILT=true
 YAYMATIK_EDITION=$([[ $EDITION == pro ]] && echo pro || echo lite) pnpm build || exit 1
 
 echo "Syncing files..."
 EXCLUDES="$PROJECT_PATH/.distignore"
 if [[ $EDITION == pro ]]; then
-    EXCLUDES=$(mktemp)
-    trap 'rm -f "$EXCLUDES"' EXIT
+    EXCLUDES_TMP=$(mktemp)
+    EXCLUDES=$EXCLUDES_TMP
     grep -vx '/includes/Pro' "$PROJECT_PATH/.distignore" > "$EXCLUDES"
 fi
 rsync -rc --exclude-from="$EXCLUDES" "$PROJECT_PATH/" "$DEST_PATH/" --delete --delete-excluded

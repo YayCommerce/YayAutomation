@@ -12,6 +12,7 @@ case $1 in
     # A separate folder is a separate wp-env site: WordPress, PHP and WooCommerce at the minimum versions.
     wp_env_min() { (cd dev/wp-env-min && ../../node_modules/.bin/wp-env "$@"); }
     WP=(wp_env_min run cli --env-cwd="wp-content/plugins/$PLUGIN_FOLDER" wp)
+    . dev/scripts/lib/wp-env-min-vendor.sh || return 1
     ;;
   --staging)
     [[ -n $STAGING_SSH && -n $STAGING_URL ]] || { echo "Set STAGING_SSH (user@host[:port]/wp/path) and STAGING_URL in dev/.env.local"; return 1; }

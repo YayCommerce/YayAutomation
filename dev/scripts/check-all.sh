@@ -9,7 +9,9 @@ cd "$(dirname "$0")/../.." || exit 1
 # extension needs dev/example-extension as a plugin (mapped by .wp-env.json).
 # plugin-lifecycle uninstalls the plugin and reseeds the site, so it runs last and on wp-env only.
 checks=(storage runs late-module carts privacy-index lifecycle winback catalog settings extension edition plugin-lifecycle)
-wp_env_only=(extension edition plugin-lifecycle)
+wp_env_only=(extension plugin-lifecycle)
+# check-edition refuses the minimum site: --wp-env only.
+latest_only=(edition)
 logs=$(mktemp -d -t yaymatik-check-all.XXXXXX) || exit 1
 results=()
 failed=0
@@ -27,6 +29,10 @@ done
 for name in "${checks[@]}"; do
   if [[ $1 != --wp-env* && " ${wp_env_only[*]} " == *" $name "* ]]; then
     results+=("SKIP check-$name (wp-env only)")
+    continue
+  fi
+  if [[ $1 != --wp-env && " ${latest_only[*]} " == *" $name "* ]]; then
+    results+=("SKIP check-$name (--wp-env only)")
     continue
   fi
   echo "=== check-$name"
