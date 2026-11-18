@@ -44,6 +44,27 @@ if [[ $EDITION == pro ]] && ! $RC && grep -qE 'TODO\(036\)|ITEM_ID_IS_TEMPORARY 
     exit 1
 fi
 
+header_value() { sed -nE "s/^[ *]*$1: *([^ ]*).*/\1/p" "$2" | head -1; }
+bad=()
+for file in yaymatik.php readme.txt; do
+    for name in 'Requires at least' 'Tested up to' 'WC requires at least' 'WC tested up to'; do
+        value=$(header_value "$name" "$file")
+        [[ $value =~ ^[0-9]+\.[0-9]+\.[0-9]+ ]] && bad+=("$file $name: $value (major.minor only, e.g. 11.3)")
+    done
+done
+version=$(header_value Version yaymatik.php)
+constant=$(sed -nE "s/.*'YAYMATIK_VERSION', '([^']*)'.*/\1/p" yaymatik.php)
+stable=$(header_value 'Stable tag' readme.txt)
+for value in "$version" "$constant" "$stable"; do
+    [[ $value =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || bad+=("Plugin version '$value' is not x.y.z")
+done
+[[ $version == "$constant" && $version == "$stable" ]] || bad+=("Version ($version), YAYMATIK_VERSION ($constant) and Stable tag ($stable) differ")
+if [[ ${#bad[@]} -gt 0 ]]; then
+    printf 'Version headers:\n'
+    printf '  %s\n' "${bad[@]}"
+    exit 1
+fi
+
 # Lint the source, not the build: a path argument bypasses phpcs.xml's <file> list and would reach
 # vendor-prefixed after its patches were verified.
 if [[ $YAYMATIK_SKIP_LINT == 1 ]]; then
