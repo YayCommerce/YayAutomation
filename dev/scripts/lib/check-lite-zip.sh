@@ -1,6 +1,6 @@
 #!/bin/bash
 # Fails when the free zip holds YayMatik Pro: includes/Pro, or a Pro step id, a Pro template id or `yaymatik-pro` in assets/dist;
-# while the teaser is hidden, also its text or link in assets/dist or the .pot.
+# while the teaser is hidden, also its text or link in assets/dist or the .pot; and when its classmap names RegisterDev.
 #   dev/scripts/lib/check-lite-zip.sh release/yaymatik.zip   (run by release.sh for the free edition)
 cd "$(dirname "$0")/../../.." || exit 1
 zip=$1
@@ -13,6 +13,8 @@ words=(yaymatik-pro $templates)
 
 found=()
 unzip -Z1 "$zip" | grep -q '^yaymatik/includes/Pro/' && found+=("includes/Pro")
+# The zip leaves RegisterDev.php out: a classmap naming it breaks a site with YAYMATIK_IS_DEVELOPMENT.
+unzip -p "$zip" yaymatik/vendor/composer/autoload_classmap.php | grep -q RegisterDev && found+=("RegisterDev in the classmap")
 tmp=$(mktemp -d) || exit 1
 trap 'rm -rf "$tmp"' EXIT
 unzip -q "$zip" 'yaymatik/assets/dist/*' -d "$tmp"
@@ -37,7 +39,7 @@ if $TEASER_HIDDEN; then
 fi
 
 if [[ ${#found[@]} -gt 0 ]]; then
-    printf 'Lite zip check failed, YayMatik Pro found:\n'
+    printf 'Lite zip check failed, found:\n'
     printf '  %s\n' "${found[@]}"
     exit 1
 fi

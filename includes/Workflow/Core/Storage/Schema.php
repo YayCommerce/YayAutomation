@@ -13,6 +13,10 @@ final class Schema {
     private const DB_VERSION        = '8';
     private const DB_VERSION_OPTION = 'yaymatik_db_version';
 
+    /** Set while a load installs (its start time), not autoloaded; older than INSTALL_LOCK seconds = a load that died. */
+    private const INSTALLING_OPTION = 'yaymatik_db_installing';
+    private const INSTALL_LOCK      = 60;
+
     public const WORKFLOWS         = 'workflows';
     public const WORKFLOW_VERSIONS = 'workflow_versions';
     public const RUNS              = 'runs';
@@ -45,6 +49,22 @@ final class Schema {
         if ( self::DB_VERSION === get_option( self::DB_VERSION_OPTION ) ) {
             return;
         }
+        // Two first loads at once would both run dbDelta: the second's ALTERs fail on what the first just added.
+        // add_option() is the lock, as the option name is unique; a load that finds it waits for a later load.
+        if ( ! add_option( self::INSTALLING_OPTION, time(), '', false ) ) {
+            if ( time() - (int) get_option( self::INSTALLING_OPTION ) < self::INSTALL_LOCK ) {
+                return;
+            }
+            update_option( self::INSTALLING_OPTION, time(), false );
+        }
+        try {
+            self::install();
+        } finally {
+            delete_option( self::INSTALLING_OPTION );
+        }
+    }
+
+    private static function install(): void {
         UnsubscribeLink::create_secret();
         global $wpdb;
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';

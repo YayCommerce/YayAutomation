@@ -88,13 +88,17 @@ fi
 
 # Ship only the runtime autoloader: drop dev packages + unscoped admin-shell, rebuild a no-dev classmap.
 # composer.json ships (Plugin Check asks for it next to vendor/); the lock is only for the dump.
+# Development code goes first: the classmap must not name it.
+rm -f "$DEST_PATH/includes/Engine/Register/RegisterDev.php"
 find "$DEST_PATH/vendor" -mindepth 1 -maxdepth 1 ! -name autoload.php ! -name composer -exec rm -rf {} +
 cp "$PROJECT_PATH/composer.lock" "$DEST_PATH/"
 composer dump-autoload --optimize --classmap-authoritative --no-dev --working-dir="$DEST_PATH" || exit 1
 rm -f "$DEST_PATH/composer.lock"
-
-# Remove development code
-rm -f "$DEST_PATH/includes/Engine/Register/RegisterDev.php"
+# The free zip's check (check-lite-zip.sh) has the same test.
+if [[ $EDITION == pro ]] && grep -q RegisterDev "$DEST_PATH/vendor/composer/autoload_classmap.php"; then
+    echo "The classmap names RegisterDev, which the zip leaves out."
+    exit 1
+fi
 
 # main.js has a fixed name, so only a new ?ver=YAYMATIK_VERSION makes browsers load a new build.
 if $RC; then

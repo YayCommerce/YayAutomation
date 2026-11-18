@@ -26,7 +26,7 @@
 
 ## §2 Storage · C3, C8, C10
 
-Custom tables replace the CPT and post meta. One installer, `Storage/Schema::maybe_install()`, creates and upgrades them with `dbDelta` + the `yaymatik_db_version` option. `trigger` and `cursor` are MySQL reserved words, so those columns are `trigger_id` and `position`.
+Custom tables replace the CPT and post meta. One installer, `Storage/Schema::maybe_install()`, creates and upgrades them with `dbDelta` + the `yaymatik_db_version` option; `add_option( 'yaymatik_db_installing' )` lets one load at a time run it (a lock over 60 s old is taken over). `trigger` and `cursor` are MySQL reserved words, so those columns are `trigger_id` and `position`.
 
 Table names below omit the prefix: each is `{prefix}yaymatik_<name>`, e.g. `wp_yaymatik_runs`.
 

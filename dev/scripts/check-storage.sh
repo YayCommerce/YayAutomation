@@ -184,6 +184,32 @@ $ok( 0 === (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wf_table} WHERE live_ve
 $res = $call( "DELETE", "workflows/{$id}" );
 $ok( 200 === $res->get_status() && null === $row( $id ) && 0 === $count( $id ), "delete: workflow and its versions gone" );
 
+// Install race: a second install while the first holds the lock does nothing; the next load would retry.
+$version  = get_option( "yaymatik_db_version" );
+$deltas   = 0;
+$count_in = function ( $queries ) use ( &$deltas ) {
+    $deltas++;
+    // The second load, arriving while this one is in dbDelta.
+    Schema::maybe_install();
+    return $queries;
+};
+update_option( "yaymatik_db_version", "0" );
+$wpdb->last_error = "";
+add_filter( "dbdelta_queries", $count_in );
+ob_start();
+Schema::maybe_install();
+Schema::maybe_install();
+$printed = ob_get_clean();
+remove_filter( "dbdelta_queries", $count_in );
+$ok( 1 === $deltas && "" === $wpdb->last_error && "" === $printed && $version === get_option( "yaymatik_db_version" ) && false === get_option( "yaymatik_db_installing" ), "install race: one dbDelta, no SQL error, no output, version set, lock gone" );
+update_option( "yaymatik_db_installing", time() - 120, false );
+update_option( "yaymatik_db_version", "0" );
+add_filter( "dbdelta_queries", $count_in );
+Schema::maybe_install();
+remove_filter( "dbdelta_queries", $count_in );
+$ok( 2 === $deltas && $version === get_option( "yaymatik_db_version" ) && false === get_option( "yaymatik_db_installing" ), "install: a lock older than a minute is taken over" );
+update_option( "yaymatik_db_version", $version );
+
 echo $fails ? "$fails failed\n" : "All passed\n";
 exit( $fails ? 1 : 0 );
 '
