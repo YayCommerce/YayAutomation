@@ -320,7 +320,13 @@ if ( ! function_exists( 'get_users' ) ) {
             )
         );
         $by_id = isset( $args['orderby']['ID'] );
-        usort( $users, fn( $a, $b ) => strcmp( (string) ( $b->user_registered ?? '' ), (string) ( $a->user_registered ?? '' ) ) ?: ( $by_id ? ( $b->ID ?? 0 ) <=> ( $a->ID ?? 0 ) : 0 ) );
+        usort(
+            $users,
+            function ( $a, $b ) use ( $by_id ) {
+                $newer = strcmp( (string) ( $b->user_registered ?? '' ), (string) ( $a->user_registered ?? '' ) );
+                return 0 === $newer && $by_id ? ( $b->ID ?? 0 ) <=> ( $a->ID ?? 0 ) : $newer;
+            }
+        );
         return isset( $args['number'] ) ? array_slice( $users, 0, (int) $args['number'] ) : $users;
     }
 }
