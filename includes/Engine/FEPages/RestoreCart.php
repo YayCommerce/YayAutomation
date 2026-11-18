@@ -145,6 +145,7 @@ class RestoreCart {
         $variation_id = (int) $line['variation_id'];
         $variation    = (array) ( $line['variation'] ?? [] );
         // Same filter as WooCommerce's add-to-cart form: other plugins may refuse a product here.
+        // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- WooCommerce's own filter, applied as its add-to-cart form does.
         if ( ! apply_filters( 'woocommerce_add_to_cart_validation', true, $product_id, $quantity, $variation_id, $variation ) ) {
             return false;
         }
