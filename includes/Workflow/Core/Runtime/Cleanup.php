@@ -18,6 +18,9 @@ final class Cleanup {
     /** Unix time of the last schedule check; autoloaded, so the hourly check costs no query. */
     public const CHECKED_OPTION = 'yaymatik_cleanup_checked_at';
 
+    /** The daily job hooks at that check, sorted; autoloaded. A job added since (a license activated) skips the hourly wait. */
+    private const JOBS_OPTION = 'yaymatik_cleanup_jobs';
+
     private const BATCH = 500;
 
     /** Seconds; what's left goes the next day. */
@@ -28,12 +31,14 @@ final class Cleanup {
         add_action( self::HOOK, [ self::class, 'run' ] );
     }
 
-    /** Schedules this job, the cart sweep and the added daily jobs when missing, checked at most hourly. */
+    /** Schedules this job, the cart sweep and the added daily jobs when missing, checked at most hourly or when the daily jobs change. */
     public static function ensure(): void {
         if ( ! function_exists( 'as_has_scheduled_action' ) ) {
             return;
         }
-        if ( time() - (int) get_option( self::CHECKED_OPTION, 0 ) < HOUR_IN_SECONDS ) {
+        $jobs = array_column( DailyJobs::all(), 'hook' );
+        sort( $jobs );
+        if ( get_option( self::JOBS_OPTION ) === $jobs && time() - (int) get_option( self::CHECKED_OPTION, 0 ) < HOUR_IN_SECONDS ) {
             return;
         }
         if ( ! as_has_scheduled_action( self::HOOK, [], ActionSchedulerQueue::GROUP ) ) {
@@ -48,6 +53,7 @@ final class Cleanup {
             }
         }
         update_option( self::CHECKED_OPTION, time(), true );
+        update_option( self::JOBS_OPTION, $jobs, true );
     }
 
     /** Replaces a missing or late job with a new one. */

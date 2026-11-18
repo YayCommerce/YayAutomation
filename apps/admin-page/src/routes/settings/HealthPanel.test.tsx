@@ -379,32 +379,39 @@ describe('HealthPanel', () => {
     expect(links).toContainEqual(['Workflow #6', '/workflows/6']);
   });
 
-  it('says no other plugin adds to YayMatik when no module is listed', async () => {
+  it('shows no Extensions block when no module is listed or none has errors', async () => {
     await render(allOk);
+    expect(extensionsBlock()).toBeNull();
 
-    expect(extensionsBlock()?.textContent).toBe('ExtensionsNo other plugin adds to YayMatik.');
+    act(() => root.unmount());
+    root = createRoot(container);
+    await render(allOk, [{ id: 'acme_rewards', label: 'Acme Rewards', requiresApi: '1.0', errors: [] }]);
+    expect(extensionsBlock()).toBeNull();
+    expect(container.textContent).not.toContain('Acme Rewards');
   });
 
-  it('lists each module with no problems or its errors', async () => {
+  it('lists only the modules with errors', async () => {
     const time = new Date().toISOString();
     await render(allOk, [
       { id: 'acme_rewards', label: 'Acme Rewards', requiresApi: '1.0', errors: [] },
       {
         id: 'acme_broken',
         label: 'Acme Broken',
-        requiresApi: null,
+        requiresApi: '1.0',
         errors: [{ callback: 'listen', message: 'Boom.', count: 3, time }],
       },
     ]);
 
     const rows = [...extensionsBlock()!.querySelectorAll('[data-extension]')];
-    expect(rows.map((row) => row.getAttribute('data-extension'))).toEqual(['acme_rewards', 'acme_broken']);
-    expect(rows[0].textContent).toBe('Acme Rewards (needs Extension API 1.0)No problems');
-    expect(rows[1].textContent).toMatch(/^Acme BrokenBoom\. \(listen, at least 3 times, last .+\)$/);
+    expect(rows.map((row) => row.getAttribute('data-extension'))).toEqual(['acme_broken']);
+    expect(rows[0].textContent).toMatch(
+      /^Acme Broken \(needs Extension API 1\.0\)Boom\. \(listen, at least 3 times, last .+\)$/,
+    );
   });
 
   it('keeps the modules after a fix, whose response has none', async () => {
-    await render([cleanup], [{ id: 'acme_rewards', label: 'Acme Rewards', requiresApi: null, errors: [] }]);
+    const errors = [{ callback: 'listen', message: 'Boom.', count: 1, time: new Date().toISOString() }];
+    await render([cleanup], [{ id: 'acme_rewards', label: 'Acme Rewards', requiresApi: null, errors }]);
     const finish = deferredFix();
 
     await act(async () => button('Schedule again')!.click());

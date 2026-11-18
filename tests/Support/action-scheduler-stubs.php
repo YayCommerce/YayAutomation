@@ -44,6 +44,20 @@ if ( ! function_exists( 'as_enqueue_async_action' ) ) {
         return (bool) as_get_scheduled_actions( $query );
     }
 
+    function as_schedule_recurring_action( $timestamp, $interval_in_seconds, $hook, $args = [], $group = '' ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundBeforeLastUsed -- same signature as Action Scheduler.
+        return as_schedule_single_action( $timestamp, $hook, $args, $group );
+    }
+
+    // The first pending action's time, or false.
+    function as_next_scheduled_action( $hook, $args = null, $group = '' ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundBeforeLastUsed -- same signature as Action Scheduler.
+        foreach ( $GLOBALS['yay_test_as'] ?? [] as $job ) {
+            if ( $job['hook'] === $hook && ( '' === $group || $job['group'] === $group ) && 'pending' === $job['status'] ) {
+                return $job['at'];
+            }
+        }
+        return false;
+    }
+
     // Only the call without args or group, which cancels every action of the hook.
     function as_unschedule_all_actions( $hook ) {
         foreach ( $GLOBALS['yay_test_as'] ?? [] as $i => $job ) {

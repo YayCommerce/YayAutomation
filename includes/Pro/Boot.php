@@ -56,7 +56,7 @@ final class Boot {
             return;
         }
         InactiveSweep::boot();
-        DailyJobs::add( 'inactive_sweep_job', InactiveSweep::HOOK, InactiveSweep::LATE, [ InactiveSweep::class, 'schedule' ] );
+        DailyJobs::add( 'inactive_sweep_job', InactiveSweep::HOOK, InactiveSweep::LATE, [ InactiveSweep::class, 'schedule' ], [ InactiveSweep::class, 'needed' ] );
     }
 
     /**
