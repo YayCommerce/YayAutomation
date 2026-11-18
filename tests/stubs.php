@@ -563,6 +563,7 @@ if ( ! function_exists( 'register_rest_route' ) ) {
     }
 }
 
+// phpcs:disable Generic.Files.OneObjectStructurePerFile.MultipleFound -- one file of stand-ins, like WP_Error above.
 if ( ! class_exists( 'WP_REST_Server' ) ) {
     /** HTTP methods of a route. */
     class WP_REST_Server {
@@ -599,3 +600,4 @@ if ( ! class_exists( 'WP_REST_Request' ) ) {
         }
     }
 }
+// phpcs:enable Generic.Files.OneObjectStructurePerFile.MultipleFound

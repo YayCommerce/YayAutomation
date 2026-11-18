@@ -25,7 +25,16 @@ final class DailyJobsTest extends TestCase {
     }
 
     private static function sweep_jobs(): int {
-        return count( as_get_scheduled_actions( [ 'hook' => 'yaymatik_inactive_sweep', 'args' => null, 'group' => 'yaymatik', 'status' => 'pending' ] ) );
+        return count(
+            as_get_scheduled_actions(
+                [
+                    'hook'   => 'yaymatik_inactive_sweep',
+                    'args'   => null,
+                    'group'  => 'yaymatik',
+                    'status' => 'pending',
+                ]
+            )
+        );
     }
 
     public function test_a_job_added_after_the_check_is_scheduled_without_the_hourly_wait(): void {
