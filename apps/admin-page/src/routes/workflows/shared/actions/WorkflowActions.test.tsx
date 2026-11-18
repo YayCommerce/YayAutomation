@@ -1,8 +1,15 @@
 import { act, type ReactElement } from 'react';
+import type { Workflow } from '@yaymatik/types';
 import { createRoot, type Root } from 'react-dom/client';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { cancelledRunsText, DeactivateDialog, UpdateDialog } from './WorkflowActions';
+import { cancelledRunsText, DeactivateDialog, RenameWorkflowDialog, UpdateDialog } from './WorkflowActions';
+
+const mutate = vi.fn();
+vi.mock('../../api/workflow.query', async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  useUpdateWorkflowMutation: () => ({ mutate, isPending: false }),
+}));
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -57,5 +64,30 @@ describe('Deactivate and Update dialogs', () => {
     expect(cancelledRunsText(1)).toBe('1 waiting run was cancelled.');
     expect(cancelledRunsText(0)).toBeUndefined();
     expect(cancelledRunsText(undefined)).toBeUndefined();
+  });
+});
+
+describe('Rename workflow dialog', () => {
+  it('starts from the name and saves it trimmed', () => {
+    const onClose = vi.fn();
+    act(() =>
+      root.render(<RenameWorkflowDialog workflow={{ id: '4', name: 'Thanks' } as Workflow} onClose={onClose} />),
+    );
+    const dialog = document.body.querySelector('[role="dialog"]')!;
+    const input = dialog.querySelector('input')!;
+    expect([dialog.querySelector('h2')?.textContent, input.value, input.type]).toEqual([
+      'Rename workflow',
+      'Thanks',
+      'text',
+    ]);
+
+    const setValue = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!;
+    act(() => {
+      setValue.call(input, '  Thank you  ');
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    act(() => dialog.querySelector('form')!.requestSubmit());
+
+    expect(mutate).toHaveBeenCalledWith({ id: '4', name: 'Thank you' }, expect.anything());
   });
 });

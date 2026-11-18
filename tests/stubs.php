@@ -525,3 +525,73 @@ if ( ! function_exists( 'esc_html__' ) ) {
         return esc_html( $text );
     }
 }
+
+if ( ! function_exists( 'get_current_user_id' ) ) {
+    function get_current_user_id() {
+        return $GLOBALS['yaymatik_test_user_id'] ?? 0;
+    }
+}
+
+if ( ! function_exists( 'current_user_can' ) ) {
+    // Capabilities a test set in `$GLOBALS['yaymatik_test_caps']`.
+    function current_user_can( $capability ) {
+        return in_array( $capability, $GLOBALS['yaymatik_test_caps'] ?? [], true );
+    }
+}
+
+if ( ! function_exists( 'sanitize_email' ) ) {
+    function sanitize_email( $email ) {
+        return (string) preg_replace( '/[^a-z0-9+_.@-]/i', '', trim( $email ) );
+    }
+}
+
+if ( ! function_exists( 'rest_ensure_response' ) ) {
+    function rest_ensure_response( $response ) {
+        return $response;
+    }
+}
+
+if ( ! function_exists( 'register_rest_route' ) ) {
+    // Routes land in `$GLOBALS['yaymatik_test_routes']`, route => args.
+    function register_rest_route( $route_namespace, $route, $args = [] ) {
+        $GLOBALS['yaymatik_test_routes'][ $route_namespace . $route ] = $args;
+        return true;
+    }
+}
+
+if ( ! class_exists( 'WP_REST_Server' ) ) {
+    /** HTTP methods of a route. */
+    class WP_REST_Server {
+        const READABLE  = 'GET';
+        const CREATABLE = 'POST';
+        const EDITABLE  = 'POST, PUT, PATCH';
+        const DELETABLE = 'DELETE';
+    }
+}
+
+if ( ! class_exists( 'WP_REST_Request' ) ) {
+    /** A request with a JSON body. */
+    class WP_REST_Request {
+
+        /** @var array */
+        private $body;
+
+        /**
+         * @param array $body
+         */
+        public function __construct( array $body = [] ) {
+            $this->body = $body;
+        }
+
+        public function get_json_params() {
+            return $this->body;
+        }
+
+        /**
+         * @param string $key
+         */
+        public function get_param( $key ) {
+            return $this->body[ $key ] ?? null;
+        }
+    }
+}

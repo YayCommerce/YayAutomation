@@ -65,6 +65,11 @@ final class Uninstaller {
             if ( self::table_exists( $p . 'wc_orders_meta' ) ) {
                 $wpdb->query( $wpdb->prepare( 'DELETE FROM %i WHERE meta_key LIKE %s', $p . 'wc_orders_meta', $meta ) );
             }
+            // User meta is shared by the network's sites: the first site's pass removes it.
+            foreach ( (array) $wpdb->get_col( $wpdb->prepare( 'SELECT DISTINCT user_id FROM %i WHERE meta_key LIKE %s OR meta_key LIKE %s', $wpdb->usermeta, $options, $meta ) ) as $user_id ) {
+                wp_cache_delete( (int) $user_id, 'user_meta' );
+            }
+            $wpdb->query( $wpdb->prepare( 'DELETE FROM %i WHERE meta_key LIKE %s OR meta_key LIKE %s', $wpdb->usermeta, $options, $meta ) );
         }
         // Options went by SQL: the cached option lists would bring them back on this request.
         wp_cache_delete( 'alloptions', 'options' );

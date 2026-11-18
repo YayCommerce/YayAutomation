@@ -165,8 +165,8 @@ declare global {
         timezoneString: string;
         gmtOffset: number;
         adminEmail: string;
-        /** The logged-in user's: where Send test emails go. */
-        userEmail: string;
+        /** Where this user's test emails go: the address they saved, else their profile email. */
+        testEmail: string;
       };
       wc: {
         active: boolean;
