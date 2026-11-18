@@ -1,5 +1,6 @@
 #!/bin/bash
-# Fails when the free zip holds YayMatik Pro: includes/Pro, or a Pro step id, a Pro template id or `yaymatik-pro` in assets/dist.
+# Fails when the free zip holds YayMatik Pro: includes/Pro, or a Pro step id, a Pro template id or `yaymatik-pro` in assets/dist;
+# while the teaser is hidden, also its text or link in assets/dist or the .pot.
 #   dev/scripts/lib/check-lite-zip.sh release/yaymatik.zip   (run by release.sh for the free edition)
 cd "$(dirname "$0")/../../.." || exit 1
 zip=$1
@@ -23,6 +24,17 @@ for step in $steps; do
     # A whole word: minified object keys aren't quoted.
     grep -rqwF "$step" "$tmp/yaymatik/assets/dist" && found+=("$step in assets/dist")
 done
+
+# Remove with the revert of the hidden teaser (src/lite/teaser.ts).
+TEASER_HIDDEN=true
+if $TEASER_HIDDEN; then
+    unzip -q "$zip" 'yaymatik/languages/yaymatik.pot' -d "$tmp"
+    # Without the plugin header's Plugin URI: the same address as the teaser's link.
+    sed '/^#\. Plugin URI of the plugin$/,/^msgstr/d' "$tmp/yaymatik/languages/yaymatik.pot" > "$tmp/pot"
+    for text in 'Get YayMatik Pro' 'yaycommerce.com/yaymatik'; do
+        grep -rqF "$text" "$tmp/yaymatik/assets/dist" "$tmp/pot" && found+=("$text in assets/dist or the .pot")
+    done
+fi
 
 if [[ ${#found[@]} -gt 0 ]]; then
     printf 'Lite zip check failed, YayMatik Pro found:\n'
