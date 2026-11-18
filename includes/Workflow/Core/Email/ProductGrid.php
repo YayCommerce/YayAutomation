@@ -3,20 +3,14 @@ namespace YayMatik\Workflow\Core\Email;
 
 defined( 'ABSPATH' ) || exit;
 
-/** Suggested products for an email: the order's cross-sells or upsells, drawn as a grid. */
+/** Products for an email, drawn as a grid: the store's newest, or what a caller picks. */
 final class ProductGrid {
-
-    public const CROSS_SELLS = 'cross_sells';
-    public const UPSELLS     = 'upsells';
 
     /** At most this many products, 2 per row. */
     public const MAX = 4;
 
     /** Products loaded per query: some may be hidden or out of stock. */
-    private const FETCH = self::MAX * 3;
-
-    /** Suggestions looked at in all, in FETCH-sized queries until MAX can be shown. */
-    private const SCAN = self::FETCH * 3;
+    public const FETCH = self::MAX * 3;
 
     /** Each image sits in a square this many pixels wide. */
     private const IMAGE_BOX = 160;
@@ -27,7 +21,7 @@ final class ProductGrid {
     /** @var \WC_Product[]|null The store's newest products. */
     private static $newest = null;
 
-    /** @var bool A preview's grid blocks show the store's newest products when the order's own grid is empty. */
+    /** @var bool A preview's grid blocks show the store's newest products when their own products are none. */
     private static $newest_when_empty = false;
 
     /**
@@ -46,69 +40,9 @@ final class ProductGrid {
         }
     }
 
-    /**
-     * Cross-sells or upsells of the order's products (a variation counts as its parent), minus what the order has.
-     *
-     * @param \WC_Order $order
-     * @param string    $kind  CROSS_SELLS or UPSELLS.
-     * @return \WC_Product[] Published, visible, in stock; at most MAX.
-     */
-    public static function for_order( \WC_Order $order, string $kind ): array {
-        $in_order  = [];
-        $suggested = [];
-        $lines     = array_filter( $order->get_items(), fn( $item ) => $item instanceof \WC_Order_Item_Product );
-        $line_ids  = [];
-        foreach ( $lines as $item ) {
-            $line_ids[] = (int) $item->get_product_id();
-            $line_ids[] = (int) $item->get_variation_id();
-        }
-        _prime_post_caches( array_values( array_unique( array_filter( $line_ids ) ) ) );
-        foreach ( $lines as $item ) {
-            $product = $item->get_product();
-            if ( ! $product ) {
-                continue;
-            }
-            $parent     = $product->is_type( 'variation' ) ? wc_get_product( $product->get_parent_id() ) : $product;
-            $in_order[] = $product->get_id();
-            if ( ! $parent ) {
-                continue;
-            }
-            $in_order[] = $parent->get_id();
-            $suggested  = array_merge( $suggested, self::CROSS_SELLS === $kind ? $parent->get_cross_sell_ids() : $parent->get_upsell_ids() );
-        }
-
-        $ids   = array_slice( array_values( array_diff( array_unique( array_map( 'intval', $suggested ) ), $in_order ) ), 0, self::SCAN );
-        $shown = [];
-        foreach ( array_chunk( $ids, self::FETCH ) as $chunk ) {
-            _prime_post_caches( $chunk );
-            $shown = self::shown( array_merge( $shown, array_filter( array_map( 'wc_get_product', $chunk ) ) ) );
-            if ( count( $shown ) >= self::MAX ) {
-                break;
-            }
-        }
-        return $shown;
-    }
-
-    /**
-     * What a grid block shows: `for_order()`, or in a preview without one, the newest products not in the order.
-     *
-     * @param \WC_Order $order
-     * @param string    $kind
-     * @return \WC_Product[]
-     */
-    public static function for_block( \WC_Order $order, string $kind ): array {
-        $shown = self::for_order( $order, $kind );
-        if ( $shown || ! self::$newest_when_empty ) {
-            return $shown;
-        }
-        $in_order = [];
-        foreach ( $order->get_items() as $item ) {
-            if ( $item instanceof \WC_Order_Item_Product ) {
-                $in_order[] = (int) $item->get_product_id();
-                $in_order[] = (int) $item->get_variation_id();
-            }
-        }
-        return array_values( array_filter( self::newest(), fn( \WC_Product $product ) => ! in_array( $product->get_id(), $in_order, true ) ) );
+    /** True inside `with_newest_when_empty()`. */
+    public static function newest_when_empty(): bool {
+        return self::$newest_when_empty;
     }
 
     /**
@@ -117,7 +51,7 @@ final class ProductGrid {
      * @param \WC_Product[] $products
      * @return \WC_Product[]
      */
-    private static function shown( array $products ): array {
+    public static function shown( array $products ): array {
         $shown = array_filter( $products, fn( \WC_Product $product ) => 'publish' === $product->get_status() && $product->is_visible() && $product->is_in_stock() );
         return array_slice( array_values( $shown ), 0, self::MAX );
     }

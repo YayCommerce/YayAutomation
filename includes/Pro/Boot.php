@@ -3,9 +3,11 @@ namespace YayMatik\Pro;
 
 use YayMatik\Engine\Register\ScriptName;
 use YayMatik\Pro\Engine\API\CustomerMetaKeysRoute;
+use YayMatik\Pro\Workflow\Core\Email\OrderGrid;
 use YayMatik\Pro\Workflow\Core\Runtime\InactiveSweep;
 use YayMatik\Pro\Workflow\Modules\WoocommerceProModule;
 use YayMatik\Pro\Workflow\Modules\YayMatikProModule;
+use YayMatik\Workflow\Core\Email\EmailPreview;
 use YayMatik\Workflow\Core\Runtime\DailyJobs;
 use YayMatik\Workflow\Core\Storage\Settings;
 use YayMatik\Workflow\ModuleRegistry;
@@ -41,6 +43,12 @@ final class Boot {
         }
         add_filter( ModuleRegistry::HOOK, [ self::class, 'modules' ] );
         CustomerMetaKeysRoute::register();
+        foreach ( [
+            OrderGrid::CROSS_SELLS => 'order.cross_sell_products',
+            OrderGrid::UPSELLS     => 'order.upsell_products',
+        ] as $kind => $tag ) {
+            EmailPreview::add_sample_need( $kind, $tag, fn( \WC_Order $order ) => (bool) OrderGrid::for_order( $order, $kind ) );
+        }
         Settings::allow(
             [
                 'abandon_minutes'     => [ 15, 1440 ],
