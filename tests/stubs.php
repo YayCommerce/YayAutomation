@@ -311,7 +311,7 @@ if ( ! function_exists( 'get_userdata' ) ) {
 }
 
 if ( ! function_exists( 'get_users' ) ) {
-    // Test users filtered by role, newest registered first, cut to the number asked for.
+    // Test users filtered by role, newest registered first (then the higher ID, when `orderby` names it), cut to the number asked for.
     function get_users( $args = [] ) {
         $users = array_values(
             array_filter(
@@ -319,7 +319,8 @@ if ( ! function_exists( 'get_users' ) ) {
                 fn( $user ) => ! isset( $args['role'] ) || in_array( $args['role'], (array) ( $user->roles ?? [] ), true )
             )
         );
-        usort( $users, fn( $a, $b ) => strcmp( (string) ( $b->user_registered ?? '' ), (string) ( $a->user_registered ?? '' ) ) );
+        $by_id = isset( $args['orderby']['ID'] );
+        usort( $users, fn( $a, $b ) => strcmp( (string) ( $b->user_registered ?? '' ), (string) ( $a->user_registered ?? '' ) ) ?: ( $by_id ? ( $b->ID ?? 0 ) <=> ( $a->ID ?? 0 ) : 0 ) );
         return isset( $args['number'] ) ? array_slice( $users, 0, (int) $args['number'] ) : $users;
     }
 }

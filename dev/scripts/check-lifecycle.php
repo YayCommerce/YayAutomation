@@ -606,8 +606,10 @@ $ok( ! is_wp_error( $preview ) && true === $preview['sample'] && false !== strpo
 $newest_customer = get_users(
     [
         'role'    => 'customer',
-        'orderby' => 'registered',
-        'order'   => 'DESC',
+        'orderby' => [
+            'registered' => 'DESC',
+            'ID'         => 'DESC',
+        ],
         'number'  => 1,
     ]
 )[0] ?? null;

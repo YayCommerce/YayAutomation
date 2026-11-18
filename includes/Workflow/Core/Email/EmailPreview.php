@@ -245,8 +245,11 @@ final class EmailPreview {
         $users = get_users(
             [
                 'role'    => 'customer',
-                'orderby' => 'registered',
-                'order'   => 'DESC',
+                // Accounts made in the same second tie on `registered`: the higher id is the newer one.
+                'orderby' => [
+                    'registered' => 'DESC',
+                    'ID'         => 'DESC',
+                ],
                 'number'  => 1,
             ]
         );

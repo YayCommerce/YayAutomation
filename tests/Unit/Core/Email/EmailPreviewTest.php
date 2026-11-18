@@ -160,6 +160,26 @@ final class EmailPreviewTest extends TestCase {
         $this->assertTrue( $review['sample'], 'a review trigger also has the review: made-up data, as before' );
     }
 
+    public function test_customers_made_in_the_same_second_preview_the_higher_id(): void {
+        // Listed lower id first: without the tie-break, the stand-in keeps that order.
+        $GLOBALS['yaymatik_test_users'] = [
+            4 => (object) [
+                'ID'              => 4,
+                'roles'           => [ 'customer' ],
+                'user_registered' => '2026-03-04 10:00:00',
+                'display_name'    => 'First',
+            ],
+            6 => (object) [
+                'ID'              => 6,
+                'roles'           => [ 'customer' ],
+                'user_registered' => '2026-03-04 10:00:00',
+                'display_name'    => 'Second',
+            ],
+        ];
+
+        $this->assertSame( 'Second', EmailPreview::render( $this->graph( 'customer_account_created' ), 'm', self::CONFIG )['customer'] );
+    }
+
     public function test_grid_kinds_come_from_the_merge_tags_the_email_uses(): void {
         $needs  = new \ReflectionProperty( EmailPreview::class, 'sample_needs' );
         $before = $needs->getValue();

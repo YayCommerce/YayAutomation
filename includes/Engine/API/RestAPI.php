@@ -212,7 +212,7 @@ class RestAPI {
     }
 
     /**
-     * Sends that email to `recipient`, else the user's test address, subject prefixed "[Test]".
+     * Sends that email to the user's test address, subject prefixed "[Test]".
      *
      * @param \WP_REST_Request $request
      */
@@ -221,12 +221,8 @@ class RestAPI {
         if ( is_wp_error( $input ) ) {
             return $input;
         }
-        $to = TestRecipient::for_send( get_current_user_id(), ( (array) $request->get_json_params() )['recipient'] ?? null );
-        if ( is_wp_error( $to ) ) {
-            return $to;
-        }
         list( $graph, $node_id, $config ) = $input;
-        return rest_ensure_response( EmailPreview::send_test( $graph, $node_id, $config, $to ) );
+        return rest_ensure_response( EmailPreview::send_test( $graph, $node_id, $config, TestRecipient::of( get_current_user_id() ) ) );
     }
 
     /**
