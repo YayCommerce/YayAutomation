@@ -3,7 +3,7 @@
  * Plugin Name:       YayMatik - Automation for WooCommerce
  * Plugin URI:        https://yaycommerce.com/yaymatik/
  * Description:       Build automation workflows on a visual canvas, or start from a template.
- * Version:           1.0.0
+ * Version:           1.0
  * Author:            YayCommerce
  * Author URI:        https://yaycommerce.com
  * Text Domain:       yaymatik
@@ -12,7 +12,7 @@
  * Requires PHP:      7.4
  * Requires Plugins:  woocommerce
  * WC requires at least: 11.0
- * WC tested up to:   11.2
+ * WC tested up to:   11.3
  * License:           GPLv2 or later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
  *

@@ -3,7 +3,7 @@
   "phpVersion": "8.1",
   "port": 8910,
   "testsEnvironment": false,
-  "plugins": ["https://downloads.wordpress.org/plugin/woocommerce.11.2.2.zip", "."],
+  "plugins": ["https://downloads.wordpress.org/plugin/woocommerce.11.3.0.zip", "."],
   "mappings": {
     "wp-content/mu-plugins": "./dev/wp/mu-plugins",
     "wp-content/plugins/acme-rewards": "./dev/example-extension"
