@@ -135,17 +135,16 @@ $check = function ( string $id ) use ( $call ) {
     return null;
 };
 
-$res = $call( 'GET', 'health/checks' );
-$ok( 200 === $res->get_status() && [ 'runs_queued', 'runs_running', 'jobs_late', 'cleanup_job', 'inactive_sweep_job', 'missing_plugin', 'needs_pro' ] === array_column( $res->get_data()['checks'], 'id' ) && false !== strtotime( $res->get_data()['checkedAt'] ), 'GET /health/checks: the 7 checks and checkedAt' );
+// The sweep's row only while an active workflow starts on Customer inactive (check-winback covers both cases).
+$sweep = InactiveSweep::needed();
+$res   = $call( 'GET', 'health/checks' );
+$ok( 200 === $res->get_status() && array_merge( [ 'runs_queued', 'runs_running', 'jobs_late', 'cleanup_job' ], $sweep ? [ 'inactive_sweep_job' ] : [], [ 'missing_plugin', 'needs_pro' ] ) === array_column( $res->get_data()['checks'], 'id' ) && false !== strtotime( $res->get_data()['checkedAt'] ), 'GET /health/checks: the checks and checkedAt' );
 $ok( is_array( $res->get_data()['extensions'] ?? null ) && ! array_intersect( [ 'yaymatik', 'woocommerce' ], array_column( $res->get_data()['extensions'], 'id' ) ), 'GET /health/checks: extensions, core modules not listed' );
-foreach ( [ 'jobs_late', 'nope', '' ] as $check_id ) {
+foreach ( array_merge( [ 'jobs_late', 'nope', '' ], $sweep ? [] : [ 'inactive_sweep_job' ] ) as $check_id ) {
     $ok( 400 === $call( 'POST', 'health/fix', [ 'check' => $check_id ] )->get_status(), "fix \"{$check_id}\" → 400" );
 }
 
-foreach ( [
-    'cleanup_job'        => Cleanup::HOOK,
-    'inactive_sweep_job' => InactiveSweep::HOOK,
-] as $check_id => $hook ) {
+foreach ( [ 'cleanup_job' => Cleanup::HOOK ] + ( $sweep ? [ 'inactive_sweep_job' => InactiveSweep::HOOK ] : [] ) as $check_id => $hook ) {
     as_unschedule_all_actions( $hook, [], ActionSchedulerQueue::GROUP );
     $found = $check( $check_id );
     $ok( 'problem' === $found['status'] && 'schedule' === $found['fix'], "{$check_id}: job missing → problem, fix schedule" );

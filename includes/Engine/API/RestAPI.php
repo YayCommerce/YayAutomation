@@ -5,6 +5,7 @@ use YayMatik\Engine\BEPages\AdminPage;
 use YayMatik\Utils\SingletonTrait;
 use YayMatik\Workflow\Core\Definition\GraphSchema;
 use YayMatik\Workflow\Core\Email\EmailPreview;
+use YayMatik\Workflow\Core\Email\TestRecipient;
 use YayMatik\Workflow\Core\Definition\Messages;
 use YayMatik\Workflow\Core\Definition\Validator;
 use YayMatik\Workflow\Core\Runtime\Cancellation;
@@ -158,6 +159,17 @@ class RestAPI {
             );
         }
 
+        // Body: { email } — where this user's test emails go.
+        register_rest_route(
+            self::REST_NAMESPACE,
+            '/test-email',
+            [
+                'methods'             => \WP_REST_Server::CREATABLE,
+                'callback'            => [ $this, 'save_test_email' ],
+                'permission_callback' => [ $this, 'can_email' ],
+            ]
+        );
+
         // Body: { nodeId, config, graph? } — as for preview: the URL of the step's iframe editor (docs/extension-api.md §5.6).
         register_rest_route(
             self::REST_NAMESPACE,
@@ -200,7 +212,7 @@ class RestAPI {
     }
 
     /**
-     * Sends that email to the logged-in user, subject prefixed "[Test]".
+     * Sends that email to the user's test address, subject prefixed "[Test]".
      *
      * @param \WP_REST_Request $request
      */
@@ -210,7 +222,17 @@ class RestAPI {
             return $input;
         }
         list( $graph, $node_id, $config ) = $input;
-        return rest_ensure_response( EmailPreview::send_test( $graph, $node_id, $config, (string) wp_get_current_user()->user_email ) );
+        return rest_ensure_response( EmailPreview::send_test( $graph, $node_id, $config, TestRecipient::of( get_current_user_id() ) ) );
+    }
+
+    /**
+     * `{ testEmail }` once saved.
+     *
+     * @param \WP_REST_Request $request
+     */
+    public function save_test_email( \WP_REST_Request $request ) {
+        $email = TestRecipient::save( get_current_user_id(), $request->get_param( 'email' ) );
+        return is_wp_error( $email ) ? $email : rest_ensure_response( [ 'testEmail' => $email ] );
     }
 
     /**

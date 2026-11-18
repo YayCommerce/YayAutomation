@@ -1,4 +1,4 @@
-import { useState, type FormEvent, type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import type { Workflow } from '@yaymatik/types';
 import { ChevronDown, Pencil, Trash2 } from 'lucide-react';
@@ -30,9 +30,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { toast } from '@/components/ui/sonner';
+import { FieldDialog } from '@/components/widget/FieldDialog';
 import { ApiError } from '../../api/workflow.api';
 import { useDeleteWorkflowMutation, useUpdateWorkflowMutation, workflowKeys } from '../../api/workflow.query';
 import { messages } from '../../model/messages';
@@ -83,13 +82,11 @@ export function MoreActionsMenu({ workflow, onDeleted }: { workflow: Workflow; o
 
 /** Mount it to open it; it starts from the current name and calls `onClose` when done. */
 export function RenameWorkflowDialog({ workflow, onClose }: { workflow: Workflow; onClose: () => void }) {
-  const [name, setName] = useState(workflow.name);
   const updateMutation = useUpdateWorkflowMutation();
 
-  const submit = (event: FormEvent) => {
-    event.preventDefault();
+  const save = (name: string) =>
     updateMutation.mutate(
-      { id: workflow.id, name: name.trim() },
+      { id: workflow.id, name },
       {
         onSuccess: () => {
           toast.success(__('Workflow renamed', 'yaymatik'));
@@ -98,39 +95,17 @@ export function RenameWorkflowDialog({ workflow, onClose }: { workflow: Workflow
         onError: (error) => toast.error(error.message),
       },
     );
-  };
 
   return (
-    <Dialog open onOpenChange={(open) => !open && !updateMutation.isPending && onClose()}>
-      <DialogContent className="sm:max-w-md">
-        <form onSubmit={submit} className="grid gap-4">
-          <DialogHeader>
-            <DialogTitle>{__('Rename workflow', 'yaymatik')}</DialogTitle>
-            <DialogDescription className="sr-only">
-              {__('Enter a new name for this workflow.', 'yaymatik')}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-2">
-            <Label htmlFor="workflow-name">{__('Name', 'yaymatik')}</Label>
-            <Input id="workflow-name" value={name} onChange={(event) => setName(event.target.value)} autoFocus />
-          </div>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="outline" disabled={updateMutation.isPending}>
-                {__('Cancel', 'yaymatik')}
-              </Button>
-            </DialogClose>
-            <LoadingButton
-              type="submit"
-              loading={updateMutation.isPending}
-              disabled={!name.trim() || updateMutation.isPending}
-            >
-              {__('Save', 'yaymatik')}
-            </LoadingButton>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+    <FieldDialog
+      title={__('Rename workflow', 'yaymatik')}
+      description={__('Enter a new name for this workflow.', 'yaymatik')}
+      label={__('Name', 'yaymatik')}
+      initialValue={workflow.name}
+      pending={updateMutation.isPending}
+      onSave={save}
+      onClose={onClose}
+    />
   );
 }
 

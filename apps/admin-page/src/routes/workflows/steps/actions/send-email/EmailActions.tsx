@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { EmailPreview, WorkflowIssue } from '@yaymatik/types';
-import { ChevronDown, CircleAlert, Eye, Info, Loader2, Send } from 'lucide-react';
+import { ChevronDown, CircleAlert, Eye, Info, Loader2, Pencil, Send } from 'lucide-react';
 import { __, sprintf } from '@wordpress/i18n';
 
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -13,10 +13,13 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { toast } from '@/components/ui/sonner';
+import { FieldDialog } from '@/components/widget/FieldDialog';
 import { issuesOf, useEmailTools } from '../../core/fields/emailTools';
 import { PreviewDialog, sampleProductsText } from './PreviewDialog';
+import { saveTestEmail } from './testEmail';
 
-const testRecipient = window.yayMatikMeta.wp.userEmail;
+/** Kept for the page's life: the next email step's panel starts from a newly saved address. */
+let savedTestRecipient = window.yayMatikMeta.wp.testEmail;
 
 /**
  * In the Send email panel header: "Preview" with a menu (Preview email, Send test email) for the
@@ -27,6 +30,8 @@ export function EmailActions() {
   const [busy, setBusy] = useState<'preview' | 'test' | null>(null);
   const [issues, setIssues] = useState<WorkflowIssue[]>([]);
   const [preview, setPreview] = useState<EmailPreview | null>(null);
+  const [testRecipient, setTestRecipient] = useState(savedTestRecipient);
+  const [editingRecipient, setEditingRecipient] = useState(false);
   // An edit may have fixed them; the next Preview or Send test checks again.
   const config = tools?.config;
   useEffect(() => setIssues([]), [config]);
@@ -66,14 +71,25 @@ export function EmailActions() {
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-end gap-3">
-        {testRecipient && (
-          <span className="text-muted-foreground min-w-0 truncate text-xs" title={testRecipient}>
-            {
-              /* translators: %s: email address */
-              sprintf(__('Test goes to %s', 'yaymatik'), testRecipient)
-            }
-          </span>
-        )}
+        <span className="group flex min-w-0 items-center gap-1">
+          {testRecipient && (
+            <span className="text-muted-foreground min-w-0 truncate text-xs" title={testRecipient}>
+              {
+                /* translators: %s: email address */
+                sprintf(__('Test goes to %s', 'yaymatik'), testRecipient)
+              }
+            </span>
+          )}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-6 shrink-0 opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
+            aria-label={__('Change test recipient', 'yaymatik')}
+            onClick={() => setEditingRecipient(true)}
+          >
+            <Pencil className="size-3.5" />
+          </Button>
+        </span>
         <ButtonGroup className="shrink-0">
           <LoadingButton size="sm" loading={busy === 'preview'} disabled={!!busy} onClick={() => run('preview')}>
             <Eye />
@@ -95,9 +111,7 @@ export function EmailActions() {
                 <Send className="mt-0.5" />
                 <span className="flex flex-col">
                   {__('Send test email', 'yaymatik')}
-                  <span className="text-muted-foreground text-xs">
-                    {__('To you, subject starts with [Test]', 'yaymatik')}
-                  </span>
+                  <span className="text-muted-foreground text-xs">{__('Subject starts with [Test]', 'yaymatik')}</span>
                 </span>
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -117,6 +131,17 @@ export function EmailActions() {
           </AlertDescription>
         </Alert>
       )}
+      {editingRecipient && (
+        <TestRecipientDialog
+          initialValue={testRecipient}
+          onSaved={(email) => {
+            savedTestRecipient = email;
+            setTestRecipient(email);
+            setEditingRecipient(false);
+          }}
+          onClose={() => setEditingRecipient(false)}
+        />
+      )}
       <PreviewDialog
         preview={preview}
         sending={busy === 'test'}
@@ -124,6 +149,44 @@ export function EmailActions() {
         onClose={() => setPreview(null)}
       />
     </div>
+  );
+}
+
+function TestRecipientDialog({
+  initialValue,
+  onSaved,
+  onClose,
+}: {
+  initialValue: string;
+  onSaved: (email: string) => void;
+  onClose: () => void;
+}) {
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string>();
+
+  const save = async (email: string) => {
+    setPending(true);
+    setError(undefined);
+    try {
+      onSaved(await saveTestEmail(email));
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : String(reason));
+      setPending(false);
+    }
+  };
+
+  return (
+    <FieldDialog
+      title={__('Send test to', 'yaymatik')}
+      description={__('Enter the email address test emails go to.', 'yaymatik')}
+      label={__('Email', 'yaymatik')}
+      initialValue={initialValue}
+      type="email"
+      pending={pending}
+      error={error}
+      onSave={save}
+      onClose={onClose}
+    />
   );
 }
 

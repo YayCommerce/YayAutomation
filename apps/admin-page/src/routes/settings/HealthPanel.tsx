@@ -382,15 +382,16 @@ function NeedsProRow({ check }: { check: HealthCheck }) {
 }
 
 /** Other plugins' modules: core's own are never listed. */
+/** Only the extensions with errors; nothing when none has any. */
 function ExtensionsBlock({ extensions }: { extensions: HealthExtension[] }) {
+  const failing = extensions.filter((extension) => extension.errors.length);
+  if (!failing.length) return null;
   return (
     <section aria-label={__('Extensions', 'yaymatik')} className="mt-4 flex flex-col gap-3 border-t pt-4">
       <h3 className="text-sm font-medium">{__('Extensions', 'yaymatik')}</h3>
-      {extensions.length ? (
-        extensions.map((extension) => <ExtensionRow key={extension.id} extension={extension} />)
-      ) : (
-        <p className="text-muted-foreground text-sm">{__('No other plugin adds to YayMatik.', 'yaymatik')}</p>
-      )}
+      {failing.map((extension) => (
+        <ExtensionRow key={extension.id} extension={extension} />
+      ))}
     </section>
   );
 }
@@ -406,36 +407,28 @@ function ExtensionRow({ extension }: { extension: HealthExtension }) {
     : extension.label;
   return (
     <div className="flex gap-3 [&>svg]:mt-0.5 [&>svg]:size-4 [&>svg]:shrink-0" data-extension={extension.id}>
-      {extension.errors.length ? (
-        <CircleAlert className="text-destructive" />
-      ) : (
-        <CircleCheck className="text-success-soft-foreground" />
-      )}
+      <CircleAlert className="text-destructive" />
       <div className="flex min-w-0 flex-col gap-1">
         <span className="text-sm font-medium">{name}</span>
-        {extension.errors.length ? (
-          <ul className="flex flex-col gap-1">
-            {extension.errors.map((error) => (
-              <li key={`${error.callback}|${error.time}`} className="text-muted-foreground text-sm">
-                <span className="text-foreground">{error.message}</span>{' '}
-                {sprintf(
-                  /* translators: 1: where it failed, e.g. "listen", 2: how many times, 3: when, e.g. "5 minutes ago" */
-                  _n(
-                    '(%1$s, at least %2$d time, last %3$s)',
-                    '(%1$s, at least %2$d times, last %3$s)',
-                    error.count,
-                    'yaymatik',
-                  ),
-                  error.callback,
+        <ul className="flex flex-col gap-1">
+          {extension.errors.map((error) => (
+            <li key={`${error.callback}|${error.time}`} className="text-muted-foreground text-sm">
+              <span className="text-foreground">{error.message}</span>{' '}
+              {sprintf(
+                /* translators: 1: where it failed, e.g. "listen", 2: how many times, 3: when, e.g. "5 minutes ago" */
+                _n(
+                  '(%1$s, at least %2$d time, last %3$s)',
+                  '(%1$s, at least %2$d times, last %3$s)',
                   error.count,
-                  humanTimeDiff(error.time),
-                )}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <span className="text-muted-foreground text-sm">{__('No problems', 'yaymatik')}</span>
-        )}
+                  'yaymatik',
+                ),
+                error.callback,
+                error.count,
+                humanTimeDiff(error.time),
+              )}
+            </li>
+          ))}
+        </ul>
       </div>
     </div>
   );

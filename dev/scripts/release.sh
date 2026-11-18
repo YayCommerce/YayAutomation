@@ -22,9 +22,46 @@ PROJECT_PATH=$(pwd)
 BUILD_PATH="${PROJECT_PATH}/release"
 DEST_PATH="$BUILD_PATH/$PLUGIN_SLUG"
 
+# One EXIT trap for both editions (a second `trap … EXIT` replaces the first): it puts the checkout back however the release ends.
+LITE_BUILT=false
+EXCLUDES_TMP=""
+cleanup() {
+    cd "$PROJECT_PATH" || return
+    [[ -n $EXCLUDES_TMP ]] && rm -f "$EXCLUDES_TMP"
+    # The checkout runs the Pro code.
+    if $LITE_BUILT; then
+        echo "Restoring the Pro build in assets/dist..."
+        pnpm build >/dev/null
+    fi
+    # yaycommerce-prerelease leaves the checkout's classmap authoritative: a new class in includes/ wouldn't load.
+    [[ -f vendor/autoload.php ]] && composer dump-autoload -q
+}
+trap cleanup EXIT
+
 # The license item id is a stand-in until YayMatik Pro has its own: only test builds may ship it.
 if [[ $EDITION == pro ]] && ! $RC && grep -qE 'TODO\(036\)|ITEM_ID_IS_TEMPORARY = true' includes/Pro/YayMatikProLicenseAdapter.php; then
     echo "includes/Pro/YayMatikProLicenseAdapter.php still has the temporary item id (TODO(036), ITEM_ID_IS_TEMPORARY): use --rc for a test build."
+    exit 1
+fi
+
+header_value() { sed -nE "s/^[ *]*$1: *([^ ]*).*/\1/p" "$2" | head -1; }
+bad=()
+for file in yaymatik.php readme.txt; do
+    for name in 'Requires at least' 'Tested up to' 'WC requires at least' 'WC tested up to'; do
+        value=$(header_value "$name" "$file")
+        [[ $value =~ ^[0-9]+\.[0-9]+\.[0-9]+ ]] && bad+=("$file $name: $value (major.minor only, e.g. 11.3)")
+    done
+done
+version=$(header_value Version yaymatik.php)
+constant=$(sed -nE "s/.*'YAYMATIK_VERSION', '([^']*)'.*/\1/p" yaymatik.php)
+stable=$(header_value 'Stable tag' readme.txt)
+for value in "$version" "$constant" "$stable"; do
+    [[ $value =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || bad+=("Plugin version '$value' is not x.y.z")
+done
+[[ $version == "$constant" && $version == "$stable" ]] || bad+=("Version ($version), YAYMATIK_VERSION ($constant) and Stable tag ($stable) differ")
+if [[ ${#bad[@]} -gt 0 ]]; then
+    printf 'Version headers:\n'
+    printf '  %s\n' "${bad[@]}"
     exit 1
 fi
 
@@ -56,15 +93,14 @@ mkdir -p "$DEST_PATH"
 echo "Installing JS dependencies..."
 pnpm install --frozen-lockfile
 echo "Running JS Build..."
-# The checkout runs the Pro code, so it gets the Pro build back however the free release ends.
-[[ $EDITION == free ]] && trap 'echo "Restoring the Pro build in assets/dist..."; pnpm build >/dev/null' EXIT
+[[ $EDITION == free ]] && LITE_BUILT=true
 YAYMATIK_EDITION=$([[ $EDITION == pro ]] && echo pro || echo lite) pnpm build || exit 1
 
 echo "Syncing files..."
 EXCLUDES="$PROJECT_PATH/.distignore"
 if [[ $EDITION == pro ]]; then
-    EXCLUDES=$(mktemp)
-    trap 'rm -f "$EXCLUDES"' EXIT
+    EXCLUDES_TMP=$(mktemp)
+    EXCLUDES=$EXCLUDES_TMP
     grep -vx '/includes/Pro' "$PROJECT_PATH/.distignore" > "$EXCLUDES"
 fi
 rsync -rc --exclude-from="$EXCLUDES" "$PROJECT_PATH/" "$DEST_PATH/" --delete --delete-excluded
@@ -88,13 +124,17 @@ fi
 
 # Ship only the runtime autoloader: drop dev packages + unscoped admin-shell, rebuild a no-dev classmap.
 # composer.json ships (Plugin Check asks for it next to vendor/); the lock is only for the dump.
+# Development code goes first: the classmap must not name it.
+rm -f "$DEST_PATH/includes/Engine/Register/RegisterDev.php"
 find "$DEST_PATH/vendor" -mindepth 1 -maxdepth 1 ! -name autoload.php ! -name composer -exec rm -rf {} +
 cp "$PROJECT_PATH/composer.lock" "$DEST_PATH/"
 composer dump-autoload --optimize --classmap-authoritative --no-dev --working-dir="$DEST_PATH" || exit 1
 rm -f "$DEST_PATH/composer.lock"
-
-# Remove development code
-rm -f "$DEST_PATH/includes/Engine/Register/RegisterDev.php"
+# The free zip's check (check-lite-zip.sh) has the same test.
+if [[ $EDITION == pro ]] && grep -q RegisterDev "$DEST_PATH/vendor/composer/autoload_classmap.php"; then
+    echo "The classmap names RegisterDev, which the zip leaves out."
+    exit 1
+fi
 
 # main.js has a fixed name, so only a new ?ver=YAYMATIK_VERSION makes browsers load a new build.
 if $RC; then

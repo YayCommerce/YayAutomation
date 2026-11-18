@@ -43,7 +43,7 @@ final class HealthCheck {
         $runs      = self::runs( $now );
         $workflows = WorkflowStore::all();
         $daily     = [];
-        foreach ( DailyJobs::all() as $check => $job ) {
+        foreach ( DailyJobs::needed() as $check => $job ) {
             $daily[] = self::result( $check, self::job( $job['hook'], $job['late'], $now ) );
         }
         return array_merge(
@@ -60,7 +60,7 @@ final class HealthCheck {
 
     /** @return string[] Fix id by check id. */
     public static function fixes(): array {
-        return self::FIXES + array_fill_keys( array_keys( DailyJobs::all() ), 'schedule' );
+        return self::FIXES + array_fill_keys( array_keys( DailyJobs::needed() ), 'schedule' );
     }
 
     /**
@@ -171,9 +171,9 @@ final class HealthCheck {
             Cleanup::reschedule();
             return 1;
         }
-        $job = DailyJobs::all()[ $check ] ?? null;
-        if ( $job ) {
-            if ( ! self::job( $job['hook'], $job['late'], $now )['count'] ) {
+        if ( isset( DailyJobs::all()[ $check ] ) ) {
+            $job = DailyJobs::needed()[ $check ] ?? null;
+            if ( ! $job || ! self::job( $job['hook'], $job['late'], $now )['count'] ) {
                 return 0;
             }
             as_unschedule_all_actions( $job['hook'], [], ActionSchedulerQueue::GROUP );

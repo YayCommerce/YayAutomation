@@ -18,12 +18,13 @@ class RegisterFacade {
         add_filter( 'script_loader_tag', [ $this, 'add_entry_as_module' ], 10, 3 );
         add_action( 'init', [ $this, 'register_all_assets' ] );
 
-        // The release zip leaves out RegisterDev.php (dev/scripts/release.sh).
-        $is_prod = YayMatik::is_prod();
-        if ( $is_prod && class_exists( '\YayMatik\Engine\Register\RegisterProd' ) ) {
-            \YayMatik\Engine\Register\RegisterProd::get_instance();
-        } elseif ( ! $is_prod && class_exists( '\YayMatik\Engine\Register\RegisterDev' ) ) {
-            \YayMatik\Engine\Register\RegisterDev::get_instance();
+        // The release zip leaves out RegisterDev.php (dev/scripts/release.sh), so a YAYMATIK_IS_DEVELOPMENT left in a
+        // live site's wp-config still gets the built assets. The file, not class_exists(): an authoritative classmap
+        // that names a missing file is a fatal error.
+        if ( YayMatik::is_prod() || ! is_file( __DIR__ . '/RegisterDev.php' ) ) {
+            RegisterProd::get_instance();
+        } else {
+            RegisterDev::get_instance();
         }
     }
 

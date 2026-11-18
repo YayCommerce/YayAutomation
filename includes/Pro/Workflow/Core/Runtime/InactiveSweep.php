@@ -38,6 +38,12 @@ final class InactiveSweep {
         add_action( self::BATCH_HOOK, [ self::class, 'batch' ], 10, 2 );
     }
 
+    /** An active workflow starts on it, or that isn't known. */
+    public static function needed(): bool {
+        $ids = WorkflowStore::active_trigger_ids();
+        return null === $ids || in_array( self::TRIGGER, $ids, true );
+    }
+
     public static function schedule(): void {
         as_schedule_recurring_action( time() + HOUR_IN_SECONDS, DAY_IN_SECONDS, self::HOOK, [], ActionSchedulerQueue::GROUP, true );
     }

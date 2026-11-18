@@ -13,7 +13,7 @@
         "timezoneString": "UTC",
         "gmtOffset": 0,
         "adminEmail": "admin@example.test",
-        "userEmail": "you@example.test"
+        "testEmail": "you@example.test"
     },
     "wc": {
         "active": true,

@@ -15,9 +15,6 @@ class ChangeCustomerRole extends Action {
 
     public const ID = 'change_customer_role';
 
-    /** Lifts the protected-role checks, never the last-role one: `apply_filters( 'yaymatik_change_role_allow_all', false )`. */
-    public const ALLOW_ALL_FILTER = 'yaymatik_change_role_allow_all';
-
     /** Capabilities beyond a customer's: a role with one is never assigned, a user with one never changed. Triggers fire on public events, so any buyer could get the role. */
     public const PROTECTED_CAPS = [
         'manage_options',
@@ -181,7 +178,8 @@ class ChangeCustomerRole extends Action {
     }
 
     private static function allow_all(): bool {
-        return (bool) apply_filters( self::ALLOW_ALL_FILTER, false );
+        // Lifts the protected-role checks, never the last-role one.
+        return (bool) apply_filters( 'yaymatik_change_role_allow_all', false );
     }
 
     /**

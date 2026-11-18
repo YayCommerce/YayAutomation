@@ -18,13 +18,10 @@ defined( 'ABSPATH' ) || exit;
 
 /**
  * The modules, and the steps and data items they register. Other plugins register on
- * `yaymatik_register` (`Extension\Extensions`); YayMatik Pro swaps in its modules on `HOOK`. An id that is already taken (module, step or data item) keeps its first owner; the
+ * `yaymatik_register` (`Extension\Extensions`); YayMatik Pro swaps in its modules on `yaymatik_modules`. An id that is already taken (module, step or data item) keeps its first owner; the
  * second claim is a diagnostic.
  */
 final class ModuleRegistry {
-
-    /** @internal YayMatik Pro's filter, not the Extension API: other plugins use `yaymatik_register`. */
-    public const HOOK = 'yaymatik_modules';
 
     /** @var Module[]|null */
     private static $modules = null;
@@ -34,7 +31,8 @@ final class ModuleRegistry {
 
     /** Module classes: core's, through the filter. */
     public static function classes(): array {
-        return (array) apply_filters( self::HOOK, [ YayMatikModule::class, WoocommerceModule::class ] );
+        /** @internal YayMatik Pro's filter, not the Extension API: other plugins use `yaymatik_register`. */
+        return (array) apply_filters( 'yaymatik_modules', [ YayMatikModule::class, WoocommerceModule::class ] );
     }
 
     /** @return Module[] Keyed by id. The first call fires `yaymatik_register`. */

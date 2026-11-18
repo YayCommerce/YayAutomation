@@ -415,6 +415,9 @@ $ok( WorkflowStore::is_active( $batch_flow ), '500 runs: the workflow stays acti
 WorkflowStore::deactivate( $batch_flow );
 InactiveSweep::batch( $batch_days, 1 );
 $ok( 500 === count( $runs_of( $batch_flow ) ) && [] === $next_pages(), 'workflow off: the batch does nothing, the chain ends' );
+as_unschedule_all_actions( InactiveSweep::HOOK );
+$ok( false === $check() && ! isset( HealthCheck::fixes()['inactive_sweep_job'] ), 'health: no active Customer inactive workflow → no sweep row and no fix, even with the job missing' );
+InactiveSweep::schedule();
 
 // The template graphs, end to end.
 $template      = function ( array $coupon, string $offer ) use ( &$flows ): int {

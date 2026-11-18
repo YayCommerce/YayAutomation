@@ -29,7 +29,7 @@ Scripts with a target take one of these. `check-*` scripts write test rows, so t
 | Target | Site |
 | --- | --- |
 | (none) | The local site, through your `wp` (`WP_PATH` if set). |
-| `--wp-env` | `pnpm wp-env start`: port 8910, latest WordPress, PHP 8.1, WooCommerce 11.2.2. `pnpm e2e` runs here. |
+| `--wp-env` | `pnpm wp-env start`: port 8910, latest WordPress, PHP 8.1, WooCommerce 11.3.0. `pnpm e2e` runs here. |
 | `--wp-env-min` | `cd dev/wp-env-min && ../../node_modules/.bin/wp-env start`: port 8911, WordPress 6.9, PHP 7.4, WooCommerce 11.0.0, the lowest versions YayMatik supports. |
 | `--staging` | Staging (`STAGING_SSH`, `STAGING_URL`): seed, reset-data, probe-mysql only. |
 

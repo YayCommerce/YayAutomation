@@ -7,6 +7,7 @@ use YayMatik\Engine\Register\ScriptName;
 use YayMatik\Workflow\Core\Coupon\FreeShipping;
 use YayMatik\Utils\SingletonTrait;
 use YayMatik\Workflow\Core\Definition\Catalog;
+use YayMatik\Workflow\Core\Email\TestRecipient;
 use YayMatik\Workflow\Core\Storage\Settings;
 use YayMatik\Workflow\Actions\SendInternalEmail;
 use YayMatik\YayMatik;
@@ -82,7 +83,7 @@ class AdminPage {
                 'timezoneString' => get_option( 'timezone_string' ),
                 'gmtOffset'      => (float) get_option( 'gmt_offset', 0 ),
                 'adminEmail'     => get_option( 'admin_email' ),
-                'userEmail'      => wp_get_current_user()->user_email,
+                'testEmail'      => TestRecipient::of( get_current_user_id() ),
             ],
             'wc'         => [
                 'active'             => class_exists( 'WooCommerce' ),

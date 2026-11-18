@@ -3,6 +3,7 @@ namespace YayMatik\Pro\Workflow\DataItems;
 
 use YayMatik\Workflow\Core\Data\MetaKeys;
 use YayMatik\Workflow\Core\Data\Type;
+use YayMatik\Pro\Workflow\Core\Email\OrderGrid;
 use YayMatik\Workflow\Core\Email\ProductGrid;
 use YayMatik\Workflow\DataItems\OrderData;
 
@@ -42,15 +43,15 @@ final class OrderProData extends OrderData {
             'has_cross_sells'     => [
                 'label' => __( 'Order has cross-sell products', 'yaymatik' ),
                 'type'  => self::TYPE_BOOLEAN,
-                'value' => fn( \WC_Order $order ) => (bool) ProductGrid::for_order( $order, ProductGrid::CROSS_SELLS ),
+                'value' => fn( \WC_Order $order ) => (bool) OrderGrid::for_order( $order, OrderGrid::CROSS_SELLS ),
             ],
             'has_upsells'         => [
                 'label' => __( 'Order has upsell products', 'yaymatik' ),
                 'type'  => self::TYPE_BOOLEAN,
-                'value' => fn( \WC_Order $order ) => (bool) ProductGrid::for_order( $order, ProductGrid::UPSELLS ),
+                'value' => fn( \WC_Order $order ) => (bool) OrderGrid::for_order( $order, OrderGrid::UPSELLS ),
             ],
-            'cross_sell_products' => self::grid_field( __( 'Cross-sell products', 'yaymatik' ), ProductGrid::CROSS_SELLS ),
-            'upsell_products'     => self::grid_field( __( 'Upsell products', 'yaymatik' ), ProductGrid::UPSELLS ),
+            'cross_sell_products' => self::grid_field( __( 'Cross-sell products', 'yaymatik' ), OrderGrid::CROSS_SELLS ),
+            'upsell_products'     => self::grid_field( __( 'Upsell products', 'yaymatik' ), OrderGrid::UPSELLS ),
         ];
         return array_merge( array_intersect_key( array_flip( self::ORDER ), $fields ), $fields );
     }
@@ -78,14 +79,14 @@ final class OrderProData extends OrderData {
      * A product grid email block.
      *
      * @param string $label
-     * @param string $kind  `ProductGrid` CROSS_SELLS or UPSELLS.
+     * @param string $kind  `OrderGrid` CROSS_SELLS or UPSELLS.
      */
     private static function grid_field( string $label, string $kind ): array {
         return [
             'label'       => $label,
             'type'        => self::TYPE_STRING,
-            'value'       => fn( \WC_Order $order ) => ProductGrid::render( ProductGrid::for_block( $order, $kind ), false ),
-            'display'     => fn( \WC_Order $order, bool $html ) => ProductGrid::render( ProductGrid::for_block( $order, $kind ), $html ),
+            'value'       => fn( \WC_Order $order ) => ProductGrid::render( OrderGrid::for_block( $order, $kind ), false ),
+            'display'     => fn( \WC_Order $order, bool $html ) => ProductGrid::render( OrderGrid::for_block( $order, $kind ), $html ),
             'conditional' => false,
             'block'       => true,
         ];

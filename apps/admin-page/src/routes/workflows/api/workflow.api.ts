@@ -134,7 +134,7 @@ export const previewEmail = (id: string, input: EmailStepInput) =>
 export const openStepEditor = (id: string, input: EmailStepInput) =>
   request<StepEditorTarget>(api.post(`workflows/${id}/editor`, { json: input }));
 
-/** Sends to the logged-in user, subject prefixed "[Test]". 400 with `issues` as for Preview. */
+/** Sends to the user's test address, subject prefixed "[Test]". 400 with `issues` as for Preview. */
 export const sendTestEmail = (id: string, input: EmailStepInput) =>
   // A slow mail server can take longer than the client's usual timeout.
   request<EmailTestResult>(api.post(`workflows/${id}/send-test`, { json: input, timeout: 60000 }));

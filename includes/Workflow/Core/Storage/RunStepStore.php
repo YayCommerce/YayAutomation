@@ -101,6 +101,7 @@ final class RunStepStore {
         if ( ! in_array( $status, array_diff( self::STATUSES, self::OPEN ), true ) ) {
             return false;
         }
+        // phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter -- Schema::in() gives one %s per status.
         $done = $wpdb->query(
             // phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- placeholders are built to match the array.
             $wpdb->prepare(
@@ -127,7 +128,8 @@ final class RunStepStore {
      */
     public static function cancel_waiting( array $run_ids, string $reason ): void {
         global $wpdb;
-        $ids  = array_map( 'intval', $run_ids );
+        $ids = array_map( 'intval', $run_ids );
+        // phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter -- Schema::in() gives one %d per run.
         $done = $wpdb->query(
             // phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- placeholders are built to match the array.
             $wpdb->prepare(
@@ -167,7 +169,7 @@ final class RunStepStore {
         if ( ! $ids ) {
             return [];
         }
-        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- Schema::in() gives one %d per run.
+        // phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- Schema::in() gives one %d per run.
         $rows = $wpdb->get_results( $wpdb->prepare( 'SELECT run_id, COUNT(*) AS steps FROM %i WHERE run_id IN (' . Schema::in( count( $ids ) ) . ') GROUP BY run_id', array_merge( [ self::table() ], array_values( $ids ) ) ), ARRAY_A );
         return array_map( 'intval', array_column( (array) $rows, 'steps', 'run_id' ) );
     }

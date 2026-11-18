@@ -7,8 +7,10 @@ import { toast } from '@/components/ui/sonner';
 import { EmailToolsContext, type EmailTools } from '../../core/fields/emailTools';
 import { EmailActions } from './EmailActions';
 import { sampleProductsText } from './PreviewDialog';
+import { saveTestEmail } from './testEmail';
 
 vi.mock('@/components/ui/sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
+vi.mock('./testEmail', () => ({ saveTestEmail: vi.fn() }));
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -206,5 +208,50 @@ describe('EmailActions', () => {
     await click(button('Send test'));
 
     expect(toast.error).toHaveBeenCalledWith('Couldn’t send the test email.');
+  });
+
+  describe('test recipient', () => {
+    const type = (input: HTMLInputElement, value: string) =>
+      act(() => {
+        Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(input, value);
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+      });
+    const submit = async () => act(async () => dialog()!.querySelector('form')!.requestSubmit());
+    const pencil = () => container.querySelector<HTMLButtonElement>('[aria-label="Change test recipient"]')!;
+
+    it('opens with the current address, shows the server error, and keeps the line', async () => {
+      vi.mocked(saveTestEmail).mockRejectedValueOnce(new Error('Enter a valid email address.'));
+      renderActions({});
+      await click(pencil());
+
+      const input = dialog()!.querySelector('input')!;
+      expect([dialog()!.querySelector('h2')?.textContent, input.value, input.type]).toEqual([
+        'Send test to',
+        'you@example.test',
+        'email',
+      ]);
+      type(input, 'qa@');
+      await submit();
+
+      expect(saveTestEmail).toHaveBeenCalledWith('qa@');
+      expect(dialog()!.textContent).toContain('Enter a valid email address.');
+      expect(input.getAttribute('aria-invalid')).toBe('true');
+      expect(container.textContent).toContain('Test goes to you@example.test');
+    });
+
+    it('saves, closes and updates the line; the next panel starts from it', async () => {
+      vi.mocked(saveTestEmail).mockResolvedValueOnce('qa@example.test');
+      renderActions({});
+      await click(pencil());
+      type(dialog()!.querySelector('input')!, 'qa@example.test');
+      await submit();
+
+      expect(dialog()).toBeNull();
+      expect(container.textContent).toContain('Test goes to qa@example.test');
+      act(() => root.unmount());
+      root = createRoot(container);
+      renderActions({});
+      expect(container.textContent).toContain('Test goes to qa@example.test');
+    });
   });
 });

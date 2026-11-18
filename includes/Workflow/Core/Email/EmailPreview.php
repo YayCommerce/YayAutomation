@@ -33,11 +33,8 @@ final class EmailPreview {
     /** Paid orders looked at for one whose suggested-products grid isn't empty. */
     private const GRID_SCAN = 20;
 
-    /** Merge tags of the order grids => their `ProductGrid` kind. */
-    private const GRID_TAGS = [
-        'order.cross_sell_products' => ProductGrid::CROSS_SELLS,
-        'order.upsell_products'     => ProductGrid::UPSELLS,
-    ];
+    /** @var array[] Kind => `tag` (a merge tag), `has` (fn( \WC_Order ): bool): a preview picks an order that has something for the tags it uses. */
+    private static $sample_needs = [];
 
     /**
      * The email as the recipient would see it.
@@ -248,8 +245,11 @@ final class EmailPreview {
         $users = get_users(
             [
                 'role'    => 'customer',
-                'orderby' => 'registered',
-                'order'   => 'DESC',
+                // Accounts made in the same second tie on `registered`: the higher id is the newer one.
+                'orderby' => [
+                    'registered' => 'DESC',
+                    'ID'         => 'DESC',
+                ],
                 'number'  => 1,
             ]
         );
@@ -288,6 +288,21 @@ final class EmailPreview {
     }
 
     /**
+     * A merge tag whose preview wants an order that has something for it; a preview without one fills the tag's grid with the newest products.
+     *
+     * @internal
+     * @param string   $kind The name `sampleProducts` gives the client.
+     * @param string   $tag  A merge tag, without braces.
+     * @param callable $has  fn( \WC_Order $order ): bool.
+     */
+    public static function add_sample_need( string $kind, string $tag, callable $has ): void {
+        self::$sample_needs[ $kind ] = [
+            'tag' => $tag,
+            'has' => $has,
+        ];
+    }
+
+    /**
      * The grid kinds an email's config shows, by merge tag.
      *
      * @param array $config
@@ -295,7 +310,7 @@ final class EmailPreview {
      */
     public static function grid_kinds( array $config ): array {
         $text = (string) wp_json_encode( $config );
-        return array_values( array_filter( self::GRID_TAGS, fn( string $tag ) => false !== strpos( $text, $tag ), ARRAY_FILTER_USE_KEY ) );
+        return array_keys( array_filter( self::$sample_needs, fn( array $need ) => false !== strpos( $text, $need['tag'] ) ) );
     }
 
     /**
@@ -326,7 +341,7 @@ final class EmailPreview {
         if ( ! $order instanceof \WC_Order ) {
             return [];
         }
-        return array_values( array_filter( $kinds, fn( string $kind ) => (bool) ProductGrid::for_order( $order, $kind ) ) );
+        return array_values( array_filter( $kinds, fn( string $kind ) => (bool) ( self::$sample_needs[ $kind ]['has'] )( $order ) ) );
     }
 
     /**

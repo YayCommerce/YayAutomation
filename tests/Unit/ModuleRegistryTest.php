@@ -47,7 +47,7 @@ final class ModuleRegistryTest extends TestCase {
 
     protected function tearDown(): void {
         if ( $this->filter ) {
-            remove_filter( ModuleRegistry::HOOK, $this->filter );
+            remove_filter( 'yaymatik_modules', $this->filter );
         }
     }
 
@@ -85,7 +85,7 @@ final class ModuleRegistryTest extends TestCase {
 
     public function test_a_filter_adds_a_module_whose_steps_name_it(): void {
         $this->filter = fn( array $modules ) => array_merge( $modules, [ FakeModule::class ] );
-        add_filter( ModuleRegistry::HOOK, $this->filter );
+        add_filter( 'yaymatik_modules', $this->filter );
 
         $modules = ModuleRegistry::from( ModuleRegistry::classes() );
 
