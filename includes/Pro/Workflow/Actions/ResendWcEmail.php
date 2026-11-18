@@ -15,9 +15,6 @@ class ResendWcEmail extends Action {
 
     public const ID = 'resend_wc_email';
 
-    /** Ids a plugin can add or remove: `apply_filters( 'yaymatik_resendable_emails', string[] $ids )`. Each must take `trigger( $order_id )`. */
-    public const FILTER = 'yaymatik_resendable_emails';
-
     /** Customer emails whose `trigger()` takes only the order id. Refunded is left out: a resend would always read as a full refund. */
     public const CORE_EMAILS = [
         'customer_processing_order',
@@ -112,7 +109,8 @@ class ResendWcEmail extends Action {
         if ( ! function_exists( 'WC' ) ) {
             return [];
         }
-        $allowed = (array) apply_filters( self::FILTER, self::CORE_EMAILS );
+        // Ids a plugin can add or remove. Each must take `trigger( $order_id )`.
+        $allowed = (array) apply_filters( 'yaymatik_resendable_emails', self::CORE_EMAILS );
         $emails  = [];
         // get_emails() is keyed by class name.
         foreach ( WC()->mailer()->get_emails() as $email ) {

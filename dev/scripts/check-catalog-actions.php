@@ -212,11 +212,11 @@ $result                    = $role_step->run(
 $ok( $result->is_failed() && [ 'customer' ] === $roles_of( $late ), 'change_customer_role: a role made protected after the save fails at run time (' . $result->message() . ')' );
 
 $allow                           = fn() => true;
-add_filter( ChangeCustomerRole::ALLOW_ALL_FILTER, $allow );
+add_filter( 'yaymatik_change_role_allow_all', $allow );
 list( $manager, $manager_scope ) = $role_user( [ 'shop_manager' ] );
 $ok( $change( $manager_scope, 'add', 'check_vip' )->is_ok() && [ 'check_vip', 'shop_manager' ] === $roles_of( $manager ), 'change_customer_role: the filter allows a protected role and a staff user' );
 $ok( $change( $manager_scope, 'remove', 'check_vip' )->is_ok() && $change( $manager_scope, 'remove', 'shop_manager' )->is_skipped(), 'change_customer_role: with the filter on, the last role is still kept' );
-remove_filter( ChangeCustomerRole::ALLOW_ALL_FILTER, $allow );
+remove_filter( 'yaymatik_change_role_allow_all', $allow );
 
 $ok( $change( $order_scope( $order() ), 'add', 'check_wholesale' )->is_skipped(), 'change_customer_role: a guest order is skipped' );
 $ok( 0 === get_current_user_id(), 'change_customer_role: all of this ran as user 0' );

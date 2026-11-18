@@ -502,6 +502,7 @@ final class WorkflowStore {
             $before[] = $versions;
             $after[]  = $versions;
         }
+        // phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter -- fixed fragments; $where has placeholders for $args.
         return $wpdb->get_results(
             // phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- one value per %i and per placeholder of $where.
             $wpdb->prepare(

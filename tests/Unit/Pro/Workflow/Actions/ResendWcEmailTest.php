@@ -33,7 +33,7 @@ final class ResendWcEmailTest extends TestCase {
 
     protected function tearDown(): void {
         if ( $this->filter ) {
-            remove_filter( ResendWcEmail::FILTER, $this->filter );
+            remove_filter( 'yaymatik_resendable_emails', $this->filter );
         }
     }
 
@@ -42,7 +42,7 @@ final class ResendWcEmailTest extends TestCase {
      */
     private function filter( callable $filter ): void {
         $this->filter = $filter;
-        add_filter( ResendWcEmail::FILTER, $filter );
+        add_filter( 'yaymatik_resendable_emails', $filter );
     }
 
     /**

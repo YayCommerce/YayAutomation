@@ -97,7 +97,7 @@ final class CartStore {
             array_values( $data ),
             ...array_map( fn( $column ) => [ $column, $column ], $updated )
         );
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own table.
+        // phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own table.
         return false !== $wpdb->query(
             // phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- one value per placeholder.
             $wpdb->prepare(
@@ -212,7 +212,7 @@ final class CartStore {
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own table, uses KEY order_id.
         $ids = array_map( 'intval', (array) $wpdb->get_col( $wpdb->prepare( 'SELECT id FROM %i WHERE order_id = %d AND status <> %s', $table, $order_id, self::ORDERED ) ) );
         if ( $ids ) {
-            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- own table, a write; Schema::in() gives one %d per id.
+            // phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- own table, a write; Schema::in() gives one %d per id.
             $wpdb->query( $wpdb->prepare( 'UPDATE %i SET status = %s, updated_at = %s WHERE id IN (' . Schema::in( count( $ids ) ) . ') AND status <> %s', array_merge( [ $table, self::ORDERED, current_time( 'mysql', true ) ], $ids, [ self::ORDERED ] ) ) );
         }
         return $ids;
@@ -232,7 +232,7 @@ final class CartStore {
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own table, indexed by email.
         $ids = array_map( 'intval', (array) $wpdb->get_col( $wpdb->prepare( 'SELECT id FROM %i WHERE email = %s AND status IN (%s, %s) AND last_activity_at <= %s', $table, $email, self::ACTIVE, self::ABANDONED, $before ) ) );
         if ( $ids ) {
-            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- own table, a write; Schema::in() gives one %d per id.
+            // phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- own table, a write; Schema::in() gives one %d per id.
             $wpdb->query( $wpdb->prepare( 'UPDATE %i SET status = %s, order_id = %d, updated_at = %s WHERE id IN (' . Schema::in( count( $ids ) ) . ') AND status <> %s', array_merge( [ $table, self::ORDERED, $order_id, current_time( 'mysql', true ) ], $ids, [ self::ORDERED ] ) ) );
         }
         return $ids;
@@ -361,7 +361,7 @@ final class CartStore {
         }
         $table = self::table();
         $ids   = array_map( 'intval', $ids );
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- own table, a write; Schema::in() gives one %d per id.
+        // phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- own table, a write; Schema::in() gives one %d per id.
         $done = $wpdb->query( $wpdb->prepare( 'DELETE FROM %i WHERE id IN (' . Schema::in( count( $ids ) ) . ')', array_merge( [ $table ], array_values( $ids ) ) ) );
         if ( false === $done ) {
             Logger::error( 'Could not delete old carts: ' . $wpdb->last_error );

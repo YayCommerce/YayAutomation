@@ -76,14 +76,14 @@ final class ChangeCustomerRoleTest extends TestCase {
 
     protected function tearDown(): void {
         if ( $this->filter ) {
-            remove_filter( ChangeCustomerRole::ALLOW_ALL_FILTER, $this->filter );
+            remove_filter( 'yaymatik_change_role_allow_all', $this->filter );
         }
         unset( $GLOBALS['yaymatik_test_roles'], $GLOBALS['yaymatik_test_users'], $GLOBALS['yaymatik_test_super_admins'] );
     }
 
     private function allow_all(): void {
         $this->filter = fn() => true;
-        add_filter( ChangeCustomerRole::ALLOW_ALL_FILTER, $this->filter );
+        add_filter( 'yaymatik_change_role_allow_all', $this->filter );
     }
 
     /**

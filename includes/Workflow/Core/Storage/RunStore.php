@@ -106,6 +106,7 @@ final class RunStore {
         $params[]                = self::PER_PAGE;
         $params[]                = ( max( 1, (int) ( $args['page'] ?? 1 ) ) - 1 ) * self::PER_PAGE;
 
+        // phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter -- $filter has placeholders for $params.
         $rows = $wpdb->get_results(
             // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- $filter has placeholders for $params.
             $wpdb->prepare( "SELECT id, workflow_id, version_id, trigger_id, subject, status, position, wait_until, error, parent_run_id, root_run_id, depth, started_at, finished_at FROM %i {$filter} ORDER BY id DESC LIMIT %d OFFSET %d", array_merge( [ self::table() ], $params ) ),
@@ -122,7 +123,7 @@ final class RunStore {
     public static function count( array $args = [] ): int {
         global $wpdb;
         list( $filter, $params ) = self::filter( $args );
-        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- $filter has placeholders for $params.
+        // phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- $filter has placeholders for $params.
         return (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM %i {$filter}", array_merge( [ self::table() ], $params ) ) );
     }
 
@@ -139,6 +140,7 @@ final class RunStore {
         if ( ! $ids ) {
             return [];
         }
+        // phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter -- Schema::in() gives one %d per workflow.
         $rows = $wpdb->get_results(
             // phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- Schema::in() gives one %d per workflow.
             $wpdb->prepare(
@@ -220,6 +222,7 @@ final class RunStore {
         }
         // A waiting run only once its wait is over; `wait_until` stays, so the Executor can tell a woken
         // wait from an interrupted one.
+        // phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter -- Schema::in() gives the list placeholders.
         $done = $wpdb->query(
             // phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- placeholders are built to match the array.
             $wpdb->prepare(
@@ -255,7 +258,7 @@ final class RunStore {
         if ( ! $subjects ) {
             return [];
         }
-        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- Schema::in() gives one %s per subject.
+        // phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- Schema::in() gives one %s per subject.
         $ids = $wpdb->get_col( $wpdb->prepare( 'SELECT id FROM %i WHERE status = %s AND subject IN (' . Schema::in( count( $subjects ), '%s' ) . ')', array_merge( [ self::table(), self::STATUS_WAITING ], array_values( $subjects ) ) ) );
         return array_map( 'intval', (array) $ids );
     }
@@ -298,7 +301,8 @@ final class RunStore {
         if ( ! $ids ) {
             return 0;
         }
-        $ids  = array_map( 'intval', array_values( $ids ) );
+        $ids = array_map( 'intval', array_values( $ids ) );
+        // phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter -- Schema::in() gives the list placeholders.
         $done = $wpdb->query(
             // phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- Schema::in() gives one %d per run.
             $wpdb->prepare(
@@ -369,6 +373,7 @@ final class RunStore {
         $table = self::table();
         $open  = array_values( array_diff( self::STATUSES, self::FINISHED ) );
         // A chain with an open run keeps all its runs: the loop guard walks parent_run_id and stops at a missing row.
+        // phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter -- Schema::in() gives the list placeholders.
         $ids = $wpdb->get_col(
             // phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- placeholders are built to match the array.
             $wpdb->prepare(
@@ -392,7 +397,7 @@ final class RunStore {
             return true;
         }
         $in = Schema::in( count( $ids ) );
-        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- Schema::in() gives one %d per run.
+        // phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- Schema::in() gives one %d per run.
         if ( false === $wpdb->query( $wpdb->prepare( "DELETE FROM %i WHERE run_id IN ({$in})", array_merge( [ RunStepStore::table() ], $ids ) ) ) || false === $wpdb->query( $wpdb->prepare( "DELETE FROM %i WHERE id IN ({$in})", array_merge( [ self::table() ], $ids ) ) ) || false === $wpdb->query( $wpdb->prepare( "DELETE FROM %i WHERE run_id IN ({$in})", array_merge( [ Schema::table( Schema::RUN_EMAILS ) ], $ids ) ) ) ) {
             Logger::error( 'Could not delete old runs: ' . $wpdb->last_error );
             return false;
@@ -412,7 +417,8 @@ final class RunStore {
     public static function for_export( string $email, array $subjects, int $limit, int $offset ): array {
         global $wpdb;
         list( $about, $params ) = self::about( $email, $subjects, false );
-        $rows                   = $wpdb->get_results(
+        // phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter -- $about has placeholders for $params.
+        $rows = $wpdb->get_results(
             // phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- placeholders are built to match the array.
             $wpdb->prepare(
                 // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- $about has placeholders for $params.
@@ -437,7 +443,8 @@ final class RunStore {
         global $wpdb;
         $busy                   = Schema::in( count( self::IN_PROGRESS ), '%s' );
         list( $about, $params ) = self::about( $email, $subjects, true );
-        $rows                   = $wpdb->get_results(
+        // phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter -- $busy and $about are placeholders.
+        $rows = $wpdb->get_results(
             // phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- placeholders are built to match the array.
             $wpdb->prepare(
                 // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- $busy and $about are placeholders.
@@ -459,7 +466,8 @@ final class RunStore {
         global $wpdb;
         $busy                   = Schema::in( count( self::IN_PROGRESS ), '%s' );
         list( $about, $params ) = self::about( $email, $subjects, false );
-        $found                  = $wpdb->get_var(
+        // phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter -- $busy and $about are placeholders.
+        $found = $wpdb->get_var(
             // phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- placeholders are built to match the array.
             $wpdb->prepare(
                 // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- $busy and $about are placeholders.
@@ -504,6 +512,7 @@ final class RunStore {
             return 0;
         }
         // A waiting run its job took meanwhile is running now.
+        // phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter -- Schema::in() gives the list placeholders.
         $ids = $wpdb->get_col(
             // phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- placeholders are built to match the array.
             $wpdb->prepare(
@@ -524,7 +533,8 @@ final class RunStore {
         ];
         foreach ( $tables as $table => list( $run_column, $json_columns, $text_columns ) ) {
             $columns = array_merge( [ 'id', $run_column ], $json_columns, $text_columns );
-            $rows    = (array) $wpdb->get_results(
+            // phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter -- Schema::in() gives the list placeholders.
+            $rows = (array) $wpdb->get_results(
                 // phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- one value per %i and %d.
                 $wpdb->prepare(
                     // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- Schema::in() gives the list placeholders.
@@ -572,9 +582,9 @@ final class RunStore {
         $in   = Schema::in( count( $ids ) );
         $of   = Schema::in( count( $keys ), '%s' );
         // A link left by an overwritten value counts as erased, so a page of only those isn't reported as failed.
-        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- Schema::in() gives the list placeholders.
+        // phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- Schema::in() gives the list placeholders.
         $linked = (array) $wpdb->get_col( $wpdb->prepare( "SELECT DISTINCT run_id FROM %i WHERE run_id IN ({$in}) AND email IN ({$of})", array_merge( [ Schema::table( Schema::RUN_EMAILS ) ], $ids, $keys ) ) );
-        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- Schema::in() gives the list placeholders.
+        // phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- Schema::in() gives the list placeholders.
         if ( false === $wpdb->query( $wpdb->prepare( "DELETE FROM %i WHERE run_id IN ({$in}) AND email IN ({$of})", array_merge( [ Schema::table( Schema::RUN_EMAILS ) ], $ids, $keys ) ) ) ) {
             Logger::error( 'Could not remove an erased email from the run index: ' . $wpdb->last_error, [ 'run_ids' => $ids ] );
             return count( $changed );
@@ -598,6 +608,7 @@ final class RunStore {
                 return;
             }
             $list = implode( ' UNION ALL ', array_fill( 0, count( $emails ), 'SELECT %s AS email' ) );
+            // phpcs:ignore PluginCheck.Security.DirectDB.UnescapedDBParameter -- $runs and $list are placeholders.
             $done = $wpdb->query(
                 // phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- placeholders are built to match the array.
                 $wpdb->prepare(

@@ -10,7 +10,6 @@ use YayMatik\Pro\Workflow\Modules\YayMatikProModule;
 use YayMatik\Workflow\Core\Email\EmailPreview;
 use YayMatik\Workflow\Core\Runtime\DailyJobs;
 use YayMatik\Workflow\Core\Storage\Settings;
-use YayMatik\Workflow\ModuleRegistry;
 use YayMatik\Workflow\Modules\WoocommerceModule;
 use YayMatik\Workflow\Modules\YayMatikModule;
 use YayMatikScoped\YayCommerce\AdminShell\AdminShell;
@@ -41,7 +40,7 @@ final class Boot {
         if ( ! self::$licensed ) {
             return;
         }
-        add_filter( ModuleRegistry::HOOK, [ self::class, 'modules' ] );
+        add_filter( 'yaymatik_modules', [ self::class, 'modules' ] );
         CustomerMetaKeysRoute::register();
         foreach ( [
             OrderGrid::CROSS_SELLS => 'order.cross_sell_products',
