@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-18T04:39:36+00:00\n"
+"POT-Creation-Date: 2026-11-19T06:38:11+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.8.1\n"
 "X-Domain: yaymatik\n"
@@ -34,28 +34,28 @@ msgstr ""
 msgid "https://yaycommerce.com"
 msgstr ""
 
-#: includes/Engine/API/RestAPI.php:257
+#: includes/Engine/API/RestAPI.php:253
 msgid "This step has no editor."
 msgstr ""
 
-#: includes/Engine/API/RestAPI.php:295
+#: includes/Engine/API/RestAPI.php:291
 msgid "Choose an email step to preview."
 msgstr ""
 
-#: includes/Engine/API/RestAPI.php:470
+#: includes/Engine/API/RestAPI.php:466
 msgid "There are no draft changes to update."
 msgstr ""
 
-#: includes/Engine/API/RestAPI.php:562
+#: includes/Engine/API/RestAPI.php:558
 #: assets/dist/admin-page/main.js:188
 msgid "Run not found."
 msgstr ""
 
-#: includes/Engine/API/RestAPI.php:611
+#: includes/Engine/API/RestAPI.php:607
 msgid "Couldn’t delete the workflow. Try again."
 msgstr ""
 
-#: includes/Engine/API/RestAPI.php:653
+#: includes/Engine/API/RestAPI.php:649
 #: assets/dist/admin-page/main.js:1
 msgid "Workflow not found."
 msgstr ""
@@ -138,7 +138,7 @@ msgstr ""
 #: includes/Pro/Workflow/Actions/ResendWcEmail.php:55
 #: includes/Pro/Workflow/Actions/ResendWcEmail.php:69
 #: includes/Workflow/Core/Definition/Catalog.php:126
-#: includes/Workflow/Core/Definition/ProCatalog.php:69
+#: includes/Workflow/Core/Definition/ProCatalog.php:75
 #: includes/Workflow/DataItems/CartData.php:36
 #: assets/dist/admin-page/main.js:101
 msgid "Email"
@@ -265,87 +265,102 @@ msgstr ""
 msgid "Read more details."
 msgstr ""
 
-#: includes/Pro/Workflow/Actions/ChangeCustomerRole.php:65
-#: includes/Workflow/Core/Definition/ProCatalog.php:85
+#: includes/Pro/Engine/Privacy/ActivityData.php:25
+#: includes/Pro/Engine/Privacy/ActivityData.php:37
+#: includes/Pro/Engine/Privacy/ActivityData.php:62
+msgid "YayMatik Pro"
+msgstr ""
+
+#: includes/Pro/Engine/Privacy/ActivityData.php:91
+msgid "Last seen on the store"
+msgstr ""
+
+#: includes/Pro/Engine/Privacy/ActivityData.php:92
+#: includes/Pro/Workflow/DataItems/CustomerProData.php:70
+msgid "Last added to cart"
+msgstr ""
+
+#: includes/Pro/Workflow/Actions/ChangeCustomerRole.php:24
+#: includes/Workflow/Core/Definition/ProCatalog.php:91
 msgid "Change customer role"
 msgstr ""
 
-#: includes/Pro/Workflow/Actions/ChangeCustomerRole.php:69
+#: includes/Pro/Workflow/Actions/ChangeCustomerRole.php:28
 msgid "Add, remove or replace a role on the customer’s account."
 msgstr ""
 
-#: includes/Pro/Workflow/Actions/ChangeCustomerRole.php:88
+#: includes/Pro/Workflow/Actions/ChangeCustomerRole.php:47
 #: assets/dist/admin-page/main.js:150
 msgid "Change"
 msgstr ""
 
-#: includes/Pro/Workflow/Actions/ChangeCustomerRole.php:90
+#: includes/Pro/Workflow/Actions/ChangeCustomerRole.php:49
 msgid "Add a role"
 msgstr ""
 
-#: includes/Pro/Workflow/Actions/ChangeCustomerRole.php:91
+#: includes/Pro/Workflow/Actions/ChangeCustomerRole.php:50
 msgid "Remove a role"
 msgstr ""
 
-#: includes/Pro/Workflow/Actions/ChangeCustomerRole.php:92
+#: includes/Pro/Workflow/Actions/ChangeCustomerRole.php:51
 msgid "Replace roles"
 msgstr ""
 
-#: includes/Pro/Workflow/Actions/ChangeCustomerRole.php:95
-#: includes/Pro/Workflow/DataItems/CustomerProData.php:76
+#: includes/Pro/Workflow/Actions/ChangeCustomerRole.php:54
+#: includes/Pro/Workflow/DataItems/CustomerProData.php:91
 msgid "Role"
 msgstr ""
 
 #. translators: {{ step }}: step name, e.g. "Change customer role"; keep {{ … }} as it is.
-#: includes/Pro/Workflow/Actions/ChangeCustomerRole.php:97
+#: includes/Pro/Workflow/Actions/ChangeCustomerRole.php:56
 msgid "{{ step }} needs a role."
 msgstr ""
 
-#: includes/Pro/Workflow/Actions/ChangeCustomerRole.php:98
+#: includes/Pro/Workflow/Actions/ChangeCustomerRole.php:57
 msgid "Only roles with customer rights are listed: no staff, editing or publishing roles."
 msgstr ""
 
 #. translators: {{ config.mode }}: e.g. "Add a role", {{ config.role }}: a role name; keep {{ … }} as it is.
-#: includes/Pro/Workflow/Actions/ChangeCustomerRole.php:104
+#: includes/Pro/Workflow/Actions/ChangeCustomerRole.php:63
 msgid "{{ config.mode }}: {{ config.role }}"
 msgstr ""
 
-#: includes/Pro/Workflow/Actions/ChangeCustomerRole.php:110
-#: includes/Workflow/Core/Definition/ProCatalog.php:87
+#: includes/Pro/Workflow/Actions/ChangeCustomerRole.php:69
+#: includes/Workflow/Core/Definition/ProCatalog.php:93
 msgid "Roles before"
 msgstr ""
 
-#: includes/Pro/Workflow/Actions/ChangeCustomerRole.php:114
-#: includes/Workflow/Core/Definition/ProCatalog.php:88
+#: includes/Pro/Workflow/Actions/ChangeCustomerRole.php:73
+#: includes/Workflow/Core/Definition/ProCatalog.php:94
 msgid "Roles after"
 msgstr ""
 
-#: includes/Pro/Workflow/Actions/ChangeCustomerRole.php:136
+#: includes/Pro/Workflow/Actions/ChangeCustomerRole.php:95
 #: includes/Pro/Workflow/Actions/UpdateCustomerMeta.php:89
 msgid "This customer has no account."
 msgstr ""
 
-#: includes/Pro/Workflow/Actions/ChangeCustomerRole.php:141
+#: includes/Pro/Workflow/Actions/ChangeCustomerRole.php:100
 msgid "This customer has a protected role."
 msgstr ""
 
 #. translators: %s: role slug
-#: includes/Pro/Workflow/Actions/ChangeCustomerRole.php:149
+#: includes/Pro/Workflow/Actions/ChangeCustomerRole.php:108
 msgid "The role %s no longer exists."
 msgstr ""
 
 #. translators: %s: role name
-#: includes/Pro/Workflow/Actions/ChangeCustomerRole.php:153
+#: includes/Pro/Workflow/Actions/ChangeCustomerRole.php:112
 msgid "%s can now manage the site, so it can’t be given."
 msgstr ""
 
 #. translators: %s: role name
-#: includes/Pro/Workflow/Actions/ChangeCustomerRole.php:157
+#: includes/Pro/Workflow/Actions/ChangeCustomerRole.php:116
 msgid "%s is their only role."
 msgstr ""
 
 #: includes/Pro/Workflow/Actions/ResendWcEmail.php:34
-#: includes/Workflow/Core/Definition/ProCatalog.php:69
+#: includes/Workflow/Core/Definition/ProCatalog.php:75
 msgid "Resend WooCommerce email"
 msgstr ""
 
@@ -382,7 +397,7 @@ msgid "This order has no billing email."
 msgstr ""
 
 #: includes/Pro/Workflow/Actions/UpdateCustomerMeta.php:24
-#: includes/Workflow/Core/Definition/ProCatalog.php:78
+#: includes/Workflow/Core/Definition/ProCatalog.php:84
 msgid "Update customer custom field"
 msgstr ""
 
@@ -394,8 +409,8 @@ msgstr ""
 #: includes/Pro/Workflow/Actions/UpdateCustomerMeta.php:61
 #: includes/Pro/Workflow/Actions/UpdateOrderMeta.php:50
 #: includes/Pro/Workflow/Actions/UpdateOrderMeta.php:66
-#: includes/Workflow/Core/Definition/ProCatalog.php:73
-#: includes/Workflow/Core/Definition/ProCatalog.php:80
+#: includes/Workflow/Core/Definition/ProCatalog.php:79
+#: includes/Workflow/Core/Definition/ProCatalog.php:86
 #: assets/dist/admin-page/main.js:111
 msgid "Field name"
 msgstr ""
@@ -420,8 +435,8 @@ msgstr ""
 
 #: includes/Pro/Workflow/Actions/UpdateCustomerMeta.php:65
 #: includes/Pro/Workflow/Actions/UpdateOrderMeta.php:70
-#: includes/Workflow/Core/Definition/ProCatalog.php:74
-#: includes/Workflow/Core/Definition/ProCatalog.php:81
+#: includes/Workflow/Core/Definition/ProCatalog.php:80
+#: includes/Workflow/Core/Definition/ProCatalog.php:87
 msgid "Value changed"
 msgstr ""
 
@@ -434,7 +449,7 @@ msgid "This custom field is protected and can’t be changed."
 msgstr ""
 
 #: includes/Pro/Workflow/Actions/UpdateOrderMeta.php:25
-#: includes/Workflow/Core/Definition/ProCatalog.php:71
+#: includes/Workflow/Core/Definition/ProCatalog.php:77
 msgid "Update order custom field"
 msgstr ""
 
@@ -460,7 +475,7 @@ msgid "WooCommerce or YayMatik manages this field. Choose another field name."
 msgstr ""
 
 #: includes/Pro/Workflow/Actions/WaitUntil.php:25
-#: includes/Workflow/Core/Definition/ProCatalog.php:68
+#: includes/Workflow/Core/Definition/ProCatalog.php:74
 msgid "Wait until"
 msgstr ""
 
@@ -497,7 +512,7 @@ msgid "Until {{ config.time }} · {{ config.weekdays }}"
 msgstr ""
 
 #: includes/Pro/Workflow/Actions/WaitUntil.php:63
-#: includes/Workflow/Core/Definition/ProCatalog.php:68
+#: includes/Workflow/Core/Definition/ProCatalog.php:74
 msgid "Waited until"
 msgstr ""
 
@@ -534,47 +549,59 @@ msgstr ""
 msgid "Enter a time, e.g. 9:15 am."
 msgstr ""
 
-#: includes/Pro/Workflow/DataItems/CustomerProData.php:48
+#: includes/Pro/Workflow/DataItems/CustomerProData.php:49
 msgid "Paid order count"
 msgstr ""
 
-#: includes/Pro/Workflow/DataItems/CustomerProData.php:53
+#: includes/Pro/Workflow/DataItems/CustomerProData.php:54
 #: includes/Pro/Workflow/Triggers/CustomerTotalSpendReaches.php:31
 msgid "Total spent"
 msgstr ""
 
-#: includes/Pro/Workflow/DataItems/CustomerProData.php:54
+#: includes/Pro/Workflow/DataItems/CustomerProData.php:55
 msgid "Orders in other currencies are added as stored, not converted."
 msgstr ""
 
-#: includes/Pro/Workflow/DataItems/CustomerProData.php:61
+#: includes/Pro/Workflow/DataItems/CustomerProData.php:62
 msgid "Last order date"
 msgstr ""
 
-#: includes/Pro/Workflow/DataItems/CustomerProData.php:62
+#: includes/Pro/Workflow/DataItems/CustomerProData.php:63
 msgid "The newest paid order; pending and failed orders don’t count."
 msgstr ""
 
-#: includes/Pro/Workflow/DataItems/CustomerProData.php:69
+#: includes/Pro/Workflow/DataItems/CustomerProData.php:71
+msgid "When the signed-in customer last added a product or raised a quantity. Never earlier than when YayMatik Pro last started tracking it."
+msgstr ""
+
+#: includes/Pro/Workflow/DataItems/CustomerProData.php:78
+msgid "Items in cart"
+msgstr ""
+
+#: includes/Pro/Workflow/DataItems/CustomerProData.php:79
+msgid "Items in the signed-in customer’s cart that isn’t ordered yet. Needs Track carts."
+msgstr ""
+
+#: includes/Pro/Workflow/DataItems/CustomerProData.php:84
 msgid "Registered date"
 msgstr ""
 
-#: includes/Pro/Workflow/DataItems/CustomerProData.php:86
+#: includes/Pro/Workflow/DataItems/CustomerProData.php:101
 msgid "Products bought"
 msgstr ""
 
-#: includes/Pro/Workflow/DataItems/CustomerProData.php:93
+#: includes/Pro/Workflow/DataItems/CustomerProData.php:108
 #: includes/Pro/Workflow/DataItems/OrderProData.php:36
 msgid "Custom field"
 msgstr ""
 
-#: includes/Pro/Workflow/DataItems/CustomerProData.php:122
+#: includes/Pro/Workflow/DataItems/CustomerProData.php:138
 #: includes/Workflow/DataItems/CustomerData.php:37
 #: includes/Workflow/DataItems/OrderData.php:144
 msgid "Customer"
 msgstr ""
 
-#: includes/Pro/Workflow/DataItems/CustomerProData.php:126
+#: includes/Pro/Workflow/DataItems/CustomerProData.php:142
 #: includes/Workflow/DataItems/CartData.php:135
 #: includes/Workflow/DataItems/OrderData.php:291
 #: includes/Workflow/DataItems/OrderData.php:342
@@ -635,7 +662,7 @@ msgid "REST API"
 msgstr ""
 
 #: includes/Pro/Workflow/Triggers/CustomerInactive.php:19
-#: includes/Workflow/Core/Definition/ProCatalog.php:65
+#: includes/Workflow/Core/Definition/ProCatalog.php:69
 msgid "Customer inactive"
 msgstr ""
 
@@ -652,8 +679,22 @@ msgstr ""
 msgid "When {{ config.days }} days without an order"
 msgstr ""
 
+#: includes/Pro/Workflow/Triggers/CustomerLoggedIn.php:34
+#: includes/Workflow/Core/Definition/ProCatalog.php:73
+msgid "Customer logged in"
+msgstr ""
+
+#: includes/Pro/Workflow/Triggers/CustomerLoggedIn.php:38
+msgid "A customer with a paid order logs in or comes back"
+msgstr ""
+
+#. translators: {{ config.days }}: number of days; keep {{ … }} as it is.
+#: includes/Pro/Workflow/Triggers/CustomerLoggedIn.php:43
+msgid "When a customer logs in · once every {{ config.days }} days"
+msgstr ""
+
 #: includes/Pro/Workflow/Triggers/CustomerOrderCountReaches.php:18
-#: includes/Workflow/Core/Definition/ProCatalog.php:66
+#: includes/Workflow/Core/Definition/ProCatalog.php:70
 msgid "Customer order count reaches"
 msgstr ""
 
@@ -674,8 +715,32 @@ msgstr ""
 msgid "When a customer reaches {{ config.count }} paid orders"
 msgstr ""
 
+#: includes/Pro/Workflow/Triggers/CustomerSession.php:53
+msgid "When to trigger"
+msgstr ""
+
+#: includes/Pro/Workflow/Triggers/CustomerSession.php:56
+msgid "Once per person every N days"
+msgstr ""
+
+#: includes/Pro/Workflow/Triggers/CustomerSession.php:67
+msgid "Sign-in"
+msgstr ""
+
+#: includes/Pro/Workflow/Triggers/CustomerSession.php:68
+msgid "Return with a saved session"
+msgstr ""
+
+#: includes/Pro/Workflow/Triggers/CustomerSession.php:69
+msgid "Automatic sign-in after sign-up or checkout"
+msgstr ""
+
+#: includes/Pro/Workflow/Triggers/CustomerSession.php:89
+msgid "Trigger time"
+msgstr ""
+
 #: includes/Pro/Workflow/Triggers/CustomerTotalSpendReaches.php:18
-#: includes/Workflow/Core/Definition/ProCatalog.php:67
+#: includes/Workflow/Core/Definition/ProCatalog.php:71
 msgid "Customer total spend reaches"
 msgstr ""
 
@@ -690,6 +755,32 @@ msgstr ""
 #. translators: {{ config.amount }}: an amount of money; keep {{ … }} as it is.
 #: includes/Pro/Workflow/Triggers/CustomerTotalSpendReaches.php:40
 msgid "When a customer’s total spent reaches {{ config.amount }}"
+msgstr ""
+
+#: includes/Pro/Workflow/Triggers/UserLoggedIn.php:19
+#: includes/Workflow/Core/Definition/ProCatalog.php:72
+msgid "User logged in"
+msgstr ""
+
+#: includes/Pro/Workflow/Triggers/UserLoggedIn.php:23
+msgid "A user with one of the chosen roles logs in or comes back"
+msgstr ""
+
+#. translators: {{ config.days }}: number of days; keep {{ … }} as it is.
+#: includes/Pro/Workflow/Triggers/UserLoggedIn.php:28
+msgid "When a user logs in · once every {{ config.days }} days"
+msgstr ""
+
+#: includes/Pro/Workflow/Triggers/UserLoggedIn.php:35
+msgid "Roles"
+msgstr ""
+
+#: includes/Pro/Workflow/Triggers/UserLoggedIn.php:37
+msgid "All roles"
+msgstr ""
+
+#: includes/Pro/Workflow/Triggers/UserLoggedIn.php:38
+msgid "Leave empty for all roles."
 msgstr ""
 
 #. translators: %s: what is missing, e.g. "WordPress 6.9, WooCommerce 11.0"
@@ -1521,7 +1612,7 @@ msgstr ""
 msgid "Leave a review"
 msgstr ""
 
-#: includes/Workflow/Core/Email/TestRecipient.php:55
+#: includes/Workflow/Core/Email/TestRecipient.php:31
 msgid "Enter a valid email address."
 msgstr ""
 
@@ -1587,22 +1678,22 @@ msgid "This run can't wait: Action Scheduler is not available."
 msgstr ""
 
 #. translators: %d: cart id
-#: includes/Workflow/Core/Runtime/RunPresenter.php:60
+#: includes/Workflow/Core/Runtime/RunPresenter.php:61
 msgid "Cart #%d"
 msgstr ""
 
 #. translators: %d: user id
-#: includes/Workflow/Core/Runtime/RunPresenter.php:69
+#: includes/Workflow/Core/Runtime/RunPresenter.php:70
 msgid "Customer #%d"
 msgstr ""
 
 #. translators: %d: review (comment) id
-#: includes/Workflow/Core/Runtime/RunPresenter.php:78
+#: includes/Workflow/Core/Runtime/RunPresenter.php:79
 msgid "Review #%d"
 msgstr ""
 
 #. translators: %s: order number
-#: includes/Workflow/Core/Runtime/RunPresenter.php:92
+#: includes/Workflow/Core/Runtime/RunPresenter.php:93
 msgid "Order #%s"
 msgstr ""
 
@@ -3767,6 +3858,26 @@ msgstr ""
 
 #: assets/dist/admin-page/main.js:152
 msgid "It’s been a month since your order {{ order.number }}. Here are a few upgrades you might like:"
+msgstr ""
+
+#: assets/dist/admin-page/main.js:152
+msgid "Logged in, nothing added to cart"
+msgstr ""
+
+#: assets/dist/admin-page/main.js:152
+msgid "When a customer logs in and adds nothing to the cart within an hour, send a reminder with a link to the shop. Once a week at most."
+msgstr ""
+
+#: assets/dist/admin-page/main.js:152
+msgid "Still looking around, {{ customer.first_name | default: \"there\" }}?"
+msgstr ""
+
+#: assets/dist/admin-page/main.js:152
+msgid "Good to see you again"
+msgstr ""
+
+#: assets/dist/admin-page/main.js:152
+msgid "Thanks for stopping by {{ site.name }}. Your favorites are a click away:"
 msgstr ""
 
 #: assets/dist/admin-page/main.js:152
