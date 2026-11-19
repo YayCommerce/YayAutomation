@@ -25,6 +25,37 @@ const node = (graph: WorkflowGraph, id: string) => graph.nodes.find((n) => n.id 
 const codes = (graph: WorkflowGraph, name = 'Alert') => validateWorkflow({ name, graph }).map((issue) => issue.code);
 
 describe('validateWorkflow', () => {
+  /** A trigger, then an email whose message holds `message`; like PHP `ValidatorTest::emailing()`. */
+  const emailing = (block: string, config: Record<string, unknown>, message: string): WorkflowGraph => ({
+    nodes: [
+      { id: 't', kind: 'trigger', position: { x: 0, y: 0 }, data: { block, config } },
+      {
+        id: 'email',
+        kind: 'action',
+        position: { x: 0, y: 100 },
+        data: { block: 'send_email', config: { to: '{{ customer.email }}', subject: 'Hi', heading: 'Hi', message } },
+      },
+    ],
+    edges: [{ id: 't-email', source: 't', target: 'email' }],
+  });
+
+  it('takes a fact of a trigger that needs YayMatik Pro: the free edition reports only that', () => {
+    const lite = window.yayMatikMeta.automation.proMissing.steps.includes('user_logged_in');
+    const graph = emailing(
+      'user_logged_in',
+      { when: ['sign_in'], days: 7, roles: [] },
+      '<p>Seen {{ trigger.time }}</p>',
+    );
+    expect(codes(graph)).toEqual(lite ? ['needs_pro'] : []);
+  });
+
+  it('still reports an unknown fact of a free trigger', () => {
+    const graph = emailing('order_created', {}, '<p>{{ trigger.nope }}</p>');
+    expect(validateWorkflow({ name: 'Alert', graph }).map((issue) => issue.message)).toEqual([
+      '{{ trigger.nope }} isn’t an available variable.',
+    ]);
+  });
+
   it('finds nothing in a complete workflow', () => {
     expect(validateWorkflow({ name: 'Alert', graph: base() })).toEqual([]);
   });

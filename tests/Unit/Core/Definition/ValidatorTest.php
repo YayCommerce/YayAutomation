@@ -950,4 +950,59 @@ final class ValidatorTest extends TestCase {
         // In the free edition the field is YayMatik Pro's.
         $this->assertSame( YAYMATIK_TEST_LITE ? Messages::get( 'needsPro' ) : Messages::get( 'unknownVariable', '{{ order.meta }}' ), $errors[0]['message'] );
     }
+
+    /**
+     * A saved workflow (so the free edition keeps a Pro step) whose trigger is `$block`, then an email whose message holds `$message`.
+     *
+     * @param string $block
+     * @param array  $config
+     * @param string $message
+     */
+    private static function emailing( string $block, array $config, string $message ): array {
+        $nodes = [
+            self::node( 't', 'trigger', $block, $config ),
+            self::node(
+                'email',
+                'action',
+                'send_email',
+                [
+                    'to'      => '{{ customer.email }}',
+                    'subject' => 'Hi',
+                    'heading' => 'Hi',
+                    'message' => $message,
+                ]
+            ),
+        ];
+        return Validator::errors(
+            [
+                'name'  => 'Alert',
+                'graph' => GraphSchema::prepare(
+                    [
+                        'nodes' => $nodes,
+                        'edges' => [ self::edge( 't', 'email' ) ],
+                    ],
+                    $nodes
+                ),
+            ]
+        );
+    }
+
+    public function test_a_fact_of_a_trigger_that_needs_pro_is_not_unknown(): void {
+        $errors = self::emailing(
+            'user_logged_in',
+            [
+                'when'  => [ 'sign_in' ],
+                'days'  => 7,
+                'roles' => [],
+            ],
+            '<p>Seen {{ trigger.time }}</p>'
+        );
+        // The free edition: the trigger needs YayMatik Pro, and that is all it reports.
+        $this->assertSame( YAYMATIK_TEST_LITE ? [ 'needs_pro' ] : [], array_column( $errors, 'code' ) );
+    }
+
+    public function test_an_unknown_fact_of_a_free_trigger_is_still_reported(): void {
+        $errors = self::emailing( 'order_created', [], '<p>{{ trigger.nope }}</p>' );
+        $this->assertSame( [ Messages::get( 'unknownVariable', '{{ trigger.nope }}' ) ], array_column( $errors, 'message' ) );
+    }
 }

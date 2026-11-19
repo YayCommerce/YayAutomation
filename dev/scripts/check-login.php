@@ -8,6 +8,7 @@
  *   destroy <state> <user> ends every session of that user (a second factor step does, before the code)
  *   seen <state> <user> <s> last seen `s` seconds back, or `none`; the user's claims removed, so a cooldown hides nothing
  *   lastseen <state> <user> prints `SEEN <seconds back>`, or `SEEN none`
+ *   seenrows <state> <user> <s> two last-seen rows `s` seconds back (claims removed), as two first visits at once leave; prints `ROWS <count>` with `count` instead of `s`
  *   added <state> <user> [t] prints `ADDED <last added meta>` (or none); with `t`, sets it to `t` first
  *   stock <state> <n>      the first product's stock
  *   privacy <state> <user> export and erase through WordPress's registered exporters and erasers
@@ -169,6 +170,7 @@ switch ( $phase ) {
             'g3'         => [ 'customer', [ 'completed' ] ],
             'tfa'        => [ 'customer', [ 'completed' ] ],
             'switch'     => [ 'customer', [ 'completed' ] ],
+            'dup'        => [ 'customer', [ 'completed' ] ],
         ];
         foreach ( $people as $key => list( $role, $statuses ) ) {
             $email = "{$key}@{$domain}";
@@ -356,6 +358,17 @@ switch ( $phase ) {
         $user_id = (int) $state['users'][ $args[2] ]['id'];
         $wpdb->delete( $claims, [ 'subject' => 'user:' . $user_id ] );
         'none' === $args[3] ? delete_user_meta( $user_id, LastSeen::KEY ) : update_user_meta( $user_id, LastSeen::KEY, time() - (int) $args[3] );
+        break;
+
+    case 'seenrows':
+        $user_id = (int) $state['users'][ $args[2] ]['id'];
+        if ( 'count' !== $args[3] ) {
+            $wpdb->delete( $claims, [ 'subject' => 'user:' . $user_id ] );
+            delete_user_meta( $user_id, LastSeen::KEY );
+            add_user_meta( $user_id, LastSeen::KEY, time() - (int) $args[3] );
+            add_user_meta( $user_id, LastSeen::KEY, time() - (int) $args[3] - 60 );
+        }
+        echo 'ROWS ', (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$wpdb->usermeta} WHERE user_id = %d AND meta_key = %s", $user_id, LastSeen::KEY ) ), "\n"; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
         break;
 
     case 'lastseen':

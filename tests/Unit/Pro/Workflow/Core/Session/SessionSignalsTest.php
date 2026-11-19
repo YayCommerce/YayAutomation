@@ -8,6 +8,8 @@ use YayMatik\Tests\Support\FakeWpdb;
 
 require_once __DIR__ . '/session-stubs.php';
 
+// phpcs:disable WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- fake usermeta rows, no query.
+
 /** Sign-in and return: the mark on a new session, its confirmation on a later request, a visit after a long absence; one event for every subscriber. */
 final class SessionSignalsTest extends TestCase {
 
@@ -124,6 +126,50 @@ final class SessionSignalsTest extends TestCase {
         $this->assertTrue( LastSeen::advance( 7, 1000, 900 ) );
         $this->assertSame( "UPDATE `wp_usermeta` SET meta_value = 1000 WHERE user_id = 7 AND meta_key = '_yaymatik_last_seen' AND CAST( meta_value AS UNSIGNED ) < 100", $this->db->last_sql() );
         $this->assertFalse( LastSeen::advance( 7, 1000, 900 ), 'the parallel request lost' );
+    }
+
+    public function test_two_first_writes_leave_one_row_the_lowest_id_with_the_newest_value(): void {
+        $rows              = [
+            [
+                'umeta_id'   => '5',
+                'meta_value' => '100',
+            ],
+            [
+                'umeta_id'   => '9',
+                'meta_value' => '200',
+            ],
+        ];
+        $this->db->results = [ 0, $rows, 1 ];
+        LastSeen::set( 7, 200 );
+
+        $updates = array_values( array_filter( $this->db->calls, fn( array $call ) => 'update' === $call[0] ) );
+        $this->assertSame( [ [ 'update', 'wp_usermeta', [ 'meta_value' => 200 ], [ 'umeta_id' => 5 ] ] ], $updates );
+        $this->assertSame( 'DELETE FROM `wp_usermeta` WHERE umeta_id IN (9)', $this->db->last_sql() );
+    }
+
+    public function test_an_update_that_moved_two_rows_dedupes_and_still_counts_once(): void {
+        $this->db->results = [
+            2,
+            [
+                [
+                    'umeta_id'   => '5',
+                    'meta_value' => '1000',
+                ],
+                [
+                    'umeta_id'   => '6',
+                    'meta_value' => '1000',
+                ],
+            ],
+            1,
+        ];
+        $this->assertTrue( LastSeen::advance( 7, 1000, 900 ) );
+        $this->assertSame( 'DELETE FROM `wp_usermeta` WHERE umeta_id IN (6)', $this->db->last_sql() );
+    }
+
+    public function test_one_row_is_left_alone(): void {
+        $this->db->results = [ 1 ];
+        $this->assertTrue( LastSeen::advance( 7, 1000, 900 ) );
+        $this->assertCount( 1, $this->db->calls, 'no dedupe query' );
     }
 
     public function test_last_seen_is_added_the_first_time(): void {

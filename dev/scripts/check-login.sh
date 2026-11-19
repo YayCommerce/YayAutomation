@@ -344,6 +344,15 @@ seen ret $((13 * 3600))
 code=$(beacon)
 expect returning "$(uid ret)" 4 "Beacon without Origin or Sec-Fetch-Site is taken ($code)"
 
+# Two last-seen rows (two first visits at once): the next write leaves one, and the return still counts once.
+rows() { phase seenrows "$STATE" "$@" | sed -n 's/^ROWS //p' | tr -d '\r'; }
+wp_login dup dup
+visit dup /
+before=$(rows dup $((13 * 3600)))
+visit dup /
+expect returning "$(uid dup)" 1 "Two last-seen rows: one return, one run (rows before: $before)"
+[[ $before == 2 && $(rows dup count) == 1 ]] && pass 'Two last-seen rows: one left after the visit' || fail "Two last-seen rows: $before before, $(rows dup count) after"
+
 # Last added to cart: what counts as an add while signed in.
 added() { phase added "$STATE" "$@" | sed -n 's/^ADDED //p' | tr -d '\r'; }
 cart_api() { curl -s -b "$jars/$1" -c "$jars/$1" -D "$jars/$1.headers" "$home/wp-json/wc/store/v1/cart"; }
