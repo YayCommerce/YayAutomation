@@ -35,6 +35,8 @@ final class ProCatalog {
         'customer.paid_order_count',
         'customer.total_spent',
         'customer.last_order_date',
+        'customer.last_added_to_cart',
+        'customer.cart_item_count',
         'customer.registered_date',
         'customer.role',
         'customer.purchased_product_ids',

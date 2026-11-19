@@ -104,11 +104,14 @@ describe.runIf(criteriaFeatures.groups)('ruleOnlyVariables', () => {
 
   it('offers the custom fields of the items a step has, for rules', () => {
     const keys = ruleOnlyVariables([variable('order.total'), variable('customer.email')]).map((v) => v.key);
-    expect(keys).toEqual(['order.meta', 'customer.meta']);
+    expect(keys).toEqual(['order.meta', 'customer.last_added_to_cart', 'customer.meta']);
   });
 
   it('none for an item the step does not have', () => {
-    expect(ruleOnlyVariables([variable('customer.email')]).map((v) => v.key)).toEqual(['customer.meta']);
+    expect(ruleOnlyVariables([variable('customer.email')]).map((v) => v.key)).toEqual([
+      'customer.last_added_to_cart',
+      'customer.meta',
+    ]);
     expect(ruleOnlyVariables([variable('site.name')])).toEqual([]);
   });
 });

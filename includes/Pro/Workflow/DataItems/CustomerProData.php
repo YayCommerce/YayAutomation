@@ -1,6 +1,7 @@
 <?php
 namespace YayMatik\Pro\Workflow\DataItems;
 
+use YayMatik\Pro\Workflow\Core\Cart\CartActivity;
 use YayMatik\Workflow\Core\Cart\CartCustomer;
 use YayMatik\Workflow\Core\Data\CustomerStats;
 use YayMatik\Workflow\Core\Data\MetaKeys;
@@ -13,7 +14,7 @@ defined( 'ABSPATH' ) || exit;
 final class CustomerProData extends CustomerData {
 
     /** Field order in the pickers: Pro's sit beside the free fields they belong with. */
-    private const ORDER = [ 'email', 'first_name', 'last_name', 'full_name', 'phone', 'billing_country', 'is_first_order', 'paid_order_count', 'total_spent', 'last_order_date', 'registered_date', 'role', 'is_guest', 'purchased_product_ids', 'meta', 'unsubscribed' ];
+    private const ORDER = [ 'email', 'first_name', 'last_name', 'full_name', 'phone', 'billing_country', 'is_first_order', 'paid_order_count', 'total_spent', 'last_order_date', 'last_added_to_cart', 'cart_item_count', 'registered_date', 'role', 'is_guest', 'purchased_product_ids', 'meta', 'unsubscribed' ];
 
 
     /** @var callable fn( int $user_id, string $email ): array, as `CustomerStats::totals()`. */
@@ -65,6 +66,20 @@ final class CustomerProData extends CustomerData {
                 'timestamp' => fn( $customer ) => $this->stats_of( $customer )['last_paid'],
                 'display'   => fn( $customer, bool $html ) => self::date_text( $this->stats_of( $customer )['last_paid'], $html ),
             ],
+            'last_added_to_cart'    => [
+                'label'     => __( 'Last added to cart', 'yaymatik' ),
+                'help'      => __( 'When the signed-in customer last added a product or raised a quantity. Never earlier than when YayMatik Pro last started tracking it.', 'yaymatik' ),
+                'type'      => self::TYPE_DATE,
+                'merge_tag' => false,
+                'value'     => fn( $customer ) => self::day( CartActivity::last_added( self::user_id( $customer ) ) ),
+                'timestamp' => fn( $customer ) => CartActivity::last_added( self::user_id( $customer ) ),
+            ],
+            'cart_item_count'       => [
+                'label' => __( 'Items in cart', 'yaymatik' ),
+                'help'  => __( 'Items in the signed-in customer’s cart that isn’t ordered yet. Needs Track carts.', 'yaymatik' ),
+                'type'  => self::TYPE_NUMBER,
+                'value' => fn( $customer ) => CartActivity::item_count( self::user_id( $customer ) ),
+            ],
             'registered_date'       => [
                 'label'     => __( 'Registered date', 'yaymatik' ),
                 'type'      => self::TYPE_DATE,
@@ -113,6 +128,7 @@ final class CustomerProData extends CustomerData {
                 'value' => wp_date( 'Y-m-d' ),
                 'text'  => wp_date( (string) get_option( 'date_format', 'F j, Y' ) ),
             ],
+            'cart_item_count'       => 2.0,
             'registered_date'       => [
                 'value' => wp_date( 'Y-m-d' ),
                 'text'  => wp_date( (string) get_option( 'date_format', 'F j, Y' ) ),

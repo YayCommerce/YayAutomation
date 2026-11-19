@@ -1,5 +1,5 @@
 #!/bin/bash
-# Check the login triggers: claim cooldown on the real table, then real sign-ins, returns and beacons over HTTP (curl) against the site, counting the runs they start. Removes its rows.
+# Check the login triggers: claim cooldown on the real table, then real sign-ins, returns, beacons and cart changes over HTTP (curl) against the site, counting the runs they start. Removes its rows.
 #   ./run.sh check-login [--wp-env|--wp-env-min]
 cd "$(dirname "$0")/../.." || exit 1
 [[ -f yaymatik.php ]] || { echo "Not the plugin root: $(pwd)"; exit 1; }
@@ -254,6 +254,72 @@ expect returning "$(uid ret)" 3 'N21: two parallel page requests after 12 hours:
 seen ret $((13 * 3600))
 code=$(beacon)
 expect returning "$(uid ret)" 4 "Beacon without Origin or Sec-Fetch-Site is taken ($code)"
+
+# Last added to cart: what counts as an add while signed in.
+added() { phase added "$STATE" "$@" | sed -n 's/^ADDED //p' | tr -d '\r'; }
+cart_api() { curl -s -b "$jars/$1" -c "$jars/$1" -D "$jars/$1.headers" "$home/wp-json/wc/store/v1/cart"; }
+nonce_of() { sed -nE 's/^[Nn]once: *([^[:space:]]+).*/\1/p' "$jars/$1.headers" | tail -1; }
+item_key() { php -r '$c = json_decode( $argv[1], true ); foreach ( $c["items"] ?? [] as $i ) { if ( (int) $i["id"] === (int) $argv[2] ) { echo $i["key"]; } }' "$(cart_api "$1")" "$2"; }
+item_qty() { php -r '$c = json_decode( $argv[1], true ); foreach ( $c["items"] ?? [] as $i ) { if ( (int) $i["id"] === (int) $argv[2] ) { echo $i["quantity"]; } }' "$(cart_api "$1")" "$2"; }
+store_api() { # jar, route, json
+  cart_api "$1" >/dev/null
+  curl -s -o /dev/null -b "$jars/$1" -c "$jars/$1" -H 'Content-Type: application/json' -H "Nonce: $(nonce_of "$1")" -d "$3" "$home/wp-json/wc/store/v1/cart/$2"
+}
+p1=$(json products 0)
+p2=$(json products 1)
+recent() { [[ $1 =~ ^[0-9]+$ ]] && (($(date +%s) - $1 < 120)); }
+wp_login cart cart
+visit cart /
+[[ $(added cart) == none ]] && pass 'Cart: nothing added yet, no value' || fail "Cart: last added $(added cart) before any add"
+visit cart "/?add-to-cart=$p1"
+recent "$(added cart)" && pass 'N24: adding a product sets last added' || fail "N24: last added $(added cart)"
+added cart 1 >/dev/null
+store_api cart update-item "{\"key\":\"$(item_key cart "$p1")\",\"quantity\":2}"
+recent "$(added cart)" && pass 'N25: a higher quantity through the Store API (block cart, mini-cart) counts' || fail "N25: Store API: last added $(added cart)"
+added cart 1 >/dev/null
+cartpage=$(json cartpage_url)
+nonce=$(curl -s -b "$jars/cart" -c "$jars/cart" "$cartpage" | field woocommerce-cart-nonce)
+curl -s -o /dev/null -b "$jars/cart" -c "$jars/cart" --data-urlencode "cart[$(item_key cart "$p1")][qty]=3" --data-urlencode "woocommerce-cart-nonce=$nonce" -d 'update_cart=Update+cart' "$cartpage"
+[[ $(item_qty cart "$p1") == 3 ]] && recent "$(added cart)" && pass 'N25: a higher quantity on the classic Cart page counts' || fail "N25: Cart page: quantity $(item_qty cart "$p1"), last added $(added cart)"
+visit cart "/?add-to-cart=$p2"
+added cart 1 >/dev/null
+store_api cart update-item "{\"key\":\"$(item_key cart "$p1")\",\"quantity\":1}"
+store_api cart remove-item "{\"key\":\"$(item_key cart "$p2")\"}"
+[[ $(item_qty cart "$p1") == 1 && -z $(item_qty cart "$p2") && $(added cart) == 1 ]] && pass 'G1: a lower quantity and one item removed, another left: not an add' || fail "G1: quantity $(item_qty cart "$p1"), other $(item_qty cart "$p2"), last added $(added cart)"
+visit cart "/?add-to-cart=$p2"
+store_api cart remove-item "{\"key\":\"$(item_key cart "$p2")\"}"
+recent "$(added cart)" && pass 'N26: added then removed still counts as added' || fail "N26: last added $(added cart)"
+
+# Signing in again merges the saved cart: not an add.
+added cart 1 >/dev/null
+wp_login cart2 cart
+visit cart2 /cart/
+[[ -n $(item_qty cart2 "$p1") && $(added cart) == 1 ]] && pass 'G2: the saved cart merged at sign-in is not an add' || fail "G2: cart quantity '$(item_qty cart2 "$p1")', last added $(added cart)"
+
+# WooCommerce lowers a quantity itself when stock runs short: not an add.
+store_api cart2 update-item "{\"key\":\"$(item_key cart2 "$p1")\",\"quantity\":5}"
+added cart 1 >/dev/null
+phase stock "$STATE" 2 >/dev/null
+visit cart2 /cart/
+visit cart2 /checkout/
+[[ $(added cart) == 1 ]] && pass "G3: WooCommerce's stock check is not an add (quantity now $(item_qty cart2 "$p1"), stock 2)" || fail "G3: last added $(added cart)"
+
+report "$(phase privacy "$STATE" cart)"
+
+# The time tracking resumed: after reactivation and after the license comes back.
+resumed() { "${WP[@]}" option get yaymatik_cart_tracking_resumed_at 2>/dev/null | tail -1 | tr -d '\r'; }
+"${WP[@]}" option update yaymatik_cart_tracking_resumed_at 1000 >/dev/null 2>&1
+"${WP[@]}" plugin deactivate "$PLUGIN_FOLDER" >/dev/null 2>&1
+"${WP[@]}" plugin activate "$PLUGIN_FOLDER" >/dev/null 2>&1
+visit anonymous /
+recent "$(resumed)" && pass 'N28: deactivated and active again: tracking resumes now' || fail "N28: resumed at $(resumed)"
+"${WP[@]}" option update yaymatik_cart_tracking_resumed_at 1000 >/dev/null 2>&1
+phase edition lite >/dev/null
+visit anonymous /
+[[ $(resumed) == 1000 ]] && pass 'N29: without a license, nothing resumes' || fail "N29: resumed at $(resumed) without a license"
+phase edition pro >/dev/null
+visit anonymous /
+recent "$(resumed)" && pass 'N29: license allowed again: tracking resumes now' || fail "N29: resumed at $(resumed)"
 
 echo
 [[ $fails == 0 ]] && echo "All checks passed." || echo "$fails check(s) failed."

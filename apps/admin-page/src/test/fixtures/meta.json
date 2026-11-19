@@ -5534,6 +5534,23 @@
                         "help": "The newest paid order; pending and failed orders don’t count."
                     },
                     {
+                        "key": "customer.last_added_to_cart",
+                        "label": "Last added to cart",
+                        "type": "date",
+                        "valueType": "date",
+                        "conditional": true,
+                        "help": "When the signed-in customer last added a product or raised a quantity. Never earlier than when YayMatik Pro last started tracking it.",
+                        "mergeTag": false
+                    },
+                    {
+                        "key": "customer.cart_item_count",
+                        "label": "Items in cart",
+                        "type": "number",
+                        "valueType": "number",
+                        "conditional": true,
+                        "help": "Items in the signed-in customer’s cart that isn’t ordered yet. Needs Track carts."
+                    },
+                    {
                         "key": "customer.registered_date",
                         "label": "Registered date",
                         "type": "date",

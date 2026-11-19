@@ -355,6 +355,8 @@
             "customer.paid_order_count": "pro",
             "customer.total_spent": "pro",
             "customer.last_order_date": "pro",
+            "customer.last_added_to_cart": "pro",
+            "customer.cart_item_count": "pro",
             "customer.registered_date": "pro",
             "customer.role": "pro",
             "customer.is_guest": "lite",

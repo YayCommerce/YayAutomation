@@ -8,6 +8,9 @@
  *   destroy <state> <user> ends every session of that user (a second factor step does, before the code)
  *   seen <state> <user> <s> last seen `s` seconds back, or `none`; the user's claims removed, so a cooldown hides nothing
  *   lastseen <state> <user> prints `SEEN <seconds back>`, or `SEEN none`
+ *   added <state> <user> [t] prints `ADDED <last added meta>` (or none); with `t`, sets it to `t` first
+ *   stock <state> <n>      the first product's stock
+ *   privacy <state> <user> export and erase through WordPress's registered exporters and erasers
  *   nocookie <state>       a sign-in whose cookies are never sent (`send_auth_cookies` false)
  *   checkout <state>       replays checkout's account creation for a guest with an older paid order; prints `COOKIE <name>=<value>`
  *   edition <lite|pro>     the dev license on or off
@@ -19,6 +22,7 @@
 
 // phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.WP.GlobalVariablesOverride.Prohibited
 
+use YayMatik\Pro\Workflow\Core\Cart\CartActivity;
 use YayMatik\Pro\Workflow\Core\Session\LastSeen;
 use YayMatik\Workflow\Core\Runtime\ActionSchedulerQueue;
 use YayMatik\Workflow\Core\Storage\RunStore;
@@ -128,6 +132,7 @@ switch ( $phase ) {
             'subscriber' => [ 'subscriber', [] ],
             'ret'        => [ 'customer', [ 'completed' ] ],
             'ret2'       => [ 'customer', [ 'completed' ] ],
+            'cart'       => [ 'customer', [ 'completed' ] ],
         ];
         foreach ( $people as $key => list( $role, $statuses ) ) {
             $email = "{$key}@{$domain}";
@@ -255,7 +260,26 @@ switch ( $phase ) {
                 }
             }
         }
-        $state['myaccount'] = wc_get_page_permalink( 'myaccount' );
+        foreach ( [ 1, 2 ] as $n ) {
+            $product = new WC_Product_Simple();
+            $product->set_name( "check-login {$n}" );
+            $product->set_regular_price( '10' );
+            $product->set_manage_stock( 1 === $n );
+            $product->set_stock_quantity( 1 === $n ? 10 : null );
+            $product->set_status( 'publish' );
+            $state['products'][] = $product->save();
+        }
+        // The classic Cart page form, beside the store's block cart.
+        $state['cartpage']  = wp_insert_post(
+            [
+                'post_type'    => 'page',
+                'post_status'  => 'publish',
+                'post_title'   => 'check-login cart',
+                'post_content' => '[woocommerce_cart]',
+            ]
+        );
+        $state['cartpage_url'] = get_permalink( $state['cartpage'] );
+        $state['myaccount']    = wc_get_page_permalink( 'myaccount' );
         $state['checkout']  = wc_get_page_permalink( 'checkout' );
         echo 'STATE ', base64_encode( (string) wp_json_encode( $state ) ), "\n"; // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode, WordPress.Security.EscapeOutput.OutputNotEscaped
         break;
@@ -285,6 +309,30 @@ switch ( $phase ) {
     case 'lastseen':
         $seen = LastSeen::get( (int) $state['users'][ $args[2] ]['id'] );
         echo 'SEEN ', null === $seen ? 'none' : time() - $seen, "\n"; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+        break;
+
+    case 'added':
+        $user_id = (int) $state['users'][ $args[2] ]['id'];
+        if ( isset( $args[3] ) ) {
+            update_user_meta( $user_id, CartActivity::META, (int) $args[3] );
+        }
+        $at = (int) get_user_meta( $user_id, CartActivity::META, true );
+        echo 'ADDED ', $at ? $at : 'none', "\n"; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+        break;
+
+    case 'stock':
+        wc_update_product_stock( (int) $state['products'][0], (int) $args[2] );
+        break;
+
+    case 'privacy':
+        $user     = $state['users'][ $args[2] ];
+        $exporter = apply_filters( 'wp_privacy_personal_data_exporters', [] )['yaymatik-pro'] ?? null;
+        $eraser   = apply_filters( 'wp_privacy_personal_data_erasers', [] )['yaymatik-pro'] ?? null;
+        $export   = $exporter ? call_user_func( $exporter['callback'], $user['email'], 1 ) : [];
+        $names    = array_column( $export['data'][0]['data'] ?? [], 'name' );
+        $ok( [ 'Last seen on the store', 'Last added to cart' ] === $names, 'Privacy: the export lists last seen and last added to cart (' . implode( ', ', $names ) . ')' );
+        $erased = $eraser ? call_user_func( $eraser['callback'], $user['email'], 1 ) : [];
+        $ok( ! empty( $erased['items_removed'] ) && null === LastSeen::get( (int) $user['id'] ) && '' === get_user_meta( (int) $user['id'], CartActivity::META, true ), 'Privacy: the eraser removes both' );
         break;
 
     case 'destroy':
@@ -364,6 +412,12 @@ switch ( $phase ) {
                     $saved_order->delete( true );
                 }
             }
+        }
+        if ( ! empty( $state['cartpage'] ) ) {
+            wp_delete_post( (int) $state['cartpage'], true );
+        }
+        foreach ( $state['products'] ?? [] as $product_id ) {
+            wp_delete_post( (int) $product_id, true );
         }
         remove_role( 'check_login_buyer' );
         remove_role( 'check_login_editor' );
