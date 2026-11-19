@@ -72,6 +72,6 @@ final class TriggerClaimStoreTest extends TestCase {
         $this->db->last_error = 'gone away';
 
         $this->assertFalse( TriggerClaimStore::claim( 3, 'user:7', 600 ) );
-        $this->assertStringContainsString( 'Could not claim a trigger subject: gone away', (string) file_get_contents( $this->log ) );
+        $this->assertStringContainsString( 'Could not claim a trigger subject: gone away', (string) file_get_contents( $this->log ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a local file.
     }
 }

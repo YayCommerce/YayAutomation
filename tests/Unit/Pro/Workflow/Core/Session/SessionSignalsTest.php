@@ -24,7 +24,7 @@ final class SessionSignalsTest extends TestCase {
     private $hooks;
 
     protected function setUp(): void {
-        $this->hooks = [ $GLOBALS['yaymatik_test_filters'] ?? [], $GLOBALS['yaymatik_test_actions'] ?? [] ];
+        $this->hooks   = [ $GLOBALS['yaymatik_test_filters'] ?? [], $GLOBALS['yaymatik_test_actions'] ?? [] ];
         $this->signals = ( new \ReflectionClass( SessionSignals::class ) )->newInstanceWithoutConstructor();
         foreach ( [ 0, 1 ] as $i ) {
             $this->signals->subscribe(

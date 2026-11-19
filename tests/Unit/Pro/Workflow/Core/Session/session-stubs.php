@@ -5,7 +5,7 @@
  * @package YayMatik
  */
 
-// phpcs:disable Generic.Files.OneObjectStructurePerFile.MultipleFound -- one file of stand-ins.
+// phpcs:disable Squiz.Classes.ClassFileName.NoMatch, Universal.Files.SeparateFunctionsFromOO.Mixed -- one file of stand-ins.
 if ( ! class_exists( 'WP_Session_Tokens' ) ) {
     /** Sessions in `$GLOBALS['yaymatik_test_sessions'][ user id ][ token ]`. */
     class WP_Session_Tokens {
@@ -30,7 +30,6 @@ if ( ! class_exists( 'WP_Session_Tokens' ) ) {
         }
     }
 }
-// phpcs:enable Generic.Files.OneObjectStructurePerFile.MultipleFound
 
 if ( ! function_exists( 'wp_get_session_token' ) ) {
     function wp_get_session_token() {

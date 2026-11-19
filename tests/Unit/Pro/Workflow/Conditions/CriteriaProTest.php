@@ -281,7 +281,7 @@ final class CriteriaProTest extends TestCase {
      * @param string $match
      * @param array  $rules
      */
-    private static function group( string $match, array $rules ): array {
+    private static function group( string $match, array $rules ): array { // phpcs:ignore Universal.NamingConventions.NoReservedKeywordParameterNames.matchFound -- the stored key's name.
         return [
             'match' => $match,
             'rules' => $rules,
@@ -360,8 +360,9 @@ final class CriteriaProTest extends TestCase {
     }
 
     public function test_groups_evaluate_with_their_own_match(): void {
-        $yes   = self::rule( 'order.created_date', 'is_not_set' );
-        $no    = self::rule( 'order.created_date', 'is_set' );
+        $yes = self::rule( 'order.created_date', 'is_not_set' );
+        $no  = self::rule( 'order.created_date', 'is_set' );
+        // phpcs:ignore Universal.NamingConventions.NoReservedKeywordParameterNames.matchFound -- the stored key's name.
         $scope = fn( array $items, string $match ) => ( new CriteriaPro() )->evaluate(
             new Scope(
                 [ 'trigger' => [ 'order' => new Ref( 'order', '1' ) ] ],
