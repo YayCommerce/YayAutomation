@@ -3,6 +3,7 @@ namespace YayMatik\Workflow\Core\Runtime;
 
 use YayMatik\Workflow\Core\Data\DataItem;
 use YayMatik\Workflow\Core\Data\RefResolver;
+use YayMatik\Workflow\Core\Data\Scope;
 use YayMatik\Workflow\Core\Storage\CartStore;
 use YayMatik\Workflow\Core\Steps\StepRegistry;
 use YayMatik\Workflow\Core\Steps\Trigger;
@@ -133,7 +134,7 @@ final class RunPresenter {
             if ( isset( $values[ $key ] ) && is_scalar( $values[ $key ] ) ) {
                 $facts[] = [
                     'label' => $fact['label'],
-                    'value' => DataItem::display( [ 'value' => fn() => $values[ $key ] ] + $fact, null, false ),
+                    'value' => DataItem::display( [ 'value' => fn() => Scope::fact_value( $fact, $values[ $key ] ) ] + $fact, null, false ),
                 ];
             }
         }

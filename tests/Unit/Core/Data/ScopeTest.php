@@ -391,4 +391,87 @@ final class ScopeTest extends TestCase {
         $this->assertNull( $scope->timestamp( 'thing.never' ) );
         $this->assertNull( $scope->timestamp( 'thing.missing' ) );
     }
+
+    /** A trigger with two date facts: `at` stored as a Unix time, `day` as a `Y-m-d`, like an extension's. */
+    private static function dated_trigger(): \YayMatik\Workflow\Core\Steps\Trigger {
+        return \YayMatik\Workflow\Extension\Extensions::collect(
+            [],
+            fn( $registrar ) => $registrar->module(
+                [
+                    'id'    => 'acme',
+                    'label' => 'Acme',
+                ]
+            )->trigger(
+                'acme_signed_in',
+                [
+                    'label'       => 'Signed in',
+                    'description' => 'When someone signs in.',
+                    'provides'    => [ 'customer' ],
+                    'facts'       => [
+                        'at'  => [
+                            'label' => 'At',
+                            'type'  => 'date',
+                        ],
+                        'day' => [
+                            'label' => 'Day',
+                            'type'  => 'date',
+                        ],
+                    ],
+                ]
+            )
+        )[0]->triggers()[0];
+    }
+
+    public function test_a_date_fact_stored_as_a_unix_time_reads_as_its_day_and_keeps_its_moment(): void {
+        // 2026-10-12 23:59:59 UTC.
+        $at    = gmmktime( 23, 59, 59, 10, 12, 2026 );
+        $scope = new Scope(
+            [
+                'trigger' => [
+                    'at'  => $at,
+                    'day' => '2026-10-12',
+                ],
+            ],
+            null,
+            []
+        );
+        $scope->set_trigger( self::dated_trigger() );
+
+        $this->assertSame( '2026-10-12', $scope->get( 'trigger.at' ) );
+        $this->assertSame( '2026-10-12', $scope->text( 'trigger.at', false ) );
+        $this->assertSame( '2026-10-12', ( new Template() )->render( '{{ trigger.at }}', $scope ) );
+        $this->assertSame( $at, $scope->moment( 'trigger.at' ) );
+        $this->assertSame( $at, $scope->timestamp( 'trigger.at' ), 'in_last reads the exact moment' );
+
+        $this->assertSame( '2026-10-12', $scope->get( 'trigger.day' ), 'a Y-m-d fact as today' );
+        $this->assertNull( $scope->moment( 'trigger.day' ), 'a day is not a moment' );
+        $this->assertSame( gmmktime( 0, 0, 0, 10, 12, 2026 ), $scope->timestamp( 'trigger.day' ) );
+        $this->assertNull( $scope->moment( 'trigger.missing' ) );
+    }
+
+    public function test_without_its_trigger_an_int_fact_stays_a_number(): void {
+        $scope = new Scope( [ 'trigger' => [ 'at' => 5 ] ], null, [] );
+        $this->assertSame( 5, $scope->get( 'trigger.at' ) );
+        $this->assertNull( $scope->moment( 'trigger.at' ) );
+    }
+
+    public function test_moment_of_a_field_is_its_timestamp_only(): void {
+        $scope = $this->dated_scope(
+            [
+                'exact' => [
+                    'label'     => 'Exact',
+                    'type'      => DataItem::TYPE_DATE,
+                    'value'     => fn() => '2026-01-02',
+                    'timestamp' => fn( $thing ) => $thing->at,
+                ],
+                'day'   => [
+                    'label' => 'Day',
+                    'type'  => DataItem::TYPE_DATE,
+                    'value' => fn() => '2026-01-02',
+                ],
+            ]
+        );
+        $this->assertSame( 1234, $scope->moment( 'thing.exact' ) );
+        $this->assertNull( $scope->moment( 'thing.day' ) );
+    }
 }

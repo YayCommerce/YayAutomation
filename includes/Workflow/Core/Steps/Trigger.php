@@ -124,6 +124,15 @@ abstract class Trigger extends Step {
     }
 
     /**
+     * Seconds after which `claims_per_workflow()` may claim the same key again; 0 = once for as long as the workflow exists.
+     *
+     * @param array $config
+     */
+    public function claim_cooldown( array $config ): int { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- for triggers with a setting for it.
+        return 0;
+    }
+
+    /**
      * What `claims_per_workflow()` claims once: the subject, or another key a trigger counts by.
      *
      * @param array $args

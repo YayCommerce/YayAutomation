@@ -59,9 +59,10 @@ interface RunRepository {
     /**
      * @param int    $workflow_id
      * @param string $subject
-     * @return bool True only for the first claim.
+     * @param int    $cooldown Seconds after which the subject may be claimed again; 0 = never.
+     * @return bool True for the first claim, or one past its cooldown.
      */
-    public function claim_subject( int $workflow_id, string $subject ): bool;
+    public function claim_subject( int $workflow_id, string $subject, int $cooldown = 0 ): bool;
 
     /**
      * @param int    $workflow_id

@@ -117,7 +117,35 @@ final class Scope implements Values {
         if ( ! $found ) {
             return null;
         }
-        return $found['field'] ? ( $found['field']['value'] )( $found['object'] ) : $found['value'];
+        return $found['field'] ? ( $found['field']['value'] )( $found['object'] ) : self::fact_value( DataRegistry::field( $path, $this->trigger ), $found['value'] );
+    }
+
+    /**
+     * A plain value as rules, tags and the run detail read it: a date fact stored as a Unix time is its `Y-m-d` in store time.
+     *
+     * @param array|null $fact
+     * @param mixed      $value
+     * @return mixed
+     */
+    public static function fact_value( ?array $fact, $value ) {
+        return is_int( $value ) && DataItem::TYPE_DATE === ( $fact['type'] ?? null ) ? wp_date( 'Y-m-d', $value ) : $value;
+    }
+
+    /**
+     * The exact moment a date path holds: a field's `timestamp`, or a date fact stored as a Unix time; null when only a day is known.
+     *
+     * @param string $path
+     * @throws GoneEntity When an entity on the path no longer exists.
+     */
+    public function moment( string $path ): ?int {
+        $found = $this->resolve( $path );
+        if ( ! $found ) {
+            return null;
+        }
+        if ( $found['field'] ) {
+            return $found['field']['timestamp'] ? ( $found['field']['timestamp'] )( $found['object'] ) : null;
+        }
+        return $this->fact_moment( $path, $found['value'] );
     }
 
     /**
@@ -131,6 +159,10 @@ final class Scope implements Values {
         $field = $found['field'] ?? null;
         if ( $field && $field['timestamp'] ) {
             return ( $field['timestamp'] )( $found['object'] );
+        }
+        $moment = $found && ! $field ? $this->fact_moment( $path, $found['value'] ) : null;
+        if ( null !== $moment ) {
+            return $moment;
         }
         if ( $field ) {
             $day = (string) ( $field['value'] )( $found['object'] );
@@ -187,7 +219,7 @@ final class Scope implements Values {
         if ( $found['field'] ) {
             return DataItem::display( $found['field'], $found['object'], $html );
         }
-        $text = Template::to_text( $found['value'] );
+        $text = Template::to_text( self::fact_value( DataRegistry::field( $path, $this->trigger ), $found['value'] ) );
         return $html ? esc_html( $text ) : $text;
     }
 
@@ -209,6 +241,16 @@ final class Scope implements Values {
         }
         $text = ( $this->output_display )( $segments[1], $segments[2], $outputs, $html );
         return null === $text ? null : (string) $text;
+    }
+
+    /**
+     * A date fact of the run's trigger stored as a Unix time, else null.
+     *
+     * @param string $path
+     * @param mixed  $value
+     */
+    private function fact_moment( string $path, $value ): ?int {
+        return is_int( $value ) && DataItem::TYPE_DATE === ( DataRegistry::field( $path, $this->trigger )['type'] ?? null ) ? $value : null;
     }
 
     /**
