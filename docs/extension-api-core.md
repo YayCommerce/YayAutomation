@@ -16,6 +16,7 @@ Tier `pro`: the entry exists only with YayMatik Pro (with an active license). A 
 | `condition` | condition | — | `match`, `rules` | `result` | lite |
 | `customer_account_created` | trigger | `customer` | — | — | lite |
 | `customer_inactive` | trigger | `customer` | `days` | — | pro |
+| `customer_logged_in` | trigger | `customer` | `when`, `days` | — | pro |
 | `customer_order_count_reaches` | trigger | `customer` | `count` | — | pro |
 | `customer_total_spend_reaches` | trigger | `customer` | `amount` | — | pro |
 | `generate_coupon` | action | `coupon` | `discount_type`, `amount`, `expiry_days`, `minimum_spend`, `individual_use`, `limit_to_customer`, `code_prefix` | `code`, `amount`, `expires_at`, `box` | lite |
@@ -30,6 +31,7 @@ Tier `pro`: the entry exists only with YayMatik Pro (with an active license). A 
 | `send_internal_email` | action | `email` | `from`, `recipients`, `subject`, `message` | `to` | lite |
 | `update_customer_meta` | action | `customer` | `key`, `value` | `key`, `changed` | pro |
 | `update_order_meta` | action | `order` | `key`, `value` | `key`, `changed` | pro |
+| `user_logged_in` | trigger | `customer` | `when`, `days`, `roles` | — | pro |
 | `wait` | action | `flow` | `delay` | — | lite |
 | `wait_until` | action | `flow` | `time`, `weekdays` | `until` | pro |
 

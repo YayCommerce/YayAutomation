@@ -21,6 +21,8 @@ final class ProCatalog {
         'customer_inactive'            => 'trigger',
         'customer_order_count_reaches' => 'trigger',
         'customer_total_spend_reaches' => 'trigger',
+        'user_logged_in'               => 'trigger',
+        'customer_logged_in'           => 'trigger',
         'wait_until'                   => 'action',
         'resend_wc_email'              => 'action',
         'update_order_meta'            => 'action',
@@ -65,6 +67,8 @@ final class ProCatalog {
             'customer_inactive'            => [ __( 'Customer inactive', 'yaymatik' ), [] ],
             'customer_order_count_reaches' => [ __( 'Customer order count reaches', 'yaymatik' ), [] ],
             'customer_total_spend_reaches' => [ __( 'Customer total spend reaches', 'yaymatik' ), [] ],
+            'user_logged_in'               => [ __( 'User logged in', 'yaymatik' ), [] ],
+            'customer_logged_in'           => [ __( 'Customer logged in', 'yaymatik' ), [] ],
             'wait_until'                   => [ __( 'Wait until', 'yaymatik' ), [ 'until' => __( 'Waited until', 'yaymatik' ) ] ],
             'resend_wc_email'              => [ __( 'Resend WooCommerce email', 'yaymatik' ), [ 'email' => __( 'Email', 'yaymatik' ) ] ],
             'update_order_meta'            => [

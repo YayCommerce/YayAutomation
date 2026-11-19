@@ -79,6 +79,16 @@
             "outputs": [],
             "tier": "pro"
         },
+        "customer_logged_in": {
+            "kind": "trigger",
+            "category": "customer",
+            "config": [
+                "when",
+                "days"
+            ],
+            "outputs": [],
+            "tier": "pro"
+        },
         "customer_order_count_reaches": {
             "kind": "trigger",
             "category": "customer",
@@ -231,6 +241,17 @@
                 "key",
                 "changed"
             ],
+            "tier": "pro"
+        },
+        "user_logged_in": {
+            "kind": "trigger",
+            "category": "customer",
+            "config": [
+                "when",
+                "days",
+                "roles"
+            ],
+            "outputs": [],
             "tier": "pro"
         },
         "wait": {
