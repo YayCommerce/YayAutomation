@@ -1,6 +1,8 @@
 #!/bin/bash
 # Check the login triggers: claim cooldown on the real table, then real sign-ins, returns, beacons, cart changes and the login template over HTTP (curl) against the site, counting the runs they start. Removes its rows.
-#   ./run.sh check-login [--wp-env|--wp-env-min]
+#   ./run.sh check-login [--wp-env|--wp-env-min] [plugins]
+# With `plugins`: only the sign-in plugins from wordpress.org (Two Factor, User Switching, OpenID Connect Generic against a
+# local Keycloak in Docker), installed for the check and removed after it.
 cd "$(dirname "$0")/../.." || exit 1
 [[ -f yaymatik.php ]] || { echo "Not the plugin root: $(pwd)"; exit 1; }
 . dev/scripts/lib/wp-target.sh "$1" check || exit 1
@@ -21,7 +23,9 @@ STATE=$(sed -n 's/^STATE //p' <<<"$out")
 [[ -n $STATE ]] || { echo "$out"; echo "Setup failed."; exit 1; }
 jars=$(mktemp -d -t check-login.XXXXXX)
 extra_orders=""
+installed=""
 cleanup() {
+  [[ -n $installed ]] && "${WP[@]}" plugin uninstall --deactivate $installed >/dev/null 2>&1
   phase cleanup "$STATE" "$extra_orders" >/dev/null
   rm -rf "$jars"
 }
@@ -51,7 +55,8 @@ wp_login() {
   curl -s -o /dev/null -c "$jars/$1" "$home/wp-login.php"
   curl -s -o /dev/null -b "$jars/$1" -c "$jars/$1" --data-urlencode "log=$(login_name "$2")" --data-urlencode "pwd=$password" -d 'wp-submit=Log+In&testcookie=1' --data-urlencode "redirect_to=$home/" "$home/wp-login.php"
 }
-field() { sed -nE "s/.*name=\"$1\" value=\"([^\"]*)\".*/\1/p" | head -1; }
+# A form field's value, other attributes allowed between name and value.
+field() { sed -nE "s/.*name=\"$1\"[^>]*value=\"([^\"]*)\".*/\1/p" | head -1; }
 myaccount=$(json myaccount)
 # The WooCommerce login form; $3 = the page it is posted to (My Account, or checkout's form).
 wc_login() {
@@ -59,6 +64,90 @@ wc_login() {
   nonce=$(curl -s -b "$jars/$1" -c "$jars/$1" "$myaccount" | field woocommerce-login-nonce)
   curl -s -o /dev/null -b "$jars/$1" -c "$jars/$1" --data-urlencode "username=$(login_name "$2")" --data-urlencode "password=$password" --data-urlencode "woocommerce-login-nonce=$nonce" -d 'login=Log+in' "${3:-$myaccount}"
 }
+
+plugins_checks() {
+  # Versions are pinned, so the matrix in docs/workflow-core-design.md says what ran.
+  installed="two-factor user-switching daggerhart-openid-connect-generic"
+  for plugin in two-factor:0.17.0 user-switching:1.12.2 daggerhart-openid-connect-generic:3.11.4; do
+    "${WP[@]}" plugin install "${plugin%%:*}" --version="${plugin##*:}" --activate >/dev/null 2>&1 || fail "Could not install $plugin"
+  done
+
+  # Two Factor (TOTP): the password step's session is ended at once; the session after the code is confirmed.
+  key=$(phase twofactor "$STATE" tfa | sed -n 's/^KEY //p' | tr -d '\r')
+  curl -s -o /dev/null -c "$jars/tfa" "$home/wp-login.php"
+  page=$(curl -s -b "$jars/tfa" -c "$jars/tfa" --data-urlencode "log=$(login_name tfa)" --data-urlencode "pwd=$password" -d 'wp-submit=Log+In&testcookie=1' --data-urlencode "redirect_to=$home/" "$home/wp-login.php")
+  visit tfa /
+  visit tfa /shop/
+  [[ $page == *validate_2fa_form* ]] && pass 'Two Factor: the password step asks for the code' || fail 'Two Factor: no code form'
+  expect customer "$(uid tfa)" 0 'N15: Two Factor, before the code: no run'
+  code=$(phase totp "$key" | sed -n 's/^CODE //p' | tr -d '\r')
+  curl -s -o /dev/null -b "$jars/tfa" -c "$jars/tfa" --data-urlencode "provider=$(field provider <<<"$page")" --data-urlencode "wp-auth-id=$(field wp-auth-id <<<"$page")" --data-urlencode "wp-auth-nonce=$(field wp-auth-nonce <<<"$page")" --data-urlencode "authcode=$code" --data-urlencode "redirect_to=$home/" -o /dev/null "$home/wp-login.php?action=validate_2fa"
+  [[ $(sessions "$(uid tfa)") -ge 1 ]] && pass 'Two Factor: the code signs the person in' || fail 'Two Factor: no session after the code'
+  visit tfa /
+  visit tfa /shop/
+  expect customer "$(uid tfa)" 1 'T11: Two Factor, after the code: exactly one run'
+
+  # User Switching: switching to a customer, back, and off is nobody signing in.
+  admin_id=$("${WP[@]}" user get admin --field=ID 2>/dev/null | tail -1 | tr -d '\r')
+  curl -s -o /dev/null -c "$jars/admin" "$home/wp-login.php"
+  curl -s -o /dev/null -b "$jars/admin" -c "$jars/admin" -d 'log=admin&pwd=password&wp-submit=Log+In&testcookie=1' "$home/wp-login.php"
+  visit admin /wp-admin/
+  phase unclaim "$admin_id" >/dev/null
+  admin_runs=$(runs anyone "$admin_id")
+  link() { grep -oE "href=[\"'][^\"']*action=$1[^\"']*" | head -1 | sed -E "s/^href=[\"']//; s/&amp;/\\&/g; s/&#038;/\\&/g"; }
+  to=$(curl -s -b "$jars/admin" -c "$jars/admin" "$home/wp-admin/user-edit.php?user_id=$(uid switch)" | link switch_to_user)
+  curl -s -o /dev/null -L -b "$jars/admin" -c "$jars/admin" "$to"
+  visit admin /
+  visit admin /shop/
+  [[ -n $to && $(sessions "$(uid switch)") -ge 1 ]] && pass 'User Switching: switched to the customer' || fail "User Switching: switch to failed ('$to')"
+  expect anyone "$(uid switch)" 0 'N16: switch to a customer: no run'
+  back=$(curl -s -b "$jars/admin" -c "$jars/admin" "$home/" | link switch_to_olduser)
+  curl -s -o /dev/null -L -b "$jars/admin" -c "$jars/admin" "$back"
+  visit admin /wp-admin/
+  visit admin /
+  [[ -n $back ]] && pass 'User Switching: switched back' || fail 'User Switching: no switch back link'
+  expect anyone "$admin_id" "$admin_runs" 'N16: switch back: no run'
+  off=$(curl -s -b "$jars/admin" -c "$jars/admin" "$home/wp-admin/" | link switch_off)
+  curl -s -o /dev/null -L -b "$jars/admin" -c "$jars/admin" "$off"
+  visit admin /
+  [[ -n $off ]] && pass 'User Switching: switched off' || fail 'User Switching: no switch off link'
+  expect anyone "$admin_id" "$admin_runs" 'N16: switch off: no run'
+
+  # OpenID Connect Generic against Keycloak: a first sign-in makes the account (auto), a later one is a sign-in.
+  if ! curl -s -o /dev/null http://localhost:8180/realms/yay; then
+    echo "SKIP OpenID Connect: no Keycloak on localhost:8180 (realm yay)"
+    return
+  fi
+  phase oidc >/dev/null
+  idp=(--resolve host.docker.internal:8180:127.0.0.1)
+  sso_login() {
+    local start form
+    start=$(curl -s -b "$jars/$1" -c "$jars/$1" "$home/wp-login.php" | grep -oE 'href="[^"]*openid-connect/auth[^"]*"' | head -1 | sed -E 's/href="([^"]*)"/\1/; s/&amp;/\&/g; s/&#038;/\&/g')
+    form=$(curl -s "${idp[@]}" -L -b "$jars/$1" -c "$jars/$1" "$start" | grep -oE 'action="[^"]*login-actions/authenticate[^"]*"' | head -1 | sed -E 's/action="([^"]*)"/\1/; s/&amp;/\&/g')
+    curl -s -o /dev/null "${idp[@]}" -L -b "$jars/$1" -c "$jars/$1" -d 'username=kc-buyer' -d 'password=Kc-buyer-1!' -d 'credentialId=' "$form"
+    [[ -n $start && -n $form ]]
+  }
+  sso_login sso1 && pass 'OpenID Connect: signed in through Keycloak' || fail 'OpenID Connect: no login button or Keycloak form'
+  visit sso1 /
+  sso_id=$("${WP[@]}" user get kc-buyer --field=ID 2>/dev/null | tail -1 | tr -d '\r')
+  [[ $sso_id =~ ^[0-9]+$ ]] && pass "OpenID Connect: the account was made (user $sso_id)" || fail 'OpenID Connect: no account made'
+
+  expect anyone_auto "$sso_id" 1 'T9: OpenID Connect, first sign-in makes the account: one run, how = auto'
+  expect anyone "$sso_id" 0 '… and none as a sign-in'
+  phase unclaim "$sso_id" >/dev/null
+  sso_login sso2 >/dev/null
+  visit sso2 /
+  visit sso2 /shop/
+  expect anyone "$sso_id" 1 'T9: OpenID Connect, a later sign-in: exactly one run, how = sign_in'
+}
+
+if [[ $2 == plugins ]]; then
+  plugins_checks
+  echo
+  [[ $fails == 0 ]] && echo "All checks passed." || echo "$fails check(s) failed."
+  [[ $fails == 0 ]]
+  exit
+fi
 
 # Sign-in on wp-login.php: confirmed on the next request, not in the one that made the session.
 wp_login paid paid

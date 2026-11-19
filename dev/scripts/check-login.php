@@ -15,6 +15,10 @@
  *   finish <state> <user> <flow> [due]  ends the user's waits and runs due jobs (with `due`, only ends the waits);
  *                          prints `RESULT <status:steps of each run>` and `MAILS <count to the user>`
  *   saved <state> <user> <qty,qty> <ago>  a saved cart of the two products (0 leaves one out), last added `ago` seconds back
+ *   twofactor <state> <user>  Two Factor's TOTP on for that user; prints `KEY <secret>`
+ *   totp <key>             prints `CODE <the current TOTP code>`
+ *   unclaim <user id>      removes that user's claims
+ *   oidc                   OpenID Connect Generic set up for the local Keycloak (check-login.sh starts it)
  *   nocookie <state>       a sign-in whose cookies are never sent (`send_auth_cookies` false)
  *   checkout <state>       replays checkout's account creation for a guest with an older paid order; prints `COOKIE <name>=<value>`
  *   edition <lite|pro>     the dev license on or off
@@ -163,6 +167,8 @@ switch ( $phase ) {
             'g1'         => [ 'customer', [ 'completed' ] ],
             'g2'         => [ 'customer', [ 'completed' ] ],
             'g3'         => [ 'customer', [ 'completed' ] ],
+            'tfa'        => [ 'customer', [ 'completed' ] ],
+            'switch'     => [ 'customer', [ 'completed' ] ],
         ];
         foreach ( $people as $key => list( $role, $statuses ) ) {
             $email = "{$key}@{$domain}";
@@ -204,10 +210,10 @@ switch ( $phase ) {
         }
         // Key => trigger, config, active.
         $setups = [
-            'customer'  => [ 'customer_logged_in', [ 'when' => [ 'sign_in' ] ], true ],
-            'customer2' => [ 'customer_logged_in', [ 'when' => [ 'sign_in' ] ], true ],
-            'auto'      => [ 'customer_logged_in', [ 'when' => [ 'auto' ] ], true ],
-            'user'      => [
+            'customer'    => [ 'customer_logged_in', [ 'when' => [ 'sign_in' ] ], true ],
+            'customer2'   => [ 'customer_logged_in', [ 'when' => [ 'sign_in' ] ], true ],
+            'auto'        => [ 'customer_logged_in', [ 'when' => [ 'auto' ] ], true ],
+            'user'        => [
                 'user_logged_in',
                 [
                     'when'  => [ 'sign_in' ],
@@ -215,7 +221,7 @@ switch ( $phase ) {
                 ],
                 true,
             ],
-            'user_auto' => [
+            'user_auto'   => [
                 'user_logged_in',
                 [
                     'when'  => [ 'auto' ],
@@ -223,9 +229,25 @@ switch ( $phase ) {
                 ],
                 true,
             ],
-            'inactive'  => [ 'customer_logged_in', [ 'when' => [ 'sign_in' ] ], false ],
-            'returning' => [ 'customer_logged_in', [ 'when' => [ 'return' ] ], true ],
-            'staff'     => [
+            'inactive'    => [ 'customer_logged_in', [ 'when' => [ 'sign_in' ] ], false ],
+            'returning'   => [ 'customer_logged_in', [ 'when' => [ 'return' ] ], true ],
+            'anyone'      => [
+                'user_logged_in',
+                [
+                    'when'  => [ 'sign_in' ],
+                    'roles' => [],
+                ],
+                true,
+            ],
+            'anyone_auto' => [
+                'user_logged_in',
+                [
+                    'when'  => [ 'auto' ],
+                    'roles' => [],
+                ],
+                true,
+            ],
+            'staff'       => [
                 'user_logged_in',
                 [
                     'when'  => [ 'return' ],
@@ -420,6 +442,54 @@ switch ( $phase ) {
         update_user_meta( $user_id, CartActivity::META, time() - (int) $args[4] );
         break;
 
+    case 'twofactor':
+        $user_id = (int) $state['users'][ $args[2] ]['id'];
+        $key     = Two_Factor_Totp::generate_key();
+        update_user_meta( $user_id, Two_Factor_Totp::SECRET_META_KEY, $key );
+        update_user_meta( $user_id, Two_Factor_Core::ENABLED_PROVIDERS_USER_META_KEY, [ 'Two_Factor_Totp' ] );
+        update_user_meta( $user_id, Two_Factor_Core::PROVIDER_USER_META_KEY, 'Two_Factor_Totp' );
+        echo 'KEY ', $key, "\n"; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+        break;
+
+    case 'totp':
+        echo 'CODE ', Two_Factor_Totp::calc_totp( $args[1] ), "\n"; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+        break;
+
+    case 'unclaim':
+        $wpdb->delete( $claims, [ 'subject' => 'user:' . (int) $args[1] ] );
+        break;
+
+    case 'oidc':
+        $idp = 'http://host.docker.internal:8180/realms/yay/protocol/openid-connect';
+        update_option(
+            'openid_connect_generic_settings',
+            [
+                'login_type'               => 'button',
+                'client_id'                => 'wordpress',
+                'client_secret'            => 'wp-secret',
+                'issuer'                   => 'http://host.docker.internal:8180/realms/yay',
+                'scope'                    => 'openid email profile',
+                'endpoint_login'           => $idp . '/auth',
+                'endpoint_userinfo'        => $idp . '/userinfo',
+                'endpoint_token'           => $idp . '/token',
+                'endpoint_end_session'     => $idp . '/logout',
+                'identity_key'             => 'preferred_username',
+                'nickname_key'             => 'preferred_username',
+                'email_format'             => '{email}',
+                'allow_internal_idp'       => 1,
+                'no_sslverify'             => 1,
+                'http_request_timeout'     => 10,
+                'enable_pkce'              => 1,
+                'state_time_limit'         => 180,
+                'link_existing_users'      => 1,
+                'create_if_does_not_exist' => 1,
+                'redirect_user_back'       => 0,
+                'redirect_on_logout'       => 0,
+                'token_refresh_enable'     => 0,
+            ]
+        );
+        break;
+
     case 'destroy':
         WP_Session_Tokens::get_instance( (int) $state['users'][ $args[2] ]['id'] )->destroy_all();
         break;
@@ -504,6 +574,12 @@ switch ( $phase ) {
         }
         foreach ( $state['products'] ?? [] as $product_id ) {
             wp_delete_post( (int) $product_id, true );
+        }
+        delete_option( 'openid_connect_generic_settings' );
+        $sso = get_user_by( 'login', 'kc-buyer' );
+        if ( $sso ) {
+            require_once ABSPATH . 'wp-admin/includes/user.php';
+            wp_delete_user( $sso->ID );
         }
         remove_role( 'check_login_buyer' );
         remove_role( 'check_login_editor' );
