@@ -30,9 +30,9 @@ $tables = [ Schema::WORKFLOWS, Schema::WORKFLOW_VERSIONS, Schema::RUNS, Schema::
 
 // Keys the new build may write on its first requests, and why; anything else that changed is a failure.
 $expected = [
-    // The step index fingerprint: the set of steps differs between builds (new Pro steps, the edition).
-    'yaymatik_extension_steps',
-    'yaymatik_extension_steps_hash',
+    // Pro adds its daily inactive sweep, so the daily job list changed: Cleanup records it and checks the jobs at once.
+    'yaymatik_cleanup_jobs',
+    'yaymatik_cleanup_checked_at',
     // Pro's cart tracking state, written on its first licensed boot (D8).
     'yaymatik_cart_tracking_resumed_at',
     'yaymatik_cart_tracking_licensed',
