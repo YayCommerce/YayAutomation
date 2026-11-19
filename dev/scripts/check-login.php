@@ -11,6 +11,10 @@
  *   added <state> <user> [t] prints `ADDED <last added meta>` (or none); with `t`, sets it to `t` first
  *   stock <state> <n>      the first product's stock
  *   privacy <state> <user> export and erase through WordPress's registered exporters and erasers
+ *   template <state>       the Logged in, nothing added to cart template's graph (tests/Unit/Pro/fixtures), checked and activated; prints `FLOW <id>`
+ *   finish <state> <user> <flow> [due]  ends the user's waits and runs due jobs (with `due`, only ends the waits);
+ *                          prints `RESULT <status:steps of each run>` and `MAILS <count to the user>`
+ *   saved <state> <user> <qty,qty> <ago>  a saved cart of the two products (0 leaves one out), last added `ago` seconds back
  *   nocookie <state>       a sign-in whose cookies are never sent (`send_auth_cookies` false)
  *   checkout <state>       replays checkout's account creation for a guest with an older paid order; prints `COOKIE <name>=<value>`
  *   edition <lite|pro>     the dev license on or off
@@ -52,7 +56,14 @@ switch ( $phase ) {
         register_shutdown_function( $cleanup );
         $cleanup();
         $age = function ( int $seconds ) use ( $wpdb, $claims, $ghost, $subject ) {
-            $wpdb->update( $claims, [ 'claimed_at' => gmdate( 'Y-m-d H:i:s', time() - $seconds ) ], [ 'workflow_id' => $ghost, 'subject' => $subject ] );
+            $wpdb->update(
+                $claims,
+                [ 'claimed_at' => gmdate( 'Y-m-d H:i:s', time() - $seconds ) ],
+                [
+                    'workflow_id' => $ghost,
+                    'subject'     => $subject,
+                ]
+            );
         };
 
         $ok( TriggerClaimStore::claim( $ghost, $subject, DAY_IN_SECONDS ), 'claim: the first claim wins' );
@@ -68,9 +79,17 @@ switch ( $phase ) {
         // wp process claims the same key meanwhile and must wait for the commit, then find nothing to take.
         $age( DAY_IN_SECONDS + 5 );
         $wpdb->query( 'START TRANSACTION' );
-        $first  = TriggerClaimStore::claim( $ghost, $subject, DAY_IN_SECONDS );
-        $code   = sprintf( '$t = microtime( true ); $won = YayMatik\Workflow\Core\Storage\TriggerClaimStore::claim( %d, %s, DAY_IN_SECONDS ); echo (int) $won, " ", round( microtime( true ) - $t, 1 );', $ghost, var_export( $subject, true ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_var_export
-        $second = proc_open( [ 'wp', 'eval', $code ], [ 1 => [ 'pipe', 'w' ], 2 => [ 'pipe', 'w' ] ], $pipes );
+        $first = TriggerClaimStore::claim( $ghost, $subject, DAY_IN_SECONDS );
+        $code  = sprintf( '$t = microtime( true ); $won = YayMatik\Workflow\Core\Storage\TriggerClaimStore::claim( %d, %s, DAY_IN_SECONDS ); echo (int) $won, " ", round( microtime( true ) - $t, 1 );', $ghost, var_export( $subject, true ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_var_export
+        // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_proc_open -- a dev script on wp-env: the second wp process.
+        $second = proc_open(
+            [ 'wp', 'eval', $code ],
+            [
+                1 => [ 'pipe', 'w' ],
+                2 => [ 'pipe', 'w' ],
+            ],
+            $pipes
+        );
         // Long enough for the second process to boot WordPress and reach the lock.
         sleep( 6 );
         $wpdb->query( 'COMMIT' );
@@ -103,7 +122,7 @@ switch ( $phase ) {
         ];
         // My Account sign-up with a password the form takes, for the automatic sign-in.
         foreach ( [
-            'woocommerce_enable_myaccount_registration' => 'yes',
+            'woocommerce_enable_myaccount_registration'  => 'yes',
             'woocommerce_registration_generate_password' => 'no',
             'woocommerce_registration_generate_username' => 'yes',
         ] as $option => $value ) {
@@ -118,21 +137,32 @@ switch ( $phase ) {
         }
         // Key => role, statuses of its orders.
         $people = [
-            'paid'      => [ 'customer', [ 'completed' ] ],
-            'paid2'     => [ 'customer', [ 'processing' ] ],
-            'paid3'     => [ 'customer', [ 'completed' ] ],
-            'paid4'     => [ 'customer', [ 'completed' ] ],
-            'paid5'     => [ 'customer', [ 'completed' ] ],
-            'paid6'     => [ 'customer', [ 'completed' ] ],
-            'noorder'   => [ 'customer', [] ],
-            'unpaid'    => [ 'customer', [ 'failed', 'cancelled', 'refunded' ] ],
-            'manager'   => [ 'shop_manager', [ 'completed' ] ],
-            'buyer'     => [ 'check_login_buyer', [ 'completed' ] ],
-            'editor'    => [ 'check_login_editor', [ 'completed' ] ],
+            'paid'       => [ 'customer', [ 'completed' ] ],
+            'paid2'      => [ 'customer', [ 'processing' ] ],
+            'paid3'      => [ 'customer', [ 'completed' ] ],
+            'paid4'      => [ 'customer', [ 'completed' ] ],
+            'paid5'      => [ 'customer', [ 'completed' ] ],
+            'paid6'      => [ 'customer', [ 'completed' ] ],
+            'noorder'    => [ 'customer', [] ],
+            'unpaid'     => [ 'customer', [ 'failed', 'cancelled', 'refunded' ] ],
+            'manager'    => [ 'shop_manager', [ 'completed' ] ],
+            'buyer'      => [ 'check_login_buyer', [ 'completed' ] ],
+            'editor'     => [ 'check_login_editor', [ 'completed' ] ],
             'subscriber' => [ 'subscriber', [] ],
             'ret'        => [ 'customer', [ 'completed' ] ],
             'ret2'       => [ 'customer', [ 'completed' ] ],
             'cart'       => [ 'customer', [ 'completed' ] ],
+            't17'        => [ 'customer', [ 'completed' ] ],
+            't18'        => [ 'customer', [ 'completed' ] ],
+            'n24'        => [ 'customer', [ 'completed' ] ],
+            'n25'        => [ 'customer', [ 'completed' ] ],
+            'n26'        => [ 'customer', [ 'completed' ] ],
+            'n27'        => [ 'customer', [ 'completed' ] ],
+            'n28'        => [ 'customer', [ 'completed' ] ],
+            'n29'        => [ 'customer', [ 'completed' ] ],
+            'g1'         => [ 'customer', [ 'completed' ] ],
+            'g2'         => [ 'customer', [ 'completed' ] ],
+            'g3'         => [ 'customer', [ 'completed' ] ],
         ];
         foreach ( $people as $key => list( $role, $statuses ) ) {
             $email = "{$key}@{$domain}";
@@ -270,7 +300,7 @@ switch ( $phase ) {
             $state['products'][] = $product->save();
         }
         // The classic Cart page form, beside the store's block cart.
-        $state['cartpage']  = wp_insert_post(
+        $state['cartpage']     = wp_insert_post(
             [
                 'post_type'    => 'page',
                 'post_status'  => 'publish',
@@ -280,7 +310,7 @@ switch ( $phase ) {
         );
         $state['cartpage_url'] = get_permalink( $state['cartpage'] );
         $state['myaccount']    = wc_get_page_permalink( 'myaccount' );
-        $state['checkout']  = wc_get_page_permalink( 'checkout' );
+        $state['checkout']     = wc_get_page_permalink( 'checkout' );
         echo 'STATE ', base64_encode( (string) wp_json_encode( $state ) ), "\n"; // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode, WordPress.Security.EscapeOutput.OutputNotEscaped
         break;
 
@@ -335,14 +365,69 @@ switch ( $phase ) {
         $ok( ! empty( $erased['items_removed'] ) && null === LastSeen::get( (int) $user['id'] ) && '' === get_user_meta( (int) $user['id'], CartActivity::META, true ), 'Privacy: the eraser removes both' );
         break;
 
+    case 'template':
+        $graph = json_decode( (string) file_get_contents( 'tests/Unit/Pro/fixtures/login-no-cart.json' ), true ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- a local file.
+        $flow  = WorkflowStore::create( 'check-login template', $graph );
+        $ok( is_array( $flow ), 'Template: the graph is saved' );
+        $done = is_array( $flow ) ? WorkflowStore::activate( (int) $flow['id'] ) : null;
+        $ok( true === $done, 'Template: it validates with the Pro registry and activates' . ( is_wp_error( $done ) ? ': ' . $done->get_error_message() . ' ' . wp_json_encode( $done->get_error_data() ) : '' ) );
+        echo 'FLOW ', is_array( $flow ) ? (int) $flow['id'] : 0, "\n"; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+        break;
+
+    case 'finish':
+        $user    = $state['users'][ $args[2] ];
+        $flow_id = (int) $args[3];
+        $run_ids = array_map( 'intval', $wpdb->get_col( $wpdb->prepare( 'SELECT id FROM ' . RunStore::table() . ' WHERE workflow_id = %d AND subject = %s', $flow_id, 'user:' . $user['id'] ) ) );
+        // As if the hour had passed: the run's own time and the job that resumes it.
+        $past = gmdate( 'Y-m-d H:i:s', time() - MINUTE_IN_SECONDS );
+        for ( $round = 0; $round < 3; $round++ ) {
+            foreach ( $run_ids as $run_id ) {
+                $wpdb->query( $wpdb->prepare( 'UPDATE ' . RunStore::table() . ' SET wait_until = %s WHERE id = %d AND wait_until IS NOT NULL', $past, $run_id ) );
+                $wpdb->query( $wpdb->prepare( "UPDATE {$wpdb->prefix}actionscheduler_actions SET scheduled_date_gmt = %s, scheduled_date_local = %s WHERE hook = %s AND status = 'pending' AND args = %s", $past, $past, ActionSchedulerQueue::HOOK, wp_json_encode( [ $run_id ] ) ) );
+            }
+            if ( 'due' === ( $args[4] ?? '' ) ) {
+                break;
+            }
+            WP_CLI::runcommand( 'action-scheduler run --hooks=' . ActionSchedulerQueue::HOOK . ' --force --quiet', [ 'return' => true ] );
+        }
+        $steps = [];
+        foreach ( $run_ids as $run_id ) {
+            $run     = RunStore::find( $run_id );
+            $steps[] = $run['status'] . ':' . implode( '>', array_column( YayMatik\Workflow\Core\Storage\RunStepStore::for_run( $run_id ), 'step_id' ) );
+        }
+        $mails = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_type = 'yay_mail_log' AND post_excerpt LIKE %s", '%' . $wpdb->esc_like( $user['email'] ) . '%' ) );
+        echo 'RESULT ', implode( ' | ', $steps ), "\n", 'MAILS ', $mails, "\n"; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+        break;
+
+    case 'saved':
+        $user_id = (int) $state['users'][ $args[2] ]['id'];
+        $cart    = [];
+        foreach ( explode( ',', $args[3] ) as $i => $quantity ) {
+            $product = wc_get_product( (int) $state['products'][ $i ] );
+            if ( (int) $quantity > 0 ) {
+                $key          = ( new WC_Cart() )->generate_cart_id( $product->get_id() );
+                $cart[ $key ] = [
+                    'key'          => $key,
+                    'product_id'   => $product->get_id(),
+                    'variation_id' => 0,
+                    'variation'    => [],
+                    'quantity'     => (int) $quantity,
+                    'data_hash'    => wc_get_cart_item_data_hash( $product ),
+                ];
+            }
+        }
+        update_user_meta( $user_id, '_woocommerce_persistent_cart_' . get_current_blog_id(), [ 'cart' => $cart ] );
+        update_user_meta( $user_id, CartActivity::META, time() - (int) $args[4] );
+        break;
+
     case 'destroy':
         WP_Session_Tokens::get_instance( (int) $state['users'][ $args[2] ]['id'] )->destroy_all();
         break;
 
     case 'nocookie':
         add_filter( 'send_auth_cookies', '__return_false' );
-        $user = $state['users']['paid6'];
-        $made = wp_signon(
+        $user     = $state['users']['paid6'];
+        $made     = wp_signon(
             [
                 'user_login'    => $user['login'],
                 'user_password' => $password,
@@ -388,7 +473,8 @@ switch ( $phase ) {
         foreach ( $state['options'] ?? [] as $option => $value ) {
             null === $value ? delete_option( $option ) : update_option( $option, $value );
         }
-        foreach ( $state['flows'] ?? [] as $flow_id ) {
+        $template = array_filter( WorkflowStore::all(), fn( array $flow ) => 'check-login template' === $flow['name'] );
+        foreach ( array_merge( $state['flows'] ?? [], array_map( 'intval', array_column( $template, 'id' ) ) ) as $flow_id ) {
             WorkflowStore::deactivate( $flow_id );
             WorkflowStore::delete( $flow_id );
             $wpdb->delete( $claims, [ 'workflow_id' => $flow_id ] );

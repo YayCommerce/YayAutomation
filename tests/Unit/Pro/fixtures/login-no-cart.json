@@ -1,0 +1,102 @@
+{
+    "nodes": [
+        {
+            "id": "trigger",
+            "kind": "trigger",
+            "position": {
+                "x": 0,
+                "y": 0
+            },
+            "data": {
+                "block": "customer_logged_in",
+                "config": {
+                    "when": [
+                        "sign_in",
+                        "return"
+                    ],
+                    "days": 7
+                }
+            }
+        },
+        {
+            "id": "wait",
+            "kind": "action",
+            "position": {
+                "x": 0,
+                "y": 170
+            },
+            "data": {
+                "block": "wait",
+                "config": {
+                    "delay": {
+                        "value": 1,
+                        "unit": "hours"
+                    }
+                }
+            }
+        },
+        {
+            "id": "condition",
+            "kind": "condition",
+            "position": {
+                "x": 0,
+                "y": 340
+            },
+            "data": {
+                "block": "condition",
+                "config": {
+                    "match": "any",
+                    "rules": [
+                        {
+                            "field": "customer.last_added_to_cart",
+                            "operator": "is_not_set",
+                            "value": "",
+                            "valueType": "value"
+                        },
+                        {
+                            "field": "customer.last_added_to_cart",
+                            "operator": "before",
+                            "value": "trigger.time",
+                            "valueType": "variable"
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "id": "email",
+            "kind": "action",
+            "position": {
+                "x": -200,
+                "y": 510
+            },
+            "data": {
+                "block": "send_email",
+                "config": {
+                    "to": "{{ customer.email }}",
+                    "subject": "Still looking around, {{ customer.first_name | default: \"there\" }}?",
+                    "heading": "Good to see you again",
+                    "message": "<p>Hi {{ customer.first_name | default: \"there\" }},</p>\n<p>Thanks for stopping by {{ site.name }}. Your favorites are a click away:</p>\n<p>{{ site.shop_button }}</p>\n<p>See you soon,<br>\n{{ site.name }}</p>"
+                }
+            }
+        }
+    ],
+    "edges": [
+        {
+            "id": "e-trigger-wait",
+            "source": "trigger",
+            "target": "wait"
+        },
+        {
+            "id": "e-wait-condition",
+            "source": "wait",
+            "target": "condition"
+        },
+        {
+            "id": "e-condition-email",
+            "source": "condition",
+            "target": "email",
+            "sourceHandle": "then"
+        }
+    ]
+}

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Check the login triggers: claim cooldown on the real table, then real sign-ins, returns, beacons and cart changes over HTTP (curl) against the site, counting the runs they start. Removes its rows.
+# Check the login triggers: claim cooldown on the real table, then real sign-ins, returns, beacons, cart changes and the login template over HTTP (curl) against the site, counting the runs they start. Removes its rows.
 #   ./run.sh check-login [--wp-env|--wp-env-min]
 cd "$(dirname "$0")/../.." || exit 1
 [[ -f yaymatik.php ]] || { echo "Not the plugin root: $(pwd)"; exit 1; }
@@ -303,6 +303,7 @@ phase stock "$STATE" 2 >/dev/null
 visit cart2 /cart/
 visit cart2 /checkout/
 [[ $(added cart) == 1 ]] && pass "G3: WooCommerce's stock check is not an add (quantity now $(item_qty cart2 "$p1"), stock 2)" || fail "G3: last added $(added cart)"
+phase stock "$STATE" 10 >/dev/null
 
 report "$(phase privacy "$STATE" cart)"
 
@@ -320,6 +321,53 @@ visit anonymous /
 phase edition pro >/dev/null
 visit anonymous /
 recent "$(resumed)" && pass 'N29: license allowed again: tracking resumes now' || fail "N29: resumed at $(resumed)"
+
+# The template, Logged in, nothing added to cart, through the engine: sign in, act while the run waits, then the hour is over.
+out=$(phase template "$STATE")
+report "$out"
+flow=$(sed -n 's/^FLOW //p' <<<"$out" | tr -d '\r')
+template_case() { # id, user, what, mails expected, then the action while waiting (a function name, or none)
+  local result mails
+  wp_login "$2" "$2"
+  visit "$2" /
+  [[ $5 != none ]] && "$5" "$2"
+  out=$(phase finish "$STATE" "$2" "$flow")
+  result=$(sed -n 's/^RESULT //p' <<<"$out" | tr -d '\r')
+  mails=$(sed -n 's/^MAILS //p' <<<"$out" | tr -d '\r')
+  if [[ $mails == "$4" && $result == completed:* ]]; then pass "$1: $3 ($result, $mails email)"; else fail "$1: $3 (run '$result', $mails emails, expected $4)"; fi
+}
+# Each action checks it happened, so a run that sends the email proves something.
+did() { [[ $1 == "$2" ]] || fail "$3: the cart action didn't happen ($1, expected $2)"; }
+add_p1() { visit "$1" "/?add-to-cart=$p1"; did "$(item_qty "$1" "$p1")" 1 add; }
+raise_p1() { store_api "$1" update-item "{\"key\":\"$(item_key "$1" "$p1")\",\"quantity\":3}"; did "$(item_qty "$1" "$p1")" 3 raise; }
+add_remove() { visit "$1" "/?add-to-cart=$p2"; did "$(item_qty "$1" "$p2")" 1 add; store_api "$1" remove-item "{\"key\":\"$(item_key "$1" "$p2")\"}"; did "$(item_qty "$1" "$p2")" '' remove; }
+late_add() { phase finish "$STATE" "$1" "$flow" due >/dev/null; visit "$1" "/?add-to-cart=$p1"; }
+reactivate() { "${WP[@]}" plugin deactivate "$PLUGIN_FOLDER" >/dev/null 2>&1; "${WP[@]}" plugin activate "$PLUGIN_FOLDER" >/dev/null 2>&1; visit anonymous /; }
+license_gap() { phase edition lite >/dev/null; visit anonymous /; phase edition pro >/dev/null; visit anonymous /; }
+lower_remove() {
+  store_api "$1" update-item "{\"key\":\"$(item_key "$1" "$p1")\",\"quantity\":1}"
+  store_api "$1" remove-item "{\"key\":\"$(item_key "$1" "$p2")\"}"
+  did "$(item_qty "$1" "$p1")/$(item_qty "$1" "$p2")" 1/ 'lower and remove'
+}
+stock_fix() { phase stock "$STATE" 2 >/dev/null; visit "$1" /cart/; visit "$1" /checkout/; did "$(item_qty "$1" "$p1")" 2 'stock fix'; phase stock "$STATE" 10 >/dev/null; }
+
+template_case T17 t17 'nothing added: the email goes after an hour' 1 none
+phase saved "$STATE" t18 2,0 30 >/dev/null
+template_case T18 t18 'items from before, the last one added earlier the same day, nothing added since: the email goes' 1 none
+template_case N24 n24 'an item added while waiting: no email' 0 add_p1
+phase saved "$STATE" n25 2,0 30 >/dev/null
+template_case N25 n25 'a quantity raised while waiting: no email' 0 raise_p1
+template_case N26 n26 'added, then all removed: no email' 0 add_remove
+template_case N27 n27 'added after the hour, before the worker ran: no email' 0 late_add
+template_case N28 n28 'YayMatik Pro deactivated and active again while waiting: no email' 0 reactivate
+template_case N29 n29 'the license lapsed and came back while waiting: no email' 0 license_gap
+phase saved "$STATE" g1 2,1 30 >/dev/null
+template_case G1 g1 'a lower quantity and one item removed, another left: the email goes' 1 lower_remove
+phase saved "$STATE" g2 1,1 30 >/dev/null
+merged() { did "$(item_qty "$1" "$p1")/$(item_qty "$1" "$p2")" 1/1 'saved cart merged'; }
+template_case G2 g2 'the saved cart merged at sign-in: the email goes' 1 merged
+phase saved "$STATE" g3 5,0 30 >/dev/null
+template_case G3 g3 "WooCommerce lowered a quantity for stock: the email goes" 1 stock_fix
 
 echo
 [[ $fails == 0 ]] && echo "All checks passed." || echo "$fails check(s) failed."
