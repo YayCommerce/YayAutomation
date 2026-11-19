@@ -4,14 +4,21 @@ namespace YayMatik\Pro\Workflow\Core\Session;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * The login triggers' one set of hooks: marks a new session at sign-in, confirms it on the person's next request,
- * then tells every subscriber. Hooks are added only once something subscribes.
+ * The login triggers' one set of hooks: marks a new session at sign-in and confirms it on the person's next request;
+ * a storefront visit (or the beacon) after a long absence is a return. Each tells every subscriber. Hooks are added
+ * only once something subscribes.
  */
 final class SessionSignals {
 
     /** Session keys of the mark. */
     public const PENDING = 'yaymatik_pending';
     public const HOW     = 'yaymatik_how';
+
+    /** A visit after this long without one is a return. */
+    public const RETURN_AFTER = 12 * HOUR_IN_SECONDS;
+
+    /** Last seen is written at most this often while the person browses on. */
+    public const REFRESH = 15 * MINUTE_IN_SECONDS;
 
     /** @var self|null */
     private static $instance = null;
@@ -34,13 +41,17 @@ final class SessionSignals {
     }
 
     /**
-     * @param callable $emit fn( array $args ): void; args `user_id`, `how` (`sign_in`, `auto`), `time`.
+     * @param callable $emit fn( array $args ): void; args `user_id`, `how` (`sign_in`, `auto`, `returned`), `time`.
      */
     public function subscribe( callable $emit ): void {
         if ( ! $this->subscribers ) {
             $this->hook();
         }
         $this->subscribers[] = $emit;
+    }
+
+    public function subscribed(): bool {
+        return (bool) $this->subscribers;
     }
 
     private function hook(): void {
@@ -52,6 +63,7 @@ final class SessionSignals {
         add_action( 'switch_back_user', [ $this, 'unmark_created' ] );
         // After the Dispatcher's `init` priority 0, which subscribes.
         add_action( 'init', [ $this, 'confirm' ], 1 );
+        add_action( 'template_redirect', [ $this, 'storefront' ] );
     }
 
     /**
@@ -127,6 +139,51 @@ final class SessionSignals {
         $now = time();
         LastSeen::set( $user_id, $now );
         $this->emit( $user_id, $how, $now );
+    }
+
+    /** On `template_redirect`: a page a person opens, not a feed, a preview, a HEAD request or a prefetch. */
+    public function storefront(): void {
+        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotValidated, WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- only compared.
+        $head     = 'HEAD' === strtoupper( (string) ( $_SERVER['REQUEST_METHOD'] ?? '' ) );
+        $purpose  = strtolower( sanitize_text_field( wp_unslash( $_SERVER['HTTP_SEC_PURPOSE'] ?? $_SERVER['HTTP_PURPOSE'] ?? '' ) ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotValidated -- read with a default.
+        $prefetch = false !== strpos( $purpose, 'prefetch' );
+        if ( $head || $prefetch || is_admin() || wp_doing_ajax() || wp_doing_cron() || is_feed() || is_preview() || ( defined( 'REST_REQUEST' ) && REST_REQUEST ) ) {
+            return;
+        }
+        $this->visit( get_current_user_id() );
+    }
+
+    /**
+     * A signed-in person is on the store: the first visit after `RETURN_AFTER` is a return. Only the request whose write moved
+     * last seen tells the subscribers, so parallel requests (two tabs) make one event.
+     *
+     * @param int $user_id
+     */
+    public function visit( int $user_id ): void {
+        if ( ! $this->subscribers || ! $user_id ) {
+            return;
+        }
+        $token = wp_get_session_token();
+        if ( isset( $this->created[ $token ] ) ) {
+            return;
+        }
+        $session = '' === $token ? null : \WP_Session_Tokens::get_instance( $user_id )->get( $token );
+        if ( ! empty( $session[ self::PENDING ] ) ) {
+            return;
+        }
+        $now  = time();
+        $seen = LastSeen::get( $user_id );
+        if ( null === $seen ) {
+            LastSeen::set( $user_id, $now );
+            return;
+        }
+        if ( $now - $seen >= self::RETURN_AFTER ) {
+            if ( LastSeen::advance( $user_id, $now, self::RETURN_AFTER ) ) {
+                $this->emit( $user_id, 'returned', $now );
+            }
+            return;
+        }
+        LastSeen::advance( $user_id, $now, self::REFRESH );
     }
 
     /**

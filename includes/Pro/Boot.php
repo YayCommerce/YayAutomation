@@ -3,6 +3,7 @@ namespace YayMatik\Pro;
 
 use YayMatik\Engine\Register\ScriptName;
 use YayMatik\Pro\Engine\API\CustomerMetaKeysRoute;
+use YayMatik\Pro\Frontend\SeenBeacon;
 use YayMatik\Pro\Workflow\Core\Email\OrderGrid;
 use YayMatik\Pro\Workflow\Core\Runtime\InactiveSweep;
 use YayMatik\Pro\Workflow\Modules\WoocommerceProModule;
@@ -42,6 +43,7 @@ final class Boot {
         }
         add_filter( 'yaymatik_modules', [ self::class, 'modules' ] );
         CustomerMetaKeysRoute::register();
+        SeenBeacon::register();
         foreach ( [
             OrderGrid::CROSS_SELLS => 'order.cross_sell_products',
             OrderGrid::UPSELLS     => 'order.upsell_products',

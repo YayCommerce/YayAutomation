@@ -6,6 +6,8 @@
  *   runs <state>           prints `RUNS <json>`: workflow key => subjects of its runs
  *   age <state> <user>     moves that user's claims and last seen 8 days back
  *   destroy <state> <user> ends every session of that user (a second factor step does, before the code)
+ *   seen <state> <user> <s> last seen `s` seconds back, or `none`; the user's claims removed, so a cooldown hides nothing
+ *   lastseen <state> <user> prints `SEEN <seconds back>`, or `SEEN none`
  *   nocookie <state>       a sign-in whose cookies are never sent (`send_auth_cookies` false)
  *   checkout <state>       replays checkout's account creation for a guest with an older paid order; prints `COOKIE <name>=<value>`
  *   edition <lite|pro>     the dev license on or off
@@ -124,6 +126,8 @@ switch ( $phase ) {
             'buyer'     => [ 'check_login_buyer', [ 'completed' ] ],
             'editor'    => [ 'check_login_editor', [ 'completed' ] ],
             'subscriber' => [ 'subscriber', [] ],
+            'ret'        => [ 'customer', [ 'completed' ] ],
+            'ret2'       => [ 'customer', [ 'completed' ] ],
         ];
         foreach ( $people as $key => list( $role, $statuses ) ) {
             $email = "{$key}@{$domain}";
@@ -185,6 +189,15 @@ switch ( $phase ) {
                 true,
             ],
             'inactive'  => [ 'customer_logged_in', [ 'when' => [ 'sign_in' ] ], false ],
+            'returning' => [ 'customer_logged_in', [ 'when' => [ 'return' ] ], true ],
+            'staff'     => [
+                'user_logged_in',
+                [
+                    'when'  => [ 'return' ],
+                    'roles' => [],
+                ],
+                true,
+            ],
         ];
         foreach ( $setups as $key => list( $trigger, $config, $active ) ) {
             $graph   = [
@@ -261,6 +274,17 @@ switch ( $phase ) {
         if ( null !== LastSeen::get( $user_id ) ) {
             update_user_meta( $user_id, LastSeen::KEY, time() - 8 * DAY_IN_SECONDS );
         }
+        break;
+
+    case 'seen':
+        $user_id = (int) $state['users'][ $args[2] ]['id'];
+        $wpdb->delete( $claims, [ 'subject' => 'user:' . $user_id ] );
+        'none' === $args[3] ? delete_user_meta( $user_id, LastSeen::KEY ) : update_user_meta( $user_id, LastSeen::KEY, time() - (int) $args[3] );
+        break;
+
+    case 'lastseen':
+        $seen = LastSeen::get( (int) $state['users'][ $args[2] ]['id'] );
+        echo 'SEEN ', null === $seen ? 'none' : time() - $seen, "\n"; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
         break;
 
     case 'destroy':

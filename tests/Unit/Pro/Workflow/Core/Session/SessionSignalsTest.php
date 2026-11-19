@@ -8,7 +8,7 @@ use YayMatik\Tests\Support\FakeWpdb;
 
 require_once __DIR__ . '/session-stubs.php';
 
-/** Sign-in: the mark on a new session, its confirmation on a later request, one event for every subscriber. */
+/** Sign-in and return: the mark on a new session, its confirmation on a later request, a visit after a long absence; one event for every subscriber. */
 final class SessionSignalsTest extends TestCase {
 
     /** @var SessionSignals */
@@ -39,7 +39,7 @@ final class SessionSignalsTest extends TestCase {
     }
 
     protected function tearDown(): void {
-        unset( $GLOBALS['yaymatik_test_sessions'], $GLOBALS['yaymatik_test_session_token'], $GLOBALS['yaymatik_test_user_id'], $GLOBALS['yaymatik_test_user_meta_added'] );
+        unset( $GLOBALS['yaymatik_test_users'], $GLOBALS['yaymatik_test_sessions'], $GLOBALS['yaymatik_test_session_token'], $GLOBALS['yaymatik_test_user_id'], $GLOBALS['yaymatik_test_user_meta_added'] );
         list( $GLOBALS['yaymatik_test_filters'], $GLOBALS['yaymatik_test_actions'] ) = $this->hooks;
         // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- no WordPress here.
         $GLOBALS['wpdb'] = new FakeWpdb();
@@ -130,5 +130,57 @@ final class SessionSignalsTest extends TestCase {
         $this->db->results = [ 0 ];
         LastSeen::set( 7, 1000 );
         $this->assertSame( [ [ 7, LastSeen::KEY, 1000 ] ], $GLOBALS['yaymatik_test_user_meta_added'] );
+    }
+
+    /**
+     * A visit by user 7 whose last seen is `$ago` seconds back (null: none), signed in with session `tok`.
+     *
+     * @param int|null $ago
+     */
+    private function visit_after( ?int $ago ): void {
+        $GLOBALS['yaymatik_test_users'][7]           = (object) [ 'meta' => null === $ago ? [] : [ LastSeen::KEY => (string) ( time() - $ago ) ] ];
+        $GLOBALS['yaymatik_test_sessions'][7]['tok'] = [ 'login' => 1 ];
+        $GLOBALS['yaymatik_test_session_token']      = 'tok';
+        $this->signals->visit( 7 );
+    }
+
+    public function test_a_visit_after_12_hours_is_a_return_for_the_request_that_moved_last_seen(): void {
+        $this->db->results = [ 1 ];
+        $this->visit_after( SessionSignals::RETURN_AFTER + 60 );
+        $this->assertSame( 'returned', $this->events[0][0]['how'] ?? null, 'T12' );
+        $this->assertSame( $this->events[0], $this->events[1] );
+        $this->assertStringEndsWith( 'CAST( meta_value AS UNSIGNED ) < ' . ( $this->events[0][0]['time'] - SessionSignals::RETURN_AFTER ), $this->db->last_sql() );
+
+        $this->events      = [ [], [] ];
+        $this->db->results = [ 0 ];
+        $this->visit_after( SessionSignals::RETURN_AFTER + 60 );
+        $this->assertSame( [], $this->events[0], 'N21: the parallel request lost the write' );
+    }
+
+    public function test_a_visit_within_12_hours_only_refreshes_last_seen(): void {
+        $this->db->results = [ 1 ];
+        $this->visit_after( SessionSignals::RETURN_AFTER - 60 );
+        $this->assertSame( [], $this->events[0], 'N6' );
+        $this->assertStringContainsString( '< ' . ( time() - SessionSignals::REFRESH ), $this->db->last_sql(), 'at most every 15 minutes' );
+    }
+
+    public function test_a_first_visit_writes_last_seen_without_an_event(): void {
+        $this->db->results = [ 0 ];
+        $this->visit_after( null );
+        $this->assertSame( [], $this->events[0], 'N8' );
+        $this->assertSame( 7, $GLOBALS['yaymatik_test_user_meta_added'][0][0] ?? null );
+    }
+
+    public function test_no_return_while_the_sign_in_is_pending_or_for_a_session_of_this_request(): void {
+        $GLOBALS['yaymatik_test_users'][7]           = (object) [ 'meta' => [ LastSeen::KEY => '1' ] ];
+        $GLOBALS['yaymatik_test_sessions'][7]['tok'] = $this->signals->mark( [], 7 );
+        $GLOBALS['yaymatik_test_session_token']      = 'tok';
+        $this->signals->visit( 7 );
+        $this->signals->created( '', 0, 0, 7, 'logged_in', 'tok' );
+        $GLOBALS['yaymatik_test_sessions'][7]['tok'] = [];
+        $this->signals->visit( 7 );
+
+        $this->assertSame( [], $this->events[0] );
+        $this->assertSame( [], $this->db->calls );
     }
 }

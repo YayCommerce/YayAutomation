@@ -1,5 +1,5 @@
 #!/bin/bash
-# Check the login triggers: claim cooldown on the real table, then real sign-ins over HTTP (curl) against the site, counting the runs they start. Removes its rows.
+# Check the login triggers: claim cooldown on the real table, then real sign-ins, returns and beacons over HTTP (curl) against the site, counting the runs they start. Removes its rows.
 #   ./run.sh check-login [--wp-env|--wp-env-min]
 cd "$(dirname "$0")/../.." || exit 1
 [[ -f yaymatik.php ]] || { echo "Not the plugin root: $(pwd)"; exit 1; }
@@ -178,6 +178,82 @@ visit lite /
 phase edition pro >/dev/null
 expect customer "$(uid paid3)" 1 'N22: Pro without a license: no run'
 [[ -s $jars/lite ]] && grep -q wordpress_logged_in "$jars/lite" && pass 'N22: … the sign-in worked' || fail 'N22: … the sign-in failed'
+
+# Return: a storefront visit after 12 hours with a saved session (Remember Me).
+seen() { phase seen "$STATE" "$@" >/dev/null; }
+seen_ago() { phase lastseen "$STATE" "$1" | sed -n 's/^SEEN //p' | tr -d '\r'; }
+wp_login ret ret
+visit ret /
+seen ret none
+visit ret /shop/
+expect returning "$(uid ret)" 0 'N8: first visit without last seen: no event'
+[[ $(seen_ago ret) =~ ^[0-9]+$ && $(seen_ago ret) -lt 60 ]] && pass 'N8: … last seen is written' || fail "N8: … last seen $(seen_ago ret)"
+seen ret $((11 * 3600))
+visit ret /
+expect returning "$(uid ret)" 0 'N6: back after 11 hours: no event'
+for _ in $(seq 1 24); do
+  seen ret 3700
+  visit ret /
+done
+expect returning "$(uid ret)" 0 'N7: a visit every hour for a day: no event'
+
+# Requests that are not a person opening a page never count, with last seen 13 hours back.
+seen ret $((13 * 3600))
+before=$(seen_ago ret)
+app=$("${WP[@]}" user application-password create "$(uid ret)" check-login --porcelain 2>/dev/null | tail -1 | tr -d '\r')
+curl -s -o /dev/null -u "$(login_name ret):$app" "$home/wp-json/wp/v2/users/me"
+curl -s -o /dev/null -b "$jars/ret" -d 'action=heartbeat&data[x]=1' "$home/wp-admin/admin-ajax.php"
+curl -s -o /dev/null -b "$jars/ret" "$home/wp-json/wc/store/v1/cart"
+curl -s -o /dev/null -b "$jars/ret" "$home/wp-cron.php"
+curl -s -o /dev/null -I -b "$jars/ret" "$home/"
+curl -s -o /dev/null -b "$jars/ret" -H 'Sec-Purpose: prefetch' "$home/"
+curl -s -o /dev/null -b "$jars/ret" -H 'Purpose: prefetch' "$home/shop/"
+curl -s -o /dev/null -b "$jars/ret" "$home/feed/"
+expect returning "$(uid ret)" 0 'N18: REST (application password), AJAX, heartbeat, Store API, cron, HEAD, prefetch, feed: no event'
+after=$(seen_ago ret)
+[[ $after -ge $before ]] && pass "N18: … last seen untouched (${before}s → ${after}s back)" || fail "N18: … last seen moved (${before}s → ${after}s back)"
+
+wp_login admin manager
+visit admin /wp-admin/
+seen manager $((13 * 3600))
+visit admin /wp-admin/
+visit admin /wp-admin/edit.php
+expect staff "$(uid manager)" 0 'N19: staff using only wp-admin: no return'
+visit admin /
+expect staff "$(uid manager)" 1 'N19: … the same person on a store page returns'
+
+visit ret /
+expect returning "$(uid ret)" 1 'T12: back after 12 hours with a saved session: how = returned'
+visit ret /shop/
+expect returning "$(uid ret)" 1 '… and browsing on is no second event'
+
+wp_login phone2 ret2
+wp_login laptop2 ret2
+visit phone2 /
+visit laptop2 /
+seen ret2 $((13 * 3600))
+visit phone2 /
+expect returning "$(uid ret2)" 1 'N9: phone after 13 hours: one return'
+# The phone's claim goes, so only last seen can stop the laptop.
+seen ret2 0
+visit laptop2 /
+expect returning "$(uid ret2)" 1 'N9: … then the laptop within 12 hours: none'
+
+# The beacon: same-site only; two at once make one event.
+beacon() { curl -s -o /dev/null -w '%{http_code}' -b "$jars/ret" -X POST "$@" "$home/wp-admin/admin-ajax.php?action=yaymatik_seen"; }
+seen ret $((13 * 3600))
+code=$(beacon -H 'Origin: https://evil.test')
+code2=$(beacon -H 'Sec-Fetch-Site: cross-site')
+expect returning "$(uid ret)" 1 "Beacon from another site refused (Origin $code, Sec-Fetch-Site $code2)"
+[[ $code == 403 && $code2 == 403 ]] && pass '… with 403' || fail "… codes $code, $code2"
+beacon -H "Origin: $home" >/dev/null & beacon -H "Origin: $home" >/dev/null & wait
+expect returning "$(uid ret)" 2 'N21: two tabs send the beacon at once: one event, one run'
+seen ret $((13 * 3600))
+visit ret / & visit ret /shop/ & wait
+expect returning "$(uid ret)" 3 'N21: two parallel page requests after 12 hours: one run'
+seen ret $((13 * 3600))
+code=$(beacon)
+expect returning "$(uid ret)" 4 "Beacon without Origin or Sec-Fetch-Site is taken ($code)"
 
 echo
 [[ $fails == 0 ]] && echo "All checks passed." || echo "$fails check(s) failed."
