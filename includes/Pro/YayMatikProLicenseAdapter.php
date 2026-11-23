@@ -12,11 +12,7 @@ class YayMatikProLicenseAdapter extends YayMatikMenuAdapter implements LicenseCo
 
     public const SLUG = 'yaymatik-pro';
 
-    // TODO(036): temporary id of YayCurrency (7761); replace with the YayMatik Pro id before release.
-    public const ITEM_ID = 7761;
-
-    /** While true, UpdateBlock keeps the updater from offering YayCurrency's package as an update. */
-    public const ITEM_ID_IS_TEMPORARY = true;
+    public const ITEM_ID = 69307;
 
     public function get_plugin_slug(): string {
         return self::SLUG; }

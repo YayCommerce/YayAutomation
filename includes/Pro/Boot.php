@@ -34,9 +34,6 @@ final class Boot {
     /** Before the plugin boots: the license, then Pro's hooks when it allows them. */
     public static function register(): void {
         AdminShell::register_plugin( new YayMatikProLicenseAdapter() );
-        if ( YayMatikProLicenseAdapter::ITEM_ID_IS_TEMPORARY ) {
-            UpdateBlock::register();
-        }
         // After AdminPage enqueues the app.
         add_action( 'admin_enqueue_scripts', [ self::class, 'localize' ], 20 );
         self::$licensed = YayMatikProLicenseAdapter::is_licensed();

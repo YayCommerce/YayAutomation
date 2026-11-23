@@ -58,6 +58,13 @@ final class BootTest extends TestCase {
         $this->assertSame( 'yaymatik-pro', AdminShell::$registered[0]->get_plugin_slug() );
     }
 
+    public function test_updates_and_details_from_the_store_are_left_as_the_updater_sets_them(): void {
+        Boot::register();
+
+        $this->assertArrayNotHasKey( 'site_transient_update_plugins', $GLOBALS['yaymatik_test_filters'] );
+        $this->assertArrayNotHasKey( 'plugins_api', $GLOBALS['yaymatik_test_filters'] );
+    }
+
     /** @return array */
     public function licenses(): array {
         return [
