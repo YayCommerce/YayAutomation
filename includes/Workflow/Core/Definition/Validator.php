@@ -540,6 +540,10 @@ final class Validator {
             if ( 1 === count( $segments ) && isset( $facts[ $segments[0] ] ) ) {
                 return null;
             }
+            // A trigger that needs YayMatik Pro defines its facts there; the workflow already says it needs Pro.
+            if ( $node && ProUsage::node( $node ) ) {
+                return null;
+            }
         }
 
         $tag     = '{{ ' . $path . ' }}';

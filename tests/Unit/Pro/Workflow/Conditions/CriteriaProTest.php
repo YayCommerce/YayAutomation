@@ -281,7 +281,7 @@ final class CriteriaProTest extends TestCase {
      * @param string $match
      * @param array  $rules
      */
-    private static function group( string $match, array $rules ): array {
+    private static function group( string $match, array $rules ): array { // phpcs:ignore Universal.NamingConventions.NoReservedKeywordParameterNames.matchFound -- the stored key's name.
         return [
             'match' => $match,
             'rules' => $rules,
@@ -360,8 +360,9 @@ final class CriteriaProTest extends TestCase {
     }
 
     public function test_groups_evaluate_with_their_own_match(): void {
-        $yes   = self::rule( 'order.created_date', 'is_not_set' );
-        $no    = self::rule( 'order.created_date', 'is_set' );
+        $yes = self::rule( 'order.created_date', 'is_not_set' );
+        $no  = self::rule( 'order.created_date', 'is_set' );
+        // phpcs:ignore Universal.NamingConventions.NoReservedKeywordParameterNames.matchFound -- the stored key's name.
         $scope = fn( array $items, string $match ) => ( new CriteriaPro() )->evaluate(
             new Scope(
                 [ 'trigger' => [ 'order' => new Ref( 'order', '1' ) ] ],
@@ -388,5 +389,100 @@ final class CriteriaProTest extends TestCase {
         $this->assertFalse( $scope( [ self::group( 'all', [ $no, $yes ] ), $yes ], 'all' ), 'all inside all' );
         $this->assertTrue( $scope( [ self::group( 'all', [ $no, $yes ] ), $yes ], 'any' ), 'the rule beside it' );
         $this->assertFalse( $scope( [ self::group( 'all', [ $no, $yes ] ), $no ], 'any' ), 'neither' );
+    }
+
+    /**
+     * A rule on the order's exact created date, under a trigger whose `time` fact is a Unix time.
+     *
+     * @param string     $created  `created_date` as strtotime() reads it; '' for none.
+     * @param int|string $time     The stored `trigger.time`.
+     * @param array      $rule
+     */
+    private static function against_trigger_time( string $created, $time, array $rule ): bool {
+        $trigger = \YayMatik\Workflow\Extension\Extensions::collect(
+            [],
+            fn( $registrar ) => $registrar->module(
+                [
+                    'id'    => 'acme',
+                    'label' => 'Acme',
+                ]
+            )->trigger(
+                'acme_signed_in',
+                [
+                    'label'       => 'Signed in',
+                    'description' => 'When someone signs in.',
+                    'provides'    => [ 'order' ],
+                    'facts'       => [
+                        'time' => [
+                            'label' => 'Trigger time',
+                            'type'  => 'date',
+                        ],
+                    ],
+                ]
+            )
+        )[0]->triggers()[0];
+        $scope   = new Scope(
+            [
+                'trigger' => [
+                    'order' => new Ref( 'order', '1' ),
+                    'time'  => $time,
+                ],
+            ],
+            new RefResolver( [ 'order' => fn() => (object) [ 'date' => $created ] ] ),
+            [
+                'order' => new FakeEntity(
+                    'order',
+                    [
+                        'created_date' => [
+                            'label'     => 'Date',
+                            'type'      => DataItem::TYPE_DATE,
+                            'value'     => fn( $order ) => '' === $order->date ? '' : gmdate( 'Y-m-d', (int) strtotime( $order->date . ' UTC' ) ),
+                            'timestamp' => fn( $order ) => '' === $order->date ? null : (int) strtotime( $order->date . ' UTC' ),
+                        ],
+                    ]
+                ),
+            ]
+        );
+        $scope->set_trigger( $trigger );
+        return ( new CriteriaPro() )->evaluate(
+            $scope,
+            [
+                'match' => 'all',
+                'rules' => [ $rule ],
+            ]
+        );
+    }
+
+    public function test_two_exact_moments_compare_by_time_within_the_same_day(): void {
+        $time   = gmmktime( 15, 0, 0, 11, 18, 2026 );
+        $before = [ 'valueType' => 'variable' ] + self::rule( 'order.created_date', 'before', 'trigger.time' );
+        $after  = [ 'valueType' => 'variable' ] + self::rule( 'order.created_date', 'after', 'trigger.time' );
+
+        $this->assertTrue( self::against_trigger_time( '2026-11-18 09:00:00', $time, $before ), 'same day, earlier: before' );
+        $this->assertFalse( self::against_trigger_time( '2026-11-18 09:00:00', $time, $after ) );
+        $this->assertFalse( self::against_trigger_time( '2026-11-18 15:00:00', $time, $before ), 'same second: not before' );
+        $this->assertFalse( self::against_trigger_time( '2026-11-18 15:00:00', $time, $after ), 'same second: not after' );
+        $this->assertTrue( self::against_trigger_time( '2026-11-18 15:00:01', $time, $after ) );
+    }
+
+    public function test_a_day_only_side_compares_by_day(): void {
+        $before = [ 'valueType' => 'variable' ] + self::rule( 'order.created_date', 'before', 'trigger.time' );
+
+        $this->assertFalse( self::against_trigger_time( '2026-11-18 09:00:00', '2026-11-18', $before ), 'a Y-m-d fact: the same day is not before' );
+        $this->assertTrue( self::against_trigger_time( '2026-11-17 23:00:00', '2026-11-18', $before ) );
+    }
+
+    public function test_a_fixed_value_rule_on_the_trigger_time_compares_by_day(): void {
+        $time = gmmktime( 15, 0, 0, 11, 18, 2026 );
+
+        $this->assertFalse( self::against_trigger_time( '', $time, self::rule( 'trigger.time', 'before', '2026-11-18' ) ) );
+        $this->assertTrue( self::against_trigger_time( '', $time, self::rule( 'trigger.time', 'before', '2026-11-19' ) ) );
+        $this->assertTrue( self::against_trigger_time( '', $time, self::rule( 'trigger.time', 'after', '2026-11-17' ) ) );
+    }
+
+    public function test_no_compare_when_the_field_has_no_value(): void {
+        $time = gmmktime( 15, 0, 0, 11, 18, 2026 );
+
+        $this->assertFalse( self::against_trigger_time( '', $time, [ 'valueType' => 'variable' ] + self::rule( 'order.created_date', 'before', 'trigger.time' ) ) );
     }
 }

@@ -33,6 +33,8 @@ final class ProStepsTest extends TestCase {
                 'customer_inactive'            => [],
                 'customer_order_count_reaches' => [],
                 'customer_total_spend_reaches' => [],
+                'user_logged_in'               => [],
+                'customer_logged_in'           => [],
                 'wait_until'                   => [ 'until' ],
                 'resend_wc_email'              => [ 'email' ],
                 'update_order_meta'            => [ 'key', 'changed' ],

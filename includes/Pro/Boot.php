@@ -3,6 +3,9 @@ namespace YayMatik\Pro;
 
 use YayMatik\Engine\Register\ScriptName;
 use YayMatik\Pro\Engine\API\CustomerMetaKeysRoute;
+use YayMatik\Pro\Engine\Privacy\ActivityData;
+use YayMatik\Pro\Frontend\SeenBeacon;
+use YayMatik\Pro\Workflow\Core\Cart\CartActivity;
 use YayMatik\Pro\Workflow\Core\Email\OrderGrid;
 use YayMatik\Pro\Workflow\Core\Runtime\InactiveSweep;
 use YayMatik\Pro\Workflow\Modules\WoocommerceProModule;
@@ -37,11 +40,15 @@ final class Boot {
         // After AdminPage enqueues the app.
         add_action( 'admin_enqueue_scripts', [ self::class, 'localize' ], 20 );
         self::$licensed = YayMatikProLicenseAdapter::is_licensed();
+        // Whatever the license: a gap in cart tracking must be seen, and a person's data erased.
+        CartActivity::register( self::$licensed );
+        ActivityData::register();
         if ( ! self::$licensed ) {
             return;
         }
         add_filter( 'yaymatik_modules', [ self::class, 'modules' ] );
         CustomerMetaKeysRoute::register();
+        SeenBeacon::register();
         foreach ( [
             OrderGrid::CROSS_SELLS => 'order.cross_sell_products',
             OrderGrid::UPSELLS     => 'order.upsell_products',

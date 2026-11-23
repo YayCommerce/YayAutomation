@@ -8,8 +8,10 @@ use YayMatik\Pro\Workflow\Actions\UpdateOrderMeta;
 use YayMatik\Pro\Workflow\DataItems\CustomerProData;
 use YayMatik\Pro\Workflow\DataItems\OrderProData;
 use YayMatik\Pro\Workflow\Triggers\CustomerInactive;
+use YayMatik\Pro\Workflow\Triggers\CustomerLoggedIn;
 use YayMatik\Pro\Workflow\Triggers\CustomerOrderCountReaches;
 use YayMatik\Pro\Workflow\Triggers\CustomerTotalSpendReaches;
+use YayMatik\Pro\Workflow\Triggers\UserLoggedIn;
 use YayMatik\Workflow\DataItems\CustomerData;
 use YayMatik\Workflow\DataItems\OrderData;
 use YayMatik\Workflow\Modules\WoocommerceModule;
@@ -20,7 +22,7 @@ defined( 'ABSPATH' ) || exit;
 class WoocommerceProModule extends WoocommerceModule {
 
     public function triggers(): array {
-        return array_merge( parent::triggers(), [ CustomerInactive::class, CustomerOrderCountReaches::class, CustomerTotalSpendReaches::class ] );
+        return array_merge( parent::triggers(), [ CustomerInactive::class, CustomerOrderCountReaches::class, CustomerTotalSpendReaches::class, UserLoggedIn::class, CustomerLoggedIn::class ] );
     }
 
     public function actions(): array {

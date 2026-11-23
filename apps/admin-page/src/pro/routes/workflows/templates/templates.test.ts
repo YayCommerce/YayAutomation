@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import type { WaitConfig } from '@/routes/workflows/steps/actions/wait/schema';
@@ -17,7 +19,7 @@ const emailsOf = (id: string) =>
     .map((node) => node.data.config);
 const greeting = '<p>Hi {{ customer.first_name | default: "there" }},</p>';
 
-it('adds its 10 templates to the 8 of the free edition', () => {
+it('adds its 11 templates to the 8 of the free edition', () => {
   expect(templates.map((template) => template.id)).toEqual([
     'cart-reminder',
     'checkout-reminder',
@@ -37,6 +39,7 @@ it('adds its 10 templates to the 8 of the free edition', () => {
     'welcome-series',
     'win-back-discount',
     'win-back-free-shipping',
+    'login-no-cart',
   ]);
 });
 
@@ -250,5 +253,29 @@ describe('needsProductReviews', () => {
     wc.reviewsEnabled = false;
     expect(needsProductReviews(graphOf('review-request-reminder'))).toBe(true);
     expect(needsProductReviews(graphOf('cross-sell-coupon'))).toBe(false);
+  });
+});
+
+describe('logged in, nothing added to cart', () => {
+  const { graph } = findTemplate('login-no-cart')!;
+
+  it('waits an hour after a sign-in or return, then emails only when nothing was added since', () => {
+    expect(graph.nodes.map((n) => n.data.block)).toEqual(['customer_logged_in', 'wait', 'condition', 'send_email']);
+    expect(graph.nodes[0].data.config).toEqual({ when: ['sign_in', 'return'], days: 7 });
+    expect(graph.nodes[1].data.config).toEqual({ delay: { value: 1, unit: 'hours' } } satisfies WaitConfig);
+    expect(graph.nodes[2].data.config).toEqual({
+      match: 'any',
+      rules: [
+        { field: 'customer.last_added_to_cart', operator: 'is_not_set', value: '', valueType: 'value' },
+        { field: 'customer.last_added_to_cart', operator: 'before', value: 'trigger.time', valueType: 'variable' },
+      ],
+    });
+    expect(graph.edges.find((e) => e.target === 'email')?.sourceHandle).toBe('then');
+    expect(sendsCustomerEmail(graph)).toBe(true);
+  });
+
+  it('is the graph check-login runs through the PHP engine', () => {
+    const fixture = resolve(__dirname, '../../../../../../../tests/Unit/Pro/fixtures/login-no-cart.json');
+    expect(graph).toEqual(JSON.parse(readFileSync(fixture, 'utf8')));
   });
 });

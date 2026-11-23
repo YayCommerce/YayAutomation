@@ -16,6 +16,7 @@ Tier `pro`: the entry exists only with YayMatik Pro (with an active license). A 
 | `condition` | condition | — | `match`, `rules` | `result` | lite |
 | `customer_account_created` | trigger | `customer` | — | — | lite |
 | `customer_inactive` | trigger | `customer` | `days` | — | pro |
+| `customer_logged_in` | trigger | `customer` | `when`, `days` | — | pro |
 | `customer_order_count_reaches` | trigger | `customer` | `count` | — | pro |
 | `customer_total_spend_reaches` | trigger | `customer` | `amount` | — | pro |
 | `generate_coupon` | action | `coupon` | `discount_type`, `amount`, `expiry_days`, `minimum_spend`, `individual_use`, `limit_to_customer`, `code_prefix` | `code`, `amount`, `expires_at`, `box` | lite |
@@ -30,6 +31,7 @@ Tier `pro`: the entry exists only with YayMatik Pro (with an active license). A 
 | `send_internal_email` | action | `email` | `from`, `recipients`, `subject`, `message` | `to` | lite |
 | `update_customer_meta` | action | `customer` | `key`, `value` | `key`, `changed` | pro |
 | `update_order_meta` | action | `order` | `key`, `value` | `key`, `changed` | pro |
+| `user_logged_in` | trigger | `customer` | `when`, `days`, `roles` | — | pro |
 | `wait` | action | `flow` | `delay` | — | lite |
 | `wait_until` | action | `flow` | `time`, `weekdays` | `until` | pro |
 
@@ -50,7 +52,7 @@ Tier `pro`: the entry exists only with YayMatik Pro (with an active license). A 
 | Item | Fields and relations | Tier `pro` |
 |---|---|---|
 | `cart` | `cart.email`, `cart.first_name`, `cart.total`, `cart.item_count`, `cart.product_names`, `cart.last_activity`, `cart.restore_url`, `cart.items`, `cart.restore_button` | — |
-| `customer` | `customer.email`, `customer.first_name`, `customer.last_name`, `customer.full_name`, `customer.phone`, `customer.billing_country`, `customer.is_first_order`, `customer.is_guest`, `customer.unsubscribed` | `customer.paid_order_count`, `customer.total_spent`, `customer.last_order_date`, `customer.registered_date`, `customer.role`, `customer.purchased_product_ids`, `customer.meta` |
+| `customer` | `customer.email`, `customer.first_name`, `customer.last_name`, `customer.full_name`, `customer.phone`, `customer.billing_country`, `customer.is_first_order`, `customer.is_guest`, `customer.unsubscribed` | `customer.paid_order_count`, `customer.total_spent`, `customer.last_order_date`, `customer.last_added_to_cart`, `customer.cart_item_count`, `customer.registered_date`, `customer.role`, `customer.purchased_product_ids`, `customer.meta` |
 | `order` | `order.number`, `order.total`, `order.subtotal`, `order.status`, `order.payment_method`, `order.shipping_method`, `order.item_count`, `order.created_date`, `order.paid_date`, `order.completed_date`, `order.product_ids`, `order.category_ids`, `order.coupon_codes`, `order.billing_country`, `order.shipping_country`, `order.customer_note`, `order.is_guest`, `order.admin_url`, `order.items`, `order.has_products_not_reviewed`, `order.review_products`, `order.customer` | `order.created_via`, `order.currency`, `order.discount_total`, `order.shipping_total`, `order.refunded_total`, `order.meta`, `order.has_cross_sells`, `order.has_upsells`, `order.cross_sell_products`, `order.upsell_products` |
 | `refund` | `refund.amount`, `refund.reason`, `refund.is_full` | — |
 | `review` | `review.rating`, `review.content`, `review.is_verified`, `review.product_name` | — |

@@ -549,6 +549,162 @@
                 ],
                 "outputs": []
             },
+            "user_logged_in": {
+                "kind": "trigger",
+                "plugin": "woocommerce",
+                "provides": [
+                    "customer"
+                ],
+                "category": "customer",
+                "facts": [
+                    {
+                        "key": "trigger.time",
+                        "label": "Trigger time",
+                        "type": "date",
+                        "valueType": "date",
+                        "conditional": true
+                    }
+                ],
+                "label": "User logged in",
+                "description": "A user with one of the chosen roles logs in or comes back",
+                "icon": "user",
+                "summary": "When a user logs in · once every {{ config.days }} days",
+                "onError": "stop",
+                "fields": [
+                    {
+                        "key": "when",
+                        "type": "multiselect",
+                        "label": "When to trigger",
+                        "required": true,
+                        "options": [
+                            {
+                                "value": "sign_in",
+                                "label": "Sign-in"
+                            },
+                            {
+                                "value": "return",
+                                "label": "Return with a saved session"
+                            },
+                            {
+                                "value": "auto",
+                                "label": "Automatic sign-in after sign-up or checkout"
+                            }
+                        ],
+                        "default": [
+                            "sign_in",
+                            "return"
+                        ]
+                    },
+                    {
+                        "key": "days",
+                        "type": "number",
+                        "label": "Once per person every N days",
+                        "required": true,
+                        "default": 7,
+                        "min": 1,
+                        "max": 365
+                    },
+                    {
+                        "key": "roles",
+                        "type": "multiselect",
+                        "label": "Roles",
+                        "placeholder": "All roles",
+                        "help": "Leave empty for all roles.",
+                        "options": [
+                            {
+                                "value": "administrator",
+                                "label": "Administrator"
+                            },
+                            {
+                                "value": "editor",
+                                "label": "Editor"
+                            },
+                            {
+                                "value": "author",
+                                "label": "Author"
+                            },
+                            {
+                                "value": "contributor",
+                                "label": "Contributor"
+                            },
+                            {
+                                "value": "subscriber",
+                                "label": "Subscriber"
+                            },
+                            {
+                                "value": "customer",
+                                "label": "Customer"
+                            },
+                            {
+                                "value": "shop_manager",
+                                "label": "Shop manager"
+                            }
+                        ],
+                        "default": [
+                            "customer"
+                        ]
+                    }
+                ],
+                "outputs": []
+            },
+            "customer_logged_in": {
+                "kind": "trigger",
+                "plugin": "woocommerce",
+                "provides": [
+                    "customer"
+                ],
+                "category": "customer",
+                "facts": [
+                    {
+                        "key": "trigger.time",
+                        "label": "Trigger time",
+                        "type": "date",
+                        "valueType": "date",
+                        "conditional": true
+                    }
+                ],
+                "label": "Customer logged in",
+                "description": "A customer with a paid order logs in or comes back",
+                "icon": "user",
+                "summary": "When a customer logs in · once every {{ config.days }} days",
+                "onError": "stop",
+                "fields": [
+                    {
+                        "key": "when",
+                        "type": "multiselect",
+                        "label": "When to trigger",
+                        "required": true,
+                        "options": [
+                            {
+                                "value": "sign_in",
+                                "label": "Sign-in"
+                            },
+                            {
+                                "value": "return",
+                                "label": "Return with a saved session"
+                            },
+                            {
+                                "value": "auto",
+                                "label": "Automatic sign-in after sign-up or checkout"
+                            }
+                        ],
+                        "default": [
+                            "sign_in",
+                            "return"
+                        ]
+                    },
+                    {
+                        "key": "days",
+                        "type": "number",
+                        "label": "Once per person every N days",
+                        "required": true,
+                        "default": 7,
+                        "min": 1,
+                        "max": 365
+                    }
+                ],
+                "outputs": []
+            },
             "send_email": {
                 "kind": "action",
                 "plugin": "woocommerce",
@@ -5378,6 +5534,23 @@
                         "help": "The newest paid order; pending and failed orders don’t count."
                     },
                     {
+                        "key": "customer.last_added_to_cart",
+                        "label": "Last added to cart",
+                        "type": "date",
+                        "valueType": "date",
+                        "conditional": true,
+                        "help": "When the signed-in customer last added a product or raised a quantity. Never earlier than when YayMatik Pro last started tracking it.",
+                        "mergeTag": false
+                    },
+                    {
+                        "key": "customer.cart_item_count",
+                        "label": "Items in cart",
+                        "type": "number",
+                        "valueType": "number",
+                        "conditional": true,
+                        "help": "Items in the signed-in customer’s cart that isn’t ordered yet. Needs Track carts."
+                    },
+                    {
                         "key": "customer.registered_date",
                         "label": "Registered date",
                         "type": "date",
@@ -5418,118 +5591,6 @@
                             {
                                 "value": "shop_manager",
                                 "label": "Shop manager"
-                            },
-                            {
-                                "value": "bookly_supervisor",
-                                "label": "Bookly Supervisor"
-                            },
-                            {
-                                "value": "bookly_administrator",
-                                "label": "Bookly Administrator"
-                            },
-                            {
-                                "value": "medarbejder",
-                                "label": "Medarbejder"
-                            },
-                            {
-                                "value": "seller",
-                                "label": "Vendor"
-                            },
-                            {
-                                "value": "vendor_staff",
-                                "label": "Vendor Staff"
-                            },
-                            {
-                                "value": "wcfm_vendor",
-                                "label": "Store Vendor"
-                            },
-                            {
-                                "value": "disable_vendor",
-                                "label": "Disable Vendor"
-                            },
-                            {
-                                "value": "wcwp_pending",
-                                "label": "Pending"
-                            },
-                            {
-                                "value": "wcwp_wholesale",
-                                "label": "Wholesale"
-                            },
-                            {
-                                "value": "vip-1",
-                                "label": "VIP 1"
-                            },
-                            {
-                                "value": "lp_teacher",
-                                "label": "LP Instructor"
-                            },
-                            {
-                                "value": "diamon",
-                                "label": "Diamon"
-                            },
-                            {
-                                "value": "gold",
-                                "label": "Gold"
-                            },
-                            {
-                                "value": "silver",
-                                "label": "Silver"
-                            },
-                            {
-                                "value": "bronze",
-                                "label": "Bronze"
-                            },
-                            {
-                                "value": "platinum",
-                                "label": "Platinum"
-                            },
-                            {
-                                "value": "retail-partner",
-                                "label": "Retail Partner"
-                            },
-                            {
-                                "value": "distributor",
-                                "label": "Distributor"
-                            },
-                            {
-                                "value": "reseller",
-                                "label": "Reseller"
-                            },
-                            {
-                                "value": "bulk-buyer",
-                                "label": "Bulk Buyer"
-                            },
-                            {
-                                "value": "corporate-client",
-                                "label": "Corporate Client"
-                            },
-                            {
-                                "value": "trade-account",
-                                "label": "Trade Account"
-                            },
-                            {
-                                "value": "agent-dealer",
-                                "label": "Agent Dealer"
-                            },
-                            {
-                                "value": "b2b-member",
-                                "label": "B2B Member"
-                            },
-                            {
-                                "value": "bookster_manager",
-                                "label": "Bookster Manager"
-                            },
-                            {
-                                "value": "bookster_agent",
-                                "label": "Bookster Agent"
-                            },
-                            {
-                                "value": "ywhs_default_role",
-                                "label": "YayWholesale Role"
-                            },
-                            {
-                                "value": "vip",
-                                "label": "VIP"
                             }
                         ]
                     },

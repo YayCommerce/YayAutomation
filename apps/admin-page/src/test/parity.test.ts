@@ -171,12 +171,16 @@ describe('PHP ↔ TS parity', () => {
     });
 
     it('condition keys and merge tags resolve to known data paths', () => {
+      // A fact of the template's own trigger is known too.
+      const trigger = template.graph.nodes.find((node) => node.kind === 'trigger')?.data.block;
+      const facts = new Set((trigger ? (php.steps[trigger]?.facts ?? []) : []).map((fact) => fact.key));
+      const known = (key: string) => dataKeys.has(key) || facts.has(key);
       for (const { data } of template.graph.nodes) {
         if (data.block === 'condition') {
           const rules = (data.config as { rules: { field: string; value: string; valueType?: string }[] }).rules;
           for (const rule of rules) {
-            expect(dataKeys.has(rule.field), rule.field).toBe(true);
-            if (rule.valueType === 'variable') expect(dataKeys.has(rule.value), rule.value).toBe(true);
+            expect(known(rule.field), rule.field).toBe(true);
+            if (rule.valueType === 'variable') expect(known(rule.value), rule.value).toBe(true);
           }
         }
         for (const path of strings(data.config).flatMap(templatePaths)) {

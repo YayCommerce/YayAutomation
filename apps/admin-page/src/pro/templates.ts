@@ -7,6 +7,7 @@ import {
   crossSellRepeat,
   upsellAfter30Days,
 } from './routes/workflows/templates/cross-sell-upsell';
+import { loginNoCart } from './routes/workflows/templates/login';
 import { reviewRequestReminder } from './routes/workflows/templates/review-request';
 import { welcomeSeries } from './routes/workflows/templates/welcome';
 import { winBackDiscount, winBackFreeShipping } from './routes/workflows/templates/win-back';
@@ -24,5 +25,6 @@ export const templates: WorkflowTemplate[] = window.yayMatikPro.licensed
       welcomeSeries,
       winBackDiscount,
       winBackFreeShipping,
+      loginNoCart,
     ]
   : [];

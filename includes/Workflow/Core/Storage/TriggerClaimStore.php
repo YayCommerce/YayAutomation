@@ -5,18 +5,25 @@ use YayMatik\Utils\Logger;
 
 defined( 'ABSPATH' ) || exit;
 
-/** "This workflow already started for this subject", kept for as long as the workflow exists. */
+/** "This workflow already started for this subject", kept for as long as the workflow exists; a trigger with a cooldown may claim it again later. */
 final class TriggerClaimStore {
 
     /**
      * @param int    $workflow_id
      * @param string $subject
-     * @return bool True only for the first claim; a failed write counts as refused, so no run starts.
+     * @param int    $cooldown
+     * @return bool True for the first claim, or for one older than `$cooldown` seconds (0 = never again); a failed write counts as refused, so no run starts.
      */
-    public static function claim( int $workflow_id, string $subject ): bool {
+    public static function claim( int $workflow_id, string $subject, int $cooldown = 0 ): bool {
         global $wpdb;
+        $now = time();
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own table, a write; the unique key decides who wins.
-        $done = $wpdb->query( $wpdb->prepare( 'INSERT IGNORE INTO %i (workflow_id, subject, claimed_at) VALUES (%d, %s, %s)', self::table(), $workflow_id, $subject, current_time( 'mysql', true ) ) );
+        $done = $wpdb->query( $wpdb->prepare( 'INSERT IGNORE INTO %i (workflow_id, subject, claimed_at) VALUES (%d, %s, %s)', self::table(), $workflow_id, $subject, gmdate( 'Y-m-d H:i:s', $now ) ) );
+        if ( 0 === $done && $cooldown > 0 ) {
+            // The row lock decides between two requests: the second one reads the new claimed_at and changes nothing.
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own table, a write; the affected row count decides who wins.
+            $done = $wpdb->query( $wpdb->prepare( 'UPDATE %i SET claimed_at = %s WHERE workflow_id = %d AND subject = %s AND claimed_at < %s', self::table(), gmdate( 'Y-m-d H:i:s', $now ), $workflow_id, $subject, gmdate( 'Y-m-d H:i:s', $now - $cooldown ) ) );
+        }
         if ( false === $done ) {
             Logger::error( 'Could not claim a trigger subject: ' . $wpdb->last_error, [ 'workflow_id' => $workflow_id, 'subject' => $subject ] ); // phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound
         }

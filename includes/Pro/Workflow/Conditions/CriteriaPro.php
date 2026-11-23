@@ -134,7 +134,18 @@ class CriteriaPro extends Criteria {
         }
         $expected = $scope->get( $rule['value'] );
         // Comparing with a variable that has no value (e.g. no paid date yet) never matches.
-        return null !== $expected && Operators::compare( $field['type'], $operator, $scope->get( $rule['field'] ), $expected );
+        if ( null === $expected ) {
+            return false;
+        }
+        // Two exact moments compare by time, so the same day still has a before and an after; a day-only side compares by day.
+        if ( DataItem::TYPE_DATE === $field['type'] && in_array( $operator, [ 'before', 'after' ], true ) ) {
+            $at    = $scope->moment( $rule['field'] );
+            $other = $scope->moment( $rule['value'] );
+            if ( null !== $at && null !== $other ) {
+                return 'before' === $operator ? $at < $other : $at > $other;
+            }
+        }
+        return Operators::compare( $field['type'], $operator, $scope->get( $rule['field'] ), $expected );
     }
 
     /**

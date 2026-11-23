@@ -276,6 +276,10 @@ final class RunPresenterTest extends TestCase {
                             'type'    => 'enum',
                             'options' => [ 'gold' => 'Gold' ],
                         ],
+                        'at'     => [
+                            'label' => 'Earned at',
+                            'type'  => 'date',
+                        ],
                     ],
                 ]
             )
@@ -290,6 +294,7 @@ final class RunPresenterTest extends TestCase {
                 'trigger' => [
                     'points' => 42,
                     'tier'   => 'gold',
+                    'at'     => gmmktime( 10, 0, 0, 10, 12, 2026 ),
                 ],
             ],
         ] + self::run_row();
@@ -308,6 +313,10 @@ final class RunPresenterTest extends TestCase {
                 [
                     'label' => 'Tier',
                     'value' => 'Gold',
+                ],
+                [
+                    'label' => 'Earned at',
+                    'value' => '2026-10-12',
                 ],
             ],
             $facts

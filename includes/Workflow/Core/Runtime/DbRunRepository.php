@@ -46,8 +46,8 @@ final class DbRunRepository implements RunRepository {
         return RunStepStore::for_run( $run_id );
     }
 
-    public function claim_subject( int $workflow_id, string $subject ): bool {
-        return TriggerClaimStore::claim( $workflow_id, $subject );
+    public function claim_subject( int $workflow_id, string $subject, int $cooldown = 0 ): bool {
+        return TriggerClaimStore::claim( $workflow_id, $subject, $cooldown );
     }
 
     public function release_subject( int $workflow_id, string $subject ): void {

@@ -859,6 +859,22 @@
                 "outputs": [],
                 "facts": []
             },
+            "user_logged_in": {
+                "module": "woocommerce",
+                "plugin": "YayMatik Pro",
+                "kind": "trigger",
+                "label": "User logged in",
+                "outputs": [],
+                "facts": []
+            },
+            "customer_logged_in": {
+                "module": "woocommerce",
+                "plugin": "YayMatik Pro",
+                "kind": "trigger",
+                "label": "Customer logged in",
+                "outputs": [],
+                "facts": []
+            },
             "wait_until": {
                 "module": "yaymatik",
                 "plugin": "YayMatik Pro",
@@ -4570,6 +4586,8 @@
                 "customer_inactive",
                 "customer_order_count_reaches",
                 "customer_total_spend_reaches",
+                "user_logged_in",
+                "customer_logged_in",
                 "wait_until",
                 "resend_wc_email",
                 "update_order_meta",
@@ -4580,6 +4598,8 @@
                 "customer.paid_order_count",
                 "customer.total_spent",
                 "customer.last_order_date",
+                "customer.last_added_to_cart",
+                "customer.cart_item_count",
                 "customer.registered_date",
                 "customer.role",
                 "customer.purchased_product_ids",

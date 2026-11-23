@@ -231,6 +231,9 @@ function reachProblem(
       : { code: 'missing_data', message: sprintf(messages.stepNotAbove, tag, stepDef.label) };
   }
   if (isFactPath(path)) {
+    // A trigger that needs YayMatik Pro defines its facts there; the workflow already says it needs Pro.
+    const trigger = graph.nodes.find((node) => node.kind === 'trigger');
+    if (trigger && needsPro(trigger)) return null;
     return fieldByKey(path, triggerOf(graph))
       ? null
       : { code: 'invalid_config', message: sprintf(messages.unknownVariable, tag) };

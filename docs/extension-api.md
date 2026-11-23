@@ -429,6 +429,8 @@ Public and semver'd: the **ids, config keys and value shapes** below, the **cond
 | Trigger | `order_status_changed` | `from` (status[]), `to` (status[]), `only_checkout` (bool) |
 | Trigger | `order_note_added` | `note_type`, `contains`, `skip_yaymatik` |
 | Trigger | `customer_inactive` / `customer_order_count_reaches` / `customer_total_spend_reaches` | `days` / `count` / `amount` |
+| Trigger | `user_logged_in` | `when` (`sign_in` \| `return` \| `auto`, at least one), `days` (1–365), `roles` (role slugs; empty = all roles) |
+| Trigger | `customer_logged_in` | `when`, `days`, as `user_logged_in` |
 | Condition | `condition` | `match` (`all`\|`any`), `rules[]` of `{ field, operator, value, valueType?, unit?, key? }` or a group `{ match, rules }` one level deep |
 | Action | `send_email` | `to`, `subject`, `heading`, `message` (HTML, merge tags) |
 | Action | `send_internal_email` | `recipients`, `subject`, `message` |
@@ -505,7 +507,7 @@ Result: every listed need maps to a contract piece; the gaps are on the plugins'
 | Split | Two PRs (§17) |
 
 ## 16. Changelog
-- 1.0.0 (YayMatik 1.0): first stable version. `yaymatik_register` (`Registrar`, `Module`: triggers, actions, data items, data fields, categories, templates), `yaymatik_fire`, `Run`, `CustomerView`, `CartView`, `Api::VERSION`, `Api::references()`. Features: `triggers`, `actions`, `data_items`, `data_fields`, `trigger_facts`, `privacy_subjects`, `email`, `templates`, `editor_iframe`. postMessage schema v1. Example: `dev/example-extension/`. A plugin's templates share the library grid with core's (no group heading), found by the plugin filter. Placeholders in `summary` / `result` / `required` are `{{ config.<field> }}`, `{{ output.<key> }}` and `{{ step }}` (§5.2).
+- 1.0.0 (YayMatik 1.0): first stable version. `yaymatik_register` (`Registrar`, `Module`: triggers, actions, data items, data fields, categories, templates), `yaymatik_fire`, `Run`, `CustomerView`, `CartView`, `Api::VERSION`, `Api::references()`. Features: `triggers`, `actions`, `data_items`, `data_fields`, `trigger_facts`, `privacy_subjects`, `email`, `templates`, `editor_iframe`. postMessage schema v1. Example: `dev/example-extension/`. A plugin's templates share the library grid with core's (no group heading), found by the plugin filter. Placeholders in `summary` / `result` / `required` are `{{ config.<field> }}`, `{{ output.<key> }}` and `{{ step }}` (§5.2). Core triggers `user_logged_in`, `customer_logged_in` and data keys `customer.last_added_to_cart`, `customer.cart_item_count` (tier pro).
 
 ## 17. Checkpoints and PRs
 

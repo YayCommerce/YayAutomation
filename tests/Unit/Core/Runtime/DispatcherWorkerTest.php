@@ -13,6 +13,7 @@ use YayMatik\Tests\Support\FakeWorkflows;
 use YayMatik\Workflow\Core\Data\Ref;
 use YayMatik\Workflow\Core\Data\RefResolver;
 use YayMatik\Workflow\Core\Data\Scope;
+use YayMatik\Workflow\Core\Definition\GraphSchema;
 use YayMatik\Workflow\Core\Runtime\ActionSchedulerQueue;
 use YayMatik\Workflow\Core\Runtime\Dispatcher;
 use YayMatik\Workflow\Core\Runtime\Worker;
@@ -305,6 +306,54 @@ final class DispatcherWorkerTest extends TestCase {
 
         $this->assertSame( 'cancelled', $this->worker->run( 1 ) );
         $this->assertSame( [ '1|order:12' => true ], $this->runs->claims );
+    }
+
+    /** A claiming trigger whose claim comes back after `config.days` days, like the login triggers. */
+    private function cooldown_trigger(): OrderStatusChanged {
+        return new class() extends OrderStatusChanged {
+            /** @var array[] Configs `claim_cooldown()` was given. */
+            public $configs = [];
+
+            public function claims_per_workflow(): bool {
+                return true;
+            }
+
+            public function claim_cooldown( array $config ): int {
+                $this->configs[] = $config;
+                return 2 * DAY_IN_SECONDS;
+            }
+        };
+    }
+
+    public function test_cooldown_claim_is_refused_inside_it_and_taken_again_after_it(): void {
+        $trigger = $this->cooldown_trigger();
+        $this->dispatcher->collect( $trigger, $this->event() );
+        $this->dispatcher->flush();
+        $this->runs->now = '2026-10-14 09:59:59';
+        $this->dispatcher->collect( $trigger, $this->event() );
+        $this->dispatcher->flush();
+
+        $this->assertCount( 1, $this->runs->runs, 'inside the cooldown' );
+
+        $this->runs->now = '2026-10-14 10:00:01';
+        $this->dispatcher->collect( $trigger, $this->event() );
+        $this->dispatcher->flush();
+
+        $this->assertCount( 2, $this->runs->runs, 'after the cooldown' );
+        $this->assertSame( [ '1|order:12' => '2026-10-14 10:00:01' ], $this->runs->claimed_at );
+        $this->assertSame( GraphSchema::trigger( $this->workflows->workflows[1]['graph']['nodes'] )['data']['config'], $trigger->configs[0], 'the node config matches() gets' );
+    }
+
+    public function test_cooldown_claim_released_by_a_run_that_never_started_leaves_no_cooldown(): void {
+        $trigger                      = $this->cooldown_trigger();
+        $this->workflows->versions[1] = 0;
+        $this->dispatcher->collect( $trigger, $this->event() );
+        $this->dispatcher->flush();
+        $this->workflows->versions[1] = 11;
+        $this->dispatcher->collect( $trigger, $this->event() );
+        $this->dispatcher->flush();
+
+        $this->assertCount( 1, $this->runs->runs );
     }
 
     /** A claiming trigger that counts by the person, like the milestones: its key isn't the subject. */

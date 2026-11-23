@@ -26,6 +26,9 @@ class FakeRunRepository implements RunRepository {
     /** @var true[] `<workflow id>|<subject>` => held claim. */
     public $claims = [];
 
+    /** @var string[] `<workflow id>|<subject>` => when it was claimed, GMT `Y-m-d H:i:s` (from `$now`). */
+    public $claimed_at = [];
+
     public function create_run( array $run ): int {
         $skipped           = RunStore::STATUS_SKIPPED === ( $run['status'] ?? '' );
         $id                = count( $this->runs ) + 1;
@@ -136,16 +139,19 @@ class FakeRunRepository implements RunRepository {
         return array_values( array_filter( $this->steps, fn( array $row ) => $row['run_id'] === $run_id ) );
     }
 
-    public function claim_subject( int $workflow_id, string $subject ): bool {
+    public function claim_subject( int $workflow_id, string $subject, int $cooldown = 0 ): bool {
         $key = "{$workflow_id}|{$subject}";
-        if ( isset( $this->claims[ $key ] ) ) {
+        $now = strtotime( $this->now . ' UTC' );
+        // Like TriggerClaimStore: a held claim is taken again only past its cooldown.
+        if ( isset( $this->claims[ $key ] ) && ( $cooldown <= 0 || strtotime( $this->claimed_at[ $key ] . ' UTC' ) >= $now - $cooldown ) ) {
             return false;
         }
-        $this->claims[ $key ] = true;
+        $this->claims[ $key ]     = true;
+        $this->claimed_at[ $key ] = $this->now;
         return true;
     }
 
     public function release_subject( int $workflow_id, string $subject ): void {
-        unset( $this->claims[ "{$workflow_id}|{$subject}" ] );
+        unset( $this->claims[ "{$workflow_id}|{$subject}" ], $this->claimed_at[ "{$workflow_id}|{$subject}" ] );
     }
 }
