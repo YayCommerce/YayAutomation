@@ -146,12 +146,12 @@ final class SettingsTest extends TestCase {
 
     public function out_of_range(): array {
         return [
-            'abandon below'   => [ 'abandon_minutes', 14, 'Enter a whole number from 15 to 1440.' ],
-            'abandon above'   => [ 'abandon_minutes', 1441, 'Enter a whole number from 15 to 1440.' ],
-            'carts below'     => [ 'cart_retention_days', 6, 'Enter a whole number from 7 to 365.' ],
-            'carts above'     => [ 'cart_retention_days', 366, 'Enter a whole number from 7 to 365.' ],
-            'runs below'      => [ 'run_retention_days', 6, 'Enter a whole number from 7 to 730.' ],
-            'runs above'      => [ 'run_retention_days', 731, 'Enter a whole number from 7 to 730.' ],
+            'abandon below' => [ 'abandon_minutes', 14, 'Enter a whole number from 15 to 1440.' ],
+            'abandon above' => [ 'abandon_minutes', 1441, 'Enter a whole number from 15 to 1440.' ],
+            'carts below'   => [ 'cart_retention_days', 6, 'Enter a whole number from 7 to 365.' ],
+            'carts above'   => [ 'cart_retention_days', 366, 'Enter a whole number from 7 to 365.' ],
+            'runs below'    => [ 'run_retention_days', 6, 'Enter a whole number from 7 to 730.' ],
+            'runs above'    => [ 'run_retention_days', 731, 'Enter a whole number from 7 to 730.' ],
         ];
     }
 
