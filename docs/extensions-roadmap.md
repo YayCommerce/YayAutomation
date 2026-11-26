@@ -46,7 +46,7 @@ Within that, core owns the run and the contract; plugins add domain logic, data 
 
 | Plugin | Role in a workflow | Extension adds | Core adds |
 |---|---|---|---|
-| YayMail | Design for order emails | Template kind not bound to a WC email, embedded editor, render by template id + order | — (email capability is in 1.0) |
+| YayMail | Design for order emails | Template kind not bound to a WC email, embedded editor, render by template id + order, skip wrapping a marked email | Mark on every email it sends (D17) |
 | YayMagic | Design for any email, with or without an order | Embedded editor, render by template id from `$run`, no globals in shortcodes, skip wrapping a marked email | Mark on every email it sends (D17) |
 | YaySMTP | Delivery and its log | Reports delivery result (and opens / clicks, if it tracks them **[Guess]**) for a message YayMatik sent | Delivery status in run detail by the mark, when YaySMTP is active |
 
