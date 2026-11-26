@@ -16,7 +16,7 @@ const texts = (value: unknown): string[] =>
       : [];
 
 // Same as PHP `ProUsage::node()`: a Pro step, a rule on a Pro field, a group, a comparison with another field, or a
-// Pro merge tag, while `proMissing` names them; always false with Pro and a license.
+// Pro merge tag, while `proMissing` names them; always false while YayMatik Pro is active.
 
 /** Whether a step needs YayMatik Pro while it isn't here. */
 export function needsPro(node: Pick<WorkflowNode, 'data'>): boolean {

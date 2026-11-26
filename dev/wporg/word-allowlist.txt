@@ -1,0 +1,10 @@
+# Phrases the free zip may hold although they match dev/scripts/lib/wporg-words.php. One per line:
+# <path in the zip, or a file name>: "<exact phrase>": <reason>
+yaymatik.php: "License:": the GPL license header
+yaymatik.php: "License URI:": the GPL license header
+yaymatik.php: "gnu.org/licenses/": the GPL license URL
+readme.txt: "License:": the GPL license header
+readme.txt: "License URI:": the GPL license header
+readme.txt: "gnu.org/licenses/": the GPL license URL
+includes/Workflow/Core/Coupon/FreeShipping.php: "can unlock it": a Free shipping method unlocks the coupon at checkout
+assets/dist/admin-page/style.css: "MIT License": Tailwind CSS's license banner

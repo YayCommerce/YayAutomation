@@ -114,7 +114,7 @@ final class ProCatalog {
     }
 
     /**
-     * The catalog minus what is registered now: empty with YayMatik Pro and a license.
+     * The catalog minus what is registered now: empty when YayMatik Pro is active.
      *
      * @return array[] `steps` (ids), `fields` (keys), `features`.
      */

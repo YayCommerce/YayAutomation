@@ -28,15 +28,15 @@ defined( 'ABSPATH' ) || exit;
 // WordPress, an active entry whose file is gone (folder deleted without deactivating) doesn't count.
 $yaymatik_pro_scope = '';
 if ( 'yaymatik-pro.php' !== basename( __FILE__ ) ) {
-    $yaymatik_is_pro = function ( $plugin ) {
+    $yaymatik_pro_file = function ( $plugin ) {
         return '/yaymatik-pro.php' === substr( (string) $plugin, -17 ) && is_file( WP_PLUGIN_DIR . '/' . $plugin );
     };
-    if ( is_multisite() && array_filter( array_keys( (array) get_site_option( 'active_sitewide_plugins', [] ) ), $yaymatik_is_pro ) ) {
+    if ( is_multisite() && array_filter( array_keys( (array) get_site_option( 'active_sitewide_plugins', [] ) ), $yaymatik_pro_file ) ) {
         $yaymatik_pro_scope = 'network';
-    } elseif ( array_filter( (array) get_option( 'active_plugins', [] ), $yaymatik_is_pro ) ) {
+    } elseif ( array_filter( (array) get_option( 'active_plugins', [] ), $yaymatik_pro_file ) ) {
         $yaymatik_pro_scope = 'site';
     }
-    unset( $yaymatik_is_pro );
+    unset( $yaymatik_pro_file );
 }
 
 if ( $yaymatik_pro_scope || function_exists( 'YayMatik\\plugin_init' ) ) {
