@@ -22,7 +22,7 @@ Words and matrix as in `docs/extensions-roadmap.md` (email stack). Builds on `ex
 - PHPStan stubs and `wp yaymatik extension check` (D13). Cross-repo CI (D21).
 
 ## Decisions
-Recommended, settled in the prepare row: D19, D20. Confirmed: D9, D17, D21, D22.
+Confirmed: D9, D17, D19, D20, D21, D22.
 
 ## Meta
 - Target branch: feature/ecosystem-email-stack

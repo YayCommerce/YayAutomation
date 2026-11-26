@@ -20,7 +20,7 @@ Words and matrix as in `docs/extensions-roadmap.md` (value stack). Builds on `ex
 - Search pickers, dependent options, repeater (D11): no template needs them.
 
 ## Decisions
-Recommended, settled in the prepare row: D7, D10 (not built here), D11. Confirmed: D22.
+Confirmed: D7, D10 (not built here), D11 (not built here), D22.
 
 ## Meta
 - Target branch: feature/ecosystem-value-stack

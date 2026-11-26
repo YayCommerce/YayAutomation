@@ -19,7 +19,7 @@ Words as in `docs/extensions-roadmap.md` (catalog 1–18, the "Extension adds" c
 - YayMagic's editor (`yaymagic-editor.md`).
 
 ## Decisions
-Recommended, settled in the prepare row: D25.
+Confirmed: D25.
 
 ## Meta
 - Target branch: feature/ecosystem-extension-scaffolds

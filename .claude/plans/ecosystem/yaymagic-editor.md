@@ -18,7 +18,7 @@ Builds on YayMagic's scaffold from `extension-scaffolds.md` and the mark from `e
 - Core changes; the other products.
 
 ## Decisions
-Recommended, settled in the prepare row: D24, D25.
+Confirmed: D24, D25.
 
 ## Meta
 - Target branch: feature/ecosystem-yaymagic-editor

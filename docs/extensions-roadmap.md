@@ -1,6 +1,6 @@
 # Extensions roadmap
 
-Where the Extension API goes after v1 ([extension-api.md](extension-api.md)). **Planned, not built.** Decisions are numbered as discussed. Plans are written on each recommendation; a decision marked *Recommended* is to be revisited before its plan is built.
+Where the Extension API goes after v1 ([extension-api.md](extension-api.md)). **Planned, not built.** Decisions are numbered as discussed. Plans are written on the confirmed decisions; a decision marked *Recommended* is not needed by any plan yet.
 
 **Words.** One word per thing, here and in the lane's plans:
 
@@ -139,14 +139,14 @@ Plans in `.claude/plans/ecosystem/`: `extension-scaffolds.md` (six scaffolds, te
 | D22 | v1.1 catalog: 6 extensions, 21 templates, all scaffolded in YayMatik first, then copied to the product repos; each product releases its extension when ready | Confirmed 2026-11-26 |
 | D23 | The Yay ecosystem moves from v1.2 into v1.1, released by readiness | Confirmed 2026-11-26 |
 | D13 | A scaffold per product, built in YayMatik and copied to its repo (row `copy-scaffolds`). PHPStan stubs and `wp yaymatik extension check`: recommend after the email stack | Scaffold confirmed 2026-11-26; rest Recommended |
-| D19 | Delivery status: YaySMTP calls `do_action( 'yaymatik_email_status', $mark, $status )`; without YaySMTP core records sent / failed from `wp_mail_succeeded` / `wp_mail_failed`. Not: reading YaySMTP's log table | Recommended |
-| D20 | The mark is a header `X-YayMatik-Run: <run id>-<step id>`; Send test uses `test`. Not: a global flag during the send | Recommended |
+| D19 | Delivery status: YaySMTP calls `do_action( 'yaymatik_email_status', $mark, $status )`; without YaySMTP core records sent / failed from `wp_mail_succeeded` / `wp_mail_failed`. Not: reading YaySMTP's log table | Confirmed 2026-11-26 |
+| D20 | The mark is a header `X-YayMatik-Run: <run id>-<step id>`; Send test uses `test`. Not: a global flag during the send | Confirmed 2026-11-26 |
 | D21 | No cross-repo CI for now. `./run.sh check-ecosystem [--wp-env]` runs the cell tests on a real site, with an installed product in place of its scaffold; `pnpm test:php` runs them on the fake adapters | Confirmed 2026-11-26 |
-| D7 | Templates that combine products live in YayMatik Pro on the public API and show only when every product they need is active | Recommended |
-| D16 | Customer hub: tags and the shared consent check in Free, segments in Pro | Recommended |
-| D24 | An extension's editor opens in the v1 full-screen modal iframe, as is (no inline panel mode) | Recommended |
-| D25 | YayMatik loads `dev/ecosystem/*/` only with `YAYMATIK_IS_DEVELOPMENT` on, on `plugins_loaded` priority 20; `YAYMATIK_DEV_ECOSYSTEM_OFF` leaves products out; a scaffold is skipped when its product is active; `./run.sh ecosystem-fire <trigger>` fires a trigger by hand. Not: a symlink or a wp-env mapping | Recommended |
-| D11 | Search pickers, dependent options and a small repeater; keep the iframe; no React slots. No v1.1 template needs them, so not in this lane | Recommended, revisit (no consumer) |
+| D7 | Templates that combine products live in YayMatik Pro on the public API and show only when every product they need is active | Confirmed 2026-11-26 |
+| D16 | Customer hub: tags and the shared consent check in Free, segments in Pro | Confirmed 2026-11-26 |
+| D24 | An extension's editor opens in the v1 full-screen modal iframe, as is (no inline panel mode) | Confirmed 2026-11-26 |
+| D25 | YayMatik loads `dev/ecosystem/*/` only with `YAYMATIK_IS_DEVELOPMENT` on, on `plugins_loaded` priority 20; `YAYMATIK_DEV_ECOSYSTEM_OFF` leaves products out; a scaffold is skipped when its product is active; `./run.sh ecosystem-fire <trigger>` fires a trigger by hand. Not: a symlink or a wp-env mapping | Confirmed 2026-11-26 |
+| D11 | Search pickers, dependent options and a small repeater; keep the iframe; no React slots. No v1.1 template needs them, so not in this lane | Confirmed 2026-11-26 |
 | D18 | Broadcasts: a saved cursor plus a send-rate setting instead of one run per customer up front; a daily check for customers who joined or left a segment | Recommended, after D16 |
 | D12 | Public but not promoted at 1.0; promoted once the email stack is ready | Recommended |
 | D14 | Event timeline deferred until "wait for event" or goals are planned | Recommended |
