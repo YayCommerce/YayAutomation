@@ -79,7 +79,7 @@ Present the plan to the user and ask for a single confirmation:
 
 **Wait for approval.** On confirmation:
 
-1. Save the plan to `.claude/plans/dev/<NNN>-<slug>.md` (next free number) and commit it: `plan <NNN>: <slug>`. Only when the user asks for a private plan, save it in `.claude/local/plans/` instead:
+1. Save the plan to `.claude/plans/dev/<NNN>-<slug>.md` (next free number) and commit it: `plan <NNN>: <slug>`. For a lane row, save it instead to `.claude/plans/<area>/<slug>.md` on the lane branch and link the row to it. Only when the user asks for a private plan, save it in `.claude/local/plans/` instead:
 
 ```markdown
 # Plan: <title>
