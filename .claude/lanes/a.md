@@ -2,12 +2,12 @@
 Dev: tvhoang91
 Build: lane-a
 
-Core's side and the proof that Yay plugins work together safely in a workflow (docs/extensions-roadmap.md). The lane ends by putting an extension scaffold in each product's repo; filling it is the product team's work.
+Core's side and the proof that products work together safely in a workflow (docs/extensions-roadmap.md, its Words apply). Six extensions are built as scaffolds in YayMatik first; the last row copies each to its product's repo, where the product team writes the real adapter.
 
-- brainstorm: extensions roadmap, PR #47
-- prepare email stack: decide its opens, write its plan, until it is ready to build
-- email-stack: core changes (email mark, delivery status by the mark), fixture extensions acting as YayMail, YayMagic, YaySMTP, scenario tests for the group 1 matrix, CI job that runs each product's extension against develop
-- prepare value stack: decide its opens, write its plan, until it is ready to build
-- value-stack: core changes (fields that declare their meta key, view facades, pickers), fixture extensions acting as YayPricing, YayWholesale, YayLoyalty, scenario tests for the group 2 matrix
+- [x] prepare: roadmap and plans, every decision the plans need settled (D7, D10, D11, D16, D19, D20, D24, D25); no code; from here the lane runs unattended until Review #47
+- [extension-scaffolds](../plans/ecosystem/extension-scaffolds.md)
+- [email-stack](../plans/ecosystem/email-stack.md)
+- [yaymagic-editor](../plans/ecosystem/yaymagic-editor.md)
+- [value-stack](../plans/ecosystem/value-stack.md)
 - Review ecosystem foundation
-- extension scaffolds: in the YayMail, YayMagic, YaySMTP, YayPricing, YayWholesale and YayLoyalty repos, one PR each, wired to the CI job
+- [copy-scaffolds](../plans/ecosystem/copy-scaffolds.md)

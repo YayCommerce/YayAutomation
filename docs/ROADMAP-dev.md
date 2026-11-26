@@ -33,8 +33,8 @@ Changes from the ROADMAP-v1.0 order:
 | M6 | Win-back | M | 2 | M8 | ✅ Done |
 | CT | Custom workflow catalog | L | 3 | M6 | ✅ Done |
 | M9 | Release hardening | M | 2 | all | In progress |
-| v1.1 | Control flow | L+ | 3 | v1.0 | — |
-| v1.2 | Yay ecosystem + Pro connectors | L+ | 3 | v1.1 | — |
+| v1.1 | Control flow + Yay ecosystem | L+ | 3 | v1.0 | — |
+| v1.2 | Pro connectors | L+ | 3 | v1.1 | — |
 | v2.0 | AI | L+ | 3 | v1.2 | — |
 | API | Public extension API (1.0, plan 034) | M | 2 | CT | ⏳ Done, merge pending |
 
@@ -292,7 +292,7 @@ Shop owners build their own workflows from New Workflow. Why: [decisions CT](wor
 
 ---
 
-## v1.1 — Control flow · L+
+## v1.1 — Control flow + Yay ecosystem · L+
 
 - **V11.1 For each** — body / done handles, saved cursor per item, limits; container card in the editor. *(§3, §7)*
 - **V11.2 Get data** — Get orders / customers / products / coupons with filters, returning lists.
@@ -302,14 +302,14 @@ Shop owners build their own workflows from New Workflow. Why: [decisions CT](wor
 - **V11.6 More control steps** — Switch, Set variable, Stop, A/B split.
 - **V11.7 Retries** — backoff; replay a failed run from the failed step (button in run detail).
 - **V11.8 Product items** — the v1.1 list in ROADMAP-v1.0: Branched post-purchase, Nth order reward, alerts, order tags.
+- **V11.9 Yay ecosystem** — six Yay plugins add their steps and templates through the Extension API; each product releases its extension when it is ready ([extensions-roadmap.md](extensions-roadmap.md)). The API side is done (plan 034); YayMatik builds each plugin's extension scaffold and copies it to the plugin's repo; the plugin's team fills it in. *(§5, §8)*
 - **Backlog** — Opt-in mode (consent checkbox) + transactional-only workflows. "Run once per order" through M6's `trigger_claims`: today a status trigger starts again when an order returns to the status (duplicate email / coupon, a second high-value alert). Customer inactive: stop a run when the customer orders during a Wait (`stop_reason`); the v1.0 templates have no Wait. Warn on Activate when another version of the same template workflow is active, or claim per template workflow (e.g. win_back) instead of per workflow. Run limit per workflow. Customer tags. Stock triggers. Workflow run failed trigger. Random split. Multi-currency totals. Milestones: one claim key for a guest who later makes an account. Order note added: a `note` data item (text, type), so emails can insert the note; today the trigger has none. Stop waiting runs (dropped from v1.0 in CT): cancel one person's waiting runs of the chosen workflows; its workflow list loads with the editor, so a workflow made since shows only after a reload.
 
-## v1.2 — Yay ecosystem + Pro connectors · L+
+## v1.2 — Pro connectors · L+
 
 - **V12.1 Pro modules** — YayMatik Pro registers its modules and multi-plugin templates. *(§8)*
-- **V12.2 Yay plugins** — register their steps (through their module) and templates; custom forms through the Extension API's iframe editor (P4, 1.0, plan 034). Steps from an inactive plugin are handled softly in plan 034 CP4 ([extension-api.md](extension-api.md) §10). ⏳ The API side is done (plan 034: registrar, templates, iframe editor, missing plugin); each plugin's connector is its owner's task. *(§5, §8)*
 - **V12.3 Feature directory** — "Install X to use this" in the pickers and the template library. *(§8)*
-- **V12.4 Connector basics** — credentials store, connector settings UI.
+- **V12.4 Connector basics** (outside services) — credentials store, connector settings UI.
 - **V12.5 Connectors** — webhook in, HTTP request, Slack, Google Sheets, SMS; CSV source and export.
 - **V12.6 Templates tier 2** — "Show if" on email blocks. *(§6)*
 
