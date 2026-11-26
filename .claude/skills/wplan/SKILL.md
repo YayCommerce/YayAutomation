@@ -104,4 +104,4 @@ Present the plan to the user and ask for a single confirmation:
 - Base branch: develop
 ```
 
-2. **Immediately continue into `/wdev`** — do not stop or ask the user to run it manually.
+2. **Immediately continue into `/wdev`** — do not stop or ask the user to run it manually. A lane plan is the exception: stop once the row links it; the Desk starts its Builder.
