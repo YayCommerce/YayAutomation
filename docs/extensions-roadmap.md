@@ -92,7 +92,7 @@ Six extensions and 21 templates, all planned and scaffolded once. Each product r
 
 None of the 21 needs a search picker or a repeater: rule and tier choices are `options` lists (D11).
 
-Plans: `.claude/plans/ecosystem/email-stack.md` (1–7), `value-stack.md` (9–18), `copy-scaffolds.md` (all six, to the product repos). Templates 19–21 are Pro (D7).
+Plans: `.claude/plans/ecosystem/scaffolds.md` (1–18, fake adapters), `email-stack.md` (1–7), `value-stack.md` (9–18), `copy-scaffolds.md` (all six, to the product repos). Templates 19–21 are Pro (D7).
 
 ## Layers
 
