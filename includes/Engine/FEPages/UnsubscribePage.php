@@ -20,27 +20,33 @@ class UnsubscribePage {
     private const STATE_INVALID = 'invalid';
     private const STATE_ERROR   = 'error';
 
+    /** What `request()` returns for a POST that may unsubscribe. */
+    public const UNSUBSCRIBE = 'unsubscribe';
+
     protected function __construct() {
         add_action( 'template_redirect', [ $this, 'maybe_handle' ], 1 );
     }
 
+    /** The email's signed link; a POST also needs the button's nonce, except a mail app's one-click. */
     public function maybe_handle(): void {
-        // phpcs:disable WordPress.Security.NonceVerification.Recommended -- the signed link is the proof; the customer isn't logged in.
-        if ( ! isset( $_GET[ UnsubscribeLink::ARG_EMAIL ] ) ) {
+        // A mail app's one-click (RFC 8058) posts from no browser and no session: no nonce can exist, the HMAC token is the proof.
+        if ( ! isset( $_GET[ UnsubscribeLink::ARG_EMAIL ] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- an email link.
             return;
         }
-        $encoded = sanitize_text_field( wp_unslash( $_GET[ UnsubscribeLink::ARG_EMAIL ] ) );
-        $token   = isset( $_GET[ UnsubscribeLink::ARG_TOKEN ] ) ? sanitize_text_field( wp_unslash( $_GET[ UnsubscribeLink::ARG_TOKEN ] ) ) : '';
-        // phpcs:enable WordPress.Security.NonceVerification.Recommended
+        $encoded = sanitize_text_field( wp_unslash( $_GET[ UnsubscribeLink::ARG_EMAIL ] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- an email link.
+        $token   = isset( $_GET[ UnsubscribeLink::ARG_TOKEN ] ) ? sanitize_text_field( wp_unslash( $_GET[ UnsubscribeLink::ARG_TOKEN ] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- an email link.
+        $post    = isset( $_SERVER['REQUEST_METHOD'] ) && 'POST' === strtoupper( sanitize_text_field( wp_unslash( $_SERVER['REQUEST_METHOD'] ) ) );
+        $body    = [];
+        foreach ( [ 'List-Unsubscribe', '_wpnonce' ] as $field ) {
+            // Checked in request(): the nonce, or the one-click body with the token.
+            $body[ $field ] = isset( $_POST[ $field ] ) ? sanitize_text_field( wp_unslash( $_POST[ $field ] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing
+        }
 
-        $email = UnsubscribeLink::from_options()->verify( $encoded, $token );
-        $post  = isset( $_SERVER['REQUEST_METHOD'] ) && 'POST' === strtoupper( sanitize_text_field( wp_unslash( $_SERVER['REQUEST_METHOD'] ) ) );
-
-        // GET only shows the button: mail scanners open links and must not unsubscribe anyone.
-        // POST is the button, or a mail app's one-click (`List-Unsubscribe-Post`, RFC 8058).
-        if ( null === $email ) {
+        $email   = UnsubscribeLink::from_options()->verify( $encoded, $token );
+        $request = self::request( $email, $post, $body );
+        if ( self::STATE_INVALID === $request ) {
             $state = self::STATE_INVALID;
-        } elseif ( $post ) {
+        } elseif ( self::UNSUBSCRIBE === $request ) {
             $state = self::unsubscribe( $email ) ? self::STATE_DONE : self::STATE_ERROR;
         } else {
             $state = UnsubscribeStore::has( $email ) ? self::STATE_DONE : self::STATE_CONFIRM;
@@ -56,8 +62,36 @@ class UnsubscribePage {
         header( 'X-Robots-Tag: noindex, nofollow' );
         // The token stays out of Referer headers when the customer follows the store link.
         header( 'Referrer-Policy: no-referrer' );
-        $this->render( $state );
+        $this->render( $state, (string) $email );
         exit;
+    }
+
+    /**
+     * What the request may do: `STATE_INVALID`, `UNSUBSCRIBE` or `STATE_CONFIRM` (show the button).
+     *
+     * @param string|null $email Null when the link's token fails.
+     * @param bool        $post
+     * @param string[]    $body
+     */
+    public static function request( ?string $email, bool $post, array $body ): string {
+        // GET only shows the button: mail scanners open links and must not unsubscribe anyone.
+        if ( null === $email ) {
+            return self::STATE_INVALID;
+        }
+        if ( ! $post ) {
+            return self::STATE_CONFIRM;
+        }
+        if ( 'One-Click' === ( $body['List-Unsubscribe'] ?? '' ) || wp_verify_nonce( $body['_wpnonce'] ?? '', self::nonce_action( $email ) ) ) {
+            return self::UNSUBSCRIBE;
+        }
+        return self::STATE_CONFIRM;
+    }
+
+    /**
+     * @param string $email
+     */
+    private static function nonce_action( string $email ): string {
+        return 'yaymatik_unsubscribe_' . md5( $email );
     }
 
     /**
@@ -76,8 +110,9 @@ class UnsubscribePage {
 
     /**
      * @param string $state One of the STATE_* constants.
+     * @param string $email Empty when the link is invalid.
      */
-    private function render( string $state ): void {
+    private function render( string $state, string $email ): void {
         $store = self::store_name();
         $texts = self::texts( $store )[ $state ];
 
@@ -110,6 +145,7 @@ class UnsubscribePage {
     <p><?php echo nl2br( esc_html( $texts['body'] ) ); ?></p>
         <?php if ( self::STATE_CONFIRM === $state ) : ?>
     <form method="post">
+            <?php wp_nonce_field( self::nonce_action( $email ) ); ?>
         <button type="submit"><?php esc_html_e( 'Unsubscribe', 'yaymatik-automation-for-woocommerce' ); ?></button>
     </form>
         <?php else : ?>

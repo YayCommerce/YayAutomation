@@ -25,7 +25,7 @@ class RestoreCart {
     }
 
     public function maybe_handle(): void {
-        // phpcs:disable WordPress.Security.NonceVerification.Recommended -- the signed link is the proof; the shopper comes from an email.
+        // phpcs:disable WordPress.Security.NonceVerification.Recommended -- an email link: no session to hold a nonce; the HMAC token (RestoreLink) is the proof.
         // A REST URL with the arg runs wp_loaded too, but WooCommerce loads no cart there.
         if ( ! isset( $_GET[ RestoreLink::ARG_CART ] ) || ! self::store_front_get() || ! WC()->cart || ! WC()->session ) {
             return;

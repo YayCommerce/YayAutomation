@@ -25,7 +25,7 @@
 		window.fetch( config.url, {
 			method: 'POST',
 			credentials: 'same-origin',
-			body: new URLSearchParams( { email: email, first_name: firstName } ),
+			body: new URLSearchParams( { email: email, first_name: firstName, _wpnonce: config.nonce } ),
 		} ).catch( function () {} );
 	}
 

@@ -1,0 +1,5 @@
+# Request handlers that read input without a nonce check in the same function, and why. Any other fails the free zip.
+# <path in the zip>::<function> — <reason>
+includes/Engine/FEPages/UnsubscribePage.php::maybe_handle — the email's unsubscribe link: a mail app's one-click (RFC 8058) posts with no browser or session, so the signed (HMAC) link is the proof; the page's own button also needs a nonce (request()).
+includes/Engine/FEPages/RestoreCart.php::maybe_handle — the email's restore-cart link: the shopper has no session to hold a nonce; the signed (HMAC) token is the proof.
+includes/Fallback.php::{closure} — reads $_GET['activate'] only to hide WordPress's "Plugin activated" notice next to its own; changes nothing.

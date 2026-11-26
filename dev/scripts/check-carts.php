@@ -287,25 +287,32 @@ $product->set_regular_price( '10' );
 $posts[]       = $product->save();
 WC()->customer = new WC_Customer( 0, true );
 WC()->cart     = new WC_Cart();
-/** A guest browser with the product in its cart and a session cookie. */
-$shop = function ( string $key ) use ( $browser, $product ) {
+/** A guest browser with a session cookie. */
+$guest = function ( string $key ) use ( $browser ) {
     $browser( $key );
     $cookie = new ReflectionProperty( WC_Session_Handler::class, '_has_cookie' );
     $cookie->setAccessible( true );
     $cookie->setValue( WC()->session, true );
+};
+/** A guest browser with the product in its cart and a session cookie. */
+$shop = function ( string $key ) use ( $guest, $product ) {
+    $guest( $key );
     WC()->cart->empty_cart( false );
     WC()->cart->add_to_cart( $product->get_id(), 1 );
 };
-/** The classic endpoint's body. */
-$post   = function ( string $email, array $server = [ 'HTTP_SEC_FETCH_SITE' => 'same-origin' ] ) {
+/** The classic endpoint's body; the nonce is this guest's unless one is given. */
+$post   = function ( string $email, array $server = [ 'HTTP_SEC_FETCH_SITE' => 'same-origin' ], ?string $nonce = null ) {
     unset( $_SERVER['HTTP_SEC_FETCH_SITE'], $_SERVER['HTTP_ORIGIN'], $_SERVER['HTTP_REFERER'] );
     $_SERVER = array_merge( $_SERVER, $server );
     $_POST   = [
         'email'      => $email,
         'first_name' => 'Gina',
+        '_wpnonce'   => $nonce ?? wp_create_nonce( 'yaymatik_capture_email' ),
     ];
-    $doing   = fn() => true;
-    $die     = function () {
+    // check_ajax_referer() reads the nonce from $_REQUEST, which a real request fills from $_POST.
+    $_REQUEST = $_POST; // phpcs:ignore WordPress.Security.NonceVerification.Missing -- the test request's own fields.
+    $doing    = fn() => true;
+    $die      = function () {
         return function () {
             throw new UnexpectedValueException( 'wp_die' );
         };
@@ -347,6 +354,18 @@ $bodies[] = $post( 'cross@example.test', [ 'HTTP_SEC_FETCH_SITE' => 'cross-site'
 $ok( $old === $row( $c1 )['updated_at'], 'Sec-Fetch-Site cross-site: refused, row unchanged' );
 $bodies[] = $post( 'origin@example.test', [ 'HTTP_ORIGIN' => 'https://evil.example' ] );
 $ok( $old === $row( $c1 )['updated_at'], 'Origin of another site: refused, row unchanged' );
+$same = [ 'HTTP_SEC_FETCH_SITE' => 'same-origin' ];
+delete_transient( 'yaymatik_log_bad_nonce' );
+$bodies[] = $post( 'nononce@example.test', $same, '' );
+$ok( $old === $row( $c1 )['updated_at'] && false !== get_transient( 'yaymatik_log_bad_nonce' ), 'no nonce: refused and logged, row unchanged' );
+$bodies[] = $post( 'badnonce@example.test', $same, 'bad' );
+$ok( $old === $row( $c1 )['updated_at'], 'wrong nonce: refused, row unchanged' );
+// Another guest's nonce: a guest's nonce belongs to their cart session.
+$guest( $prefix . 'c1-other' );
+$other = wp_create_nonce( 'yaymatik_capture_email' );
+$guest( $c1 );
+$bodies[] = $post( 'othersession@example.test', $same, $other );
+$ok( $old === $row( $c1 )['updated_at'] && wp_create_nonce( 'yaymatik_capture_email' ) !== $other, "another guest's nonce: refused, row unchanged" );
 $logged = 0;
 $count  = function ( $message ) use ( &$logged ) {
     $logged += 'Email capture refused: not from the store' === $message ? 1 : 0;
@@ -376,7 +395,7 @@ wp_set_current_user( $r1 );
 $bodies[] = $post( 'loggedin@example.test' );
 $ok( $row( (string) $r1 ) === $registered && $old === $row( $c1 )['updated_at'], 'logged in: refused, no row changed' );
 wp_set_current_user( 0 );
-$ok( [ '{"success":true}' ] === array_values( array_unique( $bodies ) ) && 8 === count( $bodies ), 'classic endpoint: the same body for new, registered, invalid, cross-site, other origin, capture off, tracking off, logged in' );
+$ok( [ '{"success":true}' ] === array_values( array_unique( $bodies ) ) && 11 === count( $bodies ), 'classic endpoint: the same body for new, registered, invalid, cross-site, other origin, no / wrong / another guest\'s nonce, capture off, tracking off, logged in' );
 
 $d = 'dee.' . wp_rand( 1000, 9999 ) . '@example.test';
 foreach ( [ 'c2', 'c3', 'c4', 'c5' ] as $name ) {
