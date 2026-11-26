@@ -23,7 +23,7 @@ The other Yay plugins follow once both groups pass (D15).
 
 **Proved** means YayMatik CI runs each extension from its own repo against YayMatik `develop` (D9), and a scenario test per row of the group's matrix below passes.
 
-**Who builds what.** Lane A (Ecosystem Foundation) builds core's side and the proof: the core changes each group needs, fixture extensions in YayMatik's tests that act like each plugin, the scenario tests and the CI job. Each plugin's real extension is its owner's task, from a brief the lane hands over; the CI job then runs it in place of the fixture.
+**Who builds what.** Lane A (Ecosystem Foundation) builds core's side and the proof: the core changes each group needs, fixture extensions in YayMatik's tests that act like each plugin, the scenario tests and the CI job. Last, the lane puts an extension scaffold in each of the six products' repos (one PR each, wired to the CI job). Filling the scaffold is the product team's work; the CI job then runs it in place of the fixture.
 
 ## Approach
 
@@ -99,7 +99,7 @@ Matrix to prove: a grant step retried, a run replayed, two workflows on one even
 | D18 | Broadcasts: a saved cursor plus a send-rate setting instead of one run per customer up front; a daily check for customers who joined or left a segment | Open, after D16 |
 | D11 | Grow the field schema (search pickers, dependent options, small repeater); keep the iframe; no React slots | Open |
 | D12 | Public but not promoted at 1.0; promoted around v1.2 after the group 1 extensions pass | Open |
-| D13 | PHPStan array-shape stubs, `wp yaymatik extension check`, an extension scaffold | Open |
+| D13 | PHPStan array-shape stubs and `wp yaymatik extension check`. The extension scaffold is in scope: lane A's last row | Open (scaffold confirmed 2026-11-26) |
 | D14 | Event timeline deferred until "wait for event" or goals are planned | Open |
 | D2 | A "Production layout" section in extension-api.md; the example stays one file | Open |
 | D7 | Pro multi-plugin templates built on the public API | Open, after D8 |
