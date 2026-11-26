@@ -2,5 +2,14 @@
 Dev: tvhoang91
 Build: lane-a
 
-- brainstorm
-- foundation
+Core's side and the proof that Yay plugins work together safely in a workflow (docs/extensions-roadmap.md). Each plugin's real extension is its owner's task, from the brief this lane hands over.
+
+- brainstorm: extensions roadmap, PR #47
+- email-foundation: core changes for group 1 (email mark, delivery status by the mark)
+- email-proof: fixture extensions acting as YayMail, YayMagic, YaySMTP; scenario tests for the group 1 matrix; CI job that runs each owner's extension against develop
+- hand group 1 briefs to the YayMail, YayMagic and YaySMTP owners
+- Review email stack
+- value-foundation: core changes for group 2 (fields that declare their meta key, view facades, pickers)
+- value-proof: fixture extensions acting as YayPricing, YayWholesale, YayLoyalty; scenario tests for the group 2 matrix
+- hand group 2 briefs to the YayPricing, YayWholesale and YayLoyalty owners
+- Review value stack
