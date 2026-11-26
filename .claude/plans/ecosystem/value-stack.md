@@ -26,3 +26,4 @@ Recommended, revisit before building: D7 (Pro templates 19–20), D11 (deferred,
 ## Meta
 - Target branch: feature/ecosystem-value-stack
 - Base branch: feature/lane-a
+- Unattended: yes

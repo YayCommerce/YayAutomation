@@ -56,7 +56,7 @@ Work through the plan's checkpoints one at a time:
    - **Risk 2** (feature, new component, form): run `/code-review medium`. Fix findings or note each skipped one. Auto-continue when nothing open.
    - **Risk 3** (hard to reverse): run `/code-review high`, then stop for manual review. Run `/wcheck` before marking done.
 
-Put decisions to the user with `/wdecide`.
+Put decisions to the user with `/wdecide`. A plan whose Meta says `Unattended: yes` never stops: Risk 3 gets `/code-review high` and `/wcheck` without the manual stop; anything for the user goes in the PR body for the lane's Review row.
 
 ---
 
