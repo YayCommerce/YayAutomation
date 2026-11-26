@@ -12,7 +12,7 @@ Workflow - Interactive development. Use this once a plan is agreed (from `/wplan
 
 ## Step 0 — Get the Plan
 
-Check `.claude/plans/` for a plan matching this task. Started by the Desk as `/wdev <plan>`: the plan is `.claude/plans/dev/<plan>.md` and the branch `feature/<plan>`.
+Check `.claude/plans/` for a plan matching this task. Started by the Desk as `/wdev <area>/<plan>`: the plan is `.claude/plans/<area>/<plan>.md` and the branch `feature/<area>-<plan>`.
 
 - **Found**: read it — goal, approach, checkpoints.
 - **Not found**: run `/wplan` first. Do not proceed until a plan exists.
