@@ -307,9 +307,9 @@ Shop owners build their own workflows from New Workflow. Why: [decisions CT](wor
 ## v1.2 — Yay ecosystem + Pro connectors · L+
 
 - **V12.1 Pro modules** — YayMatik Pro registers its modules and multi-plugin templates. *(§8)*
-- **V12.2 Yay plugins** — register their steps (through their module) and templates; custom forms through the Extension API's iframe editor (P4, 1.0, plan 034). Steps from an inactive plugin are handled softly in plan 034 CP4 ([extension-api.md](extension-api.md) §10). ⏳ The API side is done (plan 034: registrar, templates, iframe editor, missing plugin); each plugin's connector is its owner's task. *(§5, §8)*
+- **V12.2 Yay plugins** — register their steps (through their module) and templates; custom forms through the Extension API's iframe editor (P4, 1.0, plan 034). Steps from an inactive plugin are handled softly in plan 034 CP4 ([extension-api.md](extension-api.md) §10). ⏳ The API side is done (plan 034: registrar, templates, iframe editor, missing plugin); each plugin's extension is its owner's task, in its own repo; YayMatik CI runs it against develop. *(§5, §8)*
 - **V12.3 Feature directory** — "Install X to use this" in the pickers and the template library. *(§8)*
-- **V12.4 Connector basics** — credentials store, connector settings UI.
+- **V12.4 Connector basics** (outside services) — credentials store, connector settings UI.
 - **V12.5 Connectors** — webhook in, HTTP request, Slack, Google Sheets, SMS; CSV source and export.
 - **V12.6 Templates tier 2** — "Show if" on email blocks. *(§6)*
 
