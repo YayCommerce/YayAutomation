@@ -43,7 +43,8 @@ foreach ( $files as $file ) {
     $count   = count( $tokens );
     $changed = 0;
     for ( $i = 0; $i < $count; $i++ ) {
-        if ( ! is_array( $tokens[ $i ] ) || T_STRING !== $tokens[ $i ][0] || ! in_array( $tokens[ $i ][1], $gettext, true ) ) {
+        // `\esc_html__(` is one fully qualified name.
+        if ( ! is_array( $tokens[ $i ] ) || ! in_array( $tokens[ $i ][0], [ T_STRING, T_NAME_FULLY_QUALIFIED ], true ) || ! in_array( ltrim( $tokens[ $i ][1], '\\' ), $gettext, true ) ) {
             continue;
         }
         // A method or a declaration of the same name isn't the WordPress function.

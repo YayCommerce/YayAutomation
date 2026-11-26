@@ -116,12 +116,13 @@ if [[ $EDITION == pro ]]; then
     [[ $(grep -cE '^ \* (Plugin Name: +YayMatik Pro|Update URI: )' "$DEST_PATH/$MAIN_FILE") == 2 ]] || { echo "Could not write the Pro header in $MAIN_FILE"; exit 1; }
 fi
 
-# WordPress.org allows no license client or updater in the free plugin: admin-shell's src/License goes, as in
-# YayBulkOrder's lite build, and the rest of admin-shell gets class_exists guards (checked, see the script).
-# Both editions get the ABSPATH guard in every admin-shell file.
+# WordPress.org allows no license client, updater or license page in the free plugin: admin-shell's src/License goes,
+# and free-admin-shell.php strips the rest of its license code and hardens its installer (see the script). Its strings
+# take the plugin's text domain: one domain per zip. Both editions get the ABSPATH guard in every admin-shell file.
 if [[ $EDITION == free ]]; then
     rm -rf "$DEST_PATH/vendor-prefixed/src/License"
     php "$PROJECT_PATH/dev/scripts/lib/free-admin-shell.php" "$DEST_PATH/vendor-prefixed" || exit 1
+    php "$PROJECT_PATH/dev/scripts/lib/rename-text-domain.php" yaycommerce "$WPORG_SLUG" "$DEST_PATH/vendor-prefixed" >/dev/null || exit 1
 else
     php "$PROJECT_PATH/dev/scripts/lib/free-admin-shell.php" "$DEST_PATH/vendor-prefixed" --abspath-only || exit 1
 fi

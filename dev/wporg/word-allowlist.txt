@@ -6,5 +6,6 @@ yaymatik.php: "gnu.org/licenses/": the GPL license URL
 readme.txt: "License:": the GPL license header
 readme.txt: "License URI:": the GPL license header
 readme.txt: "gnu.org/licenses/": the GPL license URL
+readme.txt: "without its license and update code": says admin-shell ships without them
 includes/Workflow/Core/Coupon/FreeShipping.php: "can unlock it": a Free shipping method unlocks the coupon at checkout
 assets/dist/admin-page/style.css: "MIT License": Tailwind CSS's license banner
