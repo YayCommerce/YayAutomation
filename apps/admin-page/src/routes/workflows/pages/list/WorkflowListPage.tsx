@@ -35,16 +35,16 @@ export default function WorkflowListPage() {
   const createButton = (
     <Button onClick={() => setCreateOpen(true)}>
       <Plus />
-      {__('Create workflow', 'yaymatik')}
+      {__('Create workflow', 'yaymatik-automation-for-woocommerce')}
     </Button>
   );
-  const browseLabel = __('Browse templates', 'yaymatik');
+  const browseLabel = __('Browse templates', 'yaymatik-automation-for-woocommerce');
 
   return (
     <PageCard>
       <div className="flex min-h-9 flex-wrap items-center justify-between gap-4">
         <PageTitle>
-          {__('Workflows', 'yaymatik')}
+          {__('Workflows', 'yaymatik-automation-for-woocommerce')}
           {!!workflows?.length && <span className="text-muted-foreground text-sm font-normal">{workflows.length}</span>}
         </PageTitle>
         {/* The empty state has its own pair; loading and errors offer none. */}
@@ -75,11 +75,13 @@ export default function WorkflowListPage() {
             <EmptyMedia>
               <WorkflowsEmptyIllustration />
             </EmptyMedia>
-            <EmptyTitle className="text-base">{__('Automate your store’s routine work', 'yaymatik')}</EmptyTitle>
+            <EmptyTitle className="text-base">
+              {__('Automate your store’s routine work', 'yaymatik-automation-for-woocommerce')}
+            </EmptyTitle>
             <EmptyDescription>
               {__(
                 'Start from a template or build your own. A workflow runs on its own once you activate it.',
-                'yaymatik',
+                'yaymatik-automation-for-woocommerce',
               )}
             </EmptyDescription>
           </EmptyHeader>

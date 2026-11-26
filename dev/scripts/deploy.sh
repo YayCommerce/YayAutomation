@@ -6,7 +6,7 @@ cd "$(dirname "$0")/../.."
 
 . dev/scripts/lib/wp-target.sh --staging
 wpr() { "${WP[@]}" "$@"; }
-installed() { wpr plugin get yaymatik --field=version 2>/dev/null || true; }
+installed() { wpr plugin get yaymatik-pro --field=version 2>/dev/null || true; }
 
 # Active workflows fire on everyone's orders: none of that mail may leave staging.
 wpr eval 'if ( false === has_filter( "pre_wp_mail", "yay_mail_log_capture" ) ) { WP_CLI::error( "Mail log mu-plugin is not active." ); }
@@ -31,7 +31,7 @@ YAYMATIK_SKIP_LINT=1 "$tmp/build/run.sh" release pro --rc
 zip=$tmp/build/release/yaymatik-pro.zip
 
 # A repeated rc keeps the same ?ver=, so browsers would keep the old main.js.
-rc=$(unzip -p "$zip" yaymatik/yaymatik.php | sed -n "s/.*'YAYMATIK_VERSION', '\([^']*\)'.*/\1/p")
+rc=$(unzip -p "$zip" yaymatik-pro/yaymatik-pro.php | sed -n "s/.*'YAYMATIK_VERSION', '\([^']*\)'.*/\1/p")
 [[ $(installed) != "$rc" ]] || { echo "Refused: staging already has $rc. Make a new commit."; exit 1; }
 
 ssh "${ssh_port[@]}" "$host" mkdir -p "$remote_dir"

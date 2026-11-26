@@ -44,6 +44,6 @@ If build fails: show last 40 lines, ask user to fix or auto-fix if clearly scope
 
 > **Release complete: v\<version\>**
 >
-> Zip: `release/yaymatik.zip`
+> Zip: `release/yaymatik-automation-for-woocommerce.zip`
 
 Do not commit the version bump unless the user asks.

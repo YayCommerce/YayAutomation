@@ -1,12 +1,12 @@
 <?php
 /**
  * Plugin Name:       YayMatik - Automation for WooCommerce
- * Plugin URI:        https://yaycommerce.com/yaymatik/
+ * Plugin URI:        https://yaycommerce.com/yaymatik
  * Description:       Build automation workflows on a visual canvas, or start from a template.
  * Version:           1.0.0
  * Author:            YayCommerce
  * Author URI:        https://yaycommerce.com
- * Text Domain:       yaymatik
+ * Text Domain:       yaymatik-automation-for-woocommerce
  * Domain Path:       /languages
  * Requires at least: 6.9
  * Requires PHP:      7.4
@@ -23,15 +23,40 @@ namespace YayMatik;
 
 defined( 'ABSPATH' ) || exit;
 
-if ( function_exists( 'YayMatik\\plugin_init' ) ) {
+// WordPress loads plugins in folder order, and the free folder sorts before yaymatik-pro/: the free copy steps aside
+// for an active YayMatik Pro whichever loads first. A suffix match: Pro under another folder name still counts. Like
+// WordPress, an active entry whose file is gone (folder deleted without deactivating) doesn't count.
+$yaymatik_pro_scope = '';
+if ( 'yaymatik-pro.php' !== basename( __FILE__ ) ) {
+    $yaymatik_is_pro = function ( $plugin ) {
+        return '/yaymatik-pro.php' === substr( (string) $plugin, -17 ) && is_file( WP_PLUGIN_DIR . '/' . $plugin );
+    };
+    if ( is_multisite() && array_filter( array_keys( (array) get_site_option( 'active_sitewide_plugins', [] ) ), $yaymatik_is_pro ) ) {
+        $yaymatik_pro_scope = 'network';
+    } elseif ( array_filter( (array) get_option( 'active_plugins', [] ), $yaymatik_is_pro ) ) {
+        $yaymatik_pro_scope = 'site';
+    }
+    unset( $yaymatik_is_pro );
+}
+
+if ( $yaymatik_pro_scope || function_exists( 'YayMatik\\plugin_init' ) ) {
     require_once plugin_dir_path( __FILE__ ) . 'includes/Fallback.php';
+    // Beside a Pro active on one site only, a network-active free copy can't leave just that site (it stays unloaded
+    // there): deactivating it network-wide would take it from every other site.
+    $yaymatik_network_wide = 'site' === $yaymatik_pro_scope ? false : null;
     add_action(
         'admin_init',
-        function () {
-            deactivate_plugins( plugin_basename( __FILE__ ) );
+        function () use ( $yaymatik_network_wide ) {
+            deactivate_plugins( plugin_basename( __FILE__ ), false, $yaymatik_network_wide );
         }
     );
+    unset( $yaymatik_network_wide );
 }
+if ( $yaymatik_pro_scope ) {
+    unset( $yaymatik_pro_scope );
+    return;
+}
+unset( $yaymatik_pro_scope );
 
 if ( ! defined( 'YAYMATIK_VERSION' ) ) {
     define( 'YAYMATIK_VERSION', '1.0.0' );

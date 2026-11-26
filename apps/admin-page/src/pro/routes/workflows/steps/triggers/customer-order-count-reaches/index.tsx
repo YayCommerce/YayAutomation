@@ -18,7 +18,7 @@ export const customerOrderCountReachesStep = (): Step => {
         hints={[
           __(
             'Customers already past this number don’t start it. For them, use Order paid with a condition.',
-            'yaymatik',
+            'yaymatik-automation-for-woocommerce',
           ),
         ]}
       />

@@ -35,16 +35,16 @@ final class EmailDelivery {
     public function deliver( EmailStep $step, array $config, Values $values ): StepResult {
         $to = $step->email_recipient( $config, $values );
         if ( '' === $to ) {
-            return StepResult::failed( __( 'No valid email address.', 'yaymatik' ) );
+            return StepResult::failed( __( 'No valid email address.', 'yaymatik-automation-for-woocommerce' ) );
         }
         $customer = EmailStep::AUDIENCE_CUSTOMER === $step->email_audience();
         if ( $customer && ( $this->unsubscribed )( $to ) ) {
-            return StepResult::skipped( __( 'The customer unsubscribed from these emails.', 'yaymatik' ) );
+            return StepResult::skipped( __( 'The customer unsubscribed from these emails.', 'yaymatik-automation-for-woocommerce' ) );
         }
 
         $email = $step->compose_email( $config, $values, $customer ? $this->links()->url( $to ) : '' );
         if ( ! self::send( $to, $email ) ) {
-            return StepResult::failed( __( 'Couldn’t send the email.', 'yaymatik' ) );
+            return StepResult::failed( __( 'Couldn’t send the email.', 'yaymatik-automation-for-woocommerce' ) );
         }
         return StepResult::ok( [ 'to' => $to ] );
     }

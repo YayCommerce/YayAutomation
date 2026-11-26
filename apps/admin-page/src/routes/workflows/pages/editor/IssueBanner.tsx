@@ -86,12 +86,12 @@ export function IssueBanner({
         {withStepName(issue.message, stepName)}{' '}
         {issue.code === 'cart_tracking_off' ? (
           <Button variant="link" size="sm" className="h-auto p-0 align-baseline" asChild>
-            <Link to="/settings">{__('Open Settings', 'yaymatik')}</Link>
+            <Link to="/settings">{__('Open Settings', 'yaymatik-automation-for-woocommerce')}</Link>
           </Button>
         ) : stepId ? (
-          link(__('Show step', 'yaymatik'), () => onView(stepId))
+          link(__('Show step', 'yaymatik-automation-for-woocommerce'), () => onView(stepId))
         ) : (
-          issue.code === 'name_required' && link(__('Rename workflow', 'yaymatik'), onRename)
+          issue.code === 'name_required' && link(__('Rename workflow', 'yaymatik-automation-for-woocommerce'), onRename)
         )}
       </p>
       {issues.length > 1 && (
@@ -101,7 +101,7 @@ export function IssueBanner({
             size="icon-sm"
             className="size-6"
             disabled={current === 0}
-            aria-label={__('Previous issue', 'yaymatik')}
+            aria-label={__('Previous issue', 'yaymatik-automation-for-woocommerce')}
             onClick={() => show(current - 1)}
           >
             <ChevronLeft />
@@ -109,7 +109,7 @@ export function IssueBanner({
           <span className="tabular-nums">
             {sprintf(
               /* translators: 1: current issue number, 2: number of issues */
-              __('%1$d / %2$d', 'yaymatik'),
+              __('%1$d / %2$d', 'yaymatik-automation-for-woocommerce'),
               current + 1,
               issues.length,
             )}
@@ -119,7 +119,7 @@ export function IssueBanner({
             size="icon-sm"
             className="size-6"
             disabled={current === issues.length - 1}
-            aria-label={__('Next issue', 'yaymatik')}
+            aria-label={__('Next issue', 'yaymatik-automation-for-woocommerce')}
             onClick={() => show(current + 1)}
           >
             <ChevronRight />

@@ -7,8 +7,8 @@ import type { Step, StepResultText } from '@/routes/workflows/steps/core/types';
 export const customFieldResult: StepResultText = (step) =>
   sprintf(
     step.output.changed
-      ? /* translators: %s: custom field name */ __('Custom field %s updated', 'yaymatik')
-      : /* translators: %s: custom field name */ __('Custom field %s unchanged', 'yaymatik'),
+      ? /* translators: %s: custom field name */ __('Custom field %s updated', 'yaymatik-automation-for-woocommerce')
+      : /* translators: %s: custom field name */ __('Custom field %s unchanged', 'yaymatik-automation-for-woocommerce'),
     String(step.output.key ?? ''),
   );
 

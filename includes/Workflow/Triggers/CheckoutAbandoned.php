@@ -13,11 +13,11 @@ class CheckoutAbandoned extends CartTrigger {
     }
 
     public function label(): string {
-        return __( 'Checkout abandoned', 'yaymatik' );
+        return __( 'Checkout abandoned', 'yaymatik-automation-for-woocommerce' );
     }
 
     public function description(): string {
-        return __( 'A shopper leaves the checkout page without ordering', 'yaymatik' );
+        return __( 'A shopper leaves the checkout page without ordering', 'yaymatik-automation-for-woocommerce' );
     }
 
     public function icon(): string {
@@ -25,6 +25,6 @@ class CheckoutAbandoned extends CartTrigger {
     }
 
     public function summary(): string {
-        return __( 'When a checkout is abandoned', 'yaymatik' );
+        return __( 'When a checkout is abandoned', 'yaymatik-automation-for-woocommerce' );
     }
 }

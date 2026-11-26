@@ -28,7 +28,7 @@ export function FreeShippingWarning({ config }: { config: GenerateCouponConfig }
           <p>
             {__(
               'No shipping method takes a free shipping coupon yet, so this coupon won’t give free shipping. Add a Free shipping method that requires “A valid free shipping coupon” in',
-              'yaymatik',
+              'yaymatik-automation-for-woocommerce',
             )}{' '}
             <a
               href={`${wp.adminUrl}admin.php?page=wc-settings&tab=shipping`}
@@ -36,7 +36,7 @@ export function FreeShippingWarning({ config }: { config: GenerateCouponConfig }
               rel="noreferrer"
               className="text-foreground underline"
             >
-              {__('WooCommerce → Shipping', 'yaymatik')}
+              {__('WooCommerce → Shipping', 'yaymatik-automation-for-woocommerce')}
             </a>
             .
           </p>
@@ -44,7 +44,7 @@ export function FreeShippingWarning({ config }: { config: GenerateCouponConfig }
           <p>
             {__(
               'Your Free shipping methods also need a minimum order amount, so the customer gets free shipping only when the order reaches it.',
-              'yaymatik',
+              'yaymatik-automation-for-woocommerce',
             )}
           </p>
         )}

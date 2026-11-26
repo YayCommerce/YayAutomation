@@ -12,18 +12,18 @@ Review the **free release zip** against `.claude/docs/context-wporg-release-chec
 2. **Build and extract** into the session scratchpad:
    ```bash
    ./run.sh release > <scratchpad>/release.log 2>&1; echo "exit: $?"
-   rm -rf <scratchpad>/free && mkdir -p <scratchpad>/free && unzip -q release/yaymatik.zip -d <scratchpad>/free
+   rm -rf <scratchpad>/free && mkdir -p <scratchpad>/free && unzip -q release/yaymatik-automation-for-woocommerce.zip -d <scratchpad>/free
    ```
    If the build fails, stop and show the end of the log.
-3. **Run each item's How** in `<scratchpad>/free/yaymatik`, not the dev folder. Read the code behind every grep hit before you call it a finding.
-4. **Run Plugin Check (T1)** on the zip, on the wp-env site (`pnpm wp-env start` first if it is down). Its plugins folder maps this checkout as `YayAutomation`, so the zip installs beside it as `yaymatik`.
+3. **Run each item's How** in `<scratchpad>/free/yaymatik-automation-for-woocommerce`, not the dev folder. Read the code behind every grep hit before you call it a finding.
+4. **Run Plugin Check (T1)** on the zip, on the wp-env site (`pnpm wp-env start` first if it is down). Its plugins folder maps this checkout as `YayAutomation`, so the zip installs beside it as `yaymatik-automation-for-woocommerce` (the WordPress.org slug).
    1. `pnpm wp-env run cli wp plugin is-installed plugin-check; echo $?`. If not (`1`), ask once, then `pnpm wp-env run cli wp plugin install plugin-check --activate`.
-   2. If `pnpm wp-env run cli wp plugin is-installed yaymatik` returns `0`, stop and ask.
+   2. If `pnpm wp-env run cli wp plugin is-installed yaymatik-automation-for-woocommerce` returns `0`, stop and ask.
    3. Install the zip, check it, then delete it:
       ```bash
-      pnpm wp-env run cli wp plugin install wp-content/plugins/YayAutomation/release/yaymatik.zip
-      pnpm wp-env run cli wp plugin check yaymatik --format=json --include-experimental 2>/dev/null | grep -v '^Deprecated:' > <scratchpad>/plugin-check.json
-      pnpm wp-env run cli wp plugin delete yaymatik
+      pnpm wp-env run cli wp plugin install wp-content/plugins/YayAutomation/release/yaymatik-automation-for-woocommerce.zip
+      pnpm wp-env run cli wp plugin check yaymatik-automation-for-woocommerce --format=json --include-experimental 2>/dev/null | grep -v '^Deprecated:' > <scratchpad>/plugin-check.json
+      pnpm wp-env run cli wp plugin delete yaymatik-automation-for-woocommerce
       ```
       Do not activate it: the mapped checkout defines the same classes.
    4. Group the results by `code`. ERRORs are Must fix. WARNINGs are Should fix. Read the code behind each one, like a grep hit.

@@ -7,6 +7,7 @@ import reactRefresh from 'eslint-plugin-react-refresh';
 import { defineConfig, globalIgnores } from 'eslint/config';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
+import wordpress from '@wordpress/eslint-plugin';
 
 export default defineConfig([
   globalIgnores(['dist']),
@@ -20,6 +21,7 @@ export default defineConfig([
     ],
     plugins: {
       'better-tailwindcss': betterTailwindcss,
+      '@wordpress': wordpress,
     },
     languageOptions: {
       ecmaVersion: 2020,
@@ -46,6 +48,7 @@ export default defineConfig([
       'react-refresh/only-export-components': 'off',
       'react-hooks/incompatible-library': 'off',
       'better-tailwindcss/enforce-canonical-classes': 'warn',
+      '@wordpress/i18n-text-domain': ['error', { allowedTextDomain: 'yaymatik-automation-for-woocommerce' }],
     },
   },
 ]);

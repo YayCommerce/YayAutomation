@@ -33,7 +33,12 @@ export function CreateWorkflowButton({
       const ready = await beforeCreate();
       setPreparing(false);
       if (!ready) {
-        toast.error(__('Your latest changes couldn’t be saved, so no workflow was created.', 'yaymatik'));
+        toast.error(
+          __(
+            'Your latest changes couldn’t be saved, so no workflow was created.',
+            'yaymatik-automation-for-woocommerce',
+          ),
+        );
         return;
       }
     }
@@ -44,8 +49,8 @@ export function CreateWorkflowButton({
     <>
       <Button variant="outline" onClick={() => setOpen(true)}>
         <Plus />
-        <span className="hidden sm:inline">{__('Create workflow', 'yaymatik')}</span>
-        <span className="sm:hidden">{__('Create', 'yaymatik')}</span>
+        <span className="hidden sm:inline">{__('Create workflow', 'yaymatik-automation-for-woocommerce')}</span>
+        <span className="sm:hidden">{__('Create', 'yaymatik-automation-for-woocommerce')}</span>
       </Button>
       <CreateWorkflowDialog
         open={open}

@@ -21,11 +21,11 @@ class ChangeCustomerRole extends Action {
     }
 
     public function label(): string {
-        return __( 'Change customer role', 'yaymatik' );
+        return __( 'Change customer role', 'yaymatik-automation-for-woocommerce' );
     }
 
     public function description(): string {
-        return __( 'Add, remove or replace a role on the customer’s account.', 'yaymatik' );
+        return __( 'Add, remove or replace a role on the customer’s account.', 'yaymatik-automation-for-woocommerce' );
     }
 
     public function icon(): string {
@@ -44,33 +44,33 @@ class ChangeCustomerRole extends Action {
         return [
             Field::select(
                 'mode',
-                __( 'Change', 'yaymatik' ),
+                __( 'Change', 'yaymatik-automation-for-woocommerce' ),
                 [
-                    'add'     => __( 'Add a role', 'yaymatik' ),
-                    'remove'  => __( 'Remove a role', 'yaymatik' ),
-                    'replace' => __( 'Replace roles', 'yaymatik' ),
+                    'add'     => __( 'Add a role', 'yaymatik-automation-for-woocommerce' ),
+                    'remove'  => __( 'Remove a role', 'yaymatik-automation-for-woocommerce' ),
+                    'replace' => __( 'Replace roles', 'yaymatik-automation-for-woocommerce' ),
                 ]
             )->default( 'add' ),
-            Field::select( 'role', __( 'Role', 'yaymatik' ), [ self::class, 'assignable_roles' ] )
+            Field::select( 'role', __( 'Role', 'yaymatik-automation-for-woocommerce' ), [ self::class, 'assignable_roles' ] )
                 /* translators: {{ step }}: step name, e.g. "Change customer role"; keep {{ … }} as it is. */
-                ->required( __( '{{ step }} needs a role.', 'yaymatik' ) )
-                ->help( __( 'Only roles with customer rights are listed: no staff, editing or publishing roles.', 'yaymatik' ) ),
+                ->required( __( '{{ step }} needs a role.', 'yaymatik-automation-for-woocommerce' ) )
+                ->help( __( 'Only roles with customer rights are listed: no staff, editing or publishing roles.', 'yaymatik-automation-for-woocommerce' ) ),
         ];
     }
 
     public function summary(): string {
         /* translators: {{ config.mode }}: e.g. "Add a role", {{ config.role }}: a role name; keep {{ … }} as it is. */
-        return __( '{{ config.mode }}: {{ config.role }}', 'yaymatik' );
+        return __( '{{ config.mode }}: {{ config.role }}', 'yaymatik-automation-for-woocommerce' );
     }
 
     public function outputs(): array {
         return [
             'from' => [
-                'label' => __( 'Roles before', 'yaymatik' ),
+                'label' => __( 'Roles before', 'yaymatik-automation-for-woocommerce' ),
                 'type'  => Type::string(),
             ],
             'to'   => [
-                'label' => __( 'Roles after', 'yaymatik' ),
+                'label' => __( 'Roles after', 'yaymatik-automation-for-woocommerce' ),
                 'type'  => Type::string(),
             ],
         ];
@@ -92,12 +92,12 @@ class ChangeCustomerRole extends Action {
         $customer = $scope->entity( CustomerData::ID );
         $user     = $customer ? get_userdata( CustomerData::user_id( $customer ) ) : false;
         if ( ! $user ) {
-            return StepResult::skipped( __( 'This customer has no account.', 'yaymatik' ) );
+            return StepResult::skipped( __( 'This customer has no account.', 'yaymatik-automation-for-woocommerce' ) );
         }
         $allow_all = self::allow_all();
         // Write actions run as user 0, so these checks can't lean on the current user.
         if ( ! $allow_all && StaffRule::is_staff( $user ) ) {
-            return StepResult::skipped( __( 'This customer has a protected role.', 'yaymatik' ) );
+            return StepResult::skipped( __( 'This customer has a protected role.', 'yaymatik-automation-for-woocommerce' ) );
         }
         $role   = (string) $config['role'];
         $before = array_values( $user->roles );
@@ -105,15 +105,15 @@ class ChangeCustomerRole extends Action {
         // Removing a role that is gone or now protected is harmless: this user can't hold it unless the filter allows it.
         if ( $giving && ! isset( wp_roles()->roles[ $role ] ) ) {
             /* translators: %s: role slug */
-            return StepResult::failed( sprintf( __( 'The role %s no longer exists.', 'yaymatik' ), $role ) );
+            return StepResult::failed( sprintf( __( 'The role %s no longer exists.', 'yaymatik-automation-for-woocommerce' ), $role ) );
         }
         if ( $giving && ! $allow_all && self::role_protected( $role ) ) {
             /* translators: %s: role name */
-            return StepResult::failed( sprintf( __( '%s can now manage the site, so it can’t be given.', 'yaymatik' ), self::names( [ $role ] ) ) );
+            return StepResult::failed( sprintf( __( '%s can now manage the site, so it can’t be given.', 'yaymatik-automation-for-woocommerce' ), self::names( [ $role ] ) ) );
         }
         if ( ! $giving && [ $role ] === $before ) {
             /* translators: %s: role name */
-            return StepResult::skipped( sprintf( __( '%s is their only role.', 'yaymatik' ), self::names( [ $role ] ) ) );
+            return StepResult::skipped( sprintf( __( '%s is their only role.', 'yaymatik-automation-for-woocommerce' ), self::names( [ $role ] ) ) );
         }
         // Added first, so the account is never left without a role.
         if ( $giving && ! in_array( $role, $before, true ) ) {

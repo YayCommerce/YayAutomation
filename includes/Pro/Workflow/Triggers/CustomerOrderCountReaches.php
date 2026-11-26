@@ -15,11 +15,11 @@ class CustomerOrderCountReaches extends CustomerMilestone {
     }
 
     public function label(): string {
-        return __( 'Customer order count reaches', 'yaymatik' );
+        return __( 'Customer order count reaches', 'yaymatik-automation-for-woocommerce' );
     }
 
     public function description(): string {
-        return __( 'A customer’s paid orders reach a number', 'yaymatik' );
+        return __( 'A customer’s paid orders reach a number', 'yaymatik-automation-for-woocommerce' );
     }
 
     public function icon(): string {
@@ -28,17 +28,17 @@ class CustomerOrderCountReaches extends CustomerMilestone {
 
     public function fields(): array {
         return [
-            Field::number( 'count', __( 'Paid orders', 'yaymatik' ) )
+            Field::number( 'count', __( 'Paid orders', 'yaymatik-automation-for-woocommerce' ) )
                 ->required()
                 ->default( 5 )
                 ->min( 1 )
-                ->help( __( 'Starts once per customer, on the paid order that reaches this number. Guests count by billing email.', 'yaymatik' ) ),
+                ->help( __( 'Starts once per customer, on the paid order that reaches this number. Guests count by billing email.', 'yaymatik-automation-for-woocommerce' ) ),
         ];
     }
 
     public function summary(): string {
         /* translators: {{ config.count }}: number of paid orders; keep {{ … }} as it is. */
-        return __( 'When a customer reaches {{ config.count }} paid orders', 'yaymatik' );
+        return __( 'When a customer reaches {{ config.count }} paid orders', 'yaymatik-automation-for-woocommerce' );
     }
 
     /**

@@ -77,7 +77,7 @@ function BreadcrumbEllipsis({ className, ...props }: React.ComponentProps<'span'
       {...props}
     >
       <MoreHorizontal className="size-4" />
-      <span className="sr-only">{__('More', 'yaymatik')}</span>
+      <span className="sr-only">{__('More', 'yaymatik-automation-for-woocommerce')}</span>
     </span>
   );
 }

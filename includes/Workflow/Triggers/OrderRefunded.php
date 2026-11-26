@@ -16,11 +16,11 @@ class OrderRefunded extends OrderTrigger {
     }
 
     public function label(): string {
-        return __( 'Order refunded', 'yaymatik' );
+        return __( 'Order refunded', 'yaymatik-automation-for-woocommerce' );
     }
 
     public function description(): string {
-        return __( 'Starts for each refund, partial or full.', 'yaymatik' );
+        return __( 'Starts for each refund, partial or full.', 'yaymatik-automation-for-woocommerce' );
     }
 
     public function icon(): string {
@@ -32,7 +32,7 @@ class OrderRefunded extends OrderTrigger {
     }
 
     public function summary(): string {
-        return __( 'When an order is refunded', 'yaymatik' );
+        return __( 'When an order is refunded', 'yaymatik-automation-for-woocommerce' );
     }
 
     public function provides(): array {

@@ -13,9 +13,15 @@ export function workflowState(workflow: Pick<Workflow, 'status' | 'everActivated
 }
 
 const badges = {
-  active: { tone: 'bg-success/15 text-success-soft-foreground', label: __('Active', 'yaymatik') },
-  inactive: { tone: 'bg-muted text-muted-foreground-600', label: __('Inactive', 'yaymatik') },
-  draft: { tone: 'bg-primary/14 text-link', label: __('Draft', 'yaymatik') },
+  active: {
+    tone: 'bg-success/15 text-success-soft-foreground',
+    label: __('Active', 'yaymatik-automation-for-woocommerce'),
+  },
+  inactive: {
+    tone: 'bg-muted text-muted-foreground-600',
+    label: __('Inactive', 'yaymatik-automation-for-woocommerce'),
+  },
+  draft: { tone: 'bg-primary/14 text-link', label: __('Draft', 'yaymatik-automation-for-woocommerce') },
 } as const;
 
 /** The app's badge shape (6px corners), for the status and the badges beside it. */

@@ -12,7 +12,11 @@ export type SettingsValues = Omit<Settings, NumberKey> & Record<NumberKey, numbe
 /** PHP `Settings::check()`: a whole number in `[min, max]`, with its message. The stored value passes as is: a save sends changes only. */
 const wholeNumber = ([min, max]: [number, number], stored: number | null) => {
   /* translators: 1: smallest number, 2: largest number */
-  const message = sprintf(__('Enter a whole number from %1$d to %2$d.', 'yaymatik'), min, max);
+  const message = sprintf(
+    __('Enter a whole number from %1$d to %2$d.', 'yaymatik-automation-for-woocommerce'),
+    min,
+    max,
+  );
   return v.pipe(
     v.nullable(v.number(message)),
     v.check(

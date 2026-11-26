@@ -11,7 +11,7 @@ export function ComingSoonChip({ className }: { className?: string }) {
         className,
       )}
     >
-      {__('Coming soon', 'yaymatik')}
+      {__('Coming soon', 'yaymatik-automation-for-woocommerce')}
     </span>
   );
 }

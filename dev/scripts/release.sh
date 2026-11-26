@@ -1,8 +1,9 @@
 #!/bin/bash
-# Build the distribution zip: release/yaymatik.zip, or with `pro` release/yaymatik-pro.zip (folder yaymatik-pro, includes/Pro kept). --rc stamps X.Y.Z-rcN in the zip copy.
+# Build the distribution zip: release/yaymatik-automation-for-woocommerce.zip (folder = the WordPress.org slug), or with `pro` release/yaymatik-pro.zip (folder yaymatik-pro, includes/Pro kept). --rc stamps X.Y.Z-rcN in the zip copy.
 set -eo pipefail
 cd "$(dirname "$0")/../.." || exit 1
 [[ -f yaymatik.php ]] || { echo "Not the plugin root: $(pwd)"; exit 1; }
+source dev/scripts/lib/wporg.sh
 
 EDITION=free
 RC=false
@@ -14,10 +15,13 @@ for arg in "$@"; do
     esac
 done
 # Pro is its own plugin: folder and main file yaymatik-pro, so it installs beside the free one (Fallback.php deactivates the second).
-PLUGIN_SLUG="yaymatik"
-[[ $EDITION == pro ]] && PLUGIN_SLUG="yaymatik-pro"
+PLUGIN_SLUG=$WPORG_SLUG
+MAIN_FILE="yaymatik.php"
+if [[ $EDITION == pro ]]; then
+    PLUGIN_SLUG="yaymatik-pro"
+    MAIN_FILE="yaymatik-pro.php"
+fi
 ZIP_NAME=$PLUGIN_SLUG
-MAIN_FILE="$PLUGIN_SLUG.php"
 PROJECT_PATH=$(pwd)
 BUILD_PATH="${PROJECT_PATH}/release"
 DEST_PATH="$BUILD_PATH/$PLUGIN_SLUG"
@@ -148,7 +152,7 @@ fi
 # The translation template from the files that ship (after the rc stamp): WordPress.org builds the language packs from it. Written into the
 # build folder only, as its creation date would leave the checkout changed after every release.
 command -v wp >/dev/null || { echo "Missing: wp-cli (wp i18n make-pot)"; exit 1; }
-wp i18n make-pot "$DEST_PATH" "$DEST_PATH/languages/yaymatik.pot" --include="$MAIN_FILE",includes,assets/dist --domain=yaymatik --slug=yaymatik
+wp i18n make-pot "$DEST_PATH" "$DEST_PATH/languages/$WPORG_SLUG.pot" --include="$MAIN_FILE",includes,assets/dist --domain="$WPORG_SLUG" --slug="$WPORG_SLUG"
 
 echo "Generating zip file..."
 cd "$BUILD_PATH" || exit

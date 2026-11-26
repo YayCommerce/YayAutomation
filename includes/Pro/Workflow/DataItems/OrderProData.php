@@ -18,22 +18,22 @@ final class OrderProData extends OrderData {
     protected function define(): array {
         $fields = parent::define() + [
             'created_via'         => [
-                'label'   => __( 'Created via', 'yaymatik' ),
+                'label'   => __( 'Created via', 'yaymatik-automation-for-woocommerce' ),
                 'type'    => self::TYPE_ENUM,
                 'value'   => fn( \WC_Order $order ) => $order->get_created_via(),
                 'options' => [ self::class, 'created_via_options' ],
             ],
             'currency'            => [
-                'label'   => __( 'Currency', 'yaymatik' ),
+                'label'   => __( 'Currency', 'yaymatik-automation-for-woocommerce' ),
                 'type'    => self::TYPE_ENUM,
                 'value'   => fn( \WC_Order $order ) => $order->get_currency(),
                 'options' => [ self::class, 'currencies' ],
             ],
-            'discount_total'      => self::money_field( __( 'Discount total', 'yaymatik' ), fn( \WC_Order $order ) => (float) $order->get_discount_total() ),
-            'shipping_total'      => self::money_field( __( 'Shipping total', 'yaymatik' ), fn( \WC_Order $order ) => (float) $order->get_shipping_total() ),
-            'refunded_total'      => self::money_field( __( 'Refunded total', 'yaymatik' ), fn( \WC_Order $order ) => (float) $order->get_total_refunded() ),
+            'discount_total'      => self::money_field( __( 'Discount total', 'yaymatik-automation-for-woocommerce' ), fn( \WC_Order $order ) => (float) $order->get_discount_total() ),
+            'shipping_total'      => self::money_field( __( 'Shipping total', 'yaymatik-automation-for-woocommerce' ), fn( \WC_Order $order ) => (float) $order->get_shipping_total() ),
+            'refunded_total'      => self::money_field( __( 'Refunded total', 'yaymatik-automation-for-woocommerce' ), fn( \WC_Order $order ) => (float) $order->get_total_refunded() ),
             'meta'                => [
-                'label'        => __( 'Custom field', 'yaymatik' ),
+                'label'        => __( 'Custom field', 'yaymatik-automation-for-woocommerce' ),
                 'type'         => self::TYPE_META,
                 'value'        => fn() => '',
                 'merge_tag'    => false,
@@ -41,17 +41,17 @@ final class OrderProData extends OrderData {
                 'meta_blocked' => fn( string $key ) => MetaKeys::order_blocked( new \WC_Order(), $key ),
             ],
             'has_cross_sells'     => [
-                'label' => __( 'Order has cross-sell products', 'yaymatik' ),
+                'label' => __( 'Order has cross-sell products', 'yaymatik-automation-for-woocommerce' ),
                 'type'  => self::TYPE_BOOLEAN,
                 'value' => fn( \WC_Order $order ) => (bool) OrderGrid::for_order( $order, OrderGrid::CROSS_SELLS ),
             ],
             'has_upsells'         => [
-                'label' => __( 'Order has upsell products', 'yaymatik' ),
+                'label' => __( 'Order has upsell products', 'yaymatik-automation-for-woocommerce' ),
                 'type'  => self::TYPE_BOOLEAN,
                 'value' => fn( \WC_Order $order ) => (bool) OrderGrid::for_order( $order, OrderGrid::UPSELLS ),
             ],
-            'cross_sell_products' => self::grid_field( __( 'Cross-sell products', 'yaymatik' ), OrderGrid::CROSS_SELLS ),
-            'upsell_products'     => self::grid_field( __( 'Upsell products', 'yaymatik' ), OrderGrid::UPSELLS ),
+            'cross_sell_products' => self::grid_field( __( 'Cross-sell products', 'yaymatik-automation-for-woocommerce' ), OrderGrid::CROSS_SELLS ),
+            'upsell_products'     => self::grid_field( __( 'Upsell products', 'yaymatik-automation-for-woocommerce' ), OrderGrid::UPSELLS ),
         ];
         return array_merge( array_intersect_key( array_flip( self::ORDER ), $fields ), $fields );
     }
@@ -123,10 +123,10 @@ final class OrderProData extends OrderData {
     /** Where WooCommerce says an order came from, as value => label. */
     public static function created_via_options(): array {
         return [
-            'checkout'  => __( 'Classic checkout', 'yaymatik' ),
-            'store-api' => __( 'Block checkout', 'yaymatik' ),
-            'admin'     => __( 'Admin', 'yaymatik' ),
-            'rest-api'  => __( 'REST API', 'yaymatik' ),
+            'checkout'  => __( 'Classic checkout', 'yaymatik-automation-for-woocommerce' ),
+            'store-api' => __( 'Block checkout', 'yaymatik-automation-for-woocommerce' ),
+            'admin'     => __( 'Admin', 'yaymatik-automation-for-woocommerce' ),
+            'rest-api'  => __( 'REST API', 'yaymatik-automation-for-woocommerce' ),
         ];
     }
 

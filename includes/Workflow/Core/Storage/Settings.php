@@ -95,7 +95,7 @@ final class Settings {
         if ( $errors ) {
             return new \WP_Error(
                 'yaymatik_invalid_settings',
-                __( 'Fix the highlighted settings.', 'yaymatik' ),
+                __( 'Fix the highlighted settings.', 'yaymatik-automation-for-woocommerce' ),
                 [
                     'status' => 400,
                     'errors' => $errors,
@@ -134,17 +134,17 @@ final class Settings {
      */
     private static function check( string $key, $value ) {
         if ( is_bool( self::defaults()[ $key ] ) ) {
-            return is_bool( $value ) ? $value : new \WP_Error( 'invalid', __( 'Choose on or off.', 'yaymatik' ) );
+            return is_bool( $value ) ? $value : new \WP_Error( 'invalid', __( 'Choose on or off.', 'yaymatik-automation-for-woocommerce' ) );
         }
         if ( isset( self::$editable[ $key ] ) ) {
             list( $min, $max ) = self::$editable[ $key ];
             return is_int( $value ) && $value >= $min && $value <= $max
                 ? $value
                 /* translators: 1: smallest number, 2: largest number */
-                : new \WP_Error( 'invalid', sprintf( __( 'Enter a whole number from %1$d to %2$d.', 'yaymatik' ), $min, $max ) );
+                : new \WP_Error( 'invalid', sprintf( __( 'Enter a whole number from %1$d to %2$d.', 'yaymatik-automation-for-woocommerce' ), $min, $max ) );
         }
         if ( ! is_string( $value ) ) {
-            return new \WP_Error( 'invalid', __( 'Enter text.', 'yaymatik' ) );
+            return new \WP_Error( 'invalid', __( 'Enter text.', 'yaymatik-automation-for-woocommerce' ) );
         }
         return self::plain_text( $value );
     }

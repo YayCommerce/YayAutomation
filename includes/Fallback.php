@@ -7,8 +7,8 @@ $yaymatik_duplicate_notice = function () {
         ?>
             <div class="notice notice-error is-dismissible">
             <p>
-                <strong><?php esc_html_e( 'It looks like you have another YayMatik version installed, please delete it before activating this new version. All of the settings and data are still preserved.', 'yaymatik' ); ?>
-                <a href="https://docs.yaycommerce.com/"><?php esc_html_e( 'Read more details.', 'yaymatik' ); ?></a>
+                <strong><?php esc_html_e( 'It looks like you have another YayMatik version installed, please delete it before activating this new version. All of the settings and data are still preserved.', 'yaymatik-automation-for-woocommerce' ); ?>
+                <a href="https://docs.yaycommerce.com/"><?php esc_html_e( 'Read more details.', 'yaymatik-automation-for-woocommerce' ); ?></a>
                 </strong>
             </p>
             </div>

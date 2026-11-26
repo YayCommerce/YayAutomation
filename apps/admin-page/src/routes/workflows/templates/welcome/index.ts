@@ -5,19 +5,22 @@ import { customerEmail, emailStep, lineGraph } from '../core/flow';
 
 export const shared = { category: 'customer_lifecycle', workflow: 'welcome', createdAt: '2026-11-03' } as const;
 
-const welcomeSubject = __('Welcome to {{ site.name }}', 'yaymatik');
+const welcomeSubject = __('Welcome to {{ site.name }}', 'yaymatik-automation-for-woocommerce');
 export const welcome = customerEmail(welcomeSubject, welcomeSubject, [
-  __('Your account is ready. You can track orders, save addresses and check out faster next time.', 'yaymatik'),
+  __(
+    'Your account is ready. You can track orders, save addresses and check out faster next time.',
+    'yaymatik-automation-for-woocommerce',
+  ),
   '{{ site.welcome_links }}',
 ]);
 
 export const welcomeEmail = defineTemplate({
   ...shared,
   id: 'welcome-email',
-  name: __('Welcome email', 'yaymatik'),
+  name: __('Welcome email', 'yaymatik-automation-for-woocommerce'),
   description: __(
     'When a customer creates an account, welcome them with links to their account and the shop.',
-    'yaymatik',
+    'yaymatik-automation-for-woocommerce',
   ),
   graph: lineGraph('customer_account_created', [emailStep('email-1', welcome)]),
 });

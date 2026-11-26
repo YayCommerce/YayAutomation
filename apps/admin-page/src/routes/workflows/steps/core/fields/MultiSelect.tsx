@@ -52,9 +52,9 @@ export function MultiSelect({
       </ComboboxTrigger>
       <PopoverContent className="w-(--radix-popover-trigger-width) p-0" align="start">
         <Command>
-          <CommandInput placeholder={__('Search', 'yaymatik')} />
+          <CommandInput placeholder={__('Search', 'yaymatik-automation-for-woocommerce')} />
           <CommandList>
-            <CommandEmpty>{__('Nothing found.', 'yaymatik')}</CommandEmpty>
+            <CommandEmpty>{__('Nothing found.', 'yaymatik-automation-for-woocommerce')}</CommandEmpty>
             <CommandGroup>
               {options.map((option) => (
                 <CommandItem key={option.value} value={option.label} onSelect={() => toggle(option.value)}>

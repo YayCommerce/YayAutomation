@@ -12,10 +12,10 @@ import type { StepFormProps } from '../../core/types';
 import { schema, toNumber, type WaitConfig, type WaitUnit } from './schema';
 
 const unitLabels: Record<WaitUnit, string> = {
-  minutes: __('Minutes', 'yaymatik'),
-  hours: __('Hours', 'yaymatik'),
-  days: __('Days', 'yaymatik'),
-  weeks: __('Weeks', 'yaymatik'),
+  minutes: __('Minutes', 'yaymatik-automation-for-woocommerce'),
+  hours: __('Hours', 'yaymatik-automation-for-woocommerce'),
+  days: __('Days', 'yaymatik-automation-for-woocommerce'),
+  weeks: __('Weeks', 'yaymatik-automation-for-woocommerce'),
 };
 
 export function WaitForm({ config, onChange }: StepFormProps<WaitConfig>) {
@@ -34,9 +34,9 @@ export function WaitForm({ config, onChange }: StepFormProps<WaitConfig>) {
       <form.Field name="delay">
         {(delay) => (
           <ConfigField
-            label={__('Wait for', 'yaymatik')}
+            label={__('Wait for', 'yaymatik-automation-for-woocommerce')}
             htmlFor="step-wait-delay"
-            description={__('Then the workflow continues with the next step.', 'yaymatik')}
+            description={__('Then the workflow continues with the next step.', 'yaymatik-automation-for-woocommerce')}
             errors={delay.state.meta.errors}
           >
             <div className="flex gap-2">
@@ -56,7 +56,7 @@ export function WaitForm({ config, onChange }: StepFormProps<WaitConfig>) {
                 value={delay.state.value.unit}
                 onValueChange={(unit) => delay.handleChange({ ...delay.state.value, unit: unit as WaitUnit })}
               >
-                <SelectTrigger className="flex-1" aria-label={__('Unit', 'yaymatik')}>
+                <SelectTrigger className="flex-1" aria-label={__('Unit', 'yaymatik-automation-for-woocommerce')}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

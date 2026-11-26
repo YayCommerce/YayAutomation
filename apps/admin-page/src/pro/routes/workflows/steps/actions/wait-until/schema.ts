@@ -27,7 +27,7 @@ export const schema = v.pipe(
   v.rawCheck(({ dataset, addIssue }) => {
     if (!dataset.typed || TIME.test(String(dataset.value.time ?? ''))) return;
     addIssue({
-      message: __('Enter a time, e.g. 9:15 am.', 'yaymatik'),
+      message: __('Enter a time, e.g. 9:15 am.', 'yaymatik-automation-for-woocommerce'),
       path: [{ type: 'object', origin: 'value', input: dataset.value, key: 'time', value: dataset.value.time }],
     });
   }),

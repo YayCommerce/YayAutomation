@@ -20,11 +20,11 @@ class YayMatikModule extends Module {
     }
 
     public function label(): string {
-        return __( 'YayMatik', 'yaymatik' );
+        return __( 'YayMatik', 'yaymatik-automation-for-woocommerce' );
     }
 
     public function description(): string {
-        return __( 'Workflow logic: conditions and waits.', 'yaymatik' );
+        return __( 'Workflow logic: conditions and waits.', 'yaymatik-automation-for-woocommerce' );
     }
 
     public function logo(): string {

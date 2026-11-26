@@ -12,9 +12,18 @@ import { useSearchLabels, useSearchOptions, type SearchType } from './searchSele
 const DEBOUNCE_MS = 250;
 
 const words: Record<SearchType, { placeholder: string; empty: string }> = {
-  product: { placeholder: __('Search products', 'yaymatik'), empty: __('No products found.', 'yaymatik') },
-  category: { placeholder: __('Search categories', 'yaymatik'), empty: __('No categories found.', 'yaymatik') },
-  coupon: { placeholder: __('Search coupons', 'yaymatik'), empty: __('No coupons found.', 'yaymatik') },
+  product: {
+    placeholder: __('Search products', 'yaymatik-automation-for-woocommerce'),
+    empty: __('No products found.', 'yaymatik-automation-for-woocommerce'),
+  },
+  category: {
+    placeholder: __('Search categories', 'yaymatik-automation-for-woocommerce'),
+    empty: __('No categories found.', 'yaymatik-automation-for-woocommerce'),
+  },
+  coupon: {
+    placeholder: __('Search coupons', 'yaymatik-automation-for-woocommerce'),
+    empty: __('No coupons found.', 'yaymatik-automation-for-woocommerce'),
+  },
 };
 
 /** Any number of values as chips, picked from a list the server searches and pages: typed in the field beside the chips, the list opens below. */
@@ -118,9 +127,9 @@ export function SearchSelect({
             {!search.isPending && !search.isError && <CommandEmpty>{words[type].empty}</CommandEmpty>}
             {search.isError && (
               <div className="flex flex-col items-center gap-1 p-3 text-sm">
-                {__('Couldn’t load the list.', 'yaymatik')}
+                {__('Couldn’t load the list.', 'yaymatik-automation-for-woocommerce')}
                 <Button variant="ghost" size="sm" onClick={() => void search.refetch()}>
-                  {__('Try again', 'yaymatik')}
+                  {__('Try again', 'yaymatik-automation-for-woocommerce')}
                 </Button>
               </div>
             )}
@@ -136,7 +145,13 @@ export function SearchSelect({
           </CommandList>
           <div className="text-muted-foreground flex items-center justify-between gap-2 border-t px-3 py-1.5 text-xs">
             <span>
-              {sprintf(/* translators: %d: number of selected items */ __('%d selected', 'yaymatik'), value.length)}
+              {sprintf(
+                /* translators: %d: number of selected items */ __(
+                  '%d selected',
+                  'yaymatik-automation-for-woocommerce',
+                ),
+                value.length,
+              )}
             </span>
             {search.hasNextPage && (
               <Button
@@ -146,7 +161,7 @@ export function SearchSelect({
                 disabled={search.isFetchingNextPage}
                 onClick={() => void search.fetchNextPage()}
               >
-                {__('Load more', 'yaymatik')}
+                {__('Load more', 'yaymatik-automation-for-woocommerce')}
               </Button>
             )}
           </div>

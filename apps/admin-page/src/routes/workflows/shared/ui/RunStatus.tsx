@@ -10,13 +10,13 @@ import { appBadge } from './WorkflowStatusBadge';
 
 /** A queued run shows as Running: to the store owner it has started. */
 const runStatusLabels: Record<RunStatus, string> = {
-  queued: __('Running', 'yaymatik'),
-  running: __('Running', 'yaymatik'),
-  waiting: __('Waiting', 'yaymatik'),
-  completed: __('Completed', 'yaymatik'),
-  failed: __('Failed', 'yaymatik'),
-  cancelled: __('Cancelled', 'yaymatik'),
-  skipped: __('Skipped', 'yaymatik'),
+  queued: __('Running', 'yaymatik-automation-for-woocommerce'),
+  running: __('Running', 'yaymatik-automation-for-woocommerce'),
+  waiting: __('Waiting', 'yaymatik-automation-for-woocommerce'),
+  completed: __('Completed', 'yaymatik-automation-for-woocommerce'),
+  failed: __('Failed', 'yaymatik-automation-for-woocommerce'),
+  cancelled: __('Cancelled', 'yaymatik-automation-for-woocommerce'),
+  skipped: __('Skipped', 'yaymatik-automation-for-woocommerce'),
 };
 
 /** "Waiting until Oct 9 at 3:00 PM" for a waiting run; otherwise its status label. */
@@ -24,7 +24,7 @@ export const runStatusText = (run: Pick<Run, 'status' | 'waitUntil'>) =>
   run.status === 'waiting' && run.waitUntil
     ? sprintf(
         /* translators: %s: date and time, e.g. "Oct 9 at 3:00 PM" */
-        __('Waiting until %s', 'yaymatik'),
+        __('Waiting until %s', 'yaymatik-automation-for-woocommerce'),
         shortDayTime(run.waitUntil),
       )
     : runStatusLabels[run.status];

@@ -11,22 +11,22 @@ final class Cancellation {
 
     /** Why a run stopped: its workflow was deactivated. */
     public static function turned_off(): string {
-        return __( 'The workflow was deactivated.', 'yaymatik' );
+        return __( 'The workflow was deactivated.', 'yaymatik-automation-for-woocommerce' );
     }
 
     /** Why a waiting run stopped: its workflow was updated. */
     public static function updated(): string {
-        return __( 'The workflow was updated.', 'yaymatik' );
+        return __( 'The workflow was updated.', 'yaymatik-automation-for-woocommerce' );
     }
 
     /** Why a run about a cart stopped: the cart's row is gone. */
     public static function cart_gone(): string {
-        return __( 'The cart was emptied or deleted.', 'yaymatik' );
+        return __( 'The cart was emptied or deleted.', 'yaymatik-automation-for-woocommerce' );
     }
 
     /** Why a run about a cart stopped: its shopper unsubscribed. */
     public static function unsubscribed(): string {
-        return __( 'The shopper unsubscribed from these emails.', 'yaymatik' );
+        return __( 'The shopper unsubscribed from these emails.', 'yaymatik-automation-for-woocommerce' );
     }
 
     /**
@@ -37,7 +37,7 @@ final class Cancellation {
     public static function order_placed( int $order_id ): string {
         $order = wc_get_order( $order_id );
         /* translators: %s: order number */
-        return sprintf( __( 'The shopper placed order #%s.', 'yaymatik' ), $order ? $order->get_order_number() : $order_id );
+        return sprintf( __( 'The shopper placed order #%s.', 'yaymatik-automation-for-woocommerce' ), $order ? $order->get_order_number() : $order_id );
     }
 
     /**

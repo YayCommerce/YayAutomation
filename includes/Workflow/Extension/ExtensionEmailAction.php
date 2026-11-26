@@ -38,7 +38,7 @@ final class ExtensionEmailAction extends ExtensionAction implements EmailStep {
     public function outputs(): array {
         return [
             'to' => [
-                'label' => __( 'Sent to', 'yaymatik' ),
+                'label' => __( 'Sent to', 'yaymatik-automation-for-woocommerce' ),
                 'type'  => Type::string(),
             ],
         ];
@@ -99,7 +99,7 @@ final class ExtensionEmailAction extends ExtensionAction implements EmailStep {
             if ( ! $built instanceof \Throwable ) {
                 Diagnostics::record( $this->module, 'build', 'build must return [ subject, html, wrap ].' );
             }
-            $reason = $preview && $built instanceof \Throwable ? $built->getMessage() : __( 'Couldn’t build the email.', 'yaymatik' );
+            $reason = $preview && $built instanceof \Throwable ? $built->getMessage() : __( 'Couldn’t build the email.', 'yaymatik-automation-for-woocommerce' );
             throw new \RuntimeException( esc_html( $reason ) );
         }
 
@@ -123,7 +123,7 @@ final class ExtensionEmailAction extends ExtensionAction implements EmailStep {
     /** Default "Sent to <address>". */
     protected function result(): string {
         /* translators: {{ output.to }}: email address; keep {{ … }} as it is. */
-        return $this->args['result'] ?? __( 'Sent to {{ output.to }}', 'yaymatik' );
+        return $this->args['result'] ?? __( 'Sent to {{ output.to }}', 'yaymatik-automation-for-woocommerce' );
     }
 
     /**

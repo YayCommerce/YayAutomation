@@ -3,23 +3,23 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: YayMatik - Automation for WooCommerce 1.0.0\n"
-"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/yaymatik\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/yaymatik-automation-for-woocommerce\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-19T06:38:11+00:00\n"
+"POT-Creation-Date: 2026-11-26T08:13:28+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.8.1\n"
-"X-Domain: yaymatik\n"
+"X-Domain: yaymatik-automation-for-woocommerce\n"
 
 #. Plugin Name of the plugin
 msgid "YayMatik - Automation for WooCommerce"
 msgstr ""
 
 #. Plugin URI of the plugin
-msgid "https://yaycommerce.com/yaymatik/"
+msgid "https://yaycommerce.com/yaymatik"
 msgstr ""
 
 #. Description of the plugin

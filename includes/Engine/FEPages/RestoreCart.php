@@ -59,11 +59,11 @@ class RestoreCart {
         $shop = wc_get_page_permalink( 'shop' );
         $row  = $id > 0 ? CartStore::find( $id ) : null;
         if ( ! $row || ! RestoreLink::from_options()->verify( $id, (string) $row['created_at'], $token ) ) {
-            wc_add_notice( __( 'This cart is no longer available.', 'yaymatik' ), 'notice' );
+            wc_add_notice( __( 'This cart is no longer available.', 'yaymatik-automation-for-woocommerce' ), 'notice' );
             return $shop;
         }
         if ( CartStore::ORDERED === $row['status'] ) {
-            wc_add_notice( __( 'You already placed an order for these items.', 'yaymatik' ), 'notice' );
+            wc_add_notice( __( 'You already placed an order for these items.', 'yaymatik-automation-for-woocommerce' ), 'notice' );
             return $shop;
         }
 
@@ -87,16 +87,16 @@ class RestoreCart {
         $skipped = $plan['skipped'] + count( $plan['add'] ) - $added;
 
         if ( 0 === $added && 0 === $plan['kept'] ) {
-            wc_add_notice( __( 'This cart is no longer available.', 'yaymatik' ), 'notice' );
+            wc_add_notice( __( 'This cart is no longer available.', 'yaymatik-automation-for-woocommerce' ), 'notice' );
             return $shop;
         }
         if ( $added > 0 ) {
             WC()->cart->calculate_totals();
             self::prefill( $row, $was_empty );
-            wc_add_notice( __( 'We added your saved items to your cart.', 'yaymatik' ), 'success' );
+            wc_add_notice( __( 'We added your saved items to your cart.', 'yaymatik-automation-for-woocommerce' ), 'success' );
         }
         if ( $skipped > 0 ) {
-            wc_add_notice( __( 'Some items are no longer available.', 'yaymatik' ), 'notice' );
+            wc_add_notice( __( 'Some items are no longer available.', 'yaymatik-automation-for-woocommerce' ), 'notice' );
         }
         if ( $added > 0 || $skipped > 0 ) {
             WC()->session->set( self::NOTICE_FLAG, true );

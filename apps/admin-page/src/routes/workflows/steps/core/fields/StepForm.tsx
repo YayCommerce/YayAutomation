@@ -142,7 +142,7 @@ function SelectWidget({ field, id, value, onChange, invalid }: WidgetProps) {
   return (
     <Select value={String(value ?? '')} onValueChange={onChange}>
       <SelectTrigger id={id} className="w-full" aria-invalid={invalid}>
-        <SelectValue placeholder={field.placeholder ?? __('Choose an option', 'yaymatik')} />
+        <SelectValue placeholder={field.placeholder ?? __('Choose an option', 'yaymatik-automation-for-woocommerce')} />
       </SelectTrigger>
       <SelectContent>
         {(field.options ?? []).map((option) => (

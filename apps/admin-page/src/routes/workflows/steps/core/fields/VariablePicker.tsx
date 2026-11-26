@@ -33,8 +33,11 @@ const countOf = (group: VariableGroup) => group.sections.reduce((sum, section) =
 function describe(group: VariableGroup, { trigger, steps }: VariableScope) {
   if (group.source === 'blocks') {
     return {
-      label: __('Blocks', 'yaymatik'),
-      description: __('Ready-made parts of the email, e.g. a product grid or a coupon box', 'yaymatik'),
+      label: __('Blocks', 'yaymatik-automation-for-woocommerce'),
+      description: __(
+        'Ready-made parts of the email, e.g. a product grid or a coupon box',
+        'yaymatik-automation-for-woocommerce',
+      ),
       // Neutral: blocks come from the trigger's data, the site and steps above.
       tile: <StepTile kind="neutral" icon={Blocks} />,
     };
@@ -201,7 +204,7 @@ export function VariablePicker({
           className="hover:text-foreground flex cursor-pointer items-center gap-1.5"
         >
           <ChevronLeft className="size-3.5" aria-hidden />
-          {__('All data', 'yaymatik')}
+          {__('All data', 'yaymatik-automation-for-woocommerce')}
         </button>
         <ChevronRight className="size-3.5" aria-hidden />
         <b className="text-foreground font-semibold">{opened.label}</b>
@@ -210,7 +213,7 @@ export function VariablePicker({
   } else if (scope.trigger && dataGroups.length && query.trim() === '') {
     context = (
       <>
-        {__('Data from the trigger', 'yaymatik')}
+        {__('Data from the trigger', 'yaymatik-automation-for-woocommerce')}
         <StepTile kind="trigger" icon={scope.trigger.icon} size="sm" />
         <b className="text-foreground font-medium">{scope.trigger.label}</b>
       </>
@@ -226,7 +229,7 @@ export function VariablePicker({
     list = found.length ? (
       found.map((variable) => <VariableRow key={variable.key} variable={variable} onPick={pick} />)
     ) : (
-      <Empty>{__('No variable found.', 'yaymatik')}</Empty>
+      <Empty>{__('No variable found.', 'yaymatik-automation-for-woocommerce')}</Empty>
     );
   } else if (group) {
     list = group.sections.map((section) => (
@@ -247,14 +250,14 @@ export function VariablePicker({
         {blockGroup && row(blockGroup)}
         {stepGroups.length > 0 && (
           <>
-            <SectionHeading>{__('From earlier steps', 'yaymatik')}</SectionHeading>
+            <SectionHeading>{__('From earlier steps', 'yaymatik-automation-for-woocommerce')}</SectionHeading>
             {stepGroups.map(row)}
           </>
         )}
       </>
     );
   } else {
-    list = <Empty>{__('No data to insert here yet.', 'yaymatik')}</Empty>;
+    list = <Empty>{__('No data to insert here yet.', 'yaymatik-automation-for-woocommerce')}</Empty>;
   }
 
   return (
@@ -274,9 +277,11 @@ export function VariablePicker({
           }}
         >
           <div className="py-3 pr-12 pl-4">
-            <DialogTitle className="text-[15px] font-semibold">{__('Insert variable', 'yaymatik')}</DialogTitle>
+            <DialogTitle className="text-[15px] font-semibold">
+              {__('Insert variable', 'yaymatik-automation-for-woocommerce')}
+            </DialogTitle>
             <DialogDescription className="sr-only">
-              {__('Pick data from the workflow to use here.', 'yaymatik')}
+              {__('Pick data from the workflow to use here.', 'yaymatik-automation-for-woocommerce')}
             </DialogDescription>
           </div>
           <div className="px-3 pb-2.5">
@@ -290,8 +295,8 @@ export function VariablePicker({
                 placeholder={
                   opened
                     ? /* translators: %s: a data item or step, e.g. "Order" */
-                      sprintf(__('Search in %s', 'yaymatik'), opened.label)
-                    : __('Search all data', 'yaymatik')
+                      sprintf(__('Search in %s', 'yaymatik-automation-for-woocommerce'), opened.label)
+                    : __('Search all data', 'yaymatik-automation-for-woocommerce')
                 }
                 onChange={(event) => setQuery(event.target.value)}
               />
@@ -300,7 +305,7 @@ export function VariablePicker({
               <p className="bg-muted text-muted-foreground mt-2 w-fit rounded-md px-2 py-0.5 text-xs">
                 {
                   /* translators: %s: variable types, e.g. "Number" */
-                  sprintf(__('Types: %s', 'yaymatik'), types)
+                  sprintf(__('Types: %s', 'yaymatik-automation-for-woocommerce'), types)
                 }
               </p>
             )}

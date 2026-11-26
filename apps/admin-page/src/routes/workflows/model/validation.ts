@@ -106,7 +106,10 @@ export function issueText(issue: WorkflowIssue, ...graphs: (WorkflowGraph | null
   const label = node && stepOf(node.data)?.label;
   if (!label || issue.message.includes(label)) return issue.message;
   return sprintf(
-    /* translators: 1: a step, e.g. "Change order status", 2: what's wrong with it */ __('%1$s: %2$s', 'yaymatik'),
+    /* translators: 1: a step, e.g. "Change order status", 2: what's wrong with it */ __(
+      '%1$s: %2$s',
+      'yaymatik-automation-for-woocommerce',
+    ),
     label,
     issue.message,
   );

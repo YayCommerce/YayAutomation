@@ -29,7 +29,7 @@ export function useActivateWorkflow(workflow: Workflow) {
   const offerEditor = (error: ApiError) =>
     toast.error(error.message, {
       action: {
-        label: __('Fix in editor', 'yaymatik'),
+        label: __('Fix in editor', 'yaymatik-automation-for-woocommerce'),
         onClick: () =>
           navigate(`/workflows/${workflow.id}/edit`, { state: { showIssues: true } satisfies EditorNavState }),
       },
@@ -39,7 +39,7 @@ export function useActivateWorkflow(workflow: Workflow) {
     if (before && !(await before())) return;
     try {
       await activateMutation.mutateAsync({ id: workflow.id });
-      toast.success(__('Workflow activated', 'yaymatik'));
+      toast.success(__('Workflow activated', 'yaymatik-automation-for-woocommerce'));
       onSuccess?.();
     } catch (error) {
       if (error instanceof ApiError && error.issues.length) {
@@ -55,7 +55,7 @@ export function useActivateWorkflow(workflow: Workflow) {
     if (before && !(await before())) return;
     try {
       const deactivated = await deactivateMutation.mutateAsync({ id: workflow.id });
-      toast.success(__('Workflow deactivated', 'yaymatik'), {
+      toast.success(__('Workflow deactivated', 'yaymatik-automation-for-woocommerce'), {
         description: cancelledRunsText(deactivated.cancelledRuns),
       });
       onSuccess?.();

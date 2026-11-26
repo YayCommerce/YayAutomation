@@ -31,10 +31,10 @@ function ShowMore({ hidden, expanded, onToggle }: { hidden: number; expanded: bo
     >
       <ChevronDown className={cn('size-3.25', expanded && 'rotate-180')} aria-hidden />
       {expanded
-        ? __('Show less', 'yaymatik')
+        ? __('Show less', 'yaymatik-automation-for-woocommerce')
         : sprintf(
             /* translators: %d: number of hidden items */
-            __('Show %d more', 'yaymatik'),
+            __('Show %d more', 'yaymatik-automation-for-woocommerce'),
             hidden,
           )}
     </button>
@@ -107,9 +107,9 @@ export function LibrarySidebar({
   return (
     // Beside the grid, wider on large screens; narrow screens: above it, shorter.
     <aside className="bg-muted/35 flex min-h-0 w-55 shrink-0 flex-col overflow-y-auto border-r p-3 max-md:max-h-56 max-md:w-full max-md:border-r-0 max-md:border-b xl:w-64 2xl:w-72">
-      <GroupHeading>{__('Categories', 'yaymatik')}</GroupHeading>
+      <GroupHeading>{__('Categories', 'yaymatik-automation-for-woocommerce')}</GroupHeading>
       <div className="flex flex-col gap-0.5">
-        {categoryRow(null, __('All templates', 'yaymatik'), total)}
+        {categoryRow(null, __('All templates', 'yaymatik-automation-for-woocommerce'), total)}
         {shownCategories.map((id) => categoryRow(id, categoryLabels[id], counts[id]))}
       </div>
       <ShowMore
@@ -118,11 +118,11 @@ export function LibrarySidebar({
         onToggle={() => setAllCategories(!allCategories)}
       />
 
-      <GroupHeading>{__('Plugins', 'yaymatik')}</GroupHeading>
+      <GroupHeading>{__('Plugins', 'yaymatik-automation-for-woocommerce')}</GroupHeading>
       <SearchInput
         value={query}
         onChange={setQuery}
-        placeholder={__('Find a plugin', 'yaymatik')}
+        placeholder={__('Find a plugin', 'yaymatik-automation-for-woocommerce')}
         className="mb-1.5 h-7.5"
         inputClassName="text-[13px]"
       />
@@ -138,11 +138,15 @@ export function LibrarySidebar({
             <Checkbox checked={pluginFilter.includes(id)} onCheckedChange={(checked) => toggle(id, checked === true)} />
             <PluginIcon plugin={id} size="sm" />
             <span className="min-w-0 flex-1 truncate">{plugins[id].label}</span>
-            {!plugins[id].active && <small className="text-[11.5px]">{__('Not installed', 'yaymatik')}</small>}
+            {!plugins[id].active && (
+              <small className="text-[11.5px]">{__('Not installed', 'yaymatik-automation-for-woocommerce')}</small>
+            )}
           </label>
         ))}
         {!found.length && (
-          <p className="text-muted-foreground px-2 py-1.5 text-[13px]">{__('No plugin found.', 'yaymatik')}</p>
+          <p className="text-muted-foreground px-2 py-1.5 text-[13px]">
+            {__('No plugin found.', 'yaymatik-automation-for-woocommerce')}
+          </p>
         )}
       </div>
       {!query.trim() && (
@@ -167,7 +171,7 @@ export function FilterChip({ label, onRemove }: { label: string; onRemove: () =>
         className="hover:bg-primary/15 flex cursor-pointer rounded-full p-0.5"
         aria-label={sprintf(
           /* translators: %s: filter name, e.g. "Post-purchase" */
-          __('Remove filter %s', 'yaymatik'),
+          __('Remove filter %s', 'yaymatik-automation-for-woocommerce'),
           label,
         )}
       >
@@ -181,7 +185,7 @@ export function FilterChip({ label, onRemove }: { label: string; onRemove: () =>
 export const countLabel = (shown: number, total: number) =>
   sprintf(
     /* translators: 1: templates shown, 2: all templates */
-    _n('%1$d of %2$d template', '%1$d of %2$d templates', total, 'yaymatik'),
+    _n('%1$d of %2$d template', '%1$d of %2$d templates', total, 'yaymatik-automation-for-woocommerce'),
     shown,
     total,
   );

@@ -27,8 +27,8 @@ type PickableKind = 'trigger' | 'action';
 const categoryLabels = window.yayMatikMeta.automation.categories;
 
 const searchLabels: Record<PickableKind, string> = {
-  trigger: __('Search plugins and triggers', 'yaymatik'),
-  action: __('Search plugins and actions', 'yaymatik'),
+  trigger: __('Search plugins and triggers', 'yaymatik-automation-for-woocommerce'),
+  action: __('Search plugins and actions', 'yaymatik-automation-for-woocommerce'),
 };
 
 const matches = (text: string, query: string) => text.toLowerCase().includes(query.trim().toLowerCase());
@@ -73,7 +73,10 @@ export function StepPicker({
             missing &&
             /* translators: %s: data item, e.g. "Order" */
             sprintf(
-              __('Requires %s data. Choose a trigger or add a step above that provides it.', 'yaymatik'),
+              __(
+                'Requires %s data. Choose a trigger or add a step above that provides it.',
+                'yaymatik-automation-for-woocommerce',
+              ),
               itemLabel(missing),
             )
           }
@@ -127,7 +130,10 @@ export function StepPicker({
           placeholder={
             plugin
               ? sprintf(
-                  /* translators: %s: plugin name, e.g. "WooCommerce" */ __('Search %s', 'yaymatik'),
+                  /* translators: %s: plugin name, e.g. "WooCommerce" */ __(
+                    'Search %s',
+                    'yaymatik-automation-for-woocommerce',
+                  ),
                   plugins[plugin].label,
                 )
               : searchLabels[kind]
@@ -146,7 +152,7 @@ export function StepPicker({
                   onClick={() => open(null)}
                 >
                   <ChevronLeft className="size-3.5" aria-hidden />
-                  {__('All plugins', 'yaymatik')}
+                  {__('All plugins', 'yaymatik-automation-for-woocommerce')}
                 </button>
               </BreadcrumbLink>
             </BreadcrumbItem>
@@ -160,7 +166,9 @@ export function StepPicker({
       <div className="-mx-2 flex flex-col">
         {list}
         {Array.isArray(list) && !list.length && (
-          <p className="text-muted-foreground p-2 text-sm">{__('Nothing found.', 'yaymatik')}</p>
+          <p className="text-muted-foreground p-2 text-sm">
+            {__('Nothing found.', 'yaymatik-automation-for-woocommerce')}
+          </p>
         )}
         {ProTeaser && !plugin && !query.trim() && <ProTeaser place={kind} />}
       </div>

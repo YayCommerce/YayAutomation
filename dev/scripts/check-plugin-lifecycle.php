@@ -74,7 +74,7 @@ switch ( $args[0] ?? '' ) {
     case 'second-copy':
         foreach ( $GLOBALS['wp_filter']['admin_init']->callbacks ?? [] as $callbacks ) {
             foreach ( $callbacks as $callback ) {
-                if ( $callback['function'] instanceof Closure && preg_match( '#/plugins/yaymatik(-pro)?/yaymatik(-pro)?\.php$#', ( new ReflectionFunction( $callback['function'] ) )->getFileName() ) ) {
+                if ( $callback['function'] instanceof Closure && preg_match( '#/plugins/(yaymatik-automation-for-woocommerce/yaymatik|yaymatik-pro/yaymatik-pro)\.php$#', ( new ReflectionFunction( $callback['function'] ) )->getFileName() ) ) {
                     $callback['function']();
                 }
             }

@@ -17,13 +17,16 @@ type ResultText = (step: RunStepRow, run: RunContext) => string;
 
 /** Core's steps; another one may bring its own `result`. */
 const results: Partial<Record<StepId, ResultText>> = {
-  condition: (step) => (step.output.result === 'yes' ? __('Yes', 'yaymatik') : __('No', 'yaymatik')),
+  condition: (step) =>
+    step.output.result === 'yes'
+      ? __('Yes', 'yaymatik-automation-for-woocommerce')
+      : __('No', 'yaymatik-automation-for-woocommerce'),
   wait: (step, run) => {
     if (step.status === 'waiting') {
       return run.waitUntil
         ? sprintf(
             /* translators: %s: date and time, e.g. "Oct 9 at 3:00 PM" */
-            __('until %s', 'yaymatik'),
+            __('until %s', 'yaymatik-automation-for-woocommerce'),
             shortDayTime(run.waitUntil),
           )
         : '';
@@ -31,7 +34,7 @@ const results: Partial<Record<StepId, ResultText>> = {
     return step.finishedAt
       ? sprintf(
           /* translators: 1: how long it waited, e.g. "Wait 1 day"; 2: date and time, e.g. "Oct 9 at 3:00 PM" */
-          __('%1$s, resumed %2$s', 'yaymatik'),
+          __('%1$s, resumed %2$s', 'yaymatik-automation-for-woocommerce'),
           summary(step, run),
           shortDayTime(step.finishedAt),
         )
@@ -39,12 +42,18 @@ const results: Partial<Record<StepId, ResultText>> = {
   },
   send_email: (step) =>
     sprintf(
-      /* translators: %s: one or more email addresses, comma-separated */ __('Sent to %s', 'yaymatik'),
+      /* translators: %s: one or more email addresses, comma-separated */ __(
+        'Sent to %s',
+        'yaymatik-automation-for-woocommerce',
+      ),
       text(step.output.to),
     ),
   send_internal_email: (step) =>
     sprintf(
-      /* translators: %s: one or more email addresses, comma-separated */ __('Sent to %s', 'yaymatik'),
+      /* translators: %s: one or more email addresses, comma-separated */ __(
+        'Sent to %s',
+        'yaymatik-automation-for-woocommerce',
+      ),
       Array.isArray(step.output.to) ? step.output.to.join(', ') : '',
     ),
   generate_coupon: (step) => text(step.output.code),

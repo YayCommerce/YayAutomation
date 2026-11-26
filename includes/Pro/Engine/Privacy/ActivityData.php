@@ -22,7 +22,7 @@ final class ActivityData {
     public static function exporters( $exporters ): array {
         $exporters              = (array) $exporters;
         $exporters[ self::KEY ] = [
-            'exporter_friendly_name' => __( 'YayMatik Pro', 'yaymatik' ),
+            'exporter_friendly_name' => __( 'YayMatik Pro', 'yaymatik-automation-for-woocommerce' ),
             'callback'               => [ self::class, 'export' ],
         ];
         return $exporters;
@@ -34,7 +34,7 @@ final class ActivityData {
     public static function erasers( $erasers ): array {
         $erasers              = (array) $erasers;
         $erasers[ self::KEY ] = [
-            'eraser_friendly_name' => __( 'YayMatik Pro', 'yaymatik' ),
+            'eraser_friendly_name' => __( 'YayMatik Pro', 'yaymatik-automation-for-woocommerce' ),
             'callback'             => [ self::class, 'erase' ],
         ];
         return $erasers;
@@ -59,7 +59,7 @@ final class ActivityData {
             'data' => $data ? [
                 [
                     'group_id'    => self::KEY,
-                    'group_label' => __( 'YayMatik Pro', 'yaymatik' ),
+                    'group_label' => __( 'YayMatik Pro', 'yaymatik-automation-for-woocommerce' ),
                     'item_id'     => 'activity-' . $user->ID,
                     'data'        => $data,
                 ],
@@ -88,8 +88,8 @@ final class ActivityData {
     /** User meta key => its label in an export. */
     private static function metas(): array {
         return [
-            LastSeen::KEY      => __( 'Last seen on the store', 'yaymatik' ),
-            CartActivity::META => __( 'Last added to cart', 'yaymatik' ),
+            LastSeen::KEY      => __( 'Last seen on the store', 'yaymatik-automation-for-woocommerce' ),
+            CartActivity::META => __( 'Last added to cart', 'yaymatik-automation-for-woocommerce' ),
         ];
     }
 }

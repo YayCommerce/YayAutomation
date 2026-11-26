@@ -16,11 +16,11 @@ class OrderCreated extends OrderTrigger {
     }
 
     public function label(): string {
-        return __( 'Order created', 'yaymatik' );
+        return __( 'Order created', 'yaymatik-automation-for-woocommerce' );
     }
 
     public function description(): string {
-        return __( 'Starts when a new order is created.', 'yaymatik' );
+        return __( 'Starts when a new order is created.', 'yaymatik-automation-for-woocommerce' );
     }
 
     public function icon(): string {
@@ -32,7 +32,7 @@ class OrderCreated extends OrderTrigger {
     }
 
     public function summary(): string {
-        return __( 'When a new order is created', 'yaymatik' );
+        return __( 'When a new order is created', 'yaymatik-automation-for-woocommerce' );
     }
 
     public function listen( callable $emit ): void {

@@ -25,7 +25,7 @@ export function EditorLayout({
   actions,
   children,
   closeTo = '/workflows',
-  closeLabel = __('Close', 'yaymatik'),
+  closeLabel = __('Close', 'yaymatik-automation-for-woocommerce'),
   onClose,
 }: EditorCloseProps & { title: ReactNode; actions?: ReactNode; children: ReactNode }) {
   useEffect(() => {

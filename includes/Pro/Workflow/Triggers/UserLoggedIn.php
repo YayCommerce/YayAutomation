@@ -16,26 +16,26 @@ class UserLoggedIn extends CustomerSession {
     }
 
     public function label(): string {
-        return __( 'User logged in', 'yaymatik' );
+        return __( 'User logged in', 'yaymatik-automation-for-woocommerce' );
     }
 
     public function description(): string {
-        return __( 'A user with one of the chosen roles logs in or comes back', 'yaymatik' );
+        return __( 'A user with one of the chosen roles logs in or comes back', 'yaymatik-automation-for-woocommerce' );
     }
 
     public function summary(): string {
         /* translators: {{ config.days }}: number of days; keep {{ … }} as it is. */
-        return __( 'When a user logs in · once every {{ config.days }} days', 'yaymatik' );
+        return __( 'When a user logs in · once every {{ config.days }} days', 'yaymatik-automation-for-woocommerce' );
     }
 
     public function fields(): array {
         return array_merge(
             parent::fields(),
             [
-                Field::multiselect( 'roles', __( 'Roles', 'yaymatik' ), [ CustomerProData::class, 'roles' ] )
+                Field::multiselect( 'roles', __( 'Roles', 'yaymatik-automation-for-woocommerce' ), [ CustomerProData::class, 'roles' ] )
                     ->default( [ 'customer' ] )
-                    ->placeholder( __( 'All roles', 'yaymatik' ) )
-                    ->help( __( 'Leave empty for all roles.', 'yaymatik' ) ),
+                    ->placeholder( __( 'All roles', 'yaymatik-automation-for-woocommerce' ) )
+                    ->help( __( 'Leave empty for all roles.', 'yaymatik-automation-for-woocommerce' ) ),
             ]
         );
     }

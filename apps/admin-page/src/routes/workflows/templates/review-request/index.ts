@@ -14,14 +14,18 @@ const stillValid = {
 };
 const sevenDays = { delay: { value: 7, unit: 'days' } } satisfies WaitConfig;
 
-const first = customerEmail(__('How did your order go?', 'yaymatik'), __('Tell us what you think', 'yaymatik'), [
-  __(
-    'Thanks again for order {{ order.number }}. If you have a minute, tell other shoppers what you think:',
-    'yaymatik',
-  ),
-  '{{ order.review_products }}',
-  __('It takes a minute and helps a lot.', 'yaymatik'),
-]);
+const first = customerEmail(
+  __('How did your order go?', 'yaymatik-automation-for-woocommerce'),
+  __('Tell us what you think', 'yaymatik-automation-for-woocommerce'),
+  [
+    __(
+      'Thanks again for order {{ order.number }}. If you have a minute, tell other shoppers what you think:',
+      'yaymatik-automation-for-woocommerce',
+    ),
+    '{{ order.review_products }}',
+    __('It takes a minute and helps a lot.', 'yaymatik-automation-for-woocommerce'),
+  ],
+);
 
 /** Something to review → wait → check again with fresh data → email; the reminder repeats the last three. */
 export function graph(reminder?: SendEmailConfig): WorkflowGraph {
@@ -73,10 +77,10 @@ export const shared = { category: 'post_purchase', workflow: 'review_request', c
 export const reviewRequest = defineTemplate({
   ...shared,
   id: 'review-request',
-  name: __('Review request', 'yaymatik'),
+  name: __('Review request', 'yaymatik-automation-for-woocommerce'),
   description: __(
     '7 days after an order is completed, ask for a review of each product the customer hasn’t reviewed yet.',
-    'yaymatik',
+    'yaymatik-automation-for-woocommerce',
   ),
   graph: graph(),
 });

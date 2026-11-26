@@ -105,7 +105,7 @@ final class ReviewProducts {
     }
 
     private static function label(): string {
-        return __( 'Leave a review', 'yaymatik' );
+        return __( 'Leave a review', 'yaymatik-automation-for-woocommerce' );
     }
 
     /**

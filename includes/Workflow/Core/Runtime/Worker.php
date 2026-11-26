@@ -186,7 +186,7 @@ final class Worker {
             $this->release_claim( $run );
             $reason = $this->workflows->find( $workflow_id )
                 ? Cancellation::turned_off()
-                : __( 'The workflow was deleted before this run started.', 'yaymatik' );
+                : __( 'The workflow was deleted before this run started.', 'yaymatik-automation-for-woocommerce' );
             return $this->end( (int) $run['id'], RunStore::STATUS_CANCELLED, $reason );
         }
         // Before the refs: a gone cart ends cancelled, not skipped.

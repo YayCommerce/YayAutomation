@@ -250,7 +250,7 @@ class RestAPI {
         $step                             = is_string( $node['data']['block'] ?? null ) ? StepRegistry::get( $node['data']['block'] ) : null;
         $field                            = $step instanceof ExtensionAction ? ( $step->client_meta()['editor']['field'] ?? '' ) : '';
         if ( '' === $field ) {
-            return new \WP_Error( 'yaymatik_no_editor', __( 'This step has no editor.', 'yaymatik' ), [ 'status' => 400 ] );
+            return new \WP_Error( 'yaymatik_no_editor', __( 'This step has no editor.', 'yaymatik-automation-for-woocommerce' ), [ 'status' => 400 ] );
         }
         // As Preview and a run read it: only the step's fields, cleaned.
         $config = $step->sanitize( is_array( $config ) ? $config : [] );
@@ -288,7 +288,7 @@ class RestAPI {
         $body    = (array) $request->get_json_params();
         $node_id = is_string( $body['nodeId'] ?? null ) ? $body['nodeId'] : '';
         if ( '' === $node_id ) {
-            return new \WP_Error( 'yaymatik_no_node', __( 'Choose an email step to preview.', 'yaymatik' ), [ 'status' => 400 ] );
+            return new \WP_Error( 'yaymatik_no_node', __( 'Choose an email step to preview.', 'yaymatik-automation-for-woocommerce' ), [ 'status' => 400 ] );
         }
         $graph = $body['graph'] ?? ( $workflow['draft'] ?? $workflow['graph'] );
         return [ $graph, $node_id, $body['config'] ?? [] ];
@@ -463,7 +463,7 @@ class RestAPI {
             (int) $request['id'],
             function ( int $id, array $current ) use ( &$cancelled ) {
                 if ( null === $current['draft'] ) {
-                    return new \WP_Error( 'yaymatik_no_draft', __( 'There are no draft changes to update.', 'yaymatik' ), [ 'status' => 409 ] );
+                    return new \WP_Error( 'yaymatik_no_draft', __( 'There are no draft changes to update.', 'yaymatik-automation-for-woocommerce' ), [ 'status' => 409 ] );
                 }
                 $errors = Validator::errors(
                     [
@@ -555,7 +555,7 @@ class RestAPI {
     public function get_run( \WP_REST_Request $request ) {
         $run = RunStore::find( (int) $request['id'] );
         if ( ! $run ) {
-            return new \WP_Error( 'yaymatik_not_found', __( 'Run not found.', 'yaymatik' ), [ 'status' => 404 ] );
+            return new \WP_Error( 'yaymatik_not_found', __( 'Run not found.', 'yaymatik-automation-for-woocommerce' ), [ 'status' => 404 ] );
         }
         $graph = ( new VersionGraphSource() )->graph( (int) $run['version_id'] );
         return rest_ensure_response( RunPresenter::detail( $run, RunStepStore::for_run( (int) $run['id'] ), $graph ) );
@@ -604,7 +604,7 @@ class RestAPI {
                     );
                 }
                 if ( is_wp_error( WorkflowStore::delete( $id ) ) ) {
-                    return new \WP_Error( 'yaymatik_delete_failed', __( 'Couldn’t delete the workflow. Try again.', 'yaymatik' ), [ 'status' => 500 ] );
+                    return new \WP_Error( 'yaymatik_delete_failed', __( 'Couldn’t delete the workflow. Try again.', 'yaymatik-automation-for-woocommerce' ), [ 'status' => 500 ] );
                 }
                 return rest_ensure_response( [ 'deleted' => true ] );
             }
@@ -646,6 +646,6 @@ class RestAPI {
     }
 
     private function not_found(): \WP_Error {
-        return new \WP_Error( 'yaymatik_not_found', __( 'Workflow not found.', 'yaymatik' ), [ 'status' => 404 ] );
+        return new \WP_Error( 'yaymatik_not_found', __( 'Workflow not found.', 'yaymatik-automation-for-woocommerce' ), [ 'status' => 404 ] );
     }
 }

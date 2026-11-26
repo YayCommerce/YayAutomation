@@ -19,11 +19,11 @@ class OrderData extends DataItem {
     }
 
     public function label(): string {
-        return __( 'Order', 'yaymatik' );
+        return __( 'Order', 'yaymatik-automation-for-woocommerce' );
     }
 
     public function description(): string {
-        return __( 'The WooCommerce order that started this workflow: its number, totals, status, payment, shipping and items.', 'yaymatik' );
+        return __( 'The WooCommerce order that started this workflow: its number, totals, status, payment, shipping and items.', 'yaymatik-automation-for-woocommerce' );
     }
 
     public function icon(): string {
@@ -55,59 +55,59 @@ class OrderData extends DataItem {
     protected function define(): array {
         return [
             'number'                    => [
-                'label' => __( 'Order number', 'yaymatik' ),
+                'label' => __( 'Order number', 'yaymatik-automation-for-woocommerce' ),
                 'type'  => self::TYPE_STRING,
                 'value' => fn( \WC_Order $order ) => (string) $order->get_order_number(),
             ],
             'total'                     => [
-                'label'      => __( 'Order total', 'yaymatik' ),
+                'label'      => __( 'Order total', 'yaymatik-automation-for-woocommerce' ),
                 'type'       => self::TYPE_NUMBER,
                 'value_type' => Type::money(),
                 'value'      => fn( \WC_Order $order ) => (float) $order->get_total(),
                 'display'    => fn( \WC_Order $order, bool $html ) => self::price( $order, (float) $order->get_total(), $html ),
             ],
             'subtotal'                  => [
-                'label'      => __( 'Order subtotal', 'yaymatik' ),
+                'label'      => __( 'Order subtotal', 'yaymatik-automation-for-woocommerce' ),
                 'type'       => self::TYPE_NUMBER,
                 'value_type' => Type::money(),
                 'value'      => fn( \WC_Order $order ) => (float) $order->get_subtotal(),
                 'display'    => fn( \WC_Order $order, bool $html ) => self::price( $order, (float) $order->get_subtotal(), $html ),
             ],
             'status'                    => [
-                'label'   => __( 'Order status', 'yaymatik' ),
+                'label'   => __( 'Order status', 'yaymatik-automation-for-woocommerce' ),
                 'type'    => self::TYPE_ENUM,
                 'value'   => fn( \WC_Order $order ) => $order->get_status(),
                 'options' => [ self::class, 'statuses' ],
             ],
             'payment_method'            => [
-                'label'   => __( 'Payment method', 'yaymatik' ),
+                'label'   => __( 'Payment method', 'yaymatik-automation-for-woocommerce' ),
                 'type'    => self::TYPE_ENUM,
                 'value'   => fn( \WC_Order $order ) => $order->get_payment_method(),
                 'display' => fn( \WC_Order $order, bool $html ) => self::text( $order->get_payment_method_title(), $html ),
                 'options' => [ self::class, 'payment_methods' ],
             ],
             'shipping_method'           => [
-                'label' => __( 'Shipping method', 'yaymatik' ),
+                'label' => __( 'Shipping method', 'yaymatik-automation-for-woocommerce' ),
                 'type'  => self::TYPE_STRING,
                 'value' => fn( \WC_Order $order ) => $order->get_shipping_method(),
             ],
             'item_count'                => [
-                'label' => __( 'Item count', 'yaymatik' ),
+                'label' => __( 'Item count', 'yaymatik-automation-for-woocommerce' ),
                 'type'  => self::TYPE_NUMBER,
                 'value' => fn( \WC_Order $order ) => (float) $order->get_item_count(),
             ],
             'created_date'              => [
-                'label'     => __( 'Order date', 'yaymatik' ),
+                'label'     => __( 'Order date', 'yaymatik-automation-for-woocommerce' ),
                 'type'      => self::TYPE_DATE,
                 // WC_DateTime is in the site's timezone, so this is the date the store sees.
                 'value'     => fn( \WC_Order $order ) => $order->get_date_created() ? $order->get_date_created()->date( 'Y-m-d' ) : '',
                 'timestamp' => fn( \WC_Order $order ) => $order->get_date_created() ? $order->get_date_created()->getTimestamp() : null,
                 'display'   => fn( \WC_Order $order, bool $html ) => self::text( wc_format_datetime( $order->get_date_created() ), $html ),
             ],
-            'paid_date'                 => self::date_field( __( 'Paid date', 'yaymatik' ), fn( \WC_Order $order ) => $order->get_date_paid() ),
-            'completed_date'            => self::date_field( __( 'Completed date', 'yaymatik' ), fn( \WC_Order $order ) => $order->get_date_completed() ),
+            'paid_date'                 => self::date_field( __( 'Paid date', 'yaymatik-automation-for-woocommerce' ), fn( \WC_Order $order ) => $order->get_date_paid() ),
+            'completed_date'            => self::date_field( __( 'Completed date', 'yaymatik-automation-for-woocommerce' ), fn( \WC_Order $order ) => $order->get_date_completed() ),
             'product_ids'               => [
-                'label'   => __( 'Products in order', 'yaymatik' ),
+                'label'   => __( 'Products in order', 'yaymatik-automation-for-woocommerce' ),
                 'type'    => self::TYPE_LIST,
                 'search'  => 'product',
                 // Parents, so a variation matches a rule on its product.
@@ -115,33 +115,33 @@ class OrderData extends DataItem {
                 'display' => fn( \WC_Order $order, bool $html ) => self::text( implode( ', ', array_map( fn( \WC_Order_Item $item ) => $item->get_name(), $order->get_items() ) ), $html ),
             ],
             'category_ids'              => [
-                'label'   => __( 'Categories in order', 'yaymatik' ),
+                'label'   => __( 'Categories in order', 'yaymatik-automation-for-woocommerce' ),
                 'type'    => self::TYPE_LIST,
                 'search'  => 'category',
                 'value'   => [ self::class, 'category_ids' ],
                 'display' => fn( \WC_Order $order, bool $html ) => self::text( implode( ', ', array_filter( array_map( fn( string $id ) => (string) get_term_field( 'name', (int) $id, 'product_cat', 'raw' ), self::category_ids( $order ) ) ) ), $html ),
             ],
             'coupon_codes'              => [
-                'label'   => __( 'Coupons used', 'yaymatik' ),
+                'label'   => __( 'Coupons used', 'yaymatik-automation-for-woocommerce' ),
                 'type'    => self::TYPE_LIST,
                 'search'  => 'coupon',
                 'value'   => fn( \WC_Order $order ) => array_values( $order->get_coupon_codes() ),
                 'display' => fn( \WC_Order $order, bool $html ) => self::text( implode( ', ', $order->get_coupon_codes() ), $html ),
             ],
-            'billing_country'           => self::country_field( __( 'Billing country', 'yaymatik' ), fn( \WC_Order $order ) => $order->get_billing_country() ),
-            'shipping_country'          => self::country_field( __( 'Shipping country', 'yaymatik' ), fn( \WC_Order $order ) => $order->get_shipping_country() ),
+            'billing_country'           => self::country_field( __( 'Billing country', 'yaymatik-automation-for-woocommerce' ), fn( \WC_Order $order ) => $order->get_billing_country() ),
+            'shipping_country'          => self::country_field( __( 'Shipping country', 'yaymatik-automation-for-woocommerce' ), fn( \WC_Order $order ) => $order->get_shipping_country() ),
             'customer_note'             => [
-                'label' => __( 'Customer note', 'yaymatik' ),
+                'label' => __( 'Customer note', 'yaymatik-automation-for-woocommerce' ),
                 'type'  => self::TYPE_STRING,
                 'value' => fn( \WC_Order $order ) => $order->get_customer_note(),
             ],
             'is_guest'                  => [
-                'label' => __( 'Is guest', 'yaymatik' ),
+                'label' => __( 'Is guest', 'yaymatik-automation-for-woocommerce' ),
                 'type'  => self::TYPE_BOOLEAN,
                 'value' => fn( \WC_Order $order ) => 0 === (int) $order->get_customer_id(),
             ],
             'customer'                  => [
-                'label'       => __( 'Customer', 'yaymatik' ),
+                'label'       => __( 'Customer', 'yaymatik-automation-for-woocommerce' ),
                 'type'        => self::TYPE_STRING,
                 'value_type'  => Type::entity( CustomerData::ID ),
                 // The billing details on the order, so guests have a customer too.
@@ -149,13 +149,13 @@ class OrderData extends DataItem {
                 'conditional' => false,
             ],
             'admin_url'                 => [
-                'label'       => __( 'Order admin URL', 'yaymatik' ),
+                'label'       => __( 'Order admin URL', 'yaymatik-automation-for-woocommerce' ),
                 'type'        => self::TYPE_STRING,
                 'value'       => fn( \WC_Order $order ) => $order->get_edit_order_url(),
                 'conditional' => false,
             ],
             'items'                     => [
-                'label'       => __( 'Order items', 'yaymatik' ),
+                'label'       => __( 'Order items', 'yaymatik-automation-for-woocommerce' ),
                 'type'        => self::TYPE_STRING,
                 'value_type'  => Type::list_of( Type::entity( OrderItemData::ID ) ),
                 'value'       => fn( \WC_Order $order ) => array_values(
@@ -165,12 +165,12 @@ class OrderData extends DataItem {
                 'conditional' => false,
             ],
             'has_products_not_reviewed' => [
-                'label' => __( 'Order has products not reviewed', 'yaymatik' ),
+                'label' => __( 'Order has products not reviewed', 'yaymatik-automation-for-woocommerce' ),
                 'type'  => self::TYPE_BOOLEAN,
                 'value' => fn( \WC_Order $order ) => (bool) ReviewProducts::for_order( $order ),
             ],
             'review_products'           => [
-                'label'       => __( 'Products to review', 'yaymatik' ),
+                'label'       => __( 'Products to review', 'yaymatik-automation-for-woocommerce' ),
                 'type'        => self::TYPE_STRING,
                 'value'       => fn( \WC_Order $order ) => ReviewProducts::render( ReviewProducts::for_order( $order ), false ),
                 'display'     => fn( \WC_Order $order, bool $html ) => ReviewProducts::render( ReviewProducts::for_order( $order ), $html ),
@@ -276,9 +276,9 @@ class OrderData extends DataItem {
             $foot .= '<tr><th ' . $cell . ' scope="row" colspan="2">' . wp_kses_post( $total['label'] ) . '</th><td ' . $cell . '>' . wp_kses_post( $total['value'] ) . '</td></tr>';
         }
         $table = '<table class="td" cellspacing="0" cellpadding="6" border="1" style="width:100%;">'
-            . '<thead><tr><th ' . $cell . ' scope="col">' . esc_html__( 'Product', 'yaymatik' ) . '</th>'
-            . '<th ' . $cell . ' scope="col">' . esc_html__( 'Quantity', 'yaymatik' ) . '</th>'
-            . '<th ' . $cell . ' scope="col">' . esc_html__( 'Price', 'yaymatik' ) . '</th></tr></thead>'
+            . '<thead><tr><th ' . $cell . ' scope="col">' . esc_html__( 'Product', 'yaymatik-automation-for-woocommerce' ) . '</th>'
+            . '<th ' . $cell . ' scope="col">' . esc_html__( 'Quantity', 'yaymatik-automation-for-woocommerce' ) . '</th>'
+            . '<th ' . $cell . ' scope="col">' . esc_html__( 'Price', 'yaymatik-automation-for-woocommerce' ) . '</th></tr></thead>'
             . '<tbody>' . $rows . '</tbody><tfoot>' . $foot . '</tfoot></table>';
         // One line: the email body goes through wpautop(), which would put <br> between table rows.
         return trim( (string) preg_replace( '/\s*\n\s*/', ' ', $table ) );
@@ -288,8 +288,8 @@ class OrderData extends DataItem {
     public function sample(): array {
         $price = [ self::class, 'sample_price' ];
         $lines = [
-            [ __( 'Sample product', 'yaymatik' ), 1, 29.0 ],
-            [ __( 'Another sample product', 'yaymatik' ), 2, 20.0 ],
+            [ __( 'Sample product', 'yaymatik-automation-for-woocommerce' ), 1, 29.0 ],
+            [ __( 'Another sample product', 'yaymatik-automation-for-woocommerce' ), 2, 20.0 ],
         ];
         $cell  = 'class="td" style="text-align:left;"';
         $rows  = '';
@@ -300,16 +300,16 @@ class OrderData extends DataItem {
         }
         $totals = [
             [
-                'label' => __( 'Subtotal:', 'yaymatik' ),
+                'label' => __( 'Subtotal:', 'yaymatik-automation-for-woocommerce' ),
                 'value' => $price( 49.0 )['html'],
             ],
             [
-                'label' => __( 'Total:', 'yaymatik' ),
+                'label' => __( 'Total:', 'yaymatik-automation-for-woocommerce' ),
                 'value' => $price( 54.0 )['html'],
             ],
         ];
-        $text[] = __( 'Subtotal:', 'yaymatik' ) . ' ' . $price( 49.0 )['text'];
-        $text[] = __( 'Total:', 'yaymatik' ) . ' ' . $price( 54.0 )['text'];
+        $text[] = __( 'Subtotal:', 'yaymatik-automation-for-woocommerce' ) . ' ' . $price( 49.0 )['text'];
+        $text[] = __( 'Total:', 'yaymatik-automation-for-woocommerce' ) . ' ' . $price( 54.0 )['text'];
 
         return [
             'number'                    => '1001',
@@ -317,13 +317,13 @@ class OrderData extends DataItem {
             'subtotal'                  => $price( 49.0 ),
             'status'                    => [
                 'value' => 'processing',
-                'text'  => self::statuses()['processing'] ?? __( 'Processing', 'yaymatik' ),
+                'text'  => self::statuses()['processing'] ?? __( 'Processing', 'yaymatik-automation-for-woocommerce' ),
             ],
             'payment_method'            => [
                 'value' => 'card',
-                'text'  => __( 'Credit card', 'yaymatik' ),
+                'text'  => __( 'Credit card', 'yaymatik-automation-for-woocommerce' ),
             ],
-            'shipping_method'           => __( 'Flat rate', 'yaymatik' ),
+            'shipping_method'           => __( 'Flat rate', 'yaymatik-automation-for-woocommerce' ),
             'item_count'                => 3.0,
             'created_date'              => [
                 'value' => wp_date( 'Y-m-d' ),
@@ -339,11 +339,11 @@ class OrderData extends DataItem {
             ],
             'product_ids'               => [
                 'value' => [ '1', '2' ],
-                'text'  => __( 'Sample product', 'yaymatik' ) . ', ' . __( 'Another sample product', 'yaymatik' ),
+                'text'  => __( 'Sample product', 'yaymatik-automation-for-woocommerce' ) . ', ' . __( 'Another sample product', 'yaymatik-automation-for-woocommerce' ),
             ],
             'category_ids'              => [
                 'value' => [ '1' ],
-                'text'  => __( 'Sample category', 'yaymatik' ),
+                'text'  => __( 'Sample category', 'yaymatik-automation-for-woocommerce' ),
             ],
             'coupon_codes'              => [
                 'value' => [ 'ymsample' ],
@@ -357,7 +357,7 @@ class OrderData extends DataItem {
                 'value' => 'US',
                 'text'  => CustomerData::countries()['US'] ?? 'United States (US)',
             ],
-            'customer_note'             => __( 'Please leave it at the door.', 'yaymatik' ),
+            'customer_note'             => __( 'Please leave it at the door.', 'yaymatik-automation-for-woocommerce' ),
             'is_guest'                  => false,
             'admin_url'                 => admin_url( 'admin.php?page=wc-orders' ),
             'items'                     => [

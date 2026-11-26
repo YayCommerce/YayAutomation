@@ -14,9 +14,12 @@ export function CartTrackingSection({ form, serverErrors }: { form: SettingsForm
   return (
     <Card>
       <CardHeader className="border-b">
-        <CardTitle className="text-base">{__('Cart tracking', 'yaymatik')}</CardTitle>
+        <CardTitle className="text-base">{__('Cart tracking', 'yaymatik-automation-for-woocommerce')}</CardTitle>
         <CardDescription>
-          {__('Lets the abandoned cart and abandoned checkout workflows find carts and email shoppers.', 'yaymatik')}
+          {__(
+            'Lets the abandoned cart and abandoned checkout workflows find carts and email shoppers.',
+            'yaymatik-automation-for-woocommerce',
+          )}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -24,16 +27,16 @@ export function CartTrackingSection({ form, serverErrors }: { form: SettingsForm
           <SwitchSetting
             form={form}
             name="cartTracking"
-            label={__('Track carts', 'yaymatik')}
+            label={__('Track carts', 'yaymatik-automation-for-woocommerce')}
             description={
               tracking
                 ? __(
                     'On. Carts of logged-in customers and guests are tracked. Emails guests type at checkout are saved before they place the order.',
-                    'yaymatik',
+                    'yaymatik-automation-for-woocommerce',
                   )
                 : __(
                     'Off by default. Workflows with a cart trigger don’t start while it’s off. When on, emails guests type at checkout are saved before they place the order.',
-                    'yaymatik',
+                    'yaymatik-automation-for-woocommerce',
                   )
             }
             serverErrors={serverErrors}
@@ -46,16 +49,16 @@ export function CartTrackingSection({ form, serverErrors }: { form: SettingsForm
                   <NumberSetting
                     form={form}
                     name="abandonMinutes"
-                    label={__('Count a cart as abandoned after', 'yaymatik')}
+                    label={__('Count a cart as abandoned after', 'yaymatik-automation-for-woocommerce')}
                     description={sprintf(
                       /* translators: 1: smallest number, 2: largest number */
                       __(
                         'Minutes without activity, %1$d to %2$d. Reminder times in cart workflows count from then.',
-                        'yaymatik',
+                        'yaymatik-automation-for-woocommerce',
                       ),
                       ...settingRanges.abandonMinutes,
                     )}
-                    unit={__('minutes', 'yaymatik')}
+                    unit={__('minutes', 'yaymatik-automation-for-woocommerce')}
                     min={settingRanges.abandonMinutes[0]}
                     max={settingRanges.abandonMinutes[1]}
                     serverErrors={serverErrors}
@@ -66,10 +69,10 @@ export function CartTrackingSection({ form, serverErrors }: { form: SettingsForm
               <SwitchSetting
                 form={form}
                 name="captureGuestEmail"
-                label={__('Capture guest emails at checkout', 'yaymatik')}
+                label={__('Capture guest emails at checkout', 'yaymatik-automation-for-woocommerce')}
                 description={__(
                   'Saves the email a guest types at checkout, on classic and block checkout, before the order is placed, so the cart can be recovered.',
-                  'yaymatik',
+                  'yaymatik-automation-for-woocommerce',
                 )}
                 serverErrors={serverErrors}
               />
@@ -79,16 +82,16 @@ export function CartTrackingSection({ form, serverErrors }: { form: SettingsForm
           <NumberSetting
             form={form}
             name="cartRetentionDays"
-            label={__('Delete old carts after', 'yaymatik')}
+            label={__('Delete old carts after', 'yaymatik-automation-for-woocommerce')}
             description={sprintf(
               /* translators: 1: smallest number, 2: largest number */
               __(
                 'Carts with no activity for this long are deleted, with their email, %1$d to %2$d days. Applies even while tracking is off.',
-                'yaymatik',
+                'yaymatik-automation-for-woocommerce',
               ),
               ...settingRanges.cartRetentionDays,
             )}
-            unit={__('days', 'yaymatik')}
+            unit={__('days', 'yaymatik-automation-for-woocommerce')}
             min={settingRanges.cartRetentionDays[0]}
             max={settingRanges.cartRetentionDays[1]}
             serverErrors={serverErrors}

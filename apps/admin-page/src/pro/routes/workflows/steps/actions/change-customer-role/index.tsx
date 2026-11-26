@@ -12,15 +12,25 @@ export const changeCustomerRoleStep = (): Step =>
     kind: 'action',
     result: (step) => {
       const role = catalogLabel('change_customer_role', 'role', String(step.input.role ?? ''));
-      if (step.output.from === step.output.to) return __('Roles unchanged', 'yaymatik');
+      if (step.output.from === step.output.to) return __('Roles unchanged', 'yaymatik-automation-for-woocommerce');
       if (step.input.mode === 'remove')
-        return /* translators: %s: role name */ sprintf(__('Removed %s', 'yaymatik'), role);
+        return /* translators: %s: role name */ sprintf(__('Removed %s', 'yaymatik-automation-for-woocommerce'), role);
       if (step.input.mode === 'replace') {
-        return /* translators: %s: role name */ sprintf(__('Replaced roles with %s', 'yaymatik'), role);
+        return /* translators: %s: role name */ sprintf(
+          __('Replaced roles with %s', 'yaymatik-automation-for-woocommerce'),
+          role,
+        );
       }
-      return /* translators: %s: role name */ sprintf(__('Added %s', 'yaymatik'), role);
+      return /* translators: %s: role name */ sprintf(__('Added %s', 'yaymatik-automation-for-woocommerce'), role);
     },
     Footer: () => (
-      <Hints hints={[__('Store staff are never changed. A customer’s only role is never removed.', 'yaymatik')]} />
+      <Hints
+        hints={[
+          __(
+            'Store staff are never changed. A customer’s only role is never removed.',
+            'yaymatik-automation-for-woocommerce',
+          ),
+        ]}
+      />
     ),
   });

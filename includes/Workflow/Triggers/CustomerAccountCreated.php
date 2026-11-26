@@ -21,11 +21,11 @@ class CustomerAccountCreated extends Trigger {
     }
 
     public function label(): string {
-        return __( 'Customer account created', 'yaymatik' );
+        return __( 'Customer account created', 'yaymatik-automation-for-woocommerce' );
     }
 
     public function description(): string {
-        return __( 'A customer creates an account', 'yaymatik' );
+        return __( 'A customer creates an account', 'yaymatik-automation-for-woocommerce' );
     }
 
     public function icon(): string {
@@ -33,7 +33,7 @@ class CustomerAccountCreated extends Trigger {
     }
 
     public function summary(): string {
-        return __( 'When a customer creates an account', 'yaymatik' );
+        return __( 'When a customer creates an account', 'yaymatik-automation-for-woocommerce' );
     }
 
     public function category(): string {

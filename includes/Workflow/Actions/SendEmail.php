@@ -36,11 +36,11 @@ class SendEmail extends Action implements EmailStep {
     }
 
     public function label(): string {
-        return __( 'Send email', 'yaymatik' );
+        return __( 'Send email', 'yaymatik-automation-for-woocommerce' );
     }
 
     public function description(): string {
-        return __( 'Send an email to a customer in your store’s WooCommerce email style, with an unsubscribe link.', 'yaymatik' );
+        return __( 'Send an email to a customer in your store’s WooCommerce email style, with an unsubscribe link.', 'yaymatik-automation-for-woocommerce' );
     }
 
     public function icon(): string {
@@ -57,36 +57,36 @@ class SendEmail extends Action implements EmailStep {
 
     public function fields(): array {
         return [
-            Field::notice( 'from', __( 'From', 'yaymatik' ), SendInternalEmail::sender()['fromLine'] ),
-            Field::text( 'to', __( 'To', 'yaymatik' ) )
+            Field::notice( 'from', __( 'From', 'yaymatik-automation-for-woocommerce' ), SendInternalEmail::sender()['fromLine'] ),
+            Field::text( 'to', __( 'To', 'yaymatik-automation-for-woocommerce' ) )
                 /* translators: {{ step }}: step name; keep {{ … }} as it is. */
-                ->required( __( '{{ step }} needs an email address.', 'yaymatik' ) )
+                ->required( __( '{{ step }} needs an email address.', 'yaymatik-automation-for-woocommerce' ) )
                 ->variables()
                 ->default( '{{ customer.email }}' )
-                ->help( __( 'One email address, or a variable such as the customer’s email.', 'yaymatik' ) ),
-            Field::text( 'subject', __( 'Subject', 'yaymatik' ) )
+                ->help( __( 'One email address, or a variable such as the customer’s email.', 'yaymatik-automation-for-woocommerce' ) ),
+            Field::text( 'subject', __( 'Subject', 'yaymatik-automation-for-woocommerce' ) )
                 /* translators: {{ step }}: step name; keep {{ … }} as it is. */
-                ->required( __( '{{ step }} needs a subject.', 'yaymatik' ) )
+                ->required( __( '{{ step }} needs a subject.', 'yaymatik-automation-for-woocommerce' ) )
                 ->variables(),
-            Field::text( 'heading', __( 'Heading', 'yaymatik' ) )
+            Field::text( 'heading', __( 'Heading', 'yaymatik-automation-for-woocommerce' ) )
                 ->variables()
-                ->help( __( 'Shown at the top of the email. Leave blank to use the subject.', 'yaymatik' ) ),
-            Field::html( 'message', __( 'Message', 'yaymatik' ) )
+                ->help( __( 'Shown at the top of the email. Leave blank to use the subject.', 'yaymatik-automation-for-woocommerce' ) ),
+            Field::html( 'message', __( 'Message', 'yaymatik-automation-for-woocommerce' ) )
                 /* translators: {{ step }}: step name; keep {{ … }} as it is. */
-                ->required( __( '{{ step }} needs a message.', 'yaymatik' ) )
+                ->required( __( '{{ step }} needs a message.', 'yaymatik-automation-for-woocommerce' ) )
                 ->variables(),
         ];
     }
 
     public function summary(): string {
         /* translators: {{ config.to }}: email address or variable; keep {{ … }} as it is. */
-        return __( 'Send to {{ config.to }}', 'yaymatik' );
+        return __( 'Send to {{ config.to }}', 'yaymatik-automation-for-woocommerce' );
     }
 
     public function outputs(): array {
         return [
             'to' => [
-                'label' => __( 'Sent to', 'yaymatik' ),
+                'label' => __( 'Sent to', 'yaymatik-automation-for-woocommerce' ),
                 'type'  => Type::string(),
             ],
         ];
@@ -104,7 +104,7 @@ class SendEmail extends Action implements EmailStep {
         $to = $config['to'];
         // A variable is checked when the email is sent; a typed address now.
         $one = false === strpos( $to, ',' ) && ( false !== strpos( $to, '{{' ) || is_email( $to ) );
-        return $one ? true : $this->invalid( __( 'Enter one email address or a variable.', 'yaymatik' ), 'to' );
+        return $one ? true : $this->invalid( __( 'Enter one email address or a variable.', 'yaymatik-automation-for-woocommerce' ), 'to' );
     }
 
     /**
@@ -180,7 +180,7 @@ class SendEmail extends Action implements EmailStep {
             return '';
         }
         return '<p style="margin:32px 0 0;font-size:12px;text-align:center;">'
-            . '<a href="' . esc_url( $url ) . '">' . esc_html__( 'Unsubscribe', 'yaymatik' ) . '</a></p>';
+            . '<a href="' . esc_url( $url ) . '">' . esc_html__( 'Unsubscribe', 'yaymatik-automation-for-woocommerce' ) . '</a></p>';
     }
 
     /**

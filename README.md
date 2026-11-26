@@ -31,7 +31,7 @@ pnpm install
 pnpm dev        # Vite on :3020 — needs YAYMATIK_IS_DEVELOPMENT in wp-config.php
 pnpm build      # typecheck + build
 pnpm lint:fix
-./run.sh release  # zip → release/yaymatik.zip
+./run.sh release  # zip → release/yaymatik-automation-for-woocommerce.zip
 ```
 
 ```php

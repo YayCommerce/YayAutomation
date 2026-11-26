@@ -19,11 +19,11 @@ final class CartData extends DataItem {
     }
 
     public function label(): string {
-        return __( 'Cart', 'yaymatik' );
+        return __( 'Cart', 'yaymatik-automation-for-woocommerce' );
     }
 
     public function description(): string {
-        return __( 'The cart that started this workflow: its shopper, products and total.', 'yaymatik' );
+        return __( 'The cart that started this workflow: its shopper, products and total.', 'yaymatik-automation-for-woocommerce' );
     }
 
     public function icon(): string {
@@ -33,47 +33,47 @@ final class CartData extends DataItem {
     protected function define(): array {
         return [
             'email'          => [
-                'label' => __( 'Email', 'yaymatik' ),
+                'label' => __( 'Email', 'yaymatik-automation-for-woocommerce' ),
                 'type'  => self::TYPE_STRING,
                 'value' => fn( SavedCart $cart ) => $cart->email(),
             ],
             'first_name'     => [
-                'label' => __( 'First name', 'yaymatik' ),
+                'label' => __( 'First name', 'yaymatik-automation-for-woocommerce' ),
                 'type'  => self::TYPE_STRING,
                 'value' => fn( SavedCart $cart ) => $cart->first_name(),
             ],
             'total'          => [
-                'label'      => __( 'Cart total', 'yaymatik' ),
+                'label'      => __( 'Cart total', 'yaymatik-automation-for-woocommerce' ),
                 'type'       => self::TYPE_NUMBER,
                 'value_type' => Type::money(),
                 'value'      => fn( SavedCart $cart ) => $cart->total(),
                 'display'    => fn( SavedCart $cart, bool $html ) => $cart->price( $cart->total(), $html ),
             ],
             'item_count'     => [
-                'label' => __( 'Number of products', 'yaymatik' ),
+                'label' => __( 'Number of products', 'yaymatik-automation-for-woocommerce' ),
                 'type'  => self::TYPE_NUMBER,
                 'value' => fn( SavedCart $cart ) => (float) array_sum( array_column( $cart->lines(), 'quantity' ) ),
             ],
             'product_names'  => [
-                'label' => __( 'Product names', 'yaymatik' ),
+                'label' => __( 'Product names', 'yaymatik-automation-for-woocommerce' ),
                 'type'  => self::TYPE_STRING,
                 'value' => fn( SavedCart $cart ) => self::names( $cart->lines() ),
             ],
             'last_activity'  => [
-                'label'     => __( 'Last activity', 'yaymatik' ),
+                'label'     => __( 'Last activity', 'yaymatik-automation-for-woocommerce' ),
                 'type'      => self::TYPE_DATE,
                 'value'     => fn( SavedCart $cart ) => wp_date( 'Y-m-d', strtotime( $cart->last_activity() . ' UTC' ) ),
                 'timestamp' => fn( SavedCart $cart ) => (int) strtotime( $cart->last_activity() . ' UTC' ),
                 'display'   => fn( SavedCart $cart, bool $html ) => $html ? esc_html( self::activity_text( $cart ) ) : self::activity_text( $cart ),
             ],
             'restore_url'    => [
-                'label'       => __( 'Restore link', 'yaymatik' ),
+                'label'       => __( 'Restore link', 'yaymatik-automation-for-woocommerce' ),
                 'type'        => self::TYPE_STRING,
                 'value'       => fn( SavedCart $cart ) => $cart->restore_url(),
                 'conditional' => false,
             ],
             'items'          => [
-                'label'       => __( 'Cart items', 'yaymatik' ),
+                'label'       => __( 'Cart items', 'yaymatik-automation-for-woocommerce' ),
                 'type'        => self::TYPE_STRING,
                 'value'       => fn( SavedCart $cart ) => CartItems::render( $cart, false ),
                 'display'     => [ CartItems::class, 'render' ],
@@ -81,7 +81,7 @@ final class CartData extends DataItem {
                 'block'       => true,
             ],
             'restore_button' => [
-                'label'       => __( 'Restore my cart button', 'yaymatik' ),
+                'label'       => __( 'Restore my cart button', 'yaymatik-automation-for-woocommerce' ),
                 'type'        => self::TYPE_STRING,
                 'value'       => fn( SavedCart $cart ) => CartItems::button( $cart, false ),
                 'display'     => [ CartItems::class, 'button' ],
@@ -105,11 +105,11 @@ final class CartData extends DataItem {
         }
         if ( 2 === $count ) {
             /* translators: 1: a product name, 2: another product name */
-            return sprintf( __( '%1$s and %2$s', 'yaymatik' ), $names[0], $names[1] );
+            return sprintf( __( '%1$s and %2$s', 'yaymatik-automation-for-woocommerce' ), $names[0], $names[1] );
         }
         $more = $count - 2;
         /* translators: 1: a product name, 2: another product name, 3: how many more products */
-        return sprintf( _n( '%1$s, %2$s and %3$d more', '%1$s, %2$s and %3$d more', $more, 'yaymatik' ), $names[0], $names[1], $more );
+        return sprintf( _n( '%1$s, %2$s and %3$d more', '%1$s, %2$s and %3$d more', $more, 'yaymatik-automation-for-woocommerce' ), $names[0], $names[1], $more );
     }
 
     /** Up to 3 of the store's newest products (made-up names when it has none), with a link that goes nowhere. */
@@ -132,12 +132,12 @@ final class CartData extends DataItem {
         if ( ! $lines ) {
             $lines = [
                 [
-                    'name'       => __( 'Sample product', 'yaymatik' ),
+                    'name'       => __( 'Sample product', 'yaymatik-automation-for-woocommerce' ),
                     'quantity'   => 1,
                     'line_total' => 29.0,
                 ],
                 [
-                    'name'       => __( 'Another sample product', 'yaymatik' ),
+                    'name'       => __( 'Another sample product', 'yaymatik-automation-for-woocommerce' ),
                     'quantity'   => 2,
                     'line_total' => 40.0,
                 ],

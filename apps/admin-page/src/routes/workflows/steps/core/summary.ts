@@ -16,7 +16,10 @@ export type SummaryValues<TConfig> = Partial<
 function orList(values: string[]) {
   if (values.length < 2) return values.join('');
   return sprintf(
-    /* translators: 1: comma-separated list, 2: the last item */ __('%1$s or %2$s', 'yaymatik'),
+    /* translators: 1: comma-separated list, 2: the last item */ __(
+      '%1$s or %2$s',
+      'yaymatik-automation-for-woocommerce',
+    ),
     values.slice(0, -1).join(', '),
     values[values.length - 1],
   );

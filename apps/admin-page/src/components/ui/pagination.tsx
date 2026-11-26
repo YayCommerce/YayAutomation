@@ -36,7 +36,7 @@ function Pagination({
       <span>
         {sprintf(
           /* translators: 1: current page, 2: number of pages */
-          __('Page %1$d of %2$d', 'yaymatik'),
+          __('Page %1$d of %2$d', 'yaymatik-automation-for-woocommerce'),
           currentPage,
           pageCount,
         )}
@@ -52,7 +52,7 @@ function Pagination({
       </div>
 
       <div className="flex items-center gap-2">
-        <span>{__('Go to', 'yaymatik')}</span>
+        <span>{__('Go to', 'yaymatik-automation-for-woocommerce')}</span>
         <NumberInputRoot
           min={1}
           max={pageCount}

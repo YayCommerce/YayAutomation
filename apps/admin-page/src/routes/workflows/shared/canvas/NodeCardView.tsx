@@ -20,19 +20,19 @@ export type IssueMode = 'review' | 'error';
 
 export const kindMeta: Record<WorkflowNodeKind, { label: string; icon: LucideIcon; choose: string }> = {
   trigger: {
-    label: __('Trigger', 'yaymatik'),
+    label: __('Trigger', 'yaymatik-automation-for-woocommerce'),
     icon: kindIcons.trigger,
-    choose: __('Choose a trigger', 'yaymatik'),
+    choose: __('Choose a trigger', 'yaymatik-automation-for-woocommerce'),
   },
   condition: {
-    label: __('Condition', 'yaymatik'),
+    label: __('Condition', 'yaymatik-automation-for-woocommerce'),
     icon: kindIcons.condition,
-    choose: __('Choose a condition', 'yaymatik'),
+    choose: __('Choose a condition', 'yaymatik-automation-for-woocommerce'),
   },
   action: {
-    label: __('Action', 'yaymatik'),
+    label: __('Action', 'yaymatik-automation-for-woocommerce'),
     icon: kindIcons.action,
-    choose: __('Choose an action', 'yaymatik'),
+    choose: __('Choose an action', 'yaymatik-automation-for-woocommerce'),
   },
 };
 
@@ -113,11 +113,11 @@ export function NodeCardView({
           <div className="relative mt-2.5 h-5.5 basis-full text-xs font-semibold" aria-hidden>
             <span className={branchPill} style={{ left: branchLeft.then }}>
               <Check className="text-kind-action size-3.25 stroke-[2.5]" />
-              {__('Yes', 'yaymatik')}
+              {__('Yes', 'yaymatik-automation-for-woocommerce')}
             </span>
             <span className={branchPill} style={{ left: branchLeft.otherwise }}>
               <X className="text-muted-foreground size-3.25 stroke-[2.5]" />
-              {__('No', 'yaymatik')}
+              {__('No', 'yaymatik-automation-for-woocommerce')}
             </span>
           </div>
         )}
@@ -131,7 +131,9 @@ export function NodeCardView({
             )}
           >
             <CircleAlert className="size-3 stroke-[2.5]" aria-hidden />
-            {issue === 'error' ? __('Error', 'yaymatik') : __('Needs setup', 'yaymatik')}
+            {issue === 'error'
+              ? __('Error', 'yaymatik-automation-for-woocommerce')
+              : __('Needs setup', 'yaymatik-automation-for-woocommerce')}
           </span>
         )}
       </div>

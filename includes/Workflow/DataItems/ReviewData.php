@@ -15,11 +15,11 @@ final class ReviewData extends DataItem {
     }
 
     public function label(): string {
-        return __( 'Review', 'yaymatik' );
+        return __( 'Review', 'yaymatik-automation-for-woocommerce' );
     }
 
     public function description(): string {
-        return __( 'The product review that started the run: rating, text and product.', 'yaymatik' );
+        return __( 'The product review that started the run: rating, text and product.', 'yaymatik-automation-for-woocommerce' );
     }
 
     public function icon(): string {
@@ -29,7 +29,7 @@ final class ReviewData extends DataItem {
     protected function define(): array {
         return [
             'rating'       => [
-                'label' => __( 'Rating', 'yaymatik' ),
+                'label' => __( 'Rating', 'yaymatik-automation-for-woocommerce' ),
                 'type'  => self::TYPE_NUMBER,
                 // A review posted without stars has no rating, which no number rule matches.
                 'value' => function ( \WP_Comment $review ) {
@@ -38,17 +38,17 @@ final class ReviewData extends DataItem {
                 },
             ],
             'content'      => [
-                'label' => __( 'Review text', 'yaymatik' ),
+                'label' => __( 'Review text', 'yaymatik-automation-for-woocommerce' ),
                 'type'  => self::TYPE_STRING,
                 'value' => fn( \WP_Comment $review ) => (string) $review->comment_content,
             ],
             'is_verified'  => [
-                'label' => __( 'Verified owner', 'yaymatik' ),
+                'label' => __( 'Verified owner', 'yaymatik-automation-for-woocommerce' ),
                 'type'  => self::TYPE_BOOLEAN,
                 'value' => fn( \WP_Comment $review ) => (bool) get_comment_meta( (int) $review->comment_ID, 'verified', true ),
             ],
             'product_name' => [
-                'label' => __( 'Reviewed product', 'yaymatik' ),
+                'label' => __( 'Reviewed product', 'yaymatik-automation-for-woocommerce' ),
                 'type'  => self::TYPE_STRING,
                 'value' => function ( \WP_Comment $review ) {
                     $product = wc_get_product( (int) $review->comment_post_ID );
@@ -80,9 +80,9 @@ final class ReviewData extends DataItem {
     public function sample(): array {
         return [
             'rating'       => 5.0,
-            'content'      => __( 'Great quality, and it arrived fast.', 'yaymatik' ),
+            'content'      => __( 'Great quality, and it arrived fast.', 'yaymatik-automation-for-woocommerce' ),
             'is_verified'  => true,
-            'product_name' => __( 'Sample product', 'yaymatik' ),
+            'product_name' => __( 'Sample product', 'yaymatik-automation-for-woocommerce' ),
         ];
     }
 }

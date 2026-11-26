@@ -95,7 +95,7 @@ abstract class CartTrigger extends Trigger {
             return null;
         }
         if ( ! empty( $row['series_at'] ) ) {
-            return __( 'This cart already got a reminder series.', 'yaymatik' );
+            return __( 'This cart already got a reminder series.', 'yaymatik-automation-for-woocommerce' );
         }
         if ( CartStore::ORDERED === $row['status'] ) {
             return Cancellation::order_placed( (int) $row['order_id'] );
@@ -105,7 +105,7 @@ abstract class CartTrigger extends Trigger {
         }
         // Events are claimed in order, so the older cart of a sweep starts and blocks the next.
         if ( CartStore::series_taken( $row['email'], $id, gmdate( 'Y-m-d H:i:s', time() - self::SERIES_EVERY ) ) ) {
-            return __( 'This shopper already got a reminder series in the last 7 days.', 'yaymatik' );
+            return __( 'This shopper already got a reminder series in the last 7 days.', 'yaymatik-automation-for-woocommerce' );
         }
         return null;
     }
@@ -120,7 +120,7 @@ abstract class CartTrigger extends Trigger {
             return null;
         }
         /* translators: %s: trigger name */
-        return sprintf( __( 'Turn on cart tracking before activating. %s never starts while it’s off.', 'yaymatik' ), $this->label() );
+        return sprintf( __( 'Turn on cart tracking before activating. %s never starts while it’s off.', 'yaymatik-automation-for-woocommerce' ), $this->label() );
     }
 
     /**

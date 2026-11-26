@@ -110,13 +110,13 @@ class UnsubscribePage {
     <p><?php echo nl2br( esc_html( $texts['body'] ) ); ?></p>
         <?php if ( self::STATE_CONFIRM === $state ) : ?>
     <form method="post">
-        <button type="submit"><?php esc_html_e( 'Unsubscribe', 'yaymatik' ); ?></button>
+        <button type="submit"><?php esc_html_e( 'Unsubscribe', 'yaymatik-automation-for-woocommerce' ); ?></button>
     </form>
         <?php else : ?>
     <a href="<?php echo esc_url( home_url( '/' ) ); ?>">
             <?php
             /* translators: %s: store name */
-            echo esc_html( sprintf( __( 'Go to %s', 'yaymatik' ), $store ) );
+            echo esc_html( sprintf( __( 'Go to %s', 'yaymatik-automation-for-woocommerce' ), $store ) );
             ?>
     </a>
         <?php endif; ?>
@@ -129,7 +129,7 @@ class UnsubscribePage {
     /** The done state's text when the unsubscribe text setting is empty. */
     public static function default_done_body(): string {
         /* translators: %s: store name */
-        return sprintf( __( 'You won’t get emails like this one from %s any more.', 'yaymatik' ), self::store_name() );
+        return sprintf( __( 'You won’t get emails like this one from %s any more.', 'yaymatik-automation-for-woocommerce' ), self::store_name() );
     }
 
     private static function store_name(): string {
@@ -146,22 +146,22 @@ class UnsubscribePage {
         $done = (string) Settings::get( 'unsubscribe_text' );
         return [
             self::STATE_CONFIRM => [
-                'heading' => __( 'Unsubscribe from these emails?', 'yaymatik' ),
+                'heading' => __( 'Unsubscribe from these emails?', 'yaymatik-automation-for-woocommerce' ),
                 /* translators: %s: store name */
-                'body'    => sprintf( __( 'You’ll stop getting emails like this one from %s. Emails about your orders, like receipts and shipping updates, still arrive.', 'yaymatik' ), $store ),
+                'body'    => sprintf( __( 'You’ll stop getting emails like this one from %s. Emails about your orders, like receipts and shipping updates, still arrive.', 'yaymatik-automation-for-woocommerce' ), $store ),
             ],
             self::STATE_DONE    => [
-                'heading' => __( 'You’re unsubscribed', 'yaymatik' ),
+                'heading' => __( 'You’re unsubscribed', 'yaymatik-automation-for-woocommerce' ),
                 'body'    => '' !== $done ? $done : self::default_done_body(),
             ],
             self::STATE_INVALID => [
-                'heading' => __( 'This link is no longer valid', 'yaymatik' ),
+                'heading' => __( 'This link is no longer valid', 'yaymatik-automation-for-woocommerce' ),
                 /* translators: %s: store name */
-                'body'    => sprintf( __( 'Use the unsubscribe link in the latest email you got from %s.', 'yaymatik' ), $store ),
+                'body'    => sprintf( __( 'Use the unsubscribe link in the latest email you got from %s.', 'yaymatik-automation-for-woocommerce' ), $store ),
             ],
             self::STATE_ERROR   => [
-                'heading' => __( 'Something went wrong', 'yaymatik' ),
-                'body'    => __( 'We couldn’t unsubscribe you just now. Please try again in a moment.', 'yaymatik' ),
+                'heading' => __( 'Something went wrong', 'yaymatik-automation-for-woocommerce' ),
+                'body'    => __( 'We couldn’t unsubscribe you just now. Please try again in a moment.', 'yaymatik-automation-for-woocommerce' ),
             ],
         ];
     }

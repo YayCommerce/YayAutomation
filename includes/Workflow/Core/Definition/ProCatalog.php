@@ -66,32 +66,32 @@ final class ProCatalog {
             return null;
         }
         $names                   = [
-            'customer_inactive'            => [ __( 'Customer inactive', 'yaymatik' ), [] ],
-            'customer_order_count_reaches' => [ __( 'Customer order count reaches', 'yaymatik' ), [] ],
-            'customer_total_spend_reaches' => [ __( 'Customer total spend reaches', 'yaymatik' ), [] ],
-            'user_logged_in'               => [ __( 'User logged in', 'yaymatik' ), [] ],
-            'customer_logged_in'           => [ __( 'Customer logged in', 'yaymatik' ), [] ],
-            'wait_until'                   => [ __( 'Wait until', 'yaymatik' ), [ 'until' => __( 'Waited until', 'yaymatik' ) ] ],
-            'resend_wc_email'              => [ __( 'Resend WooCommerce email', 'yaymatik' ), [ 'email' => __( 'Email', 'yaymatik' ) ] ],
+            'customer_inactive'            => [ __( 'Customer inactive', 'yaymatik-automation-for-woocommerce' ), [] ],
+            'customer_order_count_reaches' => [ __( 'Customer order count reaches', 'yaymatik-automation-for-woocommerce' ), [] ],
+            'customer_total_spend_reaches' => [ __( 'Customer total spend reaches', 'yaymatik-automation-for-woocommerce' ), [] ],
+            'user_logged_in'               => [ __( 'User logged in', 'yaymatik-automation-for-woocommerce' ), [] ],
+            'customer_logged_in'           => [ __( 'Customer logged in', 'yaymatik-automation-for-woocommerce' ), [] ],
+            'wait_until'                   => [ __( 'Wait until', 'yaymatik-automation-for-woocommerce' ), [ 'until' => __( 'Waited until', 'yaymatik-automation-for-woocommerce' ) ] ],
+            'resend_wc_email'              => [ __( 'Resend WooCommerce email', 'yaymatik-automation-for-woocommerce' ), [ 'email' => __( 'Email', 'yaymatik-automation-for-woocommerce' ) ] ],
             'update_order_meta'            => [
-                __( 'Update order custom field', 'yaymatik' ),
+                __( 'Update order custom field', 'yaymatik-automation-for-woocommerce' ),
                 [
-                    'key'     => __( 'Field name', 'yaymatik' ),
-                    'changed' => __( 'Value changed', 'yaymatik' ),
+                    'key'     => __( 'Field name', 'yaymatik-automation-for-woocommerce' ),
+                    'changed' => __( 'Value changed', 'yaymatik-automation-for-woocommerce' ),
                 ],
             ],
             'update_customer_meta'         => [
-                __( 'Update customer custom field', 'yaymatik' ),
+                __( 'Update customer custom field', 'yaymatik-automation-for-woocommerce' ),
                 [
-                    'key'     => __( 'Field name', 'yaymatik' ),
-                    'changed' => __( 'Value changed', 'yaymatik' ),
+                    'key'     => __( 'Field name', 'yaymatik-automation-for-woocommerce' ),
+                    'changed' => __( 'Value changed', 'yaymatik-automation-for-woocommerce' ),
                 ],
             ],
             'change_customer_role'         => [
-                __( 'Change customer role', 'yaymatik' ),
+                __( 'Change customer role', 'yaymatik-automation-for-woocommerce' ),
                 [
-                    'from' => __( 'Roles before', 'yaymatik' ),
-                    'to'   => __( 'Roles after', 'yaymatik' ),
+                    'from' => __( 'Roles before', 'yaymatik-automation-for-woocommerce' ),
+                    'to'   => __( 'Roles after', 'yaymatik-automation-for-woocommerce' ),
                 ],
             ],
         ];

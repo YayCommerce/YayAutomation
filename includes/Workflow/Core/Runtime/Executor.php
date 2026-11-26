@@ -128,7 +128,7 @@ final class Executor {
         $id    = (int) $run['id'];
         $graph = $this->graphs->graph( (int) $run['version_id'] );
         if ( ! $graph || ! is_array( $graph['nodes'] ?? null ) ) {
-            return $this->fail( $id, null, null, __( 'The workflow version this run started on no longer exists.', 'yaymatik' ) );
+            return $this->fail( $id, null, null, __( 'The workflow version this run started on no longer exists.', 'yaymatik-automation-for-woocommerce' ) );
         }
         $nodes   = GraphSchema::by_id( $graph['nodes'] );
         $edges   = is_array( $graph['edges'] ?? null ) ? $graph['edges'] : [];
@@ -161,7 +161,7 @@ final class Executor {
             $step    = $step instanceof Step && Step::KIND_TRIGGER !== $step->kind() ? $step : null;
             // A run that started on YayMatik Pro stops before a step this site can't run as written.
             if ( $node && ! isset( $rows[ $step_id ] ) && ProUsage::node( $node ) ) {
-                return $this->cancel( $id, $queue, $scope, __( 'Needs YayMatik Pro.', 'yaymatik' ) );
+                return $this->cancel( $id, $queue, $scope, __( 'Needs YayMatik Pro.', 'yaymatik-automation-for-woocommerce' ) );
             }
             $outcome = $this->outcome( $run, $step_id, $node, $step, $rows[ $step_id ] ?? null, $scope );
 
@@ -229,14 +229,14 @@ final class Executor {
             switch ( $row['status'] ) {
                 case RunStepStore::STATUS_RUNNING:
                     // Still running from an earlier slice: it was interrupted, and its error policy applies.
-                    $error = __( 'Interrupted.', 'yaymatik' );
+                    $error = __( 'Interrupted.', 'yaymatik-automation-for-woocommerce' );
                     $this->runs->finish_step( (int) $row['id'], RunStepStore::STATUS_FAILED, [], $error );
                     return self::result( RunStepStore::STATUS_FAILED, [], $error );
                 case RunStepStore::STATUS_WAITING:
                     $until = empty( $run['wait_until'] ) ? 0 : (int) strtotime( $run['wait_until'] . ' UTC' );
                     if ( ! $until ) {
                         // The run was never saved as waiting (crash right after the step): its time is unknown.
-                        $error = __( 'Interrupted.', 'yaymatik' );
+                        $error = __( 'Interrupted.', 'yaymatik-automation-for-woocommerce' );
                         $this->runs->finish_step( (int) $row['id'], RunStepStore::STATUS_FAILED, [], $error );
                         return self::result( RunStepStore::STATUS_FAILED, [], $error );
                     }
@@ -264,7 +264,7 @@ final class Executor {
         }
         $row_id = $this->runs->start_step( $run_id, $step_id, $config );
         if ( ! $row_id ) {
-            throw new \RuntimeException( esc_html__( 'Could not save the step result.', 'yaymatik' ) );
+            throw new \RuntimeException( esc_html__( 'Could not save the step result.', 'yaymatik-automation-for-woocommerce' ) );
         }
 
         $scope->set_current_step( $run_id, $step_id );
@@ -293,10 +293,10 @@ final class Executor {
             if ( $inactive ) {
                 // The plugin is off: the run goes on without this step (docs/extension-api.md §10).
                 /* translators: %s: plugin name, e.g. "YayMail" */
-                return StepResult::skipped( sprintf( __( '%s isn’t active.', 'yaymatik' ), $inactive['plugin'] ) );
+                return StepResult::skipped( sprintf( __( '%s isn’t active.', 'yaymatik-automation-for-woocommerce' ), $inactive['plugin'] ) );
             }
             /* translators: %s: step type id */
-            return StepResult::failed( sprintf( __( 'Step type "%s" is not available.', 'yaymatik' ), $block ) );
+            return StepResult::failed( sprintf( __( 'Step type "%s" is not available.', 'yaymatik-automation-for-woocommerce' ), $block ) );
         }
         try {
             $valid = $step->validate( $config );
@@ -305,7 +305,7 @@ final class Executor {
             }
             if ( true !== $valid ) {
                 /* translators: %s: what is wrong with the step's settings */
-                return StepResult::failed( sprintf( __( 'Invalid settings: %s', 'yaymatik' ), is_wp_error( $valid ) ? $valid->get_error_message() : '' ) );
+                return StepResult::failed( sprintf( __( 'Invalid settings: %s', 'yaymatik-automation-for-woocommerce' ), is_wp_error( $valid ) ? $valid->get_error_message() : '' ) );
             }
             return $step->run( $scope, $config );
         } catch ( GoneEntity $gone ) {
@@ -342,11 +342,11 @@ final class Executor {
      */
     public static function gone_message( GoneEntity $gone ): string {
         if ( CustomerData::ID === $gone->ref()->type() && 0 === strpos( $gone->ref()->id(), 'user:' ) ) {
-            return __( 'The customer was deleted.', 'yaymatik' );
+            return __( 'The customer was deleted.', 'yaymatik-automation-for-woocommerce' );
         }
         $entity = DataRegistry::entities()[ $gone->ref()->type() ] ?? null;
         /* translators: %s: what was deleted, e.g. "Order" or order:12 */
-        return sprintf( __( '%s no longer exists.', 'yaymatik' ), $entity ? $entity->label() : $gone->ref()->type() );
+        return sprintf( __( '%s no longer exists.', 'yaymatik-automation-for-woocommerce' ), $entity ? $entity->label() : $gone->ref()->type() );
     }
 
     /**
@@ -361,7 +361,7 @@ final class Executor {
         $id    = (int) $run['id'];
         $until = (int) $outcome['until'];
         if ( ! $this->queue->available() ) {
-            $error = __( 'This run can\'t wait: Action Scheduler is not available.', 'yaymatik' );
+            $error = __( 'This run can\'t wait: Action Scheduler is not available.', 'yaymatik-automation-for-woocommerce' );
             $this->runs->finish_step( (int) $outcome['row'], RunStepStore::STATUS_FAILED, [], $error );
             return $this->fail( $id, $queue, $scope, $error );
         }
