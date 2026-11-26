@@ -1,9 +1,9 @@
-import { settingRanges } from '@edition/settings';
 import { __, sprintf } from '@wordpress/i18n';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { FieldGroup } from '@/components/ui/field';
 import { NumberSetting, type ServerErrors } from './SettingFields';
+import { settingRanges } from './settingRanges';
 import type { SettingsForm } from './settingsForm';
 
 export function RunHistorySection({ form, serverErrors }: { form: SettingsForm; serverErrors: ServerErrors }) {

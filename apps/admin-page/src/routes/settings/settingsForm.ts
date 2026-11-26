@@ -1,8 +1,9 @@
-import { settingRanges } from '@edition/settings';
 import { useForm } from '@tanstack/react-form';
 import type { Settings } from '@yaymatik/types';
 import * as v from 'valibot';
 import { __, sprintf } from '@wordpress/i18n';
+
+import { settingRanges } from './settingRanges';
 
 type NumberKey = 'abandonMinutes' | 'cartRetentionDays' | 'runRetentionDays';
 
@@ -26,14 +27,11 @@ const wholeNumber = ([min, max]: [number, number], stored: number | null) => {
   );
 };
 
-/** Ranges match PHP `Settings`' save ranges for this edition. */
+/** Ranges match PHP `Settings`' save ranges. */
 export const settingsSchema = (saved: SettingsValues) =>
   v.object({
     cartTracking: v.boolean(),
-    // Not shown in the free edition: it stays as stored.
-    abandonMinutes: settingRanges.abandonMinutes
-      ? wholeNumber(settingRanges.abandonMinutes, saved.abandonMinutes)
-      : v.any(),
+    abandonMinutes: wholeNumber(settingRanges.abandonMinutes, saved.abandonMinutes),
     captureGuestEmail: v.boolean(),
     cartRetentionDays: wholeNumber(settingRanges.cartRetentionDays, saved.cartRetentionDays),
     runRetentionDays: wholeNumber(settingRanges.runRetentionDays, saved.runRetentionDays),
