@@ -23,6 +23,8 @@ The other Yay plugins follow once both groups pass (D15).
 
 **Proved** means YayMatik CI runs each extension from its own repo against YayMatik `develop` (D9), and a scenario test per row of the group's matrix below passes.
 
+**Who builds what.** Lane A (Ecosystem Foundation) builds core's side and the proof: the core changes each group needs, fixture extensions in YayMatik's tests that act like each plugin, the scenario tests and the CI job. Each plugin's real extension is its owner's task, from a brief the lane hands over; the CI job then runs it in place of the fixture.
+
 ## Approach
 
 YayMatik runs inside WordPress and WooCommerce; it does not own the runtime. It owns its state (runs, claims, cursors) and borrows the clock (WP-Cron / Action Scheduler), the database, `wp_mail` and WooCommerce hooks. So:
@@ -45,8 +47,8 @@ Within that, core owns the run and the contract; plugins add domain logic, data 
 | Plugin | Role in a workflow | Extension adds | Core adds |
 |---|---|---|---|
 | YayMail | Design for order emails | Template kind not bound to a WC email, embedded editor, render by template id + order | — (email capability is in 1.0) |
-| YayMagic | Design for any email, with or without an order | Embedded editor, render by template id from `$run`, no globals in shortcodes | Guard against a second wrap (D17) |
-| YaySMTP | Delivery and its log | Reports delivery result (and opens / clicks, if it tracks them **[Guess]**) for a message YayMatik sent | Delivery status in run detail when YaySMTP is active |
+| YayMagic | Design for any email, with or without an order | Embedded editor, render by template id from `$run`, no globals in shortcodes, skip wrapping a marked email | Mark on every email it sends (D17) |
+| YaySMTP | Delivery and its log | Reports delivery result (and opens / clicks, if it tracks them **[Guess]**) for a message YayMatik sent | Delivery status in run detail by the mark, when YaySMTP is active |
 
 Matrix to prove: each design source (core, YayMail, YayMagic) × YaySMTP on / off × the other designer on / off × designer plugin removed after the workflow was saved. Each cell checks: one email, one wrapper, unsubscribe link present, run detail correct.
 
@@ -91,9 +93,9 @@ Matrix to prove: a grant step retried, a run replayed, two workflows on one even
 | D8 | New Pro and core steps use the public API where it is enough; a gap becomes a MINOR API addition; existing Pro modules move over gradually. Steps that need core internals (claims, sweeps) stay internal | Confirmed 2026-11-25 |
 | D9 | Each Yay plugin owns its YayMatik extension in its own repo. YayMatik CI runs each extension against `develop` | Confirmed 2026-11-26; team meeting to agree |
 | D15 | Scope in two groups: email stack (YayMail, YayMagic, YaySMTP), then customer value stack (YayPricing, YayWholesale, YayLoyalty). Order of the rest (YayReviews, YayReturns, YayBoost, YayCheckout, Brandy family, YayCurrency, YayExtra, YayAgentic) decided after group 2 | Confirmed 2026-11-26; team meeting to agree |
-| D10 | Queryable customer data. Recommend (D10b): a data field may declare the meta key that stores it, so core can filter in SQL; callback-only fields work in runs but not in segments | Open |
-| D16 | YayMatik as the customer hub: tags, Shopify-style segments built on D10b fields, one shared consent check for every plugin's emails. Free vs Pro open | Open, after D10 |
-| D17 | Email: one core Send email with a design slot (core / YayMail / YayMagic) and delivery tracking when YaySMTP is active, vs one action per plugin. Plus how YayMagic skips an email YayMatik already wrapped | Open |
+| D10 | Queryable customer data: a data field may declare the meta key (user, order or term meta) that stores it, so core can filter in SQL; callback-only fields work in runs but not in segments | Confirmed 2026-11-26 |
+| D16 | YayMatik as the customer hub: tags, Shopify-style segments built on D10 fields, one shared consent check for every plugin's emails. Free vs Pro open | Open |
+| D17 | Email: one action per plugin, as the 1.0 contract has it (not one Send email with a design slot). Every email YayMatik sends carries a mark (a header such as `X-YayMatik-Run`): YayMail and YayMagic skip wrapping a marked email, and YaySMTP links its delivery log to the run by it | Confirmed 2026-11-26 |
 | D18 | Broadcasts: a saved cursor plus a send-rate setting instead of one run per customer up front; a daily check for customers who joined or left a segment | Open, after D16 |
 | D11 | Grow the field schema (search pickers, dependent options, small repeater); keep the iframe; no React slots | Open |
 | D12 | Public but not promoted at 1.0; promoted around v1.2 after the group 1 extensions pass | Open |
