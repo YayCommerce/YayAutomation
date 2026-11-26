@@ -1,6 +1,6 @@
 # Extensions roadmap
 
-Where the Extension API goes after v1 ([extension-api.md](extension-api.md)). **Planned, not built.** Decisions are numbered as discussed; open ones carry a recommendation.
+Where the Extension API goes after v1 ([extension-api.md](extension-api.md)). **Planned, not built.** Decisions are numbered as discussed. Plans are written on each recommendation; a decision marked *Recommended* is to be revisited before its plan is built.
 
 **Words.** An *extension* is a plugin's integration through the Extension API. A *connector* is an outside service only (Slack, Sheets, webhooks: V12.4–12.5 in [ROADMAP-dev.md](ROADMAP-dev.md)).
 
@@ -48,7 +48,7 @@ Within that, core owns the run and the contract; plugins add domain logic, data 
 |---|---|---|---|
 | YayMail | Design for order emails | Template kind not bound to a WC email, embedded editor, render by template id + order, skip wrapping a marked email | Mark on every email it sends (D17) |
 | YayMagic | Design for any email, with or without an order | Embedded editor, render by template id from `$run`, no globals in shortcodes, skip wrapping a marked email | Mark on every email it sends (D17) |
-| YaySMTP | Delivery and its log | Reports delivery result (and opens / clicks, if it tracks them **[Guess]**) for a message YayMatik sent | Delivery status in run detail by the mark, when YaySMTP is active |
+| YaySMTP | Delivery and its log | Calls `yaymatik_email_status` with the mark when its log changes (D19); opens / clicks if it tracks them **[Guess]** | Sent / failed from WordPress's mail hooks without YaySMTP; delivery status in run detail |
 
 Matrix to prove: each design source (core, YayMail, YayMagic) × YaySMTP on / off × the other designer on / off × designer plugin removed after the workflow was saved. Each cell checks: one email, one wrapper, unsubscribe link present, run detail correct.
 
@@ -57,10 +57,42 @@ Matrix to prove: each design source (core, YayMail, YayMagic) × YaySMTP on / of
 | Plugin | Role in a workflow | Extension adds | Core adds |
 |---|---|---|---|
 | YayPricing | Applied rules and discounts as order data | Order and order-item fields (`yaypricing_rules`, `yaypricing_discount_total`) | — |
-| YayWholesale | Wholesale role and approval | Trigger "customer approved as wholesaler" (`yaymatik_fire` where it approves), customer and cart fields, set-role action | View facades (N8) |
-| YayLoyalty | Points and tiers | Points and tier fields, points-earned trigger, award-points action | Product / category pickers (D11) |
+| YayWholesale | Wholesale role and approval | Triggers "request submitted", "approved", "rejected" (`yaymatik_fire` where it decides), customer and cart fields, set-role action | A per-step key so a grant runs once on retry (`Run::key()`) |
+| YayLoyalty | Points and tiers | Points and tier fields, triggers points earned, tier reached, points expiring; award-points action | Same per-step key |
 
 Matrix to prove: a grant step retried, a run replayed, two workflows on one event, a wholesale price and a YayPricing rule on one order, each plugin removed mid-run. Each cell checks: grant once, prices as the plugins compute them without YayMatik, run detail correct.
+
+## v1.1 catalog (D22)
+
+Six extensions and 21 templates, all planned and scaffolded once. Each product releases its extension when it is **ready**: its cells pass YayMatik's CI matrix (D21) and its release contains the extension. YayMatik shows a template only when every plugin it needs is active, so v1.1 waits for no product, and a product that is not ready hides its templates.
+
+| # | Product | Template | Waits for |
+|---|---|---|---|
+| 1 | YayMail | Order paid → thank-you | |
+| 2 | YayMail | Order completed → review request | |
+| 3 | YayMail | Abandoned cart → recovery email | |
+| 4 | YayMagic | Account created → welcome | |
+| 5 | YayMagic | Customer inactive → win-back | |
+| 6 | YayMagic | Nth order → milestone thank-you | |
+| 7 | YaySMTP | Email delivery failed → alert the store team | |
+| 8 | YaySMTP | Customer email bounced → tag the customer, stop marketing | Tags (D16) |
+| 9 | YayWholesale | Wholesale request submitted → alert the store team | |
+| 10 | YayWholesale | Approved → welcome with wholesale terms | |
+| 11 | YayWholesale | Rejected → polite reply | |
+| 12 | YayWholesale | Cart below the wholesale minimum → "Add $X more" | |
+| 13 | YayLoyalty | Points earned → balance email | |
+| 14 | YayLoyalty | Tier reached → coupon | |
+| 15 | YayLoyalty | Points expiring soon → reminder | |
+| 16 | YayLoyalty | Inactive customer with points → "Your N points are waiting" | |
+| 17 | YayPricing | Large rule discount → alert the store team | |
+| 18 | YayPricing | Order used rule X → follow-up cross-sell | |
+| 19 | Pro: YayLoyalty + YayMagic | Tier reached → designed promo | D7 |
+| 20 | Pro: YayWholesale + YayMail | Approved → set role, designed welcome | D7 |
+| 21 | Pro: YaySMTP + YayMail | Order email failed → resend, then alert | D7 |
+
+None of the 21 needs a search picker or a repeater: rule and tier choices are `options` lists (D11).
+
+Plans: `.claude/plans/ecosystem/email-stack.md` (1–7, 21), `value-stack.md` (9–20), `extension-scaffolds.md` (all, in the product repos).
 
 ## Layers
 
@@ -92,14 +124,19 @@ Matrix to prove: a grant step retried, a run replayed, two workflows on one even
 | D1 | Keep the public names: `YayMatik\Api`, `Registrar`, `Run` | Confirmed 2026-11-25 |
 | D8 | New Pro and core steps use the public API where it is enough; a gap becomes a MINOR API addition; existing Pro modules move over gradually. Steps that need core internals (claims, sweeps) stay internal | Confirmed 2026-11-25 |
 | D9 | Each Yay plugin owns its YayMatik extension in its own repo. YayMatik CI runs each extension against `develop` | Confirmed 2026-11-26; team meeting to agree |
+| D10 | Queryable customer data: a data field may declare the meta key (user, order or term meta) that stores it, so core can filter in SQL; callback-only fields work in runs but not in segments. First consumer is segments (D16), so not built in this lane | Confirmed 2026-11-26 |
 | D15 | Scope in two groups: email stack (YayMail, YayMagic, YaySMTP), then customer value stack (YayPricing, YayWholesale, YayLoyalty). Order of the rest (YayReviews, YayReturns, YayBoost, YayCheckout, Brandy family, YayCurrency, YayExtra, YayAgentic) decided after group 2 | Confirmed 2026-11-26; team meeting to agree |
-| D10 | Queryable customer data: a data field may declare the meta key (user, order or term meta) that stores it, so core can filter in SQL; callback-only fields work in runs but not in segments | Confirmed 2026-11-26 |
-| D16 | YayMatik as the customer hub: tags, Shopify-style segments built on D10 fields, one shared consent check for every plugin's emails. Free vs Pro open | Open |
-| D17 | Email: one action per plugin, as the 1.0 contract has it (not one Send email with a design slot). Every email YayMatik sends carries a mark (a header such as `X-YayMatik-Run`): YayMail and YayMagic skip wrapping a marked email, and YaySMTP links its delivery log to the run by it | Confirmed 2026-11-26 |
-| D18 | Broadcasts: a saved cursor plus a send-rate setting instead of one run per customer up front; a daily check for customers who joined or left a segment | Open, after D16 |
-| D11 | Grow the field schema (search pickers, dependent options, small repeater); keep the iframe; no React slots | Open |
-| D12 | Public but not promoted at 1.0; promoted around v1.2 after the group 1 extensions pass | Open |
-| D13 | PHPStan array-shape stubs and `wp yaymatik extension check`. The extension scaffold is in scope: lane A's last row | Open (scaffold confirmed 2026-11-26) |
-| D14 | Event timeline deferred until "wait for event" or goals are planned | Open |
-| D2 | A "Production layout" section in extension-api.md; the example stays one file | Open |
-| D7 | Pro multi-plugin templates built on the public API | Open, after D8 |
+| D17 | Email: one action per plugin, as the 1.0 contract has it (not one Send email with a design slot). Every email YayMatik sends carries a mark: YayMail and YayMagic skip wrapping a marked email, and YaySMTP links its delivery log to the run by it | Confirmed 2026-11-26 |
+| D22 | v1.1 catalog: 6 extensions, 21 templates, all scaffolded once; each product releases its extension when ready | Confirmed 2026-11-26 |
+| D23 | The Yay ecosystem moves from v1.2 into v1.1, released by readiness | Confirmed 2026-11-26 |
+| D13 | Extension scaffold in each product repo (lane A's last row). PHPStan stubs and `wp yaymatik extension check`: recommend after the email stack | Scaffold confirmed 2026-11-26; rest Recommended |
+| D19 | Delivery status: YaySMTP calls `do_action( 'yaymatik_email_status', $mark, $status )`; without YaySMTP core records sent / failed from `wp_mail_succeeded` / `wp_mail_failed`. Not: reading YaySMTP's log table | Recommended |
+| D20 | The mark is a header `X-YayMatik-Run: <run id>-<step id>`; Send test uses `test`. Not: a global flag during the send | Recommended |
+| D21 | A matrix job in YayMatik CI checks out each product repo with a read-only token and runs the scenario suite with the real extension in place of its fixture; the fixture runs until one exists. Not: each product's CI pulling YayMatik | Recommended |
+| D7 | Templates that combine plugins live in YayMatik Pro on the public API and show only when every plugin they need is active | Recommended |
+| D16 | Customer hub: tags and the shared consent check in Free, segments in Pro | Recommended |
+| D11 | Search pickers, dependent options and a small repeater; keep the iframe; no React slots. No v1.1 template needs them, so not in this lane | Recommended, revisit (no consumer) |
+| D18 | Broadcasts: a saved cursor plus a send-rate setting instead of one run per customer up front; a daily check for customers who joined or left a segment | Recommended, after D16 |
+| D12 | Public but not promoted at 1.0; promoted once the email stack is ready | Recommended |
+| D14 | Event timeline deferred until "wait for event" or goals are planned | Recommended |
+| D2 | A "Production layout" section in extension-api.md; the example stays one file | Recommended |

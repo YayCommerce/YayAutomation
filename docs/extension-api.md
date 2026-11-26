@@ -452,7 +452,7 @@ Core categories: triggers `order`, `cart`, `customer`, `review`; actions `email`
 | Fix | Inheritance contract → arrays, one `do_action`, one `Run` object; core adapters | Core refactors never fatal an extension; a plugin needs no YayMatik class but `Run` | Adapter layer to maintain; less freedom than subclasses |
 | Fix | Trigger callbacks (`listen`, `refs`, `subject`) → `yaymatik_fire` with a payload | The plugin fires where the event happens; subject and privacy come from core shapes | Payload keys are a convention to document; module data items need `privacy_subjects` |
 | Fix | No error isolation outside `run` (N1) | One bad plugin can't take the site / editor down | try/catch at ~8 call sites, a diagnostics store |
-| Fix | Unknown step = save error / Failed (N4, V12.2) | J9 | Step index option; Validator + Executor + editor changes |
+| Fix | Unknown step = save error / Failed (N4, V11.9) | J9 | Step index option; Validator + Executor + editor changes |
 | Fix | Two type vocabularies (finding 3) | One set of type names (strings) in the public API | Mapping names → core types and condition types inside core |
 | Fix | Closed categories (N5) | Extensions add picker sections | TS types open up |
 | Fix | Hard-coded step ids in EmailPreview, run detail, "sends customer email" (EmailPreview.php:113,144; runResults.ts:65; meta.ts:30) | Email extensions behave like Send email | Core email code reads capabilities instead of ids |
