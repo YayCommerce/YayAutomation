@@ -1,6 +1,7 @@
 <?php
 namespace YayMatik\Workflow\Extension;
 
+use YayMatik\Workflow\Core\Data\DataRegistry;
 use YayMatik\Workflow\Core\Steps\Step;
 use YayMatik\Workflow\Core\Steps\StepRegistry;
 use YayMatik\Workflow\Core\Steps\Trigger;
@@ -78,11 +79,15 @@ final class StepIndex {
     /**
      * The label of the plugin, seen before and off now, that declared a data key's item or field
      * (`order.yaypricing_discount_total`, `yaywholesale_request.status`): their ids start with its module id + `_`,
-     * the longest such id when one module id starts another.
+     * the longest such id when one module id starts another. A key registered now (core's `order.shipping_method`)
+     * belongs to no plugin that is off, whatever its prefix.
      *
      * @param string $key
      */
     public static function inactive_plugin( string $key ): ?string {
+        if ( DataRegistry::field( $key ) ) {
+            return null;
+        }
         $ids   = explode( '.', $key, 3 );
         $owner = '';
         foreach ( array_keys( self::stored()['plugins'] + ModuleRegistry::modules() ) as $module ) {
