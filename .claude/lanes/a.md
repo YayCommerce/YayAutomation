@@ -1,6 +1,5 @@
 # Ecosystem Foundation
 Dev: tvhoang91
-Build: lane-a
 
 Core's side and the proof that products work together safely in a workflow (docs/extensions-roadmap.md, its Words apply). Six extensions are built as scaffolds in YayMatik first; the last row copies each to its product's repo, where the product team writes the real adapter.
 
