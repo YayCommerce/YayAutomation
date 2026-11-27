@@ -4,24 +4,37 @@ import { shortDayTime } from '@/lib/helpers/date.helper';
 import { cn } from '@/lib/utils';
 import { HelpTip } from '@/components/ui/tooltip';
 
-/** What a mail plugin reported last for the email a step sent, through `yaymatik_email_status`. */
+/** The status a run step's `output.delivery` shows: what a mail plugin reported last through `yaymatik_email_status`. */
 export interface EmailDelivery {
-  status: 'delivered' | 'opened' | 'clicked' | 'bounced';
+  status: keyof typeof labels;
   at: string;
-  /** Why it bounced, as the mail plugin says it. */
+  /** Why it bounced or failed, as the mail plugin says it. */
   reason?: string;
 }
 
-const labels: Record<EmailDelivery['status'], string> = {
+const labels = {
   delivered: __('Delivered', 'yaymatik'),
   opened: __('Opened', 'yaymatik'),
   clicked: __('Clicked', 'yaymatik'),
   bounced: __('Bounced', 'yaymatik'),
+  failed: __('Failed', 'yaymatik'),
 };
 
-/** "● Delivered · Nov 27 at 10:42 AM" under a step's "Sent to …"; bounced in red, its reason on hover. */
+/**
+ * Sent gives no line, nor failed on a failed step: its "Sent to …" or its error already says it. Failed on a
+ * completed step is a mail plugin's later report.
+ */
+export function shownDelivery(value: unknown, stepStatus: string): EmailDelivery | undefined {
+  if (!value || typeof value !== 'object') return undefined;
+  const { status, at, reason } = value as Record<string, unknown>;
+  if (typeof status !== 'string' || !Object.hasOwn(labels, status) || typeof at !== 'string') return undefined;
+  if (status === 'failed' && stepStatus !== 'completed') return undefined;
+  return { status: status as EmailDelivery['status'], at, reason: typeof reason === 'string' ? reason : undefined };
+}
+
+/** "● Delivered · Nov 27 at 10:42 AM" under a step's "Sent to …"; bounced or failed in red, its reason on hover. */
 export function DeliveryStatus({ delivery }: { delivery: EmailDelivery }) {
-  const bounced = delivery.status === 'bounced';
+  const bounced = delivery.status === 'bounced' || delivery.status === 'failed';
   return (
     <p
       className={cn(

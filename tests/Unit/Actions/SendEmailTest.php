@@ -26,7 +26,7 @@ final class SendEmailTest extends TestCase {
     }
 
     private function scope( string $email = 'Ann@X.com' ): Scope {
-        return new Scope(
+        $scope = new Scope(
             [
                 'trigger' => [
                     'customer' => [
@@ -36,6 +36,8 @@ final class SendEmailTest extends TestCase {
                 ],
             ]
         );
+        $scope->set_current_step( 5, 'mail', 31 );
+        return $scope;
     }
 
     private function config( array $values = [] ): array {
@@ -74,7 +76,7 @@ final class SendEmailTest extends TestCase {
             FakeMailer::$current->sent[0][2]
         );
         $this->assertSame(
-            "Content-Type: text/html\r\nList-Unsubscribe: <{$url}>\r\nList-Unsubscribe-Post: List-Unsubscribe=One-Click\r\n",
+            "Content-Type: text/html\r\nList-Unsubscribe: <{$url}>\r\nList-Unsubscribe-Post: List-Unsubscribe=One-Click\r\nX-YayMatik-Mark: 31\r\n",
             FakeMailer::$current->headers[0]
         );
         $this->assertStringContainsString( '&yaymatik_token=', FakeMailer::$current->headers[0], 'a raw URL in the header' );

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { RunDetail, StepId, WorkflowNodeKind } from '@yaymatik/types';
 import { __ } from '@wordpress/i18n';
 
@@ -12,8 +12,7 @@ import { useRunQuery } from '../../api/workflow.query';
 import { RunStatusBadge } from '../../shared/ui/RunStatus';
 import { stepOf, type Step } from '../../steps';
 import { StepTile } from '../../steps/core/StepTile';
-import { DeliveryStatus, type EmailDelivery } from './DeliveryStatus';
-import { DRAFT_RUN_ID, draftRun } from './runDelivery.fixtures';
+import { DeliveryStatus, shownDelivery, type EmailDelivery } from './DeliveryStatus';
 import { stepResult } from './runResults';
 
 /** One run of this workflow from the right; a missing run or another workflow's closes with "Run not found.". */
@@ -26,11 +25,7 @@ export function RunDetailSheet({
   runId: string | null;
   onClose: () => void;
 }) {
-  const isDraft = runId === DRAFT_RUN_ID;
-  const query = useRunQuery(workflowId, isDraft ? null : runId);
-  const draft = useMemo(() => draftRun(workflowId), [workflowId]);
-  const run = isDraft ? draft : query.data;
-  const error = query.error;
+  const { data: run, error } = useRunQuery(workflowId, runId);
   const notFound = !!runId && (run ? run.workflowId !== workflowId : error instanceof ApiError && error.status === 404);
 
   useEffect(() => {
@@ -111,7 +106,7 @@ function RunSteps({ run }: { run: RunDetail }) {
             stepDef={stepDef}
             label={stepDef?.label ?? __('Removed step', 'yaymatik')}
             result={stepResult(step, run)}
-            delivery={step.output.delivery as EmailDelivery | undefined}
+            delivery={shownDelivery(step.output.delivery, step.status)}
             time={step.finishedAt ?? step.startedAt}
           />
         );
