@@ -48,7 +48,7 @@ export function RunDetailSheet({
   return (
     <Sheet open={!!runId && !notFound} onOpenChange={(open) => !open && onClose()}>
       <SheetContent className="gap-0">
-        <SheetHeader className="flex-row items-center gap-3 pe-12">
+        <SheetHeader className="h-13.5 flex-row items-center gap-3 py-0 pe-12">
           <SheetTitle className="min-w-0 truncate leading-6">
             {shown ? (
               shown.subjectUrl ? (

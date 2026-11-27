@@ -22,7 +22,7 @@ export const draftRun = (workflowId: string): RunDetail => ({
   id: DRAFT_RUN_ID,
   workflowId,
   versionId: '1',
-  triggerId: 'order_completed',
+  triggerId: 'order_paid',
   subject: 'order:1042',
   status: 'completed',
   error: null,
