@@ -399,7 +399,7 @@ $m->template( 'yaymail_order_paid_email', [
 
 ### 9.1 Check your extension
 
-- **`wp yaymatik extension check [<module>]`** on any site with your plugin active: each extension module with its `requires_api`, then every problem its declarations and templates raise (the same checks as registration and Browse templates, run fresh in that request, not read from the 24 h store). Exits 1 when there is one. A template hidden only because it starts on a YayMatik Pro step, on a site without Pro, is listed as a note and doesn't fail the check.
+- **`wp yaymatik extension check [<module>]`** on any site with your plugin active: each extension module with its `requires_api`, then every problem its declarations and templates raise (the same checks as registration and Browse templates, run fresh in that request, not read from the 24 h store). Exits 1 when there is one. A template hidden only because it uses a YayMatik Pro step, on a site without Pro, is a note and doesn't fail the check. The problems also go to Health check › Extensions, as on any request, except unknown keys: ignored there, a problem here.
 - **PHPStan stubs:** `stubs/yaymatik-extension-api.php` (`./run.sh extension-stubs` writes it from `includes/Api`; `StubsTest` fails when they differ). Not in the plugin zip: copy it into your repo, and list it under `scanFiles` (not `stubFiles`, which PHPStan checks as strictly as its own stubs):
 
 ```neon
@@ -409,7 +409,7 @@ parameters:
     - stubs/yaymatik-extension-api.php
 ```
 
-  With WordPress and WooCommerce stubs (`szepeviktor/phpstan-wordpress`, `php-stubs/woocommerce-stubs`), PHPStan then reports a misspelled API method, a missing argument and `new` on a facade. The six scaffolds in `dev/ecosystem/` pass at level 5.
+  With WordPress and WooCommerce stubs (`szepeviktor/phpstan-wordpress`, `php-stubs/woocommerce-stubs`), PHPStan then reports a misspelled API method, a missing argument and `new` on a facade.
 
 ## 10. Plugin deactivated or removed (J9)
 

@@ -1,7 +1,6 @@
 <?php
 /**
  * PHPStan stubs of the public Extension API (includes/Api): signatures and docblocks, no bodies.
- * Used by `./run.sh extension-stubs` and by StubsTest.
  *
  * @package YayMatik
  */
@@ -30,6 +29,9 @@ function yaymatik_extension_stubs( string $api_dir ): string {
  * @param ReflectionClass $class_ref
  */
 function yaymatik_extension_stubs_class( ReflectionClass $class_ref ): string {
+    if ( $class_ref->getParentClass() || $class_ref->getInterfaceNames() ) {
+        throw new LogicException( esc_html( $class_ref->getName() . ': the stubs don\'t write extends / implements yet.' ) );
+    }
     $members = [];
     foreach ( $class_ref->getReflectionConstants() as $constant ) {
         if ( $constant->isPublic() ) {

@@ -32,12 +32,14 @@ final class CheckCommand {
         $modules = array_filter( ModuleRegistry::modules(), fn( $module ) => $module instanceof ExtensionModule );
         // Browse templates checks them only when they change; here always.
         TemplateCheck::hidden( array_values( $modules ) );
-        $pro_only = self::pro_only( $modules );
-        $problems = [];
-        $notes    = [];
-        foreach ( Diagnostics::recorded() as $entry ) {
-            if ( isset( $pro_only[ $entry['module'] ][ $entry['callback'] ] ) ) {
-                $notes[ $entry['module'] ][] = "{$entry['callback']}: needs YayMatik Pro, so hidden on this site.";
+        $pro_steps = ProCatalog::missing()['steps'];
+        $recorded  = Diagnostics::recorded();
+        $problems  = [];
+        $notes     = [];
+        foreach ( $recorded as $entry ) {
+            // Only the first step a chain can't build is named: the rest is checked on a site with Pro.
+            if ( preg_match( '/^Hidden from Browse templates: Step "[^"]+": unknown step "([^"]+)"\.$/', $entry['message'], $match ) && in_array( $match[1], $pro_steps, true ) ) {
+                $notes[ $entry['module'] ][] = "{$entry['callback']}: needs YayMatik Pro (step \"{$match[1]}\"), so hidden on this site; check it on a site with Pro.";
             } else {
                 $problems[ $entry['module'] ][] = "{$entry['callback']}: {$entry['message']}";
             }
@@ -55,6 +57,10 @@ final class CheckCommand {
             return;
         }
         $count = 0;
+        if ( count( $recorded ) >= Diagnostics::KEEP ) {
+            \WP_CLI::warning( sprintf( 'Only the first %d problems of this request are listed.', Diagnostics::KEEP ) );
+            ++$count;
+        }
         foreach ( $ids as $id ) {
             $module = $modules[ $id ] ?? null;
             \WP_CLI::log( $module ? "{$id} ({$module->label()}), requires_api " . ( $module->requires_api() ?? 'not set' ) : "{$id}: not registered" );
@@ -73,41 +79,5 @@ final class CheckCommand {
             \WP_CLI::error( sprintf( '%d problem(s).', $count ) );
         }
         \WP_CLI::success( sprintf( '%d module(s), no problems.', count( $ids ) ) );
-    }
-
-    /**
-     * Templates hidden here only because they use a step of YayMatik Pro, which this site lacks: `template <id>` by module id.
-     *
-     * @param ExtensionModule[] $modules
-     */
-    private static function pro_only( array $modules ): array {
-        $pro_steps = ProCatalog::missing()['steps'];
-        $pro_only  = [];
-        foreach ( $modules as $module ) {
-            foreach ( $module->templates() as $id => $args ) {
-                if ( array_intersect( self::step_ids( $args['steps'] ), $pro_steps ) ) {
-                    $pro_only[ $module->id() ][ "template {$id}" ] = true;
-                }
-            }
-        }
-        return $pro_only;
-    }
-
-    /**
-     * The step ids a template's chain names, branches included; read as written, as a chain with an unknown step makes no graph.
-     *
-     * @param array $steps
-     */
-    private static function step_ids( array $steps ): array {
-        $ids = [];
-        foreach ( $steps as $item ) {
-            $ids[] = is_array( $item ) && is_string( $item['step'] ?? null ) ? $item['step'] : '';
-            foreach ( [ 'then', 'otherwise' ] as $branch ) {
-                if ( is_array( $item[ $branch ] ?? null ) ) {
-                    $ids = array_merge( $ids, self::step_ids( $item[ $branch ] ) );
-                }
-            }
-        }
-        return $ids;
     }
 }
