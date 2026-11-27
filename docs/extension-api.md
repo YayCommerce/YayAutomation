@@ -227,7 +227,7 @@ public function handle_set_role( array $config, $step ) {
 |---|---|---|
 | `needs` | no | Data item ids the action needs whatever its config (e.g. `[ 'order' ]`); an unknown id refuses the declaration |
 | `handle` | yes unless `email` | `fn( array $config, Step $step )` → `$step->done( outputs )`, `$step->skip( reason )` or `$step->fail( reason )` |
-| `outputs` | no | `[ key => [ 'label', 'type', 'options'? ] ]` — readable by later steps at `steps.<node>.<key>`; only declared keys are stored (Executor.php:263) |
+| `outputs` | no | `[ key => [ 'label', 'type', 'options'? ] ]` — readable by later steps at `steps.<node>.<key>`; only declared keys are stored (Executor.php:263); `delivery` is reserved (an email's delivery status) |
 | `sample_outputs` | no | `fn( array $config ): array` for previews of later steps |
 | `on_error` | no | `'stop'` (default) or `'continue'` |
 | `result` | no | Run-detail line; its only placeholders are `{{ output.<key> }}` and `{{ config.<field> }}` (a select reads as its option's label), e.g. `'Sent to {{ output.to }}'`; default the `summary` (runResults.ts:100) |

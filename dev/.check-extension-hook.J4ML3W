@@ -1,9 +1,0 @@
-<?php
-WP_CLI::add_wp_hook(
-    'wp_mail',
-    function ( $atts ) {
-        $headers = is_array( $atts['headers'] ) ? $atts['headers'] : explode( "\n", str_replace( "\r\n", "\n", (string) $atts['headers'] ) );
-        file_put_contents( 'dev/.check-extension-mail.6O2Bzu', wp_json_encode( [ 'to' => implode( ', ', (array) $atts['to'] ), 'subject' => $atts['subject'], 'message' => $atts['message'], 'headers' => array_values( array_filter( array_map( 'trim', $headers ) ) ), 'user' => get_current_user_id(), 'post' => isset( $GLOBALS['post'] ) ] ) . "\n", FILE_APPEND );
-        return $atts;
-    }
-);
