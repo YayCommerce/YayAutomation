@@ -26,6 +26,9 @@ final class YayMatik {
         \YayMatik\Engine\Privacy\PersonalData::get_instance();
         \YayMatik\Engine\API\HealthRoutes::get_instance();
         \YayMatik\Engine\API\SearchRoutes::get_instance();
+        if ( defined( 'WP_CLI' ) && WP_CLI ) {
+            \WP_CLI::add_command( 'yaymatik extension check', \YayMatik\Workflow\Extension\CheckCommand::class );
+        }
 
         // Orders are only read through WC_Order, so HPOS (custom order tables) is safe.
         add_action( 'before_woocommerce_init', [ $this, 'before_woocommerce_init' ] );

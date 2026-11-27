@@ -1,5 +1,5 @@
 #!/bin/bash
-# Run the email and value stacks' cells (docs/extensions-roadmap.md) on a real site, an installed product in place of its scaffold (wp-cli).
+# Run `wp yaymatik extension check` and the email and value stacks' cells (docs/extensions-roadmap.md) on a real site, an installed product in place of its scaffold (wp-cli).
 #   ./run.sh check-ecosystem [--wp-env|--wp-env-min]
 # The scaffolds load in dev mode: on the local site wp-config.php needs YAYMATIK_IS_DEVELOPMENT. No email is sent.
 cd "$(dirname "$0")/../.." || exit 1
@@ -55,6 +55,7 @@ step() {
   if "$@"; then results+=("PASS $label"); else results+=("FAIL $label"); fi
 }
 
+step "extension check" "${WP[@]}" --exec="$(site "${products[@]}")" yaymatik extension check
 step "setup" phase "$(site "${products[@]}")" setup
 for source in core yaymail yaymagic; do
   others=()

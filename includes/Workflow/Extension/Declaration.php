@@ -710,7 +710,9 @@ final class Declaration {
     private static function unknown_keys( string $module, string $what, array $args, array $known ): void {
         $unknown = array_diff( array_keys( $args ), $known );
         if ( $unknown ) {
-            self::doing_it_wrong( "{$module}, {$what}: unknown keys ignored: " . implode( ', ', $unknown ) . '.' );
+            $message = 'Unknown keys ignored: ' . implode( ', ', $unknown ) . '.';
+            Diagnostics::note( $module, $what, $message );
+            self::doing_it_wrong( "{$module}, {$what}: {$message}" );
         }
     }
 

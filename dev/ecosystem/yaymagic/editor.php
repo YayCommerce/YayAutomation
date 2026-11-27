@@ -11,6 +11,7 @@ defined( 'ABSPATH' ) || exit;
 // phpcs:disable WordPress.Security.NonceVerification.Recommended -- read-only query args of our own page.
 // phpcs:disable WordPress.WP.EnqueuedResources -- a dev-only page, printed as is.
 
+/** @var YayMagic_YayMatik_Fake_Adapter $this Included from its `render_editor()`. */
 $yaymagic_designs = $this->designs();
 $yaymagic_id      = absint( $_GET['design'] ?? 0 );
 $yaymagic_design  = $yaymagic_designs[ $yaymagic_id ] ?? null;

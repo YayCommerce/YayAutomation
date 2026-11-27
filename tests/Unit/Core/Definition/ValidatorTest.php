@@ -480,7 +480,7 @@ final class ValidatorTest extends TestCase {
 
     /** @return array[] Cases shared with the admin app's `availableVariables()` (tests/fixtures/variables.json). */
     public function variable_cases(): array {
-        $cases = json_decode( (string) file_get_contents( dirname( __DIR__, 3 ) . '/fixtures/variables.json' ), true )['cases'];
+        $cases = json_decode( (string) file_get_contents( dirname( __DIR__, 3 ) . '/fixtures/variables.json' ), true )['cases']; // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
         $sets  = [];
         foreach ( $cases as $case ) {
             if ( isset( $sets[ $case['name'] ] ) ) {
@@ -557,7 +557,7 @@ final class ValidatorTest extends TestCase {
 
     public function test_list_issues_survive_a_workflow_that_cant_be_checked(): void {
         $log      = tempnam( sys_get_temp_dir(), 'yay-log' );
-        $previous = ini_set( 'error_log', $log );
+        $previous = ini_set( 'error_log', $log ); // phpcs:ignore WordPress.PHP.IniSet.Risky
         try {
             // No `nodes`: errors() throws on it.
             $issues = Validator::list_issues(
@@ -569,7 +569,7 @@ final class ValidatorTest extends TestCase {
                 ]
             );
         } finally {
-            ini_set( 'error_log', (string) $previous );
+            ini_set( 'error_log', (string) $previous ); // phpcs:ignore WordPress.PHP.IniSet.Risky
         }
         $this->assertSame(
             [
@@ -578,8 +578,8 @@ final class ValidatorTest extends TestCase {
             ],
             $issues
         );
-        $this->assertStringContainsString( 'Could not check workflow 42', (string) file_get_contents( $log ) );
-        unlink( $log );
+        $this->assertStringContainsString( 'Could not check workflow 42', (string) file_get_contents( $log ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+        unlink( $log ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink
     }
 
     public function test_warns_when_an_action_can_set_off_its_own_trigger(): void {

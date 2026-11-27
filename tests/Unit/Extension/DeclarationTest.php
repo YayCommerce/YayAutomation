@@ -56,6 +56,23 @@ final class DeclarationTest extends TestCase {
         return Diagnostics::recent( 24 )[0]['message'] ?? '';
     }
 
+    public function test_an_unknown_key_is_kept_out_but_reported_to_the_check_not_health_check(): void {
+        $recorded = new \ReflectionProperty( Diagnostics::class, 'recorded' );
+        $recorded->setAccessible( true );
+        $recorded->setValue( null, [] );
+        $this->assertNotNull( self::action( [ 'descripton' => 'Typo.' ] ) );
+
+        $this->assertContains(
+            [
+                'module'   => 'acme',
+                'callback' => 'action acme_act',
+                'message'  => 'Unknown keys ignored: descripton.',
+            ],
+            Diagnostics::recorded()
+        );
+        $this->assertSame( [], Diagnostics::recent( 24 ) );
+    }
+
     public function test_field_arrays_become_core_fields(): void {
         $fields = self::fields(
             [
