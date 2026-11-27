@@ -69,7 +69,7 @@ final class TemplateCheck {
         }
         foreach ( Validator::errors(
             [
-                'name'  => $args['name'],
+                'name'  => $args['label'],
                 'graph' => $prepared,
             ]
         ) as $issue ) {

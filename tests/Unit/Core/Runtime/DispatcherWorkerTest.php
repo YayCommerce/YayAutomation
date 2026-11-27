@@ -477,9 +477,9 @@ final class DispatcherWorkerTest extends TestCase {
                         'label'       => 'Add points',
                         'description' => 'Adds points, which fires Points earned.',
                         'emits'       => $emits,
-                        'run'         => function ( array $config, $run ) {
+                        'handle'      => function ( array $config, $step ) {
                             do_action( Fire::HOOK, 'acme_points', [ 'order_id' => self::ORDER ] );
-                            return $run->done();
+                            return $step->done();
                         },
                     ]
                 );

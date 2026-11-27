@@ -59,7 +59,7 @@ final class TemplateCheckTest extends TestCase {
                     [
                         'label'       => 'Ping',
                         'description' => 'Pings.',
-                        'run'         => fn( array $config, $run ) => $run->done(),
+                        'handle'      => fn( array $config, $step ) => $step->done(),
                     ]
                 );
                 $acme = $registrar->module(
@@ -73,7 +73,7 @@ final class TemplateCheckTest extends TestCase {
                     [
                         'label'       => 'Add points',
                         'description' => 'Adds points.',
-                        'fields'      => [
+                        'settings'    => [
                             'points' => [
                                 'type'     => 'number',
                                 'label'    => 'Points',
@@ -87,7 +87,7 @@ final class TemplateCheckTest extends TestCase {
                                 'type'  => 'number',
                             ],
                         ],
-                        'run'         => fn( array $config, $run ) => $run->done(),
+                        'handle'      => fn( array $config, $step ) => $step->done(),
                     ]
                 );
                 $acme->action(
@@ -95,7 +95,7 @@ final class TemplateCheckTest extends TestCase {
                     [
                         'label'       => 'Send rewards email',
                         'description' => 'Sends.',
-                        'fields'      => [
+                        'settings'    => [
                             'subject'   => [
                                 'type'      => 'text',
                                 'label'     => 'Subject',
@@ -119,10 +119,10 @@ final class TemplateCheckTest extends TestCase {
                     $acme->template(
                         $id,
                         [
-                            'name'        => $id,
-                            'description' => 'D.',
-                            'category'    => 'customer_lifecycle',
-                            'steps'       => $steps,
+                            'label'            => $id,
+                            'description'      => 'D.',
+                            'library_category' => 'customer_lifecycle',
+                            'steps'            => $steps,
                         ]
                     );
                 }
@@ -294,11 +294,11 @@ final class TemplateCheckTest extends TestCase {
                 )->template(
                     'acme_cart',
                     [
-                        'name'        => 'Cart',
-                        'description' => 'D.',
-                        'category'    => 'recover_carts',
-                        'workflow'    => 'abandoned_cart',
-                        'steps'       => self::chain(),
+                        'label'            => 'Cart',
+                        'description'      => 'D.',
+                        'library_category' => 'recover_carts',
+                        'workflow'         => 'abandoned_cart',
+                        'steps'            => self::chain(),
                     ]
                 );
             }

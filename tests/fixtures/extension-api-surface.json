@@ -49,11 +49,10 @@
         "constants": [],
         "methods": {
             "api_version": "(): string",
-            "module": "(array $args): YayMatik\\Api\\Module",
-            "supports": "(string $feature): bool"
+            "module": "(array $args): YayMatik\\Api\\Module"
         }
     },
-    "YayMatik\\Api\\Run": {
+    "YayMatik\\Api\\Step": {
         "kind": "interface",
         "constants": [],
         "methods": {
@@ -73,17 +72,6 @@
         }
     },
     "keys": {
-        "features": [
-            "triggers",
-            "actions",
-            "data_items",
-            "data_fields",
-            "trigger_facts",
-            "privacy_subjects",
-            "email",
-            "templates",
-            "editor_iframe"
-        ],
         "module_keys": [
             "id",
             "label",
@@ -97,7 +85,7 @@
             "description",
             "icon",
             "category",
-            "fields",
+            "settings",
             "summary",
             "validate",
             "setup_issue"
@@ -107,11 +95,11 @@
             "matches",
             "once_per",
             "facts",
-            "sample"
+            "sample_facts"
         ],
         "action_keys": [
-            "requires",
-            "run",
+            "needs",
+            "handle",
             "outputs",
             "sample_outputs",
             "on_error",
@@ -131,9 +119,9 @@
             "url"
         ],
         "template_keys": [
-            "name",
+            "label",
             "description",
-            "category",
+            "library_category",
             "workflow",
             "created",
             "before",
