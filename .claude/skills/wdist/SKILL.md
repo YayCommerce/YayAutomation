@@ -4,7 +4,7 @@ description: Release workflow — bump version, build, and create a distribution
 
 # /wdist
 
-Workflow - Create a release distribution.
+Workflow - Create a release distribution. For a WordPress.org upload of the free zip, use `/wp-release` instead.
 
 ---
 

@@ -1,8 +1,7 @@
 #!/bin/bash
 # Fails when the free zip holds YayMatik Pro: includes/Pro, or a Pro step id, a Pro template id or `yaymatik-pro` in assets/dist;
-# while the teaser is hidden, also its text or link in assets/dist or the .pot; when its classmap names RegisterDev; and when a
-# shipped file names a license, a trial or an upsell outside dev/wporg/word-allowlist.txt (wporg-words.php); when admin-shell
-# still ships license code or its URL installer; and when a gettext call uses another text domain than the slug.
+# while the teaser is hidden, also its text or link in assets/dist or the .pot; and when its classmap names RegisterDev.
+# WordPress.org's own rules: dev/scripts/check-wporg.sh.
 #   dev/scripts/lib/check-lite-zip.sh release/yaymatik-automation-for-woocommerce.zip   (run by release.sh for the free edition)
 cd "$(dirname "$0")/../../.." || exit 1
 source dev/scripts/lib/wporg.sh
@@ -20,7 +19,7 @@ unzip -Z1 "$zip" | grep -q "^$WPORG_SLUG/includes/Pro/" && found+=("includes/Pro
 unzip -p "$zip" "$WPORG_SLUG/vendor/composer/autoload_classmap.php" | grep -q RegisterDev && found+=("RegisterDev in the classmap")
 tmp=$(mktemp -d) || exit 1
 trap 'rm -rf "$tmp"' EXIT
-unzip -q "$zip" -d "$tmp"
+unzip -q "$zip" "$WPORG_SLUG/assets/dist/*" "$WPORG_SLUG/languages/*" -d "$tmp" || { echo "The zip has no assets/dist or languages/"; exit 1; }
 for word in "${words[@]}"; do
     # Quoted: `cart-series` is also the start of a longer template id.
     grep -rqE "[\"'\`]$word[\"'\`]|$word/" "$tmp/$WPORG_SLUG/assets/dist" && found+=("$word in assets/dist")
@@ -40,31 +39,9 @@ if $TEASER_HIDDEN; then
     done
 fi
 
-# admin-shell as free-admin-shell.php leaves it.
-# Composer's own MIT notice for its autoloader is the one license file the zip ships.
-unzip -Z1 "$zip" | grep -iE 'icens[^/]*$' | grep -vx "$WPORG_SLUG/vendor/composer/LICENSE" > "$tmp/icens"
-[[ -s $tmp/icens ]] && found+=("license files: $(tr '\n' ' ' < "$tmp/icens")")
-for text in LegacyBridge AddonBridge enable_license go-pro '->install($plugin' 'install($_POST'; do
-    grep -rqF -- "$text" "$tmp/$WPORG_SLUG" && found+=("$text in the zip")
-done
-# The same count with and without the domain filter: every string in the zip is in the slug's domain.
-command -v wp >/dev/null || { echo "Missing: wp-cli (wp i18n make-pot)"; exit 1; }
-count_strings() { wp i18n make-pot "$tmp/$WPORG_SLUG" "$tmp/count.pot" --skip-audit "$@" >/dev/null 2>&1 && grep -c '^msgid "' "$tmp/count.pot"; }
-in_slug=$(count_strings --domain="$WPORG_SLUG")
-in_any=$(count_strings --ignore-domain)
-[[ -n $in_slug && $in_slug == "$in_any" ]] || found+=("gettext strings: $in_any in any text domain, ${in_slug:-?} in $WPORG_SLUG")
-# make-pot merges equal strings across domains: phpcs names each PHP call in another domain.
-mismatch=$(dev/tools/lintphp/vendor/bin/phpcs --standard=WordPress --sniffs=WordPress.WP.I18n --runtime-set text_domain "$WPORG_SLUG" \
-    --extensions=php --ignore='*/vendor/*' --report=csv -q "$tmp/$WPORG_SLUG" | grep TextDomainMismatch)
-[[ -z $mismatch ]] || found+=("gettext calls in another text domain:"$'\n'"$mismatch")
-shell_version=$(sed -nE "s/.*const VERSION = '([^']+)'.*/\1/p" "$tmp/$WPORG_SLUG/vendor-prefixed/src/AdminShell.php")
-grep -qF "(\`yaycommerce/admin-shell\`) $shell_version," "$tmp/$WPORG_SLUG/readme.txt" || found+=("readme.txt: the admin-shell version isn't $shell_version")
-
-words_out=$(php dev/scripts/lib/wporg-words.php "$tmp/$WPORG_SLUG" dev/wporg/word-allowlist.txt) || found+=("$words_out")
-
 if [[ ${#found[@]} -gt 0 ]]; then
     printf 'Lite zip check failed, found:\n'
     printf '  %s\n' "${found[@]}"
     exit 1
 fi
-echo "Lite zip check: no Pro code ($(( ${#words[@]} + $(wc -w <<< "$steps") )) names checked), no license code, $in_slug strings all in $WPORG_SLUG. $words_out"
+echo "Lite zip check: no Pro code ($(( ${#words[@]} + $(wc -w <<< "$steps") )) names checked)."

@@ -164,6 +164,7 @@ cd "$PROJECT_PATH" || exit 1
 
 if [[ $EDITION == free ]]; then
     dev/scripts/lib/check-lite-zip.sh "release/$ZIP_NAME.zip" || { rm -f "release/$ZIP_NAME.zip"; exit 1; }
+    dev/scripts/check-wporg.sh "release/$ZIP_NAME.zip" || { rm -f "release/$ZIP_NAME.zip"; exit 1; }
 fi
 
 echo "Build successfully"
