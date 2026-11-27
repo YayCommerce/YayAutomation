@@ -302,8 +302,8 @@ final class ValueStackTest extends TestCase {
         $products = array_keys( self::PRODUCTS );
         foreach ( [ 'once', 'retried', 'replayed', 'two workflows' ] as $scenario ) {
             for ( $mask = 7; $mask >= 0; $mask-- ) {
-                $active = array_values( array_filter( $products, fn( $folder, $i ) => (bool) ( $mask & ( 1 << $i ) ), ARRAY_FILTER_USE_BOTH ) );
-                $mix    = implode(
+                $active                         = array_values( array_filter( $products, fn( $folder, $i ) => (bool) ( $mask & ( 1 << $i ) ), ARRAY_FILTER_USE_BOTH ) );
+                $mix                            = implode(
                     ', ',
                     array_map( fn( string $folder ) => $folder . ( in_array( $folder, $active, true ) ? ' on' : ' removed' ), $products )
                 );

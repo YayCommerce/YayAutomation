@@ -91,7 +91,7 @@ final class YayMagic_YayMatik_Fake_Adapter {
      * @param array              $config
      * @param \YayMatik\Api\Step $step
      */
-    public function build_email( array $config, $step ): array {
+    public function build_email( array $config, $step ): array { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- the `build` signature.
         $design = $this->designs()[ (int) ( $config['design_id'] ?? 0 ) ] ?? null;
         if ( ! $design ) {
             throw new \RuntimeException( 'No YayMagic design ' . (int) ( $config['design_id'] ?? 0 ) . '.' );
