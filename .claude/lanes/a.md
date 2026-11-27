@@ -8,7 +8,7 @@ Core's side and the proof that products work together safely in a workflow (docs
 - [x] [extension-scaffolds](../plans/ecosystem/extension-scaffolds.md) #53
 - [x] [email-stack](../plans/ecosystem/email-stack.md) #54
 - [x] [yaymagic-editor](../plans/ecosystem/yaymagic-editor.md) #55
-- [x] [value-stack](../plans/ecosystem/value-stack.md)
+- [x] [value-stack](../plans/ecosystem/value-stack.md) #56
 - [extension-check](../plans/ecosystem/extension-check.md)
 - Review ecosystem foundation
 - [copy-scaffolds](../plans/ecosystem/copy-scaffolds.md)
