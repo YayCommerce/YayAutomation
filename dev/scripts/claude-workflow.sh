@@ -136,6 +136,26 @@ cleanup() {
   git -C "$ROOT" worktree prune -v
 }
 
+# The lane chat: one per lane, in its own worktree, since Builders work in the main checkout.
+# A prompt starts a new chat with it, or is typed into the running one.
+lane_chat() {
+  [[ -n $1 ]] || { echo 'Usage: cw lane <letter> ["<prompt>"]'; return 1; }
+  local l=$(slug "$1") w=lane-$(slug "$1") dir="$ROOT/.claude/worktrees/lane-$(slug "$1")"
+  git -C "$ROOT" fetch -q origin
+  if [[ ! -d $dir ]]; then
+    git -C "$ROOT" worktree add -q --detach "$dir" "origin/feature/lane-$l" || return 1
+  elif ! has_window "$w" && [[ -z $(git -C "$dir" status --porcelain) ]] && ! git -C "$dir" symbolic-ref -q HEAD >/dev/null; then
+    git -C "$dir" switch -q --detach "origin/feature/lane-$l"   # idle, clean and detached: move to the lane's latest
+  fi
+  if has_window "$w" && [[ $(window_state "$(tmux display -p -t "$TS:$(win "$w")" '#{pane_pid}')") == running ]]; then
+    [[ -n $2 ]] && tmux send-keys -t "$TS:$(win "$w")" -l "$2" && tmux send-keys -t "$TS:$(win "$w")" Enter && echo "Sent to '$w'."
+    attach "$w"
+  else
+    open_window "$w" "$dir" "claude --remote-control $w --permission-mode $MODE ${2:+${(q)2}}"
+  fi
+}
+
+if [[ -n $1 ]]; then REPLY=$1; else
 print -l \
   "  1) Session here (current folder and branch, no worktree)" \
   "  2) New task session in a new worktree" \
@@ -149,7 +169,9 @@ print -l \
   " ls) List tmux windows, worktrees and Claude processes" \
   "  q) Quit"
 printf "Choose: "; read -r REPLY
+fi
 case $REPLY in
+  lane) lane_chat "$2" "$3" ;;
   s) start_server ;;
   1) here_session ;;
   2) new_session ;;
