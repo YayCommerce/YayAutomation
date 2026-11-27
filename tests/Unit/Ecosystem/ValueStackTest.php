@@ -160,7 +160,9 @@ final class ValueStackTest extends TestCase {
 
         $core = ModuleRegistry::modules();
         StepIndex::refresh( Extensions::collect( array_keys( $core ), ...$declare( array_keys( self::PRODUCTS ) ) ) );
-        $modules = [];
+        // That collect added every product's data-field filters; a removed product's must not stay, as on a real site.
+        $GLOBALS['yaymatik_test_filters'] = $this->filters;
+        $modules                          = [];
         foreach ( Extensions::collect( array_keys( $core ), ...$declare( $active ) ) as $module ) {
             $modules[ $module->id() ] = $module;
         }
