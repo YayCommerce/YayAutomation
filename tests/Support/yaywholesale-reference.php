@@ -10,7 +10,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-final class YayWholesale_YayMatik {
+final class YayWholesale_Reference_YayMatik {
 
     public static function init() {
         add_action( 'yaymatik_register', [ new self(), 'register' ] );

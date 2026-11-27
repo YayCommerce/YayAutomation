@@ -5,7 +5,7 @@ Core's side and the proof that products work together safely in a workflow (docs
 
 - [x] prepare: roadmap and plans, every decision the plans need settled (D7, D10, D11, D16, D19, D20, D24, D25); no code; from here the lane runs unattended until Review #47
 - [x] [api-names](../plans/ecosystem/api-names.md) #52
-- [extension-scaffolds](../plans/ecosystem/extension-scaffolds.md)
+- [x] [extension-scaffolds](../plans/ecosystem/extension-scaffolds.md) #53
 - [email-stack](../plans/ecosystem/email-stack.md)
 - [yaymagic-editor](../plans/ecosystem/yaymagic-editor.md)
 - [value-stack](../plans/ecosystem/value-stack.md)

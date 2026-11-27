@@ -46,7 +46,21 @@ final class YayMatik {
         } else {
             \YayMatikScoped\YayCommerce\AdminShell\AdminShell::register_plugin( new YayMatikMenuAdapter() );
         }
+        if ( ! self::is_prod() ) {
+            add_action( 'plugins_loaded', [ self::class, 'load_dev_ecosystem' ], 20 );
+        }
         self::get_instance();
+    }
+
+    /** The extension scaffolds in dev/ecosystem, loaded as a later plugin would be; the zip has no dev/. */
+    public static function load_dev_ecosystem() {
+        $off   = defined( 'YAYMATIK_DEV_ECOSYSTEM_OFF' ) ? array_map( 'trim', explode( ',', strtolower( (string) YAYMATIK_DEV_ECOSYSTEM_OFF ) ) ) : [];
+        $files = glob( YAYMATIK_PLUGIN_DIR . 'dev/ecosystem/*/load.php' );
+        foreach ( $files ? $files : [] as $file ) {
+            if ( ! in_array( basename( dirname( $file ) ), $off, true ) ) {
+                require_once $file;
+            }
+        }
     }
 
     public static function is_prod() {
