@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { RunDetail, StepId, WorkflowNodeKind } from '@yaymatik/types';
-import { __, sprintf } from '@wordpress/i18n';
+import { __ } from '@wordpress/i18n';
 
 import { shortDayTime } from '@/lib/helpers/date.helper';
 import { cn } from '@/lib/utils';
@@ -48,8 +48,8 @@ export function RunDetailSheet({
   return (
     <Sheet open={!!runId && !notFound} onOpenChange={(open) => !open && onClose()}>
       <SheetContent className="gap-0">
-        <SheetHeader className="pe-12">
-          <SheetTitle className="leading-6">
+        <SheetHeader className="flex-row items-center gap-3 pe-12">
+          <SheetTitle className="min-w-0 truncate leading-6">
             {shown ? (
               shown.subjectUrl ? (
                 <a href={shown.subjectUrl} className="text-link hover:underline">
@@ -63,16 +63,7 @@ export function RunDetailSheet({
             )}
           </SheetTitle>
           <SheetDescription asChild>
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-              {shown ? (
-                <>
-                  <RunStatusBadge run={shown} />
-                  <RunTimes run={shown} />
-                </>
-              ) : (
-                <Skeleton className="h-4 w-48" />
-              )}
-            </div>
+            <div className="shrink-0">{shown && <RunStatusBadge run={shown} />}</div>
           </SheetDescription>
         </SheetHeader>
         <div className="min-h-0 flex-1 overflow-y-auto p-5">
@@ -96,29 +87,6 @@ export function RunDetailSheet({
         </div>
       </SheetContent>
     </Sheet>
-  );
-}
-
-function RunTimes({ run }: { run: RunDetail }) {
-  return (
-    <span>
-      {run.startedAt &&
-        sprintf(
-          /* translators: %s: date and time, e.g. "Oct 9 at 3:00 PM" */
-          __('Started %s', 'yaymatik'),
-          shortDayTime(run.startedAt),
-        )}
-      {run.finishedAt && (
-        <>
-          {' · '}
-          {sprintf(
-            /* translators: %s: date and time, e.g. "Oct 9 at 3:00 PM" */
-            __('Finished %s', 'yaymatik'),
-            shortDayTime(run.finishedAt),
-          )}
-        </>
-      )}
-    </span>
   );
 }
 
