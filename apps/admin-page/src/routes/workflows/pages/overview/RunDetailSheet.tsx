@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { RunDetail, StepId, WorkflowNodeKind } from '@yaymatik/types';
 import { __, sprintf } from '@wordpress/i18n';
 
@@ -12,6 +12,8 @@ import { useRunQuery } from '../../api/workflow.query';
 import { RunStatusBadge } from '../../shared/ui/RunStatus';
 import { stepOf, type Step } from '../../steps';
 import { StepTile } from '../../steps/core/StepTile';
+import { DeliveryStatus, type EmailDelivery } from './DeliveryStatus';
+import { DRAFT_RUN_ID, draftRun } from './runDelivery.fixtures';
 import { stepResult } from './runResults';
 
 /** One run of this workflow from the right; a missing run or another workflow's closes with "Run not found.". */
@@ -24,7 +26,11 @@ export function RunDetailSheet({
   runId: string | null;
   onClose: () => void;
 }) {
-  const { data: run, error } = useRunQuery(workflowId, runId);
+  const isDraft = runId === DRAFT_RUN_ID;
+  const query = useRunQuery(workflowId, isDraft ? null : runId);
+  const draft = useMemo(() => draftRun(workflowId), [workflowId]);
+  const run = isDraft ? draft : query.data;
+  const error = query.error;
   const notFound = !!runId && (run ? run.workflowId !== workflowId : error instanceof ApiError && error.status === 404);
 
   useEffect(() => {
@@ -137,6 +143,7 @@ function RunSteps({ run }: { run: RunDetail }) {
             stepDef={stepDef}
             label={stepDef?.label ?? __('Removed step', 'yaymatik')}
             result={stepResult(step, run)}
+            delivery={step.output.delivery as EmailDelivery | undefined}
             time={step.finishedAt ?? step.startedAt}
           />
         );
@@ -153,12 +160,14 @@ function StepLine({
   stepDef,
   label,
   result,
+  delivery,
   time,
 }: {
   kind: WorkflowNodeKind;
   stepDef: Step | undefined;
   label: string;
   result?: string;
+  delivery?: EmailDelivery;
   time: string | null;
 }) {
   return (
@@ -176,6 +185,7 @@ function StepLine({
           {time && <span className="text-muted-foreground shrink-0 text-xs">{shortDayTime(time)}</span>}
         </div>
         {result && <p className="text-muted-foreground-600 m-0 text-[13px] wrap-break-word">{result}</p>}
+        {delivery && <DeliveryStatus delivery={delivery} />}
       </div>
     </li>
   );
