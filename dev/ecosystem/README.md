@@ -39,10 +39,14 @@ The fake adapters of YayMail, YayMagic and YaySMTP also act as the products do o
 
 `tests/Unit/Ecosystem/EmailStackTest.php` runs each cell of the email stack's matrix on them. `./run.sh check-ecosystem [--wp-env|--wp-env-min]` runs the same cells on a real site, an installed `yaymail`, `yaymagic` or `yaysmtp` plugin in place of its scaffold, and prints which ran on a scaffold. It sends no email: a mail log stands in for the mailer and fires `wp_mail_succeeded`, so an installed YaySMTP that logs from its own mailer (`phpmailer_init`) reports nothing there; its cells need it to report from `wp_mail_succeeded`. Installed products are left active or not as they were.
 
+## Value stack
+
+The fake adapters of YayWholesale and YayLoyalty keep a ledger of their grants by `$step->key()` (options `yaywholesale_fake_grants`, `yayloyalty_fake_grants`): a retried or replayed step returns the first result and grants nothing. `tests/Unit/Ecosystem/ValueStackTest.php` runs each cell of the value stack's matrix on them; `./run.sh check-ecosystem` runs the same cells on a real site, reading the grants through the products' customer fields (`yaywholesale_role`, `yayloyalty_points`), so an installed product's own store counts.
+
 ## Extension UI
 
 YayMagic's scaffold also shows how an extension adds its own editor: `yaymagic/README.md`.
 
 ## Rule for adapters
 
-An action with a side effect skips it when `$step->is_test()` is true (`set_role`, `award_points`). The real adapter keeps that check.
+An action with a side effect skips it when `$step->is_test()` is true (`set_role`, `award_points`), and grants once per `$step->key()`. The real adapter keeps both checks.

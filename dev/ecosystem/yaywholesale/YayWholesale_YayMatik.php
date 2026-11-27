@@ -32,7 +32,7 @@ final class YayWholesale_YayMatik {
                 'label'        => 'YayWholesale',
                 'description'  => __( 'Wholesale roles, requests and minimums.', 'yaywholesale' ),
                 'logo'         => plugins_url( 'logo.svg', __FILE__ ),
-                'requires_api' => '1.0',
+                'requires_api' => '1.1',
             ]
         );
         if ( ! $module->ok() ) {

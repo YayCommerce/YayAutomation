@@ -32,7 +32,7 @@ final class YayLoyalty_YayMatik {
                 'label'        => 'YayLoyalty',
                 'description'  => __( 'Reward points and tiers.', 'yayloyalty' ),
                 'logo'         => plugins_url( 'logo.svg', __FILE__ ),
-                'requires_api' => '1.0',
+                'requires_api' => '1.1',
             ]
         );
         if ( ! $module->ok() ) {

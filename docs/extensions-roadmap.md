@@ -68,7 +68,7 @@ Matrix: each design source (core, YayMail, YayMagic) × YaySMTP on / off × the 
 | Product | Role in a workflow | Extension adds | Core adds |
 |---|---|---|---|
 | YayPricing | Applied rules and discounts as order data | Order and order-item fields (`yaypricing_rules`, `yaypricing_discount_total`) | — |
-| YayWholesale | Wholesale role and approval | Triggers "request submitted", "approved", "rejected" (`yaymatik_fire` where it decides), customer and cart fields, set-role action | A per-step key so a grant runs once on retry (`Run::key()`) |
+| YayWholesale | Wholesale role and approval | Triggers "request submitted", "approved", "rejected" (`yaymatik_fire` where it decides), customer and cart fields, set-role action | A per-step key so a grant runs once on retry (`Step::key()`) |
 | YayLoyalty | Points and tiers | Points and tier fields, triggers points earned, tier reached, points expiring; award-points action | Same per-step key |
 
 Matrix: a grant step retried, a run replayed, two workflows on one event, a wholesale price and a YayPricing rule on one order, each product removed mid-run. Each cell checks: grant once, prices as the products compute them without YayMatik, run detail correct.

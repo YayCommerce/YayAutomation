@@ -11,12 +11,13 @@ use YayMatik\Workflow\Core\Steps\StepRegistry;
 use YayMatik\Workflow\Core\Storage\WorkflowStore;
 
 /**
- * @param int    $workflow_id Workflow id.
- * @param string $trigger_id  Trigger step id.
- * @param array  $event       Event args.
+ * @param int           $workflow_id Workflow id.
+ * @param string        $trigger_id  Trigger step id.
+ * @param array         $event       Event args.
+ * @param callable|null $then        fn( int $run_id ) after the run, before its row is read.
  * @return array|null The run row afterwards, with its `steps`; null when no run started. Both are deleted.
  */
-function yaymatik_check_run( int $workflow_id, string $trigger_id, array $event ): ?array {
+function yaymatik_check_run( int $workflow_id, string $trigger_id, array $event, ?callable $then = null ): ?array {
     $workflow = WorkflowStore::find( $workflow_id );
     $trigger  = StepRegistry::get( $trigger_id );
     if ( ! $workflow || ! $trigger instanceof YayMatik\Workflow\Core\Steps\Trigger || ! Runtime::worker() ) {
@@ -28,6 +29,9 @@ function yaymatik_check_run( int $workflow_id, string $trigger_id, array $event 
         return null;
     }
     Runtime::worker()->run( $run_id );
+    if ( $then ) {
+        $then( $run_id );
+    }
     $run = YayMatik\Workflow\Core\Storage\RunStore::find( $run_id );
     if ( $run ) {
         $run['steps'] = YayMatik\Workflow\Core\Storage\RunStepStore::for_run( $run_id );

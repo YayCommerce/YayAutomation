@@ -55,6 +55,9 @@ interface Step {
     /** The step must do nothing real (today: an email's `build` in Send test); an action with a side effect skips it. */
     public function is_test(): bool;
 
+    /** The run step's key: the same across its retries and replays, one per loop item; '' outside a run. A grant keeps it to run once. */
+    public function key(): string;
+
     /**
      * Return it from `handle`: the step is done.
      *

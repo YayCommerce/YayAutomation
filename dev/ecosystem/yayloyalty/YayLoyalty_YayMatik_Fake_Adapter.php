@@ -14,6 +14,9 @@ final class YayLoyalty_YayMatik_Fake_Adapter {
 
     private const POINTS_META = '_yayloyalty_fake_points';
 
+    /** Option: `Step::key()` => the award's outputs, so a retried or replayed step awards once. */
+    public const GRANTS = 'yayloyalty_fake_grants';
+
     /** Tier => the balance it starts at. */
     private const TIERS = [
         'gold'   => 2000,
@@ -62,14 +65,22 @@ final class YayLoyalty_YayMatik_Fake_Adapter {
         if ( $step->is_test() ) {
             return $step->skip( __( 'A test gives no points.', 'yayloyalty' ) );
         }
+        $grants = (array) get_option( self::GRANTS, [] );
+        $key    = $step->key();
+        if ( '' !== $key && isset( $grants[ $key ] ) ) {
+            return $step->done( $grants[ $key ] );
+        }
         $points  = (int) $config['points'];
         $balance = (int) get_user_meta( $user->ID, self::POINTS_META, true ) + $points;
         update_user_meta( $user->ID, self::POINTS_META, $balance );
-        return $step->done(
-            [
-                'points_added' => $points,
-                'balance'      => $balance,
-            ]
-        );
+        $award = [
+            'points_added' => $points,
+            'balance'      => $balance,
+        ];
+        if ( '' !== $key ) {
+            $grants[ $key ] = $award;
+            update_option( self::GRANTS, $grants, false );
+        }
+        return $step->done( $award );
     }
 }

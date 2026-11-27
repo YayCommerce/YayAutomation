@@ -2,6 +2,7 @@
 namespace YayMatik\Workflow\Core\Runtime;
 
 use YayMatik\Utils\Logger;
+use YayMatik\Workflow\Conditions\Criteria;
 use YayMatik\Workflow\Core\Data\DataRegistry;
 use YayMatik\Workflow\Core\Data\GoneEntity;
 use YayMatik\Workflow\Core\Data\Ref;
@@ -302,6 +303,12 @@ final class Executor {
             }
             /* translators: %s: step type id */
             return StepResult::failed( sprintf( __( 'Step type "%s" is not available.', 'yaymatik' ), $block ) );
+        }
+        $off = $step instanceof Criteria ? $step->inactive_plugin( $config ) : null;
+        if ( $off ) {
+            // Its rule's data is gone with the plugin: the path ends here, as when the step's own plugin is off.
+            /* translators: %s: plugin name, e.g. "YayPricing" */
+            return StepResult::skipped( sprintf( __( '%s isn’t active.', 'yaymatik' ), $off ) );
         }
         try {
             $valid = $step->validate( $config );
