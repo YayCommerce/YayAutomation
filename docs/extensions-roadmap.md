@@ -145,7 +145,7 @@ Plans in `.claude/plans/ecosystem/`: `extension-scaffolds.md` (six scaffolds, te
 | D7 | Templates that combine products live in YayMatik Pro on the public API and show only when every product they need is active | Confirmed 2026-11-26 |
 | D16 | Customer hub: tags and the shared consent check in Free, segments in Pro | Confirmed 2026-11-26 |
 | D24 | An extension's editor opens in the v1 full-screen modal iframe, as is (no inline panel mode) | Confirmed 2026-11-26 |
-| D25 | YayMatik loads `dev/ecosystem/*/` only with `YAYMATIK_IS_DEVELOPMENT` on, on `plugins_loaded` priority 20; `YAYMATIK_DEV_ECOSYSTEM_OFF` leaves products out; a scaffold is skipped when its product is active; `./run.sh ecosystem-fire <trigger>` fires a trigger by hand. Not: a symlink or a wp-env mapping | Confirmed 2026-11-26 |
+| D25 | YayMatik loads `dev/ecosystem/*/` only with `YAYMATIK_IS_DEVELOPMENT` on, on `plugins_loaded` priority 20; `YAYMATIK_DEV_ECOSYSTEM_OFF` leaves products out (no other skip rule: scaffolds live only until copy-scaffolds); `./run.sh ecosystem-fire <trigger>` fires a trigger by hand. Not: a symlink or a wp-env mapping | Confirmed 2026-11-26 |
 | D11 | Search pickers, dependent options and a small repeater; keep the iframe; no React slots. No v1.1 template needs them, so not in this lane | Confirmed 2026-11-26 |
 | D18 | Broadcasts: a saved cursor plus a send-rate setting instead of one run per customer up front; a daily check for customers who joined or left a segment | Recommended, after D16 |
 | D12 | Public but not promoted at 1.0; promoted once the email stack is ready | Recommended |

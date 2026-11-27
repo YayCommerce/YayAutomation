@@ -8,7 +8,7 @@ Words and matrix as in `docs/extensions-roadmap.md` (email stack). Builds on `ex
 
 - **Mark (D20).** `EmailDelivery` adds `X-YayMatik-Run: <run id>-<step id>` to every email it sends (`test` for Send test, none for Preview). One place, so core Send email, Send internal email and every extension's email action carry it.
 - **Delivery status (D19).** Core listens to `wp_mail_succeeded` / `wp_mail_failed` for marked mail and records sent / failed on the step. A new public action `yaymatik_email_status( $mark, $status )` lets YaySMTP report delivered, bounced, opened, clicked later. Stored per step as `output.delivery` `{ status, at, reason? }`, the latest only; nothing runs on the shopper's request.
-- **Run detail status line (screen draft).** Branch `feature/ecosystem-email-stack` holds the draft: `DeliveryStatus.tsx` under the step's "Sent to …" in `RunDetailSheet.tsx`, data from `runDelivery.fixtures.ts`, opened with `?run=draft-delivery` on any workflow's overview. Looks like: status line → the step's result line in run detail. Delivered, opened, clicked: muted with a green dot; bounced: red, its reason in a `HelpTip`. Sent and failed show no line ("Sent to …" and the failed step already say it). One status per step, even for several recipients. The Builder continues from that branch: merges `feature/lane-a` first, feeds `output.delivery` from the server, deletes the fixtures file and the draft branch in `RunDetailSheet`, and adds a `RunDetailSheet` test per state.
+- **Run detail status line (screen draft).** Branch `feature/ecosystem-email-stack` holds the draft: `DeliveryStatus.tsx` under the step's "Sent to …" in `RunDetailSheet.tsx`, data from `runDelivery.fixtures.ts`, opened with `?run=draft-delivery` on any workflow's overview. Looks like: status line → the step's result line in run detail. The header becomes one row: the subject and the status badge in a fixed 54px row (`h-13.5 py-0`, the app header's height), the title on the kit's line height, the Started · Finished times dropped (each step's row carries its time). Delivered, opened, clicked: muted with a green dot; bounced: red, its reason in a `HelpTip`. Sent and failed show no line ("Sent to …" and the failed step already say it). One status per step, even for several recipients. The Builder continues from that branch: merges `feature/lane-a` first, feeds `output.delivery` from the server, deletes the fixtures file and the draft branch in `RunDetailSheet`, and adds a `RunDetailSheet` test per state.
 - **Fake adapters** of the three scaffolds gain the products' email behavior: YayMail wraps WooCommerce emails unless marked, YayMagic wraps every `wp_mail` unless marked, YaySMTP logs by mark and calls `yaymatik_email_status`.
 - **Cell tests** in `tests/Unit/Ecosystem/`, one per cell, on the fake adapters. Each checks one email, one wrapper, unsubscribe link, run detail.
 - **Local check (D21).** `./run.sh check-ecosystem [--wp-env|--wp-env-min]`, in the pattern of `check-extension.sh`: runs the same cells on a real site with a mail log, with an installed product in place of its scaffold; prints PASS / FAIL per cell and which ran on a scaffold; joins `check-all`.
@@ -24,10 +24,10 @@ Words and matrix as in `docs/extensions-roadmap.md` (email stack). Builds on `ex
 
 ## Decisions
 Confirmed: D9, D17, D19, D20, D21, D22.
-- P2.1 Run detail status line as in the screen draft — open, recommended
+- P2.1 Run detail status line and one-row header as in the screen draft — confirmed
 
 ## Meta
 - Target branch: feature/ecosystem-email-stack
 - Base branch: feature/lane-a
 - Unattended: yes
-- Draft: waiting
+- Draft: confirmed
