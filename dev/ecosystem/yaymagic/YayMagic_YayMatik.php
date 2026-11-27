@@ -61,10 +61,16 @@ final class YayMagic_YayMatik {
                 ],
                 /* translators: {{ config.subject }}: the email's subject; keep {{ … }} as it is. */
                 'summary'     => __( 'Email “{{ config.subject }}”', 'yaymagic' ),
+                'validate'    => [ $this->adapter, 'validate' ],
                 'email'       => [
                     'audience'  => 'customer',
                     'recipient' => 'customer',
                     'build'     => [ $this->adapter, 'build_email' ],
+                ],
+                'editor'      => [
+                    'field'  => 'design_id',
+                    'button' => __( 'Customize email', 'yaymagic' ),
+                    'url'    => [ $this->adapter, 'editor_url' ],
                 ],
             ]
         );

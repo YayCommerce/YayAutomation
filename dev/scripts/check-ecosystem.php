@@ -63,6 +63,10 @@ switch ( $phase ) {
             'order'     => $order->get_id(),
             'workflows' => [],
         ];
+        // The scaffold: a design as its editor saves it, so the cell checks that what the editor saved is what's sent.
+        if ( class_exists( 'YayMagic_YayMatik_Fake_Adapter' ) ) {
+            $state['design'] = ( new YayMagic_YayMatik_Fake_Adapter() )->save_design( 0, CHECK_ECO_PREFIX . ' design', '<p>Order {{ order.number }} for {{ customer.first_name }}</p>' );
+        }
         wp_set_current_user( $admin );
         foreach ( CHECK_ECO_SOURCES as $source => $block ) {
             $config  = 'core' === $source
@@ -74,7 +78,7 @@ switch ( $phase ) {
                 ]
                 : [
                     'subject'   => 'Check ecosystem: {{ customer.first_name }}',
-                    'design_id' => '1',
+                    'design_id' => (string) ( 'yaymagic' === $source && isset( $state['design'] ) ? $state['design'] : 1 ),
                 ];
             $node    = fn( string $id, string $kind, int $y, string $step, array $step_config ) => [
                 'id'       => $id,
@@ -184,6 +188,10 @@ switch ( $phase ) {
             $ok( 'completed' === ( $step['status'] ?? null ) && CHECK_ECO_EMAIL === ( $step['output']['to'] ?? null ), 'run detail: Sent to ' . CHECK_ECO_EMAIL );
             $delivery = (string) ( $step['output']['delivery']['status'] ?? '' );
             $ok( $smtp ? in_array( $delivery, [ 'delivered', 'opened', 'clicked' ], true ) : 'sent' === $delivery, "run detail: delivery {$delivery}" );
+            if ( 'yaymagic' === $source && isset( $state['design'] ) ) {
+                $number = wc_get_order( (int) $state['order'] )->get_order_number();
+                $ok( $mail && false !== strpos( $mail['message'], "Order {$number} for Ann" ) && false === strpos( $mail['message'], '{{' ), 'the design saved in the editor, its variables rendered' );
+            }
         }
         if ( $smtp_log ) {
             delete_option( $smtp_log );
@@ -195,6 +203,11 @@ switch ( $phase ) {
         $order = wc_get_order( (int) ( $state['order'] ?? 0 ) );
         if ( $order ) {
             $order->delete( true );
+        }
+        if ( isset( $state['design'] ) && class_exists( 'YayMagic_YayMatik_Fake_Adapter' ) ) {
+            $designs = (array) get_option( YayMagic_YayMatik_Fake_Adapter::DESIGNS, [] );
+            unset( $designs[ $state['design'] ] );
+            update_option( YayMagic_YayMatik_Fake_Adapter::DESIGNS, $designs, false );
         }
         delete_option( CHECK_ECO_STATE );
         $ok( ! $left, 'cleanup: temporary workflows removed' );

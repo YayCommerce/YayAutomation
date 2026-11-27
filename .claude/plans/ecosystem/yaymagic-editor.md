@@ -20,6 +20,9 @@ Builds on YayMagic's scaffold from `extension-scaffolds.md` and the mark from `e
 
 ## Decisions
 Confirmed: D24, D25.
+- The fake keeps designs in option `yaymagic_fake_designs` over three built-in samples; any `{{ order.… }}` tag in a design counts as an order block for `validate`. — confirmed (auto)
+- The editor saves by a form post and reload, then posts `save` (as the Acme example does), not by fetch. — confirmed (auto)
+- A design id with no design makes `build_email` throw (the step fails), no fallback design. — confirmed (auto)
 
 ## Meta
 - Target branch: feature/ecosystem-yaymagic-editor
