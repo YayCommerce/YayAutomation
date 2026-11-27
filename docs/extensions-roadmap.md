@@ -73,6 +73,8 @@ Matrix: each design source (core, YayMail, YayMagic) × YaySMTP on / off × the 
 
 Matrix: a grant step retried, a run replayed, two workflows on one event, a wholesale price and a YayPricing rule on one order, each product removed mid-run. Each cell checks: grant once, prices as the products compute them without YayMatik, run detail correct.
 
+Deferred: a condition with `match: any` skips whole when one rule reads an inactive plugin's data, even if another rule could match. It follows the documented rule, and no v1.1 template mixes an off plugin's rule with others; revisit if a merchant's workflow needs it.
+
 ## v1.1 catalog (D22)
 
 Six extensions and 21 templates, all planned and scaffolded once. Each product releases its extension when it is ready (D21). YayMatik shows a template only when every product it needs is active, so v1.1 waits for no product, and an extension that is not ready shows no templates.

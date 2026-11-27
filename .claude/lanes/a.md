@@ -10,5 +10,6 @@ Core's side and the proof that products work together safely in a workflow (docs
 - [x] [yaymagic-editor](../plans/ecosystem/yaymagic-editor.md) #55
 - [x] [value-stack](../plans/ecosystem/value-stack.md) #56
 - [x] [extension-check](../plans/ecosystem/extension-check.md) #57
-- Review ecosystem foundation
+- [x] Review ecosystem foundation
+- activation-missing-plugin: a workflow whose condition reads an inactive plugin's data is refused at activation with `missing_plugin` ("Activate YayPricing…"), not the rule's "Choose data for each rule"; plan first
 - [copy-scaffolds](../plans/ecosystem/copy-scaffolds.md)
