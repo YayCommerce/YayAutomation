@@ -10,7 +10,7 @@ Words as in `docs/extensions-roadmap.md` (catalog 1–18, the "Extension adds" c
 - **What each declares:** YayMail `yaymail_send_email` (templates 1–3); YayMagic `yaymagic_send_email` (4–6); YaySMTP data item `yaysmtp_email` (a failed email log entry, with `privacy_subjects`) and trigger `yaysmtp_email_failed` (7); YayWholesale customer fields role and status, cart fields minimum and missing amount, triggers request submitted, approved and rejected, action `yaywholesale_set_role` (9–12); YayLoyalty customer fields points and tier, triggers points earned, tier reached and points expiring, action `yayloyalty_award_points` (13–16); YayPricing order fields `yaypricing_rules` and `yaypricing_discount_total` (17, 18).
 - **Email actions** pick their design from a select (field `design_id`) the fake adapter fills; `yaymagic-editor.md` adds the editor on that same field. No scaffold declares an editor here; YayMagic's is its own plan.
 - **Fake adapter per product:** actions do the cheapest real thing and report it (`done()` outputs such as `points_added`, `role`); email actions return a simple design from `build`; fields return sample values. The same fake adapters serve the dev site and `pnpm test:php`.
-- **Loading (D25):** YayMatik loads `dev/ecosystem/*/` only with `YAYMATIK_IS_DEVELOPMENT` on, on `plugins_loaded` priority 20 as a later plugin would. `YAYMATIK_DEV_ECOSYSTEM_OFF` lists products to leave out. A scaffold steps aside when its product registers its own module (P1.2). Never shipped (`/dev` is in `.distignore`).
+- **Loading (D25):** YayMatik loads `dev/ecosystem/*/` only with `YAYMATIK_IS_DEVELOPMENT` on, on `plugins_loaded` priority 20 as a later plugin would. `YAYMATIK_DEV_ECOSYSTEM_OFF` lists products to leave out. Never shipped (`/dev` is in `.distignore`).
 - **Firing by hand (D25):** `./run.sh ecosystem-fire <trigger> [--wp-env]` calls `yaymatik_fire` with a sample payload.
 
 ## Checkpoints
@@ -23,8 +23,8 @@ Words as in `docs/extensions-roadmap.md` (catalog 1–18, the "Extension adds" c
 ## Decisions
 Confirmed: D25.
 - Template 8 left out: it needs tags (D16); YaySMTP's bounced trigger waits with it — confirmed (auto)
-- P1.1 Templates 5, 6 and 16 start on Pro triggers (`customer_inactive`, `customer_order_count_reaches`), so they show only with YayMatik Pro, by the existing rule — open, recommended
-- P1.2 A scaffold steps aside when its product registers a module with the same id (the loader registers scaffolds last on `yaymatik_register` and skips a taken id, no diagnostic), not when the product's plugin is merely active — open, recommended
+- P1.1 Templates 5, 6 and 16 start on Pro triggers (`customer_inactive`, `customer_order_count_reaches`), so they show only with YayMatik Pro, by the existing rule — confirmed
+- P1.2 No skip rule: scaffolds live only until copy-scaffolds hands them to the product teams; `YAYMATIK_DEV_ECOSYSTEM_OFF` covers a clash. Replaces D25's "skipped when its product is active" — confirmed
 - Fake adapters fill email designs as a select; no editor in this plan — confirmed (auto)
 
 ## Meta
