@@ -124,7 +124,7 @@ Facts, outputs and data fields name their type as a string: `string`, `number`, 
 | `fail( string $reason )` | an error; `on_error` decides |
 | `is_test()` | the step must do nothing real. Today only an email's `build` in Send test sees true; test runs and dry runs will set it for `handle` too, so an action with a side effect (award, role, any write) skips when it is true |
 | `unsubscribe_url()` | email actions only (§5.5) |
-| `key()` | the run step's key (API 1.1): the same across its retries and replays, one per loop item; `''` outside a run. An action that grants something (role, points, coupon) stores it with the grant and, when it already has the key, returns the same `done()` without granting again |
+| `key()` | the run step's key (API 1.1): its run-step row, so the same when the run is replayed; `''` outside a run. An action that grants something (role, points, coupon) stores it with the grant and, when it already has the key, returns the same `done()` without granting again |
 
 `handle` returns what `done()` / `skip()` / `fail()` return. Anything else → Failed "The step returned no result." + diagnostic.
 
@@ -514,7 +514,7 @@ Result: every listed need maps to a contract piece; the gaps are on the plugins'
 ## 16. Changelog
 - 1.0.0 (YayMatik 1.0): first stable version. `yaymatik_register` (`Registrar`, `Module`: triggers, actions, data items, data fields, categories, templates), `yaymatik_fire`, `Step`, `CustomerView`, `CartView`, `Api::VERSION`, `Api::references()`. postMessage schema v1. Example: `dev/example-extension/`. A plugin's templates share the library grid with core's (no group heading), found by the plugin filter. Placeholders in `summary` / `result` / `required` are `{{ config.<field> }}`, `{{ output.<key> }}` and `{{ step }}` (§5.2). Core triggers `user_logged_in`, `customer_logged_in` and data keys `customer.last_added_to_cart`, `customer.cart_item_count` (tier pro).
   Renamed before any extension shipped, so the version stays 1.0.0 (stored ids, config keys and template ids unchanged): interface `Run` → `Step`; action `run` → `handle`, `requires` → `needs`; trigger / action `fields` → `settings`; trigger `sample` → `sample_facts`; template `name` → `label`, `category` → `library_category`; `Registrar::supports()` removed (use `requires_api` or `api_version()`).
-- 1.1.0 (YayMatik 1.1): `Step::key()`; hook `yaymatik_email_status`.
+- 1.1.0 (YayMatik 1.1): `Step::key()`; hook `yaymatik_email_status`. Core alone implements `Step`: a plugin's own class implementing it (a test double) must add `key()`.
 
 ## 17. Checkpoints and PRs
 

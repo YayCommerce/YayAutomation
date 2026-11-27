@@ -420,6 +420,8 @@ switch ( $phase ) {
         $loyalty   = in_array( 'yayloyalty', $active, true );
         $pricing   = in_array( 'yaypricing', $active, true );
         $before    = $loyalty ? (int) yaymatik_check_value_field( $user_id, 'yayloyalty_points' ) : 0;
+        // The scaffold's role from an earlier cell, so this cell's check proves this cell set it.
+        delete_user_meta( $user_id, '_yaywholesale_fake_role' );
         $ledgers   = [
             'role'   => class_exists( 'YayWholesale_YayMatik_Fake_Adapter' ) ? YayWholesale_YayMatik_Fake_Adapter::GRANTS : '',
             'points' => class_exists( 'YayLoyalty_YayMatik_Fake_Adapter' ) ? YayLoyalty_YayMatik_Fake_Adapter::GRANTS : '',

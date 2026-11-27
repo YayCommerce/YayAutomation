@@ -170,7 +170,8 @@ class Criteria extends Condition {
     public function inactive_plugin( array $config ): ?string {
         foreach ( $this->flat_rules( $config['rules'] ) as $rule ) {
             foreach ( $this->reads( $rule ) as $key ) {
-                $plugin = '' === $key ? null : StepIndex::inactive_plugin( $key );
+                // A trigger's facts: `run()` fails the step when the trigger's plugin is off.
+                $plugin = '' === $key || 0 === strpos( $key, 'trigger.' ) ? null : StepIndex::inactive_plugin( $key );
                 if ( $plugin ) {
                     return $plugin;
                 }

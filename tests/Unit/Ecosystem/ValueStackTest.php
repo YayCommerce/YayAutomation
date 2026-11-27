@@ -259,7 +259,7 @@ final class ValueStackTest extends TestCase {
     }
 
     /**
-     * Each grant step's `handle` once more on its own run-step row: a retry of the attempt (V11.7).
+     * Each grant step's `handle` once more on its own run-step row: a retry of the attempt.
      *
      * @param int $id
      */

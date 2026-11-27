@@ -304,13 +304,13 @@ final class Executor {
             /* translators: %s: step type id */
             return StepResult::failed( sprintf( __( 'Step type "%s" is not available.', 'yaymatik' ), $block ) );
         }
-        $off = $step instanceof Criteria ? $step->inactive_plugin( $config ) : null;
-        if ( $off ) {
-            // Its rule's data is gone with the plugin: the path ends here, as when the step's own plugin is off.
-            /* translators: %s: plugin name, e.g. "YayPricing" */
-            return StepResult::skipped( sprintf( __( '%s isn’t active.', 'yaymatik' ), $off ) );
-        }
         try {
+            $off = $step instanceof Criteria ? $step->inactive_plugin( $config ) : null;
+            if ( $off ) {
+                // Its rule's data is gone with the plugin: the path ends here, as when the step's own plugin is off.
+                /* translators: %s: plugin name, e.g. "YayPricing" */
+                return StepResult::skipped( sprintf( __( '%s isn’t active.', 'yaymatik' ), $off ) );
+            }
             $valid = $step->validate( $config );
             if ( true === $valid ) {
                 $valid = $step->context_error( $config, self::available( $scope ), $scope->trigger() ) ?? true;

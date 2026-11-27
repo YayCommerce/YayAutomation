@@ -77,19 +77,21 @@ final class StepIndex {
 
     /**
      * The label of the plugin, seen before and off now, that declared a data key's item or field
-     * (`order.yaypricing_discount_total`, `yaywholesale_request.status`): their ids start with its module id + `_`.
+     * (`order.yaypricing_discount_total`, `yaywholesale_request.status`): their ids start with its module id + `_`,
+     * the longest such id when one module id starts another.
      *
      * @param string $key
      */
     public static function inactive_plugin( string $key ): ?string {
-        $ids = explode( '.', $key, 3 );
-        foreach ( array_diff_key( self::stored()['plugins'], ModuleRegistry::modules() ) as $module => $label ) {
+        $ids   = explode( '.', $key, 3 );
+        $owner = '';
+        foreach ( array_keys( self::stored()['plugins'] + ModuleRegistry::modules() ) as $module ) {
             $prefix = $module . '_';
-            if ( 0 === strpos( $ids[0], $prefix ) || 0 === strpos( $ids[1] ?? '', $prefix ) ) {
-                return (string) $label;
+            if ( strlen( (string) $module ) > strlen( $owner ) && ( 0 === strpos( $ids[0], $prefix ) || 0 === strpos( $ids[1] ?? '', $prefix ) ) ) {
+                $owner = (string) $module;
             }
         }
-        return null;
+        return '' === $owner || isset( ModuleRegistry::modules()[ $owner ] ) ? null : (string) self::stored()['plugins'][ $owner ];
     }
 
     /**
