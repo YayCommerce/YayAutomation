@@ -37,6 +37,10 @@ Docs in `extension-api.md`, written as what exists:
 ## Decisions
 Confirmed: D26 (N1–N3, N5, N7–N9, N11), D27 (N4).
 - `Api::VERSION` stays `1.0.0`, with a changelog entry — confirmed (auto)
+- Catalog's template shape (`name`, `category`, TS `WorkflowTemplate`) stays: it is the admin app's type, shared with core templates; only the declaration keys change — confirmed (auto)
+- Internal `RunAdapter` and core `Step::fields()` / `requires()` keep their names (extensions never see them) — confirmed (auto)
+- Refusal messages for a step's form say "Setting" (`Setting "role" needs …`), so "field" means a data field only — confirmed (auto)
+- The example's "Add reward points" skips when `is_test()`, as §4.3 asks of a side-effect action — confirmed (auto)
 
 ## Meta
 - Target branch: feature/ecosystem-api-names

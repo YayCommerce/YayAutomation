@@ -307,7 +307,7 @@ final class ExecutorTest extends TestCase {
                     [
                         'label'       => 'Act',
                         'description' => 'Reads the order.',
-                        'run'         => fn( array $config, $run ) => $run->order() ? $run->done() : $run->fail( 'No order.' ),
+                        'handle'      => fn( array $config, $step ) => $step->order() ? $step->done() : $step->fail( 'No order.' ),
                     ]
                 );
             }

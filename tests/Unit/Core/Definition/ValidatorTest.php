@@ -655,7 +655,7 @@ final class ValidatorTest extends TestCase {
                     $action + [
                         'label'       => 'Act',
                         'description' => 'Does it.',
-                        'run'         => fn( array $config, $run ) => $run->done(),
+                        'handle'      => fn( array $config, $step ) => $step->done(),
                     ]
                 );
             }
@@ -741,7 +741,7 @@ final class ValidatorTest extends TestCase {
 
     public function test_a_fact_is_a_variable_of_its_trigger_only(): void {
         $note    = [
-            'fields' => [
+            'settings' => [
                 'note' => [
                     'type'      => 'text',
                     'label'     => 'Note',

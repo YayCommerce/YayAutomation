@@ -60,14 +60,11 @@ final class RegistrarTest extends TestCase {
         $this->assertSame( [ 'acme module: Module id "acme" is already taken by another module.' ], self::diagnostics() );
     }
 
-    public function test_api_version_and_features(): void {
+    public function test_api_version(): void {
         Extensions::collect(
             [],
             function ( Registrar $registrar ) {
                 $this->assertSame( Api::VERSION, $registrar->api_version() );
-                $this->assertTrue( $registrar->supports( 'triggers' ) );
-                $this->assertTrue( $registrar->supports( 'actions' ) );
-                $this->assertFalse( $registrar->supports( 'email' ) );
             }
         );
     }
@@ -179,7 +176,7 @@ final class RegistrarTest extends TestCase {
                 $action    = [
                     'label'       => 'Add',
                     'description' => 'Adds.',
-                    'run'         => fn( array $config, $run ) => $run->done(),
+                    'handle'      => fn( array $config, $step ) => $step->done(),
                 ];
                 $results[] = $module->action( 'add_points', $action );
                 $results[] = $module->action( 'acme_add_points', $action );
@@ -210,7 +207,7 @@ final class RegistrarTest extends TestCase {
                     [
                         'label'       => 'Add',
                         'description' => 'Adds.',
-                        'run'         => fn( array $config, $run ) => $run->done(),
+                        'handle'      => fn( array $config, $step ) => $step->done(),
                         'retries'     => 3,
                     ]
                 );
@@ -245,7 +242,7 @@ final class RegistrarTest extends TestCase {
                 [
                     'label'       => 'Late',
                     'description' => 'Too late.',
-                    'run'         => fn( array $config, $run ) => $run->done(),
+                    'handle'      => fn( array $config, $step ) => $step->done(),
                 ]
             )
         );

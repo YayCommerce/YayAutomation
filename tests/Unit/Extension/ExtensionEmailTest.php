@@ -26,7 +26,7 @@ final class ExtensionEmailTest extends TestCase {
     }
 
     /**
-     * @param callable|array $build fn( $config, $run ): array, or the array it returns.
+     * @param callable|array $build fn( $config, $step ): array, or the array it returns.
      * @param array          $email More `email` keys.
      * @param array          $extra More declaration keys.
      */
@@ -37,7 +37,7 @@ final class ExtensionEmailTest extends TestCase {
             $extra + [
                 'label'       => 'Mail',
                 'description' => 'Sends.',
-                'fields'      => [
+                'settings'    => [
                     'to' => [
                         'type'      => 'text',
                         'label'     => 'To',
@@ -46,9 +46,9 @@ final class ExtensionEmailTest extends TestCase {
                 ],
                 'email'       => $email + [
                     'recipient' => 'customer',
-                    'build'     => function ( array $config, $run ) use ( $build ) {
-                        $this->built = [ $config, $run ];
-                        return is_callable( $build ) ? $build( $config, $run ) : $build;
+                    'build'     => function ( array $config, $step ) use ( $build ) {
+                        $this->built = [ $config, $step ];
+                        return is_callable( $build ) ? $build( $config, $step ) : $build;
                     },
                 ],
             ]
@@ -89,9 +89,9 @@ final class ExtensionEmailTest extends TestCase {
             . '<img alt="{{ customer.first_name }}" src="x.png">'
             . '<!-- {{ customer.first_name }} --><p><a href="UNSUB">Unsubscribe</a></p></body></html>';
         $action   = $this->action(
-            fn( array $config, $run ) => [
+            fn( array $config, $step ) => [
                 'subject' => 'Hi {{ customer.first_name }}',
-                'html'    => str_replace( 'UNSUB', esc_url( $run->unsubscribe_url() ), $document ),
+                'html'    => str_replace( 'UNSUB', esc_url( $step->unsubscribe_url() ), $document ),
             ]
         );
 
@@ -147,20 +147,20 @@ final class ExtensionEmailTest extends TestCase {
 
     public function test_preview_and_send_test_get_an_inert_link(): void {
         $action = $this->action(
-            fn( array $config, $run ) => [
+            fn( array $config, $step ) => [
                 'subject' => 'S',
-                'html'    => '<body><a href="' . esc_url( $run->unsubscribe_url() ) . '">Out</a></body>',
+                'html'    => '<body><a href="' . esc_url( $step->unsubscribe_url() ) . '">Out</a></body>',
             ]
         );
 
         $preview = $action->compose_email( [], self::scope(), null );
-        $run     = $this->built[1];
+        $step    = $this->built[1];
         $action->compose_email( [], self::scope(), null, true );
 
         $this->assertSame( '<body><a href="#">Out</a></body>', $preview['body'], 'it asked for the link: no footer' );
         $this->assertSame( "Content-Type: text/html\r\n", $preview['headers'] );
-        $this->assertTrue( $run->is_preview() );
-        $this->assertFalse( $run->is_test() );
+        $this->assertTrue( $step->is_preview() );
+        $this->assertFalse( $step->is_test() );
         $this->assertTrue( $this->built[1]->is_test() );
     }
 
@@ -251,7 +251,7 @@ final class ExtensionEmailTest extends TestCase {
     }
 
     public function test_the_declaration_rules(): void {
-        $this->assertNull( $this->action( [], [], [ 'run' => fn() => null ] ), 'core runs an email action' );
+        $this->assertNull( $this->action( [], [], [ 'handle' => fn() => null ] ), 'core runs an email action' );
         $this->assertNull( $this->action( [], [ 'recipient' => 'email' ] ), 'recipient: customer or a field' );
         $this->assertNull( $this->action( [], [ 'audience' => 'everyone' ] ) );
         $action = $this->action( [] );

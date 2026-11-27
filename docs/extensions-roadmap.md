@@ -47,7 +47,7 @@ YayMatik runs inside WordPress and WooCommerce; it does not own the runtime. It 
 
 Within that, core owns the run and the contract; plugins add domain logic, data and UI as declarations:
 
-1. **Core owns the run.** Queue, waits, retries, claims, versions, history, privacy. Plugins give step bodies (`run` / `build`) and events (`yaymatik_fire`).
+1. **Core owns the run.** Queue, waits, retries, claims, versions, history, privacy. Plugins give step bodies (`handle` / `build`) and events (`yaymatik_fire`).
 2. **Declared, not coded.** Every trigger, action, field and template is an array with labels and types: core validates it, draws its form, generates docs from it, and AI reads it (v2.0).
 3. **Additive.** New keys, field types and `Step` methods in MINOR releases (D26: no `supports()`; `requires_api` and `api_version()` say what's there); breaking changes only behind `yaymatik_register_v2`.
 4. **Degrade softly.** A broken or missing plugin is a diagnostic or a Skipped step, never a fatal or a cancelled run.
@@ -58,7 +58,7 @@ Within that, core owns the run and the contract; plugins add domain logic, data 
 | Product | Role in a workflow | Extension adds | Core adds |
 |---|---|---|---|
 | YayMail | Design for order emails | Template kind not bound to a WC email, embedded editor, render by template id + order, skip wrapping a marked email | Mark on every email it sends (D17) |
-| YayMagic | Design for any email, with or without an order | Embedded editor, render by template id from `$run`, no globals in shortcodes, skip wrapping a marked email | Mark on every email it sends (D17) |
+| YayMagic | Design for any email, with or without an order | Embedded editor, render by template id from `$step`, no globals in shortcodes, skip wrapping a marked email | Mark on every email it sends (D17) |
 | YaySMTP | Delivery and its log | Calls `yaymatik_email_status` with the mark when its log changes (D19); opens / clicks if it tracks them **[Guess]** | Sent / failed from WordPress's mail hooks without YaySMTP; delivery status in run detail |
 
 Matrix: each design source (core, YayMail, YayMagic) × YaySMTP on / off × the other design source on / off × the design source's product removed after the workflow was saved. Each cell checks: one email, one wrapper, unsubscribe link present, run detail correct.

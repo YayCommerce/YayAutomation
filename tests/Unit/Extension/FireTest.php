@@ -59,7 +59,7 @@ final class FireTest extends TestCase {
                         'label'       => 'Points earned',
                         'description' => 'When points are earned.',
                         'provides'    => [ 'customer' ],
-                        'fields'      => [
+                        'settings'    => [
                             'min' => [
                                 'type'    => 'number',
                                 'label'   => 'At least',
@@ -80,10 +80,10 @@ final class FireTest extends TestCase {
                 $module->trigger(
                     'acme_redeemed',
                     [
-                        'label'       => 'Reward redeemed',
-                        'description' => 'When a reward is redeemed.',
-                        'provides'    => [ 'acme_reward' ],
-                        'facts'       => [
+                        'label'        => 'Reward redeemed',
+                        'description'  => 'When a reward is redeemed.',
+                        'provides'     => [ 'acme_reward' ],
+                        'facts'        => [
                             'points' => [
                                 'label' => 'Points',
                                 'type'  => 'number',
@@ -93,7 +93,7 @@ final class FireTest extends TestCase {
                                 'type'  => 'string',
                             ],
                         ],
-                        'sample'      => [ 'points' => 25 ],
+                        'sample_facts' => [ 'points' => 25 ],
                     ]
                 );
                 $module->trigger(
@@ -215,7 +215,7 @@ final class FireTest extends TestCase {
 
         $this->assertSame( 'order:12', $this->runs->runs[1]['subject'] );
         $this->assertSame( self::ref( 'customer', 'order:12' ), $this->scope( 1 )['customer'] );
-        $this->assertSame( 5, $this->scope( 1 )['user_id'], 'kept for Run::user() on a guest order' );
+        $this->assertSame( 5, $this->scope( 1 )['user_id'], 'kept for Step::user() on a guest order' );
     }
 
     public function test_a_user_id_beside_a_cart_id_does_not_change_the_customer(): void {

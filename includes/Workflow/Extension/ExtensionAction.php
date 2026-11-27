@@ -28,7 +28,7 @@ class ExtensionAction extends Action {
     }
 
     public function requires(): array {
-        return $this->args['requires'] ?? [];
+        return $this->args['needs'] ?? [];
     }
 
     public function emits(): array {
@@ -67,13 +67,13 @@ class ExtensionAction extends Action {
     public function run( Scope $scope, array $config ): StepResult {
         return Guard::call(
             $this->module,
-            'run',
+            'handle',
             function () use ( $scope, $config ) {
-                $result = ( $this->args['run'] )( $config, new RunAdapter( $scope ) );
+                $result = ( $this->args['handle'] )( $config, new RunAdapter( $scope ) );
                 if ( $result instanceof StepResult ) {
                     return $result;
                 }
-                Diagnostics::record( $this->module, 'run', 'run returned something other than $run->done(), $run->skip() or $run->fail().' );
+                Diagnostics::record( $this->module, 'handle', 'handle returned something other than $step->done(), $step->skip() or $step->fail().' );
                 return StepResult::failed( __( 'The step returned no result.', 'yaymatik' ) );
             },
             fn( \Throwable $e ) => StepResult::failed( $e->getMessage() )

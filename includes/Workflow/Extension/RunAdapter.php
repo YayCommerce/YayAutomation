@@ -1,7 +1,7 @@
 <?php
 namespace YayMatik\Workflow\Extension;
 
-use YayMatik\Api\Run;
+use YayMatik\Api\Step;
 use YayMatik\Workflow\Core\Cart\SavedCart;
 use YayMatik\Workflow\Core\Data\DataRegistry;
 use YayMatik\Workflow\Core\Data\Ref;
@@ -16,11 +16,11 @@ use YayMatik\Workflow\DataItems\OrderData;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * A run's values as the public `Run`: no Ref or other internal object gets out.
+ * A run's values as the public `Step`: no Ref or other internal object gets out.
  *
  * @internal
  */
-final class RunAdapter implements Run {
+final class RunAdapter implements Step {
 
     /** @var Values */
     private $values;

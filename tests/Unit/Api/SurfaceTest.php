@@ -5,7 +5,7 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * The public Extension API is frozen: a change to a class, constant, method, parameter or return type in
- * `includes/Api/`, or to a declared key, feature, field type or type name, fails here. A deliberate change
+ * `includes/Api/`, or to a declared key, field type or type name, fails here. A deliberate change
  * updates tests/fixtures/extension-api-surface.json with the JSON this test prints, and the contract.
  */
 final class SurfaceTest extends TestCase {
@@ -41,7 +41,7 @@ final class SurfaceTest extends TestCase {
             $surface[ $class->getName() ] = $entry;
         }
         ksort( $surface );
-        $keys = [ 'features' => self::constant( \YayMatik\Api\Registrar::class, 'FEATURES' ) ];
+        $keys = [];
         foreach ( [ 'MODULE_KEYS', 'STEP_KEYS', 'TRIGGER_KEYS', 'ACTION_KEYS', 'EMAIL_KEYS', 'EDITOR_KEYS', 'TEMPLATE_KEYS', 'DATA_ITEM_KEYS', 'DATA_FIELD_KEYS' ] as $name ) {
             $keys[ strtolower( $name ) ] = self::constant( \YayMatik\Workflow\Extension\Declaration::class, $name );
         }

@@ -3,8 +3,8 @@ namespace YayMatik\Api;
 
 defined( 'ABSPATH' ) || exit;
 
-/** The run an action's `run` gets: its data, and how the step ends (docs/extension-api.md §4.3). */
-interface Run {
+/** The step an action's `handle` gets: its data, and how it ends (docs/extension-api.md §4.3). */
+interface Step {
 
     /** @return \WC_Order|null */
     public function order();
@@ -46,17 +46,17 @@ interface Run {
      */
     public function render( string $text, bool $html = false ): string;
 
-    /** True in Preview and Send test. */
+    /** Sample or made-up data: Preview and Send test. */
     public function is_preview(): bool;
 
     /** An email action's unsubscribe link for its footer: `#` in Preview and Send test, '' outside an email's `build`. */
     public function unsubscribe_url(): string;
 
-    /** True in Send test. */
+    /** The step must do nothing real (today: an email's `build` in Send test); an action with a side effect skips it. */
     public function is_test(): bool;
 
     /**
-     * Return it from `run`: the step is done.
+     * Return it from `handle`: the step is done.
      *
      * @param array $outputs
      * @return mixed
@@ -64,7 +64,7 @@ interface Run {
     public function done( array $outputs = [] );
 
     /**
-     * Return it from `run`: nothing to do; the run goes on.
+     * Return it from `handle`: nothing to do; the run goes on.
      *
      * @param string $reason
      * @return mixed
@@ -72,7 +72,7 @@ interface Run {
     public function skip( string $reason );
 
     /**
-     * Return it from `run`: an error; `on_error` decides.
+     * Return it from `handle`: an error; `on_error` decides.
      *
      * @param string $reason
      * @return mixed

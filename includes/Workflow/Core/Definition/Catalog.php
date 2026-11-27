@@ -58,9 +58,9 @@ final class Catalog {
                 }
                 $list[] = [
                     'id'          => $id,
-                    'name'        => $args['name'],
+                    'name'        => $args['label'],
                     'description' => $args['description'],
-                    'category'    => $args['category'],
+                    'category'    => $args['library_category'],
                     'workflow'    => $args['workflow'],
                     'createdAt'   => $args['created'],
                     'before'      => $args['before'],

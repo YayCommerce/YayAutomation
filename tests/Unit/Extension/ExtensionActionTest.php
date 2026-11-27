@@ -17,7 +17,7 @@ use YayMatik\Workflow\Extension\Extensions;
 require_once dirname( __DIR__, 2 ) . '/Support/woocommerce-stubs.php';
 require_once dirname( __DIR__, 2 ) . '/Support/extension-callables.php';
 
-/** An action's `run` with the `Run` object, its result, and the declared `validate` / `setup_issue`. */
+/** An action's `handle` with the `Step` object, its result, and the declared `validate` / `setup_issue`. */
 final class ExtensionActionTest extends TestCase {
 
     /** @var object[] Order id => order. */
@@ -101,15 +101,15 @@ final class ExtensionActionTest extends TestCase {
     }
 
     /**
-     * Runs the action with a run callback; returns the result.
+     * Runs the action with a handle callback; returns the result.
      *
-     * @param callable $run
+     * @param callable $handle
      * @param array    $trigger
      */
-    private function run_with( callable $run, array $trigger = [] ): StepResult {
+    private function handle_with( callable $handle, array $trigger = [] ): StepResult {
         return self::action(
             [
-                'run'     => $run,
+                'handle'  => $handle,
                 'outputs' => [
                     'balance' => [
                         'label' => 'Balance',
@@ -121,52 +121,52 @@ final class ExtensionActionTest extends TestCase {
     }
 
     public function test_done_skip_and_fail(): void {
-        $done = $this->run_with( fn( array $config, $run ) => $run->done( [ 'balance' => 35 ] ) );
+        $done = $this->handle_with( fn( array $config, $step ) => $step->done( [ 'balance' => 35 ] ) );
         $this->assertTrue( $done->is_ok() );
         $this->assertSame( [ 'balance' => 35 ], $done->outputs() );
 
-        $skip = $this->run_with( fn( array $config, $run ) => $run->skip( 'Guests can’t collect points.' ) );
+        $skip = $this->handle_with( fn( array $config, $step ) => $step->skip( 'Guests can’t collect points.' ) );
         $this->assertSame( [ 'skipped', 'Guests can’t collect points.' ], [ $skip->status(), $skip->message() ] );
 
-        $fail = $this->run_with( fn( array $config, $run ) => $run->fail( 'The points service is down.' ) );
+        $fail = $this->handle_with( fn( array $config, $step ) => $step->fail( 'The points service is down.' ) );
         $this->assertSame( [ 'failed', 'The points service is down.' ], [ $fail->status(), $fail->message() ] );
     }
 
     public function test_any_other_return_fails_the_step_with_a_diagnostic(): void {
         foreach ( [ null, true, [ 'balance' => 1 ] ] as $returned ) {
-            $result = $this->run_with( fn() => $returned );
+            $result = $this->handle_with( fn() => $returned );
             $this->assertSame( [ 'failed', 'The step returned no result.' ], [ $result->status(), $result->message() ] );
         }
-        $this->assertSame( 'run returned something other than $run->done(), $run->skip() or $run->fail().', Diagnostics::recent( 24 )[0]['message'] );
+        $this->assertSame( 'handle returned something other than $step->done(), $step->skip() or $step->fail().', Diagnostics::recent( 24 )[0]['message'] );
     }
 
     public function test_a_throw_fails_the_step_with_its_message_and_a_diagnostic(): void {
-        $result = $this->run_with(
+        $result = $this->handle_with(
             function () {
                 throw new \RuntimeException( 'Points API timed out.' );
             }
         );
 
         $this->assertSame( [ 'failed', 'Points API timed out.' ], [ $result->status(), $result->message() ] );
-        $this->assertSame( [ 'acme', 'run' ], [ Diagnostics::recent( 24 )[0]['module'], Diagnostics::recent( 24 )[0]['callback'] ] );
+        $this->assertSame( [ 'acme', 'handle' ], [ Diagnostics::recent( 24 )[0]['module'], Diagnostics::recent( 24 )[0]['callback'] ] );
     }
 
     public function test_a_deleted_order_goes_on_to_the_executor(): void {
         $this->expectException( GoneEntity::class );
-        $this->run_with( fn( array $config, $run ) => $run->done( [ 'balance' => $run->order()->get_total() ] ), [ 'order' => new Ref( 'order', 99 ) ] );
+        $this->handle_with( fn( array $config, $step ) => $step->done( [ 'balance' => $step->order()->get_total() ] ), [ 'order' => new Ref( 'order', 99 ) ] );
     }
 
     public function test_each_callable_kind_runs(): void {
         $callables = [
-            'closure'  => fn( array $config, $run ) => $run->done( [ 'via' => 'closure' ] ),
+            'closure'  => fn( array $config, $step ) => $step->done( [ 'via' => 'closure' ] ),
             'method'   => [ new \YayMatik_Test_Extension_Callables(), 'method' ],
-            'static'   => 'YayMatik_Test_Extension_Callables::run',
-            'function' => 'yaymatik_test_extension_run',
+            'static'   => 'YayMatik_Test_Extension_Callables::handle',
+            'function' => 'yaymatik_test_extension_handle',
         ];
         foreach ( $callables as $via => $callable ) {
             $action = self::action(
                 [
-                    'run'     => $callable,
+                    'handle'  => $callable,
                     'outputs' => [
                         'via' => [
                             'label' => 'Via',
@@ -181,14 +181,14 @@ final class ExtensionActionTest extends TestCase {
 
     public function test_run_reads_order_user_and_email(): void {
         $seen    = [];
-        $read    = function ( array $config, $run ) use ( &$seen ) {
-            $user   = $run->user();
+        $read    = function ( array $config, $step ) use ( &$seen ) {
+            $user   = $step->user();
             $seen[] = [
-                $run->order() ? 'order' : null,
+                $step->order() ? 'order' : null,
                 $user ? $user->ID : null,
-                $run->customer_email(),
+                $step->customer_email(),
             ];
-            return $run->done();
+            return $step->done();
         };
         $account = [
             'order'    => new Ref( 'order', 12 ),
@@ -199,10 +199,10 @@ final class ExtensionActionTest extends TestCase {
             'customer' => new Ref( 'customer', 'order:13' ),
             'user_id'  => 5,
         ];
-        $this->run_with( $read, $account + [ 'user_id' => 5 ] );
-        $this->run_with( $read, $guest );
-        $this->run_with( $read, [ 'customer' => new Ref( 'customer', 'user:5' ) ] );
-        $this->run_with( $read, [] );
+        $this->handle_with( $read, $account + [ 'user_id' => 5 ] );
+        $this->handle_with( $read, $guest );
+        $this->handle_with( $read, [ 'customer' => new Ref( 'customer', 'user:5' ) ] );
+        $this->handle_with( $read, [] );
 
         $this->assertSame(
             [
@@ -217,10 +217,10 @@ final class ExtensionActionTest extends TestCase {
 
     public function test_get_gives_values_not_entities_and_render_fills_tags(): void {
         $seen = [];
-        $this->run_with(
-            function ( array $config, $run ) use ( &$seen ) {
-                $seen = [ $run->get( 'order' ), $run->get( 'customer.email' ), $run->get( 'steps.coupon.code' ), $run->render( 'Hi {{ customer.email }}' ), $run->is_preview(), $run->cart(), $run->item( 'order' ) ];
-                return $run->done();
+        $this->handle_with(
+            function ( array $config, $step ) use ( &$seen ) {
+                $seen = [ $step->get( 'order' ), $step->get( 'customer.email' ), $step->get( 'steps.coupon.code' ), $step->render( 'Hi {{ customer.email }}' ), $step->is_preview(), $step->cart(), $step->item( 'order' ) ];
+                return $step->done();
             },
             [
                 'order'    => new Ref( 'order', 12 ),
@@ -234,7 +234,7 @@ final class ExtensionActionTest extends TestCase {
     public function test_validate_array_is_the_steps_context_error(): void {
         $action = self::action(
             [
-                'run'      => fn( array $config, $run ) => $run->done(),
+                'handle'   => fn( array $config, $step ) => $step->done(),
                 'validate' => fn( array $config, array $available ) => in_array( 'order', $available, true ) ? [] : [ 'design' => 'This design needs an order.' ],
             ]
         );
@@ -248,7 +248,7 @@ final class ExtensionActionTest extends TestCase {
     public function test_a_throwing_validate_is_an_issue_and_a_diagnostic(): void {
         $action = self::action(
             [
-                'run'      => fn( array $config, $run ) => $run->done(),
+                'handle'   => fn( array $config, $step ) => $step->done(),
                 'validate' => function () {
                     throw new \RuntimeException( 'Boom.' );
                 },
@@ -263,7 +263,7 @@ final class ExtensionActionTest extends TestCase {
         $issue  = '';
         $action = self::action(
             [
-                'run'         => fn( array $config, $run ) => $run->done(),
+                'handle'      => fn( array $config, $step ) => $step->done(),
                 'setup_issue' => function () use ( &$issue ) {
                     return $issue;
                 },
@@ -278,9 +278,9 @@ final class ExtensionActionTest extends TestCase {
     public function test_declared_keys_reach_the_core_action(): void {
         $action = self::action(
             [
-                'run'      => fn( array $config, $run ) => $run->done(),
+                'handle'   => fn( array $config, $step ) => $step->done(),
                 'category' => 'customer',
-                'requires' => [ 'customer' ],
+                'needs'    => [ 'customer' ],
                 'emits'    => [ 'acme_points' ],
                 'on_error' => 'continue',
                 'summary'  => 'Add {{ config.points }} points',

@@ -103,7 +103,7 @@ final class ExtensionTrigger extends Trigger {
     }
 
     public function sample_facts(): array {
-        return array_intersect_key( (array) ( $this->args['sample'] ?? [] ), $this->facts() );
+        return array_intersect_key( (array) ( $this->args['sample_facts'] ?? [] ), $this->facts() );
     }
 
     /**
