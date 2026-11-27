@@ -185,15 +185,15 @@ final class ExecutorTest extends TestCase {
         $this->steps['mail'] = new FakeStep(
             'mail',
             function ( Scope $scope ) use ( &$marks ): StepResult {
-                $marks[] = $scope->step_row();
-                DeliveryStatus::on_sent( [ 'headers' => "Content-Type: text/html\r\n" . DeliveryStatus::header( (string) $scope->step_row() ) ] );
+                $marks[] = $scope->step_key();
+                DeliveryStatus::on_sent( [ 'headers' => "Content-Type: text/html\r\n" . DeliveryStatus::header( $scope->step_key() ) ] );
                 return StepResult::ok( [ 'to' => 'a@x.com' ] );
             }
         );
         $this->steps['down'] = new FakeStep(
             'down',
             function ( Scope $scope ): StepResult {
-                DeliveryStatus::on_failed( new \WP_Error( 'wp_mail_failed', 'SMTP connect() failed.', [ 'headers' => [ DeliveryStatus::HEADER . ': ' . $scope->step_row() ] ] ) );
+                DeliveryStatus::on_failed( new \WP_Error( 'wp_mail_failed', 'SMTP connect() failed.', [ 'headers' => [ DeliveryStatus::HEADER . ': ' . $scope->step_key() ] ] ) );
                 return StepResult::failed( 'Couldn’t send the email.' );
             },
             Step::ON_ERROR_CONTINUE
@@ -211,7 +211,7 @@ final class ExecutorTest extends TestCase {
         $this->slice( $id );
 
         $rows = array_column( $this->runs->steps( $id ), null, 'step_id' );
-        $this->assertSame( [ $rows['a']['id'] ], $marks, 'the mark is the run-step row' );
+        $this->assertSame( [ $rows['a']['id'] . '.' . strtotime( '2026-10-12 10:00:00 UTC' ) ], $marks, 'the mark is the run-step row and its run’s start' );
         $this->assertSame( 'a@x.com', $rows['a']['output']['to'] );
         $this->assertSame( 'sent', $rows['a']['output']['delivery']['status'] );
         $this->assertSame(

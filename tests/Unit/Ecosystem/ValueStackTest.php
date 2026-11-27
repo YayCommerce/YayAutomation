@@ -11,6 +11,7 @@ use YayMatik\Tests\Support\FakeWorkflows;
 use YayMatik\Workflow\Core\Data\DataRegistry;
 use YayMatik\Workflow\Core\Data\Scope;
 use YayMatik\Workflow\Core\Runtime\Executor;
+use YayMatik\Workflow\Core\Runtime\StepKey;
 use YayMatik\Workflow\Core\Steps\StepRegistry;
 use YayMatik\Workflow\Extension\Declaration;
 use YayMatik\Workflow\Extension\Extensions;
@@ -273,7 +274,7 @@ final class ValueStackTest extends TestCase {
                 continue;
             }
             $scope = Scope::from_array( (array) $run['scope'] );
-            $scope->set_current_step( $id, (string) $row['step_id'], (int) $row['id'] );
+            $scope->set_current_step( $id, (string) $row['step_id'], StepKey::of( (int) $row['id'], (string) $run['started_at'] ) );
             $this->assertTrue( $step->run( $scope, (array) $row['input'] )->is_ok(), "{$row['step_id']} retried" );
         }
     }

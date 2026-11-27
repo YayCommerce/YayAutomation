@@ -25,7 +25,7 @@ Words and matrix as in `docs/extensions-roadmap.md` (email stack). Builds on `ex
 ## Decisions
 Confirmed: D9, D17, D19, D20, D21, D22, D28.
 - P2.1 Run detail status line and one-row header as in the screen draft — confirmed
-- B1 Mark = the run-step row id, kept in `Scope` (not stored); a status reported while the step runs is held in memory and written by the Executor with the step's output — confirmed (auto)
+- B1 Mark = the step's key (`StepKey`: row id and its run's start), kept in `Scope` (not stored); a status reported while the step runs is held in memory and written by the Executor with the step's output — confirmed (auto)
 - B2 Core's own sent / failed never replaces a status a mail plugin reported first in the same send — confirmed (auto)
 - B3 `failed` shows in red under a completed step (a mail plugin's later report); hidden on a failed step — confirmed (auto)
 - B4 Statuses are ranked: a report replaces only an earlier stage (sent < delivered < opened < clicked); failed and bounced are final — confirmed (Review, was latest-wins)

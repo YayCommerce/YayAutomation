@@ -130,7 +130,7 @@ final class GenerateCouponTest extends TestCase {
 
     public function test_the_coupon_records_the_run_and_step_that_made_it(): void {
         $scope = new Scope( [ 'trigger' => [ 'customer' => [ 'email' => 'ann@x.com' ] ] ] );
-        $scope->set_current_step( 42, 'coupon', 1 );
+        $scope->set_current_step( 42, 'coupon', '1.1791799200' );
         $this->step()->run( $scope, $this->config() );
 
         $this->assertSame( [ 42, 'coupon' ], [ $this->coupons->created[0]['run_id'], $this->coupons->created[0]['node_id'] ] );

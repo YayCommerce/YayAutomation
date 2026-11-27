@@ -69,7 +69,7 @@ A plugin touches **arrays, one `do_action` and one `Step` object**. Everything e
 | hook `yaymatik_register` → `Registrar` | `module( array ): Module`, `api_version(): string` |
 | `Module` | `ok()`, `trigger( id, array )`, `action( id, array )`, `data_item( id, array )`, `data_fields( item_id, array )`, `template( id, array )`, `category( id, label )`. Each returns `bool` |
 | hook **`yaymatik_fire`** | `do_action( 'yaymatik_fire', string $trigger_id, array $payload )` — starts a trigger (§5.3) |
-| header **`X-YayMatik-Mark`** | On every email YayMatik sends: the run-step row id, or `test` for Send test. A design plugin leaves a marked email unwrapped; a mail plugin keys its log by it |
+| header **`X-YayMatik-Mark`** | On every email YayMatik sends: the step's key (`key()`, e.g. `1234.1795775379`), or `test` for Send test. A design plugin leaves a marked email unwrapped; a mail plugin keys its log by it |
 | hook **`yaymatik_email_status`** | `do_action( 'yaymatik_email_status', string $mark, string $status, string $reason = '' )` — `delivered`, `opened`, `clicked`, `bounced`, `sent` or `failed`; run detail shows the furthest stage (sent < delivered < opened < clicked; `failed` and `bounced` are final), so a late report never undoes a later one. Core records `sent` / `failed` itself from `wp_mail` |
 | `Step` (interface) | The one object `handle` and `build` get (§4.3) |
 | `CustomerView`, `CartView` (interfaces) | What data-field callbacks on `customer` / `cart` receive (§6) |
@@ -124,7 +124,7 @@ Facts, outputs and data fields name their type as a string: `string`, `number`, 
 | `fail( string $reason )` | an error; `on_error` decides |
 | `is_test()` | the step must do nothing real. Today only an email's `build` in Send test sees true; test runs and dry runs will set it for `handle` too, so an action with a side effect (award, role, any write) skips when it is true |
 | `unsubscribe_url()` | email actions only (§5.5) |
-| `key()` | the run step's key (API 1.1): its run-step row, so the same when the run is replayed; `''` outside a run. An action that grants something (role, points, coupon) stores it with the grant and, when it already has the key, returns the same `done()` without granting again |
+| `key()` | the run step's key (API 1.1): an opaque string (the run-step row and its run's start), the same when the run is replayed and never reused, even after YayMatik's tables are recreated or a backup is restored; `''` outside a run. An action that grants something (role, points, coupon) stores it with the grant and, when it already has the key, returns the same `done()` without granting again |
 
 `handle` returns what `done()` / `skip()` / `fail()` return. Anything else → Failed "The step returned no result." + diagnostic.
 

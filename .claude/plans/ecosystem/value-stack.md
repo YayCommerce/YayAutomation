@@ -21,7 +21,7 @@ Words and matrix as in `docs/extensions-roadmap.md` (value stack). Builds on `ex
 
 ## Decisions
 Confirmed: D7, D10 (not built here), D11 (not built here), D22, D28.
-- V1 `Step::key()` = the run-step row id as a string (the mark's value); '' outside a run (Preview, Send test) — confirmed (auto)
+- V1 `Step::key()` = the run-step row id and its run's start, `<row>.<unix>` (the mark's value), so a reset or restored backup never reuses one; '' outside a run (Preview, Send test) — confirmed (Review, was the bare row id)
 - V2 Extension API 1.1.0: `Step::key()` and the email stack's `yaymatik_email_status` in its changelog; the YayWholesale and YayLoyalty scaffolds need `requires_api` 1.1 — confirmed (auto)
 - V3 Retry and replay exist only from V11.7: a retried cell calls the grant's `handle` again on its own row, a replayed cell runs the run again from its start (rows keep their results) — confirmed (auto)
 - V4 A condition reading the data of a plugin that's off is Skipped "<Plugin> isn’t active." and its path ends, as a step of that plugin is; before, the run failed on "Choose data for each rule.". The step index keeps each module's label for it (YayPricing has no steps). Activation still refuses such a workflow with the rule's settings error, not `missing_plugin` — confirmed (auto)

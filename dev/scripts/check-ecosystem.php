@@ -14,6 +14,7 @@ use YayMatik\Workflow\Core\Data\Ref;
 use YayMatik\Workflow\Core\Data\Scope;
 use YayMatik\Workflow\Core\Email\DeliveryStatus;
 use YayMatik\Workflow\Core\Runtime\Runtime;
+use YayMatik\Workflow\Core\Runtime\StepKey;
 use YayMatik\Workflow\Core\Steps\StepRegistry;
 use YayMatik\Workflow\Core\Storage\RunStore;
 use YayMatik\Workflow\DataItems\CustomerData;
@@ -111,7 +112,7 @@ function yaymatik_check_value_retry( int $run_id ): array {
         }
         $step  = StepRegistry::get( CHECK_VALUE_GRANTS[ $row['step_id'] ][1] );
         $scope = Scope::from_array( (array) $run['scope'] );
-        $scope->set_current_step( $run_id, (string) $row['step_id'], (int) $row['id'] );
+        $scope->set_current_step( $run_id, (string) $row['step_id'], StepKey::of( (int) $row['id'], (string) $run['started_at'] ) );
         if ( ! $step || ! $step->run( $scope, (array) $row['input'] )->is_ok() ) {
             $errors[] = "{$row['step_id']}: the retry did not complete";
         }
@@ -245,9 +246,9 @@ switch ( $phase ) {
             $ok( 'skipped' === ( $step['status'] ?? null ) && ( $step['error'] ?? null ) === $why, "removed: run detail says Skipped, \"{$why}\"" );
         } else {
             $mail = $mails[0] ?? null;
-            $mark = (string) ( $step['id'] ?? '' );
+            $mark = $step ? StepKey::of( (int) $step['id'], (string) $run['started_at'] ) : '';
             $ok( 1 === count( $mails ), 'one email (' . count( $mails ) . ')' );
-            $ok( $mail && '' !== $mark && DeliveryStatus::mark_of( $mail['headers'] ) === $mark, 'marked with its run-step row' );
+            $ok( $mail && '' !== $mark && DeliveryStatus::mark_of( $mail['headers'] ) === $mark, 'marked with its step key' );
             $ok( $mail && 1 === substr_count( strtolower( $mail['message'] ), '<body' ), 'wrapped once (' . ( $mail ? substr_count( strtolower( $mail['message'] ), '<body' ) : 0 ) . ' <body>)' );
             $ok( $mail && false !== strpos( $mail['message'], 'yaymatik_unsub=' ) && false !== stripos( (string) $mail['headers'], 'List-Unsubscribe: <' ), 'unsubscribe link and header' );
             $smtp   = in_array( 'yaysmtp', $active, true );
@@ -463,7 +464,7 @@ switch ( $phase ) {
                 $name = CHECK_VALUE_PRODUCTS[ $folder ];
                 if ( in_array( $folder, $active, true ) ) {
                     $ok( 'completed' === ( $row['status'] ?? null ), "run {$n}: {$node} completed (" . ( $row['error'] ?? '' ) . ')' );
-                    $keys[ $node ][] = (string) ( $row['id'] ?? '' );
+                    $keys[ $node ][] = StepKey::of( (int) ( $row['id'] ?? 0 ), (string) ( $run['started_at'] ?? '' ) );
                 } else {
                     $ok( 'skipped' === ( $row['status'] ?? null ) && "{$name} isn’t active." === ( $row['error'] ?? null ), "run {$n}: {$node} Skipped, \"{$name} isn’t active.\"" );
                 }

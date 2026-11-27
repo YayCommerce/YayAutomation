@@ -1,12 +1,13 @@
 <?php
 namespace YayMatik\Workflow\Core\Email;
 
+use YayMatik\Workflow\Core\Runtime\StepKey;
 use YayMatik\Workflow\Core\Storage\RunStepStore;
 
 defined( 'ABSPATH' ) || exit;
 
 /**
- * The mark on every email YayMatik sends, and the furthest delivery status of a marked email as its step's `output.delivery`.
+ * The mark on every email YayMatik sends (its step's `StepKey`), and the furthest delivery status of a marked email as its step's `output.delivery`.
  */
 final class DeliveryStatus {
 
@@ -34,10 +35,10 @@ final class DeliveryStatus {
         self::BOUNCED   => 4,
     ];
 
-    /** @var array Run-step row id => its delivery or null, for the steps running now: their row is written when they finish. */
+    /** @var array Step key => its delivery or null, for the steps running now: their row is written when they finish. */
     private static $running = [];
 
-    /** @var callable fn( int $row, array $delivery ): bool */
+    /** @var callable fn( string $key, array $delivery ): bool */
     private static $save = [ RunStepStore::class, 'set_delivery' ];
 
     public static function register(): void {
@@ -72,20 +73,20 @@ final class DeliveryStatus {
     /**
      * A step starts: a status reported while it runs waits for `finish()`.
      *
-     * @param int $row
+     * @param string $key
      */
-    public static function start( int $row ): void {
-        self::$running[ $row ] = null;
+    public static function start( string $key ): void {
+        self::$running[ $key ] = null;
     }
 
     /**
      * A step ends: the status reported while it ran, if any.
      *
-     * @param int $row
+     * @param string $key
      */
-    public static function finish( int $row ): ?array {
-        $delivery = self::$running[ $row ] ?? null;
-        unset( self::$running[ $row ] );
+    public static function finish( string $key ): ?array {
+        $delivery = self::$running[ $key ] ?? null;
+        unset( self::$running[ $key ] );
         return $delivery;
     }
 
@@ -116,8 +117,7 @@ final class DeliveryStatus {
      * @param string $reason
      */
     private static function record_own( string $mark, string $status, string $reason = '' ): void {
-        $row = ctype_digit( $mark ) ? (int) $mark : 0;
-        if ( ! $row || ! array_key_exists( $row, self::$running ) || null !== self::$running[ $row ] ) {
+        if ( ! array_key_exists( $mark, self::$running ) || null !== self::$running[ $mark ] ) {
             return;
         }
         self::record( $mark, $status, $reason );
@@ -131,8 +131,7 @@ final class DeliveryStatus {
      * @param mixed $reason
      */
     public static function record( $mark, $status, $reason = '' ): void {
-        $row = is_scalar( $mark ) && ctype_digit( (string) $mark ) ? (int) $mark : 0;
-        if ( ! $row || ! in_array( $status, self::STATUSES, true ) ) {
+        if ( ! StepKey::row( $mark ) || ! in_array( $status, self::STATUSES, true ) ) {
             return;
         }
         $delivery = [
@@ -142,13 +141,13 @@ final class DeliveryStatus {
         if ( is_string( $reason ) && '' !== $reason ) {
             $delivery['reason'] = $reason;
         }
-        if ( array_key_exists( $row, self::$running ) ) {
-            if ( self::replaces( $status, self::$running[ $row ] ) ) {
-                self::$running[ $row ] = $delivery;
+        if ( array_key_exists( $mark, self::$running ) ) {
+            if ( self::replaces( $status, self::$running[ $mark ] ) ) {
+                self::$running[ $mark ] = $delivery;
             }
             return;
         }
-        ( self::$save )( $row, $delivery );
+        ( self::$save )( $mark, $delivery );
     }
 
     /**

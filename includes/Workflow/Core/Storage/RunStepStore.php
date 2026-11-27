@@ -3,6 +3,7 @@ namespace YayMatik\Workflow\Core\Storage;
 
 use YayMatik\Utils\Logger;
 use YayMatik\Workflow\Core\Email\DeliveryStatus;
+use YayMatik\Workflow\Core\Runtime\StepKey;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -93,14 +94,19 @@ final class RunStepStore {
     /**
      * Puts a finished email step's delivery status, `{ status, at, reason? }`, in its output as `delivery`.
      *
-     * @param int   $id
-     * @param array $delivery
+     * @param string $key
+     * @param array  $delivery
      */
-    public static function set_delivery( int $id, array $delivery ): bool {
+    public static function set_delivery( string $key, array $delivery ): bool {
         global $wpdb;
-        $output = $wpdb->get_var( $wpdb->prepare( 'SELECT output FROM %i WHERE id = %d', self::table(), $id ) );
-        $output = null === $output ? null : json_decode( (string) $output, true );
-        // Gone (pruned runs' emails are still opened), still running, or not an email step: every email step outputs `to`.
+        $id   = StepKey::row( $key );
+        $step = $wpdb->get_row( $wpdb->prepare( 'SELECT s.output, r.started_at FROM %i s INNER JOIN %i r ON r.id = s.run_id WHERE s.id = %d', self::table(), RunStore::table(), $id ), ARRAY_A );
+        // A row id reused after the tables started over belongs to a newer run: the key holds its run's start.
+        if ( ! $step || StepKey::of( $id, (string) $step['started_at'] ) !== $key ) {
+            return false;
+        }
+        $output = json_decode( (string) $step['output'], true );
+        // Still running, or not an email step: every email step outputs `to`.
         if ( ! is_array( $output ) || ! isset( $output['to'] ) || ! DeliveryStatus::replaces( $delivery['status'], $output['delivery'] ?? null ) ) {
             return false;
         }

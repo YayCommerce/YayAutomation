@@ -271,10 +271,11 @@ final class Executor {
             throw new \RuntimeException( esc_html__( 'Could not save the step result.', 'yaymatik-automation-for-woocommerce' ) );
         }
 
-        $scope->set_current_step( $run_id, $step_id, $row_id );
-        DeliveryStatus::start( $row_id );
+        $key = StepKey::of( $row_id, (string) $run['started_at'] );
+        $scope->set_current_step( $run_id, $step_id, $key );
+        DeliveryStatus::start( $key );
         $result   = $broken ?? self::run_step( $node, $step, $config, $scope );
-        $delivery = DeliveryStatus::finish( $row_id );
+        $delivery = DeliveryStatus::finish( $key );
         $status   = self::STATUS_OF[ $result->status() ];
         $output   = $result->is_ok() || $result->is_wait() ? array_intersect_key( $result->outputs(), $step ? $step->outputs() : [] ) : [];
         $error    = $result->is_skipped() || $result->is_failed() ? $result->message() : null;

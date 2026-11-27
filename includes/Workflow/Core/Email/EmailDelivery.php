@@ -43,14 +43,14 @@ final class EmailDelivery {
         }
 
         $email = $step->compose_email( $config, $scope, $customer ? $this->links()->url( $to ) : '' );
-        if ( ! self::send( $to, $email, (string) $scope->step_row() ) ) {
+        if ( ! self::send( $to, $email, $scope->step_key() ) ) {
             return StepResult::failed( __( 'Couldn’t send the email.', 'yaymatik-automation-for-woocommerce' ) );
         }
         return StepResult::ok( [ 'to' => $to ] );
     }
 
     /**
-     * Sends through WooCommerce's mailer (its sender name and address), marked with a run-step row id or `TEST`.
+     * Sends through WooCommerce's mailer (its sender name and address), marked with the step's key or `TEST`.
      *
      * @param string|string[] $to
      * @param array           $email `EmailStep::compose_email()` output.

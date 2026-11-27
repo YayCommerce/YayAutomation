@@ -12,6 +12,7 @@ use YayMatik\Workflow\Core\Data\DataRegistry;
 use YayMatik\Workflow\Core\Email\DeliveryStatus;
 use YayMatik\Workflow\Core\Email\UnsubscribeLink;
 use YayMatik\Workflow\Core\Runtime\Executor;
+use YayMatik\Workflow\Core\Runtime\StepKey;
 use YayMatik\Workflow\Core\Steps\StepRegistry;
 use YayMatik\Workflow\Extension\Declaration;
 use YayMatik\Workflow\Extension\Extensions;
@@ -262,7 +263,7 @@ final class EmailStackTest extends TestCase {
 
         $this->assertCount( 1, FakeMailer::$current->mails, 'one email' );
         $mail = FakeMailer::$current->mails[0];
-        $mark = (string) $rows['mail']['id'];
+        $mark = StepKey::of( (int) $rows['mail']['id'], '2026-10-12 10:00:00' );
         $this->assertSame( $mark, DeliveryStatus::mark_of( $mail['headers'] ) );
         $this->assertSame( 0, substr_count( $mail['message'], '<body' ), 'no design plugin wrapped it again' );
         $this->assertSame( 1, substr_count( $mail['message'], '<h1>' ), 'WooCommerce’s wrapper, once' );

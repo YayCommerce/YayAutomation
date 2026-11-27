@@ -21,8 +21,8 @@ final class DeliveryStatusTest extends TestCase {
         $this->save    = self::prop( 'save' );
         self::prop(
             'save',
-            function ( int $row, array $delivery ): bool {
-                $this->saved[] = [ $row, $delivery ];
+            function ( string $key, array $delivery ): bool {
+                $this->saved[] = [ $key, $delivery ];
                 return true;
             }
         );
@@ -69,10 +69,10 @@ final class DeliveryStatusTest extends TestCase {
 
     public function test_a_later_report_is_saved_on_the_step_row(): void {
         DeliveryStatus::register();
-        do_action( 'yaymatik_email_status', '12', 'delivered' );
-        DeliveryStatus::record( '12', 'bounced', '550 No such user here' );
+        do_action( 'yaymatik_email_status', '12.1795000000', 'delivered' );
+        DeliveryStatus::record( '12.1795000000', 'bounced', '550 No such user here' );
 
-        $this->assertSame( [ 12, 12 ], array_column( $this->saved, 0 ) );
+        $this->assertSame( [ '12.1795000000', '12.1795000000' ], array_column( $this->saved, 0 ) );
         $this->assertSame( 'bounced', $this->saved[1][1]['status'] );
         $this->assertSame( '550 No such user here', $this->saved[1][1]['reason'] );
         $this->assertArrayNotHasKey( 'reason', $this->saved[0][1] );
@@ -87,33 +87,34 @@ final class DeliveryStatusTest extends TestCase {
         $this->assertFalse( DeliveryStatus::replaces( 'opened', [ 'status' => 'bounced' ] ) );
         $this->assertFalse( DeliveryStatus::replaces( 'bounced', [ 'status' => 'failed' ] ) );
 
-        DeliveryStatus::start( 8 );
-        DeliveryStatus::record( 8, 'opened' );
-        DeliveryStatus::record( 8, 'delivered' );
-        $this->assertSame( 'opened', DeliveryStatus::finish( 8 )['status'], 'held while the step runs too' );
+        DeliveryStatus::start( '8.1795000000' );
+        DeliveryStatus::record( '8.1795000000', 'opened' );
+        DeliveryStatus::record( '8.1795000000', 'delivered' );
+        $this->assertSame( 'opened', DeliveryStatus::finish( '8.1795000000' )['status'], 'held while the step runs too' );
     }
 
     public function test_a_report_while_the_step_runs_waits_for_its_finish(): void {
-        DeliveryStatus::start( 7 );
-        DeliveryStatus::record( 7, 'sent' );
-        DeliveryStatus::record( 7, 'delivered' );
+        DeliveryStatus::start( '7.1795000000' );
+        DeliveryStatus::record( '7.1795000000', 'sent' );
+        DeliveryStatus::record( '7.1795000000', 'delivered' );
 
-        DeliveryStatus::on_sent( [ 'headers' => DeliveryStatus::header( '7' ) ] );
+        DeliveryStatus::on_sent( [ 'headers' => DeliveryStatus::header( '7.1795000000' ) ] );
 
         $this->assertSame( [], $this->saved );
-        $this->assertSame( 'delivered', DeliveryStatus::finish( 7 )['status'], 'core’s sent never replaces a mail plugin’s report' );
-        $this->assertNull( DeliveryStatus::finish( 7 ), 'taken once' );
+        $this->assertSame( 'delivered', DeliveryStatus::finish( '7.1795000000' )['status'], 'core’s sent never replaces a mail plugin’s report' );
+        $this->assertNull( DeliveryStatus::finish( '7.1795000000' ), 'taken once' );
     }
 
     public function test_send_test_unmarked_mail_a_resend_and_unknown_statuses_are_ignored(): void {
         DeliveryStatus::on_sent( [ 'headers' => DeliveryStatus::header( DeliveryStatus::TEST ) ] );
         DeliveryStatus::on_sent( [ 'headers' => '' ] );
-        DeliveryStatus::on_sent( [ 'headers' => DeliveryStatus::header( '12' ) ] );
+        DeliveryStatus::on_sent( [ 'headers' => DeliveryStatus::header( '12.1795000000' ) ] );
         DeliveryStatus::on_failed( 'not an error' );
         DeliveryStatus::on_failed( new \WP_Error( 'wp_mail_failed', 'x', (object) [ 'headers' => [] ] ) );
         DeliveryStatus::on_sent( (object) [] );
-        DeliveryStatus::record( '12', 'read' );
-        DeliveryStatus::record( '0', 'sent' );
+        DeliveryStatus::record( '12.1795000000', 'read' );
+        DeliveryStatus::record( '12', 'sent' );
+        DeliveryStatus::record( '0.1795000000', 'sent' );
         DeliveryStatus::record( [ 12 ], 'sent' );
 
         $this->assertSame( [], $this->saved );
