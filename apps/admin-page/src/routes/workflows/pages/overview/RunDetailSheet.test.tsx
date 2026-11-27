@@ -112,6 +112,46 @@ describe('RunDetailSheet', () => {
     expect(onClose).not.toHaveBeenCalled();
   });
 
+  it.each([
+    ['delivered', 'Delivered'],
+    ['opened', 'Opened'],
+    ['clicked', 'Clicked'],
+    ['bounced', 'Bounced'],
+    ['failed', 'Failed'],
+  ])('shows a step’s %s email under its result', async (status, label) => {
+    const delivery = { status, at: '2026-10-09T15:05:00+00:00', reason: '550 No such user here' };
+    vi.mocked(getRun).mockResolvedValue({ ...run, steps: [{ ...run.steps[0], output: { to: 'a@b.com', delivery } }] });
+    await open('31');
+    const sheet = document.body.querySelector('[data-slot="sheet-content"]')!;
+    await vi.waitFor(() => expect(sheet.querySelectorAll('li')).toHaveLength(2));
+    const line = sheet.querySelectorAll('li')[1].querySelectorAll('p')[1];
+    expect(line.textContent).toMatch(new RegExp(`^${label} · Oct 9`));
+    expect(line.className).toContain(
+      ['bounced', 'failed'].includes(status) ? 'text-destructive' : 'text-muted-foreground',
+    );
+    expect(!!line.querySelector('svg'), 'the reason on hover').toBe(['bounced', 'failed'].includes(status));
+  });
+
+  it.each([
+    ['sent', 'completed'],
+    ['failed', 'failed'],
+  ] as const)('shows no delivery line for a %s email on a %s step', async (status, stepStatus) => {
+    vi.mocked(getRun).mockResolvedValue({
+      ...run,
+      steps: [
+        {
+          ...run.steps[0],
+          status: stepStatus,
+          output: { to: 'a@b.com', delivery: { status, at: '2026-10-09T15:05:00+00:00' } },
+        },
+      ],
+    });
+    await open('31');
+    const sheet = document.body.querySelector('[data-slot="sheet-content"]')!;
+    await vi.waitFor(() => expect(sheet.querySelectorAll('li')).toHaveLength(2));
+    expect(sheet.querySelectorAll('li')[1].textContent).not.toMatch(/(Sent|Failed) · /);
+  });
+
   it('shows the trigger facts under the trigger', async () => {
     vi.mocked(getRun).mockResolvedValue({
       ...run,

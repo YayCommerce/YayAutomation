@@ -30,6 +30,15 @@ Templates 5, 6 and 16 start on Pro triggers, so they show only with YayMatik Pro
 
 Fires the trigger through `yaymatik_fire` with a sample payload (its `sample_facts`, the newest customer, id `1` for a scaffold's own data item), runs the runs it starts and lists each step's status. A workflow on that trigger must be active: use one of its templates and activate it. On wp-env each wp-cli call defines `YAYMATIK_IS_DEVELOPMENT` itself; its admin pages don't, so they show no scaffold templates, and the workflow there is made from wp-cli (as check scripts do).
 
+## Email behavior
+
+The fake adapters of YayMail, YayMagic and YaySMTP also act as the products do on every email (`hook_mail()`, from `load.php`), so the email stack can be checked before the products change:
+
+- YayMail wraps WooCommerce's emails in its design, YayMagic wraps every `wp_mail()`, except an email with the `X-YayMatik-Mark` header.
+- YaySMTP logs every email it sends (option `yaysmtp_fake_sent_log`) and calls `yaymatik_email_status` with the mark and `delivered`.
+
+`tests/Unit/Ecosystem/EmailStackTest.php` runs each cell of the email stack's matrix on them. `./run.sh check-ecosystem [--wp-env|--wp-env-min]` runs the same cells on a real site, an installed `yaymail`, `yaymagic` or `yaysmtp` plugin in place of its scaffold, and prints which ran on a scaffold. It sends no email: a mail log stands in for the mailer and fires `wp_mail_succeeded`, so an installed YaySMTP that logs from its own mailer (`phpmailer_init`) reports nothing there; its cells need it to report from `wp_mail_succeeded`. Installed products are left active or not as they were.
+
 ## Rule for adapters
 
 An action with a side effect skips it when `$step->is_test()` is true (`set_role`, `award_points`). The real adapter keeps that check.

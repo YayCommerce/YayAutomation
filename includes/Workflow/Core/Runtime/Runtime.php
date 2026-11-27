@@ -1,6 +1,7 @@
 <?php
 namespace YayMatik\Workflow\Core\Runtime;
 
+use YayMatik\Workflow\Core\Email\DeliveryStatus;
 use YayMatik\Workflow\Core\Steps\StepRegistry;
 use YayMatik\Workflow\Extension\Fire;
 
@@ -36,6 +37,7 @@ final class Runtime {
             [ StepRegistry::class, 'triggers' ]
         );
         $worker->register();
+        DeliveryStatus::register();
         ( new Fire( $workflows, self::$dispatcher, [ StepRegistry::class, 'get' ] ) )->register();
         // Not on plugins_loaded: the trigger list reads the modules, and a plugin loaded after this one adds its own then.
         add_action( 'init', [ self::$dispatcher, 'register' ], 0 );

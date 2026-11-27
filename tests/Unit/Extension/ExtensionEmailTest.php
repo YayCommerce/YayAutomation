@@ -191,12 +191,14 @@ final class ExtensionEmailTest extends TestCase {
             ]
         );
 
-        $result = $action->run( self::scope(), [ 'to' => 'Team@Example.test' ] );
+        $scope = self::scope();
+        $scope->set_current_step( 5, 'mail', 31 );
+        $result = $action->run( $scope, [ 'to' => 'Team@Example.test' ] );
 
         $this->assertTrue( $result->is_ok() );
         $this->assertSame( [ 'to' => 'team@example.test' ], $result->outputs() );
         $this->assertSame( [ 'team@example.test', 'S', '<body>Hi</body>' ], FakeMailer::$current->sent[0] );
-        $this->assertSame( "Content-Type: text/html\r\n", FakeMailer::$current->headers[0] );
+        $this->assertSame( "Content-Type: text/html\r\nX-YayMatik-Mark: 31\r\n", FakeMailer::$current->headers[0], 'the mark on a staff email too' );
         $this->assertSame( '', $this->built[1]->unsubscribe_url() );
         $this->assertFalse( $this->built[1]->is_preview(), 'a real send' );
         $this->assertSame( [], $action->requires(), 'a typed recipient needs no customer' );

@@ -10,4 +10,6 @@ defined( 'ABSPATH' ) || exit;
 require_once __DIR__ . '/YayMagic_YayMatik.php';
 require_once __DIR__ . '/YayMagic_YayMatik_Fake_Adapter.php';
 
-add_action( 'yaymatik_register', [ new YayMagic_YayMatik( new YayMagic_YayMatik_Fake_Adapter() ), 'register' ] );
+$yaymagic_adapter = new YayMagic_YayMatik_Fake_Adapter();
+$yaymagic_adapter->hook_mail();
+add_action( 'yaymatik_register', [ new YayMagic_YayMatik( $yaymagic_adapter ), 'register' ] );

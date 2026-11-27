@@ -28,6 +28,9 @@ final class Scope implements Values {
     /** @var Trigger|null The run's trigger: it defines the `trigger.<fact>` values. */
     private $trigger = null;
 
+    /** @var int The run-step row of the step running now; not stored. */
+    private $row = 0;
+
     /**
      * @param array            $data     Section => values; values may hold Refs.
      * @param RefResolver|null $resolver Null = a new one (one per slice).
@@ -95,14 +98,21 @@ final class Scope implements Values {
     }
 
     /**
-     * The run and the step running now, as `run.id` and `run.step`.
+     * The run and the step running now, as `run.id` and `run.step`, and its run-step row.
      *
      * @param int    $run_id
      * @param string $step_id
+     * @param int    $row
      */
-    public function set_current_step( int $run_id, string $step_id ): void {
+    public function set_current_step( int $run_id, string $step_id, int $row ): void {
         $this->data['run']['id']   = $run_id;
         $this->data['run']['step'] = $step_id;
+        $this->row                 = $row;
+    }
+
+    /** The run-step row of the step running now; 0 outside a run. */
+    public function step_row(): int {
+        return $this->row;
     }
 
     /**

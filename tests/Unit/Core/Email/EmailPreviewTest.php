@@ -68,6 +68,7 @@ final class EmailPreviewTest extends TestCase {
         $this->assertSame( 'you@example.test', $to );
         $this->assertSame( '[Test] ' . $preview['subject'], $subject );
         $this->assertSame( $body, $preview['html'], 'the same HTML, byte for byte' );
+        $this->assertStringEndsWith( "X-YayMatik-Mark: test\r\n", FakeMailer::$current->headers[0] );
         $this->assertStringContainsString( 'Tom &amp; Jerry', $preview['html'] );
         $this->assertTrue( $preview['sample'] );
         $this->assertNull( $preview['order'] );
