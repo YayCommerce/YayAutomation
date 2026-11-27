@@ -6,7 +6,7 @@ use YayMatik\Workflow\Core\Storage\RunStepStore;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * The mark on every email YayMatik sends, and the latest delivery status of a marked email as its step's `output.delivery`.
+ * The mark on every email YayMatik sends, and the furthest delivery status of a marked email as its step's `output.delivery`.
  */
 final class DeliveryStatus {
 
@@ -23,6 +23,16 @@ final class DeliveryStatus {
     public const BOUNCED   = 'bounced';
 
     public const STATUSES = [ self::SENT, self::FAILED, self::DELIVERED, self::OPENED, self::CLICKED, self::BOUNCED ];
+
+    /** How far an email got: a report replaces only one further back, so a late webhook can't undo a later stage. Failed and bounced are final. */
+    private const STAGE = [
+        self::SENT      => 0,
+        self::DELIVERED => 1,
+        self::OPENED    => 2,
+        self::CLICKED   => 3,
+        self::FAILED    => 4,
+        self::BOUNCED   => 4,
+    ];
 
     /** @var array Run-step row id => its delivery or null, for the steps running now: their row is written when they finish. */
     private static $running = [];
@@ -114,7 +124,7 @@ final class DeliveryStatus {
     }
 
     /**
-     * `yaymatik_email_status` ( mark, one of `STATUSES`, why it failed or bounced ): the latest replaces the one before.
+     * `yaymatik_email_status` ( mark, one of `STATUSES`, why it failed or bounced ): kept when it `replaces()` the one before.
      *
      * @param mixed $mark
      * @param mixed $status
@@ -133,9 +143,22 @@ final class DeliveryStatus {
             $delivery['reason'] = $reason;
         }
         if ( array_key_exists( $row, self::$running ) ) {
-            self::$running[ $row ] = $delivery;
+            if ( self::replaces( $status, self::$running[ $row ] ) ) {
+                self::$running[ $row ] = $delivery;
+            }
             return;
         }
         ( self::$save )( $row, $delivery );
+    }
+
+    /**
+     * Whether a status reported now replaces the delivery stored before.
+     *
+     * @param string     $status
+     * @param array|null $before
+     */
+    public static function replaces( string $status, ?array $before ): bool {
+        $was = self::STAGE[ $before['status'] ?? '' ] ?? -1;
+        return self::STAGE[ $status ] > $was;
     }
 }

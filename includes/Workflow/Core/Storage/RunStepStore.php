@@ -2,6 +2,7 @@
 namespace YayMatik\Workflow\Core\Storage;
 
 use YayMatik\Utils\Logger;
+use YayMatik\Workflow\Core\Email\DeliveryStatus;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -100,7 +101,7 @@ final class RunStepStore {
         $output = $wpdb->get_var( $wpdb->prepare( 'SELECT output FROM %i WHERE id = %d', self::table(), $id ) );
         $output = null === $output ? null : json_decode( (string) $output, true );
         // Gone (pruned runs' emails are still opened), still running, or not an email step: every email step outputs `to`.
-        if ( ! is_array( $output ) || ! isset( $output['to'] ) ) {
+        if ( ! is_array( $output ) || ! isset( $output['to'] ) || ! DeliveryStatus::replaces( $delivery['status'], $output['delivery'] ?? null ) ) {
             return false;
         }
         $output['delivery'] = $delivery;

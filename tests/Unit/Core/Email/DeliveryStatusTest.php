@@ -67,7 +67,7 @@ final class DeliveryStatusTest extends TestCase {
         $this->assertSame( '', DeliveryStatus::mark_of( "Content-Type: text/html\r\n" ), 'mail YayMatik didn’t send' );
     }
 
-    public function test_a_later_report_is_saved_on_the_step_row_latest_wins(): void {
+    public function test_a_later_report_is_saved_on_the_step_row(): void {
         DeliveryStatus::register();
         do_action( 'yaymatik_email_status', '12', 'delivered' );
         DeliveryStatus::record( '12', 'bounced', '550 No such user here' );
@@ -77,6 +77,20 @@ final class DeliveryStatusTest extends TestCase {
         $this->assertSame( '550 No such user here', $this->saved[1][1]['reason'] );
         $this->assertArrayNotHasKey( 'reason', $this->saved[0][1] );
         $this->assertNotFalse( \DateTimeImmutable::createFromFormat( \DateTimeInterface::ATOM, $this->saved[0][1]['at'] ) );
+    }
+
+    public function test_a_report_replaces_only_a_stage_further_back_and_failed_or_bounced_is_final(): void {
+        $this->assertTrue( DeliveryStatus::replaces( 'sent', null ) );
+        $this->assertTrue( DeliveryStatus::replaces( 'opened', [ 'status' => 'delivered' ] ) );
+        $this->assertFalse( DeliveryStatus::replaces( 'delivered', [ 'status' => 'opened' ] ), 'a late webhook' );
+        $this->assertTrue( DeliveryStatus::replaces( 'bounced', [ 'status' => 'delivered' ] ) );
+        $this->assertFalse( DeliveryStatus::replaces( 'opened', [ 'status' => 'bounced' ] ) );
+        $this->assertFalse( DeliveryStatus::replaces( 'bounced', [ 'status' => 'failed' ] ) );
+
+        DeliveryStatus::start( 8 );
+        DeliveryStatus::record( 8, 'opened' );
+        DeliveryStatus::record( 8, 'delivered' );
+        $this->assertSame( 'opened', DeliveryStatus::finish( 8 )['status'], 'held while the step runs too' );
     }
 
     public function test_a_report_while_the_step_runs_waits_for_its_finish(): void {

@@ -70,7 +70,7 @@ A plugin touches **arrays, one `do_action` and one `Step` object**. Everything e
 | `Module` | `ok()`, `trigger( id, array )`, `action( id, array )`, `data_item( id, array )`, `data_fields( item_id, array )`, `template( id, array )`, `category( id, label )`. Each returns `bool` |
 | hook **`yaymatik_fire`** | `do_action( 'yaymatik_fire', string $trigger_id, array $payload )` — starts a trigger (§5.3) |
 | header **`X-YayMatik-Mark`** | On every email YayMatik sends: the run-step row id, or `test` for Send test. A design plugin leaves a marked email unwrapped; a mail plugin keys its log by it |
-| hook **`yaymatik_email_status`** | `do_action( 'yaymatik_email_status', string $mark, string $status, string $reason = '' )` — `delivered`, `opened`, `clicked`, `bounced`, `sent` or `failed`; the latest shows in run detail. Core records `sent` / `failed` itself from `wp_mail` |
+| hook **`yaymatik_email_status`** | `do_action( 'yaymatik_email_status', string $mark, string $status, string $reason = '' )` — `delivered`, `opened`, `clicked`, `bounced`, `sent` or `failed`; run detail shows the furthest stage (sent < delivered < opened < clicked; `failed` and `bounced` are final), so a late report never undoes a later one. Core records `sent` / `failed` itself from `wp_mail` |
 | `Step` (interface) | The one object `handle` and `build` get (§4.3) |
 | `CustomerView`, `CartView` (interfaces) | What data-field callbacks on `customer` / `cart` receive (§6) |
 | `Api` | `Api::VERSION`, `Api::references( step_id, field )` (§5.6) |
