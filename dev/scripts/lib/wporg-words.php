@@ -9,10 +9,10 @@
 
 // Usage: php wporg-words.php <extracted plugin folder> <allow-list>
 // WordPress.org reads every file that ships: a Lite file may say a feature comes with YayMatik Pro, never that a license
-// or payment unlocks it. Allow-list lines: `<path or file name>: "<exact phrase>": <reason>`; a match passes only inside
+// or payment unlocks it, and it ships no disabled "coming soon" placeholder. Allow-list lines: `<path or file name>: "<exact phrase>": <reason>`; a match passes only inside
 // one of its file's phrases (case-insensitive), so a minified bundle is checked word by word, not line by line.
 
-const YAYMATIK_WORDS = '/licen[cs]e|\btrial|premium|unlock|upgrade to|go pro|\bis_pro\b|licensed/i';
+const YAYMATIK_WORDS = '/licen[cs]e|\btrial|premium|unlock|upgrade to|go pro|coming soon|\bis_pro\b|licensed/i';
 
 $root      = rtrim( $argv[1] ?? '', '/' );
 $list_file = $argv[2] ?? '';

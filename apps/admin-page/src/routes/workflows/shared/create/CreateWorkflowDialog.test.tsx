@@ -33,37 +33,22 @@ afterEach(() => {
   container.remove();
 });
 
-const focusable = 'a[href], button, input, textarea, select, [tabindex]:not([tabindex="-1"]), [contenteditable="true"]';
-const describeBox = () => document.querySelector('div[aria-disabled]') as HTMLElement;
-const examples = () => [...document.querySelectorAll('ul[aria-label="Example prompts"] li')] as HTMLElement[];
-
-describe('CreateWorkflowDialog describe box', () => {
-  it('has nothing to focus or type in, and its parts look disabled', () => {
-    expect(describeBox()).not.toBeNull();
-    expect(describeBox().querySelectorAll(focusable)).toHaveLength(0);
-    expect(describeBox().className).toContain('cursor-not-allowed');
-    expect(describeBox().querySelectorAll('.opacity-50')).toHaveLength(2);
-    expect(describeBox().textContent).toContain('Coming soon');
+describe('CreateWorkflowDialog', () => {
+  it('offers only the two ways to start: no assistant box, examples or "coming soon"', () => {
+    expect(document.querySelector('[aria-disabled]')).toBeNull();
+    expect(document.querySelector('ul[aria-label="Example prompts"]')).toBeNull();
+    expect(document.body.textContent).not.toMatch(/coming soon|describe it/i);
+    expect(document.body.textContent).toContain('What do you want to automate?');
   });
 
-  it('shows the 4 examples as disabled, not clickable', () => {
-    expect(examples()).toHaveLength(4);
-    for (const chip of examples()) {
-      expect(chip.getAttribute('aria-disabled')).toBe('true');
-      expect(chip.querySelectorAll(focusable)).toHaveLength(0);
-      act(() => chip.click());
-    }
-    act(() => describeBox().click());
-    expect(onSelectTrigger).not.toHaveBeenCalled();
-    expect(onBrowseTemplates).not.toHaveBeenCalled();
-  });
-
-  it('keeps the two ways to start on your own usable', () => {
+  it('opens templates or the trigger picker from its two cards', () => {
     const cards = [...document.querySelectorAll('button')].filter((b) =>
       /Browse templates|Choose a trigger/.test(b.textContent ?? ''),
     );
     expect(cards).toHaveLength(2);
     act(() => cards[0].click());
     expect(onBrowseTemplates).toHaveBeenCalledOnce();
+    act(() => cards[1].click());
+    expect(onSelectTrigger).toHaveBeenCalledOnce();
   });
 });

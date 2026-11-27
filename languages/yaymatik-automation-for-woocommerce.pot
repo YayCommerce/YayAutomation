@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-26T08:13:28+00:00\n"
+"POT-Creation-Date: 2026-11-27T08:51:13+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.8.1\n"
 "X-Domain: yaymatik-automation-for-woocommerce\n"
@@ -19,7 +19,7 @@ msgid "YayMatik - Automation for WooCommerce"
 msgstr ""
 
 #. Plugin URI of the plugin
-msgid "https://yaycommerce.com/yaymatik"
+msgid "https://yaycommerce.com/yaymatik/"
 msgstr ""
 
 #. Description of the plugin
@@ -81,49 +81,49 @@ msgstr ""
 msgid "Some items are no longer available."
 msgstr ""
 
-#: includes/Engine/FEPages/UnsubscribePage.php:113
+#: includes/Engine/FEPages/UnsubscribePage.php:149
 #: includes/Engine/Privacy/PersonalData.php:81
 #: includes/Workflow/Actions/SendEmail.php:183
 msgid "Unsubscribe"
 msgstr ""
 
 #. translators: %s: store name
-#: includes/Engine/FEPages/UnsubscribePage.php:119
+#: includes/Engine/FEPages/UnsubscribePage.php:155
 msgid "Go to %s"
 msgstr ""
 
 #. translators: %s: store name
-#: includes/Engine/FEPages/UnsubscribePage.php:132
+#: includes/Engine/FEPages/UnsubscribePage.php:168
 msgid "You won’t get emails like this one from %s any more."
 msgstr ""
 
-#: includes/Engine/FEPages/UnsubscribePage.php:149
+#: includes/Engine/FEPages/UnsubscribePage.php:185
 msgid "Unsubscribe from these emails?"
 msgstr ""
 
 #. translators: %s: store name
-#: includes/Engine/FEPages/UnsubscribePage.php:151
+#: includes/Engine/FEPages/UnsubscribePage.php:187
 msgid "You’ll stop getting emails like this one from %s. Emails about your orders, like receipts and shipping updates, still arrive."
 msgstr ""
 
-#: includes/Engine/FEPages/UnsubscribePage.php:154
+#: includes/Engine/FEPages/UnsubscribePage.php:190
 msgid "You’re unsubscribed"
 msgstr ""
 
-#: includes/Engine/FEPages/UnsubscribePage.php:158
+#: includes/Engine/FEPages/UnsubscribePage.php:194
 msgid "This link is no longer valid"
 msgstr ""
 
 #. translators: %s: store name
-#: includes/Engine/FEPages/UnsubscribePage.php:160
+#: includes/Engine/FEPages/UnsubscribePage.php:196
 msgid "Use the unsubscribe link in the latest email you got from %s."
 msgstr ""
 
-#: includes/Engine/FEPages/UnsubscribePage.php:163
+#: includes/Engine/FEPages/UnsubscribePage.php:199
 msgid "Something went wrong"
 msgstr ""
 
-#: includes/Engine/FEPages/UnsubscribePage.php:164
+#: includes/Engine/FEPages/UnsubscribePage.php:200
 msgid "We couldn’t unsubscribe you just now. Please try again in a moment."
 msgstr ""
 
@@ -1705,22 +1705,22 @@ msgstr ""
 msgid "Result"
 msgstr ""
 
-#: includes/Workflow/Core/Storage/Settings.php:98
+#: includes/Workflow/Core/Storage/Settings.php:82
 #: assets/dist/admin-page/main.js:45
 msgid "Fix the highlighted settings."
 msgstr ""
 
-#: includes/Workflow/Core/Storage/Settings.php:137
+#: includes/Workflow/Core/Storage/Settings.php:121
 msgid "Choose on or off."
 msgstr ""
 
 #. translators: 1: smallest number, 2: largest number
-#: includes/Workflow/Core/Storage/Settings.php:144
+#: includes/Workflow/Core/Storage/Settings.php:128
 #: assets/dist/admin-page/main.js:41
 msgid "Enter a whole number from %1$d to %2$d."
 msgstr ""
 
-#: includes/Workflow/Core/Storage/Settings.php:147
+#: includes/Workflow/Core/Storage/Settings.php:131
 msgid "Enter text."
 msgstr ""
 
@@ -2666,43 +2666,11 @@ msgid "Discard changes"
 msgstr ""
 
 #: assets/dist/admin-page/main.js:45
-msgid "Coming soon"
-msgstr ""
-
-#: assets/dist/admin-page/main.js:45
-msgid "Thank first-time buyers"
-msgstr ""
-
-#: assets/dist/admin-page/main.js:45
-msgid "Alert me about big orders"
-msgstr ""
-
-#: assets/dist/admin-page/main.js:45
-msgid "Remind shoppers about their cart"
-msgstr ""
-
-#: assets/dist/admin-page/main.js:45
-msgid "Ask for a review after delivery"
-msgstr ""
-
-#: assets/dist/admin-page/main.js:45
 msgid "What do you want to automate?"
 msgstr ""
 
 #: assets/dist/admin-page/main.js:45
-msgid "Soon you can describe it and get a draft to review. Until then, start on your own below."
-msgstr ""
-
-#: assets/dist/admin-page/main.js:45
-msgid "e.g. Email customers who haven’t ordered in 90 days with a coupon"
-msgstr ""
-
-#: assets/dist/admin-page/main.js:45
-msgid "Example prompts"
-msgstr ""
-
-#: assets/dist/admin-page/main.js:45
-msgid "or start on your own"
+msgid "Start from a ready-made template, or build it step by step."
 msgstr ""
 
 #: assets/dist/admin-page/main.js:45

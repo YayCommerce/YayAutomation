@@ -146,7 +146,7 @@ Use this table when a WordPress.org review email arrives. Find its heading, then
   How: `grep -rn "wp_remote_\|fetch(\|axios"`. Each external call must start only after the user opts in, and the readme must disclose it under "External services".
 
 - [ ] **G4. No locked or trial features in the free version.**
-  How: on a clean install with the free plugin only, click every menu and setting. Nothing may be disabled behind a paywall or a time limit. Upsell banners are fine. Clicking is not enough: scan the code too (G8), and the words "license", "trial", "unlock", "premium", "upgrade to" in every shipped file (check-wporg gate 2, `dev/wporg/word-allowlist.txt`).
+  How: on a clean install with the free plugin only, click every menu and setting. Nothing may be disabled behind a paywall or a time limit. Upsell banners are fine. Clicking is not enough: scan the code too (G8), and the words "license", "trial", "unlock", "premium", "upgrade to", "coming soon" in every shipped file (no disabled placeholder for a later feature) (check-wporg gate 2, `dev/wporg/word-allowlist.txt`).
 
 - [ ] **G5. Notices are limited.**
   How: `grep -rn "admin_notices"`. Each notice must check the current screen (`get_current_screen()->id`) and be dismissible. Open the Dashboard, Posts and Plugins pages and confirm none of your notices show there.

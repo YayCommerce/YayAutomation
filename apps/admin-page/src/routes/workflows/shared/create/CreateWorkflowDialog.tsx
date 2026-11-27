@@ -1,25 +1,12 @@
 import type { ReactNode } from 'react';
-import { ArrowUp, ChevronRight, LayoutTemplate, Loader2, Sparkles } from 'lucide-react';
+import { ChevronRight, LayoutTemplate, Loader2 } from 'lucide-react';
 import { __ } from '@wordpress/i18n';
 
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { StepTile } from '../../steps/core/StepTile';
 import { WorkflowAppIcon } from '../layout/EditorLayout';
-import { ComingSoonChip } from '../ui/ComingSoonChip';
 
-/** Example prompts for the describe box; shown, not usable, until the assistant ships (v2.0). */
-const ideas = [
-  __('Thank first-time buyers', 'yaymatik-automation-for-woocommerce'),
-  __('Alert me about big orders', 'yaymatik-automation-for-woocommerce'),
-  __('Remind shoppers about their cart', 'yaymatik-automation-for-woocommerce'),
-  __('Ask for a review after delivery', 'yaymatik-automation-for-woocommerce'),
-];
-
-/**
- * Near full-screen start page: the question, a describe box with example prompts (the assistant;
- * "Coming soon" until it ships), then two ways to start on your own: browse templates, or choose
- * a trigger.
- */
+/** Near full-screen start page: the question, then two ways to start: browse templates, or choose a trigger. */
 export function CreateWorkflowDialog({
   open,
   onOpenChange,
@@ -50,66 +37,14 @@ export function CreateWorkflowDialog({
           </DialogTitle>
         </div>
 
-        <div className="flex flex-1 flex-col items-center justify-center gap-4.5 overflow-y-auto px-6 pt-12 pb-14">
+        <div className="flex flex-1 flex-col items-center justify-center gap-6 overflow-y-auto px-6 pb-16">
           <div className="text-center">
             <h2 className="text-[22px] font-semibold tracking-tight">
               {__('What do you want to automate?', 'yaymatik-automation-for-woocommerce')}
             </h2>
             <DialogDescription className="text-muted-foreground mt-1 text-[13.5px]">
-              {__(
-                'Soon you can describe it and get a draft to review. Until then, start on your own below.',
-                'yaymatik-automation-for-woocommerce',
-              )}
+              {__('Start from a ready-made template, or build it step by step.', 'yaymatik-automation-for-woocommerce')}
             </DialogDescription>
-          </div>
-
-          {/* The assistant isn't built yet: the box, its send button and the examples look like disabled
-              controls (the kit's opacity-50) and nothing in them takes focus or clicks. "Coming soon" stays clear. */}
-          <div
-            aria-disabled
-            className="bg-card border-input flex w-full max-w-150 cursor-not-allowed flex-col gap-2.5 rounded-[14px] border pt-3 pr-3 pb-2.5 pl-3.5"
-          >
-            <div className="flex min-h-11 gap-2.5 text-[14.5px]/normal opacity-50">
-              <Sparkles className="text-primary mt-0.75 size-4 shrink-0" aria-hidden />
-              <span className="text-muted-foreground">
-                {__(
-                  'e.g. Email customers who haven’t ordered in 90 days with a coupon',
-                  'yaymatik-automation-for-woocommerce',
-                )}
-              </span>
-            </div>
-            <div className="flex items-center justify-end gap-2">
-              <ComingSoonChip />
-              <span
-                className="bg-muted text-muted-foreground flex size-8 items-center justify-center rounded-full opacity-50"
-                aria-hidden
-              >
-                <ArrowUp className="size-3.75 stroke-[2.5]" />
-              </span>
-            </div>
-          </div>
-
-          {/* Examples of what to describe; not clickable until the assistant ships. */}
-          <ul
-            className="flex max-w-160 flex-wrap justify-center gap-2"
-            aria-label={__('Example prompts', 'yaymatik-automation-for-woocommerce')}
-          >
-            {ideas.map((idea) => (
-              <li
-                key={idea}
-                aria-disabled
-                className="bg-card text-muted-foreground-600 flex h-7.5 cursor-not-allowed items-center gap-1.5 rounded-full border px-3 text-[13px] opacity-50"
-              >
-                <Sparkles className="text-muted-foreground size-3.25" aria-hidden />
-                {idea}
-              </li>
-            ))}
-          </ul>
-
-          <div className="text-muted-foreground flex w-full max-w-150 items-center gap-3 text-[12.5px]">
-            <span className="bg-border h-px flex-1" />
-            {__('or start on your own', 'yaymatik-automation-for-woocommerce')}
-            <span className="bg-border h-px flex-1" />
           </div>
 
           <div className="grid w-full max-w-150 gap-3 sm:grid-cols-2">
