@@ -10,6 +10,7 @@ use YayMatik\Workflow\Core\Steps\Condition;
 use YayMatik\Workflow\Core\Steps\Field;
 use YayMatik\Workflow\Core\Steps\StepResult;
 use YayMatik\Workflow\Core\Steps\Trigger;
+use YayMatik\Workflow\Extension\StepIndex;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -159,6 +160,24 @@ class Criteria extends Condition {
         $keys  = array_filter( $keys, fn( string $key ) => '' !== $key && 0 !== strpos( $key, 'trigger.' ) );
         $items = array_map( [ DataRegistry::class, 'item_of' ], $keys );
         return array_values( array_diff( array_unique( $items ), DataRegistry::ALWAYS ) );
+    }
+
+    /**
+     * The plugin, off now, whose data a rule reads; null when none.
+     *
+     * @param array $config
+     */
+    public function inactive_plugin( array $config ): ?string {
+        foreach ( $this->flat_rules( $config['rules'] ) as $rule ) {
+            foreach ( $this->reads( $rule ) as $key ) {
+                // A trigger's facts: `run()` fails the step when the trigger's plugin is off.
+                $plugin = '' === $key || 0 === strpos( $key, 'trigger.' ) ? null : StepIndex::inactive_plugin( $key );
+                if ( $plugin ) {
+                    return $plugin;
+                }
+            }
+        }
+        return null;
     }
 
     public function run( Scope $scope, array $config ): StepResult {

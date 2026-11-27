@@ -135,6 +135,12 @@ final class RunAdapter implements Step {
         return $this->email['test'];
     }
 
+    /** The run-step row, as the email's mark. */
+    public function key(): string {
+        $row = $this->values instanceof Scope ? $this->values->step_row() : 0;
+        return $row ? (string) $row : '';
+    }
+
     /**
      * @param array $outputs
      */

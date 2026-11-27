@@ -123,6 +123,11 @@ final class RegistrarTest extends TestCase {
                     'requires_api' => '1.1',
                 ],
                 [
+                    'id'           => 'one_two',
+                    'label'        => 'F',
+                    'requires_api' => '1.2',
+                ],
+                [
                     'id'           => 'two_zero',
                     'label'        => 'D',
                     'requires_api' => '2.0',
@@ -135,8 +140,8 @@ final class RegistrarTest extends TestCase {
             ]
         );
 
-        $this->assertSame( [ 'one_zero', 'one_zero_zero' ], $ids );
-        $this->assertContains( 'one_one module: Needs YayMatik with Extension API 1.1.', self::diagnostics() );
+        $this->assertSame( [ 'one_zero', 'one_zero_zero', 'one_one' ], $ids );
+        $this->assertContains( 'one_two module: Needs YayMatik with Extension API 1.2.', self::diagnostics() );
     }
 
     public function test_a_refused_module_handle_does_nothing(): void {

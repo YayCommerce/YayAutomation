@@ -16,6 +16,9 @@ final class YayWholesale_YayMatik_Fake_Adapter {
 
     private const MINIMUM = 500.0;
 
+    /** Option: `Step::key()` => the role it set, so a retried or replayed step sets it once. */
+    public const GRANTS = 'yaywholesale_fake_grants';
+
     /** Role => label. */
     public function role_options(): array {
         return [
@@ -74,7 +77,16 @@ final class YayWholesale_YayMatik_Fake_Adapter {
         if ( $step->is_test() ) {
             return $step->skip( __( 'A test changes no role.', 'yaywholesale' ) );
         }
+        $grants = (array) get_option( self::GRANTS, [] );
+        $key    = $step->key();
+        if ( '' !== $key && isset( $grants[ $key ] ) ) {
+            return $step->done( [ 'role' => $grants[ $key ] ] );
+        }
         update_user_meta( $user->ID, self::ROLE_META, $config['role'] );
+        if ( '' !== $key ) {
+            $grants[ $key ] = $config['role'];
+            update_option( self::GRANTS, $grants, false );
+        }
         return $step->done( [ 'role' => $config['role'] ] );
     }
 }

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Run the email stack's cells (docs/extensions-roadmap.md) on a real site, an installed product in place of its scaffold (wp-cli).
+# Run the email and value stacks' cells (docs/extensions-roadmap.md) on a real site, an installed product in place of its scaffold (wp-cli).
 #   ./run.sh check-ecosystem [--wp-env|--wp-env-min]
 # The scaffolds load in dev mode: on the local site wp-config.php needs YAYMATIK_IS_DEVELOPMENT. No email is sent.
 cd "$(dirname "$0")/../.." || exit 1
@@ -8,7 +8,8 @@ cd "$(dirname "$0")/../.." || exit 1
 # wp-env's wp-config has no YAYMATIK_IS_DEVELOPMENT: each wp-cli process defines it, so the scaffolds load there too.
 [[ $1 == --wp-env* ]] && WP+=(--exec="define( 'YAYMATIK_IS_DEVELOPMENT', true );")
 
-products=(yaymail yaymagic yaysmtp)
+products=(yaymail yaymagic yaysmtp yaypricing yaywholesale yayloyalty)
+value_products=(yaypricing yaywholesale yayloyalty)
 # A product installed as a plugin replaces its scaffold, whose class names its build declares too.
 installed=()
 was_active=()
@@ -74,6 +75,21 @@ for source in core yaymail yaymagic; do
   done
 done
 step "cleanup" phase "$(site "${products[@]}")" cleanup
+
+step "value setup" phase "$(site "${products[@]}")" value-setup
+for scenario in once retried replayed "two workflows"; do
+  for mask in 7 6 5 4 3 2 1 0; do
+    on=()
+    mix=()
+    for i in 0 1 2; do
+      p=${value_products[$i]}
+      if (( mask & (1 << i) )); then on+=("$p"); mix+=("$p on"); else mix+=("$p removed"); fi
+    done
+    label="$scenario: $(IFS=,; echo "${mix[*]}" | sed 's/,/, /g')"
+    step "$label" phase "$(site "${on[@]}")" value-cell "$scenario" "$(IFS=,; echo "${on[*]}")"
+  done
+done
+step "value cleanup" phase "$(site "${products[@]}")" value-cleanup
 
 echo
 printf '%s\n' "${results[@]}"

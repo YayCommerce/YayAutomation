@@ -2,7 +2,7 @@
     "YayMatik\\Api\\Api": {
         "kind": "final class",
         "constants": {
-            "VERSION": "1.0.0"
+            "VERSION": "1.1.0"
         },
         "methods": {
             "references": "static (string $step_id, string $field): array"
@@ -64,6 +64,7 @@
             "is_preview": "(): bool",
             "is_test": "(): bool",
             "item": "(string $id)",
+            "key": "(): string",
             "order": "()",
             "render": "(string $text, bool $html = false): string",
             "skip": "(string $reason)",

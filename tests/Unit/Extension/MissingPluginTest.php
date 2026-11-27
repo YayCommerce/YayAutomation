@@ -139,6 +139,25 @@ final class MissingPluginTest extends TestCase {
         $this->assertNull( StepIndex::inactive( 'yaymatik_old' ), 'its module is active: a dropped step, not a plugin that is off' );
     }
 
+    public function test_data_of_a_module_that_is_off_names_its_plugin_by_the_longest_module_id(): void {
+        StepIndex::refresh(
+            Extensions::collect(
+                [],
+                fn( $registrar ) => $registrar->module(
+                    [
+                        'id'    => 'acme_pro',
+                        'label' => 'Acme Pro',
+                    ]
+                )
+            )
+        );
+
+        $this->assertSame( 'Acme Rewards', StepIndex::inactive_plugin( 'order.acme_points' ) );
+        $this->assertSame( 'Acme Rewards', StepIndex::inactive_plugin( 'acme_member.level' ) );
+        $this->assertSame( 'Acme Pro', StepIndex::inactive_plugin( 'order.acme_pro_tier' ), 'not shadowed by acme' );
+        $this->assertNull( StepIndex::inactive_plugin( 'order.total' ) );
+    }
+
     public function test_it_saves_but_cannot_be_turned_on_and_its_outputs_stay_readable(): void {
         $graph  = GraphSchema::prepare( self::graph( 'Balance {{ steps.a.balance }}' ), self::graph()['nodes'] );
         $issues = Validator::errors(
