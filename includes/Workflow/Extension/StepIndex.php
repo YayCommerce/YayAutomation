@@ -1,6 +1,7 @@
 <?php
 namespace YayMatik\Workflow\Extension;
 
+use YayMatik\Workflow\Core\Data\DataRegistry;
 use YayMatik\Workflow\Core\Steps\Step;
 use YayMatik\Workflow\Core\Steps\StepRegistry;
 use YayMatik\Workflow\Core\Steps\Trigger;
@@ -9,7 +10,7 @@ use YayMatik\Workflow\ModuleRegistry;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Other plugins' steps as last seen, so a workflow keeps working while a plugin is off: entries are
+ * Other plugins' steps and modules as last seen, so a workflow keeps working while a plugin is off: entries are
  * added and updated when the registry is built, never removed (docs/extension-api.md §10).
  *
  * @internal
@@ -32,8 +33,10 @@ final class StepIndex {
             return;
         }
         $steps     = [];
+        $plugins   = [];
         $templates = [];
         foreach ( $modules as $module ) {
+            $plugins[ $module->id() ] = $module->label();
             foreach ( array_merge( $module->triggers(), $module->actions() ) as $step ) {
                 $steps[ $step->id() ] = self::entry( $module, $step );
             }
@@ -41,7 +44,7 @@ final class StepIndex {
                 $templates[ $id ] = $template['steps'];
             }
         }
-        $fingerprint = md5( (string) wp_json_encode( $steps ) );
+        $fingerprint = md5( (string) wp_json_encode( [ $steps, $plugins ] ) );
         // What a template's check reads, without translated text: core's version, the modules and their steps' shape, the chains as written.
         $checked = $templates ? md5( (string) wp_json_encode( [ YAYMATIK_VERSION, array_map( [ self::class, 'shape' ], $modules ), $templates ] ) ) : '';
         $stored  = self::stored();
@@ -51,6 +54,7 @@ final class StepIndex {
         self::$stored = [
             'fingerprint' => $fingerprint,
             'steps'       => $steps + $stored['steps'],
+            'plugins'     => $plugins + $stored['plugins'],
             'checked'     => $checked,
             'templates'   => $checked === $stored['checked'] ? $stored['templates'] : ( $templates ? TemplateCheck::hidden( $modules ) : [] ),
         ];
@@ -70,6 +74,28 @@ final class StepIndex {
             return null;
         }
         return $entry;
+    }
+
+    /**
+     * The label of the plugin, off now, that declared a data key's item or field; null when none.
+     *
+     * @param string $key
+     */
+    public static function inactive_plugin( string $key ): ?string {
+        // A key registered now is core's or an active plugin's, even when an off module's id is its prefix (`order.shipping_method`).
+        if ( DataRegistry::field( $key ) ) {
+            return null;
+        }
+        // Ids of an item or field start with its module id + `_`; the longest such id wins when one module id starts another.
+        $ids   = explode( '.', $key, 3 );
+        $owner = '';
+        foreach ( array_keys( self::stored()['plugins'] + ModuleRegistry::modules() ) as $module ) {
+            $prefix = $module . '_';
+            if ( strlen( (string) $module ) > strlen( $owner ) && ( 0 === strpos( $ids[0], $prefix ) || 0 === strpos( $ids[1] ?? '', $prefix ) ) ) {
+                $owner = (string) $module;
+            }
+        }
+        return '' === $owner || isset( ModuleRegistry::modules()[ $owner ] ) ? null : (string) self::stored()['plugins'][ $owner ];
     }
 
     /**
@@ -135,6 +161,7 @@ final class StepIndex {
             self::$stored = [
                 'fingerprint' => (string) ( $stored['fingerprint'] ?? '' ),
                 'steps'       => is_array( $stored['steps'] ?? null ) ? $stored['steps'] : [],
+                'plugins'     => is_array( $stored['plugins'] ?? null ) ? $stored['plugins'] : [],
                 'checked'     => (string) ( $stored['checked'] ?? '' ),
                 'templates'   => is_array( $stored['templates'] ?? null ) ? $stored['templates'] : [],
             ];

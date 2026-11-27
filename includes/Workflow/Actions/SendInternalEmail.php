@@ -87,7 +87,7 @@ class SendInternalEmail extends Action implements EmailStep {
             $recipients = [ (string) get_option( 'admin_email' ) ];
         }
 
-        if ( ! EmailDelivery::send( $recipients, $this->compose_email( $config, $scope, null ) ) ) {
+        if ( ! EmailDelivery::send( $recipients, $this->compose_email( $config, $scope, null ), $scope->step_key() ) ) {
             return StepResult::failed( __( 'Couldn’t send the email.', 'yaymatik-automation-for-woocommerce' ) );
         }
         return StepResult::ok( [ 'to' => $recipients ] );

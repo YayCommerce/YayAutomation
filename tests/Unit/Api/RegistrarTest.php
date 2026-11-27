@@ -60,14 +60,11 @@ final class RegistrarTest extends TestCase {
         $this->assertSame( [ 'acme module: Module id "acme" is already taken by another module.' ], self::diagnostics() );
     }
 
-    public function test_api_version_and_features(): void {
+    public function test_api_version(): void {
         Extensions::collect(
             [],
             function ( Registrar $registrar ) {
                 $this->assertSame( Api::VERSION, $registrar->api_version() );
-                $this->assertTrue( $registrar->supports( 'triggers' ) );
-                $this->assertTrue( $registrar->supports( 'actions' ) );
-                $this->assertFalse( $registrar->supports( 'email' ) );
             }
         );
     }
@@ -126,6 +123,11 @@ final class RegistrarTest extends TestCase {
                     'requires_api' => '1.1',
                 ],
                 [
+                    'id'           => 'one_two',
+                    'label'        => 'F',
+                    'requires_api' => '1.2',
+                ],
+                [
                     'id'           => 'two_zero',
                     'label'        => 'D',
                     'requires_api' => '2.0',
@@ -138,8 +140,8 @@ final class RegistrarTest extends TestCase {
             ]
         );
 
-        $this->assertSame( [ 'one_zero', 'one_zero_zero' ], $ids );
-        $this->assertContains( 'one_one module: Needs YayMatik with Extension API 1.1.', self::diagnostics() );
+        $this->assertSame( [ 'one_zero', 'one_zero_zero', 'one_one' ], $ids );
+        $this->assertContains( 'one_two module: Needs YayMatik with Extension API 1.2.', self::diagnostics() );
     }
 
     public function test_a_refused_module_handle_does_nothing(): void {
@@ -179,7 +181,7 @@ final class RegistrarTest extends TestCase {
                 $action    = [
                     'label'       => 'Add',
                     'description' => 'Adds.',
-                    'run'         => fn( array $config, $run ) => $run->done(),
+                    'handle'      => fn( array $config, $step ) => $step->done(),
                 ];
                 $results[] = $module->action( 'add_points', $action );
                 $results[] = $module->action( 'acme_add_points', $action );
@@ -210,7 +212,7 @@ final class RegistrarTest extends TestCase {
                     [
                         'label'       => 'Add',
                         'description' => 'Adds.',
-                        'run'         => fn( array $config, $run ) => $run->done(),
+                        'handle'      => fn( array $config, $step ) => $step->done(),
                         'retries'     => 3,
                     ]
                 );
@@ -245,7 +247,7 @@ final class RegistrarTest extends TestCase {
                 [
                     'label'       => 'Late',
                     'description' => 'Too late.',
-                    'run'         => fn( array $config, $run ) => $run->done(),
+                    'handle'      => fn( array $config, $step ) => $step->done(),
                 ]
             )
         );

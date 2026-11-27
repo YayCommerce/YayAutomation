@@ -35,7 +35,7 @@ final class ReferenceConsumerTest extends TestCase {
     }
 
     public function test_approved_then_set_wholesale_role(): void {
-        $module = Extensions::collect( [], [ new \YayWholesale_YayMatik(), 'register' ] )[0];
+        $module = Extensions::collect( [], [ new \YayWholesale_Reference_YayMatik(), 'register' ] )[0];
         $steps  = [];
         foreach ( array_merge( $module->triggers(), $module->actions() ) as $step ) {
             $steps[ $step->id() ] = $step;

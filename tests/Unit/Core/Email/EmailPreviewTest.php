@@ -68,6 +68,7 @@ final class EmailPreviewTest extends TestCase {
         $this->assertSame( 'you@example.test', $to );
         $this->assertSame( '[Test] ' . $preview['subject'], $subject );
         $this->assertSame( $body, $preview['html'], 'the same HTML, byte for byte' );
+        $this->assertStringEndsWith( "X-YayMatik-Mark: test\r\n", FakeMailer::$current->headers[0] );
         $this->assertStringContainsString( 'Tom &amp; Jerry', $preview['html'] );
         $this->assertTrue( $preview['sample'] );
         $this->assertNull( $preview['order'] );
@@ -89,9 +90,9 @@ final class EmailPreviewTest extends TestCase {
                     'description' => 'Sends.',
                     'email'       => [
                         'recipient' => 'customer',
-                        'build'     => fn( array $config, $run ) => [
+                        'build'     => fn( array $config, $step ) => [
                             'subject' => 'Hi {{ customer.first_name }}',
-                            'html'    => '<html><head><style>p{color:red}</style></head><body><p>' . ( $run->is_preview() ? 'preview' : 'live' ) . '</p></body></html>',
+                            'html'    => '<html><head><style>p{color:red}</style></head><body><p>' . ( $step->is_preview() ? 'preview' : 'live' ) . '</p></body></html>',
                         ],
                     ],
                 ]

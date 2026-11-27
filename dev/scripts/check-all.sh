@@ -8,7 +8,7 @@ cd "$(dirname "$0")/../.." || exit 1
 # check-orders and check-status-flow print JSON to diff before / after a change, so they are not here.
 # extension needs dev/example-extension as a plugin (mapped by .wp-env.json).
 # plugin-lifecycle uninstalls the plugin and reseeds the site, so it runs last and on wp-env only.
-checks=(storage runs late-module carts privacy-index lifecycle winback catalog settings login extension edition plugin-lifecycle)
+checks=(storage runs late-module carts privacy-index lifecycle winback catalog settings login extension ecosystem edition plugin-lifecycle)
 wp_env_only=(extension plugin-lifecycle)
 # check-edition refuses the minimum site: --wp-env only.
 latest_only=(edition)

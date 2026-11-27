@@ -13,6 +13,7 @@ use YayMatik\Workflow\Core\Data\RefResolver;
 use YayMatik\Workflow\Core\Runtime\Cancellation;
 use YayMatik\Workflow\Core\Runtime\DbRunRepository;
 use YayMatik\Workflow\Core\Runtime\Executor;
+use YayMatik\Workflow\Core\Runtime\StepKey;
 use YayMatik\Workflow\Core\Storage\RunStepStore;
 use YayMatik\Workflow\Core\Storage\RunStore;
 
@@ -44,6 +45,19 @@ final class RunStepStoreTest extends TestCase {
         $this->assertSame( 'running', $data['status'] );
         $this->assertSame( '{"note":"Hi {{ order.number }}"}', $data['input'] );
         $this->assertNotEmpty( $data['started_at'] );
+    }
+
+    public function test_a_delivery_is_saved_only_on_the_row_and_run_its_key_names(): void {
+        $step              = [
+            'output'     => '{"to":"a@x.com"}',
+            'started_at' => '2026-10-12 10:00:00',
+        ];
+        $this->db->results = [ $step, $step ];
+
+        $this->assertFalse( RunStepStore::set_delivery( '12.1700000000', [ 'status' => 'opened' ] ), 'row 12 reused by a newer run' );
+        $this->assertTrue( RunStepStore::set_delivery( StepKey::of( 12, '2026-10-12 10:00:00' ), [ 'status' => 'opened' ] ) );
+        $this->assertSame( [ 'update', 'wp_yaymatik_run_steps', [ 'output' => '{"to":"a@x.com","delivery":{"status":"opened"}}' ], [ 'id' => 12 ] ], array_slice( end( $this->db->calls ), 0, 4 ) );
+        $this->assertSame( 0, StepKey::row( '12' ), 'a bare row id is not a key' );
     }
 
     public function test_finish_sets_finished_at_except_while_waiting(): void {
@@ -203,6 +217,7 @@ final class RunStepStoreTest extends TestCase {
                 'version_id'  => 3,
                 'position'    => null,
                 'scope'       => [],
+                'started_at'  => '2026-10-12 10:00:00',
             ]
         );
 

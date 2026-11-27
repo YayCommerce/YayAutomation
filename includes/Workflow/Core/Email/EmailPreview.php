@@ -83,7 +83,7 @@ final class EmailPreview {
             return $email;
         }
         $subject = self::TEST_PREFIX . $email['subject'];
-        if ( ! EmailDelivery::send( $to, [ 'subject' => $subject ] + $email ) ) {
+        if ( ! EmailDelivery::send( $to, [ 'subject' => $subject ] + $email, DeliveryStatus::TEST ) ) {
             return new \WP_Error( 'yaymatik_mail_failed', __( 'Couldn’t send the test email.', 'yaymatik-automation-for-woocommerce' ), [ 'status' => 500 ] );
         }
         return [

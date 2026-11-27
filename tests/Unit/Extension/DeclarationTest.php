@@ -32,7 +32,7 @@ final class DeclarationTest extends TestCase {
                     $args + [
                         'label'       => 'Act',
                         'description' => 'Does it.',
-                        'run'         => fn( array $config, $run ) => $run->done(),
+                        'handle'      => fn( array $config, $step ) => $step->done(),
                     ]
                 );
             }
@@ -46,7 +46,7 @@ final class DeclarationTest extends TestCase {
      */
     private static function fields( array $fields ): array {
         $shapes = [];
-        foreach ( self::action( [ 'fields' => $fields ] )->fields() as $field ) {
+        foreach ( self::action( [ 'settings' => $fields ] )->fields() as $field ) {
             $shapes[ $field->key() ] = $field->to_array();
         }
         return $shapes;
@@ -54,6 +54,23 @@ final class DeclarationTest extends TestCase {
 
     private static function last_diagnostic(): string {
         return Diagnostics::recent( 24 )[0]['message'] ?? '';
+    }
+
+    public function test_an_unknown_key_is_kept_out_but_reported_to_the_check_not_health_check(): void {
+        $recorded = new \ReflectionProperty( Diagnostics::class, 'recorded' );
+        $recorded->setAccessible( true );
+        $recorded->setValue( null, [] );
+        $this->assertNotNull( self::action( [ 'descripton' => 'Typo.' ] ) );
+
+        $this->assertContains(
+            [
+                'module'   => 'acme',
+                'callback' => 'action acme_act',
+                'message'  => 'Unknown keys ignored: descripton.',
+            ],
+            Diagnostics::recorded()
+        );
+        $this->assertSame( [], Diagnostics::recent( 24 ) );
     }
 
     public function test_field_arrays_become_core_fields(): void {
@@ -128,7 +145,7 @@ final class DeclarationTest extends TestCase {
     public function test_a_required_field_left_blank_fails_validate_with_its_message(): void {
         $action = self::action(
             [
-                'fields' => [
+                'settings' => [
                     'points' => [
                         'type'     => 'number',
                         'label'    => 'Points',
@@ -210,25 +227,33 @@ final class DeclarationTest extends TestCase {
                     ],
                 ],
             ],
-            'Field "role" needs a "type" from: text, textarea, html, number, select, multiselect, toggle, emails, notice, number_unit.' => [ 'fields' => [ 'role' => [ 'label' => 'Role' ] ] ],
-            'Field "role" needs "options".'            => [
-                'fields' => [
+            'Output "delivery" is reserved for YayMatik.' => [
+                'outputs' => [
+                    'delivery' => [
+                        'label' => 'Delivery',
+                        'type'  => 'string',
+                    ],
+                ],
+            ],
+            'Setting "role" needs a "type" from: text, textarea, html, number, select, multiselect, toggle, emails, notice, number_unit.' => [ 'settings' => [ 'role' => [ 'label' => 'Role' ] ] ],
+            'Setting "role" needs "options".'             => [
+                'settings' => [
                     'role' => [
                         'type'  => 'select',
                         'label' => 'Role',
                     ],
                 ],
             ],
-            'Field key "Role" must be lowercase letters, digits or underscores.' => [
-                'fields' => [
+            'Setting key "Role" must be lowercase letters, digits or underscores.' => [
+                'settings' => [
                     'Role' => [
                         'type'  => 'text',
                         'label' => 'Role',
                     ],
                 ],
             ],
-            'Field "role": "show_if" must be [ field => value ].' => [
-                'fields' => [
+            'Setting "role": "show_if" must be [ setting => value ].' => [
+                'settings' => [
                     'role' => [
                         'type'    => 'text',
                         'label'   => 'Role',
@@ -236,10 +261,10 @@ final class DeclarationTest extends TestCase {
                     ],
                 ],
             ],
-            '"run" must be a callable.'                => [ 'run' => 'no_such_function' ],
-            '"on_error" must be "stop" or "continue".' => [ 'on_error' => 'retry' ],
+            '"handle" must be a callable.'                => [ 'handle' => 'no_such_function' ],
+            '"on_error" must be "stop" or "continue".'    => [ 'on_error' => 'retry' ],
             '"category" must be a core category or one this module declared first.' => [ 'category' => 'rewards' ],
-            'Unknown data item in "requires": ordr.'   => [ 'requires' => [ 'ordr' ] ],
+            'Unknown data item in "needs": ordr.'         => [ 'needs' => [ 'ordr' ] ],
         ];
         foreach ( $cases as $message => $args ) {
             $GLOBALS['yaymatik_test_options'] = [];
@@ -254,8 +279,8 @@ final class DeclarationTest extends TestCase {
             '"summary": {{ order.total }} isn\'t a placeholder; use {{ config.<field> }}. Kept as written.' => [ 'summary' => 'Add {{ config.points }} for {{ order.total }}' ],
             '"summary": {{ config.points | upper }} isn\'t a placeholder; use {{ config.<field> }}. Kept as written.' => [ 'summary' => '{{ config.points | upper }}' ],
             '"result": {{ steps.a.b }} isn\'t a placeholder; use {{ output.<key> }} or {{ config.<field> }}. Kept as written.' => [ 'result' => '{{ output.balance }} {{ steps.a.b }}' ],
-            'Field "role": "required": {{ config.role }} isn\'t a placeholder; use {{ step }}. Kept as written.' => [
-                'fields' => [
+            'Setting "role": "required": {{ config.role }} isn\'t a placeholder; use {{ step }}. Kept as written.' => [
+                'settings' => [
                     'role' => [
                         'type'     => 'text',
                         'label'    => 'Role',
@@ -266,7 +291,7 @@ final class DeclarationTest extends TestCase {
         ];
         foreach ( $cases as $message => $args ) {
             $GLOBALS['yaymatik_test_options'] = [];
-            $action = self::action( $args );
+            $action                           = self::action( $args );
             $this->assertNotNull( $action, $message );
             $this->assertSame( $message, self::last_diagnostic() );
         }

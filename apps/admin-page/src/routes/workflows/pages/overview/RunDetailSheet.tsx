@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { RunDetail, StepId, WorkflowNodeKind } from '@yaymatik/types';
-import { __, sprintf } from '@wordpress/i18n';
+import { __ } from '@wordpress/i18n';
 
 import { shortDayTime } from '@/lib/helpers/date.helper';
 import { cn } from '@/lib/utils';
@@ -12,6 +12,7 @@ import { useRunQuery } from '../../api/workflow.query';
 import { RunStatusBadge } from '../../shared/ui/RunStatus';
 import { stepOf, type Step } from '../../steps';
 import { StepTile } from '../../steps/core/StepTile';
+import { DeliveryStatus, shownDelivery, type EmailDelivery } from './DeliveryStatus';
 import { stepResult } from './runResults';
 
 /** One run of this workflow from the right; a missing run or another workflow's closes with "Run not found.". */
@@ -42,8 +43,8 @@ export function RunDetailSheet({
   return (
     <Sheet open={!!runId && !notFound} onOpenChange={(open) => !open && onClose()}>
       <SheetContent className="gap-0">
-        <SheetHeader className="pe-12">
-          <SheetTitle className="leading-6">
+        <SheetHeader className="h-13.5 flex-row items-center gap-3 py-0 pe-12">
+          <SheetTitle className="min-w-0 truncate">
             {shown ? (
               shown.subjectUrl ? (
                 <a href={shown.subjectUrl} className="text-link hover:underline">
@@ -57,16 +58,7 @@ export function RunDetailSheet({
             )}
           </SheetTitle>
           <SheetDescription asChild>
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-              {shown ? (
-                <>
-                  <RunStatusBadge run={shown} />
-                  <RunTimes run={shown} />
-                </>
-              ) : (
-                <Skeleton className="h-4 w-48" />
-              )}
-            </div>
+            <div className="shrink-0">{shown && <RunStatusBadge run={shown} />}</div>
           </SheetDescription>
         </SheetHeader>
         <div className="min-h-0 flex-1 overflow-y-auto p-5">
@@ -93,29 +85,6 @@ export function RunDetailSheet({
   );
 }
 
-function RunTimes({ run }: { run: RunDetail }) {
-  return (
-    <span>
-      {run.startedAt &&
-        sprintf(
-          /* translators: %s: date and time, e.g. "Oct 9 at 3:00 PM" */
-          __('Started %s', 'yaymatik-automation-for-woocommerce'),
-          shortDayTime(run.startedAt),
-        )}
-      {run.finishedAt && (
-        <>
-          {' · '}
-          {sprintf(
-            /* translators: %s: date and time, e.g. "Oct 9 at 3:00 PM" */
-            __('Finished %s', 'yaymatik-automation-for-woocommerce'),
-            shortDayTime(run.finishedAt),
-          )}
-        </>
-      )}
-    </span>
-  );
-}
-
 /** The trigger, then each step that ran; steps not reached aren't listed. */
 function RunSteps({ run }: { run: RunDetail }) {
   const trigger = stepNamed(run.triggerId);
@@ -137,6 +106,7 @@ function RunSteps({ run }: { run: RunDetail }) {
             stepDef={stepDef}
             label={stepDef?.label ?? __('Removed step', 'yaymatik-automation-for-woocommerce')}
             result={stepResult(step, run)}
+            delivery={shownDelivery(step.output.delivery, step.status)}
             time={step.finishedAt ?? step.startedAt}
           />
         );
@@ -153,12 +123,14 @@ function StepLine({
   stepDef,
   label,
   result,
+  delivery,
   time,
 }: {
   kind: WorkflowNodeKind;
   stepDef: Step | undefined;
   label: string;
   result?: string;
+  delivery?: EmailDelivery;
   time: string | null;
 }) {
   return (
@@ -176,6 +148,7 @@ function StepLine({
           {time && <span className="text-muted-foreground shrink-0 text-xs">{shortDayTime(time)}</span>}
         </div>
         {result && <p className="text-muted-foreground-600 m-0 text-[13px] wrap-break-word">{result}</p>}
+        {delivery && <DeliveryStatus delivery={delivery} />}
       </div>
     </li>
   );

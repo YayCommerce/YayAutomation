@@ -40,7 +40,7 @@ final class RefMap {
     }
 
     /**
-     * Key => Ref; a `user_id` that isn't the customer stays a plain id, for `Run::user()`.
+     * Key => Ref; a `user_id` that isn't the customer stays a plain id, for `Step::user()`.
      *
      * @param array    $args  Payload with valid ids.
      * @param string[] $items

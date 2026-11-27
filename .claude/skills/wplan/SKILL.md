@@ -79,7 +79,7 @@ Present the plan to the user and ask for a single confirmation:
 
 **Wait for approval.** On confirmation:
 
-1. Save the plan to `.claude/plans/dev/<NNN>-<slug>.md` (next free number) and commit it: `plan <NNN>: <slug>`. For a lane row, save it instead to `.claude/plans/<area>/<slug>.md` on the lane branch and link the row to it. Only when the user asks for a private plan, save it in `.claude/local/plans/` instead:
+1. Save the plan to `.claude/plans/dev/<NNN>-<slug>.md` (next free number) and commit it: `plan <NNN>: <slug>`. For a lane row, see Lane plans below. Only when the user asks for a private plan, save it in `.claude/local/plans/` instead:
 
 ```markdown
 # Plan: <title>
@@ -104,4 +104,9 @@ Present the plan to the user and ask for a single confirmation:
 - Base branch: develop
 ```
 
-2. **Immediately continue into `/wdev`** — do not stop or ask the user to run it manually.
+2. **Immediately continue into `/wdev`** — do not stop or ask the user to run it manually. A lane plan is the exception: stop once the row links it; the Desk starts its Builder.
+
+**Lane plans** are planned per chunk (a lane's rows up to its next `Review` row): one `/wplan` over the chunk's plans in run order, one `/wdecide` list numbered by plan (`P2.1`).
+- Work in a `.claude/worktrees/` worktree on `plans/<chunk>` off the lane branch; never switch the main checkout, where Builders work.
+- Save each to `.claude/plans/<area>/<slug>.md`. Meta: `Target branch: feature/<area>-<slug>`, `Base branch: feature/lane-<letter>`, `Unattended: yes`, and `Draft: confirmed` once its screen draft is.
+- A link starts a Builder: link the chunk's rows only when every plan is saved and every draft confirmed, then PR `plans/<chunk>` into the lane branch.

@@ -2,6 +2,7 @@
 namespace YayMatik\Workflow\Core\Runtime;
 
 use YayMatik\Utils\Logger;
+use YayMatik\Workflow\Conditions\Criteria;
 use YayMatik\Workflow\Core\Data\DataRegistry;
 use YayMatik\Workflow\Core\Data\GoneEntity;
 use YayMatik\Workflow\Core\Data\Ref;
@@ -9,6 +10,7 @@ use YayMatik\Workflow\Core\Data\RefResolver;
 use YayMatik\Workflow\Core\Data\Scope;
 use YayMatik\Workflow\Core\Definition\GraphSchema;
 use YayMatik\Workflow\Core\Definition\ProUsage;
+use YayMatik\Workflow\Core\Email\DeliveryStatus;
 use YayMatik\Workflow\Core\Steps\Condition;
 use YayMatik\Workflow\Core\Steps\Step;
 use YayMatik\Workflow\Core\Steps\StepRegistry;
@@ -226,6 +228,8 @@ final class Executor {
         $run_id = (int) $run['id'];
         // A step with a row already ran: its stored result applies, so a finished step never runs twice.
         if ( $row ) {
+            // An email's delivery status is run detail, not a value for later steps.
+            $output = array_diff_key( (array) $row['output'], [ 'delivery' => true ] );
             switch ( $row['status'] ) {
                 case RunStepStore::STATUS_RUNNING:
                     // Still running from an earlier slice: it was interrupted, and its error policy applies.
@@ -242,15 +246,15 @@ final class Executor {
                     }
                     if ( $until > $this->clock->now() ) {
                         // Woken early: wait again until the same time.
-                        $outcome        = self::result( RunStepStore::STATUS_WAITING, (array) $row['output'], null, $until );
+                        $outcome        = self::result( RunStepStore::STATUS_WAITING, $output, null, $until );
                         $outcome['row'] = (int) $row['id'];
                         return $outcome;
                     }
                     // Woken after its wait: the step is done.
                     $this->runs->finish_step( (int) $row['id'], RunStepStore::STATUS_COMPLETED, (array) $row['output'] );
-                    return self::result( RunStepStore::STATUS_COMPLETED, (array) $row['output'] );
+                    return self::result( RunStepStore::STATUS_COMPLETED, $output );
                 default:
-                    return self::result( (string) $row['status'], (array) $row['output'], $row['error'] );
+                    return self::result( (string) $row['status'], $output, $row['error'] );
             }
         }
 
@@ -267,12 +271,15 @@ final class Executor {
             throw new \RuntimeException( esc_html__( 'Could not save the step result.', 'yaymatik-automation-for-woocommerce' ) );
         }
 
-        $scope->set_current_step( $run_id, $step_id );
-        $result = $broken ?? self::run_step( $node, $step, $config, $scope );
-        $status = self::STATUS_OF[ $result->status() ];
-        $output = $result->is_ok() || $result->is_wait() ? array_intersect_key( $result->outputs(), $step ? $step->outputs() : [] ) : [];
-        $error  = $result->is_skipped() || $result->is_failed() ? $result->message() : null;
-        $this->runs->finish_step( $row_id, $status, $output, $error );
+        $key = StepKey::of( $row_id, (string) $run['started_at'] );
+        $scope->set_current_step( $run_id, $step_id, $key );
+        DeliveryStatus::start( $key );
+        $result   = $broken ?? self::run_step( $node, $step, $config, $scope );
+        $delivery = DeliveryStatus::finish( $key );
+        $status   = self::STATUS_OF[ $result->status() ];
+        $output   = $result->is_ok() || $result->is_wait() ? array_intersect_key( $result->outputs(), $step ? $step->outputs() : [] ) : [];
+        $error    = $result->is_skipped() || $result->is_failed() ? $result->message() : null;
+        $this->runs->finish_step( $row_id, $status, $delivery ? $output + [ 'delivery' => $delivery ] : $output, $error );
         $outcome        = self::result( $status, $output, $error, $result->until() );
         $outcome['row'] = $row_id;
         return $outcome;
@@ -299,6 +306,12 @@ final class Executor {
             return StepResult::failed( sprintf( __( 'Step type "%s" is not available.', 'yaymatik-automation-for-woocommerce' ), $block ) );
         }
         try {
+            $off = $step instanceof Criteria ? $step->inactive_plugin( $config ) : null;
+            if ( $off ) {
+                // Its rule's data is gone with the plugin: the path ends here, as when the step's own plugin is off.
+                /* translators: %s: plugin name, e.g. "YayPricing" */
+                return StepResult::skipped( sprintf( __( '%s isn’t active.', 'yaymatik-automation-for-woocommerce' ), $off ) );
+            }
             $valid = $step->validate( $config );
             if ( true === $valid ) {
                 $valid = $step->context_error( $config, self::available( $scope ), $scope->trigger() ) ?? true;

@@ -58,6 +58,12 @@ Work through the plan's checkpoints one at a time:
 
 Put decisions to the user with `/wdecide`.
 
+**Lane mode** (started by the Desk, or Meta `Unattended: yes`): never wait in the window.
+- Low-stake open: take the recommendation, write it to `## Decisions` as `confirmed (auto)`. High-stake open, or no plan file: commit, push, `yay lane report <plan> parked "<opens in /wdecide form>"`, and wait for the answer.
+- Risk 3: `/code-review high`, no manual stop, no `/wcheck`; the PR body lists what wasn't verified in the browser, for the Review.
+- Don't ask the user to run `pnpm dev`.
+- Done: CI runs only on PRs into `develop`, so skip steps 5 and 6; the Stop hook's pass is the check, and the PR body says so. Then `gh pr merge <n> --merge` as its own command (the merge gate allows it into a lane) and `yay lane report <plan> merged #<n>`.
+
 ---
 
 ## Done

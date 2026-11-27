@@ -12,7 +12,7 @@ use YayMatik\Workflow\Extension\RunAdapter;
 
 require_once dirname( __DIR__, 2 ) . '/Support/woocommerce-stubs.php';
 
-/** What `Run` reads: facts, the cart as a view, a module's own data item. */
+/** What `Step` reads: facts, the cart as a view, a module's own data item. */
 final class RunAdapterTest extends TestCase {
 
     public function test_facts_and_the_cart(): void {
@@ -26,7 +26,7 @@ final class RunAdapterTest extends TestCase {
                 'items'    => '[]',
             ]
         );
-        $run  = new RunAdapter(
+        $step = new RunAdapter(
             new Scope(
                 [
                     'trigger' => [
@@ -39,10 +39,10 @@ final class RunAdapterTest extends TestCase {
             )
         );
 
-        $this->assertSame( 42, $run->get( 'trigger.points' ) );
-        $this->assertInstanceOf( CartView::class, $run->cart() );
-        $this->assertSame( 'cart@example.test', $run->cart()->email() );
-        $this->assertNull( $run->item( 'cart' ), 'core items have their own getters' );
+        $this->assertSame( 42, $step->get( 'trigger.points' ) );
+        $this->assertInstanceOf( CartView::class, $step->cart() );
+        $this->assertSame( 'cart@example.test', $step->cart()->email() );
+        $this->assertNull( $step->item( 'cart' ), 'core items have their own getters' );
         $this->assertNull( ( new RunAdapter( new Scope( [], null, [] ) ) )->cart() );
     }
 }

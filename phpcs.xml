@@ -88,6 +88,7 @@
 	<exclude-pattern>/apps/</exclude-pattern>
 	<exclude-pattern>/assets/</exclude-pattern>
 	<exclude-pattern>/dist/</exclude-pattern>
+	<exclude-pattern>/stubs/</exclude-pattern>
 	<exclude-pattern>index.php</exclude-pattern>
 
 	<!-- Do not fail on warnings -->

@@ -14,7 +14,7 @@ final class Diagnostics {
 
     public const OPTION = 'yaymatik_extension_errors';
 
-    private const KEEP = 50;
+    public const KEEP = 50;
 
     /** Seconds between two writes of the same module and callback; a literal, as PHPUnit runs without WordPress's constants. */
     private const THROTTLE = 600;
@@ -22,6 +22,12 @@ final class Diagnostics {
     // Repeats inside the window are counted in this request only: `count` is a lower bound.
     /** @var int[] Repeats not written yet, by `module|callback`. */
     private static $pending = [];
+
+    /** @var array[] The first entries recorded in this request, repeats inside the window too, by `module|callback|message`; capped as a queue run can last long. */
+    private static $recorded = [];
+
+    /** @var bool A new entry came after the cap. */
+    private static $cut = false;
 
     /**
      * Never throws: callers are catch blocks.
@@ -32,6 +38,7 @@ final class Diagnostics {
      */
     public static function record( string $module, string $callback, string $message ): void {
         try {
+            self::note( $module, $callback, $message );
             $key     = $module . '|' . $callback;
             $entries = self::stored();
             $now     = time();
@@ -76,6 +83,39 @@ final class Diagnostics {
             }
         }
         return array_reverse( $entries );
+    }
+
+    /**
+     * For this request's `recorded()` only, not the store: what `wp yaymatik extension check` reports and Health check doesn't.
+     *
+     * @param string $module
+     * @param string $callback
+     * @param string $message
+     */
+    public static function note( string $module, string $callback, string $message ): void {
+        $key = "{$module}|{$callback}|{$message}";
+        if ( isset( self::$recorded[ $key ] ) ) {
+            return;
+        }
+        if ( count( self::$recorded ) >= self::KEEP ) {
+            self::$cut = true;
+            return;
+        }
+        self::$recorded[ $key ] = [
+            'module'   => $module,
+            'callback' => $callback,
+            'message'  => $message,
+        ];
+    }
+
+    /** Whether `recorded()` left entries out. */
+    public static function cut(): bool {
+        return self::$cut;
+    }
+
+    /** @return array[] What this request recorded, each once: `module`, `callback`, `message`. */
+    public static function recorded(): array {
+        return array_values( self::$recorded );
     }
 
     /** @return array[] By `module|callback`; anything malformed is dropped. */

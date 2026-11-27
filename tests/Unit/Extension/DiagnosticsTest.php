@@ -36,6 +36,35 @@ final class DiagnosticsTest extends TestCase {
         $this->assertSame( 3, self::stored()['acme_two|refs']['count'], 'the next write flushes the count' );
     }
 
+    public function test_this_request_lists_each_entry_once_repeats_inside_the_window_too(): void {
+        $recorded = new \ReflectionProperty( Diagnostics::class, 'recorded' );
+        $recorded->setAccessible( true );
+        $recorded->setValue( null, [] );
+        Diagnostics::record( 'acme_recorded', 'trigger x', 'Bad key.' );
+        Diagnostics::record( 'acme_recorded', 'trigger x', 'Bad key.' );
+        Diagnostics::record( 'acme_recorded', 'trigger x', 'Other key.' );
+
+        $this->assertSame( [ 'Bad key.', 'Other key.' ], array_column( Diagnostics::recorded(), 'message' ), 'the second message is throttled in the store, not here' );
+    }
+
+    public function test_the_list_is_cut_only_when_an_entry_past_the_cap_is_left_out(): void {
+        $recorded = new \ReflectionProperty( Diagnostics::class, 'recorded' );
+        $recorded->setAccessible( true );
+        $recorded->setValue( null, [] );
+        $cut = new \ReflectionProperty( Diagnostics::class, 'cut' );
+        $cut->setAccessible( true );
+        $cut->setValue( null, false );
+        for ( $i = 1; $i <= Diagnostics::KEEP; $i++ ) {
+            Diagnostics::note( 'acme_cap', 'trigger x', "Key {$i}." );
+        }
+        Diagnostics::note( 'acme_cap', 'trigger x', 'Key 1.' );
+        $this->assertFalse( Diagnostics::cut(), 'exactly at the cap, a repeat included' );
+
+        Diagnostics::note( 'acme_cap', 'trigger x', 'One more.' );
+        $this->assertTrue( Diagnostics::cut() );
+        $this->assertCount( Diagnostics::KEEP, Diagnostics::recorded() );
+    }
+
     public function test_after_ten_minutes_the_entry_is_written_again(): void {
         $GLOBALS['yaymatik_test_options'][ Diagnostics::OPTION ] = [
             'acme_three|listen' => [

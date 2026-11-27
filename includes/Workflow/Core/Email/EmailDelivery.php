@@ -1,7 +1,7 @@
 <?php
 namespace YayMatik\Workflow\Core\Email;
 
-use YayMatik\Workflow\Core\Data\Values;
+use YayMatik\Workflow\Core\Data\Scope;
 use YayMatik\Workflow\Core\Steps\StepResult;
 use YayMatik\Workflow\Core\Storage\UnsubscribeStore;
 
@@ -30,10 +30,10 @@ final class EmailDelivery {
     /**
      * @param EmailStep $step
      * @param array     $config
-     * @param Values    $values
+     * @param Scope     $scope
      */
-    public function deliver( EmailStep $step, array $config, Values $values ): StepResult {
-        $to = $step->email_recipient( $config, $values );
+    public function deliver( EmailStep $step, array $config, Scope $scope ): StepResult {
+        $to = $step->email_recipient( $config, $scope );
         if ( '' === $to ) {
             return StepResult::failed( __( 'No valid email address.', 'yaymatik-automation-for-woocommerce' ) );
         }
@@ -42,20 +42,22 @@ final class EmailDelivery {
             return StepResult::skipped( __( 'The customer unsubscribed from these emails.', 'yaymatik-automation-for-woocommerce' ) );
         }
 
-        $email = $step->compose_email( $config, $values, $customer ? $this->links()->url( $to ) : '' );
-        if ( ! self::send( $to, $email ) ) {
+        $email = $step->compose_email( $config, $scope, $customer ? $this->links()->url( $to ) : '' );
+        if ( ! self::send( $to, $email, $scope->step_key() ) ) {
             return StepResult::failed( __( 'Couldn’t send the email.', 'yaymatik-automation-for-woocommerce' ) );
         }
         return StepResult::ok( [ 'to' => $to ] );
     }
 
     /**
-     * Sends through WooCommerce's mailer, so its sender name and address apply.
+     * Sends through WooCommerce's mailer (its sender name and address), marked with the step's key or `TEST`.
      *
      * @param string|string[] $to
      * @param array           $email `EmailStep::compose_email()` output.
+     * @param string          $mark
      */
-    public static function send( $to, array $email ): bool {
+    public static function send( $to, array $email, string $mark ): bool {
+        $email['headers'] .= DeliveryStatus::header( $mark );
         if ( empty( $email['raw'] ) ) {
             return (bool) WC()->mailer()->send( $to, $email['subject'], $email['body'], $email['headers'] );
         }

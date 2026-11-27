@@ -37,9 +37,9 @@ final class Declaration {
 
     private const MODULE_KEYS = [ 'id', 'label', 'description', 'logo', 'requires_api', 'privacy_subjects' ];
 
-    private const STEP_KEYS = [ 'label', 'description', 'icon', 'category', 'fields', 'summary', 'validate', 'setup_issue' ];
+    private const STEP_KEYS = [ 'label', 'description', 'icon', 'category', 'settings', 'summary', 'validate', 'setup_issue' ];
 
-    private const TRIGGER_KEYS = [ 'provides', 'matches', 'once_per', 'facts', 'sample' ];
+    private const TRIGGER_KEYS = [ 'provides', 'matches', 'once_per', 'facts', 'sample_facts' ];
 
     private const DATA_ITEM_KEYS = [ 'label', 'description', 'icon', 'load', 'fields', 'sample' ];
 
@@ -47,13 +47,13 @@ final class Declaration {
 
     private const MAX_FACTS = 10;
 
-    private const ACTION_KEYS = [ 'requires', 'run', 'outputs', 'sample_outputs', 'on_error', 'result', 'emits', 'email', 'editor' ];
+    private const ACTION_KEYS = [ 'needs', 'handle', 'outputs', 'sample_outputs', 'on_error', 'result', 'emits', 'email', 'editor' ];
 
     private const EDITOR_KEYS = [ 'field', 'button', 'url' ];
 
     private const EMAIL_KEYS = [ 'audience', 'recipient', 'build' ];
 
-    private const TEMPLATE_KEYS = [ 'name', 'description', 'category', 'workflow', 'created', 'before', 'steps' ];
+    private const TEMPLATE_KEYS = [ 'label', 'description', 'library_category', 'workflow', 'created', 'before', 'steps' ];
 
     /** Browse templates' categories (TS `TemplateCategory`). */
     private const TEMPLATE_CATEGORIES = [ 'recover_carts', 'post_purchase', 'customer_lifecycle', 'alerts' ];
@@ -118,13 +118,13 @@ final class Declaration {
         if ( null === $error && is_string( $facts ) ) {
             $error = $facts;
         }
-        if ( null === $error && isset( $args['sample'] ) && ! is_array( $args['sample'] ) ) {
-            $error = '"sample" must be fact => value.';
+        if ( null === $error && isset( $args['sample_facts'] ) && ! is_array( $args['sample_facts'] ) ) {
+            $error = '"sample_facts" must be fact => value.';
         }
         if ( null === $error && isset( $args['once_per'] ) && 'subject' !== $args['once_per'] ) {
             $error = '"once_per" must be "subject".';
         }
-        $fields = null === $error ? self::fields( $module->id(), $args['fields'] ?? [] ) : null;
+        $fields = null === $error ? self::settings( $module->id(), $args['settings'] ?? [] ) : null;
         if ( null !== $error || is_string( $fields ) ) {
             self::refuse( $module->id(), $what, $error ?? $fields );
             return null;
@@ -132,9 +132,9 @@ final class Declaration {
         self::unknown_keys( $module->id(), $what, $args, array_merge( self::STEP_KEYS, self::TRIGGER_KEYS ) );
         self::check_placeholders( $module->id(), $what, $args );
         return [
-            'fields' => $fields,
-            'facts'  => $facts,
-            'items'  => fn() => array_keys( $module->data_items() ),
+            'settings' => $fields,
+            'facts'    => $facts,
+            'items'    => fn() => array_keys( $module->data_items() ),
         ] + $args;
     }
 
@@ -148,21 +148,21 @@ final class Declaration {
     public static function action( ExtensionModule $module, string $id, array $args ): ?array {
         $what  = "action {$id}";
         $error = self::step_error( $module, $id, $args, self::ACTION_CATEGORIES )
-            ?? self::list_error( $args, 'requires', false )
-            ?? self::items_error( $args['requires'] ?? [] )
+            ?? self::list_error( $args, 'needs', false )
+            ?? self::items_error( $args['needs'] ?? [] )
             ?? self::list_error( $args, 'emits', false )
-            ?? ( isset( $args['email'] ) ? self::email_error( $args ) : self::callable_error( $args, [ 'run' ], [ 'sample_outputs' ] ) );
+            ?? ( isset( $args['email'] ) ? self::email_error( $args ) : self::callable_error( $args, [ 'handle' ], [ 'sample_outputs' ] ) );
         if ( null === $error && isset( $args['on_error'] ) && ! in_array( $args['on_error'], [ Step::ON_ERROR_STOP, Step::ON_ERROR_CONTINUE ], true ) ) {
             $error = '"on_error" must be "stop" or "continue".';
         }
         if ( null === $error && isset( $args['result'] ) && ! is_string( $args['result'] ) ) {
             $error = '"result" must be a string.';
         }
-        $fields  = null === $error ? self::fields( $module->id(), $args['fields'] ?? [] ) : null;
+        $fields  = null === $error ? self::settings( $module->id(), $args['settings'] ?? [] ) : null;
         $outputs = null === $error && ! is_string( $fields ) ? self::outputs( $module->id(), $args['outputs'] ?? [] ) : null;
         $error   = $error ?? ( is_string( $fields ) ? $fields : null ) ?? ( is_string( $outputs ) ? $outputs : null );
         if ( null === $error && isset( $args['email'] ) && 'customer' !== $args['email']['recipient'] && null === self::field( $fields, $args['email']['recipient'] ) ) {
-            $error = '"email" "recipient" must be "customer" or a key of "fields".';
+            $error = '"email" "recipient" must be "customer" or a key of "settings".';
         }
         if ( null === $error && isset( $args['editor'] ) ) {
             $error = self::editor_error( $args['editor'], $fields );
@@ -181,13 +181,13 @@ final class Declaration {
             $args['email'] += [ 'audience' => 'customer' ];
         }
         return [
-            'fields'  => $fields,
-            'outputs' => $outputs,
+            'settings' => $fields,
+            'outputs'  => $outputs,
         ] + $args;
     }
 
     /**
-     * An email action: core runs it, so it has no `run` or `outputs` of its own (docs/extension-api.md §5.5).
+     * An email action: core runs it, so it has no `handle` or `outputs` of its own (docs/extension-api.md §5.5).
      *
      * @param array $args
      */
@@ -196,7 +196,7 @@ final class Declaration {
         if ( ! is_array( $email ) ) {
             return '"email" must be [ audience, recipient, build ].';
         }
-        foreach ( [ 'run', 'outputs', 'sample_outputs' ] as $key ) {
+        foreach ( [ 'handle', 'outputs', 'sample_outputs' ] as $key ) {
             if ( isset( $args[ $key ] ) ) {
                 return "An email action has no \"{$key}\": core sends it and outputs \"to\".";
             }
@@ -205,7 +205,7 @@ final class Declaration {
             return '"email" "audience" must be "customer" or "staff".';
         }
         if ( ! is_string( $email['recipient'] ?? null ) ) {
-            return '"email" needs "recipient": "customer" or a field key.';
+            return '"email" needs "recipient": "customer" or a key of "settings".';
         }
         return is_callable( $email['build'] ?? null ) ? null : '"email" "build" must be a callable.';
     }
@@ -222,7 +222,7 @@ final class Declaration {
         }
         $field = is_string( $editor['field'] ?? null ) ? self::field( $fields, $editor['field'] ) : null;
         if ( ! $field || ! in_array( $field->type(), [ Field::TEXT, Field::SELECT ], true ) ) {
-            return '"editor" "field" must be a text or select field of this action.';
+            return '"editor" "field" must be a text or select setting of this action.';
         }
         if ( ! is_string( $editor['button'] ?? null ) || '' === trim( $editor['button'] ) ) {
             return '"editor" needs a "button" label.';
@@ -253,13 +253,13 @@ final class Declaration {
     public static function template( ExtensionModule $module, string $id, array $args ): ?array {
         $what  = "template {$id}";
         $error = self::own_id_error( $module->id(), $id );
-        foreach ( [ 'name', 'description' ] as $key ) {
+        foreach ( [ 'label', 'description' ] as $key ) {
             if ( null === $error && ( ! is_string( $args[ $key ] ?? null ) || '' === trim( $args[ $key ] ) ) ) {
                 $error = "\"{$key}\" is required.";
             }
         }
-        if ( null === $error && ! in_array( $args['category'] ?? null, self::TEMPLATE_CATEGORIES, true ) ) {
-            $error = '"category" must be one of: ' . implode( ', ', self::TEMPLATE_CATEGORIES ) . '.';
+        if ( null === $error && ! in_array( $args['library_category'] ?? null, self::TEMPLATE_CATEGORIES, true ) ) {
+            $error = '"library_category" must be one of: ' . implode( ', ', self::TEMPLATE_CATEGORIES ) . '.';
         }
         if ( null === $error && isset( $args['workflow'] ) && ( ! is_string( $args['workflow'] ) || null !== self::own_id_error( $module->id(), $args['workflow'] ) ) ) {
             $error = "\"workflow\" must start with \"{$module->id()}_\" and be 3–64 lowercase letters, digits or underscores.";
@@ -457,8 +457,8 @@ final class Declaration {
             [ '"summary"', $args['summary'] ?? '', '/^config\.[a-z_][a-z0-9_]*$/', '{{ config.<field> }}' ],
             [ '"result"', $args['result'] ?? '', '/^(output|config)\.[a-z_][a-z0-9_]*$/', '{{ output.<key> }} or {{ config.<field> }}' ],
         ];
-        foreach ( $args['fields'] ?? [] as $key => $field ) {
-            $texts[] = [ "Field \"{$key}\": \"required\"", is_string( $field['required'] ?? null ) ? $field['required'] : '', '/^step$/', '{{ step }}' ];
+        foreach ( $args['settings'] ?? [] as $key => $field ) {
+            $texts[] = [ "Setting \"{$key}\": \"required\"", is_string( $field['required'] ?? null ) ? $field['required'] : '', '/^step$/', '{{ step }}' ];
         }
         $template = new Template();
         foreach ( $texts as list( $label, $text, $pattern, $allowed ) ) {
@@ -499,11 +499,11 @@ final class Declaration {
     }
 
     /**
-     * @param string[] $requires
+     * @param string[] $needs
      */
-    private static function items_error( array $requires ): ?string {
-        $unknown = array_diff( $requires, self::item_ids() );
-        return $unknown ? 'Unknown data item in "requires": ' . implode( ', ', $unknown ) . '.' : null;
+    private static function items_error( array $needs ): ?string {
+        $unknown = array_diff( $needs, self::item_ids() );
+        return $unknown ? 'Unknown data item in "needs": ' . implode( ', ', $unknown ) . '.' : null;
     }
 
     /**
@@ -529,19 +529,19 @@ final class Declaration {
      * Core fields from `key => [ type, label, … ]` (§4.1), or why they were refused.
      *
      * @param string $module
-     * @param mixed  $fields
+     * @param mixed  $settings
      * @return Field[]|string
      */
-    private static function fields( string $module, $fields ) {
-        if ( ! is_array( $fields ) ) {
-            return '"fields" must be key => field array.';
+    private static function settings( string $module, $settings ) {
+        if ( ! is_array( $settings ) ) {
+            return '"settings" must be key => field array.';
         }
         $built = [];
-        foreach ( $fields as $key => $field ) {
+        foreach ( $settings as $key => $field ) {
             if ( ! is_string( $key ) || ! preg_match( self::KEY, $key ) ) {
-                return "Field key \"{$key}\" must be lowercase letters, digits or underscores.";
+                return "Setting key \"{$key}\" must be lowercase letters, digits or underscores.";
             }
-            $core = is_array( $field ) ? self::core_field( $module, $key, $field ) : "Field \"{$key}\" must be an array.";
+            $core = is_array( $field ) ? self::core_field( $module, $key, $field ) : "Setting \"{$key}\" must be an array.";
             if ( is_string( $core ) ) {
                 return $core;
             }
@@ -560,17 +560,17 @@ final class Declaration {
         $type  = $field['type'] ?? null;
         $label = $field['label'] ?? null;
         if ( ! is_string( $type ) || ! isset( self::FIELD_TYPES[ $type ] ) ) {
-            return "Field \"{$key}\" needs a \"type\" from: " . implode( ', ', array_keys( self::FIELD_TYPES ) ) . '.';
+            return "Setting \"{$key}\" needs a \"type\" from: " . implode( ', ', array_keys( self::FIELD_TYPES ) ) . '.';
         }
         if ( ! is_string( $label ) || '' === trim( $label ) ) {
-            return "Field \"{$key}\" needs a \"label\".";
+            return "Setting \"{$key}\" needs a \"label\".";
         }
         $args  = [ $key, $label ];
         $extra = self::FIELD_TYPES[ $type ];
         if ( '' !== $extra ) {
             $value = $field[ $extra ] ?? null;
             if ( 'text' === $extra ? ! is_string( $value ) : ! is_array( $value ) && ! is_callable( $value ) ) {
-                return "Field \"{$key}\" needs \"{$extra}\".";
+                return "Setting \"{$key}\" needs \"{$extra}\".";
             }
             $args[] = 'text' !== $extra && is_callable( $value ) ? self::guarded_options( $module, $value ) : $value;
         }
@@ -589,7 +589,7 @@ final class Declaration {
         foreach ( [ 'min', 'max' ] as $limit ) {
             if ( isset( $field[ $limit ] ) ) {
                 if ( ! is_int( $field[ $limit ] ) && ! is_float( $field[ $limit ] ) ) {
-                    return "Field \"{$key}\": \"{$limit}\" must be a number.";
+                    return "Setting \"{$key}\": \"{$limit}\" must be a number.";
                 }
                 $core->$limit( $field[ $limit ] );
             }
@@ -599,7 +599,7 @@ final class Declaration {
         }
         if ( isset( $field['show_if'] ) ) {
             if ( ! is_array( $field['show_if'] ) || 1 !== count( $field['show_if'] ) || ! is_string( key( $field['show_if'] ) ) ) {
-                return "Field \"{$key}\": \"show_if\" must be [ field => value ].";
+                return "Setting \"{$key}\": \"show_if\" must be [ setting => value ].";
             }
             $core->show_if( key( $field['show_if'] ), current( $field['show_if'] ) );
         }
@@ -682,6 +682,10 @@ final class Declaration {
             if ( ! is_string( $key ) || ! preg_match( self::KEY, $key ) || ! is_string( $output['label'] ?? null ) || ! $type ) {
                 return "Output \"{$key}\" must be lowercase key => [ label, type ], with a known type name.";
             }
+            // Core stores an email's delivery status under this key of the step's output.
+            if ( 'delivery' === $key ) {
+                return 'Output "delivery" is reserved for YayMatik.';
+            }
             $built[ $key ] = [
                 'label' => $output['label'],
                 'type'  => $type,
@@ -710,7 +714,9 @@ final class Declaration {
     private static function unknown_keys( string $module, string $what, array $args, array $known ): void {
         $unknown = array_diff( array_keys( $args ), $known );
         if ( $unknown ) {
-            self::doing_it_wrong( "{$module}, {$what}: unknown keys ignored: " . implode( ', ', $unknown ) . '.' );
+            $message = 'Unknown keys ignored: ' . implode( ', ', $unknown ) . '.';
+            Diagnostics::note( $module, $what, $message );
+            self::doing_it_wrong( "{$module}, {$what}: {$message}" );
         }
     }
 

@@ -15,6 +15,7 @@ use YayMatik\Workflow\Core\Data\GoneEntity;
 use YayMatik\Workflow\Core\Data\Ref;
 use YayMatik\Workflow\Core\Data\RefResolver;
 use YayMatik\Workflow\Core\Data\Scope;
+use YayMatik\Workflow\Core\Email\DeliveryStatus;
 use YayMatik\Workflow\Core\Runtime\Executor;
 use YayMatik\Workflow\Core\Steps\Step;
 use YayMatik\Workflow\Core\Steps\StepResult;
@@ -179,6 +180,69 @@ final class ExecutorTest extends TestCase {
         $this->assertSame( 3, $this->runs->saves );
     }
 
+    public function test_a_mail_status_reported_while_the_step_runs_is_kept_in_its_output(): void {
+        $marks               = [];
+        $this->steps['mail'] = new FakeStep(
+            'mail',
+            function ( Scope $scope ) use ( &$marks ): StepResult {
+                $marks[] = $scope->step_key();
+                DeliveryStatus::on_sent( [ 'headers' => "Content-Type: text/html\r\n" . DeliveryStatus::header( $scope->step_key() ) ] );
+                return StepResult::ok( [ 'to' => 'a@x.com' ] );
+            }
+        );
+        $this->steps['down'] = new FakeStep(
+            'down',
+            function ( Scope $scope ): StepResult {
+                DeliveryStatus::on_failed( new \WP_Error( 'wp_mail_failed', 'SMTP connect() failed.', [ 'headers' => [ DeliveryStatus::HEADER . ': ' . $scope->step_key() ] ] ) );
+                return StepResult::failed( 'Couldn’t send the email.' );
+            },
+            Step::ON_ERROR_CONTINUE
+        );
+        $this->graph(
+            [
+                'a' => [ 'mail', [] ],
+                'b' => [ 'down', [] ],
+                'c' => [ 'act', [] ],
+            ],
+            [ [ 't', 'a' ], [ 'a', 'b' ], [ 'b', 'c' ] ]
+        );
+        $id = $this->new_run();
+
+        $this->slice( $id );
+
+        $rows = array_column( $this->runs->steps( $id ), null, 'step_id' );
+        $this->assertSame( [ $rows['a']['id'] . '.' . strtotime( '2026-10-12 10:00:00 UTC' ) ], $marks, 'the mark is the run-step row and its run’s start' );
+        $this->assertSame( 'a@x.com', $rows['a']['output']['to'] );
+        $this->assertSame( 'sent', $rows['a']['output']['delivery']['status'] );
+        $this->assertSame(
+            [ 'failed', 'SMTP connect() failed.' ],
+            [ $rows['b']['output']['delivery']['status'], $rows['b']['output']['delivery']['reason'] ],
+            'a failed step keeps its delivery'
+        );
+        $this->assertSame( [ 'to' => 'a@x.com' ], $rows['c']['output'], 'only the step that sent' );
+        $this->assertArrayNotHasKey( 'delivery', $this->run_of( $id )['scope']['steps']['a'], 'not a value for later steps' );
+    }
+
+    public function test_a_finished_rows_delivery_stays_out_of_the_scope_on_resume(): void {
+        $this->graph( [ 'a' => [ 'act', [] ] ], [ [ 't', 'a' ] ] );
+        $id  = $this->new_run();
+        $row = $this->runs->start_step( $id, 'a', [] );
+        $this->runs->finish_step(
+            $row,
+            'completed',
+            [
+                'to'       => 'a@x.com',
+                'delivery' => [
+                    'status' => 'sent',
+                    'at'     => '2026-10-12T10:00:00+00:00',
+                ],
+            ]
+        );
+
+        $this->assertSame( 'completed', $this->slice( $id ) );
+        $this->assertSame( [ 'to' => 'a@x.com' ], $this->run_of( $id )['scope']['steps']['a'] );
+    }
+
     public function test_condition_follows_then_on_yes_and_otherwise_on_no(): void {
         foreach ( [ [ true, 'yes_step' ], [ false, 'no_step' ] ] as list( $yes, $expected ) ) {
             $this->setUp();
@@ -307,7 +371,7 @@ final class ExecutorTest extends TestCase {
                     [
                         'label'       => 'Act',
                         'description' => 'Reads the order.',
-                        'run'         => fn( array $config, $run ) => $run->order() ? $run->done() : $run->fail( 'No order.' ),
+                        'handle'      => fn( array $config, $step ) => $step->order() ? $step->done() : $step->fail( 'No order.' ),
                     ]
                 );
             }

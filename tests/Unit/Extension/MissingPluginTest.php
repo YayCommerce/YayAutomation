@@ -41,7 +41,7 @@ final class MissingPluginTest extends TestCase {
                                     'type'  => 'number',
                                 ],
                             ],
-                            'run'         => fn( array $config, $run ) => $run->done(),
+                            'handle'      => fn( array $config, $step ) => $step->done(),
                         ]
                     );
                 }
@@ -137,6 +137,29 @@ final class MissingPluginTest extends TestCase {
         $this->assertNotNull( StepIndex::inactive( 'acme_add_points' ) );
         $this->assertNull( StepIndex::inactive( 'send_email' ), 'registered' );
         $this->assertNull( StepIndex::inactive( 'yaymatik_old' ), 'its module is active: a dropped step, not a plugin that is off' );
+    }
+
+    public function test_data_of_a_module_that_is_off_names_its_plugin_by_the_longest_module_id(): void {
+        StepIndex::refresh(
+            Extensions::collect(
+                [],
+                fn( $registrar ) => $registrar->module(
+                    [
+                        'id'    => 'acme_pro',
+                        'label' => 'Acme Pro',
+                    ]
+                )
+            )
+        );
+
+        $this->assertSame( 'Acme Rewards', StepIndex::inactive_plugin( 'order.acme_points' ) );
+        $this->assertSame( 'Acme Rewards', StepIndex::inactive_plugin( 'acme_member.level' ) );
+        $this->assertSame( 'Acme Pro', StepIndex::inactive_plugin( 'order.acme_pro_tier' ), 'not shadowed by acme' );
+        $this->assertNull( StepIndex::inactive_plugin( 'order.total' ) );
+
+        $GLOBALS['yaymatik_test_options'][ StepIndex::OPTION ]['plugins']['shipping'] = 'Shipping Plus';
+        self::forget_index();
+        $this->assertNull( StepIndex::inactive_plugin( 'order.shipping_method' ), 'a core field, not the off module whose id is its prefix' );
     }
 
     public function test_it_saves_but_cannot_be_turned_on_and_its_outputs_stay_readable(): void {

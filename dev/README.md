@@ -18,7 +18,7 @@ Run everything through `./run.sh` in the plugin root. It works from any folder.
 | `./run.sh bench-privacy --wp-env\|--wp-env-min [sizes…]` | Seed 50k and 200k runs (or the sizes given), then print EXPLAIN and median ms of each privacy lookup, old full scan vs the index, and the write cost of indexing. Removes its rows. |
 | `./run.sh probe-mysql --staging` | Read-only probe of staging's MySQL 8 (SELECTs only): the privacy index SQL, `GET_LOCK`, the user meta key collation. |
 | `./run.sh deploy` | Build a Pro rc zip of this commit and install it on staging. Refuses uncommitted changes, a wrong site, a missing mail log and an rc the site already has. |
-| `./run.sh claude-workflow` (alias `cw`) | Claude work menu: tmux + Remote Control sessions. macOS, needs `zsh`, `tmux`, `claude`. |
+| `./run.sh claude-workflow` (alias `cw`) | Claude work menu: tmux + Remote Control sessions. `cw lane <letter> ["<prompt>"]` opens the lane chat in `.claude/worktrees/lane-<letter>` (the Desk's `yay chat`). macOS, needs `zsh`, `tmux`, `claude`. |
 
 Add a command: drop an executable `dev/scripts/<name>.sh`. Line 2 comment is its description.
 
