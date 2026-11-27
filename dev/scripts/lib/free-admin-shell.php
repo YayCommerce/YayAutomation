@@ -96,7 +96,8 @@ rmdir( "{$dir}/src/Registry" );
 $handlers = <<<'PHP'
     public function ajax_get_plugin_data(): void
     {
-        if ('wporg' !== ($_POST['shell'] ?? '')) {
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing -- a routing check; the nonce is checked next.
+        if ('wporg' !== sanitize_key(wp_unslash($_POST['shell'] ?? ''))) {
             return;
         }
         if (!check_ajax_referer('yay_recommended_nonce', 'nonce', \false)) {
@@ -128,7 +129,8 @@ $handlers = <<<'PHP'
     }
     public function ajax_activate_plugin(): void
     {
-        if ('wporg' !== ($_POST['shell'] ?? '')) {
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing -- a routing check; the nonce is checked next.
+        if ('wporg' !== sanitize_key(wp_unslash($_POST['shell'] ?? ''))) {
             return;
         }
         if (!check_ajax_referer('yay_recommended_nonce', 'nonce', \false)) {
@@ -149,7 +151,8 @@ $handlers = <<<'PHP'
     }
     public function ajax_upgrade_plugin(): void
     {
-        if ('wporg' !== ($_POST['shell'] ?? '')) {
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing -- a routing check; the nonce is checked next.
+        if ('wporg' !== sanitize_key(wp_unslash($_POST['shell'] ?? ''))) {
             return;
         }
         if (!check_ajax_referer('yay_recommended_nonce', 'nonce', \false)) {
@@ -286,7 +289,8 @@ file_put_contents( $shell_page, substr( $code, 0, $start ) . $handlers . substr(
 foreach ( $php_files() as $short => $target ) {
     $kept = '';
     foreach ( token_get_all( (string) file_get_contents( $target ) ) as $token ) {
-        if ( ! is_array( $token ) || ! in_array( $token[0], [ T_COMMENT, T_DOC_COMMENT ], true ) ) {
+        // phpcs annotations stay: they say why a line is allowed.
+        if ( ! is_array( $token ) || ! in_array( $token[0], [ T_COMMENT, T_DOC_COMMENT ], true ) || false !== strpos( $token[1], 'phpcs:' ) ) {
             $kept .= is_array( $token ) ? $token[1] : $token;
         }
     }
