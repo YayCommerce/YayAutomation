@@ -20,10 +20,7 @@ const labels = {
   failed: __('Failed', 'yaymatik'),
 };
 
-/**
- * Sent gives no line, nor failed on a failed step: its "Sent to …" or its error already says it. Failed on a
- * completed step is a mail plugin's later report.
- */
+/** No line for sent, nor failed on a failed step (its result says it); failed on a completed step is a later report. */
 export function shownDelivery(value: unknown, stepStatus: string): EmailDelivery | undefined {
   if (!value || typeof value !== 'object') return undefined;
   const { status, at, reason } = value as Record<string, unknown>;

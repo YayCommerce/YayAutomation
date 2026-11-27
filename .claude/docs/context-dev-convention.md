@@ -26,7 +26,7 @@ Without it, WP loads the prod build in `assets/dist/admin-page/`.
 - A change in behavior adds or updates a test: Vitest (`*.test.ts` next to the code) or PHPUnit (`tests/Unit/`, mirrors `includes/`, no WordPress loaded; WP-bound code is checked with wp-cli). Tests read PHP's meta from `apps/admin-page/src/test/fixtures/meta.json`; run `./run.sh meta-fixture` after changing what PHP sends.
 - UI change → `/wcheck`. REST change → `fetch('/wp-json/yaymatik/v1/…')` in console.
 - Extension API: `dev/example-extension/` is a plugin using every piece of it (installed as `acme-rewards` on wp-env; `pnpm wp-env start` after pulling a `.wp-env.json` change). `./run.sh check-extension --wp-env` runs it end to end (part of `check-all --wp-env`).
-- Ecosystem scaffolds: `dev/ecosystem/` holds six extensions on fake adapters, loaded in dev mode; `./run.sh ecosystem-fire <trigger> [--wp-env]` fires one (its README).
+- Ecosystem scaffolds: `dev/ecosystem/` holds six extensions on fake adapters, loaded in dev mode; `./run.sh ecosystem-fire <trigger> [--wp-env]` fires one, `./run.sh check-ecosystem --wp-env` runs the email stack's cells on a real site (its README).
 - E2E: `pnpm e2e` (Playwright on wp-env, port 8910; specs in `dev/e2e/`). Local only, before a release; never on staging.
 
 ## Workflows folder (`apps/admin-page/src/routes/workflows/`)

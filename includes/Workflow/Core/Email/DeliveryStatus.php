@@ -99,14 +99,15 @@ final class DeliveryStatus {
     }
 
     /**
-     * Core's own sent / failed never replaces what a mail plugin reported first, whichever hook ran first.
+     * Core's own sent / failed, for the step sending now only: never over a mail plugin's report, nor on a resend.
      *
      * @param string $mark
      * @param string $status
      * @param string $reason
      */
     private static function record_own( string $mark, string $status, string $reason = '' ): void {
-        if ( ctype_digit( $mark ) && isset( self::$running[ (int) $mark ] ) ) {
+        $row = ctype_digit( $mark ) ? (int) $mark : 0;
+        if ( ! $row || ! array_key_exists( $row, self::$running ) || null !== self::$running[ $row ] ) {
             return;
         }
         self::record( $mark, $status, $reason );

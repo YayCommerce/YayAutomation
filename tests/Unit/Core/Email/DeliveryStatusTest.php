@@ -19,7 +19,13 @@ final class DeliveryStatusTest extends TestCase {
     protected function setUp(): void {
         $this->filters = $GLOBALS['yaymatik_test_filters'] ?? [];
         $this->save    = self::prop( 'save' );
-        self::prop( 'save', fn( int $row, array $delivery ) => (bool) ( $this->saved[] = [ $row, $delivery ] ) );
+        self::prop(
+            'save',
+            function ( int $row, array $delivery ): bool {
+                $this->saved[] = [ $row, $delivery ];
+                return true;
+            }
+        );
     }
 
     protected function tearDown(): void {
@@ -48,7 +54,16 @@ final class DeliveryStatusTest extends TestCase {
         $this->assertSame( "X-YayMatik-Mark: 12\r\n", DeliveryStatus::header( '12' ) );
         $this->assertSame( '12', DeliveryStatus::mark_of( "Content-Type: text/html\r\n" . DeliveryStatus::header( '12' ) ) );
         $this->assertSame( 'test', DeliveryStatus::mark_of( [ 'Content-Type: text/html', 'x-yaymatik-mark:  test ' ] ) );
-        $this->assertSame( '31', DeliveryStatus::mark_of( [ 'List-Unsubscribe' => '<https://shop.test/?a=b:c>', 'X-YayMatik-Mark' => '31' ] ), 'as wp_mail_succeeded gets them' );
+        $this->assertSame(
+            '31',
+            DeliveryStatus::mark_of(
+                [
+                    'List-Unsubscribe' => '<https://shop.test/?a=b:c>',
+                    'X-YayMatik-Mark'  => '31',
+                ]
+            ),
+            'as wp_mail_succeeded gets them'
+        );
         $this->assertSame( '', DeliveryStatus::mark_of( "Content-Type: text/html\r\n" ), 'mail YayMatik didn’t send' );
     }
 
@@ -69,14 +84,17 @@ final class DeliveryStatusTest extends TestCase {
         DeliveryStatus::record( 7, 'sent' );
         DeliveryStatus::record( 7, 'delivered' );
 
+        DeliveryStatus::on_sent( [ 'headers' => DeliveryStatus::header( '7' ) ] );
+
         $this->assertSame( [], $this->saved );
-        $this->assertSame( 'delivered', DeliveryStatus::finish( 7 )['status'] );
+        $this->assertSame( 'delivered', DeliveryStatus::finish( 7 )['status'], 'core’s sent never replaces a mail plugin’s report' );
         $this->assertNull( DeliveryStatus::finish( 7 ), 'taken once' );
     }
 
-    public function test_send_test_unmarked_mail_and_unknown_statuses_are_ignored(): void {
+    public function test_send_test_unmarked_mail_a_resend_and_unknown_statuses_are_ignored(): void {
         DeliveryStatus::on_sent( [ 'headers' => DeliveryStatus::header( DeliveryStatus::TEST ) ] );
         DeliveryStatus::on_sent( [ 'headers' => '' ] );
+        DeliveryStatus::on_sent( [ 'headers' => DeliveryStatus::header( '12' ) ] );
         DeliveryStatus::on_failed( 'not an error' );
         DeliveryStatus::on_failed( new \WP_Error( 'wp_mail_failed', 'x', (object) [ 'headers' => [] ] ) );
         DeliveryStatus::on_sent( (object) [] );

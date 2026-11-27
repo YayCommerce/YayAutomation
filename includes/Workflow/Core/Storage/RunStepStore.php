@@ -90,21 +90,19 @@ final class RunStepStore {
     }
 
     /**
-     * Puts a finished step's email delivery status in its output as `delivery`.
+     * Puts a finished email step's delivery status, `{ status, at, reason? }`, in its output as `delivery`.
      *
      * @param int   $id
-     * @param array $delivery `{ status, at, reason? }`.
+     * @param array $delivery
      */
     public static function set_delivery( int $id, array $delivery ): bool {
         global $wpdb;
         $output = $wpdb->get_var( $wpdb->prepare( 'SELECT output FROM %i WHERE id = %d', self::table(), $id ) );
-        if ( null === $output ) {
-            // No row, or one still running in another request, whose finish() would overwrite the output.
-            Logger::error( 'Email status for a step that is gone or not finished: ' . ( $delivery['status'] ?? '' ), [ 'run_step_id' => $id ] );
+        $output = null === $output ? null : json_decode( (string) $output, true );
+        // Gone (pruned runs' emails are still opened), still running, or not an email step: every email step outputs `to`.
+        if ( ! is_array( $output ) || ! isset( $output['to'] ) ) {
             return false;
         }
-        $output             = json_decode( (string) $output, true );
-        $output             = is_array( $output ) ? $output : [];
         $output['delivery'] = $delivery;
         if ( false === $wpdb->update( self::table(), [ 'output' => wp_json_encode( $output ) ], [ 'id' => $id ] ) ) {
             Logger::error( 'Could not save an email status: ' . $wpdb->last_error, [ 'run_step_id' => $id ] );

@@ -50,8 +50,7 @@ final class EmailDelivery {
     }
 
     /**
-     * Sends through WooCommerce's mailer, so its sender name and address apply, marked with the step's run-step row
-     * id or `DeliveryStatus::TEST`.
+     * Sends through WooCommerce's mailer (its sender name and address), marked with a run-step row id or `TEST`.
      *
      * @param string|string[] $to
      * @param array           $email `EmailStep::compose_email()` output.

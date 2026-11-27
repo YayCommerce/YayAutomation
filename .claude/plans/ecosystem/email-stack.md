@@ -25,6 +25,11 @@ Words and matrix as in `docs/extensions-roadmap.md` (email stack). Builds on `ex
 ## Decisions
 Confirmed: D9, D17, D19, D20, D21, D22, D28.
 - P2.1 Run detail status line and one-row header as in the screen draft — confirmed
+- B1 Mark = the run-step row id, kept in `Scope` (not stored); a status reported while the step runs is held in memory and written by the Executor with the step's output — confirmed (auto)
+- B2 Core's own sent / failed never replaces a status a mail plugin reported first in the same send — confirmed (auto)
+- B3 `failed` shows in red under a completed step (a mail plugin's later report); hidden on a failed step — confirmed (auto)
+- B4 Statuses are not ranked: the latest report wins, as planned — confirmed (auto)
+- B5 `check-ecosystem` sends no email: it replaces the mailer with a mail log that fires `wp_mail_succeeded`; "logged once" with a real YaySMTP = one `yaymatik_email_status` report per mark — confirmed (auto)
 
 ## Meta
 - Target branch: feature/ecosystem-email-stack
