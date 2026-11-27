@@ -19,6 +19,9 @@ Words as in `docs/extensions-roadmap.md` (D13). Builds on `api-names.md` and `ex
 
 ## Decisions
 Confirmed: D13.
+- C1 The command reports what this request recorded (`Diagnostics::recorded()`), and runs the template check itself: the store is throttled to one write per 10 minutes and keeps 24 h, so a fixed declaration would still show there — confirmed (auto)
+- C2 On a site without Pro, a template hidden only because it uses a Pro step (`ProCatalog`) is a note, not a problem: the check exits 0 — confirmed (auto)
+- C3 Teams list the stubs under PHPStan `scanFiles`, not `stubFiles` (which PHPStan validates strictly: missing iterable value types, `WC_Order` unknown); the scaffolds pass at level 5 — confirmed (auto)
 
 ## Meta
 - Target branch: feature/ecosystem-extension-check

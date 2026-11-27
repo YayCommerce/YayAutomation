@@ -397,6 +397,20 @@ $m->template( 'yaymail_order_paid_email', [
 
 - **Diagnostics:** option `yaymatik_extension_errors`, last 50 entries (module, callback, message, time, count); one write per (module, callback) per 10 minutes; also `Logger::error`. Shown in **Health check › Extensions**: each module, its `requires_api`, errors in the last 24 h. No auto-disable beyond the existing run ceiling (Dispatcher.php:161–170). (Q12, agreed)
 
+### 9.1 Check your extension
+
+- **`wp yaymatik extension check [<module>]`** on any site with your plugin active: each extension module with its `requires_api`, then every problem its declarations and templates raise (the same checks as registration and Browse templates, run fresh in that request, not read from the 24 h store). Exits 1 when there is one. A template hidden only because it starts on a YayMatik Pro step, on a site without Pro, is listed as a note and doesn't fail the check.
+- **PHPStan stubs:** `stubs/yaymatik-extension-api.php` (`./run.sh extension-stubs` writes it from `includes/Api`; `StubsTest` fails when they differ). Not in the plugin zip: copy it into your repo, and list it under `scanFiles` (not `stubFiles`, which PHPStan checks as strictly as its own stubs):
+
+```neon
+parameters:
+  level: 5
+  scanFiles:
+    - stubs/yaymatik-extension-api.php
+```
+
+  With WordPress and WooCommerce stubs (`szepeviktor/phpstan-wordpress`, `php-stubs/woocommerce-stubs`), PHPStan then reports a misspelled API method, a missing argument and `new` on a facade. The six scaffolds in `dev/ecosystem/` pass at level 5.
+
 ## 10. Plugin deactivated or removed (J9)
 
 When a plugin is off, its code doesn't run, so core can't ask it for a step's name. Core keeps a small **step index** (option `yaymatik_extension_steps`: step id ⇒ module id, module label, kind, step label, output keys), refreshed whenever the registry is built and its fingerprint changed. (Q1, agreed)

@@ -36,6 +36,17 @@ final class DiagnosticsTest extends TestCase {
         $this->assertSame( 3, self::stored()['acme_two|refs']['count'], 'the next write flushes the count' );
     }
 
+    public function test_this_request_lists_each_entry_once_repeats_inside_the_window_too(): void {
+        $recorded = new \ReflectionProperty( Diagnostics::class, 'recorded' );
+        $recorded->setAccessible( true );
+        $recorded->setValue( null, [] );
+        Diagnostics::record( 'acme_recorded', 'trigger x', 'Bad key.' );
+        Diagnostics::record( 'acme_recorded', 'trigger x', 'Bad key.' );
+        Diagnostics::record( 'acme_recorded', 'trigger x', 'Other key.' );
+
+        $this->assertSame( [ 'Bad key.', 'Other key.' ], array_column( Diagnostics::recorded(), 'message' ), 'the second message is throttled in the store, not here' );
+    }
+
     public function test_after_ten_minutes_the_entry_is_written_again(): void {
         $GLOBALS['yaymatik_test_options'][ Diagnostics::OPTION ] = [
             'acme_three|listen' => [

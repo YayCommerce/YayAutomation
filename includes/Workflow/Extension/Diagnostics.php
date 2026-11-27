@@ -23,6 +23,9 @@ final class Diagnostics {
     /** @var int[] Repeats not written yet, by `module|callback`. */
     private static $pending = [];
 
+    /** @var array[] The first entries recorded in this request, repeats inside the window too, by `module|callback|message`; capped as a queue run can last long. */
+    private static $recorded = [];
+
     /**
      * Never throws: callers are catch blocks.
      *
@@ -32,6 +35,13 @@ final class Diagnostics {
      */
     public static function record( string $module, string $callback, string $message ): void {
         try {
+            if ( count( self::$recorded ) < self::KEEP ) {
+                self::$recorded[ "{$module}|{$callback}|{$message}" ] = [
+                    'module'   => $module,
+                    'callback' => $callback,
+                    'message'  => $message,
+                ];
+            }
             $key     = $module . '|' . $callback;
             $entries = self::stored();
             $now     = time();
@@ -76,6 +86,11 @@ final class Diagnostics {
             }
         }
         return array_reverse( $entries );
+    }
+
+    /** @return array[] What this request recorded, each once: `module`, `callback`, `message`. */
+    public static function recorded(): array {
+        return array_values( self::$recorded );
     }
 
     /** @return array[] By `module|callback`; anything malformed is dropped. */
