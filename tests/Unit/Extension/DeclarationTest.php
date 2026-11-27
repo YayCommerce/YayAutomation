@@ -227,8 +227,16 @@ final class DeclarationTest extends TestCase {
                     ],
                 ],
             ],
+            'Output "delivery" is reserved for YayMatik.' => [
+                'outputs' => [
+                    'delivery' => [
+                        'label' => 'Delivery',
+                        'type'  => 'string',
+                    ],
+                ],
+            ],
             'Setting "role" needs a "type" from: text, textarea, html, number, select, multiselect, toggle, emails, notice, number_unit.' => [ 'settings' => [ 'role' => [ 'label' => 'Role' ] ] ],
-            'Setting "role" needs "options".'          => [
+            'Setting "role" needs "options".'             => [
                 'settings' => [
                     'role' => [
                         'type'  => 'select',
@@ -253,10 +261,10 @@ final class DeclarationTest extends TestCase {
                     ],
                 ],
             ],
-            '"handle" must be a callable.'             => [ 'handle' => 'no_such_function' ],
-            '"on_error" must be "stop" or "continue".' => [ 'on_error' => 'retry' ],
+            '"handle" must be a callable.'                => [ 'handle' => 'no_such_function' ],
+            '"on_error" must be "stop" or "continue".'    => [ 'on_error' => 'retry' ],
             '"category" must be a core category or one this module declared first.' => [ 'category' => 'rewards' ],
-            'Unknown data item in "needs": ordr.'      => [ 'needs' => [ 'ordr' ] ],
+            'Unknown data item in "needs": ordr.'         => [ 'needs' => [ 'ordr' ] ],
         ];
         foreach ( $cases as $message => $args ) {
             $GLOBALS['yaymatik_test_options'] = [];

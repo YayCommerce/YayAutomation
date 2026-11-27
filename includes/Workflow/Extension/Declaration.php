@@ -682,6 +682,10 @@ final class Declaration {
             if ( ! is_string( $key ) || ! preg_match( self::KEY, $key ) || ! is_string( $output['label'] ?? null ) || ! $type ) {
                 return "Output \"{$key}\" must be lowercase key => [ label, type ], with a known type name.";
             }
+            // Core stores an email's delivery status under this key of the step's output.
+            if ( 'delivery' === $key ) {
+                return 'Output "delivery" is reserved for YayMatik.';
+            }
             $built[ $key ] = [
                 'label' => $output['label'],
                 'type'  => $type,
