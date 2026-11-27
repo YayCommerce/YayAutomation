@@ -26,6 +26,9 @@ final class Diagnostics {
     /** @var array[] The first entries recorded in this request, repeats inside the window too, by `module|callback|message`; capped as a queue run can last long. */
     private static $recorded = [];
 
+    /** @var bool A new entry came after the cap. */
+    private static $cut = false;
+
     /**
      * Never throws: callers are catch blocks.
      *
@@ -90,13 +93,24 @@ final class Diagnostics {
      * @param string $message
      */
     public static function note( string $module, string $callback, string $message ): void {
-        if ( count( self::$recorded ) < self::KEEP ) {
-            self::$recorded[ "{$module}|{$callback}|{$message}" ] = [
-                'module'   => $module,
-                'callback' => $callback,
-                'message'  => $message,
-            ];
+        $key = "{$module}|{$callback}|{$message}";
+        if ( isset( self::$recorded[ $key ] ) ) {
+            return;
         }
+        if ( count( self::$recorded ) >= self::KEEP ) {
+            self::$cut = true;
+            return;
+        }
+        self::$recorded[ $key ] = [
+            'module'   => $module,
+            'callback' => $callback,
+            'message'  => $message,
+        ];
+    }
+
+    /** Whether `recorded()` left entries out. */
+    public static function cut(): bool {
+        return self::$cut;
     }
 
     /** @return array[] What this request recorded, each once: `module`, `callback`, `message`. */

@@ -57,7 +57,7 @@ final class CheckCommand {
             return;
         }
         $count = 0;
-        if ( count( $recorded ) >= Diagnostics::KEEP ) {
+        if ( Diagnostics::cut() ) {
             \WP_CLI::warning( sprintf( 'Only the first %d problems of this request are listed.', Diagnostics::KEEP ) );
             ++$count;
         }
