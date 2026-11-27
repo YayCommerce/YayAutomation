@@ -41,17 +41,17 @@ done
 info=$(gh pr view "$pr" --json baseRefName,headRefName,changedFiles,files 2>/dev/null)
 base=$(jq -r '.baseRefName // empty' <<<"$info")
 head=$(jq -r '.headRefName // empty' <<<"$info")
+# Hooks, settings and workflows change what runs unprompted, so they always ask.
+paths=$(jq -r '.files[]?.path' <<<"$info")
+grep -qE '^\.claude/(hooks|settings)|^\.github/' <<<"$paths" && decide ask "Changes hooks, settings or workflows: confirm."
 [[ "$base" == feature/lane-* || "$base" == review/* ]] && decide allow "Plan PR into $base."
 [[ "$base" == develop ]] || decide ask "Merge into ${base:-unknown base}: confirm."
 [[ "$head" == review/* ]] && decide ask "Review PR into develop: the user's merge."
 
-# Nothing to review: every file is a test, doc, plan or skill. Hooks, settings and workflows change
-# what runs unprompted, so they always ask. `files` stops at 100, hence the count check.
+# Nothing to review: every file is a test, doc, plan or skill. `files` stops at 100, hence the count check.
 listed=$(jq '.files | length' <<<"$info")
 [[ -n "$listed" && "$listed" -gt 0 && "$listed" == "$(jq '.changedFiles' <<<"$info")" ]] ||
   decide ask "Merge into develop: confirm."
-paths=$(jq -r '.files[].path' <<<"$info")
 other=$(grep -vE '^tests/|^dev/e2e/|^\.claude/(docs|plans|skills)/|\.md$' <<<"$paths")
-risky=$(grep -E '^\.claude/(hooks|settings)|^\.github/' <<<"$paths")
-[[ -z "$other" && -z "$risky" ]] && decide allow "PR into develop changes no plugin code."
+[[ -z "$other" ]] && decide allow "PR into develop changes no plugin code."
 decide ask "Merge into develop: confirm."
