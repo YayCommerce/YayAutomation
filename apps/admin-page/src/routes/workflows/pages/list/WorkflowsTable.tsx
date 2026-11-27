@@ -31,7 +31,8 @@ type Tab = 'all' | WorkflowState;
 function TriggerCell({ workflow }: { workflow: Workflow }) {
   const trigger = workflow.graph.nodes.find((node) => node.kind === 'trigger');
   const stepDef = trigger && stepOf(trigger.data);
-  if (!stepDef) return <span className="text-muted-foreground">{__('No trigger yet', 'yaymatik')}</span>;
+  if (!stepDef)
+    return <span className="text-muted-foreground">{__('No trigger yet', 'yaymatik-automation-for-woocommerce')}</span>;
   return (
     <span className="flex items-center gap-2" title={plainSummary(stepDef.summary(trigger.data.config))}>
       <StepTile kind="trigger" icon={stepDef.icon} size="sm" />
@@ -47,14 +48,14 @@ function TableHeadRow({ select }: { select: ReactNode }) {
   return (
     <TableRow>
       <TableHead className="w-9">{select}</TableHead>
-      <TableHead>{__('Name', 'yaymatik')}</TableHead>
-      <TableHead>{__('Status', 'yaymatik')}</TableHead>
-      <TableHead>{__('Trigger', 'yaymatik')}</TableHead>
-      <TableHead className="text-right">{__('Runs (30 days)', 'yaymatik')}</TableHead>
-      <TableHead>{__('Last run', 'yaymatik')}</TableHead>
-      <TableHead>{__('Last updated', 'yaymatik')}</TableHead>
+      <TableHead>{__('Name', 'yaymatik-automation-for-woocommerce')}</TableHead>
+      <TableHead>{__('Status', 'yaymatik-automation-for-woocommerce')}</TableHead>
+      <TableHead>{__('Trigger', 'yaymatik-automation-for-woocommerce')}</TableHead>
+      <TableHead className="text-right">{__('Runs (30 days)', 'yaymatik-automation-for-woocommerce')}</TableHead>
+      <TableHead>{__('Last run', 'yaymatik-automation-for-woocommerce')}</TableHead>
+      <TableHead>{__('Last updated', 'yaymatik-automation-for-woocommerce')}</TableHead>
       <TableHead className="w-12">
-        <span className="sr-only">{__('Actions', 'yaymatik')}</span>
+        <span className="sr-only">{__('Actions', 'yaymatik-automation-for-woocommerce')}</span>
       </TableHead>
     </TableRow>
   );
@@ -102,7 +103,7 @@ export function WorkflowsTable({ workflows }: { workflows: Workflow[] }) {
       // selected" apart from "all selected".
       className="data-[state=indeterminate]:border-primary data-[state=indeterminate]:bg-primary/40 data-[state=indeterminate]:text-primary-foreground"
       onCheckedChange={() => setSelectedIds(allChecked ? new Set() : new Set(inTab.map((workflow) => workflow.id)))}
-      aria-label={__('Select all workflows', 'yaymatik')}
+      aria-label={__('Select all workflows', 'yaymatik-automation-for-woocommerce')}
     />
   );
 
@@ -122,16 +123,16 @@ export function WorkflowsTable({ workflows }: { workflows: Workflow[] }) {
           className={cn(tabBarClass, 'mb-3')}
         >
           <SegmentedItem value="all" className={tabClass}>
-            {__('All', 'yaymatik')}
+            {__('All', 'yaymatik-automation-for-woocommerce')}
           </SegmentedItem>
           <SegmentedItem value="active" className={tabClass}>
-            {__('Active', 'yaymatik')}
+            {__('Active', 'yaymatik-automation-for-woocommerce')}
           </SegmentedItem>
           <SegmentedItem value="inactive" className={tabClass}>
-            {__('Inactive', 'yaymatik')}
+            {__('Inactive', 'yaymatik-automation-for-woocommerce')}
           </SegmentedItem>
           <SegmentedItem value="draft" className={tabClass}>
-            {__('Draft', 'yaymatik')}
+            {__('Draft', 'yaymatik-automation-for-woocommerce')}
           </SegmentedItem>
         </Segmented>
 
@@ -144,7 +145,7 @@ export function WorkflowsTable({ workflows }: { workflows: Workflow[] }) {
               {rows.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={8} className="text-muted-foreground h-24 text-center">
-                    {__('No workflows here yet.', 'yaymatik')}
+                    {__('No workflows here yet.', 'yaymatik-automation-for-woocommerce')}
                   </TableCell>
                 </TableRow>
               )}
@@ -169,7 +170,7 @@ export function WorkflowsTable({ workflows }: { workflows: Workflow[] }) {
                       onCheckedChange={(checked) => toggle(workflow.id, checked === true)}
                       aria-label={sprintf(
                         /* translators: %s: workflow name */
-                        __('Select %s', 'yaymatik'),
+                        __('Select %s', 'yaymatik-automation-for-woocommerce'),
                         workflow.name,
                       )}
                     />
@@ -179,7 +180,9 @@ export function WorkflowsTable({ workflows }: { workflows: Workflow[] }) {
                       <Link to={`/workflows/${workflow.id}`} className="hover:text-primary font-medium">
                         {workflow.name}
                       </Link>
-                      {workflow.draft && <WarningBadge>{__('Draft changes', 'yaymatik')}</WarningBadge>}
+                      {workflow.draft && (
+                        <WarningBadge>{__('Draft changes', 'yaymatik-automation-for-woocommerce')}</WarningBadge>
+                      )}
                     </div>
                   </TableCell>
                   <TableCell>
@@ -278,10 +281,12 @@ function NeedsSetupBadge() {
       <TooltipTrigger asChild>
         <Badge variant="secondary" className={cn(appBadge, 'bg-warning text-warning-foreground font-semibold')}>
           <CircleAlert className="stroke-[2.5]" aria-hidden />
-          {__('Needs setup', 'yaymatik')}
+          {__('Needs setup', 'yaymatik-automation-for-woocommerce')}
         </Badge>
       </TooltipTrigger>
-      <TooltipContent>{__('Fix the issues in the editor before activating.', 'yaymatik')}</TooltipContent>
+      <TooltipContent>
+        {__('Fix the issues in the editor before activating.', 'yaymatik-automation-for-woocommerce')}
+      </TooltipContent>
     </Tooltip>
   );
 }

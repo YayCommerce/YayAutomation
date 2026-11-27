@@ -64,8 +64,8 @@ export const customerEmail = (subject: string, heading: string, lines: string[])
   subject,
   heading,
   message: emailMessage([
-    __('Hi {{ customer.first_name | default: "there" }},', 'yaymatik'),
+    __('Hi {{ customer.first_name | default: "there" }},', 'yaymatik-automation-for-woocommerce'),
     ...lines,
-    __('See you soon,\n{{ site.name }}', 'yaymatik'),
+    __('See you soon,\n{{ site.name }}', 'yaymatik-automation-for-woocommerce'),
   ]),
 });

@@ -37,7 +37,7 @@ export function SearchInput({
         <InputGroupAddon align="inline-end">
           <InputGroupButton
             size="icon-md"
-            aria-label={__('Clear search', 'yaymatik')}
+            aria-label={__('Clear search', 'yaymatik-automation-for-woocommerce')}
             onClick={() => {
               onChange('');
               input.current?.focus();

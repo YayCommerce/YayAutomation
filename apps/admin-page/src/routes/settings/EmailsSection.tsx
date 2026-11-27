@@ -27,8 +27,10 @@ export function EmailsSection({
   return (
     <Card>
       <CardHeader className="border-b">
-        <CardTitle className="text-base">{__('Emails', 'yaymatik')}</CardTitle>
-        <CardDescription>{__('What shoppers see around workflow emails.', 'yaymatik')}</CardDescription>
+        <CardTitle className="text-base">{__('Emails', 'yaymatik-automation-for-woocommerce')}</CardTitle>
+        <CardDescription>
+          {__('What shoppers see around workflow emails.', 'yaymatik-automation-for-woocommerce')}
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <FieldGroup>
@@ -37,10 +39,10 @@ export function EmailsSection({
               <Field data-invalid={!!error}>
                 <SettingText
                   id={id}
-                  label={__('Unsubscribe page text', 'yaymatik')}
+                  label={__('Unsubscribe page text', 'yaymatik-automation-for-woocommerce')}
                   description={__(
                     'Shown after the shopper unsubscribes. Leave blank for the default text.',
-                    'yaymatik',
+                    'yaymatik-automation-for-woocommerce',
                   )}
                   error={error}
                 />
@@ -67,7 +69,10 @@ export function EmailsSection({
             <Mail aria-hidden />
             <AlertDescription className="text-foreground flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
               <span>
-                {__('Sender name, address and colors come from your WooCommerce email settings.', 'yaymatik')}
+                {__(
+                  'Sender name, address and colors come from your WooCommerce email settings.',
+                  'yaymatik-automation-for-woocommerce',
+                )}
               </span>
               <a
                 href={`${wp.adminUrl}admin.php?page=wc-settings&tab=email`}
@@ -75,7 +80,7 @@ export function EmailsSection({
                 rel="noopener"
                 className="text-link inline-flex items-center gap-1 font-medium"
               >
-                {__('WooCommerce email settings', 'yaymatik')}
+                {__('WooCommerce email settings', 'yaymatik-automation-for-woocommerce')}
                 <ExternalLink className="size-3.5" aria-hidden />
               </a>
             </AlertDescription>

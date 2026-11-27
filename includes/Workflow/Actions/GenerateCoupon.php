@@ -60,11 +60,11 @@ class GenerateCoupon extends Action {
     }
 
     public function label(): string {
-        return __( 'Generate coupon', 'yaymatik' );
+        return __( 'Generate coupon', 'yaymatik-automation-for-woocommerce' );
     }
 
     public function description(): string {
-        return __( 'Create a single-use WooCommerce coupon to send in a later email.', 'yaymatik' );
+        return __( 'Create a single-use WooCommerce coupon to send in a later email.', 'yaymatik-automation-for-woocommerce' );
     }
 
     public function icon(): string {
@@ -90,26 +90,26 @@ class GenerateCoupon extends Action {
 
     public function fields(): array {
         return [
-            Field::select( 'discount_type', __( 'Discount type', 'yaymatik' ), self::types() )->default( self::PERCENT ),
-            Field::number( 'amount', __( 'Amount', 'yaymatik' ) )
+            Field::select( 'discount_type', __( 'Discount type', 'yaymatik-automation-for-woocommerce' ), self::types() )->default( self::PERCENT ),
+            Field::number( 'amount', __( 'Amount', 'yaymatik-automation-for-woocommerce' ) )
                 ->default( 10 )
                 ->min( 0.01 )
-                ->help( __( 'A percentage from 1 to 100, or an amount in your store currency.', 'yaymatik' ) )
+                ->help( __( 'A percentage from 1 to 100, or an amount in your store currency.', 'yaymatik-automation-for-woocommerce' ) )
                 ->show_if( 'discount_type', [ self::PERCENT, self::FIXED_CART ] ),
-            Field::number( 'expiry_days', __( 'Expires after (days)', 'yaymatik' ) )
+            Field::number( 'expiry_days', __( 'Expires after (days)', 'yaymatik-automation-for-woocommerce' ) )
                 ->default( 30 )
                 ->min( 1 )
-                ->help( __( 'The coupon ends at the end of that day, in your store’s timezone. Leave blank for no expiry.', 'yaymatik' ) ),
-            Field::number( 'minimum_spend', __( 'Minimum spend', 'yaymatik' ) )
+                ->help( __( 'The coupon ends at the end of that day, in your store’s timezone. Leave blank for no expiry.', 'yaymatik-automation-for-woocommerce' ) ),
+            Field::number( 'minimum_spend', __( 'Minimum spend', 'yaymatik-automation-for-woocommerce' ) )
                 ->min( 0 )
-                ->help( __( 'Leave blank for none.', 'yaymatik' ) ),
-            Field::toggle( 'individual_use', __( 'Can’t be combined with other coupons', 'yaymatik' ) ),
-            Field::toggle( 'limit_to_customer', __( 'Only the customer can use it', 'yaymatik' ) )
+                ->help( __( 'Leave blank for none.', 'yaymatik-automation-for-woocommerce' ) ),
+            Field::toggle( 'individual_use', __( 'Can’t be combined with other coupons', 'yaymatik-automation-for-woocommerce' ) ),
+            Field::toggle( 'limit_to_customer', __( 'Only the customer can use it', 'yaymatik-automation-for-woocommerce' ) )
                 ->default( true )
-                ->help( __( 'Limited to the customer’s billing email.', 'yaymatik' ) ),
-            Field::text( 'code_prefix', __( 'Code prefix', 'yaymatik' ) )
+                ->help( __( 'Limited to the customer’s billing email.', 'yaymatik-automation-for-woocommerce' ) ),
+            Field::text( 'code_prefix', __( 'Code prefix', 'yaymatik-automation-for-woocommerce' ) )
                 ->default( self::DEFAULT_PREFIX )
-                ->help( __( 'Letters, numbers, - and _. The code is the prefix and 8 random characters.', 'yaymatik' ) ),
+                ->help( __( 'Letters, numbers, - and _. The code is the prefix and 8 random characters.', 'yaymatik-automation-for-woocommerce' ) ),
         ];
     }
 
@@ -120,20 +120,20 @@ class GenerateCoupon extends Action {
     public function outputs(): array {
         return [
             'code'       => [
-                'label' => __( 'Coupon code', 'yaymatik' ),
+                'label' => __( 'Coupon code', 'yaymatik-automation-for-woocommerce' ),
                 'type'  => Type::string(),
             ],
             'amount'     => [
-                'label' => __( 'Coupon amount', 'yaymatik' ),
+                'label' => __( 'Coupon amount', 'yaymatik-automation-for-woocommerce' ),
                 'type'  => Type::string(),
             ],
             'expires_at' => [
-                'label'   => __( 'Coupon expiry date', 'yaymatik' ),
+                'label'   => __( 'Coupon expiry date', 'yaymatik-automation-for-woocommerce' ),
                 'type'    => Type::date(),
                 'display' => fn( array $outputs, bool $html ) => self::text( self::expiry_text( (string) ( $outputs['expires_at'] ?? '' ) ), $html ),
             ],
             'box'        => [
-                'label'   => __( 'Coupon box', 'yaymatik' ),
+                'label'   => __( 'Coupon box', 'yaymatik-automation-for-woocommerce' ),
                 'type'    => Type::string(),
                 'block'   => true,
                 'display' => [ self::class, 'box' ],
@@ -169,19 +169,19 @@ class GenerateCoupon extends Action {
         }
         $amount = $config['amount'];
         if ( self::PERCENT === $config['discount_type'] && ( null === $amount || $amount < 1 || $amount > 100 ) ) {
-            return $this->invalid( __( 'Enter a percentage from 1 to 100.', 'yaymatik' ), 'amount' );
+            return $this->invalid( __( 'Enter a percentage from 1 to 100.', 'yaymatik-automation-for-woocommerce' ), 'amount' );
         }
         if ( self::FIXED_CART === $config['discount_type'] && ( null === $amount || $amount <= 0 ) ) {
-            return $this->invalid( __( 'Enter an amount above 0.', 'yaymatik' ), 'amount' );
+            return $this->invalid( __( 'Enter an amount above 0.', 'yaymatik-automation-for-woocommerce' ), 'amount' );
         }
         $days = $config['expiry_days'];
         if ( null !== $days && ( $days < 1 || floor( $days ) != $days ) ) { // phpcs:ignore Universal.Operators.StrictComparisons.LooseNotEqual -- 3.0 is a whole number.
-            return $this->invalid( __( 'Enter a whole number of days, 1 or more, or leave it blank for no expiry.', 'yaymatik' ), 'expiry_days' );
+            return $this->invalid( __( 'Enter a whole number of days, 1 or more, or leave it blank for no expiry.', 'yaymatik-automation-for-woocommerce' ), 'expiry_days' );
         }
         $prefix = $config['code_prefix'];
         if ( ! preg_match( '/^[A-Z0-9_-]*$/', $prefix ) || strlen( $prefix ) > self::PREFIX_MAX ) {
             /* translators: %d: maximum length */
-            return $this->invalid( sprintf( __( 'Use up to %d letters, numbers, - and _.', 'yaymatik' ), self::PREFIX_MAX ), 'code_prefix' );
+            return $this->invalid( sprintf( __( 'Use up to %d letters, numbers, - and _.', 'yaymatik-automation-for-woocommerce' ), self::PREFIX_MAX ), 'code_prefix' );
         }
         return true;
     }
@@ -191,13 +191,13 @@ class GenerateCoupon extends Action {
         if ( $config['limit_to_customer'] ) {
             $email = strtolower( trim( (string) $scope->get( CustomerData::ID . '.email' ) ) );
             if ( '' === $email ) {
-                return StepResult::failed( __( 'The customer has no email address to limit the coupon to.', 'yaymatik' ) );
+                return StepResult::failed( __( 'The customer has no email address to limit the coupon to.', 'yaymatik-automation-for-woocommerce' ) );
             }
         }
 
         $code = $this->unique_code( $config['code_prefix'] );
         if ( null === $code ) {
-            return StepResult::failed( __( 'Couldn’t make a unique coupon code. Try a longer or different prefix.', 'yaymatik' ) );
+            return StepResult::failed( __( 'Couldn’t make a unique coupon code. Try a longer or different prefix.', 'yaymatik-automation-for-woocommerce' ) );
         }
 
         $type    = $config['discount_type'];
@@ -217,13 +217,13 @@ class GenerateCoupon extends Action {
                 'run_id'         => (int) $scope->get( 'run.id' ),
                 'node_id'        => (string) $scope->get( 'run.step' ),
                 'description'    => '' === $email
-                    ? __( 'Made by a YayMatik workflow.', 'yaymatik' )
+                    ? __( 'Made by a YayMatik workflow.', 'yaymatik-automation-for-woocommerce' )
                     /* translators: %s: customer email */
-                    : sprintf( __( 'Made by a YayMatik workflow for %s.', 'yaymatik' ), $email ),
+                    : sprintf( __( 'Made by a YayMatik workflow for %s.', 'yaymatik-automation-for-woocommerce' ), $email ),
             ]
         );
         if ( ! $id ) {
-            return StepResult::failed( __( 'Couldn’t save the coupon.', 'yaymatik' ) );
+            return StepResult::failed( __( 'Couldn’t save the coupon.', 'yaymatik-automation-for-woocommerce' ) );
         }
 
         return StepResult::ok(
@@ -265,10 +265,10 @@ class GenerateCoupon extends Action {
         $value  = self::free_shipping_text() === $amount
             ? $amount
             /* translators: %s: discount, e.g. "10%" or "$5.00" */
-            : sprintf( __( '%s off', 'yaymatik' ), $amount );
+            : sprintf( __( '%s off', 'yaymatik-automation-for-woocommerce' ), $amount );
         $date = self::expiry_text( (string) ( $outputs['expires_at'] ?? '' ) );
         /* translators: %s: date */
-        $expiry = '' === $date ? '' : sprintf( __( 'Expires %s', 'yaymatik' ), $date );
+        $expiry = '' === $date ? '' : sprintf( __( 'Expires %s', 'yaymatik-automation-for-woocommerce' ), $date );
 
         if ( ! $html ) {
             return implode( "\n", array_filter( [ $value, $code, $expiry ] ) );
@@ -335,7 +335,7 @@ class GenerateCoupon extends Action {
     }
 
     private static function free_shipping_text(): string {
-        return __( 'Free shipping', 'yaymatik' );
+        return __( 'Free shipping', 'yaymatik-automation-for-woocommerce' );
     }
 
     /**
@@ -354,9 +354,9 @@ class GenerateCoupon extends Action {
 
     private static function types(): array {
         return [
-            self::PERCENT       => __( 'Percentage discount', 'yaymatik' ),
-            self::FIXED_CART    => __( 'Fixed amount off the cart', 'yaymatik' ),
-            self::FREE_SHIPPING => __( 'Free shipping', 'yaymatik' ),
+            self::PERCENT       => __( 'Percentage discount', 'yaymatik-automation-for-woocommerce' ),
+            self::FIXED_CART    => __( 'Fixed amount off the cart', 'yaymatik-automation-for-woocommerce' ),
+            self::FREE_SHIPPING => __( 'Free shipping', 'yaymatik-automation-for-woocommerce' ),
         ];
     }
 }

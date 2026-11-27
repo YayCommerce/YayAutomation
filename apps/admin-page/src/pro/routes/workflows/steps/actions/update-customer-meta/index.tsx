@@ -11,5 +11,7 @@ export const updateCustomerMetaStep = (): Step =>
     id: 'update_customer_meta',
     kind: 'action',
     result: customFieldResult,
-    Footer: () => <Hints hints={[__('Customers without an account are skipped.', 'yaymatik')]} />,
+    Footer: () => (
+      <Hints hints={[__('Customers without an account are skipped.', 'yaymatik-automation-for-woocommerce')]} />
+    ),
   });

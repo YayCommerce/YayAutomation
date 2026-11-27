@@ -407,10 +407,10 @@ final class WorkflowStore {
         $taken = $wpdb->get_var( $wpdb->prepare( 'SELECT GET_LOCK( %s, 10 )', $lock ) );
         if ( null === $taken && '' !== $wpdb->last_error ) {
             Logger::error( 'Could not take the workflow lock: ' . $wpdb->last_error, [ 'workflow_id' => $id ] );
-            return new \WP_Error( 'yaymatik_save_failed', __( 'Couldn’t save the workflow. Try again.', 'yaymatik' ), [ 'status' => 500 ] );
+            return new \WP_Error( 'yaymatik_save_failed', __( 'Couldn’t save the workflow. Try again.', 'yaymatik-automation-for-woocommerce' ), [ 'status' => 500 ] );
         }
         if ( '1' !== (string) $taken ) {
-            return new \WP_Error( 'yaymatik_busy', __( 'This workflow is busy. Try again in a moment.', 'yaymatik' ), [ 'status' => 409 ] );
+            return new \WP_Error( 'yaymatik_busy', __( 'This workflow is busy. Try again in a moment.', 'yaymatik-automation-for-woocommerce' ), [ 'status' => 409 ] );
         }
         try {
             return $work();
@@ -439,7 +439,7 @@ final class WorkflowStore {
         $error = $wpdb->last_error;
         $wpdb->query( 'ROLLBACK' );
         Logger::error( 'Could not save a workflow: ' . $error );
-        return new \WP_Error( 'yaymatik_save_failed', __( 'Couldn’t save the workflow. Try again.', 'yaymatik' ), [ 'status' => 500 ] );
+        return new \WP_Error( 'yaymatik_save_failed', __( 'Couldn’t save the workflow. Try again.', 'yaymatik-automation-for-woocommerce' ), [ 'status' => 500 ] );
     }
 
     /**

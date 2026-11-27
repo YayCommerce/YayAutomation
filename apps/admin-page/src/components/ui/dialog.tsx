@@ -35,7 +35,7 @@ function DialogCloseIcon({ className, ...props }: React.ComponentProps<typeof Di
       {...props}
     >
       <XIcon className="size-5" />
-      <span className="sr-only">{__('Close', 'yaymatik')}</span>
+      <span className="sr-only">{__('Close', 'yaymatik-automation-for-woocommerce')}</span>
     </DialogPrimitive.Close>
   );
 }

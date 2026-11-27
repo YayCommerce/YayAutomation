@@ -16,11 +16,11 @@ class OrderPaid extends OrderPaidTrigger {
     }
 
     public function label(): string {
-        return __( 'Order paid', 'yaymatik' );
+        return __( 'Order paid', 'yaymatik-automation-for-woocommerce' );
     }
 
     public function description(): string {
-        return __( 'Starts once when an order is paid.', 'yaymatik' );
+        return __( 'Starts once when an order is paid.', 'yaymatik-automation-for-woocommerce' );
     }
 
     public function icon(): string {
@@ -32,7 +32,7 @@ class OrderPaid extends OrderPaidTrigger {
     }
 
     public function summary(): string {
-        return __( 'When an order is paid', 'yaymatik' );
+        return __( 'When an order is paid', 'yaymatik-automation-for-woocommerce' );
     }
 
     /**

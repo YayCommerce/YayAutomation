@@ -34,11 +34,11 @@ class Wait extends Action {
     }
 
     public function label(): string {
-        return __( 'Wait', 'yaymatik' );
+        return __( 'Wait', 'yaymatik-automation-for-woocommerce' );
     }
 
     public function description(): string {
-        return __( 'Pause the workflow for a while before the next step.', 'yaymatik' );
+        return __( 'Pause the workflow for a while before the next step.', 'yaymatik-automation-for-woocommerce' );
     }
 
     public function icon(): string {
@@ -55,20 +55,20 @@ class Wait extends Action {
 
     public function fields(): array {
         return [
-            Field::number_unit( 'delay', __( 'Wait for', 'yaymatik' ), [ self::class, 'units' ] )
+            Field::number_unit( 'delay', __( 'Wait for', 'yaymatik-automation-for-woocommerce' ), [ self::class, 'units' ] )
                 ->default(
                     [
                         'value' => 1,
                         'unit'  => 'days',
                     ]
                 )
-                ->help( __( 'Then the workflow continues with the next step.', 'yaymatik' ) ),
+                ->help( __( 'Then the workflow continues with the next step.', 'yaymatik-automation-for-woocommerce' ) ),
         ];
     }
 
     public function summary(): string {
         /* translators: {{ config.delay }}: how long, e.g. "7 days"; keep {{ … }} as it is. */
-        return __( 'Wait {{ config.delay }}', 'yaymatik' );
+        return __( 'Wait {{ config.delay }}', 'yaymatik-automation-for-woocommerce' );
     }
 
     public function validate( array $config ) {
@@ -78,10 +78,10 @@ class Wait extends Action {
         }
         $value = $config['delay']['value'];
         if ( $value < 1 || floor( $value ) != $value ) { // phpcs:ignore Universal.Operators.StrictComparisons.LooseNotEqual -- 3.0 is a whole number.
-            return $this->invalid( __( 'Enter a whole number, 1 or more.', 'yaymatik' ), 'delay' );
+            return $this->invalid( __( 'Enter a whole number, 1 or more.', 'yaymatik-automation-for-woocommerce' ), 'delay' );
         }
         if ( $value > self::MAX[ $config['delay']['unit'] ] ) {
-            return $this->invalid( __( 'Wait at most a year.', 'yaymatik' ), 'delay' );
+            return $this->invalid( __( 'Wait at most a year.', 'yaymatik-automation-for-woocommerce' ), 'delay' );
         }
         return true;
     }
@@ -93,10 +93,10 @@ class Wait extends Action {
 
     public static function units(): array {
         return [
-            'minutes' => __( 'Minutes', 'yaymatik' ),
-            'hours'   => __( 'Hours', 'yaymatik' ),
-            'days'    => __( 'Days', 'yaymatik' ),
-            'weeks'   => __( 'Weeks', 'yaymatik' ),
+            'minutes' => __( 'Minutes', 'yaymatik-automation-for-woocommerce' ),
+            'hours'   => __( 'Hours', 'yaymatik-automation-for-woocommerce' ),
+            'days'    => __( 'Days', 'yaymatik-automation-for-woocommerce' ),
+            'weeks'   => __( 'Weeks', 'yaymatik-automation-for-woocommerce' ),
         ];
     }
 }

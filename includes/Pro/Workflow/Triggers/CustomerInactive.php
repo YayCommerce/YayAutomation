@@ -16,11 +16,11 @@ class CustomerInactive extends OrderTrigger {
     }
 
     public function label(): string {
-        return __( 'Customer inactive', 'yaymatik' );
+        return __( 'Customer inactive', 'yaymatik-automation-for-woocommerce' );
     }
 
     public function description(): string {
-        return __( 'A customer has not ordered for a number of days', 'yaymatik' );
+        return __( 'A customer has not ordered for a number of days', 'yaymatik-automation-for-woocommerce' );
     }
 
     public function icon(): string {
@@ -37,7 +37,7 @@ class CustomerInactive extends OrderTrigger {
 
     public function fields(): array {
         return [
-            Field::number( 'days', __( 'Days without an order', 'yaymatik' ) )
+            Field::number( 'days', __( 'Days without an order', 'yaymatik-automation-for-woocommerce' ) )
                 ->required()
                 ->default( 90 )
                 ->min( 7 )
@@ -47,7 +47,7 @@ class CustomerInactive extends OrderTrigger {
 
     public function summary(): string {
         /* translators: {{ config.days }}: number of days; keep {{ … }} as it is. */
-        return __( 'When {{ config.days }} days without an order', 'yaymatik' );
+        return __( 'When {{ config.days }} days without an order', 'yaymatik-automation-for-woocommerce' );
     }
 
     /**

@@ -3,11 +3,12 @@
 #   ./run.sh check-plugin-lifecycle --wp-env|--wp-env-min
 cd "$(dirname "$0")/../.." || exit 1
 [[ -f yaymatik.php ]] || { echo "Not the plugin root: $(pwd)"; exit 1; }
+source dev/scripts/lib/wporg.sh
 # It uninstalls the plugin and drops its tables: only on a throwaway site.
 [[ $1 == --wp-env || $1 == --wp-env-min ]] || { echo "Refused: check-plugin-lifecycle runs on --wp-env or --wp-env-min only."; exit 1; }
 . dev/scripts/lib/wp-target.sh "$1" check || exit 1
-# The zips install as yaymatik and yaymatik-pro, and are deleted afterwards: never the mounted checkout.
-[[ $PLUGIN_FOLDER == yaymatik || $PLUGIN_FOLDER == yaymatik-pro ]] && { echo "Refused: the checkout folder is $PLUGIN_FOLDER, the name a zip installs as. Clone it under another name."; exit 1; }
+# The zips install as $WPORG_SLUG and yaymatik-pro, and are deleted afterwards: never the mounted checkout.
+[[ $PLUGIN_FOLDER == "$WPORG_SLUG" || $PLUGIN_FOLDER == yaymatik-pro ]] && { echo "Refused: the checkout folder is $PLUGIN_FOLDER, the name a zip installs as. Clone it under another name."; exit 1; }
 
 fails=0
 step() { "${WP[@]}" "$@" || fails=$((fails + 1)); }
@@ -18,7 +19,7 @@ old_wp=(--require=dev/scripts/check-plugin-lifecycle.php)
 
 restore() {
   "${WP[@]}" config delete YAYMATIK_REMOVE_ALL_DATA >/dev/null 2>&1
-  "${WP[@]}" plugin delete yaymatik yaymatik-pro >/dev/null 2>&1
+  "${WP[@]}" plugin delete "$WPORG_SLUG" yaymatik-pro >/dev/null 2>&1
   "${WP[@]}" plugin activate "$PLUGIN_FOLDER" >/dev/null
   check cleanup
   ./run.sh reset-data "$1" --yes >/dev/null && ./run.sh seed "$1" >/dev/null || fails=$((fails + 1))
@@ -42,23 +43,32 @@ check deactivated
 step plugin activate "$PLUGIN_FOLDER"
 
 echo '--- YayMatik and YayMatik Pro both active'
-# The zips from ./run.sh release and ./run.sh release pro --rc; Pro's folder sorts first, so the free plugin is the one deactivated.
-if [[ -f release/yaymatik.zip && -f release/yaymatik-pro.zip ]]; then
+# The zips from ./run.sh release and ./run.sh release pro --rc. The free plugin steps aside for Pro whatever the activation order
+# (its folder loads first): it deactivates itself on the next admin request.
+lite_zip=release/$WPORG_SLUG.zip
+if [[ -f $lite_zip && -f release/yaymatik-pro.zip ]]; then
   step plugin deactivate "$PLUGIN_FOLDER"
-  step plugin install release/yaymatik.zip release/yaymatik-pro.zip --force
-  step plugin activate yaymatik-pro yaymatik
-  # The second copy deactivates itself on the next admin request; only its own admin_init closure runs (WooCommerce's needs wp-admin).
-  step eval-file dev/scripts/check-plugin-lifecycle.php second-copy
-  if [[ $("${WP[@]}" plugin get yaymatik-pro --field=status) == active && $("${WP[@]}" plugin get yaymatik --field=status) == inactive ]]; then
-    echo 'PASS both active: yaymatik-pro stays, yaymatik is deactivated'
-  else
-    echo 'FAIL both active: expected yaymatik-pro active and yaymatik inactive'
-    fails=$((fails + 1))
-  fi
-  step plugin delete yaymatik yaymatik-pro
+  step plugin install "$lite_zip" release/yaymatik-pro.zip --force
+  for order in "$WPORG_SLUG yaymatik-pro" "yaymatik-pro $WPORG_SLUG"; do
+    "${WP[@]}" plugin deactivate "$WPORG_SLUG" yaymatik-pro >/dev/null 2>&1
+    out=$(for plugin in $order; do "${WP[@]}" plugin activate "$plugin" 2>&1; done
+      # Only the YayMatik copies' admin_init closures run (WooCommerce's needs wp-admin).
+      "${WP[@]}" eval-file dev/scripts/check-plugin-lifecycle.php second-copy 2>&1)
+    if grep -qE 'Fatal error|PHP (Fatal|Warning|Notice)|^(Warning|Notice): ' <<< "$out"; then
+      echo "FAIL both active ($order): PHP error or notice"; echo "$out"
+      fails=$((fails + 1))
+    fi
+    if [[ $("${WP[@]}" plugin get yaymatik-pro --field=status) == active && $("${WP[@]}" plugin get "$WPORG_SLUG" --field=status) == inactive ]]; then
+      echo "PASS both active ($order activated in this order): yaymatik-pro stays, $WPORG_SLUG is deactivated"
+    else
+      echo "FAIL both active ($order): expected yaymatik-pro active and $WPORG_SLUG inactive"
+      fails=$((fails + 1))
+    fi
+  done
+  step plugin delete "$WPORG_SLUG" yaymatik-pro
   step plugin activate "$PLUGIN_FOLDER"
 else
-  echo 'SKIP both active: build release/yaymatik.zip and release/yaymatik-pro.zip first'
+  echo "SKIP both active: build $lite_zip and release/yaymatik-pro.zip first"
 fi
 
 echo '--- uninstall, YAYMATIK_REMOVE_ALL_DATA not set'

@@ -88,8 +88,10 @@ function WorkflowOverview({ workflow }: { workflow: Workflow }) {
 
   // The workflow as it runs (or as saved), then draft changes when there are any.
   const tabs: { value: string; label: string; graph: Workflow['graph'] }[] = [
-    { value: 'live', label: __('Workflow', 'yaymatik'), graph: workflow.graph },
-    ...(workflow.draft ? [{ value: 'draft', label: __('Draft changes', 'yaymatik'), graph: workflow.draft }] : []),
+    { value: 'live', label: __('Workflow', 'yaymatik-automation-for-woocommerce'), graph: workflow.graph },
+    ...(workflow.draft
+      ? [{ value: 'draft', label: __('Draft changes', 'yaymatik-automation-for-woocommerce'), graph: workflow.draft }]
+      : []),
   ];
   const [tab, setTab] = useState(tabs[0].value);
   const [historyPage, setHistoryPage] = useState(1);
@@ -132,19 +134,19 @@ function WorkflowOverview({ workflow }: { workflow: Workflow }) {
           <Button variant="outline" size="sm" asChild>
             <Link to={editPath}>
               <Pencil />
-              {__('Edit', 'yaymatik')}
+              {__('Edit', 'yaymatik-automation-for-woocommerce')}
             </Link>
           </Button>
           <MoreActionsMenu workflow={workflow} />
           {isActive ? (
             <Button variant="destructive-outline" size="sm" onClick={() => setDeactivateOpen(true)}>
-              {__('Deactivate', 'yaymatik')}
+              {__('Deactivate', 'yaymatik-automation-for-woocommerce')}
             </Button>
           ) : (
             // Not offered while it has issues; the notice below says what to fix.
             issues.length === 0 && (
               <Button size="sm" onClick={() => setActivateOpen(true)}>
-                {__('Activate', 'yaymatik')}
+                {__('Activate', 'yaymatik-automation-for-woocommerce')}
               </Button>
             )
           )}
@@ -168,7 +170,7 @@ function WorkflowOverview({ workflow }: { workflow: Workflow }) {
               </TabsTrigger>
             ))}
             <TabsTrigger value={HISTORY_TAB} className={underlineTabClass}>
-              {__('Version history', 'yaymatik')}
+              {__('Version history', 'yaymatik-automation-for-woocommerce')}
             </TabsTrigger>
           </TabsList>
           {tabs.map((t) => (
@@ -178,7 +180,7 @@ function WorkflowOverview({ workflow }: { workflow: Workflow }) {
                 graph={t.graph}
                 controls={
                   <Button variant="outline" size="icon-sm" className="bg-card" asChild>
-                    <Link to={editPath} aria-label={__('Edit workflow', 'yaymatik')}>
+                    <Link to={editPath} aria-label={__('Edit workflow', 'yaymatik-automation-for-woocommerce')}>
                       <Pencil />
                     </Link>
                   </Button>
@@ -240,7 +242,7 @@ function SetupNotice({ issues, messages, onFix }: { issues: WorkflowIssue[]; mes
                 '%d step needs setup before this workflow can run.',
                 '%d steps need setup before this workflow can run.',
                 steps,
-                'yaymatik',
+                'yaymatik-automation-for-woocommerce',
               ),
               steps,
             )}
@@ -254,12 +256,12 @@ function SetupNotice({ issues, messages, onFix }: { issues: WorkflowIssue[]; mes
       </div>
       {issues.some(isTracking) && (
         <Button variant="destructive-soft" size="sm" asChild>
-          <Link to="/settings">{__('Open Settings', 'yaymatik')}</Link>
+          <Link to="/settings">{__('Open Settings', 'yaymatik-automation-for-woocommerce')}</Link>
         </Button>
       )}
       {!issues.every(isTracking) && (
         <Button variant="destructive-soft" size="sm" onClick={onFix}>
-          {__('Fix in editor', 'yaymatik')}
+          {__('Fix in editor', 'yaymatik-automation-for-woocommerce')}
         </Button>
       )}
     </ErrorAlert>
@@ -284,13 +286,13 @@ function SummaryRow({ workflow }: { workflow: Workflow }) {
       ? workflow.activatedAt
         ? sprintf(
             /* translators: %s: date, e.g. "Oct 2" */
-            __('Active since %s', 'yaymatik'),
+            __('Active since %s', 'yaymatik-automation-for-woocommerce'),
             shortDay(workflow.activatedAt),
           )
-        : __('Active', 'yaymatik')
+        : __('Active', 'yaymatik-automation-for-woocommerce')
       : state === 'inactive'
-        ? __('Inactive', 'yaymatik')
-        : __('Draft', 'yaymatik');
+        ? __('Inactive', 'yaymatik-automation-for-woocommerce')
+        : __('Draft', 'yaymatik-automation-for-woocommerce');
   const trigger = workflow.graph.nodes.find((node) => node.kind === 'trigger');
   const triggerStep = trigger && stepOf(trigger.data);
   const summary = triggerStep && trigger ? triggerStep.summary(trigger.data.config) : '';
@@ -298,8 +300,8 @@ function SummaryRow({ workflow }: { workflow: Workflow }) {
 
   return (
     <div className="bg-card grid grid-cols-2 rounded-lg border md:grid-cols-4 md:divide-x max-md:[&>*:nth-child(even)]:border-l max-md:[&>*:nth-child(n+3)]:border-t">
-      <SummaryCell label={__('Status', 'yaymatik')}>{status}</SummaryCell>
-      <SummaryCell label={__('Trigger', 'yaymatik')}>
+      <SummaryCell label={__('Status', 'yaymatik-automation-for-woocommerce')}>{status}</SummaryCell>
+      <SummaryCell label={__('Trigger', 'yaymatik-automation-for-woocommerce')}>
         {triggerStep ? (
           <>
             <StepTile kind="trigger" icon={triggerStep.icon} size="sm" />
@@ -314,8 +316,10 @@ function SummaryRow({ workflow }: { workflow: Workflow }) {
           none
         )}
       </SummaryCell>
-      <SummaryCell label={__('Runs (30 days)', 'yaymatik')}>{workflow.lastRunAt ? workflow.runs30d : none}</SummaryCell>
-      <SummaryCell label={__('Last run', 'yaymatik')}>
+      <SummaryCell label={__('Runs (30 days)', 'yaymatik-automation-for-woocommerce')}>
+        {workflow.lastRunAt ? workflow.runs30d : none}
+      </SummaryCell>
+      <SummaryCell label={__('Last run', 'yaymatik-automation-for-woocommerce')}>
         {workflow.lastRunAt ? <LastRun workflow={workflow} className="min-w-0" /> : none}
       </SummaryCell>
     </div>
@@ -330,7 +334,7 @@ function OverviewLayout({ title, actions, children }: { title: ReactNode; action
       {/* Same top offsets as the app header, plus its height; z-30 slides under its z-40. */}
       <div className="bg-background sticky top-13.5 z-30 flex h-12 shrink-0 items-center gap-2 border-b px-4 min-[601px]:top-[calc(var(--wp-admin--admin-bar--height,32px)+3.375rem)]">
         <Button variant="ghost" size="icon-sm" asChild>
-          <Link to="/workflows" aria-label={__('Back to workflows', 'yaymatik')}>
+          <Link to="/workflows" aria-label={__('Back to workflows', 'yaymatik-automation-for-woocommerce')}>
             <ChevronLeft />
           </Link>
         </Button>

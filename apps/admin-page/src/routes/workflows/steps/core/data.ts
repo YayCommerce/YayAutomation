@@ -49,7 +49,8 @@ export const checkedTrigger = (trigger: string | null | undefined) =>
 export const itemOf = (key: string) => key.split('.')[0];
 
 export const itemLabel = (id: string) =>
-  dataItems.find((item) => item.id === id)?.label ?? (id === 'trigger' ? __('Trigger', 'yaymatik') : id);
+  dataItems.find((item) => item.id === id)?.label ??
+  (id === 'trigger' ? __('Trigger', 'yaymatik-automation-for-woocommerce') : id);
 
 /** Operator ids for a field type, from PHP `Operators::BY_TYPE`. */
 export const operatorsFor = (type: DataFieldType) => meta.operators[type];

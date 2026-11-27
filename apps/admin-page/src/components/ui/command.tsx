@@ -26,8 +26,8 @@ function Command({ className, ...props }: React.ComponentProps<typeof CommandPri
 }
 
 function CommandDialog({
-  title = __('Command Palette', 'yaymatik'),
-  description = __('Search for a command to run...', 'yaymatik'),
+  title = __('Command Palette', 'yaymatik-automation-for-woocommerce'),
+  description = __('Search for a command to run...', 'yaymatik-automation-for-woocommerce'),
   children,
   ...props
 }: React.ComponentProps<typeof Dialog> & {

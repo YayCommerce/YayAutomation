@@ -68,12 +68,17 @@ export function HealthPanel() {
     if (problems) {
       toast.info(
         sprintf(
-          /* translators: %d: number of problems */ _n('Found %d problem.', 'Found %d problems.', problems, 'yaymatik'),
+          /* translators: %d: number of problems */ _n(
+            'Found %d problem.',
+            'Found %d problems.',
+            problems,
+            'yaymatik-automation-for-woocommerce',
+          ),
           problems,
         ),
       );
     } else {
-      toast.success(__('No problems found.', 'yaymatik'));
+      toast.success(__('No problems found.', 'yaymatik-automation-for-woocommerce'));
     }
   };
   // A failed scan hides the rows it replaced; a scan running again shows them until it ends.
@@ -82,7 +87,7 @@ export function HealthPanel() {
   return (
     <Card>
       <CardHeader className="border-b">
-        <CardTitle className="text-base">{__('Health check', 'yaymatik')}</CardTitle>
+        <CardTitle className="text-base">{__('Health check', 'yaymatik-automation-for-woocommerce')}</CardTitle>
         {data && !failed ? (
           <CardDescription title={formatDateTime(data.checkedAt)}>{summary(shown, data.checkedAt)}</CardDescription>
         ) : (
@@ -91,7 +96,7 @@ export function HealthPanel() {
         <CardAction>
           <LoadingButton variant="outline" size="sm" loading={isFetching || checking} onClick={() => void checkAgain()}>
             <RefreshCw />
-            {__('Check again', 'yaymatik')}
+            {__('Check again', 'yaymatik-automation-for-woocommerce')}
           </LoadingButton>
         </CardAction>
       </CardHeader>
@@ -99,7 +104,10 @@ export function HealthPanel() {
         {failed ? (
           <SettingsErrorAlert
             message={sprintf(
-              /* translators: %s: why it failed */ __('Couldn’t run the health check. %s', 'yaymatik'),
+              /* translators: %s: why it failed */ __(
+                'Couldn’t run the health check. %s',
+                'yaymatik-automation-for-woocommerce',
+              ),
               failed.message,
             )}
             onRetry={() => refetch()}
@@ -129,11 +137,13 @@ export function HealthPanel() {
               <EmptyMedia className="bg-success/15 text-success-soft-foreground mb-0 size-11 rounded-full">
                 <CircleCheck className="size-5" />
               </EmptyMedia>
-              <EmptyTitle className="font-semibold">{__('No problems found', 'yaymatik')}</EmptyTitle>
+              <EmptyTitle className="font-semibold">
+                {__('No problems found', 'yaymatik-automation-for-woocommerce')}
+              </EmptyTitle>
               <EmptyDescription>
                 {__(
                   'Runs are being queued and picked up as they should, and the daily cleanup is scheduled.',
-                  'yaymatik',
+                  'yaymatik-automation-for-woocommerce',
                 )}
               </EmptyDescription>
             </EmptyHeader>
@@ -151,15 +161,29 @@ function summary(shown: HealthCheck[], checkedAt: string) {
   if (problems) {
     return sprintf(
       /* translators: 1: number of problems, 2: when, e.g. "5 minutes ago" */
-      _n('%1$d problem · checked %2$s', '%1$d problems · checked %2$s', problems, 'yaymatik'),
+      _n(
+        '%1$d problem · checked %2$s',
+        '%1$d problems · checked %2$s',
+        problems,
+        'yaymatik-automation-for-woocommerce',
+      ),
       problems,
       time,
     );
   }
   if (shown.length) {
-    return sprintf(/* translators: %s: when, e.g. "5 minutes ago" */ __('No problems · checked %s', 'yaymatik'), time);
+    return sprintf(
+      /* translators: %s: when, e.g. "5 minutes ago" */ __(
+        'No problems · checked %s',
+        'yaymatik-automation-for-woocommerce',
+      ),
+      time,
+    );
   }
-  return sprintf(/* translators: %s: when, e.g. "5 minutes ago" */ __('Checked %s', 'yaymatik'), time);
+  return sprintf(
+    /* translators: %s: when, e.g. "5 minutes ago" */ __('Checked %s', 'yaymatik-automation-for-woocommerce'),
+    time,
+  );
 }
 
 interface FixRowText {
@@ -177,7 +201,12 @@ const coreRows: Record<'runs_queued' | 'runs_running' | 'cleanup_job', FixRowTex
     title: (check) =>
       sprintf(
         /* translators: %s: number of runs */
-        _n('%s run is stuck before it starts', '%s runs are stuck before they start', pluralCount(check), 'yaymatik'),
+        _n(
+          '%s run is stuck before it starts',
+          '%s runs are stuck before they start',
+          pluralCount(check),
+          'yaymatik-automation-for-woocommerce',
+        ),
         countText(check),
       ),
     help: (check) =>
@@ -185,16 +214,16 @@ const coreRows: Record<'runs_queued' | 'runs_running' | 'cleanup_job', FixRowTex
         'It is queued or waiting, but no background job will pick it up. This happens when queueing failed.',
         'They are queued or waiting, but no background job will pick them up. This happens when queueing failed.',
         pluralCount(check),
-        'yaymatik',
+        'yaymatik-automation-for-woocommerce',
       ),
     fix: (check) =>
       _n(
         'Fix: queue it again. It continues from where it stopped.',
         'Fix: queue them again. Each run continues from where it stopped.',
         pluralCount(check),
-        'yaymatik',
+        'yaymatik-automation-for-woocommerce',
       ),
-    button: __('Queue them again', 'yaymatik'),
+    button: __('Queue them again', 'yaymatik-automation-for-woocommerce'),
   },
   runs_running: {
     icon: <CircleAlert className="text-destructive" />,
@@ -205,7 +234,7 @@ const coreRows: Record<'runs_queued' | 'runs_running' | 'cleanup_job', FixRowTex
           '%s run stopped in the middle of a step',
           '%s runs stopped in the middle of a step',
           pluralCount(check),
-          'yaymatik',
+          'yaymatik-automation-for-woocommerce',
         ),
         countText(check),
       ),
@@ -214,23 +243,27 @@ const coreRows: Record<'runs_queued' | 'runs_running' | 'cleanup_job', FixRowTex
         'It is still marked running, but its recovery job died. Runs like this never resume on their own.',
         'They are still marked running, but their recovery jobs died. Runs like this never resume on their own.',
         pluralCount(check),
-        'yaymatik',
+        'yaymatik-automation-for-woocommerce',
       ),
     fix: (check) =>
       _n(
         'Fix: queue recovery again. The interrupted step fails; it never runs twice.',
         'Fix: queue recovery again. The interrupted steps fail; none runs twice.',
         pluralCount(check),
-        'yaymatik',
+        'yaymatik-automation-for-woocommerce',
       ),
-    button: __('Queue recovery again', 'yaymatik'),
+    button: __('Queue recovery again', 'yaymatik-automation-for-woocommerce'),
   },
   cleanup_job: {
     icon: <TriangleAlert className="text-warning-soft-foreground" />,
-    title: () => __('The daily cleanup isn’t running on time', 'yaymatik'),
-    help: () => __('It’s missing or more than an hour late, so old runs and carts aren’t deleted on time.', 'yaymatik'),
-    fix: () => __('Fix: schedule it again.', 'yaymatik'),
-    button: __('Schedule again', 'yaymatik'),
+    title: () => __('The daily cleanup isn’t running on time', 'yaymatik-automation-for-woocommerce'),
+    help: () =>
+      __(
+        'It’s missing or more than an hour late, so old runs and carts aren’t deleted on time.',
+        'yaymatik-automation-for-woocommerce',
+      ),
+    fix: () => __('Fix: schedule it again.', 'yaymatik-automation-for-woocommerce'),
+    button: __('Schedule again', 'yaymatik-automation-for-woocommerce'),
   },
 };
 
@@ -243,21 +276,24 @@ const fixRows: Record<string, FixRowText> = {
         icon: <TriangleAlert className="text-warning-soft-foreground" />,
         title: job.title,
         help: job.help,
-        fix: () => __('Fix: schedule it again.', 'yaymatik'),
-        button: __('Schedule again', 'yaymatik'),
+        fix: () => __('Fix: schedule it again.', 'yaymatik-automation-for-woocommerce'),
+        button: __('Schedule again', 'yaymatik-automation-for-woocommerce'),
       },
     ]),
   ),
 };
 
 function fixedMessage(id: FixableHealthCheckId, fixed: number) {
-  if (id === 'cleanup_job') return __('The daily cleanup is scheduled again.', 'yaymatik');
+  if (id === 'cleanup_job') return __('The daily cleanup is scheduled again.', 'yaymatik-automation-for-woocommerce');
   if (healthJobs[id]) return healthJobs[id].fixed();
   return id === 'runs_queued'
     ? /* translators: %d: number of runs */
-      sprintf(_n('%d run queued again.', '%d runs queued again.', fixed, 'yaymatik'), fixed)
+      sprintf(_n('%d run queued again.', '%d runs queued again.', fixed, 'yaymatik-automation-for-woocommerce'), fixed)
     : /* translators: %d: number of runs */
-      sprintf(_n('%d run queued for recovery.', '%d runs queued for recovery.', fixed, 'yaymatik'), fixed);
+      sprintf(
+        _n('%d run queued for recovery.', '%d runs queued for recovery.', fixed, 'yaymatik-automation-for-woocommerce'),
+        fixed,
+      );
 }
 
 function FixRow({ check, id }: { check: HealthCheck; id: FixableHealthCheckId }) {
@@ -267,10 +303,12 @@ function FixRow({ check, id }: { check: HealthCheck; id: FixableHealthCheckId })
   const run = () =>
     fix.mutateAsync().then(
       ({ fixed }) =>
-        fixed ? toast.success(fixedMessage(id, fixed)) : toast.info(__('Nothing to fix any more.', 'yaymatik')),
+        fixed
+          ? toast.success(fixedMessage(id, fixed))
+          : toast.info(__('Nothing to fix any more.', 'yaymatik-automation-for-woocommerce')),
       (error) =>
         /* translators: %s: why it failed */
-        toast.error(sprintf(__('Couldn’t fix it. %s', 'yaymatik'), errorMessage(error))),
+        toast.error(sprintf(__('Couldn’t fix it. %s', 'yaymatik-automation-for-woocommerce'), errorMessage(error))),
     );
 
   return (
@@ -294,12 +332,17 @@ function LateJobsRow({ check }: { check: HealthCheck }) {
       icon={<Info className="text-link" />}
       title={sprintf(
         /* translators: %d: number of jobs */
-        _n('%d background job is late', '%d background jobs are late', check.count, 'yaymatik'),
+        _n(
+          '%d background job is late',
+          '%d background jobs are late',
+          check.count,
+          'yaymatik-automation-for-woocommerce',
+        ),
         check.count,
       )}
       help={__(
         'They were due more than 15 minutes ago. WP-Cron only runs when someone visits the site, so a quiet store runs jobs late.',
-        'yaymatik',
+        'yaymatik-automation-for-woocommerce',
       )}
       extra={
         check.guide && (
@@ -309,7 +352,7 @@ function LateJobsRow({ check }: { check: HealthCheck }) {
             rel="noopener"
             className="text-link inline-flex w-fit items-center gap-1 text-sm font-medium hover:underline"
           >
-            {__('How to run WP-Cron from the server', 'yaymatik')}
+            {__('How to run WP-Cron from the server', 'yaymatik-automation-for-woocommerce')}
             <ExternalLink className="size-3.5" aria-hidden />
           </a>
         )
@@ -329,7 +372,7 @@ function MissingPluginRow({ check }: { check: HealthCheck }) {
           'Active workflows use a plugin that isn’t active: %d',
           'Active workflows use a plugin that isn’t active: %d',
           check.count,
-          'yaymatik',
+          'yaymatik-automation-for-woocommerce',
         ),
         check.count,
       )}
@@ -337,7 +380,7 @@ function MissingPluginRow({ check }: { check: HealthCheck }) {
         /* translators: %s: plugin names, e.g. "YayMail" */
         __(
           'Their runs skip the steps of %s, and one whose trigger is from it doesn’t start. Activate it to run them again.',
-          'yaymatik',
+          'yaymatik-automation-for-woocommerce',
         ),
         (check.plugins ?? []).join(', '),
       )}
@@ -345,11 +388,15 @@ function MissingPluginRow({ check }: { check: HealthCheck }) {
         <span className="flex flex-wrap gap-x-3 gap-y-1 text-sm">
           {(check.workflows ?? []).map(({ id, name }) => (
             <Link key={id} to={`/workflows/${id}`} className="text-link font-medium hover:underline">
-              {name || /* translators: %s: workflow id */ sprintf(__('Workflow #%s', 'yaymatik'), id)}
+              {name ||
+                /* translators: %s: workflow id */ sprintf(
+                  __('Workflow #%s', 'yaymatik-automation-for-woocommerce'),
+                  id,
+                )}
             </Link>
           ))}
           <a href={`${window.yayMatikMeta.wp.adminUrl}plugins.php`} className="text-link font-medium hover:underline">
-            {__('Plugins', 'yaymatik')}
+            {__('Plugins', 'yaymatik-automation-for-woocommerce')}
           </a>
         </span>
       }
@@ -364,15 +411,27 @@ function NeedsProRow({ check }: { check: HealthCheck }) {
       icon={<TriangleAlert className="text-warning-accent" />}
       title={sprintf(
         /* translators: %d: number of workflows */
-        _n('Active workflows need YayMatik Pro: %d', 'Active workflows need YayMatik Pro: %d', check.count, 'yaymatik'),
+        _n(
+          'Active workflows need YayMatik Pro: %d',
+          'Active workflows need YayMatik Pro: %d',
+          check.count,
+          'yaymatik-automation-for-woocommerce',
+        ),
         check.count,
       )}
-      help={__('They don’t start until YayMatik Pro is active. Nothing in them was changed.', 'yaymatik')}
+      help={__(
+        'They don’t start until YayMatik Pro is active. Nothing in them was changed.',
+        'yaymatik-automation-for-woocommerce',
+      )}
       extra={
         <span className="flex flex-wrap gap-x-3 gap-y-1 text-sm">
           {(check.workflows ?? []).map(({ id, name }) => (
             <Link key={id} to={`/workflows/${id}`} className="text-link font-medium hover:underline">
-              {name || /* translators: %s: workflow id */ sprintf(__('Workflow #%s', 'yaymatik'), id)}
+              {name ||
+                /* translators: %s: workflow id */ sprintf(
+                  __('Workflow #%s', 'yaymatik-automation-for-woocommerce'),
+                  id,
+                )}
             </Link>
           ))}
         </span>
@@ -387,8 +446,11 @@ function ExtensionsBlock({ extensions }: { extensions: HealthExtension[] }) {
   const failing = extensions.filter((extension) => extension.errors.length);
   if (!failing.length) return null;
   return (
-    <section aria-label={__('Extensions', 'yaymatik')} className="mt-4 flex flex-col gap-3 border-t pt-4">
-      <h3 className="text-sm font-medium">{__('Extensions', 'yaymatik')}</h3>
+    <section
+      aria-label={__('Extensions', 'yaymatik-automation-for-woocommerce')}
+      className="mt-4 flex flex-col gap-3 border-t pt-4"
+    >
+      <h3 className="text-sm font-medium">{__('Extensions', 'yaymatik-automation-for-woocommerce')}</h3>
       {failing.map((extension) => (
         <ExtensionRow key={extension.id} extension={extension} />
       ))}
@@ -400,7 +462,7 @@ function ExtensionRow({ extension }: { extension: HealthExtension }) {
   const name = extension.requiresApi
     ? sprintf(
         /* translators: 1: plugin name, 2: Extension API version, e.g. "1.0" */
-        __('%1$s (needs Extension API %2$s)', 'yaymatik'),
+        __('%1$s (needs Extension API %2$s)', 'yaymatik-automation-for-woocommerce'),
         extension.label,
         extension.requiresApi,
       )
@@ -420,7 +482,7 @@ function ExtensionRow({ extension }: { extension: HealthExtension }) {
                   '(%1$s, at least %2$d time, last %3$s)',
                   '(%1$s, at least %2$d times, last %3$s)',
                   error.count,
-                  'yaymatik',
+                  'yaymatik-automation-for-woocommerce',
                 ),
                 error.callback,
                 error.count,

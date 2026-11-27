@@ -17,11 +17,11 @@ abstract class Condition extends Step {
     public function outputs(): array {
         return [
             'result' => [
-                'label'   => __( 'Result', 'yaymatik' ),
+                'label'   => __( 'Result', 'yaymatik-automation-for-woocommerce' ),
                 'type'    => Type::enum(),
                 'options' => [
-                    'yes' => __( 'Yes', 'yaymatik' ),
-                    'no'  => __( 'No', 'yaymatik' ),
+                    'yes' => __( 'Yes', 'yaymatik-automation-for-woocommerce' ),
+                    'no'  => __( 'No', 'yaymatik-automation-for-woocommerce' ),
                 ],
             ],
         ];

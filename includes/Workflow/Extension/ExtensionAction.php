@@ -74,7 +74,7 @@ class ExtensionAction extends Action {
                     return $result;
                 }
                 Diagnostics::record( $this->module, 'handle', 'handle returned something other than $step->done(), $step->skip() or $step->fail().' );
-                return StepResult::failed( __( 'The step returned no result.', 'yaymatik' ) );
+                return StepResult::failed( __( 'The step returned no result.', 'yaymatik-automation-for-woocommerce' ) );
             },
             fn( \Throwable $e ) => StepResult::failed( $e->getMessage() )
         );
@@ -112,7 +112,7 @@ class ExtensionAction extends Action {
     }
 
     private static function editor_refused(): \WP_Error {
-        return new \WP_Error( 'yaymatik_editor_url', __( 'This step’s editor couldn’t be opened. Details are in Settings › Health check.', 'yaymatik' ), [ 'status' => 400 ] );
+        return new \WP_Error( 'yaymatik_editor_url', __( 'This step’s editor couldn’t be opened. Details are in Settings › Health check.', 'yaymatik-automation-for-woocommerce' ), [ 'status' => 400 ] );
     }
 
     /**

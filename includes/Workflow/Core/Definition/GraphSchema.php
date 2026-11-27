@@ -46,14 +46,14 @@ final class GraphSchema {
      */
     public static function prepare( $graph, array $stored = [] ) {
         if ( ! is_array( $graph ) || ! is_array( $graph['nodes'] ?? null ) || ! is_array( $graph['edges'] ?? null ) ) {
-            return self::error( __( 'Invalid workflow graph.', 'yaymatik' ) );
+            return self::error( __( 'Invalid workflow graph.', 'yaymatik-automation-for-woocommerce' ) );
         }
         $version = self::version( $graph );
         if ( null === $version ) {
-            return self::error( __( 'Invalid workflow graph.', 'yaymatik' ) );
+            return self::error( __( 'Invalid workflow graph.', 'yaymatik-automation-for-woocommerce' ) );
         }
         if ( $version > self::VERSION ) {
-            return self::error( __( 'This workflow was saved by a newer version of YayMatik. Update the plugin to edit it.', 'yaymatik' ) );
+            return self::error( __( 'This workflow was saved by a newer version of YayMatik. Update the plugin to edit it.', 'yaymatik-automation-for-woocommerce' ) );
         }
 
         $nodes    = [];
@@ -61,7 +61,7 @@ final class GraphSchema {
         foreach ( $graph['nodes'] as $raw ) {
             $id = is_array( $raw ) ? (string) ( $raw['id'] ?? '' ) : '';
             if ( ! self::is_valid_id( $id ) || isset( $nodes[ $id ] ) ) {
-                return self::error( __( 'Invalid or duplicate step id.', 'yaymatik' ) );
+                return self::error( __( 'Invalid or duplicate step id.', 'yaymatik-automation-for-woocommerce' ) );
             }
 
             $kind    = (string) ( $raw['kind'] ?? '' );
@@ -83,7 +83,7 @@ final class GraphSchema {
                 $kept = null;
             }
             if ( ! in_array( $kind, self::KINDS, true ) || ( ! $known && null === $kept ) ) {
-                return self::error( __( 'Unknown step type.', 'yaymatik' ), $id );
+                return self::error( __( 'Unknown step type.', 'yaymatik-automation-for-woocommerce' ), $id );
             }
             if ( Step::KIND_TRIGGER === $kind ) {
                 ++$triggers;
@@ -105,7 +105,7 @@ final class GraphSchema {
         }
 
         if ( 1 !== $triggers ) {
-            return self::error( __( 'A workflow needs exactly one trigger.', 'yaymatik' ) );
+            return self::error( __( 'A workflow needs exactly one trigger.', 'yaymatik-automation-for-woocommerce' ) );
         }
 
         $edges = [];
@@ -129,7 +129,7 @@ final class GraphSchema {
                 && ! isset( $has_parent[ $target['id'] ] )
                 && ! isset( $used_slots[ $source['id'] . '|' . $handle ] );
             if ( ! $valid ) {
-                return self::error( __( 'Invalid connection between steps.', 'yaymatik' ) );
+                return self::error( __( 'Invalid connection between steps.', 'yaymatik-automation-for-woocommerce' ) );
             }
 
             $has_parent[ $target['id'] ]                 = true;

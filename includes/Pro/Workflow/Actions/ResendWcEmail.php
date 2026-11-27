@@ -31,11 +31,11 @@ class ResendWcEmail extends Action {
     }
 
     public function label(): string {
-        return __( 'Resend WooCommerce email', 'yaymatik' );
+        return __( 'Resend WooCommerce email', 'yaymatik-automation-for-woocommerce' );
     }
 
     public function description(): string {
-        return __( 'Send one of WooCommerce’s order emails to the customer again.', 'yaymatik' );
+        return __( 'Send one of WooCommerce’s order emails to the customer again.', 'yaymatik-automation-for-woocommerce' );
     }
 
     public function icon(): string {
@@ -52,21 +52,21 @@ class ResendWcEmail extends Action {
 
     public function fields(): array {
         return [
-            Field::select( 'email', __( 'Email', 'yaymatik' ), [ self::class, 'emails' ] )
+            Field::select( 'email', __( 'Email', 'yaymatik-automation-for-woocommerce' ), [ self::class, 'emails' ] )
                 /* translators: {{ step }}: step name, e.g. "Resend WooCommerce email"; keep {{ … }} as it is. */
-                ->required( __( '{{ step }} needs an email.', 'yaymatik' ) ),
+                ->required( __( '{{ step }} needs an email.', 'yaymatik-automation-for-woocommerce' ) ),
         ];
     }
 
     public function summary(): string {
         /* translators: {{ config.email }}: a WooCommerce email's name, e.g. "Completed order"; keep {{ … }} as it is. */
-        return __( 'Resend {{ config.email }}', 'yaymatik' );
+        return __( 'Resend {{ config.email }}', 'yaymatik-automation-for-woocommerce' );
     }
 
     public function outputs(): array {
         return [
             'email' => [
-                'label' => __( 'Email', 'yaymatik' ),
+                'label' => __( 'Email', 'yaymatik-automation-for-woocommerce' ),
                 'type'  => Type::string(),
             ],
         ];
@@ -80,21 +80,21 @@ class ResendWcEmail extends Action {
     public function run( Scope $scope, array $config ): StepResult {
         $order = $scope->entity( OrderData::ID );
         if ( ! $order ) {
-            return StepResult::skipped( __( 'There is no order to send it for.', 'yaymatik' ) );
+            return StepResult::skipped( __( 'There is no order to send it for.', 'yaymatik-automation-for-woocommerce' ) );
         }
         $id    = (string) $config['email'];
         $email = self::resendable()[ $id ] ?? null;
         if ( ! $email ) {
             /* translators: %s: email id */
-            return StepResult::failed( sprintf( __( 'The WooCommerce email %s can’t be resent here any more.', 'yaymatik' ), $id ) );
+            return StepResult::failed( sprintf( __( 'The WooCommerce email %s can’t be resent here any more.', 'yaymatik-automation-for-woocommerce' ), $id ) );
         }
         // trigger() reports nothing, and sends nothing when the email is off or has no recipient.
         if ( ! $email->is_enabled() ) {
             /* translators: %s: email name, e.g. "Completed order" */
-            return StepResult::skipped( sprintf( __( '%s is turned off in WooCommerce.', 'yaymatik' ), $email->get_title() ) );
+            return StepResult::skipped( sprintf( __( '%s is turned off in WooCommerce.', 'yaymatik-automation-for-woocommerce' ), $email->get_title() ) );
         }
         if ( '' === (string) $order->get_billing_email() ) {
-            return StepResult::skipped( __( 'This order has no billing email.', 'yaymatik' ) );
+            return StepResult::skipped( __( 'This order has no billing email.', 'yaymatik-automation-for-woocommerce' ) );
         }
         $email->trigger( $order->get_id() );
         return StepResult::ok( [ 'email' => $id ] );

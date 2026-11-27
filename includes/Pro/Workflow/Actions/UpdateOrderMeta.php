@@ -22,11 +22,11 @@ class UpdateOrderMeta extends Action {
     }
 
     public function label(): string {
-        return __( 'Update order custom field', 'yaymatik' );
+        return __( 'Update order custom field', 'yaymatik-automation-for-woocommerce' );
     }
 
     public function description(): string {
-        return __( 'Set a custom field (meta) on the order.', 'yaymatik' );
+        return __( 'Set a custom field (meta) on the order.', 'yaymatik-automation-for-woocommerce' );
     }
 
     public function icon(): string {
@@ -47,27 +47,27 @@ class UpdateOrderMeta extends Action {
 
     public function fields(): array {
         return [
-            Field::text( 'key', __( 'Field name', 'yaymatik' ) )
+            Field::text( 'key', __( 'Field name', 'yaymatik-automation-for-woocommerce' ) )
                 /* translators: {{ step }}: step name; keep {{ … }} as it is. */
-                ->required( __( '{{ step }} needs a field name.', 'yaymatik' ) )
-                ->help( __( 'The meta key, e.g. _vip_order.', 'yaymatik' ) ),
-            Field::text( 'value', __( 'Value', 'yaymatik' ) )->variables(),
+                ->required( __( '{{ step }} needs a field name.', 'yaymatik-automation-for-woocommerce' ) )
+                ->help( __( 'The meta key, e.g. _vip_order.', 'yaymatik-automation-for-woocommerce' ) ),
+            Field::text( 'value', __( 'Value', 'yaymatik-automation-for-woocommerce' ) )->variables(),
         ];
     }
 
     public function summary(): string {
         /* translators: {{ config.key }}: custom field name, {{ config.value }}: its value; keep {{ … }} as it is. */
-        return __( 'Set {{ config.key }} to {{ config.value }}', 'yaymatik' );
+        return __( 'Set {{ config.key }} to {{ config.value }}', 'yaymatik-automation-for-woocommerce' );
     }
 
     public function outputs(): array {
         return [
             'key'     => [
-                'label' => __( 'Field name', 'yaymatik' ),
+                'label' => __( 'Field name', 'yaymatik-automation-for-woocommerce' ),
                 'type'  => Type::string(),
             ],
             'changed' => [
-                'label' => __( 'Value changed', 'yaymatik' ),
+                'label' => __( 'Value changed', 'yaymatik-automation-for-woocommerce' ),
                 'type'  => Type::boolean(),
             ],
         ];
@@ -89,7 +89,7 @@ class UpdateOrderMeta extends Action {
     public function run( Scope $scope, array $config ): StepResult {
         $order = $scope->entity( OrderData::ID );
         if ( ! $order ) {
-            return StepResult::skipped( __( 'There is no order to update.', 'yaymatik' ) );
+            return StepResult::skipped( __( 'There is no order to update.', 'yaymatik-automation-for-woocommerce' ) );
         }
         $key = $config['key'];
         // `validate()` only saw a blank order; this order's data store has the last word.
@@ -112,7 +112,7 @@ class UpdateOrderMeta extends Action {
         $order->save();
         $order->add_order_note(
             /* translators: 1: custom field name, 2: its previous value, 3: its new value */
-            sprintf( __( 'Custom field %1$s changed from “%2$s” to “%3$s” by a YayMatik workflow.', 'yaymatik' ), $key, $old, $new )
+            sprintf( __( 'Custom field %1$s changed from “%2$s” to “%3$s” by a YayMatik workflow.', 'yaymatik-automation-for-woocommerce' ), $key, $old, $new )
         );
         // Runs keep refs only: the rendered values stay in the note, with the order.
         return StepResult::ok(
@@ -124,6 +124,6 @@ class UpdateOrderMeta extends Action {
     }
 
     private static function blocked_message(): string {
-        return __( 'WooCommerce or YayMatik manages this field. Choose another field name.', 'yaymatik' );
+        return __( 'WooCommerce or YayMatik manages this field. Choose another field name.', 'yaymatik-automation-for-woocommerce' );
     }
 }

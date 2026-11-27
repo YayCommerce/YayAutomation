@@ -34,11 +34,11 @@ class CustomerData extends DataItem {
     }
 
     public function label(): string {
-        return __( 'Customer', 'yaymatik' );
+        return __( 'Customer', 'yaymatik-automation-for-woocommerce' );
     }
 
     public function description(): string {
-        return __( 'The person behind the event, from their billing details. Works for guests too.', 'yaymatik' );
+        return __( 'The person behind the event, from their billing details. Works for guests too.', 'yaymatik-automation-for-woocommerce' );
     }
 
     public function icon(): string {
@@ -62,48 +62,48 @@ class CustomerData extends DataItem {
     protected function define(): array {
         return [
             'email'           => [
-                'label' => __( 'Customer email', 'yaymatik' ),
+                'label' => __( 'Customer email', 'yaymatik-automation-for-woocommerce' ),
                 'type'  => self::TYPE_STRING,
                 'value' => fn( $customer ) => $customer->get_billing_email(),
             ],
             'first_name'      => [
-                'label' => __( 'Customer first name', 'yaymatik' ),
+                'label' => __( 'Customer first name', 'yaymatik-automation-for-woocommerce' ),
                 'type'  => self::TYPE_STRING,
                 'value' => fn( $customer ) => $customer->get_billing_first_name(),
             ],
             'last_name'       => [
-                'label' => __( 'Customer last name', 'yaymatik' ),
+                'label' => __( 'Customer last name', 'yaymatik-automation-for-woocommerce' ),
                 'type'  => self::TYPE_STRING,
                 'value' => fn( $customer ) => $customer->get_billing_last_name(),
             ],
             'full_name'       => [
-                'label' => __( 'Customer full name', 'yaymatik' ),
+                'label' => __( 'Customer full name', 'yaymatik-automation-for-woocommerce' ),
                 'type'  => self::TYPE_STRING,
                 'value' => fn( $customer ) => trim( $customer->get_billing_first_name() . ' ' . $customer->get_billing_last_name() ),
             ],
             'phone'           => [
-                'label' => __( 'Customer phone', 'yaymatik' ),
+                'label' => __( 'Customer phone', 'yaymatik-automation-for-woocommerce' ),
                 'type'  => self::TYPE_STRING,
                 'value' => fn( $customer ) => $customer->get_billing_phone(),
             ],
             'billing_country' => [
-                'label'   => __( 'Billing country', 'yaymatik' ),
+                'label'   => __( 'Billing country', 'yaymatik-automation-for-woocommerce' ),
                 'type'    => self::TYPE_ENUM,
                 'value'   => fn( $customer ) => $customer->get_billing_country(),
                 'options' => [ self::class, 'countries' ],
             ],
             'is_first_order'  => [
-                'label' => __( 'Customer’s first order', 'yaymatik' ),
+                'label' => __( 'Customer’s first order', 'yaymatik-automation-for-woocommerce' ),
                 'type'  => self::TYPE_BOOLEAN,
                 'value' => fn( $customer ) => $this->is_first_order( $customer ),
             ],
             'is_guest'        => [
-                'label' => __( 'Is guest', 'yaymatik' ),
+                'label' => __( 'Is guest', 'yaymatik-automation-for-woocommerce' ),
                 'type'  => self::TYPE_BOOLEAN,
                 'value' => fn( $customer ) => 0 === self::user_id( $customer ),
             ],
             'unsubscribed'    => [
-                'label' => __( 'Customer unsubscribed', 'yaymatik' ),
+                'label' => __( 'Customer unsubscribed', 'yaymatik-automation-for-woocommerce' ),
                 'type'  => self::TYPE_BOOLEAN,
                 'value' => fn( $customer ) => (bool) ( $this->unsubscribed )( (string) $customer->get_billing_email() ),
             ],

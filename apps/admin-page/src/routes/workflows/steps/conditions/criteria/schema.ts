@@ -34,7 +34,10 @@ export type CriteriaItem = Rule | Group;
 export type CriteriaConfig = { match: 'all' | 'any'; rules: CriteriaItem[] };
 
 /** How items read between each other, under `all` and `any`. */
-export const joinerText = { all: __('and', 'yaymatik'), any: __('or', 'yaymatik') };
+export const joinerText = {
+  all: __('and', 'yaymatik-automation-for-woocommerce'),
+  any: __('or', 'yaymatik-automation-for-woocommerce'),
+};
 
 export const isGroup = (item: CriteriaItem): item is Group => 'rules' in item;
 

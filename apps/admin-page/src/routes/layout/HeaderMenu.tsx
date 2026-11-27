@@ -10,13 +10,13 @@ export default function HeaderMenu() {
       <HeaderNavMenuItem asChild>
         <NavLink to="/workflows">
           <Workflow className="size-4 stroke-2" />
-          <span className="max-sm:hidden">{__('Workflows', 'yaymatik')}</span>
+          <span className="max-sm:hidden">{__('Workflows', 'yaymatik-automation-for-woocommerce')}</span>
         </NavLink>
       </HeaderNavMenuItem>
       <HeaderNavMenuItem asChild>
         <NavLink to="/settings">
           <Settings className="size-4 stroke-2" />
-          <span className="max-sm:hidden">{__('Settings', 'yaymatik')}</span>
+          <span className="max-sm:hidden">{__('Settings', 'yaymatik-automation-for-woocommerce')}</span>
         </NavLink>
       </HeaderNavMenuItem>
     </HeaderNavMenuList>

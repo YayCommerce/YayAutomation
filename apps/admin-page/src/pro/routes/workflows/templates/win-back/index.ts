@@ -10,11 +10,11 @@ const shared = { category: 'customer_lifecycle', workflow: 'win_back', createdAt
 
 /** Bring back a customer whose last order is 90 days old. Two versions that differ only in the coupon and the line that offers it. */
 function graph(coupon: Partial<GenerateCouponConfig>, offer: string): WorkflowGraph {
-  const email = customerEmail(__('We miss you at {{ site.name }}', 'yaymatik'), __('It’s been a while', 'yaymatik'), [
-    offer,
-    COUPON_LINE,
-    '{{ site.shop_button }}',
-  ]);
+  const email = customerEmail(
+    __('We miss you at {{ site.name }}', 'yaymatik-automation-for-woocommerce'),
+    __('It’s been a while', 'yaymatik-automation-for-woocommerce'),
+    [offer, COUPON_LINE, '{{ site.shop_button }}'],
+  );
 
   return {
     nodes: [
@@ -60,24 +60,33 @@ function graph(coupon: Partial<GenerateCouponConfig>, offer: string): WorkflowGr
 export const winBackDiscount = defineTemplate({
   ...shared,
   id: 'win-back-discount',
-  name: __('Win-back + discount', 'yaymatik'),
-  description: __('When a customer hasn’t ordered for 90 days, send a 15% off coupon, valid for 14 days.', 'yaymatik'),
+  name: __('Win-back + discount', 'yaymatik-automation-for-woocommerce'),
+  description: __(
+    'When a customer hasn’t ordered for 90 days, send a 15% off coupon, valid for 14 days.',
+    'yaymatik-automation-for-woocommerce',
+  ),
   graph: graph(
     { discount_type: 'percent', amount: 15 },
-    __('It’s been a while since your last order. Here’s {{ steps.coupon.amount }} off your next one:', 'yaymatik'),
+    __(
+      'It’s been a while since your last order. Here’s {{ steps.coupon.amount }} off your next one:',
+      'yaymatik-automation-for-woocommerce',
+    ),
   ),
 });
 
 export const winBackFreeShipping = defineTemplate({
   ...shared,
   id: 'win-back-free-shipping',
-  name: __('Win-back + free shipping', 'yaymatik'),
+  name: __('Win-back + free shipping', 'yaymatik-automation-for-woocommerce'),
   description: __(
     'When a customer hasn’t ordered for 90 days, send a free shipping coupon, valid for 14 days.',
-    'yaymatik',
+    'yaymatik-automation-for-woocommerce',
   ),
   graph: graph(
     { discount_type: 'free_shipping', amount: null },
-    __('It’s been a while since your last order. Here’s free shipping on your next order:', 'yaymatik'),
+    __(
+      'It’s been a while since your last order. Here’s free shipping on your next order:',
+      'yaymatik-automation-for-woocommerce',
+    ),
   ),
 });

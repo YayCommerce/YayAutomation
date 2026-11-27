@@ -123,13 +123,13 @@ final class Catalog {
     /** Picker section labels by id: core's, then the ones extension modules declared. */
     public static function categories(): array {
         $categories = [
-            'email'    => __( 'Email', 'yaymatik' ),
-            'order'    => __( 'Order', 'yaymatik' ),
-            'coupon'   => __( 'Coupons', 'yaymatik' ),
-            'flow'     => __( 'Flow', 'yaymatik' ),
-            'cart'     => __( 'Carts', 'yaymatik' ),
-            'customer' => __( 'Customers', 'yaymatik' ),
-            'review'   => __( 'Reviews', 'yaymatik' ),
+            'email'    => __( 'Email', 'yaymatik-automation-for-woocommerce' ),
+            'order'    => __( 'Order', 'yaymatik-automation-for-woocommerce' ),
+            'coupon'   => __( 'Coupons', 'yaymatik-automation-for-woocommerce' ),
+            'flow'     => __( 'Flow', 'yaymatik-automation-for-woocommerce' ),
+            'cart'     => __( 'Carts', 'yaymatik-automation-for-woocommerce' ),
+            'customer' => __( 'Customers', 'yaymatik-automation-for-woocommerce' ),
+            'review'   => __( 'Reviews', 'yaymatik-automation-for-woocommerce' ),
         ];
         foreach ( ModuleRegistry::modules() as $module ) {
             if ( $module instanceof ExtensionModule ) {

@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { needsPro } from './proUsage';
 import { validateWorkflow } from './validation';
 
-/** True only in the free edition's run: with Pro and a license nothing is missing. */
+/** True only in the free edition's run: while YayMatik Pro is active nothing is missing. */
 const lite = process.env.YAYMATIK_EDITION === 'lite';
 
 const node = (id: string, kind: WorkflowNode['kind'], block: string, config: Record<string, unknown> = {}) =>

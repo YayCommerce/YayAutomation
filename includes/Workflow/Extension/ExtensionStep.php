@@ -87,7 +87,7 @@ trait ExtensionStep {
                 $field = array_key_first( $errors );
                 return $this->invalid( (string) $errors[ $field ], is_string( $field ) ? $field : '' );
             },
-            fn() => $this->invalid( __( 'This step’s settings couldn’t be checked.', 'yaymatik' ) )
+            fn() => $this->invalid( __( 'This step’s settings couldn’t be checked.', 'yaymatik-automation-for-woocommerce' ) )
         );
     }
 }

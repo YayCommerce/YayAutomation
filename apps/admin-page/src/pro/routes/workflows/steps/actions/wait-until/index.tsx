@@ -44,17 +44,22 @@ export const waitUntilStep = (): Step =>
     defaults: () => ({ time: '09:00', weekdays: [] }),
     summaryValues: {
       time: ({ time }) => value(timeText(time)),
-      weekdays: ({ weekdays }) => value(weekdayText(weekdays) || __('Any day', 'yaymatik')),
+      weekdays: ({ weekdays }) => value(weekdayText(weekdays) || __('Any day', 'yaymatik-automation-for-woocommerce')),
     },
     Form: WaitUntilForm,
     result: (step, run, summary) => {
       if (step.status === 'waiting') {
         /* translators: %s: date and time, e.g. "Oct 9 at 3:00 PM" */
-        return run.waitUntil ? sprintf(__('until %s', 'yaymatik'), shortDayTime(run.waitUntil)) : '';
+        return run.waitUntil
+          ? sprintf(__('until %s', 'yaymatik-automation-for-woocommerce'), shortDayTime(run.waitUntil))
+          : '';
       }
       return step.finishedAt
         ? sprintf(
-            /* translators: %s: date and time, e.g. "Oct 9 at 3:00 PM" */ __('Waited until %s', 'yaymatik'),
+            /* translators: %s: date and time, e.g. "Oct 9 at 3:00 PM" */ __(
+              'Waited until %s',
+              'yaymatik-automation-for-woocommerce',
+            ),
             shortDayTime(step.finishedAt),
           )
         : summary;
@@ -66,12 +71,15 @@ export const waitUntilStep = (): Step =>
             text: config.time
               ? sprintf(
                   /* translators: 1: time zone, e.g. "Asia/Ho_Chi_Minh"; 2: a time, e.g. "9:15 AM" */
-                  __('Store time (%1$s). Past %2$s, it waits for the next chosen day.', 'yaymatik'),
+                  __(
+                    'Store time (%1$s). Past %2$s, it waits for the next chosen day.',
+                    'yaymatik-automation-for-woocommerce',
+                  ),
                   storeZone(),
                   timeText(config.time),
                 )
               : /* translators: %s: time zone, e.g. "Asia/Ho_Chi_Minh" */
-                sprintf(__('Store time (%s).', 'yaymatik'), storeZone()),
+                sprintf(__('Store time (%s).', 'yaymatik-automation-for-woocommerce'), storeZone()),
             icon: <Clock aria-hidden />,
           },
         ]}

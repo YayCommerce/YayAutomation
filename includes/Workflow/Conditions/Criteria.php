@@ -28,11 +28,11 @@ class Criteria extends Condition {
     }
 
     public function label(): string {
-        return __( 'Condition', 'yaymatik' );
+        return __( 'Condition', 'yaymatik-automation-for-woocommerce' );
     }
 
     public function description(): string {
-        return __( 'Take the Yes path when the rules match, otherwise the No path.', 'yaymatik' );
+        return __( 'Take the Yes path when the rules match, otherwise the No path.', 'yaymatik-automation-for-woocommerce' );
     }
 
     public function icon(): string {
@@ -43,13 +43,13 @@ class Criteria extends Condition {
         return [
             Field::select(
                 'match',
-                __( 'Match', 'yaymatik' ),
+                __( 'Match', 'yaymatik-automation-for-woocommerce' ),
                 [
-                    'all' => __( 'All', 'yaymatik' ),
-                    'any' => __( 'Any', 'yaymatik' ),
+                    'all' => __( 'All', 'yaymatik-automation-for-woocommerce' ),
+                    'any' => __( 'Any', 'yaymatik-automation-for-woocommerce' ),
                 ]
             )->default( 'all' ),
-            Field::rules( 'rules', __( 'Rules', 'yaymatik' ) )->required(),
+            Field::rules( 'rules', __( 'Rules', 'yaymatik-automation-for-woocommerce' ) )->required(),
         ];
     }
 
@@ -182,7 +182,7 @@ class Criteria extends Condition {
 
     public function run( Scope $scope, array $config ): StepResult {
         if ( ! $scope->trigger() && array_filter( $this->flat_rules( $config['rules'] ), [ $this, 'reads_fact' ] ) ) {
-            return StepResult::failed( __( 'This condition reads the trigger’s values, but the trigger’s plugin isn’t active.', 'yaymatik' ) );
+            return StepResult::failed( __( 'This condition reads the trigger’s values, but the trigger’s plugin isn’t active.', 'yaymatik-automation-for-woocommerce' ) );
         }
         return parent::run( $scope, $config );
     }

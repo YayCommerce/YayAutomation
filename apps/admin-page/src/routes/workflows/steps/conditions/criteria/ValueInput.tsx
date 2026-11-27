@@ -20,10 +20,10 @@ import { comparableWith, VARIABLE_VALUE_TYPES, type Rule, type RuleUnit } from '
 
 /** For the picker's "Types: …" line. */
 const typeLabels: Partial<Record<DataField['type'], string>> = {
-  number: __('Number', 'yaymatik'),
-  string: __('Text', 'yaymatik'),
-  date: __('Date', 'yaymatik'),
-  enum: __('Option', 'yaymatik'),
+  number: __('Number', 'yaymatik-automation-for-woocommerce'),
+  string: __('Text', 'yaymatik-automation-for-woocommerce'),
+  date: __('Date', 'yaymatik-automation-for-woocommerce'),
+  enum: __('Option', 'yaymatik-automation-for-woocommerce'),
 };
 
 /** "Order total" under Order → "Total": the item already shows in small text beside it. */
@@ -100,7 +100,7 @@ export function ValueInput({
         options={field?.options ?? []}
         value={list}
         onChange={setList}
-        placeholder={__('Choose values', 'yaymatik')}
+        placeholder={__('Choose values', 'yaymatik-automation-for-woocommerce')}
         invalid={invalid}
       />
     );
@@ -119,12 +119,12 @@ export function ValueInput({
           onChange={(event) => setValue(event.target.value)}
         />
         <Select value={rule.unit ?? 'days'} onValueChange={(unit) => onChange({ ...rule, unit: unit as RuleUnit })}>
-          <SelectTrigger className="w-full" aria-label={__('Unit', 'yaymatik')}>
+          <SelectTrigger className="w-full" aria-label={__('Unit', 'yaymatik-automation-for-woocommerce')}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="hours">{__('hours', 'yaymatik')}</SelectItem>
-            <SelectItem value="days">{__('days', 'yaymatik')}</SelectItem>
+            <SelectItem value="hours">{__('hours', 'yaymatik-automation-for-woocommerce')}</SelectItem>
+            <SelectItem value="days">{__('days', 'yaymatik-automation-for-woocommerce')}</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -135,7 +135,7 @@ export function ValueInput({
     return (
       <Select value={text} onValueChange={setValue}>
         <SelectTrigger id={id} className="w-full" aria-invalid={invalid}>
-          <SelectValue placeholder={__('Choose a value', 'yaymatik')} />
+          <SelectValue placeholder={__('Choose a value', 'yaymatik-automation-for-woocommerce')} />
         </SelectTrigger>
         <SelectContent>
           {field.options.map((option) => (
@@ -160,7 +160,7 @@ export function ValueInput({
           <DataSelect
             id={id}
             field={fieldByKey(text, trigger)}
-            placeholder={__('Choose data', 'yaymatik')}
+            placeholder={__('Choose data', 'yaymatik-automation-for-woocommerce')}
             invalid={invalid}
           />
         </VariablePicker>
@@ -168,7 +168,7 @@ export function ValueInput({
           variant="ghost"
           size="icon-sm"
           className="shrink-0"
-          aria-label={__('Type a value instead', 'yaymatik')}
+          aria-label={__('Type a value instead', 'yaymatik-automation-for-woocommerce')}
           onClick={() => setValue('')}
         >
           <X />
@@ -191,7 +191,10 @@ export function ValueInput({
       {variables && (
         <InputGroupAddon align="inline-end">
           <VariablePicker {...variables} onSelect={setVariable}>
-            <InputGroupButton size="icon-md" aria-label={__('Compare with other data', 'yaymatik')}>
+            <InputGroupButton
+              size="icon-md"
+              aria-label={__('Compare with other data', 'yaymatik-automation-for-woocommerce')}
+            >
               <Code />
             </InputGroupButton>
           </VariablePicker>
@@ -218,8 +221,8 @@ export function MetaKeyInput({
   const control = {
     id,
     'aria-invalid': invalid,
-    'aria-label': __('Field name', 'yaymatik'),
-    placeholder: __('Field name', 'yaymatik'),
+    'aria-label': __('Field name', 'yaymatik-automation-for-woocommerce'),
+    placeholder: __('Field name', 'yaymatik-automation-for-woocommerce'),
     className: 'font-mono text-xs',
     value: rule.key ?? '',
   };

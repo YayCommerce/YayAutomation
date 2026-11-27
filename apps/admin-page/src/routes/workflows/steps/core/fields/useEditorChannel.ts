@@ -45,7 +45,11 @@ export function readEditorMessage(
       const fits =
         (typeof value === 'string' || (typeof value === 'number' && Number.isFinite(value))) &&
         String(value).length <= MAX_VALUE_LENGTH;
-      if (!fits) return { type: 'error', message: __('The editor sent a value that can’t be saved.', 'yaymatik') };
+      if (!fits)
+        return {
+          type: 'error',
+          message: __('The editor sent a value that can’t be saved.', 'yaymatik-automation-for-woocommerce'),
+        };
       return { type: 'save', value, ...(typeof data.label === 'string' ? { label: data.label } : {}) };
     }
     case 'error':

@@ -40,7 +40,7 @@ final class YayMatik {
         }
     }
 
-    /** YayMatik Pro registers its own menu, with its license, and its modules before anything reads them. */
+    /** YayMatik Pro registers its own menu and its modules before anything reads them. */
     public static function initialize() {
         if ( class_exists( \YayMatik\Pro\Boot::class ) ) {
             \YayMatik\Pro\Boot::register();

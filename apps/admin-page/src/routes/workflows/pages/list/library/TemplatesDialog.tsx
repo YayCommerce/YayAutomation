@@ -24,9 +24,9 @@ import { SearchInput } from './SearchInput';
 type SortKey = 'popular' | 'newest' | 'name';
 
 const sortOptions: { value: SortKey; label: string }[] = [
-  { value: 'popular', label: __('Most popular', 'yaymatik') },
-  { value: 'newest', label: __('Newest', 'yaymatik') },
-  { value: 'name', label: __('Name (A–Z)', 'yaymatik') },
+  { value: 'popular', label: __('Most popular', 'yaymatik-automation-for-woocommerce') },
+  { value: 'newest', label: __('Newest', 'yaymatik-automation-for-woocommerce') },
+  { value: 'name', label: __('Name (A–Z)', 'yaymatik-automation-for-woocommerce') },
 ];
 
 const compare: Record<SortKey, (a: WorkflowTemplate, b: WorkflowTemplate) => number> = {
@@ -106,15 +106,20 @@ function TemplateLibrary() {
       <div className="flex flex-col gap-3 border-b px-5 py-4 xl:grid xl:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] xl:items-center xl:gap-6">
         {/* pr-9 keeps the title clear of the close button. */}
         <div className="min-w-0 pr-9 xl:pr-0">
-          <DialogTitle className="text-lg font-semibold">{__('Template Library', 'yaymatik')}</DialogTitle>
+          <DialogTitle className="text-lg font-semibold">
+            {__('Template Library', 'yaymatik-automation-for-woocommerce')}
+          </DialogTitle>
           <DialogDescription className="text-[13px]">
-            {__('Ready-made workflows for WooCommerce. Pick one, review it, then activate.', 'yaymatik')}
+            {__(
+              'Ready-made workflows for WooCommerce. Pick one, review it, then activate.',
+              'yaymatik-automation-for-woocommerce',
+            )}
           </DialogDescription>
         </div>
         <SearchInput
           value={search}
           onChange={setSearch}
-          placeholder={__('Search templates', 'yaymatik')}
+          placeholder={__('Search templates', 'yaymatik-automation-for-woocommerce')}
           className="w-full xl:w-120"
         />
       </div>
@@ -148,12 +153,16 @@ function TemplateLibrary() {
               ))}
               {filtered && (
                 <Button variant="link" size="sm" className="h-auto px-1 text-[12.5px]" onClick={clearFilters}>
-                  {__('Clear all', 'yaymatik')}
+                  {__('Clear all', 'yaymatik-automation-for-woocommerce')}
                 </Button>
               )}
             </div>
             <Select value={sort} onValueChange={(value) => setSort(value as SortKey)}>
-              <SelectTrigger size="sm" className="w-40 shrink-0" aria-label={__('Sort templates', 'yaymatik')}>
+              <SelectTrigger
+                size="sm"
+                className="w-40 shrink-0"
+                aria-label={__('Sort templates', 'yaymatik-automation-for-woocommerce')}
+              >
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -214,26 +223,26 @@ function NoResults({
       <div className="bg-muted text-muted-foreground mb-1 flex h-13 w-18 items-center justify-center rounded-xl">
         <SearchX className="size-6 stroke-[1.6]" aria-hidden />
       </div>
-      <p className="text-base font-semibold">{__('No templates found', 'yaymatik')}</p>
+      <p className="text-base font-semibold">{__('No templates found', 'yaymatik-automation-for-woocommerce')}</p>
       <p className="text-muted-foreground max-w-[52ch] text-[13px]">
         {query
           ? sprintf(
               /* translators: %s: what was searched for */
-              __('No templates match “%s”.', 'yaymatik'),
+              __('No templates match “%s”.', 'yaymatik-automation-for-woocommerce'),
               query,
             )
-          : __('Try a different filter.', 'yaymatik')}
+          : __('Try a different filter.', 'yaymatik-automation-for-woocommerce')}
       </p>
       {(query || filtered) && (
         <div className="mt-2 flex flex-wrap justify-center gap-2">
           {query && (
             <Button variant="outline" size="sm" onClick={onClearSearch}>
-              {__('Clear search', 'yaymatik')}
+              {__('Clear search', 'yaymatik-automation-for-woocommerce')}
             </Button>
           )}
           {filtered && (
             <Button variant="outline" size="sm" onClick={onClearFilters}>
-              {__('Clear filters', 'yaymatik')}
+              {__('Clear filters', 'yaymatik-automation-for-woocommerce')}
             </Button>
           )}
         </div>
@@ -343,7 +352,9 @@ function TemplateCard({ template }: { template: WorkflowTemplate }) {
         <p className="text-muted-foreground line-clamp-2 text-[13px]">{template.description}</p>
         <div className="mt-auto flex items-center justify-between gap-2 pt-3">
           <PluginStack ids={used} />
-          {needsCartTracking(template.graph) && <WarningBadge>{__('Needs cart tracking', 'yaymatik')}</WarningBadge>}
+          {needsCartTracking(template.graph) && (
+            <WarningBadge>{__('Needs cart tracking', 'yaymatik-automation-for-woocommerce')}</WarningBadge>
+          )}
         </div>
       </div>
     </Link>

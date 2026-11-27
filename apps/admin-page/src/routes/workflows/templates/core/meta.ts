@@ -6,10 +6,10 @@ import { flatRules, type CriteriaItem } from '../../steps/conditions/criteria/sc
 
 /** In library chip order. */
 export const categoryLabels: Record<TemplateCategory, string> = {
-  recover_carts: __('Recover carts', 'yaymatik'),
-  post_purchase: __('Post-purchase', 'yaymatik'),
-  customer_lifecycle: __('Customer lifecycle', 'yaymatik'),
-  alerts: __('Alerts', 'yaymatik'),
+  recover_carts: __('Recover carts', 'yaymatik-automation-for-woocommerce'),
+  post_purchase: __('Post-purchase', 'yaymatik-automation-for-woocommerce'),
+  customer_lifecycle: __('Customer lifecycle', 'yaymatik-automation-for-woocommerce'),
+  alerts: __('Alerts', 'yaymatik-automation-for-woocommerce'),
 };
 
 /**

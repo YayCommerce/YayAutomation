@@ -12,10 +12,10 @@ export const loginNoCart = defineTemplate({
   workflow: 'login_no_cart',
   createdAt: '2026-11-18',
   id: 'login-no-cart',
-  name: __('Logged in, nothing added to cart', 'yaymatik'),
+  name: __('Logged in, nothing added to cart', 'yaymatik-automation-for-woocommerce'),
   description: __(
     'When a customer logs in and adds nothing to the cart within an hour, send a reminder with a link to the shop. Once a week at most.',
-    'yaymatik',
+    'yaymatik-automation-for-woocommerce',
   ),
   graph: {
     nodes: [
@@ -54,10 +54,16 @@ export const loginNoCart = defineTemplate({
         data: {
           block: 'send_email',
           config: customerEmail(
-            __('Still looking around, {{ customer.first_name | default: "there" }}?', 'yaymatik'),
-            __('Good to see you again', 'yaymatik'),
+            __(
+              'Still looking around, {{ customer.first_name | default: "there" }}?',
+              'yaymatik-automation-for-woocommerce',
+            ),
+            __('Good to see you again', 'yaymatik-automation-for-woocommerce'),
             [
-              __('Thanks for stopping by {{ site.name }}. Your favorites are a click away:', 'yaymatik'),
+              __(
+                'Thanks for stopping by {{ site.name }}. Your favorites are a click away:',
+                'yaymatik-automation-for-woocommerce',
+              ),
               '{{ site.shop_button }}',
             ],
           ),

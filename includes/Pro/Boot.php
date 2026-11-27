@@ -12,7 +12,6 @@ use YayMatik\Pro\Workflow\Modules\WoocommerceProModule;
 use YayMatik\Pro\Workflow\Modules\YayMatikProModule;
 use YayMatik\Workflow\Core\Email\EmailPreview;
 use YayMatik\Workflow\Core\Runtime\DailyJobs;
-use YayMatik\Workflow\Core\Storage\Settings;
 use YayMatik\Workflow\Modules\WoocommerceModule;
 use YayMatik\Workflow\Modules\YayMatikModule;
 use YayMatikScoped\YayCommerce\AdminShell\AdminShell;
@@ -52,13 +51,6 @@ final class Boot {
         ] as $kind => $tag ) {
             EmailPreview::add_sample_need( $kind, $tag, fn( \WC_Order $order ) => (bool) OrderGrid::for_order( $order, $kind ) );
         }
-        Settings::allow(
-            [
-                'abandon_minutes'     => [ 15, 1440 ],
-                'cart_retention_days' => [ 7, 365 ],
-                'run_retention_days'  => [ 7, 730 ],
-            ]
-        );
     }
 
     /** On `init`: Pro's jobs. */

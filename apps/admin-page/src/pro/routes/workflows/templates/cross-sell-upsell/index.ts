@@ -74,24 +74,34 @@ function graph({
 
 const hasCrossSells = rule('order.has_cross_sells', 'is_true');
 
-const couponLines = [__('Use this coupon for {{ steps.coupon.amount }} off your next order:', 'yaymatik'), COUPON_LINE];
+const couponLines = [
+  __('Use this coupon for {{ steps.coupon.amount }} off your next order:', 'yaymatik-automation-for-woocommerce'),
+  COUPON_LINE,
+];
 
 const crossSellEmail = (extra: string[] = []) =>
-  customerEmail(__('Picked for you, {{ customer.first_name }}', 'yaymatik'), __('You might also like', 'yaymatik'), [
-    __('Thanks again for your order {{ order.number }}. These go well with what you bought:', 'yaymatik'),
-    '{{ order.cross_sell_products }}',
-    ...extra,
-  ]);
+  customerEmail(
+    __('Picked for you, {{ customer.first_name }}', 'yaymatik-automation-for-woocommerce'),
+    __('You might also like', 'yaymatik-automation-for-woocommerce'),
+    [
+      __(
+        'Thanks again for your order {{ order.number }}. These go well with what you bought:',
+        'yaymatik-automation-for-woocommerce',
+      ),
+      '{{ order.cross_sell_products }}',
+      ...extra,
+    ],
+  );
 
 const shared = { category: 'post_purchase', workflow: 'cross_sell_upsell', createdAt: '2026-10-07' } as const;
 
 export const crossSellFirstTime = defineTemplate({
   ...shared,
   id: 'cross-sell-first-time-buyers',
-  name: __('Cross-sell to first-time buyers', 'yaymatik'),
+  name: __('Cross-sell to first-time buyers', 'yaymatik-automation-for-woocommerce'),
   description: __(
     '7 days after a first order is completed, suggest products that go well with what the customer bought.',
-    'yaymatik',
+    'yaymatik-automation-for-woocommerce',
   ),
   graph: graph({
     audience: [rule('customer.paid_order_count', 'equal', '1')],
@@ -104,10 +114,10 @@ export const crossSellFirstTime = defineTemplate({
 export const crossSellRepeat = defineTemplate({
   ...shared,
   id: 'cross-sell-repeat-buyers',
-  name: __('Cross-sell to repeat buyers', 'yaymatik'),
+  name: __('Cross-sell to repeat buyers', 'yaymatik-automation-for-woocommerce'),
   description: __(
     '7 days after a returning customer’s order is completed, suggest products that go well with what they bought.',
-    'yaymatik',
+    'yaymatik-automation-for-woocommerce',
   ),
   graph: graph({
     audience: [rule('customer.paid_order_count', 'greater_than', '1')],
@@ -120,10 +130,10 @@ export const crossSellRepeat = defineTemplate({
 export const crossSellCoupon = defineTemplate({
   ...shared,
   id: 'cross-sell-coupon',
-  name: __('Cross-sell with a coupon', 'yaymatik'),
+  name: __('Cross-sell with a coupon', 'yaymatik-automation-for-woocommerce'),
   description: __(
     '14 days after an order is completed, suggest products that go well with it, with a 10% off coupon valid for 14 days.',
-    'yaymatik',
+    'yaymatik-automation-for-woocommerce',
   ),
   graph: graph({
     suggestions: hasCrossSells,
@@ -136,22 +146,22 @@ export const crossSellCoupon = defineTemplate({
 export const upsellAfter30Days = defineTemplate({
   ...shared,
   id: 'upsell-after-30-days',
-  name: __('Upsell after 30 days', 'yaymatik'),
+  name: __('Upsell after 30 days', 'yaymatik-automation-for-woocommerce'),
   description: __(
     '30 days after an order is completed, suggest upgrades to what the customer bought, with a 15% off coupon valid for 14 days.',
-    'yaymatik',
+    'yaymatik-automation-for-woocommerce',
   ),
   graph: graph({
     suggestions: rule('order.has_upsells', 'is_true'),
     days: 30,
     coupon: { amount: 15, expiry_days: 14 },
     email: customerEmail(
-      __('Ready for an upgrade, {{ customer.first_name }}?', 'yaymatik'),
-      __('Upgrade what you love', 'yaymatik'),
+      __('Ready for an upgrade, {{ customer.first_name }}?', 'yaymatik-automation-for-woocommerce'),
+      __('Upgrade what you love', 'yaymatik-automation-for-woocommerce'),
       [
         __(
           'It’s been a month since your order {{ order.number }}. Here are a few upgrades you might like:',
-          'yaymatik',
+          'yaymatik-automation-for-woocommerce',
         ),
         '{{ order.upsell_products }}',
         ...couponLines,

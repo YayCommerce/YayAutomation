@@ -21,11 +21,11 @@ class UpdateCustomerMeta extends Action {
     }
 
     public function label(): string {
-        return __( 'Update customer custom field', 'yaymatik' );
+        return __( 'Update customer custom field', 'yaymatik-automation-for-woocommerce' );
     }
 
     public function description(): string {
-        return __( 'Set a custom field on the customer’s account.', 'yaymatik' );
+        return __( 'Set a custom field on the customer’s account.', 'yaymatik-automation-for-woocommerce' );
     }
 
     public function icon(): string {
@@ -42,27 +42,27 @@ class UpdateCustomerMeta extends Action {
 
     public function fields(): array {
         return [
-            Field::text( 'key', __( 'Field name', 'yaymatik' ) )
+            Field::text( 'key', __( 'Field name', 'yaymatik-automation-for-woocommerce' ) )
                 /* translators: {{ step }}: step name; keep {{ … }} as it is. */
-                ->required( __( '{{ step }} needs a field name.', 'yaymatik' ) )
+                ->required( __( '{{ step }} needs a field name.', 'yaymatik-automation-for-woocommerce' ) )
                 ->suggest( 'customer-meta-keys' ),
-            Field::text( 'value', __( 'Value', 'yaymatik' ) )->variables(),
+            Field::text( 'value', __( 'Value', 'yaymatik-automation-for-woocommerce' ) )->variables(),
         ];
     }
 
     public function summary(): string {
         /* translators: {{ config.key }}: custom field name, {{ config.value }}: its value; keep {{ … }} as it is. */
-        return __( 'Set {{ config.key }} to {{ config.value }}', 'yaymatik' );
+        return __( 'Set {{ config.key }} to {{ config.value }}', 'yaymatik-automation-for-woocommerce' );
     }
 
     public function outputs(): array {
         return [
             'key'     => [
-                'label' => __( 'Field name', 'yaymatik' ),
+                'label' => __( 'Field name', 'yaymatik-automation-for-woocommerce' ),
                 'type'  => Type::string(),
             ],
             'changed' => [
-                'label' => __( 'Value changed', 'yaymatik' ),
+                'label' => __( 'Value changed', 'yaymatik-automation-for-woocommerce' ),
                 'type'  => Type::boolean(),
             ],
         ];
@@ -86,7 +86,7 @@ class UpdateCustomerMeta extends Action {
         $user_id  = $customer ? CustomerData::user_id( $customer ) : 0;
         // An order keeps the id of an account deleted since.
         if ( ! $user_id || ! get_userdata( $user_id ) ) {
-            return StepResult::skipped( __( 'This customer has no account.', 'yaymatik' ) );
+            return StepResult::skipped( __( 'This customer has no account.', 'yaymatik-automation-for-woocommerce' ) );
         }
         $key = $config['key'];
         // A stored config may never have passed `validate()`.
@@ -105,7 +105,7 @@ class UpdateCustomerMeta extends Action {
         }
         // update_user_meta() unslashes its key and value: slashed here, the stored key is the one checked above.
         if ( false === update_user_meta( $user_id, wp_slash( $key ), wp_slash( $new ) ) ) {
-            return StepResult::failed( __( 'Couldn’t save the custom field.', 'yaymatik' ) );
+            return StepResult::failed( __( 'Couldn’t save the custom field.', 'yaymatik-automation-for-woocommerce' ) );
         }
         // Runs keep refs only: no values in the outputs.
         return StepResult::ok(
@@ -117,6 +117,6 @@ class UpdateCustomerMeta extends Action {
     }
 
     private static function blocked_message(): string {
-        return __( 'This custom field is protected and can’t be changed.', 'yaymatik' );
+        return __( 'This custom field is protected and can’t be changed.', 'yaymatik-automation-for-woocommerce' );
     }
 }

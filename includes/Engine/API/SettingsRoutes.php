@@ -47,7 +47,7 @@ class SettingsRoutes {
     public function update_settings( \WP_REST_Request $request ) {
         $body = $request->get_json_params();
         if ( ! is_array( $body ) ) {
-            return new \WP_Error( 'yaymatik_invalid_body', __( 'Send the settings as a JSON object.', 'yaymatik' ), [ 'status' => 400 ] );
+            return new \WP_Error( 'yaymatik_invalid_body', __( 'Send the settings as a JSON object.', 'yaymatik-automation-for-woocommerce' ), [ 'status' => 400 ] );
         }
         $changes = [];
         foreach ( array_keys( Settings::defaults() ) as $key ) {

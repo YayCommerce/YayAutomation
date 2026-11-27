@@ -76,7 +76,7 @@ final class EmailPreview {
      */
     public static function send_test( $graph, string $node_id, $config, string $to, ?int $order_id = null ) {
         if ( ! is_email( $to ) ) {
-            return new \WP_Error( 'yaymatik_no_email', __( 'Your account has no valid email address.', 'yaymatik' ), [ 'status' => 400 ] );
+            return new \WP_Error( 'yaymatik_no_email', __( 'Your account has no valid email address.', 'yaymatik-automation-for-woocommerce' ), [ 'status' => 400 ] );
         }
         $email = self::compose( $graph, $node_id, $config, $order_id, true );
         if ( is_wp_error( $email ) ) {
@@ -84,7 +84,7 @@ final class EmailPreview {
         }
         $subject = self::TEST_PREFIX . $email['subject'];
         if ( ! EmailDelivery::send( $to, [ 'subject' => $subject ] + $email, DeliveryStatus::TEST ) ) {
-            return new \WP_Error( 'yaymatik_mail_failed', __( 'Couldn’t send the test email.', 'yaymatik' ), [ 'status' => 500 ] );
+            return new \WP_Error( 'yaymatik_mail_failed', __( 'Couldn’t send the test email.', 'yaymatik-automation-for-woocommerce' ), [ 'status' => 500 ] );
         }
         return [
             'sentTo'         => $to,
@@ -113,7 +113,7 @@ final class EmailPreview {
         $node  = $nodes[ $node_id ] ?? null;
         $step  = $node && $node['data']['block'] ? StepRegistry::get( $node['data']['block'] ) : null;
         if ( ! $step instanceof EmailStep ) {
-            return new \WP_Error( 'yaymatik_not_email', __( 'Only email steps can be previewed.', 'yaymatik' ), [ 'status' => 400 ] );
+            return new \WP_Error( 'yaymatik_not_email', __( 'Only email steps can be previewed.', 'yaymatik-automation-for-woocommerce' ), [ 'status' => 400 ] );
         }
 
         // The same checks as Activate, for this step only: settings, then the variables it uses.

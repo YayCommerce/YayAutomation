@@ -50,7 +50,7 @@ async function request<T>(response: ResponsePromise): Promise<T> {
       // Error body isn't JSON (PHP fatal, proxy error page): fall back to the generic message.
     }
     throw new ApiError(
-      message || __('Something went wrong. Please try again.', 'yaymatik'),
+      message || __('Something went wrong. Please try again.', 'yaymatik-automation-for-woocommerce'),
       error instanceof HTTPError ? error.response.status : undefined,
       issues,
       code,
@@ -67,7 +67,7 @@ export const listWorkflows = () => request<Workflow[]>(api.get('workflows'));
 export const getWorkflow = (id: string) =>
   /^\d+$/.test(id)
     ? request<Workflow>(api.get(`workflows/${id}`))
-    : Promise.reject(new ApiError(__('Workflow not found.', 'yaymatik'), 404));
+    : Promise.reject(new ApiError(__('Workflow not found.', 'yaymatik-automation-for-woocommerce'), 404));
 
 /** New inactive workflow. Issues are allowed. */
 /** Without a name and graph the server creates a blank "New workflow" with an unchosen trigger. */
@@ -111,7 +111,7 @@ export const listRuns = (id: string, page: number, statuses: RunStatus[]) =>
 export const getRun = (id: string) =>
   /^\d+$/.test(id)
     ? request<RunDetail>(api.get(`runs/${id}`))
-    : Promise.reject(new ApiError(__('Run not found.', 'yaymatik'), 404));
+    : Promise.reject(new ApiError(__('Run not found.', 'yaymatik-automation-for-woocommerce'), 404));
 
 /** `POST /workflows/{id}/editor`. */
 export interface StepEditorTarget {

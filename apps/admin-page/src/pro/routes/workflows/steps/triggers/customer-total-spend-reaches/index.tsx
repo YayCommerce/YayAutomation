@@ -10,6 +10,13 @@ export const customerTotalSpendReachesStep = (): Step =>
     id: 'customer_total_spend_reaches',
     kind: 'trigger',
     Footer: () => (
-      <Hints hints={[__('Starts once per customer, on the paid order that reaches this amount.', 'yaymatik')]} />
+      <Hints
+        hints={[
+          __(
+            'Starts once per customer, on the paid order that reaches this amount.',
+            'yaymatik-automation-for-woocommerce',
+          ),
+        ]}
+      />
     ),
   });

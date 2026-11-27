@@ -46,49 +46,49 @@ final class CustomerProData extends CustomerData {
     protected function define(): array {
         $fields = parent::define() + [
             'paid_order_count'      => [
-                'label' => __( 'Paid order count', 'yaymatik' ),
+                'label' => __( 'Paid order count', 'yaymatik-automation-for-woocommerce' ),
                 'type'  => self::TYPE_NUMBER,
                 'value' => fn( $customer ) => (float) $this->stats_of( $customer )['count'],
             ],
             'total_spent'           => [
-                'label'      => __( 'Total spent', 'yaymatik' ),
-                'help'       => __( 'Orders in other currencies are added as stored, not converted.', 'yaymatik' ),
+                'label'      => __( 'Total spent', 'yaymatik-automation-for-woocommerce' ),
+                'help'       => __( 'Orders in other currencies are added as stored, not converted.', 'yaymatik-automation-for-woocommerce' ),
                 'type'       => self::TYPE_NUMBER,
                 'value_type' => Type::money(),
                 'value'      => fn( $customer ) => (float) $this->stats_of( $customer )['spent'],
                 'display'    => fn( $customer, bool $html ) => self::money_text( (float) $this->stats_of( $customer )['spent'], $html ),
             ],
             'last_order_date'       => [
-                'label'     => __( 'Last order date', 'yaymatik' ),
-                'help'      => __( 'The newest paid order; pending and failed orders don’t count.', 'yaymatik' ),
+                'label'     => __( 'Last order date', 'yaymatik-automation-for-woocommerce' ),
+                'help'      => __( 'The newest paid order; pending and failed orders don’t count.', 'yaymatik-automation-for-woocommerce' ),
                 'type'      => self::TYPE_DATE,
                 'value'     => fn( $customer ) => self::day( $this->stats_of( $customer )['last_paid'] ),
                 'timestamp' => fn( $customer ) => $this->stats_of( $customer )['last_paid'],
                 'display'   => fn( $customer, bool $html ) => self::date_text( $this->stats_of( $customer )['last_paid'], $html ),
             ],
             'last_added_to_cart'    => [
-                'label'     => __( 'Last added to cart', 'yaymatik' ),
-                'help'      => __( 'When the signed-in customer last added a product or raised a quantity. Never earlier than when YayMatik Pro last started tracking it.', 'yaymatik' ),
+                'label'     => __( 'Last added to cart', 'yaymatik-automation-for-woocommerce' ),
+                'help'      => __( 'When the signed-in customer last added a product or raised a quantity. Never earlier than when YayMatik Pro last started tracking it.', 'yaymatik-automation-for-woocommerce' ),
                 'type'      => self::TYPE_DATE,
                 'merge_tag' => false,
                 'value'     => fn( $customer ) => self::day( CartActivity::last_added( self::user_id( $customer ) ) ),
                 'timestamp' => fn( $customer ) => CartActivity::last_added( self::user_id( $customer ) ),
             ],
             'cart_item_count'       => [
-                'label' => __( 'Items in cart', 'yaymatik' ),
-                'help'  => __( 'Items in the signed-in customer’s cart that isn’t ordered yet. Needs Track carts.', 'yaymatik' ),
+                'label' => __( 'Items in cart', 'yaymatik-automation-for-woocommerce' ),
+                'help'  => __( 'Items in the signed-in customer’s cart that isn’t ordered yet. Needs Track carts.', 'yaymatik-automation-for-woocommerce' ),
                 'type'  => self::TYPE_NUMBER,
                 'value' => fn( $customer ) => CartActivity::item_count( self::user_id( $customer ) ),
             ],
             'registered_date'       => [
-                'label'     => __( 'Registered date', 'yaymatik' ),
+                'label'     => __( 'Registered date', 'yaymatik-automation-for-woocommerce' ),
                 'type'      => self::TYPE_DATE,
                 'value'     => fn( $customer ) => self::day( self::registered_at( $customer ) ),
                 'timestamp' => [ self::class, 'registered_at' ],
                 'display'   => fn( $customer, bool $html ) => self::date_text( self::registered_at( $customer ), $html ),
             ],
             'role'                  => [
-                'label'   => __( 'Role', 'yaymatik' ),
+                'label'   => __( 'Role', 'yaymatik-automation-for-woocommerce' ),
                 'type'    => self::TYPE_LIST,
                 'value'   => [ self::class, 'roles_of' ],
                 'display' => fn( $customer, bool $html ) => self::text(
@@ -98,14 +98,14 @@ final class CustomerProData extends CustomerData {
                 'options' => [ self::class, 'roles' ],
             ],
             'purchased_product_ids' => [
-                'label'   => __( 'Products bought', 'yaymatik' ),
+                'label'   => __( 'Products bought', 'yaymatik-automation-for-woocommerce' ),
                 'type'    => self::TYPE_LIST,
                 'search'  => 'product',
                 'value'   => [ self::class, 'purchased' ],
                 'display' => fn( $customer, bool $html ) => self::text( implode( ', ', array_filter( array_map( fn( string $id ) => (string) get_post_field( 'post_title', (int) $id, 'raw' ), self::purchased( $customer ) ) ) ), $html ),
             ],
             'meta'                  => [
-                'label'        => __( 'Custom field', 'yaymatik' ),
+                'label'        => __( 'Custom field', 'yaymatik-automation-for-woocommerce' ),
                 'type'         => self::TYPE_META,
                 'value'        => fn() => '',
                 'merge_tag'    => false,
@@ -135,11 +135,11 @@ final class CustomerProData extends CustomerData {
             ],
             'role'                  => [
                 'value' => [ 'customer' ],
-                'text'  => self::roles()['customer'] ?? __( 'Customer', 'yaymatik' ),
+                'text'  => self::roles()['customer'] ?? __( 'Customer', 'yaymatik-automation-for-woocommerce' ),
             ],
             'purchased_product_ids' => [
                 'value' => [ '1' ],
-                'text'  => __( 'Sample product', 'yaymatik' ),
+                'text'  => __( 'Sample product', 'yaymatik-automation-for-woocommerce' ),
             ],
         ];
     }

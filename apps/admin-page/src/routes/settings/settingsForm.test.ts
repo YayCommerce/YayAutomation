@@ -1,7 +1,7 @@
-import { settingRanges } from '@edition/settings';
 import * as v from 'valibot';
 import { describe, expect, it } from 'vitest';
 
+import { settingRanges } from './settingRanges';
 import { changedSettings, settingsSchema, type SettingsValues } from './settingsForm';
 
 const saved: SettingsValues = {
@@ -18,8 +18,8 @@ const issues = (changes: Partial<SettingsValues>) =>
   (v.safeParse(settingsSchema(saved), { ...saved, ...changes }).issues ?? []).map((issue) => issue.message);
 
 describe('settingsSchema', () => {
-  const ranges = Object.entries(settingRanges).flatMap(([key, range]) =>
-    range ? [[key as keyof typeof settingRanges, ...range] as const] : [],
+  const ranges = Object.entries(settingRanges).map(
+    ([key, range]) => [key as keyof typeof settingRanges, ...range] as const,
   );
 
   it.each(ranges)('%s takes whole numbers from %d to %d, like PHP', (key, min, max) => {
@@ -33,13 +33,13 @@ describe('settingsSchema', () => {
   });
 });
 
-describe('the edition’s ranges', () => {
-  it('match PHP: the free edition saves retention up to 60 and 90 days and shows no abandon minutes', () => {
-    expect(settingRanges).toEqual(
-      process.env.YAYMATIK_EDITION !== 'lite'
-        ? { abandonMinutes: [15, 1440], cartRetentionDays: [7, 365], runRetentionDays: [7, 730] }
-        : { abandonMinutes: null, cartRetentionDays: [7, 60], runRetentionDays: [7, 90] },
-    );
+describe('the ranges', () => {
+  it('are one table, PHP `Settings::RANGES`, in both editions', () => {
+    expect(settingRanges).toEqual({
+      abandonMinutes: [15, 1440],
+      cartRetentionDays: [7, 365],
+      runRetentionDays: [7, 730],
+    });
   });
 
   it('let a stored value above the range through untouched, as a save sends changes only', () => {

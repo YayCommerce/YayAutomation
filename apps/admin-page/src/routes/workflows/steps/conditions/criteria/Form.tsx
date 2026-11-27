@@ -80,7 +80,7 @@ export function CriteriaForm({ config, onChange }: StepFormProps<CriteriaConfig>
         {
           /* translators: 1: the Yes path's tag, 2: "all" or "any" */ __(
             'Take the %1$s path when %2$s of these match:',
-            'yaymatik',
+            'yaymatik-automation-for-woocommerce',
           )
             .split(/(%\d\$s)/)
             .map((part, i) =>
@@ -90,7 +90,7 @@ export function CriteriaForm({ config, onChange }: StepFormProps<CriteriaConfig>
                   className="inline-flex h-5.5 items-center gap-1 rounded-full border pr-2 pl-1.5 text-[12.5px] font-semibold"
                 >
                   <Check className="text-kind-action size-3 stroke-[2.5]" aria-hidden />
-                  {__('Yes', 'yaymatik')}
+                  {__('Yes', 'yaymatik-automation-for-woocommerce')}
                 </span>
               ) : part === '%2$s' ? (
                 <MatchSelect key={i} match={value.match} onChange={(match) => update({ ...value, match })} />
@@ -137,19 +137,19 @@ export function CriteriaForm({ config, onChange }: StepFormProps<CriteriaConfig>
       <div className="flex flex-wrap gap-2">
         <Button variant="outline" size="sm" onClick={addRule}>
           <Plus />
-          {__('Add rule', 'yaymatik')}
+          {__('Add rule', 'yaymatik-automation-for-woocommerce')}
         </Button>
         {criteriaFeatures.groups && (
           <Button variant="outline" size="sm" onClick={addGroup}>
             <Plus />
-            {__('Add group', 'yaymatik')}
+            {__('Add group', 'yaymatik-automation-for-woocommerce')}
           </Button>
         )}
       </div>
 
       <p className="text-muted-foreground flex items-center gap-1.5 text-[12.5px]">
         <Info className="size-3.25 shrink-0" aria-hidden />
-        {__('Otherwise the No path runs.', 'yaymatik')}
+        {__('Otherwise the No path runs.', 'yaymatik-automation-for-woocommerce')}
       </p>
     </div>
   );
@@ -177,12 +177,12 @@ function withRuleIssue(
 function MatchSelect({ match, onChange }: { match: Group['match']; onChange: (match: Group['match']) => void }) {
   return (
     <Select value={match} onValueChange={(next) => onChange(next as Group['match'])}>
-      <SelectTrigger size="sm" className="h-7.5 px-2.5" aria-label={__('Match', 'yaymatik')}>
+      <SelectTrigger size="sm" className="h-7.5 px-2.5" aria-label={__('Match', 'yaymatik-automation-for-woocommerce')}>
         <SelectValue />
       </SelectTrigger>
       <SelectContent>
-        <SelectItem value="all">{__('all', 'yaymatik')}</SelectItem>
-        <SelectItem value="any">{__('any', 'yaymatik')}</SelectItem>
+        <SelectItem value="all">{__('all', 'yaymatik-automation-for-woocommerce')}</SelectItem>
+        <SelectItem value="any">{__('any', 'yaymatik-automation-for-woocommerce')}</SelectItem>
       </SelectContent>
     </Select>
   );
@@ -220,14 +220,19 @@ function GroupBox({
       <div className={cn('bg-card flex flex-col gap-2 rounded-[10px] border p-2.5', tone?.tint)}>
         <div className="flex items-center gap-1.5 text-sm">
           <MatchSelect match={group.match} onChange={(match) => onChange({ ...group, match })} />
-          <span className="flex-1">{__('of these', 'yaymatik')}</span>
+          <span className="flex-1">{__('of these', 'yaymatik-automation-for-woocommerce')}</span>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon-sm" aria-label={__('Remove group', 'yaymatik')} onClick={onRemove}>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label={__('Remove group', 'yaymatik-automation-for-woocommerce')}
+                onClick={onRemove}
+              >
                 <Trash2 />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>{__('Remove group', 'yaymatik')}</TooltipContent>
+            <TooltipContent>{__('Remove group', 'yaymatik-automation-for-woocommerce')}</TooltipContent>
           </Tooltip>
         </div>
         {group.rules.map((rule, index) => (
@@ -260,7 +265,7 @@ function GroupBox({
           }}
         >
           <Plus />
-          {__('Add rule to group', 'yaymatik')}
+          {__('Add rule to group', 'yaymatik-automation-for-woocommerce')}
         </Button>
       </div>
       {errors?.own && tone && <ErrorLine className={tone.text}>{errors.own}</ErrorLine>}
@@ -304,8 +309,12 @@ function RuleBox({
       onValueChange={(operator) => onChange(withOperator(rule, operator))}
       disabled={!field}
     >
-      <SelectTrigger id={`${id}-operator`} className={className} aria-label={__('Comparison', 'yaymatik')}>
-        <SelectValue placeholder={__('Choose a comparison', 'yaymatik')} />
+      <SelectTrigger
+        id={`${id}-operator`}
+        className={className}
+        aria-label={__('Comparison', 'yaymatik-automation-for-woocommerce')}
+      >
+        <SelectValue placeholder={__('Choose a comparison', 'yaymatik-automation-for-woocommerce')} />
       </SelectTrigger>
       <SelectContent>
         {field &&
@@ -338,7 +347,7 @@ function RuleBox({
             <DataSelect
               id={`${id}-data`}
               field={field}
-              placeholder={__('Choose data', 'yaymatik')}
+              placeholder={__('Choose data', 'yaymatik-automation-for-woocommerce')}
               invalid={!!error && !field}
             />
           </VariablePicker>
@@ -349,13 +358,13 @@ function RuleBox({
               variant="ghost"
               size="icon-sm"
               className="self-center"
-              aria-label={__('Remove rule', 'yaymatik')}
+              aria-label={__('Remove rule', 'yaymatik-automation-for-woocommerce')}
               onClick={onRemove}
             >
               <Trash2 />
             </Button>
           </TooltipTrigger>
-          <TooltipContent>{__('Remove rule', 'yaymatik')}</TooltipContent>
+          <TooltipContent>{__('Remove rule', 'yaymatik-automation-for-woocommerce')}</TooltipContent>
         </Tooltip>
 
         {meta ? (
@@ -376,7 +385,7 @@ function RuleBox({
         {hasValue && (
           <div data-spotlight className={cn('min-w-0', (wide || meta) && 'col-span-3', spotlightTarget)}>
             <label htmlFor={`${id}-value`} className="sr-only">
-              {field?.label ?? __('Value', 'yaymatik')}
+              {field?.label ?? __('Value', 'yaymatik-automation-for-woocommerce')}
             </label>
             <ValueInput
               id={`${id}-value`}

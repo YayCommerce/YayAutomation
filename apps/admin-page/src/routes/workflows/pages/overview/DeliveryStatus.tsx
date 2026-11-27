@@ -13,11 +13,11 @@ export interface EmailDelivery {
 }
 
 const labels = {
-  delivered: __('Delivered', 'yaymatik'),
-  opened: __('Opened', 'yaymatik'),
-  clicked: __('Clicked', 'yaymatik'),
-  bounced: __('Bounced', 'yaymatik'),
-  failed: __('Failed', 'yaymatik'),
+  delivered: __('Delivered', 'yaymatik-automation-for-woocommerce'),
+  opened: __('Opened', 'yaymatik-automation-for-woocommerce'),
+  clicked: __('Clicked', 'yaymatik-automation-for-woocommerce'),
+  bounced: __('Bounced', 'yaymatik-automation-for-woocommerce'),
+  failed: __('Failed', 'yaymatik-automation-for-woocommerce'),
 };
 
 /** No line for sent, nor failed on a failed step (its result says it); failed on a completed step is a later report. */
@@ -42,7 +42,7 @@ export function DeliveryStatus({ delivery }: { delivery: EmailDelivery }) {
       <span aria-hidden="true" className={cn('size-1.5 rounded-full', bounced ? 'bg-destructive' : 'bg-success')} />
       {sprintf(
         /* translators: 1: delivery status, e.g. "Delivered"; 2: date and time, e.g. "Oct 9 at 3:00 PM" */
-        __('%1$s · %2$s', 'yaymatik'),
+        __('%1$s · %2$s', 'yaymatik-automation-for-woocommerce'),
         labels[delivery.status],
         shortDayTime(delivery.at),
       )}

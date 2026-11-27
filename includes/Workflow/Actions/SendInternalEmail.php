@@ -23,11 +23,11 @@ class SendInternalEmail extends Action implements EmailStep {
     }
 
     public function label(): string {
-        return __( 'Send internal email', 'yaymatik' );
+        return __( 'Send internal email', 'yaymatik-automation-for-woocommerce' );
     }
 
     public function description(): string {
-        return __( 'Email your store team, from your WooCommerce store email address.', 'yaymatik' );
+        return __( 'Email your store team, from your WooCommerce store email address.', 'yaymatik-automation-for-woocommerce' );
     }
 
     public function icon(): string {
@@ -44,18 +44,18 @@ class SendInternalEmail extends Action implements EmailStep {
 
     public function fields(): array {
         return [
-            Field::notice( 'from', __( 'From', 'yaymatik' ), self::from_line() ),
-            Field::emails( 'recipients', __( 'To', 'yaymatik' ) )
+            Field::notice( 'from', __( 'From', 'yaymatik-automation-for-woocommerce' ), self::from_line() ),
+            Field::emails( 'recipients', __( 'To', 'yaymatik-automation-for-woocommerce' ) )
                 ->placeholder( (string) get_option( 'admin_email' ) )
-                ->help( __( 'Separate addresses with commas. Leave blank to use the site admin email.', 'yaymatik' ) ),
-            Field::text( 'subject', __( 'Subject', 'yaymatik' ) )
+                ->help( __( 'Separate addresses with commas. Leave blank to use the site admin email.', 'yaymatik-automation-for-woocommerce' ) ),
+            Field::text( 'subject', __( 'Subject', 'yaymatik-automation-for-woocommerce' ) )
                 /* translators: {{ step }}: step name; keep {{ … }} as it is. */
-                ->required( __( '{{ step }} needs a subject.', 'yaymatik' ) )
+                ->required( __( '{{ step }} needs a subject.', 'yaymatik-automation-for-woocommerce' ) )
                 ->variables()
-                ->default( __( 'Order {{ order.number }} is {{ order.status }}', 'yaymatik' ) ),
-            Field::html( 'message', __( 'Message', 'yaymatik' ) )
+                ->default( __( 'Order {{ order.number }} is {{ order.status }}', 'yaymatik-automation-for-woocommerce' ) ),
+            Field::html( 'message', __( 'Message', 'yaymatik-automation-for-woocommerce' ) )
                 /* translators: {{ step }}: step name; keep {{ … }} as it is. */
-                ->required( __( '{{ step }} needs a message.', 'yaymatik' ) )
+                ->required( __( '{{ step }} needs a message.', 'yaymatik-automation-for-woocommerce' ) )
                 ->variables()
                 ->default( self::sample_message() ),
         ];
@@ -63,13 +63,13 @@ class SendInternalEmail extends Action implements EmailStep {
 
     public function summary(): string {
         /* translators: {{ config.recipients }}: email addresses; keep {{ … }} as it is. */
-        return __( 'Send to {{ config.recipients }}', 'yaymatik' );
+        return __( 'Send to {{ config.recipients }}', 'yaymatik-automation-for-woocommerce' );
     }
 
     public function outputs(): array {
         return [
             'to' => [
-                'label' => __( 'Sent to', 'yaymatik' ),
+                'label' => __( 'Sent to', 'yaymatik-automation-for-woocommerce' ),
                 'type'  => Type::list_of( Type::string() ),
             ],
         ];
@@ -88,7 +88,7 @@ class SendInternalEmail extends Action implements EmailStep {
         }
 
         if ( ! EmailDelivery::send( $recipients, $this->compose_email( $config, $scope, null ), (string) $scope->step_row() ) ) {
-            return StepResult::failed( __( 'Couldn’t send the email.', 'yaymatik' ) );
+            return StepResult::failed( __( 'Couldn’t send the email.', 'yaymatik-automation-for-woocommerce' ) );
         }
         return StepResult::ok( [ 'to' => $recipients ] );
     }
@@ -130,8 +130,8 @@ class SendInternalEmail extends Action implements EmailStep {
 
     /** A new step's message: who ordered, the total and the items. */
     private static function sample_message(): string {
-        return '<p>' . __( 'Order {{ order.number }} from {{ customer.full_name }} is {{ order.status }}.', 'yaymatik' ) . '</p>'
-            . '<p>' . __( 'Total: {{ order.total }}', 'yaymatik' ) . '</p>'
+        return '<p>' . __( 'Order {{ order.number }} from {{ customer.full_name }} is {{ order.status }}.', 'yaymatik-automation-for-woocommerce' ) . '</p>'
+            . '<p>' . __( 'Total: {{ order.total }}', 'yaymatik-automation-for-woocommerce' ) . '</p>'
             . '<p>{{ order.items }}</p>';
     }
 

@@ -17,13 +17,16 @@ export async function request<T>(
     } catch {
       // Error body isn't JSON (PHP fatal, proxy error page).
     }
-    let message = __('The server didn’t answer.', 'yaymatik');
+    let message = __('The server didn’t answer.', 'yaymatik-automation-for-woocommerce');
     if (error instanceof HTTPError) {
       message =
         typeof json?.message === 'string'
           ? json.message
           : /* translators: %d: HTTP status code */
-            sprintf(__('The server returned an error (%d).', 'yaymatik'), error.response.status);
+            sprintf(
+              __('The server returned an error (%d).', 'yaymatik-automation-for-woocommerce'),
+              error.response.status,
+            );
     }
     throw toError(message, json);
   }

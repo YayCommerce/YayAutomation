@@ -126,7 +126,7 @@ abstract class DataItem {
         }
         $text = (string) $value;
         if ( is_bool( $value ) ) {
-            $text = $value ? __( 'Yes', 'yaymatik' ) : __( 'No', 'yaymatik' );
+            $text = $value ? __( 'Yes', 'yaymatik-automation-for-woocommerce' ) : __( 'No', 'yaymatik-automation-for-woocommerce' );
         } elseif ( self::TYPE_ENUM === $field['type'] ) {
             $text = (string) ( ( $field['options'] )()[ $text ] ?? $text );
         }

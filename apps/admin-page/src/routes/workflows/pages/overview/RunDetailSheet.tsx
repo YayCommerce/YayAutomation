@@ -31,7 +31,7 @@ export function RunDetailSheet({
   useEffect(() => {
     if (!notFound) return;
     // The id keeps one toast when the effect runs twice (React's development mode).
-    toast.error(__('Run not found.', 'yaymatik'), { id: 'run-not-found' });
+    toast.error(__('Run not found.', 'yaymatik-automation-for-woocommerce'), { id: 'run-not-found' });
     onClose();
   }, [notFound, onClose]);
 
@@ -76,7 +76,7 @@ export function RunDetailSheet({
           {/* Its own line: the reason may sit on a step's row or below the steps. */}
           {shown?.stoppedByOrderUrl && (
             <a href={shown.stoppedByOrderUrl} className="text-link mt-3 block text-sm hover:underline">
-              {__('View order', 'yaymatik')}
+              {__('View order', 'yaymatik-automation-for-woocommerce')}
             </a>
           )}
         </div>
@@ -104,7 +104,7 @@ function RunSteps({ run }: { run: RunDetail }) {
             key={step.id}
             kind={stepDef?.kind ?? 'action'}
             stepDef={stepDef}
-            label={stepDef?.label ?? __('Removed step', 'yaymatik')}
+            label={stepDef?.label ?? __('Removed step', 'yaymatik-automation-for-woocommerce')}
             result={stepResult(step, run)}
             delivery={shownDelivery(step.output.delivery, step.status)}
             time={step.finishedAt ?? step.startedAt}

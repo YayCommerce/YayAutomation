@@ -31,16 +31,16 @@ class CustomerLoggedIn extends CustomerSession {
     }
 
     public function label(): string {
-        return __( 'Customer logged in', 'yaymatik' );
+        return __( 'Customer logged in', 'yaymatik-automation-for-woocommerce' );
     }
 
     public function description(): string {
-        return __( 'A customer with a paid order logs in or comes back', 'yaymatik' );
+        return __( 'A customer with a paid order logs in or comes back', 'yaymatik-automation-for-woocommerce' );
     }
 
     public function summary(): string {
         /* translators: {{ config.days }}: number of days; keep {{ … }} as it is. */
-        return __( 'When a customer logs in · once every {{ config.days }} days', 'yaymatik' );
+        return __( 'When a customer logs in · once every {{ config.days }} days', 'yaymatik-automation-for-woocommerce' );
     }
 
     /**

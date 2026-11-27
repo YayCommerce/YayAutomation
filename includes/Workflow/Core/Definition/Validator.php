@@ -33,7 +33,7 @@ final class Validator {
             return $graph;
         }
         return [
-            'name'  => array_key_exists( 'name', $input ) ? self::prepare_name( $input['name'] ) : __( 'New workflow', 'yaymatik' ),
+            'name'  => array_key_exists( 'name', $input ) ? self::prepare_name( $input['name'] ) : __( 'New workflow', 'yaymatik-automation-for-woocommerce' ),
             'graph' => $graph,
         ];
     }
@@ -47,7 +47,7 @@ final class Validator {
      */
     public static function prepare_changes( $input, array $stored = [] ) {
         if ( ! is_array( $input ) ) {
-            return self::error( __( 'Invalid workflow.', 'yaymatik' ) );
+            return self::error( __( 'Invalid workflow.', 'yaymatik-automation-for-woocommerce' ) );
         }
         $changes = [];
         if ( array_key_exists( 'name', $input ) ) {
@@ -85,9 +85,9 @@ final class Validator {
         $count   = count( $errors );
         $message = 'apply' === $action
             /* translators: %d: number of issues */
-            ? _n( 'Fix %d issue before you update this workflow.', 'Fix %d issues before you update this workflow.', $count, 'yaymatik' )
+            ? _n( 'Fix %d issue before you update this workflow.', 'Fix %d issues before you update this workflow.', $count, 'yaymatik-automation-for-woocommerce' )
             /* translators: %d: number of issues */
-            : _n( 'Fix %d issue before you activate this workflow.', 'Fix %d issues before you activate this workflow.', $count, 'yaymatik' );
+            : _n( 'Fix %d issue before you activate this workflow.', 'Fix %d issues before you activate this workflow.', $count, 'yaymatik-automation-for-woocommerce' );
         return new \WP_Error(
             'yaymatik_invalid_workflow',
             sprintf( $message, $count ),

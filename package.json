@@ -13,7 +13,7 @@
     "test:php": "dev/tools/phpunit/vendor/bin/phpunit",
     "test:php:lite": "YAYMATIK_EDITION=lite dev/tools/phpunit/vendor/bin/phpunit --testsuite lite",
     "e2e": "pnpm build && playwright test -c dev/e2e/playwright.config.ts",
-    "makepot": "wp i18n make-pot . languages/yaymatik.pot --include=yaymatik.php,includes,assets/dist --domain=yaymatik --slug=yaymatik",
+    "makepot": "wp i18n make-pot . languages/yaymatik-automation-for-woocommerce.pot --include=yaymatik.php,includes,assets/dist --domain=yaymatik-automation-for-woocommerce --slug=yaymatik-automation-for-woocommerce",
     "format": "pnpm -r format",
     "analyze": "pnpm -F @yaymatik/admin analyze"
   },

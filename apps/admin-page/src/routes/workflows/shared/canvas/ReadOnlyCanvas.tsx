@@ -121,7 +121,7 @@ function CanvasControls({ fitViewOptions }: { fitViewOptions: FitViewOptions }) 
           size="icon-sm"
           className="bg-card"
           onClick={() => zoomOut()}
-          aria-label={__('Zoom out', 'yaymatik')}
+          aria-label={__('Zoom out', 'yaymatik-automation-for-woocommerce')}
         >
           <Minus />
         </Button>
@@ -130,7 +130,7 @@ function CanvasControls({ fitViewOptions }: { fitViewOptions: FitViewOptions }) 
           size="icon-sm"
           className="bg-card"
           onClick={() => zoomIn()}
-          aria-label={__('Zoom in', 'yaymatik')}
+          aria-label={__('Zoom in', 'yaymatik-automation-for-woocommerce')}
         >
           <Plus />
         </Button>
@@ -140,7 +140,7 @@ function CanvasControls({ fitViewOptions }: { fitViewOptions: FitViewOptions }) 
         size="icon-sm"
         className="bg-card"
         onClick={() => fitView(fitViewOptions)}
-        aria-label={__('Fit view', 'yaymatik')}
+        aria-label={__('Fit view', 'yaymatik-automation-for-woocommerce')}
       >
         <Maximize2 />
       </Button>

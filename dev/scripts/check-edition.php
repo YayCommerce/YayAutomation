@@ -216,6 +216,17 @@ switch ( $args[0] ?? '' ) {
             $ok( 200 === $saved->get_status() && $same, "lite: {$name} saves, its Pro settings kept as they were" );
             $ok( in_array( 'needs_pro', $codes, true ) && ! WorkflowStore::is_active( $workflow_id ), "lite: {$name} doesn't activate (needs_pro)" );
         }
+
+        // Last in the step: the settings this process read stay the wide ones after the option is put back.
+        $stored = get_option( 'yaymatik_settings', null );
+        $widest = [
+            'abandonMinutes'    => 1440,
+            'cartRetentionDays' => 365,
+            'runRetentionDays'  => 730,
+        ];
+        $saved  = $call( 'PUT', 'settings', $widest );
+        $ok( 200 === $saved->get_status() && array_intersect_key( $saved->get_data(), $widest ) === $widest, 'lite: settings save 1440 abandon minutes, 365 cart days and 730 run days' );
+        null === $stored ? delete_option( 'yaymatik_settings' ) : update_option( 'yaymatik_settings', $stored, true );
         break;
 
     case 'pro-again':

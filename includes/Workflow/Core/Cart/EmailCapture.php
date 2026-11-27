@@ -14,6 +14,7 @@ defined( 'ABSPATH' ) || exit;
 final class EmailCapture {
 
     private const AJAX_ACTION   = 'yaymatik_capture_email';
+    private const NONCE_ACTION  = 'yaymatik_capture_email';
     private const CAPTURED_KEY  = 'yaymatik_captured';
     private const SESSIONS_MAX  = 3;
     private const EMAIL_MAX     = 190;
@@ -21,11 +22,12 @@ final class EmailCapture {
     private const SCRIPT_HANDLE = 'yaymatik-capture-email';
 
     /** "no cart", "logged in" and "not an email" are ordinary shopper behaviour: not logged. */
-    private const LOGGED = [ 'not from the store', 'rate limit' ];
+    private const LOGGED = [ 'bad nonce', 'not from the store', 'rate limit' ];
 
     public static function boot(): void {
         // Answers even while tracking or capture is off, so the response never tells a setting apart.
         add_action( 'wc_ajax_' . self::AJAX_ACTION, [ self::class, 'ajax' ] );
+        add_filter( 'nonce_user_logged_out', [ self::class, 'nonce_user' ], 10, 2 );
         if ( ! self::enabled() ) {
             return;
         }
@@ -39,16 +41,41 @@ final class EmailCapture {
             return;
         }
         wp_enqueue_script( self::SCRIPT_HANDLE, YAYMATIK_PLUGIN_URL . 'assets/js/capture-email.js', [], YAYMATIK_VERSION, true );
-        wp_localize_script( self::SCRIPT_HANDLE, 'yayMatikCapture', [ 'url' => \WC_AJAX::get_endpoint( self::AJAX_ACTION ) ] );
+        wp_localize_script(
+            self::SCRIPT_HANDLE,
+            'yayMatikCapture',
+            [
+                'url'   => \WC_AJAX::get_endpoint( self::AJAX_ACTION ),
+                'nonce' => wp_create_nonce( self::NONCE_ACTION ),
+            ]
+        );
+    }
+
+    /**
+     * A guest's nonce belongs to their cart session, as WooCommerce's own `woocommerce*` nonces do.
+     *
+     * @param int|string $uid
+     * @param int|string $action
+     * @return int|string
+     */
+    public static function nonce_user( $uid, $action ) {
+        // Without it every guest shares one nonce. Checkout isn't page-cached: WooCommerce sets DONOTCACHEPAGE there.
+        $session = self::NONCE_ACTION === $action && function_exists( 'WC' ) ? WC()->session : null;
+        return $session instanceof \WC_Session_Handler && $session->has_session() && $session->get_customer_id() ? $session->get_customer_id() : $uid;
     }
 
     /** Always the same `{"success":true}`: the answer never says whether an address is known, valid or kept. */
     public static function ajax(): void {
-        // phpcs:disable WordPress.Security.NonceVerification.Missing -- a guest's cached checkout page has no reliable nonce; RequestOrigin is the CSRF check.
+        if ( ! self::enabled() ) {
+            wp_send_json_success();
+        }
+        if ( false === check_ajax_referer( self::NONCE_ACTION, '_wpnonce', false ) ) {
+            self::log( 'bad nonce' );
+            wp_send_json_success();
+        }
         $email      = isset( $_POST['email'] ) ? sanitize_text_field( wp_unslash( $_POST['email'] ) ) : '';
         $first_name = isset( $_POST['first_name'] ) ? sanitize_text_field( wp_unslash( $_POST['first_name'] ) ) : '';
-        // phpcs:enable WordPress.Security.NonceVerification.Missing
-        $headers = [];
+        $headers    = [];
         foreach ( [
             'sec-fetch-site' => 'HTTP_SEC_FETCH_SITE',
             'origin'         => 'HTTP_ORIGIN',
@@ -57,10 +84,7 @@ final class EmailCapture {
             $headers[ $name ] = isset( $_SERVER[ $server ] ) ? sanitize_text_field( wp_unslash( $_SERVER[ $server ] ) ) : '';
         }
 
-        if ( self::enabled() ) {
-            $reason = RequestOrigin::allowed( $headers, home_url() ) ? self::attempt( $email, $first_name ) : 'not from the store';
-            self::log( $reason );
-        }
+        self::log( RequestOrigin::allowed( $headers, home_url() ) ? self::attempt( $email, $first_name ) : 'not from the store' );
         wp_send_json_success();
     }
 
