@@ -26,6 +26,10 @@ Confirmed: D25, D26, D27.
 - P1.1 Templates 5, 6 and 16 start on Pro triggers (`customer_inactive`, `customer_order_count_reaches`), so they show only with YayMatik Pro, by the existing rule — confirmed
 - P1.2 No skip rule: scaffolds live only until copy-scaffolds hands them to the product teams; `YAYMATIK_DEV_ECOSYSTEM_OFF` covers a clash. Replaces D25's "skipped when its product is active" — confirmed
 - Fake adapters fill email designs as a select; no editor in this plan — confirmed (auto)
+- Email templates leave `design_id` blank and required: Use template makes the draft, Activate waits until a design is picked, as the example extension does — confirmed (auto)
+- Template 18 starts on any rule discount (`yaypricing_discount_total` > 0), and its "Before you start" line says how to narrow it to one rule: a blank rule value would hide the template, and a fake rule id would bake a store value in — confirmed (auto)
+- The test fixture class in `tests/Support/yaywholesale-reference.php` is renamed `YayWholesale_Reference_YayMatik`, so the scaffold keeps the product's own class name — confirmed (auto)
+- `ecosystem-fire` uses the newest customer (or admin) for `customer` and id `1` for a scaffold's own data item; it refuses when no active workflow uses the trigger — confirmed (auto)
 
 ## Meta
 - Target branch: feature/ecosystem-extension-scaffolds
