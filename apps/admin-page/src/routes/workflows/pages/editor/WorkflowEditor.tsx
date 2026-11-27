@@ -179,7 +179,7 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
   /** Saves pending edits first; false (and a toast) when that fails. */
   const saveFirst = async () => {
     const saved = await autosave.flush();
-    if (!saved) toast.error(__('Couldn’t save your latest changes. Try again.', 'yaymatik'));
+    if (!saved) toast.error(__('Couldn’t save your latest changes. Try again.', 'yaymatik-automation-for-woocommerce'));
     return saved;
   };
 
@@ -215,12 +215,14 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
       try {
         const updated = await apply.mutateAsync({ id: workflow.id });
         setErrorMode(false);
-        toast.success(__('Workflow updated', 'yaymatik'), { description: cancelledRunsText(updated.cancelledRuns) });
+        toast.success(__('Workflow updated', 'yaymatik-automation-for-woocommerce'), {
+          description: cancelledRunsText(updated.cancelledRuns),
+        });
       } catch (error) {
         if (error instanceof ApiError && error.code === 'yaymatik_no_draft') {
           // The edits ended up matching the live workflow, so the server dropped the draft. Refetch so
           // the header stops offering Update.
-          toast.info(__('There were no changes to update.', 'yaymatik'));
+          toast.info(__('There were no changes to update.', 'yaymatik-automation-for-woocommerce'));
           void queryClient.invalidateQueries({ queryKey: workflowKeys.detail(workflow.id) });
         } else if (error instanceof ApiError && error.issues.length) {
           showRefusal(error.issues, error);
@@ -239,7 +241,7 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
       autosave.reset(saved.graph, { issues: editedIssues(saved), warnings: editedWarnings(saved) });
       resetPanel(saved.graph);
       setErrorMode(false);
-      toast.success(__('Changes discarded', 'yaymatik'));
+      toast.success(__('Changes discarded', 'yaymatik-automation-for-woocommerce'));
     } catch (error) {
       // Nothing was discarded; the edits keep saving.
       autosave.resume();
@@ -271,14 +273,14 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
       <EditorContext.Provider value={editorState}>
         <EditorLayout
           closeTo={`/workflows/${workflow.id}`}
-          closeLabel={__('Close editor', 'yaymatik')}
+          closeLabel={__('Close editor', 'yaymatik-automation-for-woocommerce')}
           title={
             <>
               <span className="truncate font-medium">{workflow.name}</span>
               {/* Edits not yet in the live workflow → Draft changes. Otherwise Draft (never activated),
                   Inactive, or no badge when active. */}
               {hasDraft ? (
-                <WarningBadge>{__('Draft changes', 'yaymatik')}</WarningBadge>
+                <WarningBadge>{__('Draft changes', 'yaymatik-automation-for-woocommerce')}</WarningBadge>
               ) : (
                 !isActive && <WorkflowStatusBadge state={workflowState(workflow)} />
               )}
@@ -290,7 +292,7 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
               {hasDraft ? (
                 <>
                   <Button variant="outline" size="sm" disabled={busy} onClick={() => setConfirm('discard')}>
-                    {__('Discard changes', 'yaymatik')}
+                    {__('Discard changes', 'yaymatik-automation-for-woocommerce')}
                   </Button>
                   {/* Only a running workflow asks first: updating an inactive one changes nothing live. */}
                   <Button
@@ -298,12 +300,12 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
                     disabled={busy || blockedByIssues}
                     onClick={() => (isActive ? setConfirm('update') : void runUpdate())}
                   >
-                    {__('Update', 'yaymatik')}
+                    {__('Update', 'yaymatik-automation-for-woocommerce')}
                   </Button>
                 </>
               ) : !isActive ? (
                 <Button size="sm" disabled={busy || blockedByIssues} onClick={() => setConfirm('activate')}>
-                  {__('Activate', 'yaymatik')}
+                  {__('Activate', 'yaymatik-automation-for-woocommerce')}
                 </Button>
               ) : (
                 <Button
@@ -312,7 +314,7 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
                   disabled={busy}
                   onClick={() => setConfirm('deactivate')}
                 >
-                  {__('Deactivate', 'yaymatik')}
+                  {__('Deactivate', 'yaymatik-automation-for-woocommerce')}
                 </Button>
               )}
             </>
@@ -408,13 +410,13 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
         <AlertDialog open={leaveGuard.showDialog} onOpenChange={(open) => !open && leaveGuard.cancelLeave()}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>{__('Leave without saving?', 'yaymatik')}</AlertDialogTitle>
+              <AlertDialogTitle>{__('Leave without saving?', 'yaymatik-automation-for-woocommerce')}</AlertDialogTitle>
               <AlertDialogDescription>
-                {__('Your latest changes couldn’t be saved and will be lost.', 'yaymatik')}
+                {__('Your latest changes couldn’t be saved and will be lost.', 'yaymatik-automation-for-woocommerce')}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>{__('Stay', 'yaymatik')}</AlertDialogCancel>
+              <AlertDialogCancel>{__('Stay', 'yaymatik-automation-for-woocommerce')}</AlertDialogCancel>
               {/* Not AlertDialogAction: that also fires onOpenChange(false), which would reset the blocker. */}
               <Button
                 variant="destructive"
@@ -423,7 +425,7 @@ export function WorkflowEditor({ workflow }: { workflow: Workflow }) {
                   leaveGuard.confirmLeave();
                 }}
               >
-                {__('Leave', 'yaymatik')}
+                {__('Leave', 'yaymatik-automation-for-woocommerce')}
               </Button>
             </AlertDialogFooter>
           </AlertDialogContent>

@@ -18,7 +18,7 @@ final class Cleanup {
     /** Unix time of the last schedule check; autoloaded, so the hourly check costs no query. */
     public const CHECKED_OPTION = 'yaymatik_cleanup_checked_at';
 
-    /** The daily job hooks at that check, sorted; autoloaded. A job added since (a license activated) skips the hourly wait. */
+    /** The daily job hooks at that check, sorted; autoloaded. A job added since (YayMatik Pro's) skips the hourly wait. */
     private const JOBS_OPTION = 'yaymatik_cleanup_jobs';
 
     private const BATCH = 500;

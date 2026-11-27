@@ -14,15 +14,18 @@ import { emailMessage } from '../core/email';
 function graph(coupon: Partial<GenerateCouponConfig>, offer: string): WorkflowGraph {
   const email: SendEmailConfig = {
     to: '{{ customer.email }}',
-    subject: __('Thanks for your first order — a gift for your next one', 'yaymatik'),
-    heading: __('Thanks for shopping with us', 'yaymatik'),
+    subject: __('Thanks for your first order — a gift for your next one', 'yaymatik-automation-for-woocommerce'),
+    heading: __('Thanks for shopping with us', 'yaymatik-automation-for-woocommerce'),
     message: emailMessage([
-      __('Hi {{ customer.first_name | default: "there" }},', 'yaymatik'),
-      __('Thank you for your first order with {{ site.name }}. We hope you love it!', 'yaymatik'),
+      __('Hi {{ customer.first_name | default: "there" }},', 'yaymatik-automation-for-woocommerce'),
+      __(
+        'Thank you for your first order with {{ site.name }}. We hope you love it!',
+        'yaymatik-automation-for-woocommerce',
+      ),
       offer,
       '{{ steps.coupon.box }}',
-      __('Enter the code at checkout to use it.', 'yaymatik'),
-      __('See you again soon,\n{{ site.name }}', 'yaymatik'),
+      __('Enter the code at checkout to use it.', 'yaymatik-automation-for-woocommerce'),
+      __('See you again soon,\n{{ site.name }}', 'yaymatik-automation-for-woocommerce'),
     ]),
   };
 
@@ -75,32 +78,32 @@ function graph(coupon: Partial<GenerateCouponConfig>, offer: string): WorkflowGr
 
 export const firstOrderDiscount = defineTemplate({
   id: 'first-order-thank-you-discount',
-  name: __('First-order thank-you: % off next order', 'yaymatik'),
+  name: __('First-order thank-you: % off next order', 'yaymatik-automation-for-woocommerce'),
   description: __(
     'Thank customers when their first order is completed, with a 10% off coupon for their next order, valid for 30 days.',
-    'yaymatik',
+    'yaymatik-automation-for-woocommerce',
   ),
   category: 'post_purchase',
   workflow: 'first_order_thank_you',
   createdAt: '2026-10-07',
   graph: graph(
     { discount_type: 'percent', amount: 10 },
-    __('As a thank you, here is {{ steps.coupon.amount }} off your next order:', 'yaymatik'),
+    __('As a thank you, here is {{ steps.coupon.amount }} off your next order:', 'yaymatik-automation-for-woocommerce'),
   ),
 });
 
 export const firstOrderFreeShipping = defineTemplate({
   id: 'first-order-thank-you-free-shipping',
-  name: __('First-order thank-you: free shipping', 'yaymatik'),
+  name: __('First-order thank-you: free shipping', 'yaymatik-automation-for-woocommerce'),
   description: __(
     'Thank customers when their first order is completed, with a free shipping coupon for their next order, valid for 30 days.',
-    'yaymatik',
+    'yaymatik-automation-for-woocommerce',
   ),
   category: 'post_purchase',
   workflow: 'first_order_thank_you',
   createdAt: '2026-10-07',
   graph: graph(
     { discount_type: 'free_shipping', amount: null },
-    __('As a thank you, your next order ships free:', 'yaymatik'),
+    __('As a thank you, your next order ships free:', 'yaymatik-automation-for-woocommerce'),
   ),
 });

@@ -75,11 +75,11 @@ export function FieldDialog({
           <DialogFooter>
             <DialogClose asChild>
               <Button variant="outline" disabled={pending}>
-                {__('Cancel', 'yaymatik')}
+                {__('Cancel', 'yaymatik-automation-for-woocommerce')}
               </Button>
             </DialogClose>
             <LoadingButton type="submit" loading={pending} disabled={!value.trim() || pending}>
-              {__('Save', 'yaymatik')}
+              {__('Save', 'yaymatik-automation-for-woocommerce')}
             </LoadingButton>
           </DialogFooter>
         </form>

@@ -33,7 +33,10 @@ function comparedText(
     if (!compared.length) return '';
     return field?.options?.length
       ? compared.map((item) => optionLabel(field, item)).join(', ')
-      : sprintf(/* translators: %d: number of selected items */ __('%d selected', 'yaymatik'), compared.length);
+      : sprintf(
+          /* translators: %d: number of selected items */ __('%d selected', 'yaymatik-automation-for-woocommerce'),
+          compared.length,
+        );
   }
   if (isRelative(operator)) {
     // Being typed: "0" isn't an amount yet.
@@ -41,8 +44,13 @@ function comparedText(
     const amount = Number(compared);
     return sprintf(
       unit === 'hours'
-        ? /* translators: %d: number of hours */ _n('%d hour', '%d hours', amount, 'yaymatik')
-        : /* translators: %d: number of days */ _n('%d day', '%d days', amount, 'yaymatik'),
+        ? /* translators: %d: number of hours */ _n(
+            '%d hour',
+            '%d hours',
+            amount,
+            'yaymatik-automation-for-woocommerce',
+          )
+        : /* translators: %d: number of days */ _n('%d day', '%d days', amount, 'yaymatik-automation-for-woocommerce'),
       amount,
     );
   }
@@ -58,7 +66,7 @@ function describe(rule: Rule, trigger: string | null | undefined) {
   const name = field?.type === 'meta' ? `${field.label} ${rule.key || PLACEHOLDER}` : field?.label;
   return sprintf(
     /* translators: 1: variable, 2: comparison, e.g. "is greater than", 3: value */
-    __('%1$s %2$s %3$s', 'yaymatik'),
+    __('%1$s %2$s %3$s', 'yaymatik-automation-for-woocommerce'),
     name ?? PLACEHOLDER,
     operatorLabels[operator] ?? PLACEHOLDER,
     shown ? value(shown) : needsValue(operator) ? PLACEHOLDER : '',
@@ -70,8 +78,8 @@ function joined(parts: string[], match: CriteriaConfig['match']) {
   if (parts.length <= MAX_SUMMARY_ITEMS) return parts.join(` ${joinerText[match]} `);
   const more =
     match === 'any'
-      ? /* translators: %d: how many more rules */ __('or %d more', 'yaymatik')
-      : /* translators: %d: how many more rules */ __('and %d more', 'yaymatik');
+      ? /* translators: %d: how many more rules */ __('or %d more', 'yaymatik-automation-for-woocommerce')
+      : /* translators: %d: how many more rules */ __('and %d more', 'yaymatik-automation-for-woocommerce');
   return `${parts[0]} ${sprintf(more, parts.length - 1)}`;
 }
 
@@ -102,7 +110,7 @@ export const criteriaStep = defineStep<CriteriaConfig>({
   summaryValues: {
     rules: ({ match, rules }, trigger) => {
       if (rules.some((item) => isGroup(item) && !item.rules.some((rule) => rule.field))) {
-        return missing(__('A group has no rules yet', 'yaymatik'));
+        return missing(__('A group has no rules yet', 'yaymatik-automation-for-woocommerce'));
       }
       return joined(
         rules.filter((item) => isGroup(item) || item.field).map((item) => describeItem(item, trigger)),

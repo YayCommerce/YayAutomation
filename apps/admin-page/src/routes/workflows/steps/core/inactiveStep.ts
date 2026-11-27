@@ -25,7 +25,8 @@ export function inactiveSteps(): Record<string, Step> {
         drawsField: () => false,
         uses: () => [],
         /* translators: %s: plugin name, e.g. "YayMail" */
-        summary: () => sprintf(__('Needs %s — the plugin isn’t active.', 'yaymatik'), meta.plugin),
+        summary: () =>
+          sprintf(__('Needs %s — the plugin isn’t active.', 'yaymatik-automation-for-woocommerce'), meta.plugin),
         inactive: meta.plugin,
       },
     ]),

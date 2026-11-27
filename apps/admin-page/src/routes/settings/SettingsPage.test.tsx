@@ -1,5 +1,4 @@
 import { act } from 'react';
-import { settingRanges } from '@edition/settings';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { SettingsResponse } from '@yaymatik/types';
 import { createRoot, type Root } from 'react-dom/client';
@@ -225,10 +224,10 @@ describe('SettingsPage', () => {
     await click(saveButton());
 
     expect(saveSettings).not.toHaveBeenCalled();
-    expect(errorOf('runRetentionDays')).toBe(`Enter a whole number from 7 to ${settingRanges.runRetentionDays[1]}.`);
+    expect(errorOf('runRetentionDays')).toBe('Enter a whole number from 7 to 730.');
   });
 
-  it('hides the tracking fields while tracking is off; abandon minutes only in Pro', async () => {
+  it('hides the tracking fields while tracking is off; abandon minutes in both editions', async () => {
     vi.mocked(getSettings).mockResolvedValue({ ...settings, cartTracking: false });
     await render();
     expect(field('abandonMinutes')).toBeNull();
@@ -236,11 +235,11 @@ describe('SettingsPage', () => {
     expect(field('cartRetentionDays')).not.toBeNull();
 
     await click(field<HTMLButtonElement>('cartTracking'));
-    expect(field('abandonMinutes') !== null).toBe(settingRanges.abandonMinutes !== null);
+    expect(field<HTMLInputElement>('abandonMinutes')).toMatchObject({ min: '15', max: '1440' });
     expect(field('captureGuestEmail')).not.toBeNull();
   });
 
-  it.runIf(settingRanges.abandonMinutes)('turning tracking off drops its fields’ edits and errors', async () => {
+  it('turning tracking off drops its fields’ edits and errors', async () => {
     vi.mocked(saveSettings).mockResolvedValue({ ...settings, cartTracking: false });
     await render();
 

@@ -14,13 +14,13 @@ import { WorkflowStatusBadge } from '../../shared/ui/WorkflowStatusBadge';
 
 const actionLabels: Record<WorkflowVersionAction, (user: string) => string> = {
   /* translators: %s: user display name */
-  created: (user: string) => sprintf(__('Created by %s', 'yaymatik'), user),
+  created: (user: string) => sprintf(__('Created by %s', 'yaymatik-automation-for-woocommerce'), user),
   /* translators: %s: user display name */
-  edited: (user: string) => sprintf(__('Edited by %s', 'yaymatik'), user),
+  edited: (user: string) => sprintf(__('Edited by %s', 'yaymatik-automation-for-woocommerce'), user),
   /* translators: %s: user display name */
-  activated: (user: string) => sprintf(__('Activated by %s', 'yaymatik'), user),
+  activated: (user: string) => sprintf(__('Activated by %s', 'yaymatik-automation-for-woocommerce'), user),
   /* translators: %s: user display name */
-  deactivated: (user: string) => sprintf(__('Deactivated by %s', 'yaymatik'), user),
+  deactivated: (user: string) => sprintf(__('Deactivated by %s', 'yaymatik-automation-for-woocommerce'), user),
 };
 
 /**
@@ -48,9 +48,9 @@ export function VersionHistory({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-1/4">{__('Version created', 'yaymatik')}</TableHead>
-            <TableHead className="w-2/5">{__('Recent history', 'yaymatik')}</TableHead>
-            <TableHead>{__('Status', 'yaymatik')}</TableHead>
+            <TableHead className="w-1/4">{__('Version created', 'yaymatik-automation-for-woocommerce')}</TableHead>
+            <TableHead className="w-2/5">{__('Recent history', 'yaymatik-automation-for-woocommerce')}</TableHead>
+            <TableHead>{__('Status', 'yaymatik-automation-for-woocommerce')}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -73,7 +73,7 @@ export function VersionHistory({
           ) : data.items.length === 0 ? (
             <TableRow>
               <TableCell colSpan={3} className="text-muted-foreground">
-                {__('No versions yet.', 'yaymatik')}
+                {__('No versions yet.', 'yaymatik-automation-for-woocommerce')}
               </TableCell>
             </TableRow>
           ) : (
@@ -85,7 +85,7 @@ export function VersionHistory({
         <Button
           variant="ghost"
           size="icon-sm"
-          aria-label={__('Previous page', 'yaymatik')}
+          aria-label={__('Previous page', 'yaymatik-automation-for-woocommerce')}
           disabled={page === 1 || isPlaceholderData}
           onClick={() => onPageChange(page - 1)}
         >
@@ -94,7 +94,7 @@ export function VersionHistory({
         <Button
           variant="ghost"
           size="icon-sm"
-          aria-label={__('Next page', 'yaymatik')}
+          aria-label={__('Next page', 'yaymatik-automation-for-woocommerce')}
           disabled={!data?.hasMore || isPlaceholderData}
           onClick={() => onPageChange(page + 1)}
         >
@@ -123,15 +123,17 @@ function VersionRow({ version }: { version: WorkflowVersion }) {
                 <TriangleAlert
                   className="text-warning size-4"
                   role="img"
-                  aria-label={__('This version has errors', 'yaymatik')}
+                  aria-label={__('This version has errors', 'yaymatik-automation-for-woocommerce')}
                 />
               </TooltipTrigger>
-              <TooltipContent>{__('This version has errors', 'yaymatik')}</TooltipContent>
+              <TooltipContent>{__('This version has errors', 'yaymatik-automation-for-woocommerce')}</TooltipContent>
             </Tooltip>
           )}
         </span>
       </TableCell>
-      <TableCell>{actionLabels[version.action](version.user ?? __('a deleted user', 'yaymatik'))}</TableCell>
+      <TableCell>
+        {actionLabels[version.action](version.user ?? __('a deleted user', 'yaymatik-automation-for-woocommerce'))}
+      </TableCell>
       <TableCell>{version.status && <WorkflowStatusBadge state={version.status} />}</TableCell>
     </TableRow>
   );

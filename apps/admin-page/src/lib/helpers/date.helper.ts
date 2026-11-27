@@ -22,5 +22,9 @@ export const shortDay = (date: string) =>
 
 /** "Oct 2 at 3:39 PM": the year only when it isn't this year; the time in the site's time format. */
 export function shortDayTime(date: string) {
-  return sprintf(/* translators: 1: date, 2: time */ __('%1$s at %2$s', 'yaymatik'), shortDay(date), formatTime(date));
+  return sprintf(
+    /* translators: 1: date, 2: time */ __('%1$s at %2$s', 'yaymatik-automation-for-woocommerce'),
+    shortDay(date),
+    formatTime(date),
+  );
 }

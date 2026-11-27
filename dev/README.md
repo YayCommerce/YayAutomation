@@ -11,7 +11,7 @@ Run everything through `./run.sh` in the plugin root. It works from any folder.
 | `./run.sh` | List commands |
 | `./run.sh setup` | `composer install` + scoped admin-shell → `vendor/autoload.php`, `vendor-prefixed/`, plus the PHP lint and test tools in `dev/tools/lintphp` and `dev/tools/phpunit`. `pnpm dev` runs it if `vendor/autoload.php` is missing. |
 | `./run.sh meta-fixture` | Write `apps/admin-page/src/test/fixtures/meta.json` (PHP's `window.yayMatikMeta`) from the local site with wp-cli. Run after changing what PHP sends. |
-| `./run.sh release [pro] [--rc]` | Build `release/yaymatik.zip`, or `yaymatik-pro.zip` with `pro`. `--rc` stamps `X.Y.Z-rcN` (N = commit count) in the zip copy. |
+| `./run.sh release [pro] [--rc]` | Build `release/yaymatik-automation-for-woocommerce.zip`, or `yaymatik-pro.zip` with `pro`. `--rc` stamps `X.Y.Z-rcN` (N = commit count) in the zip copy. |
 | `./run.sh seed [--wp-env\|--wp-env-min\|--staging]` | Add the fake store data: products, a customer, cash on delivery, cart tracking, a "Classic checkout" page (`/classic-checkout/`). Safe to run again. |
 | `./run.sh reset-data [--wp-env\|--wp-env-min\|--staging] [--yes]` | Delete all YayMatik data on that site. Staging recovery: this, then `seed`. |
 | `./run.sh check-all [--wp-env\|--wp-env-min]` | Run every PASS/FAIL check on one site and print one table; exits 1 on any FAIL. Each `check-*` also runs on its own with the same targets. |

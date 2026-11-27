@@ -16,11 +16,11 @@ class OrderNoteAdded extends OrderTrigger {
     }
 
     public function label(): string {
-        return __( 'Order note added', 'yaymatik' );
+        return __( 'Order note added', 'yaymatik-automation-for-woocommerce' );
     }
 
     public function description(): string {
-        return __( 'Starts when a note is added to an order.', 'yaymatik' );
+        return __( 'Starts when a note is added to an order.', 'yaymatik-automation-for-woocommerce' );
     }
 
     public function icon(): string {
@@ -29,19 +29,19 @@ class OrderNoteAdded extends OrderTrigger {
 
     public function fields(): array {
         return [
-            Field::select( 'note_type', __( 'Note type', 'yaymatik' ), self::types() )->default( 'any' ),
-            Field::text( 'contains', __( 'Note contains', 'yaymatik' ) )
-                ->placeholder( __( 'Any text', 'yaymatik' ) )
-                ->help( __( 'Not case sensitive. Leave empty for any note.', 'yaymatik' ) ),
-            Field::toggle( 'skip_yaymatik', __( 'Skip notes added by YayMatik workflows', 'yaymatik' ) )
+            Field::select( 'note_type', __( 'Note type', 'yaymatik-automation-for-woocommerce' ), self::types() )->default( 'any' ),
+            Field::text( 'contains', __( 'Note contains', 'yaymatik-automation-for-woocommerce' ) )
+                ->placeholder( __( 'Any text', 'yaymatik-automation-for-woocommerce' ) )
+                ->help( __( 'Not case sensitive. Leave empty for any note.', 'yaymatik-automation-for-woocommerce' ) ),
+            Field::toggle( 'skip_yaymatik', __( 'Skip notes added by YayMatik workflows', 'yaymatik-automation-for-woocommerce' ) )
                 ->default( true )
-                ->help( __( 'Keeps a workflow from starting itself when a step adds a note or changes the order status.', 'yaymatik' ) ),
+                ->help( __( 'Keeps a workflow from starting itself when a step adds a note or changes the order status.', 'yaymatik-automation-for-woocommerce' ) ),
         ];
     }
 
     public function summary(): string {
         /* translators: {{ config.note_type }}: which notes count, e.g. "Private note" or "Any note"; keep {{ … }} as it is. */
-        return __( '{{ config.note_type }} added to an order', 'yaymatik' );
+        return __( '{{ config.note_type }} added to an order', 'yaymatik-automation-for-woocommerce' );
     }
 
     /**
@@ -111,9 +111,9 @@ class OrderNoteAdded extends OrderTrigger {
 
     private static function types(): array {
         return [
-            'any'      => __( 'Any note', 'yaymatik' ),
-            'private'  => __( 'Private note', 'yaymatik' ),
-            'customer' => __( 'Note to customer', 'yaymatik' ),
+            'any'      => __( 'Any note', 'yaymatik-automation-for-woocommerce' ),
+            'private'  => __( 'Private note', 'yaymatik-automation-for-woocommerce' ),
+            'customer' => __( 'Note to customer', 'yaymatik-automation-for-woocommerce' ),
         ];
     }
 }

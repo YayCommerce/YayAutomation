@@ -55,7 +55,7 @@ function WorkflowNodeCard({ id, type, data, selected }: NodeProps<FlowNode>) {
               variant="outline"
               size="icon-sm"
               className={`${roundButton} ${onHover('left')}`}
-              aria-label={__('Change trigger', 'yaymatik')}
+              aria-label={__('Change trigger', 'yaymatik-automation-for-woocommerce')}
               onClick={(event: MouseEvent) => {
                 event.stopPropagation();
                 openPanel(id, true);
@@ -64,7 +64,7 @@ function WorkflowNodeCard({ id, type, data, selected }: NodeProps<FlowNode>) {
               <Replace />
             </Button>
           </TooltipTrigger>
-          <TooltipContent>{__('Change trigger', 'yaymatik')}</TooltipContent>
+          <TooltipContent>{__('Change trigger', 'yaymatik-automation-for-woocommerce')}</TooltipContent>
         </Tooltip>
       )
     ) : (
@@ -74,7 +74,7 @@ function WorkflowNodeCard({ id, type, data, selected }: NodeProps<FlowNode>) {
             variant="outline"
             size="icon-sm"
             className={`${roundButton} ${onHover('left')}`}
-            aria-label={__('Delete step', 'yaymatik')}
+            aria-label={__('Delete step', 'yaymatik-automation-for-woocommerce')}
             onClick={(event: MouseEvent) => {
               event.stopPropagation();
               requestDelete([id]);
@@ -83,7 +83,7 @@ function WorkflowNodeCard({ id, type, data, selected }: NodeProps<FlowNode>) {
             <Trash2 />
           </Button>
         </TooltipTrigger>
-        <TooltipContent>{__('Delete step', 'yaymatik')}</TooltipContent>
+        <TooltipContent>{__('Delete step', 'yaymatik-automation-for-woocommerce')}</TooltipContent>
       </Tooltip>
     );
 
@@ -137,7 +137,7 @@ function AddNodeButton({ nodeId, branch, left }: { nodeId: string; branch?: Work
             variant="outline"
             size="icon-sm"
             className={`${roundButton} ${onHover('top')}`}
-            aria-label={__('Add step', 'yaymatik')}
+            aria-label={__('Add step', 'yaymatik-automation-for-woocommerce')}
           >
             <Plus />
           </Button>

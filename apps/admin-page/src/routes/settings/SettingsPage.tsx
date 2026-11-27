@@ -41,11 +41,14 @@ export default function SettingsPage() {
   return (
     <PageCard>
       <div className="flex flex-col gap-4">
-        <h1 className="sr-only">{__('Settings', 'yaymatik')}</h1>
+        <h1 className="sr-only">{__('Settings', 'yaymatik-automation-for-woocommerce')}</h1>
         {error && !isFetching ? (
           <SettingsErrorAlert
             message={sprintf(
-              /* translators: %s: why it failed */ __('Couldn’t load your settings. %s', 'yaymatik'),
+              /* translators: %s: why it failed */ __(
+                'Couldn’t load your settings. %s',
+                'yaymatik-automation-for-woocommerce',
+              ),
               error.message,
             )}
             onRetry={() => refetch()}
@@ -88,7 +91,7 @@ function SettingsEditor({ settings }: { settings: SettingsResponse }) {
         const response = await save.mutateAsync(changedSettings(values, saved));
         lastSaveOk.current = true;
         savedRef.current = toValues(response);
-        toast.success(__('Settings saved', 'yaymatik'));
+        toast.success(__('Settings saved', 'yaymatik-automation-for-woocommerce'));
         return savedRef.current;
       } catch (error) {
         const fieldErrors = error instanceof SettingsError ? error.fieldErrors : [];
@@ -138,11 +141,11 @@ function SettingsEditor({ settings }: { settings: SettingsResponse }) {
   return (
     <PageCard>
       <div className="flex flex-col gap-4">
-        <h1 className="sr-only">{__('Settings', 'yaymatik')}</h1>
+        <h1 className="sr-only">{__('Settings', 'yaymatik-automation-for-woocommerce')}</h1>
         {failure && (
           <SettingsErrorAlert
             /* translators: %s: why it failed */
-            message={sprintf(__('Couldn’t save your settings. %s', 'yaymatik'), failure)}
+            message={sprintf(__('Couldn’t save your settings. %s', 'yaymatik-automation-for-woocommerce'), failure)}
             onRetry={submit}
           />
         )}
@@ -150,8 +153,8 @@ function SettingsEditor({ settings }: { settings: SettingsResponse }) {
           <SettingsErrorAlert
             message={sprintf(
               /* translators: %s: why it failed */
-              __('Couldn’t save your settings. %s', 'yaymatik'),
-              __('Fix the highlighted settings.', 'yaymatik'),
+              __('Couldn’t save your settings. %s', 'yaymatik-automation-for-woocommerce'),
+              __('Fix the highlighted settings.', 'yaymatik-automation-for-woocommerce'),
             )}
           />
         )}
@@ -164,8 +167,8 @@ function SettingsEditor({ settings }: { settings: SettingsResponse }) {
       {headerSlot &&
         createPortal(
           <LoadingButton loading={submitting} onClick={submit}>
-            <span className="hidden sm:inline">{__('Save changes', 'yaymatik')}</span>
-            <span className="sm:hidden">{__('Save', 'yaymatik')}</span>
+            <span className="hidden sm:inline">{__('Save changes', 'yaymatik-automation-for-woocommerce')}</span>
+            <span className="sm:hidden">{__('Save', 'yaymatik-automation-for-woocommerce')}</span>
           </LoadingButton>,
           headerSlot,
         )}
@@ -176,24 +179,27 @@ function SettingsEditor({ settings }: { settings: SettingsResponse }) {
             variant="ghost"
             size="icon-sm"
             className="absolute top-3 right-3"
-            aria-label={__('Close', 'yaymatik')}
+            aria-label={__('Close', 'yaymatik-automation-for-woocommerce')}
             disabled={leaving}
             onClick={leaveGuard.cancelLeave}
           >
             <X />
           </Button>
           <AlertDialogHeader>
-            <AlertDialogTitle>{__('Unsaved changes', 'yaymatik')}</AlertDialogTitle>
+            <AlertDialogTitle>{__('Unsaved changes', 'yaymatik-automation-for-woocommerce')}</AlertDialogTitle>
             <AlertDialogDescription>
-              {__('You have unsaved changes. Do you want to save them before leaving?', 'yaymatik')}
+              {__(
+                'You have unsaved changes. Do you want to save them before leaving?',
+                'yaymatik-automation-for-woocommerce',
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <Button variant="outline" disabled={leaving} onClick={leaveGuard.confirmLeave}>
-              {__('Discard changes', 'yaymatik')}
+              {__('Discard changes', 'yaymatik-automation-for-woocommerce')}
             </Button>
             <LoadingButton loading={leaving} onClick={() => !leaving && saveAndLeave()}>
-              {__('Save changes', 'yaymatik')}
+              {__('Save changes', 'yaymatik-automation-for-woocommerce')}
             </LoadingButton>
           </AlertDialogFooter>
         </AlertDialogContent>

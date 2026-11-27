@@ -17,11 +17,11 @@ final class SiteData extends DataItem {
     }
 
     public function label(): string {
-        return __( 'Site', 'yaymatik' );
+        return __( 'Site', 'yaymatik-automation-for-woocommerce' );
     }
 
     public function description(): string {
-        return __( 'Your WordPress site: its name, address, shop and account pages, and email blocks for them. Available in every workflow.', 'yaymatik' );
+        return __( 'Your WordPress site: its name, address, shop and account pages, and email blocks for them. Available in every workflow.', 'yaymatik-automation-for-woocommerce' );
     }
 
     public function icon(): string {
@@ -31,32 +31,32 @@ final class SiteData extends DataItem {
     protected function define(): array {
         return [
             'name'           => [
-                'label' => __( 'Site name', 'yaymatik' ),
+                'label' => __( 'Site name', 'yaymatik-automation-for-woocommerce' ),
                 'type'  => self::TYPE_STRING,
                 'value' => fn() => wp_specialchars_decode( get_bloginfo( 'name' ), ENT_QUOTES ),
             ],
             'url'            => [
-                'label'       => __( 'Site URL', 'yaymatik' ),
+                'label'       => __( 'Site URL', 'yaymatik-automation-for-woocommerce' ),
                 'type'        => self::TYPE_STRING,
                 'value'       => fn() => home_url(),
                 'conditional' => false,
             ],
             'account_url'    => [
-                'label'       => __( 'My account URL', 'yaymatik' ),
+                'label'       => __( 'My account URL', 'yaymatik-automation-for-woocommerce' ),
                 'type'        => self::TYPE_STRING,
                 'value'       => fn() => self::page_url( 'myaccount' ),
                 'conditional' => false,
             ],
             'shop_url'       => [
-                'label'       => __( 'Shop URL', 'yaymatik' ),
+                'label'       => __( 'Shop URL', 'yaymatik-automation-for-woocommerce' ),
                 'type'        => self::TYPE_STRING,
                 'value'       => fn() => self::page_url( 'shop' ),
                 'conditional' => false,
             ],
-            'welcome_links'  => self::block( __( 'Account and shop buttons', 'yaymatik' ), fn( bool $html ) => EmailButton::pair( self::account_label(), self::page_url( 'myaccount' ), self::shop_label(), self::page_url( 'shop' ), $html ) ),
-            'shop_button'    => self::block( __( 'Visit the shop button', 'yaymatik' ), fn( bool $html ) => EmailButton::render( self::shop_label(), self::page_url( 'shop' ), $html ) ),
-            'account_button' => self::block( __( 'Go to your account button', 'yaymatik' ), fn( bool $html ) => EmailButton::render( self::account_label(), self::page_url( 'myaccount' ), $html ) ),
-            'new_products'   => self::block( __( 'Newest products', 'yaymatik' ), fn( bool $html ) => ProductGrid::render( ProductGrid::newest(), $html ) ),
+            'welcome_links'  => self::block( __( 'Account and shop buttons', 'yaymatik-automation-for-woocommerce' ), fn( bool $html ) => EmailButton::pair( self::account_label(), self::page_url( 'myaccount' ), self::shop_label(), self::page_url( 'shop' ), $html ) ),
+            'shop_button'    => self::block( __( 'Visit the shop button', 'yaymatik-automation-for-woocommerce' ), fn( bool $html ) => EmailButton::render( self::shop_label(), self::page_url( 'shop' ), $html ) ),
+            'account_button' => self::block( __( 'Go to your account button', 'yaymatik-automation-for-woocommerce' ), fn( bool $html ) => EmailButton::render( self::account_label(), self::page_url( 'myaccount' ), $html ) ),
+            'new_products'   => self::block( __( 'Newest products', 'yaymatik-automation-for-woocommerce' ), fn( bool $html ) => ProductGrid::render( ProductGrid::newest(), $html ) ),
         ];
     }
 
@@ -85,10 +85,10 @@ final class SiteData extends DataItem {
     }
 
     private static function shop_label(): string {
-        return __( 'Visit the shop', 'yaymatik' );
+        return __( 'Visit the shop', 'yaymatik-automation-for-woocommerce' );
     }
 
     private static function account_label(): string {
-        return __( 'Go to your account', 'yaymatik' );
+        return __( 'Go to your account', 'yaymatik-automation-for-woocommerce' );
     }
 }

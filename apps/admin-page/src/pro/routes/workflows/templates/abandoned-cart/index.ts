@@ -12,29 +12,38 @@ import {
   waitStep,
 } from '@/routes/workflows/templates/core/flow';
 
-const second = customerEmail(__('Still thinking it over?', 'yaymatik'), __('Your cart is waiting', 'yaymatik'), [
-  __('Your cart is still saved. Pick up where you left off:', 'yaymatik'),
-  ...ITEM_LINES,
-]);
+const second = customerEmail(
+  __('Still thinking it over?', 'yaymatik-automation-for-woocommerce'),
+  __('Your cart is waiting', 'yaymatik-automation-for-woocommerce'),
+  [__('Your cart is still saved. Pick up where you left off:', 'yaymatik-automation-for-woocommerce'), ...ITEM_LINES],
+);
 
-const last = customerEmail(__('Last reminder about your cart', 'yaymatik'), __('Your cart is still here', 'yaymatik'), [
-  __('This is our last reminder. Your items are one click away:', 'yaymatik'),
-  ...ITEM_LINES,
-]);
+const last = customerEmail(
+  __('Last reminder about your cart', 'yaymatik-automation-for-woocommerce'),
+  __('Your cart is still here', 'yaymatik-automation-for-woocommerce'),
+  [
+    __('This is our last reminder. Your items are one click away:', 'yaymatik-automation-for-woocommerce'),
+    ...ITEM_LINES,
+  ],
+);
 
 const lastCoupon = customerEmail(
-  __('{{ steps.coupon.amount }} off the cart you left', 'yaymatik'),
-  __('A little something to help you decide', 'yaymatik'),
-  [__('Use this coupon for {{ steps.coupon.amount }} off your order:', 'yaymatik'), COUPON_LINE, ...ITEM_LINES],
+  __('{{ steps.coupon.amount }} off the cart you left', 'yaymatik-automation-for-woocommerce'),
+  __('A little something to help you decide', 'yaymatik-automation-for-woocommerce'),
+  [
+    __('Use this coupon for {{ steps.coupon.amount }} off your order:', 'yaymatik-automation-for-woocommerce'),
+    COUPON_LINE,
+    ...ITEM_LINES,
+  ],
 );
 
 export const cartSeries = defineTemplate({
   ...shared,
   id: 'cart-series',
-  name: __('Cart 3-email series', 'yaymatik'),
+  name: __('Cart 3-email series', 'yaymatik-automation-for-woocommerce'),
   description: __(
     'Three reminders with the shopper’s cart: after 1 hour, 1 day and 3 days. Stops as soon as they order.',
-    'yaymatik',
+    'yaymatik-automation-for-woocommerce',
   ),
   graph: lineGraph('cart_abandoned', [
     waitStep('wait-1', 1, 'hours'),
@@ -49,10 +58,10 @@ export const cartSeries = defineTemplate({
 export const cartSeriesCoupon = defineTemplate({
   ...shared,
   id: 'cart-series-coupon',
-  name: __('Cart 3-email series + coupon', 'yaymatik'),
+  name: __('Cart 3-email series + coupon', 'yaymatik-automation-for-woocommerce'),
   description: __(
     'Three reminders with the shopper’s cart; the last adds a 10% off coupon valid for 7 days. Stops as soon as they order.',
-    'yaymatik',
+    'yaymatik-automation-for-woocommerce',
   ),
   graph: lineGraph('cart_abandoned', [
     waitStep('wait-1', 1, 'hours'),

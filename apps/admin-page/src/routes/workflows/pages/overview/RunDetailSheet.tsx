@@ -30,7 +30,7 @@ export function RunDetailSheet({
   useEffect(() => {
     if (!notFound) return;
     // The id keeps one toast when the effect runs twice (React's development mode).
-    toast.error(__('Run not found.', 'yaymatik'), { id: 'run-not-found' });
+    toast.error(__('Run not found.', 'yaymatik-automation-for-woocommerce'), { id: 'run-not-found' });
     onClose();
   }, [notFound, onClose]);
 
@@ -84,7 +84,7 @@ export function RunDetailSheet({
           {/* Its own line: the reason may sit on a step's row or below the steps. */}
           {shown?.stoppedByOrderUrl && (
             <a href={shown.stoppedByOrderUrl} className="text-link mt-3 block text-sm hover:underline">
-              {__('View order', 'yaymatik')}
+              {__('View order', 'yaymatik-automation-for-woocommerce')}
             </a>
           )}
         </div>
@@ -99,7 +99,7 @@ function RunTimes({ run }: { run: RunDetail }) {
       {run.startedAt &&
         sprintf(
           /* translators: %s: date and time, e.g. "Oct 9 at 3:00 PM" */
-          __('Started %s', 'yaymatik'),
+          __('Started %s', 'yaymatik-automation-for-woocommerce'),
           shortDayTime(run.startedAt),
         )}
       {run.finishedAt && (
@@ -107,7 +107,7 @@ function RunTimes({ run }: { run: RunDetail }) {
           {' · '}
           {sprintf(
             /* translators: %s: date and time, e.g. "Oct 9 at 3:00 PM" */
-            __('Finished %s', 'yaymatik'),
+            __('Finished %s', 'yaymatik-automation-for-woocommerce'),
             shortDayTime(run.finishedAt),
           )}
         </>
@@ -135,7 +135,7 @@ function RunSteps({ run }: { run: RunDetail }) {
             key={step.id}
             kind={stepDef?.kind ?? 'action'}
             stepDef={stepDef}
-            label={stepDef?.label ?? __('Removed step', 'yaymatik')}
+            label={stepDef?.label ?? __('Removed step', 'yaymatik-automation-for-woocommerce')}
             result={stepResult(step, run)}
             time={step.finishedAt ?? step.startedAt}
           />

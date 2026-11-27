@@ -15,9 +15,12 @@ export const schema = v.object({
     v.object({ value: v.nullable(v.number()), unit: v.picklist(UNITS) }),
     v.check(
       ({ value }) => value !== null && Number.isInteger(value) && value >= 1,
-      __('Enter a whole number, 1 or more.', 'yaymatik'),
+      __('Enter a whole number, 1 or more.', 'yaymatik-automation-for-woocommerce'),
     ),
-    v.check(({ value, unit }) => value === null || value <= MAX[unit], __('Wait at most a year.', 'yaymatik')),
+    v.check(
+      ({ value, unit }) => value === null || value <= MAX[unit],
+      __('Wait at most a year.', 'yaymatik-automation-for-woocommerce'),
+    ),
   ),
 });
 

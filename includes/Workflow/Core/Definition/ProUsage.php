@@ -7,7 +7,7 @@ use YayMatik\Workflow\Core\Data\Template;
 defined( 'ABSPATH' ) || exit;
 
 // Needs Pro: a Pro step, a rule on a Pro field, a group, a comparison with another field, or a Pro merge tag, while
-// `ProCatalog::missing()` names them. With Pro and a license nothing is missing, so nothing needs it.
+// `ProCatalog::missing()` names them. While YayMatik Pro is active nothing is missing, so nothing needs it.
 
 /** The steps of a workflow that need YayMatik Pro while it isn't here. */
 final class ProUsage {

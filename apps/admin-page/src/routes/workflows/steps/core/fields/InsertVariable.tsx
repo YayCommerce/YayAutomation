@@ -70,7 +70,7 @@ export function InsertVariableLink({
     >
       <Button type="button" variant="link" size="sm" className="h-auto gap-1 px-0 text-[12.5px]">
         <Braces className="size-3.5" aria-hidden />
-        {__('Insert variable', 'yaymatik')}
+        {__('Insert variable', 'yaymatik-automation-for-woocommerce')}
       </Button>
     </VariablePicker>
   );

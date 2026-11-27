@@ -23,7 +23,7 @@ class YayMatikMenuAdapter implements \YayMatikScoped\YayCommerce\AdminShell\Cont
     public function get_plugin_basename(): string {
         return YAYMATIK_BASE_NAME; }
     public function get_settings_label(): string {
-        return __( 'Workflows', 'yaymatik' ); }
+        return __( 'Workflows', 'yaymatik-automation-for-woocommerce' ); }
     public function get_docs_url(): string {
         return 'https://docs.yaycommerce.com/'; }
     public function get_pro_url(): string {

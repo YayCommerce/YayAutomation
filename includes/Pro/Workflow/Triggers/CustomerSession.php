@@ -50,10 +50,10 @@ abstract class CustomerSession extends Trigger {
 
     public function fields(): array {
         return [
-            Field::multiselect( 'when', __( 'When to trigger', 'yaymatik' ), [ self::class, 'whens' ] )
+            Field::multiselect( 'when', __( 'When to trigger', 'yaymatik-automation-for-woocommerce' ), [ self::class, 'whens' ] )
                 ->required()
                 ->default( [ 'sign_in', 'return' ] ),
-            Field::number( 'days', __( 'Once per person every N days', 'yaymatik' ) )
+            Field::number( 'days', __( 'Once per person every N days', 'yaymatik-automation-for-woocommerce' ) )
                 ->required()
                 ->default( 7 )
                 ->min( 1 )
@@ -64,9 +64,9 @@ abstract class CustomerSession extends Trigger {
     /** `when` value => its label. */
     public static function whens(): array {
         return [
-            'sign_in' => __( 'Sign-in', 'yaymatik' ),
-            'return'  => __( 'Return with a saved session', 'yaymatik' ),
-            'auto'    => __( 'Automatic sign-in after sign-up or checkout', 'yaymatik' ),
+            'sign_in' => __( 'Sign-in', 'yaymatik-automation-for-woocommerce' ),
+            'return'  => __( 'Return with a saved session', 'yaymatik-automation-for-woocommerce' ),
+            'auto'    => __( 'Automatic sign-in after sign-up or checkout', 'yaymatik-automation-for-woocommerce' ),
         ];
     }
 
@@ -86,7 +86,7 @@ abstract class CustomerSession extends Trigger {
     public function facts(): array {
         return [
             'time' => [
-                'label'        => __( 'Trigger time', 'yaymatik' ),
+                'label'        => __( 'Trigger time', 'yaymatik-automation-for-woocommerce' ),
                 'type'         => DataItem::TYPE_DATE,
                 'value_type'   => Type::date(),
                 'options'      => null,

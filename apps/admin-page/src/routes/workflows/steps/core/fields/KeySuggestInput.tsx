@@ -87,7 +87,7 @@ export const KeySuggestInput = forwardRef<
           }}
         >
           <CommandList>
-            <CommandGroup heading={__('Used in your workflows', 'yaymatik')}>
+            <CommandGroup heading={__('Used in your workflows', 'yaymatik-automation-for-woocommerce')}>
               {keys.map((key) => (
                 <CommandItem
                   key={key}

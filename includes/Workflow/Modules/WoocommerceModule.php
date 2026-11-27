@@ -37,11 +37,11 @@ class WoocommerceModule extends Module {
     }
 
     public function label(): string {
-        return __( 'WooCommerce', 'yaymatik' );
+        return __( 'WooCommerce', 'yaymatik-automation-for-woocommerce' );
     }
 
     public function description(): string {
-        return __( 'Orders, customers and store emails.', 'yaymatik' );
+        return __( 'Orders, customers and store emails.', 'yaymatik-automation-for-woocommerce' );
     }
 
     public function logo(): string {

@@ -24,18 +24,23 @@ function toNumber(raw: unknown, fallback: number | null): number | null {
 
 /** "10% off", "$5 off", "Free shipping". */
 function discount({ discount_type, amount }: GenerateCouponConfig) {
-  if (discount_type === 'free_shipping') return value(__('Free shipping', 'yaymatik'));
+  if (discount_type === 'free_shipping') return value(__('Free shipping', 'yaymatik-automation-for-woocommerce'));
   if (amount === null) return '';
   const shown = discount_type === 'percent' ? `${amount}%` : `${currencySymbol}${amount}`;
   /* translators: %s: discount, e.g. "10%" */
-  return sprintf(__('%s off', 'yaymatik'), value(shown));
+  return sprintf(__('%s off', 'yaymatik-automation-for-woocommerce'), value(shown));
 }
 
 /** "expires in 30 days", "never expires". */
 function expiry({ expiry_days: days }: GenerateCouponConfig) {
-  if (days === null) return __('never expires', 'yaymatik');
+  if (days === null) return __('never expires', 'yaymatik-automation-for-woocommerce');
   return sprintf(
-    /* translators: %s: number of days */ _n('expires in %s day', 'expires in %s days', days, 'yaymatik'),
+    /* translators: %s: number of days */ _n(
+      'expires in %s day',
+      'expires in %s days',
+      days,
+      'yaymatik-automation-for-woocommerce',
+    ),
     value(String(days)),
   );
 }

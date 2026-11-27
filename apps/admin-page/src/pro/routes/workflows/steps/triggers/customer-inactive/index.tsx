@@ -14,7 +14,9 @@ export const customerInactiveStep = (): Step => {
     normalize: ({ days = step.defaults().days }) => ({
       days: typeof days === 'number' ? Math.round(days) : days,
     }),
-    Footer: () => <Hint icon={<Clock aria-hidden />}>{__('Checked once a day', 'yaymatik')}</Hint>,
+    Footer: () => (
+      <Hint icon={<Clock aria-hidden />}>{__('Checked once a day', 'yaymatik-automation-for-woocommerce')}</Hint>
+    ),
   });
   return step;
 };

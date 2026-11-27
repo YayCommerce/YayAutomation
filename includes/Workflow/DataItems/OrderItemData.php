@@ -16,11 +16,11 @@ final class OrderItemData extends DataItem {
     }
 
     public function label(): string {
-        return __( 'Order item', 'yaymatik' );
+        return __( 'Order item', 'yaymatik-automation-for-woocommerce' );
     }
 
     public function description(): string {
-        return __( 'One line of an order: the product name, quantity and line total.', 'yaymatik' );
+        return __( 'One line of an order: the product name, quantity and line total.', 'yaymatik-automation-for-woocommerce' );
     }
 
     public function icon(): string {
@@ -34,17 +34,17 @@ final class OrderItemData extends DataItem {
     protected function define(): array {
         return [
             'name'     => [
-                'label' => __( 'Item name', 'yaymatik' ),
+                'label' => __( 'Item name', 'yaymatik-automation-for-woocommerce' ),
                 'type'  => self::TYPE_STRING,
                 'value' => fn( \WC_Order_Item $item ) => $item->get_name(),
             ],
             'quantity' => [
-                'label' => __( 'Item quantity', 'yaymatik' ),
+                'label' => __( 'Item quantity', 'yaymatik-automation-for-woocommerce' ),
                 'type'  => self::TYPE_NUMBER,
                 'value' => fn( \WC_Order_Item $item ) => (float) $item->get_quantity(),
             ],
             'total'    => [
-                'label'      => __( 'Item total', 'yaymatik' ),
+                'label'      => __( 'Item total', 'yaymatik-automation-for-woocommerce' ),
                 'type'       => self::TYPE_NUMBER,
                 'value_type' => Type::money(),
                 'value'      => fn( \WC_Order_Item $item ) => (float) $item->get_total(),

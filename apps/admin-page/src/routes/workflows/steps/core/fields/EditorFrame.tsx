@@ -77,7 +77,7 @@ export function editorFooter(stepId: string, editor: { field: string; button: st
         </LoadingButton>
         <p className="text-muted-foreground flex items-center gap-1.5 text-[12.5px]">
           <Info className="size-3.5 shrink-0" aria-hidden />
-          {__('Design changes apply to live emails at once.', 'yaymatik')}
+          {__('Design changes apply to live emails at once.', 'yaymatik-automation-for-woocommerce')}
         </p>
         {opened && (
           <EditorFrame
@@ -144,10 +144,15 @@ export function EditorFrame({
           <div className="flex min-w-0 items-center gap-3">
             <DialogTitle className="shrink-0 text-base font-semibold">{title}</DialogTitle>
             <DialogDescription className={error ? 'text-destructive truncate text-xs' : 'sr-only'}>
-              {error || __('Save in the editor to use the design in this step.', 'yaymatik')}
+              {error || __('Save in the editor to use the design in this step.', 'yaymatik-automation-for-woocommerce')}
             </DialogDescription>
           </div>
-          <Button variant="ghost" size="icon-sm" aria-label={__('Close', 'yaymatik')} onClick={close}>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            aria-label={__('Close', 'yaymatik-automation-for-woocommerce')}
+            onClick={close}
+          >
             <X />
           </Button>
         </div>
@@ -156,14 +161,19 @@ export function EditorFrame({
         <AlertDialog open={confirming} onOpenChange={setConfirming}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>{__('Discard your changes?', 'yaymatik')}</AlertDialogTitle>
+              <AlertDialogTitle>{__('Discard your changes?', 'yaymatik-automation-for-woocommerce')}</AlertDialogTitle>
               <AlertDialogDescription>
-                {__('The editor has changes you haven’t saved. Close it anyway?', 'yaymatik')}
+                {__(
+                  'The editor has changes you haven’t saved. Close it anyway?',
+                  'yaymatik-automation-for-woocommerce',
+                )}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>{__('Keep editing', 'yaymatik')}</AlertDialogCancel>
-              <AlertDialogAction onClick={onClose}>{__('Discard', 'yaymatik')}</AlertDialogAction>
+              <AlertDialogCancel>{__('Keep editing', 'yaymatik-automation-for-woocommerce')}</AlertDialogCancel>
+              <AlertDialogAction onClick={onClose}>
+                {__('Discard', 'yaymatik-automation-for-woocommerce')}
+              </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>

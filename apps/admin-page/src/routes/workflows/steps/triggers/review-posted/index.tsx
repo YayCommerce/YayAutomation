@@ -12,9 +12,9 @@ export const reviewPostedStep = defineStep({
       hints={[
         __(
           'Replies and reviews waiting for approval don’t start it. Use Review › Rating in a Condition for low or high ratings.',
-          'yaymatik',
+          'yaymatik-automation-for-woocommerce',
         ),
-        __('A guest reviewer has only an email address.', 'yaymatik'),
+        __('A guest reviewer has only an email address.', 'yaymatik-automation-for-woocommerce'),
       ]}
     />
   ),

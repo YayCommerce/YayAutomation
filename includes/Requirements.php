@@ -49,7 +49,7 @@ final class Requirements {
                 return;
             }
             /* translators: %s: what is missing, e.g. "WordPress 6.9, WooCommerce 11.0" */
-            $message = sprintf( __( 'YayMatik needs %s or later, so it is not running.', 'yaymatik' ), implode( ', ', $missing ) );
+            $message = sprintf( __( 'YayMatik needs %s or later, so it is not running.', 'yaymatik-automation-for-woocommerce' ), implode( ', ', $missing ) );
             echo '<div class="notice notice-error is-dismissible"><p>' . esc_html( $message ) . '</p></div>';
         };
         // The network Plugins screen fires its own hook.

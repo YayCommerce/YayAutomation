@@ -90,7 +90,11 @@ To build it, with Node.js 22.13 or later and pnpm 9 or later:
 1. `pnpm install`
 2. `pnpm build`
 
-This rebuilds `assets/dist/`. The PHP in `vendor-prefixed/` is the YayCommerce admin menu package, shipped as built (prefixed) PHP.
+This rebuilds `assets/dist/`. The PHP in `vendor-prefixed/` is the YayCommerce admin menu package (`yaycommerce/admin-shell`), prefixed with PHP-Scoper. It draws the YayCommerce menu and the Recommended Plugins page; this plugin ships it without its license and update code.
+
+**Third-party code in the plugin**
+
+* YayCommerce admin menu (`yaycommerce/admin-shell`) 2.14.0, in `vendor-prefixed/` (GPL-3.0-or-later)
 
 **Third-party libraries in the admin app**
 

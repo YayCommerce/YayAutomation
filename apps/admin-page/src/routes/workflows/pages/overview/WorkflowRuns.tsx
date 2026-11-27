@@ -15,13 +15,13 @@ import { RunStatusBadge } from '../../shared/ui/RunStatus';
 import { tabBarClass, tabClass } from '../../shared/ui/tabs';
 
 const filters: { value: string; label: string; statuses: RunStatus[] }[] = [
-  { value: 'all', label: __('All', 'yaymatik'), statuses: [] },
-  { value: 'running', label: __('Running', 'yaymatik'), statuses: ['queued', 'running'] },
-  { value: 'waiting', label: __('Waiting', 'yaymatik'), statuses: ['waiting'] },
-  { value: 'completed', label: __('Completed', 'yaymatik'), statuses: ['completed'] },
-  { value: 'failed', label: __('Failed', 'yaymatik'), statuses: ['failed'] },
-  { value: 'cancelled', label: __('Cancelled', 'yaymatik'), statuses: ['cancelled'] },
-  { value: 'skipped', label: __('Skipped', 'yaymatik'), statuses: ['skipped'] },
+  { value: 'all', label: __('All', 'yaymatik-automation-for-woocommerce'), statuses: [] },
+  { value: 'running', label: __('Running', 'yaymatik-automation-for-woocommerce'), statuses: ['queued', 'running'] },
+  { value: 'waiting', label: __('Waiting', 'yaymatik-automation-for-woocommerce'), statuses: ['waiting'] },
+  { value: 'completed', label: __('Completed', 'yaymatik-automation-for-woocommerce'), statuses: ['completed'] },
+  { value: 'failed', label: __('Failed', 'yaymatik-automation-for-woocommerce'), statuses: ['failed'] },
+  { value: 'cancelled', label: __('Cancelled', 'yaymatik-automation-for-woocommerce'), statuses: ['cancelled'] },
+  { value: 'skipped', label: __('Skipped', 'yaymatik-automation-for-woocommerce'), statuses: ['skipped'] },
 ];
 
 const COLUMNS = 4;
@@ -43,7 +43,7 @@ export function WorkflowRuns({ workflowId, onOpen }: { workflowId: string; onOpe
   return (
     <section className="flex flex-col gap-2">
       {/* The cards' p-3, so the title lines up with their content. */}
-      <h2 className="px-3 text-sm font-semibold">{__('Workflow runs', 'yaymatik')}</h2>
+      <h2 className="px-3 text-sm font-semibold">{__('Workflow runs', 'yaymatik-automation-for-woocommerce')}</h2>
       {neverRan ? (
         <NoRuns />
       ) : (
@@ -69,10 +69,10 @@ export function WorkflowRuns({ workflowId, onOpen }: { workflowId: string; onOpe
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>{__('Started', 'yaymatik')}</TableHead>
-                  <TableHead>{__('Subject', 'yaymatik')}</TableHead>
-                  <TableHead>{__('Status', 'yaymatik')}</TableHead>
-                  <TableHead className="text-right">{__('Steps run', 'yaymatik')}</TableHead>
+                  <TableHead>{__('Started', 'yaymatik-automation-for-woocommerce')}</TableHead>
+                  <TableHead>{__('Subject', 'yaymatik-automation-for-woocommerce')}</TableHead>
+                  <TableHead>{__('Status', 'yaymatik-automation-for-woocommerce')}</TableHead>
+                  <TableHead className="text-right">{__('Steps run', 'yaymatik-automation-for-woocommerce')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -95,7 +95,7 @@ export function WorkflowRuns({ workflowId, onOpen }: { workflowId: string; onOpe
                 ) : data.items.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={COLUMNS} className="text-muted-foreground h-24 text-center">
-                      {__('No runs with this status.', 'yaymatik')}
+                      {__('No runs with this status.', 'yaymatik-automation-for-woocommerce')}
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -165,9 +165,14 @@ function NoRuns() {
         <EmptyMedia className="bg-card text-muted-foreground mb-0 size-11 rounded-full border shadow-xs">
           <Activity className="size-5" aria-hidden />
         </EmptyMedia>
-        <EmptyTitle className="text-base font-semibold">{__('No runs yet', 'yaymatik')}</EmptyTitle>
+        <EmptyTitle className="text-base font-semibold">
+          {__('No runs yet', 'yaymatik-automation-for-woocommerce')}
+        </EmptyTitle>
         <EmptyDescription className="text-[13px]">
-          {__('Each time this workflow starts, the run shows up here with every step’s result.', 'yaymatik')}
+          {__(
+            'Each time this workflow starts, the run shows up here with every step’s result.',
+            'yaymatik-automation-for-woocommerce',
+          )}
         </EmptyDescription>
       </EmptyHeader>
     </Empty>

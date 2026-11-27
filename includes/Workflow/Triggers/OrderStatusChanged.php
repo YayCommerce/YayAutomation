@@ -16,11 +16,11 @@ class OrderStatusChanged extends OrderTrigger {
     }
 
     public function label(): string {
-        return __( 'Order status changed', 'yaymatik' );
+        return __( 'Order status changed', 'yaymatik-automation-for-woocommerce' );
     }
 
     public function description(): string {
-        return __( 'Starts when an order moves to another status. Choose which status changes count.', 'yaymatik' );
+        return __( 'Starts when an order moves to another status. Choose which status changes count.', 'yaymatik-automation-for-woocommerce' );
     }
 
     public function icon(): string {
@@ -30,20 +30,20 @@ class OrderStatusChanged extends OrderTrigger {
     public function fields(): array {
         $statuses = [ OrderData::class, 'statuses' ];
         return [
-            Field::multiselect( 'from', __( 'Status changes from', 'yaymatik' ), $statuses )
-                ->placeholder( __( 'Any status', 'yaymatik' ) )
-                ->help( __( 'Leave empty for any previous status.', 'yaymatik' ) ),
-            Field::multiselect( 'to', __( 'Status changes to', 'yaymatik' ), $statuses )
-                ->placeholder( __( 'Any status', 'yaymatik' ) )
-                ->help( __( 'Leave empty for any new status.', 'yaymatik' ) ),
-            Field::toggle( 'only_checkout', __( 'Only run for checkout orders', 'yaymatik' ) )
-                ->help( __( 'Skips orders created by admin, REST API, import tools, and other non-checkout sources.', 'yaymatik' ) ),
+            Field::multiselect( 'from', __( 'Status changes from', 'yaymatik-automation-for-woocommerce' ), $statuses )
+                ->placeholder( __( 'Any status', 'yaymatik-automation-for-woocommerce' ) )
+                ->help( __( 'Leave empty for any previous status.', 'yaymatik-automation-for-woocommerce' ) ),
+            Field::multiselect( 'to', __( 'Status changes to', 'yaymatik-automation-for-woocommerce' ), $statuses )
+                ->placeholder( __( 'Any status', 'yaymatik-automation-for-woocommerce' ) )
+                ->help( __( 'Leave empty for any new status.', 'yaymatik-automation-for-woocommerce' ) ),
+            Field::toggle( 'only_checkout', __( 'Only run for checkout orders', 'yaymatik-automation-for-woocommerce' ) )
+                ->help( __( 'Skips orders created by admin, REST API, import tools, and other non-checkout sources.', 'yaymatik-automation-for-woocommerce' ) ),
         ];
     }
 
     public function summary(): string {
         /* translators: {{ config.from }} and {{ config.to }}: order statuses; keep {{ … }} as it is. */
-        return __( '{{ config.from }} → {{ config.to }}', 'yaymatik' );
+        return __( '{{ config.from }} → {{ config.to }}', 'yaymatik-automation-for-woocommerce' );
     }
 
     /**

@@ -67,7 +67,10 @@ export function WorkflowBulkActions({
       );
       toast.success(
         /* translators: %d: number of workflows */
-        sprintf(_n('%d workflow deactivated', '%d workflows deactivated', done, 'yaymatik'), done),
+        sprintf(
+          _n('%d workflow deactivated', '%d workflows deactivated', done, 'yaymatik-automation-for-woocommerce'),
+          done,
+        ),
         { description: cancelledRunsText(cancelled) },
       );
     }
@@ -76,7 +79,12 @@ export function WorkflowBulkActions({
       toast.error(
         sprintf(
           /* translators: %d: number of workflows */
-          _n('%d workflow couldn’t be deactivated', '%d workflows couldn’t be deactivated', failed.length, 'yaymatik'),
+          _n(
+            '%d workflow couldn’t be deactivated',
+            '%d workflows couldn’t be deactivated',
+            failed.length,
+            'yaymatik-automation-for-woocommerce',
+          ),
           failed.length,
         ),
         { description: errorMessage(reason) },
@@ -126,7 +134,7 @@ export function WorkflowBulkActions({
             '%d workflow deleted',
             '%d workflows deleted',
             done,
-            'yaymatik',
+            'yaymatik-automation-for-woocommerce',
           ),
           done,
         ),
@@ -138,7 +146,12 @@ export function WorkflowBulkActions({
       toast.error(
         sprintf(
           /* translators: %d: number of workflows */
-          _n('%d workflow couldn’t be deleted', '%d workflows couldn’t be deleted', failed.length, 'yaymatik'),
+          _n(
+            '%d workflow couldn’t be deleted',
+            '%d workflows couldn’t be deleted',
+            failed.length,
+            'yaymatik-automation-for-woocommerce',
+          ),
           failed.length,
         ),
         { description: result.status === 'rejected' ? errorMessage(result.reason) : undefined },
@@ -153,14 +166,14 @@ export function WorkflowBulkActions({
         <span className="text-sm whitespace-nowrap">
           {sprintf(
             /* translators: %d: number of selected items */
-            __('%d selected', 'yaymatik'),
+            __('%d selected', 'yaymatik-automation-for-woocommerce'),
             selected.length,
           )}
         </span>
         <Separator orientation="vertical" className="ml-2 h-5!" />
         {active.length > 0 && (
           <Button variant="ghost" size="sm" onClick={() => open('deactivate', active)}>
-            {__('Deactivate', 'yaymatik')}
+            {__('Deactivate', 'yaymatik-automation-for-woocommerce')}
           </Button>
         )}
         <Button
@@ -170,7 +183,7 @@ export function WorkflowBulkActions({
           // Any selected workflow still on → explain instead of offering to delete.
           onClick={() => open(active.length ? 'deleteBlocked' : 'delete', selected)}
         >
-          {__('Delete', 'yaymatik')}
+          {__('Delete', 'yaymatik-automation-for-woocommerce')}
         </Button>
       </BulkActionBox>
 
@@ -189,11 +202,11 @@ export function WorkflowBulkActions({
         pending={pending}
         title={sprintf(
           /* translators: %d: number of workflows */
-          _n('Delete %d workflow?', 'Delete %d workflows?', targets.length, 'yaymatik'),
+          _n('Delete %d workflow?', 'Delete %d workflows?', targets.length, 'yaymatik-automation-for-woocommerce'),
           targets.length,
         )}
-        description={__('These workflows will be permanently deleted.', 'yaymatik')}
-        confirmLabel={__('Delete', 'yaymatik')}
+        description={__('These workflows will be permanently deleted.', 'yaymatik-automation-for-woocommerce')}
+        confirmLabel={__('Delete', 'yaymatik-automation-for-woocommerce')}
         destructive
       />
       <AlertDialog open={dialog === 'deleteBlocked'} onOpenChange={(isOpen) => !isOpen && setDialog(null)}>

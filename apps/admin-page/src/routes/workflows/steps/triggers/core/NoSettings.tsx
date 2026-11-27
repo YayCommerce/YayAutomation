@@ -24,7 +24,9 @@ export function Hints({ hints }: { hints: (string | { text: string; icon: ReactN
 export function NoSettings({ hints }: { hints: string[] }) {
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-muted-foreground text-sm">{__('No settings needed.', 'yaymatik')}</p>
+      <p className="text-muted-foreground text-sm">
+        {__('No settings needed.', 'yaymatik-automation-for-woocommerce')}
+      </p>
       <Hints hints={hints} />
     </div>
   );

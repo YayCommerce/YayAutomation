@@ -58,7 +58,7 @@ final class RunPresenter {
             $cart = CartStore::find( (int) $id );
             return [
                 /* translators: %d: cart id */
-                'subjectLabel' => $cart && '' !== $cart['email'] ? $cart['email'] : sprintf( __( 'Cart #%d', 'yaymatik' ), (int) $id ),
+                'subjectLabel' => $cart && '' !== $cart['email'] ? $cart['email'] : sprintf( __( 'Cart #%d', 'yaymatik-automation-for-woocommerce' ), (int) $id ),
                 'subjectUrl'   => null,
             ];
         }
@@ -67,7 +67,7 @@ final class RunPresenter {
             $email    = $customer ? (string) $customer->get_billing_email() : '';
             return [
                 /* translators: %d: user id */
-                'subjectLabel' => '' !== $email ? $email : sprintf( __( 'Customer #%d', 'yaymatik' ), (int) $id ),
+                'subjectLabel' => '' !== $email ? $email : sprintf( __( 'Customer #%d', 'yaymatik-automation-for-woocommerce' ), (int) $id ),
                 // Not get_edit_user_link(): empty when this user can't edit that one. The page checks access itself.
                 'subjectUrl'   => $customer ? admin_url( 'user-edit.php?user_id=' . (int) $id ) : null,
             ];
@@ -76,7 +76,7 @@ final class RunPresenter {
             $review = get_comment( (int) $id );
             return [
                 /* translators: %d: review (comment) id */
-                'subjectLabel' => sprintf( __( 'Review #%d', 'yaymatik' ), (int) $id ),
+                'subjectLabel' => sprintf( __( 'Review #%d', 'yaymatik-automation-for-woocommerce' ), (int) $id ),
                 // Not get_edit_comment_link(): empty when this user can't edit it. The page checks access itself.
                 'subjectUrl'   => $review ? admin_url( 'comment.php?action=editcomment&c=' . (int) $id ) : null,
             ];
@@ -90,7 +90,7 @@ final class RunPresenter {
         $order = function_exists( 'wc_get_order' ) ? wc_get_order( (int) $id ) : false;
         return [
             /* translators: %s: order number */
-            'subjectLabel' => sprintf( __( 'Order #%s', 'yaymatik' ), $order ? $order->get_order_number() : (int) $id ),
+            'subjectLabel' => sprintf( __( 'Order #%s', 'yaymatik-automation-for-woocommerce' ), $order ? $order->get_order_number() : (int) $id ),
             'subjectUrl'   => $order ? $order->get_edit_order_url() : null,
         ];
     }

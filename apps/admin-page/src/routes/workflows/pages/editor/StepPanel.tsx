@@ -189,7 +189,12 @@ export function StepPanel({
   const update = (change: (graph: WorkflowGraph) => WorkflowGraph) => form.setFieldValue('graph', change);
 
   const close = closable && (
-    <Button variant="ghost" size="icon-sm" aria-label={__('Close', 'yaymatik')} onClick={onClose}>
+    <Button
+      variant="ghost"
+      size="icon-sm"
+      aria-label={__('Close', 'yaymatik-automation-for-woocommerce')}
+      onClick={onClose}
+    >
       <X />
     </Button>
   );
@@ -209,7 +214,7 @@ export function StepPanel({
               variant="ghost"
               size="icon-sm"
               className="-ml-1.5"
-              aria-label={__('Back to settings', 'yaymatik')}
+              aria-label={__('Back to settings', 'yaymatik-automation-for-woocommerce')}
               onClick={() => onSwap(false)}
             >
               <ArrowLeft />
@@ -225,7 +230,9 @@ export function StepPanel({
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>
-                {node.kind === 'trigger' ? __('Change the trigger?', 'yaymatik') : __('Change the action?', 'yaymatik')}
+                {node.kind === 'trigger'
+                  ? __('Change the trigger?', 'yaymatik-automation-for-woocommerce')
+                  : __('Change the action?', 'yaymatik-automation-for-woocommerce')}
               </AlertDialogTitle>
               <AlertDialogDescription>
                 {swapTo &&
@@ -233,7 +240,7 @@ export function StepPanel({
                     /* translators: 1: current step, 2: new step */
                     __(
                       '“%1$s” becomes “%2$s” and its settings are cleared. Steps that used its data will need setup.',
-                      'yaymatik',
+                      'yaymatik-automation-for-woocommerce',
                     ),
                     stepDef?.label ?? '',
                     stepDefs[swapTo].label,
@@ -241,8 +248,10 @@ export function StepPanel({
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>{__('Cancel', 'yaymatik')}</AlertDialogCancel>
-              <AlertDialogAction onClick={() => swapTo && onPick(swapTo)}>{__('Change', 'yaymatik')}</AlertDialogAction>
+              <AlertDialogCancel>{__('Cancel', 'yaymatik-automation-for-woocommerce')}</AlertDialogCancel>
+              <AlertDialogAction onClick={() => swapTo && onPick(swapTo)}>
+                {__('Change', 'yaymatik-automation-for-woocommerce')}
+              </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
@@ -251,7 +260,10 @@ export function StepPanel({
   }
   if (!stepDef) return null;
 
-  const swapLabel = node.kind === 'trigger' ? __('Change trigger', 'yaymatik') : __('Change action', 'yaymatik');
+  const swapLabel =
+    node.kind === 'trigger'
+      ? __('Change trigger', 'yaymatik-automation-for-woocommerce')
+      : __('Change action', 'yaymatik-automation-for-woocommerce');
 
   // Shown while the form shows its errors. The form shows its own first error itself (under a field,
   // or in a condition's rule); anything else goes under its field, or at the top.
@@ -315,7 +327,7 @@ export function StepPanel({
             <p className="text-muted-foreground text-sm">
               {__(
                 'Needs YayMatik Pro. You can save this workflow as it is, but it can’t be turned on, and doesn’t start, until YayMatik Pro is active.',
-                'yaymatik',
+                'yaymatik-automation-for-woocommerce',
               )}
             </p>
           ) : stepDef.inactive ? (
@@ -324,7 +336,7 @@ export function StepPanel({
                 /* translators: %s: plugin name, e.g. "YayMail" */
                 __(
                   'You can edit and save this workflow, but you can’t turn it on until %1$s is active. If it’s already on, it keeps running and skips this step.',
-                  'yaymatik',
+                  'yaymatik-automation-for-woocommerce',
                 ),
                 stepDef.inactive,
               )}
@@ -343,7 +355,9 @@ export function StepPanel({
               </FieldIssueContext.Provider>
             </FeedbackContext.Provider>
           ) : (
-            <p className="text-muted-foreground text-sm">{__('No settings needed.', 'yaymatik')}</p>
+            <p className="text-muted-foreground text-sm">
+              {__('No settings needed.', 'yaymatik-automation-for-woocommerce')}
+            </p>
           )}
         </div>
       </EditorToolsContext.Provider>

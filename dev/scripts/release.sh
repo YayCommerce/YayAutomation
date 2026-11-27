@@ -1,8 +1,9 @@
 #!/bin/bash
-# Build the distribution zip: release/yaymatik.zip, or with `pro` release/yaymatik-pro.zip (folder yaymatik-pro, includes/Pro kept). --rc stamps X.Y.Z-rcN in the zip copy.
+# Build the distribution zip: release/yaymatik-automation-for-woocommerce.zip (folder = the WordPress.org slug), or with `pro` release/yaymatik-pro.zip (folder yaymatik-pro, includes/Pro kept). --rc stamps X.Y.Z-rcN in the zip copy.
 set -eo pipefail
 cd "$(dirname "$0")/../.." || exit 1
 [[ -f yaymatik.php ]] || { echo "Not the plugin root: $(pwd)"; exit 1; }
+source dev/scripts/lib/wporg.sh
 
 EDITION=free
 RC=false
@@ -14,10 +15,13 @@ for arg in "$@"; do
     esac
 done
 # Pro is its own plugin: folder and main file yaymatik-pro, so it installs beside the free one (Fallback.php deactivates the second).
-PLUGIN_SLUG="yaymatik"
-[[ $EDITION == pro ]] && PLUGIN_SLUG="yaymatik-pro"
+PLUGIN_SLUG=$WPORG_SLUG
+MAIN_FILE="yaymatik.php"
+if [[ $EDITION == pro ]]; then
+    PLUGIN_SLUG="yaymatik-pro"
+    MAIN_FILE="yaymatik-pro.php"
+fi
 ZIP_NAME=$PLUGIN_SLUG
-MAIN_FILE="$PLUGIN_SLUG.php"
 PROJECT_PATH=$(pwd)
 BUILD_PATH="${PROJECT_PATH}/release"
 DEST_PATH="$BUILD_PATH/$PLUGIN_SLUG"
@@ -112,12 +116,13 @@ if [[ $EDITION == pro ]]; then
     [[ $(grep -cE '^ \* (Plugin Name: +YayMatik Pro|Update URI: )' "$DEST_PATH/$MAIN_FILE") == 2 ]] || { echo "Could not write the Pro header in $MAIN_FILE"; exit 1; }
 fi
 
-# WordPress.org allows no license client or updater in the free plugin: admin-shell's src/License goes, as in
-# YayBulkOrder's lite build, and the rest of admin-shell gets class_exists guards (checked, see the script).
-# Both editions get the ABSPATH guard in every admin-shell file.
+# WordPress.org allows no license client, updater or license page in the free plugin: admin-shell's src/License goes,
+# and free-admin-shell.php strips the rest of its license code and hardens its installer (see the script). Its strings
+# take the plugin's text domain: one domain per zip. Both editions get the ABSPATH guard in every admin-shell file.
 if [[ $EDITION == free ]]; then
     rm -rf "$DEST_PATH/vendor-prefixed/src/License"
     php "$PROJECT_PATH/dev/scripts/lib/free-admin-shell.php" "$DEST_PATH/vendor-prefixed" || exit 1
+    php "$PROJECT_PATH/dev/scripts/lib/rename-text-domain.php" yaycommerce "$WPORG_SLUG" "$DEST_PATH/vendor-prefixed" >/dev/null || exit 1
 else
     php "$PROJECT_PATH/dev/scripts/lib/free-admin-shell.php" "$DEST_PATH/vendor-prefixed" --abspath-only || exit 1
 fi
@@ -148,7 +153,7 @@ fi
 # The translation template from the files that ship (after the rc stamp): WordPress.org builds the language packs from it. Written into the
 # build folder only, as its creation date would leave the checkout changed after every release.
 command -v wp >/dev/null || { echo "Missing: wp-cli (wp i18n make-pot)"; exit 1; }
-wp i18n make-pot "$DEST_PATH" "$DEST_PATH/languages/yaymatik.pot" --include="$MAIN_FILE",includes,assets/dist --domain=yaymatik --slug=yaymatik
+wp i18n make-pot "$DEST_PATH" "$DEST_PATH/languages/$WPORG_SLUG.pot" --include="$MAIN_FILE",includes,assets/dist --domain="$WPORG_SLUG" --slug="$WPORG_SLUG"
 
 echo "Generating zip file..."
 cd "$BUILD_PATH" || exit
@@ -159,6 +164,7 @@ cd "$PROJECT_PATH" || exit 1
 
 if [[ $EDITION == free ]]; then
     dev/scripts/lib/check-lite-zip.sh "release/$ZIP_NAME.zip" || { rm -f "release/$ZIP_NAME.zip"; exit 1; }
+    dev/scripts/check-wporg.sh "release/$ZIP_NAME.zip" || { rm -f "release/$ZIP_NAME.zip"; exit 1; }
 fi
 
 echo "Build successfully"

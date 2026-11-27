@@ -12,13 +12,16 @@ export const resendWcEmailStep = (): Step =>
     kind: 'action',
     result: (step) =>
       /* translators: %s: a WooCommerce email's name, e.g. "Completed order" */
-      sprintf(__('Sent %s', 'yaymatik'), catalogLabel('resend_wc_email', 'email', String(step.output.email ?? ''))),
+      sprintf(
+        __('Sent %s', 'yaymatik-automation-for-woocommerce'),
+        catalogLabel('resend_wc_email', 'email', String(step.output.email ?? '')),
+      ),
     Footer: () => (
       <Hints
         hints={[
           __(
             'Sent to the order’s billing email, as WooCommerce sends it. Skipped when the email is turned off in WooCommerce.',
-            'yaymatik',
+            'yaymatik-automation-for-woocommerce',
           ),
         ]}
       />

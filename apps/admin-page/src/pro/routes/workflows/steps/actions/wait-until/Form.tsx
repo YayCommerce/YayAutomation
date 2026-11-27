@@ -65,7 +65,7 @@ export function WaitUntilForm({ config, onChange }: StepFormProps<WaitUntilConfi
                   <InputGroupButton
                     size="icon-md"
                     className="text-muted-foreground"
-                    aria-label={__('Choose a time', 'yaymatik')}
+                    aria-label={__('Choose a time', 'yaymatik-automation-for-woocommerce')}
                     onClick={openPicker}
                   >
                     <Clock aria-hidden />

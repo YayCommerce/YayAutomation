@@ -1,6 +1,6 @@
 # WordPress.org pre-submission checklist
 
-Run before you submit a new plugin or a review update to WordPress.org. Each item says what to check, then **How:** gives the steps. Refer to items by ID (for example "S4").
+Run before you submit a new plugin or a review update to WordPress.org. Each item says what to check, then **How:** gives the steps. Refer to items by ID (for example "S4"). `./run.sh check-wporg <zip> --urls` (`dev/scripts/check-wporg.sh`) automates G1, G4, G8, G9, Q5, R7, S1, S14 and part of G3 for YayMatik; `/wp-release` runs the whole list.
 
 ## Index
 
@@ -19,6 +19,7 @@ Run before you submit a new plugin or a review update to WordPress.org. Each ite
 | S11 | JSON in inline scripts is hex-encoded | [1. Security](#1-security) |
 | S12 | Stored HTML escaped when echoed | [1. Security](#1-security) |
 | S13 | Block comment attributes serialized | [1. Security](#1-security) |
+| S14 | Each nonce exception written down | [1. Security](#1-security) |
 | G1 | No updater or license client in the free zip | [2. Guidelines](#2-guidelines-compliance) |
 | G2 | No remote code or assets | [2. Guidelines](#2-guidelines-compliance) |
 | G3 | No tracking without opt-in | [2. Guidelines](#2-guidelines-compliance) |
@@ -26,6 +27,8 @@ Run before you submit a new plugin or a review update to WordPress.org. Each ite
 | G5 | Admin notices limited | [2. Guidelines](#2-guidelines-compliance) |
 | G6 | No forced credit links | [2. Guidelines](#2-guidelines-compliance) |
 | G7 | GPL-compatible licenses | [2. Guidelines](#2-guidelines-compliance) |
+| G8 | No edition-dependent limits in code | [2. Guidelines](#2-guidelines-compliance) |
+| G9 | No license UI or open installer | [2. Guidelines](#2-guidelines-compliance) |
 | B1 | Public source for minified files | [3. Source code and build](#3-source-code-and-build) |
 | B2 | Build steps documented | [3. Source code and build](#3-source-code-and-build) |
 | B3 | Third-party libraries credited | [3. Source code and build](#3-source-code-and-build) |
@@ -49,6 +52,7 @@ Run before you submit a new plugin or a review update to WordPress.org. Each ite
 | R4 | Header fields complete | [5. Readme and headers](#5-readme-and-headers) |
 | R5 | Tags and name clean | [5. Readme and headers](#5-readme-and-headers) |
 | R6 | Disclosures present | [5. Readme and headers](#5-readme-and-headers) |
+| R7 | Header and readme URLs answer 200 | [5. Readme and headers](#5-readme-and-headers) |
 | T1 | Plugin Check passes | [6. Tools](#6-tools) |
 | T2 | PHPCS passes | [6. Tools](#6-tools) |
 | T3 | Works on a clean install | [6. Tools](#6-tools) |
@@ -56,6 +60,8 @@ Run before you submit a new plugin or a review update to WordPress.org. Each ite
 | U2 | Confirm the slug | [7. Before you upload](#7-before-you-upload) |
 | U3 | Short reply in the same thread | [7. Before you upload](#7-before-you-upload) |
 | U4 | Every case of a reported issue fixed | [7. Before you upload](#7-before-you-upload) |
+| U5 | Slug decided before the first upload | [7. Before you upload](#7-before-you-upload) |
+| U6 | Reply from the template | [7. Before you upload](#7-before-you-upload) |
 
 ### Review email headings → items
 
@@ -63,14 +69,14 @@ Use this table when a WordPress.org review email arrives. Find its heading, then
 
 | Heading in the review email | Items |
 |---|---|
-| Nonces and user permissions before processing requests | S1, S2 |
+| Nonces and user permissions before processing requests | S1, S2, S14 |
 | Proper escaping of outputs | S4, S6, S7 |
 | Variables and options must be escaped when echo'd | S4, S6, S11, S12, S13 |
 | Callback calls … return values are output must be properly escaped | S5, S7 |
 | Sanitize, validate and escape / data must be sanitized | S3 |
 | Calling files remotely / Including an update checker | G1, G2 |
 | Tracking / phoning home | G3 |
-| Trialware / locked features | G4 |
+| Trialware / locked features | G4, G8, G9 |
 | Hijacking the admin dashboard / Guideline 11 | G5 |
 | The source code of your plugin should be publicly accessible / Guidelines 1, 4 | B1, B2, B3 |
 | No publicly documented resource for your generated/compressed content | B1, B2 |
@@ -81,11 +87,13 @@ Use this table when a WordPress.org review email arrives. Find its heading, then
 | `load_plugin_textdomain()` is not needed | Q4 |
 | Allowing direct file access | S9 |
 | Readme / Stable tag / Tested up to | R1, R2, R3 |
+| URL(s) declared in your plugin seem to be invalid | R7 |
+| Text domain does not match plugin slug | Q5, U5 |
 
 ## 1. Security
 
 - [ ] **S1. Data-changing handlers check a nonce and the user's permission.**
-  How: `grep -rn "wp_ajax_\|admin_post_\|\$_POST\|\$_GET\|\$_REQUEST" includes/`. Open each handler. Before it writes anything, it must call `check_ajax_referer()` or `wp_verify_nonce()`, and then `current_user_can()`.
+  How: `grep -rn "wp_ajax_\|wc_ajax_\|admin_post_\|\$_POST\|\$_GET\|\$_REQUEST" includes/ vendor-prefixed/` (vendored code ships too). Open each handler. Before it writes anything, it must call `check_ajax_referer()` or `wp_verify_nonce()`, and then `current_user_can()`. A `phpcs:disable NonceVerification` is not a reason: ask whether a nonce could exist there (a guest with a session can have one).
 
 - [ ] **S2. Every REST route has a real `permission_callback`.**
   How: `grep -rn "register_rest_route" -A8`. Find each `__return_true`. It is OK only if the route is public and read-only.
@@ -123,10 +131,13 @@ Use this table when a WordPress.org review email arrives. Find its heading, then
 - [ ] **S13. Block comment attributes are serialized.**
   How: `grep -rn "<!-- wp:.*wp_json_encode"`. Use `serialize_block_attributes()`. A value that contains `-->` can close the comment and add markup.
 
+- [ ] **S14. Each nonce exception is written down with its reason.**
+  How: a handler may skip the nonce only where no session can exist (an email link, a mail app's RFC 8058 one-click), and then a signed token is the proof. List each one in `dev/wporg/nonce-exceptions.txt` (`<path>::<function> — <reason>`); check-wporg gate 4 fails on any other, and on an entry nothing uses. Explain them in the reply (U6).
+
 ## 2. Guidelines compliance
 
 - [ ] **G1. The free zip has no updater or license client.**
-  How: unzip the release and run `grep -rni "updater\|license\|edd_sl\|update_plugins\|pre_set_site_transient_update"`. You should get no hits in the free build.
+  How: unzip the release and run `grep -rni "updater\|license\|edd_sl\|update_plugins\|pre_set_site_transient_update"`. You should get no hits in the free build, besides the GPL lines. No license views, scripts or styles either, also not in vendored code ("as in another approved zip" is not a reason).
 
 - [ ] **G2. No remote code or assets.**
   How: `grep -rn "https\?://" --include=*.php --include=*.js` in the zip. Look for CDNs, Google Fonts and remote scripts. Bundle them locally.
@@ -135,7 +146,7 @@ Use this table when a WordPress.org review email arrives. Find its heading, then
   How: `grep -rn "wp_remote_\|fetch(\|axios"`. Each external call must start only after the user opts in, and the readme must disclose it under "External services".
 
 - [ ] **G4. No locked or trial features in the free version.**
-  How: on a clean install with the free plugin only, click every menu and setting. Nothing may be disabled behind a paywall or a time limit. Upsell banners are fine.
+  How: on a clean install with the free plugin only, click every menu and setting. Nothing may be disabled behind a paywall or a time limit. Upsell banners are fine. Clicking is not enough: scan the code too (G8), and the words "license", "trial", "unlock", "premium", "upgrade to", "coming soon" in every shipped file (no disabled placeholder for a later feature) (check-wporg gate 2, `dev/wporg/word-allowlist.txt`).
 
 - [ ] **G5. Notices are limited.**
   How: `grep -rn "admin_notices"`. Each notice must check the current screen (`get_current_screen()->id`) and be dismissible. Open the Dashboard, Posts and Plugins pages and confirm none of your notices show there.
@@ -145,6 +156,12 @@ Use this table when a WordPress.org review email arrives. Find its heading, then
 
 - [ ] **G7. Licenses are GPL-compatible.**
   How: `pnpm licenses list` or `composer licenses`. Flag anything that is not MIT, BSD, Apache-2.0, GPL or LGPL.
+
+- [ ] **G8. No edition-dependent limits in the code.**
+  How: what the free code can run must be fully usable in the free zip: no range, count or feature that a paid build widens at run time (for example free ranges in a static table that a Pro build widens once it sees a license). A paid difference is code the free zip doesn't ship. check-wporg gate 3 lists `licensed` / `is_licensed`, `class_exists( …\Pro\… )` and `allow` / `extend` / `widen` methods that change a static table; each kept one goes in `dev/wporg/edition-allowlist.txt` with its reason. Never put a limit back after approval: Guideline 5 covers every hosted version.
+
+- [ ] **G9. No license UI and no open plugin installer.**
+  How: a vendored admin menu may ship only without its license pages, registry and updater, and an installer in it may install only its own WordPress.org list by slug (never a package URL from the request), after nonce, then capability. check-wporg gate 5. A copy in the free zip must never draw other plugins' license pages (YayMatik: the stripped admin-shell joins the election as `0.0.1`).
 
 ## 3. Source code and build
 
@@ -230,6 +247,9 @@ Use this table when a WordPress.org review email arrives. Find its heading, then
 - [ ] **R6. Disclosures are present.**
   How: the readme has sections for "Source code", "External services" (if any) and "Privacy".
 
+- [ ] **R7. Header and readme URLs answer 200.**
+  How: every URL in the plugin header (Plugin URI, Author URI) and in `readme.txt`, the source repo included, answers 2xx to `curl -sIL` with no login, on upload day. A redirect is fine, but put the final URL in the header. check-wporg gate 6 (`--urls`).
+
 ## 6. Tools
 
 - [ ] **T1. Plugin Check passes.**
@@ -247,10 +267,26 @@ Use this table when a WordPress.org review email arrives. Find its heading, then
   How: build the release zip, upload it through Plugins > Add New > Upload on a clean site, and run a smoke test of the main features.
 
 - [ ] **U2. Confirm the slug.**
-  How: check the folder name and Text Domain. You can't change the slug after approval, so ask for a change in your reply before then.
+  How: check the folder name and Text Domain. You can't change the slug after approval, so ask for a change in your reply before then. U5 decides it before the first upload.
 
 - [ ] **U3. Write a short reply.**
   How: reply in the same email thread. Give only context or clarifications, such as a repo link or answers to their questions. Don't include a changelog. If a finding is a false positive, or a name belongs to another plugin, say so and give an example. AI-detected findings can be wrong, so read the code, then fix them or explain why you did not.
 
 - [ ] **U4. Every case of a reported issue is fixed.**
   How: the email lists examples only. For each finding, search the whole plugin for the same pattern and fix all cases. Then test the updated zip on a clean site with `WP_DEBUG` true (Q11, T3). Reviewers reject an update that skips this.
+
+- [ ] **U5. The slug is decided before the first upload.**
+  How: WordPress.org makes the slug from the Plugin Name (lowercase, words joined by `-`: "YayMatik – Automation for WooCommerce" became `yaymatik-automation-for-woocommerce`) unless the submission asks for another. Text domain, the zip's top folder and the `.pot` name must equal it (YayMatik: `WPORG_SLUG` in `dev/scripts/lib/wporg.sh`). Code prefixes don't need to match.
+
+- [ ] **U6. The reply follows the template.**
+  How: in the same thread, at most 6 lines: thanks; that every reported issue and its other cases are fixed; context the code can't show (each token-only handler from S14 and why no nonce can exist); the public source link; a permalink request only if the slug must change. No change list.
+
+## Review history
+
+| Round | Date | Review | Finding | Root cause in code | Root cause in process | Now caught by |
+|---|---|---|---|---|---|---|
+| 1 | Nov 23, 2026 | AUTOPREREVIEW | Trialware: `Settings::update` caps the ranges | `Settings::$editable` free ranges, widened by `allow()` when Pro saw a license | G4 was a click-through only | G8, check-wporg gate 3 |
+| 1 | Nov 23, 2026 | AUTOPREREVIEW | (same nature) license words, admin-shell license UI and installer | Lite comments; admin-shell's license views, registry and URL installer shipped | G1 accepted license views "as in another approved zip" | G1, G9, gates 2 and 5 |
+| 1 | Nov 23, 2026 | AUTOPREREVIEW | Nonces and permissions | Guest email capture without a nonce; the unsubscribe button posted no nonce; admin-shell installer | S1 grepped `includes/` only and accepted `phpcs:disable` reasons | S1, S14, gate 4 |
+| 1 | Nov 23, 2026 | AUTOPREREVIEW | Plugin URI 404 | The page didn't exist yet | No URL check for the header | R7, gate 6 |
+| 1 | Nov 23, 2026 | AUTOPREREVIEW | Text domain `yaymatik` ≠ slug | Domain chosen before the slug was known | U2 was never acted on | U5, Q5, gate 1 |

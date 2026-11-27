@@ -13,7 +13,7 @@ export function SettingsErrorAlert({ message, onRetry }: { message: string; onRe
         <span>{message}</span>
         {onRetry && (
           <Button variant="outline" size="sm" onClick={onRetry}>
-            {__('Try again', 'yaymatik')}
+            {__('Try again', 'yaymatik-automation-for-woocommerce')}
           </Button>
         )}
       </AlertDescription>

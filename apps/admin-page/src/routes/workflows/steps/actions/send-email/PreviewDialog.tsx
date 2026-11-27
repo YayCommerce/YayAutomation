@@ -58,7 +58,7 @@ export function PreviewDialog({
             <div className="flex items-center justify-between gap-4 border-b px-5 py-3.5">
               <div className="flex min-w-0 items-center gap-2.5">
                 <DialogTitle className="shrink-0 text-base font-semibold">
-                  {__('Email preview', 'yaymatik')}
+                  {__('Email preview', 'yaymatik-automation-for-woocommerce')}
                 </DialogTitle>
                 <DialogDescription
                   className={
@@ -68,20 +68,20 @@ export function PreviewDialog({
                   }
                 >
                   {preview.sample
-                    ? __('Sample data', 'yaymatik')
+                    ? __('Sample data', 'yaymatik-automation-for-woocommerce')
                     : preview.order
                       ? sprintf(
                           /* translators: %s: order number */
-                          __('Order #%s data · nothing is sent', 'yaymatik'),
+                          __('Order #%s data · nothing is sent', 'yaymatik-automation-for-woocommerce'),
                           preview.order,
                         )
                       : preview.customer
                         ? sprintf(
                             /* translators: %s: customer name */
-                            __('Customer %s data · nothing is sent', 'yaymatik'),
+                            __('Customer %s data · nothing is sent', 'yaymatik-automation-for-woocommerce'),
                             preview.customer,
                           )
-                        : __('Nothing is sent', 'yaymatik')}
+                        : __('Nothing is sent', 'yaymatik-automation-for-woocommerce')}
                 </DialogDescription>
                 {!preview.sample && preview.sampleProducts.length > 0 && (
                   <span className="bg-warning-soft text-warning-soft-foreground truncate rounded-full px-2 py-0.5 text-[11px] font-semibold">
@@ -100,10 +100,15 @@ export function PreviewDialog({
                   onClick={onSendTest}
                 >
                   <Send />
-                  {__('Send test', 'yaymatik')}
+                  {__('Send test', 'yaymatik-automation-for-woocommerce')}
                 </LoadingButton>
                 <DialogClose asChild>
-                  <Button variant="ghost" size="icon-sm" className="rounded-md" aria-label={__('Close', 'yaymatik')}>
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    className="rounded-md"
+                    aria-label={__('Close', 'yaymatik-automation-for-woocommerce')}
+                  >
                     <X />
                   </Button>
                 </DialogClose>
@@ -126,7 +131,7 @@ export function PreviewDialog({
                 <p className="text-muted-foreground truncate text-[13px]">
                   {
                     /* translators: %s: email address */
-                    sprintf(__('to %s', 'yaymatik'), preview.to || '—')
+                    sprintf(__('to %s', 'yaymatik-automation-for-woocommerce'), preview.to || '—')
                   }
                 </p>
               </div>
@@ -144,14 +149,18 @@ export function PreviewDialog({
 }
 
 const devices: { value: Device; label: string; icon: typeof Monitor }[] = [
-  { value: 'desktop', label: __('Desktop', 'yaymatik'), icon: Monitor },
-  { value: 'mobile', label: __('Mobile', 'yaymatik'), icon: Smartphone },
+  { value: 'desktop', label: __('Desktop', 'yaymatik-automation-for-woocommerce'), icon: Monitor },
+  { value: 'mobile', label: __('Mobile', 'yaymatik-automation-for-woocommerce'), icon: Smartphone },
 ];
 
 /** Desktop / Mobile on a muted pill; the chosen one a raised chip. Focus ring from the keyboard only. */
 function DeviceToggle({ value, onChange }: { value: Device; onChange: (device: Device) => void }) {
   return (
-    <div role="group" aria-label={__('Preview width', 'yaymatik')} className="bg-muted flex rounded-md p-0.75">
+    <div
+      role="group"
+      aria-label={__('Preview width', 'yaymatik-automation-for-woocommerce')}
+      className="bg-muted flex rounded-md p-0.75"
+    >
       {devices.map(({ value: device, label, icon: Icon }) => {
         const on = device === value;
         return (
@@ -248,7 +257,7 @@ export function EmailFrame({ html, width, minWidth }: { html: string; width: num
   return (
     <iframe
       ref={frame}
-      title={__('Email preview', 'yaymatik')}
+      title={__('Email preview', 'yaymatik-automation-for-woocommerce')}
       sandbox="allow-same-origin"
       scrolling="no"
       srcDoc={html}
@@ -261,8 +270,9 @@ export function EmailFrame({ html, width, minWidth }: { html: string; width: num
 
 /** Why grids show the store's newest products instead of the order's suggestions. */
 export function sampleProductsText(kinds: ProductGridKind[]): string {
-  if (kinds.length > 1) return __('Sample products: no recent order has cross-sells or upsells', 'yaymatik');
+  if (kinds.length > 1)
+    return __('Sample products: no recent order has cross-sells or upsells', 'yaymatik-automation-for-woocommerce');
   return kinds[0] === 'upsells'
-    ? __('Sample products: no recent order has upsells', 'yaymatik')
-    : __('Sample products: no recent order has cross-sells', 'yaymatik');
+    ? __('Sample products: no recent order has upsells', 'yaymatik-automation-for-woocommerce')
+    : __('Sample products: no recent order has cross-sells', 'yaymatik-automation-for-woocommerce');
 }

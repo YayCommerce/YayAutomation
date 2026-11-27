@@ -21,11 +21,11 @@ class AddOrderNote extends Action {
     }
 
     public function label(): string {
-        return __( 'Add order note', 'yaymatik' );
+        return __( 'Add order note', 'yaymatik-automation-for-woocommerce' );
     }
 
     public function description(): string {
-        return __( 'Add a private note to the order, or a note the customer gets by email.', 'yaymatik' );
+        return __( 'Add a private note to the order, or a note the customer gets by email.', 'yaymatik-automation-for-woocommerce' );
     }
 
     public function icon(): string {
@@ -46,23 +46,23 @@ class AddOrderNote extends Action {
 
     public function fields(): array {
         return [
-            Field::select( 'type', __( 'Note type', 'yaymatik' ), self::types() )->default( 'private' ),
-            Field::textarea( 'note', __( 'Note', 'yaymatik' ) )
+            Field::select( 'type', __( 'Note type', 'yaymatik-automation-for-woocommerce' ), self::types() )->default( 'private' ),
+            Field::textarea( 'note', __( 'Note', 'yaymatik-automation-for-woocommerce' ) )
                 /* translators: {{ step }}: step name, e.g. "Add order note"; keep {{ … }} as it is. */
-                ->required( __( '{{ step }} needs a note.', 'yaymatik' ) )
+                ->required( __( '{{ step }} needs a note.', 'yaymatik-automation-for-woocommerce' ) )
                 ->variables(),
         ];
     }
 
     public function summary(): string {
         /* translators: {{ config.type }}: note type (private or to the customer), {{ config.note }}: the note text; keep {{ … }} as it is. */
-        return __( '{{ config.type }}: {{ config.note }}', 'yaymatik' );
+        return __( '{{ config.type }}: {{ config.note }}', 'yaymatik-automation-for-woocommerce' );
     }
 
     public function outputs(): array {
         return [
             'type' => [
-                'label'   => __( 'Note type', 'yaymatik' ),
+                'label'   => __( 'Note type', 'yaymatik-automation-for-woocommerce' ),
                 'type'    => Type::enum(),
                 'options' => self::types(),
             ],
@@ -72,7 +72,7 @@ class AddOrderNote extends Action {
     public function run( Scope $scope, array $config ): StepResult {
         $order = $scope->entity( OrderData::ID );
         if ( ! $order ) {
-            return StepResult::skipped( __( 'There is no order to add the note to.', 'yaymatik' ) );
+            return StepResult::skipped( __( 'There is no order to add the note to.', 'yaymatik-automation-for-woocommerce' ) );
         }
         // WooCommerce shows notes through wp_kses_post() but emails a customer note as is.
         $note = wp_kses_post( self::render( $config['note'], $scope ) );
@@ -82,8 +82,8 @@ class AddOrderNote extends Action {
 
     private static function types(): array {
         return [
-            'private'  => __( 'Private note', 'yaymatik' ),
-            'customer' => __( 'Note to customer', 'yaymatik' ),
+            'private'  => __( 'Private note', 'yaymatik-automation-for-woocommerce' ),
+            'customer' => __( 'Note to customer', 'yaymatik-automation-for-woocommerce' ),
         ];
     }
 }

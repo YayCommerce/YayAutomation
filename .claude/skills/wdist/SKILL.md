@@ -4,7 +4,7 @@ description: Release workflow — bump version, build, and create a distribution
 
 # /wdist
 
-Workflow - Create a release distribution.
+Workflow - Create a release distribution. For a WordPress.org upload of the free zip, use `/wp-release` instead.
 
 ---
 
@@ -44,6 +44,6 @@ If build fails: show last 40 lines, ask user to fix or auto-fix if clearly scope
 
 > **Release complete: v\<version\>**
 >
-> Zip: `release/yaymatik.zip`
+> Zip: `release/yaymatik-automation-for-woocommerce.zip`
 
 Do not commit the version bump unless the user asks.

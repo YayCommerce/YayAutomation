@@ -45,7 +45,7 @@ export function WorkflowRowMenu({ workflow, onAction }: { workflow: Workflow; on
           size="icon-sm"
           aria-label={sprintf(
             /* translators: %s: workflow name */
-            __('Actions for %s', 'yaymatik'),
+            __('Actions for %s', 'yaymatik-automation-for-woocommerce'),
             workflow.name,
           )}
         >
@@ -55,30 +55,30 @@ export function WorkflowRowMenu({ workflow, onAction }: { workflow: Workflow; on
       <DropdownMenuContent align="end" className="min-w-44">
         <DropdownMenuItem onSelect={() => navigate(`/workflows/${workflow.id}/edit`)}>
           <Pencil />
-          {__('Edit', 'yaymatik')}
+          {__('Edit', 'yaymatik-automation-for-woocommerce')}
         </DropdownMenuItem>
         <DropdownMenuItem onSelect={() => onAction('rename')}>
           <Type />
-          {__('Rename', 'yaymatik')}
+          {__('Rename', 'yaymatik-automation-for-woocommerce')}
         </DropdownMenuItem>
         {isActive ? (
           <DropdownMenuItem onSelect={() => onAction('deactivate')}>
             <Power />
-            {__('Deactivate', 'yaymatik')}
+            {__('Deactivate', 'yaymatik-automation-for-woocommerce')}
           </DropdownMenuItem>
         ) : (
           // Not offered while what Activate would make live has issues: the server would refuse.
           canActivate(workflow) && (
             <DropdownMenuItem onSelect={() => onAction('activate')}>
               <Power />
-              {__('Activate', 'yaymatik')}
+              {__('Activate', 'yaymatik-automation-for-woocommerce')}
             </DropdownMenuItem>
           )
         )}
         <DropdownMenuSeparator />
         <DropdownMenuItem variant="destructive" onSelect={() => onAction('delete')}>
           <Trash2 />
-          {__('Delete', 'yaymatik')}
+          {__('Delete', 'yaymatik-automation-for-woocommerce')}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

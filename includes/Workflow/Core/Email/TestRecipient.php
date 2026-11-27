@@ -28,7 +28,7 @@ final class TestRecipient {
     public static function save( int $user_id, $email ) {
         $email = is_string( $email ) ? sanitize_email( $email ) : '';
         if ( ! is_email( $email ) ) {
-            return new \WP_Error( 'yaymatik_invalid_email', __( 'Enter a valid email address.', 'yaymatik' ), [ 'status' => 400 ] );
+            return new \WP_Error( 'yaymatik_invalid_email', __( 'Enter a valid email address.', 'yaymatik-automation-for-woocommerce' ), [ 'status' => 400 ] );
         }
         update_user_meta( $user_id, self::META, $email );
         return $email;

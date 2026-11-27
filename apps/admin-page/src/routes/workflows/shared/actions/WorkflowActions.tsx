@@ -50,18 +50,18 @@ export function MoreActionsMenu({ workflow, onDeleted }: { workflow: Workflow; o
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
           <Button variant="outline" size="sm">
-            {__('More actions', 'yaymatik')}
+            {__('More actions', 'yaymatik-automation-for-woocommerce')}
             <ChevronDown />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuItem onSelect={() => setDialog('rename')}>
             <Pencil />
-            {__('Rename', 'yaymatik')}
+            {__('Rename', 'yaymatik-automation-for-woocommerce')}
           </DropdownMenuItem>
           <DropdownMenuItem variant="destructive" onSelect={() => setDialog('delete')}>
             <Trash2 />
-            {__('Delete', 'yaymatik')}
+            {__('Delete', 'yaymatik-automation-for-woocommerce')}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -89,7 +89,7 @@ export function RenameWorkflowDialog({ workflow, onClose }: { workflow: Workflow
       { id: workflow.id, name },
       {
         onSuccess: () => {
-          toast.success(__('Workflow renamed', 'yaymatik'));
+          toast.success(__('Workflow renamed', 'yaymatik-automation-for-woocommerce'));
           onClose();
         },
         onError: (error) => toast.error(error.message),
@@ -98,9 +98,9 @@ export function RenameWorkflowDialog({ workflow, onClose }: { workflow: Workflow
 
   return (
     <FieldDialog
-      title={__('Rename workflow', 'yaymatik')}
-      description={__('Enter a new name for this workflow.', 'yaymatik')}
-      label={__('Name', 'yaymatik')}
+      title={__('Rename workflow', 'yaymatik-automation-for-woocommerce')}
+      description={__('Enter a new name for this workflow.', 'yaymatik-automation-for-woocommerce')}
+      label={__('Name', 'yaymatik-automation-for-woocommerce')}
       initialValue={workflow.name}
       pending={updateMutation.isPending}
       onSave={save}
@@ -138,7 +138,7 @@ export function DeleteWorkflowDialog({
     if (!workflow) return;
     deleteMutation.mutate(workflow.id, {
       onSuccess: () => {
-        toast.success(__('Workflow deleted', 'yaymatik'));
+        toast.success(__('Workflow deleted', 'yaymatik-automation-for-woocommerce'));
         onClose();
         onDeleted?.();
       },
@@ -166,14 +166,18 @@ export function DeleteWorkflowDialog({
               <AlertDialogTitle>
                 {sprintf(
                   /* translators: %s: workflow name */
-                  __('Delete “%s”?', 'yaymatik'),
+                  __('Delete “%s”?', 'yaymatik-automation-for-woocommerce'),
                   shown?.workflow.name ?? '',
                 )}
               </AlertDialogTitle>
-              <AlertDialogDescription>{__('This can’t be undone.', 'yaymatik')}</AlertDialogDescription>
+              <AlertDialogDescription>
+                {__('This can’t be undone.', 'yaymatik-automation-for-woocommerce')}
+              </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel disabled={deleteMutation.isPending}>{__('Cancel', 'yaymatik')}</AlertDialogCancel>
+              <AlertDialogCancel disabled={deleteMutation.isPending}>
+                {__('Cancel', 'yaymatik-automation-for-woocommerce')}
+              </AlertDialogCancel>
               {/* Not AlertDialogAction: that closes the dialog before the request finishes. */}
               <LoadingButton
                 variant="destructive"
@@ -181,7 +185,7 @@ export function DeleteWorkflowDialog({
                 disabled={deleteMutation.isPending}
                 onClick={confirm}
               >
-                {__('Delete', 'yaymatik')}
+                {__('Delete', 'yaymatik-automation-for-woocommerce')}
               </LoadingButton>
             </AlertDialogFooter>
           </>
@@ -204,7 +208,7 @@ export function ConfirmDialog({
   title,
   description,
   confirmLabel,
-  cancelLabel = __('Cancel', 'yaymatik'),
+  cancelLabel = __('Cancel', 'yaymatik-automation-for-woocommerce'),
   destructive,
   open,
   onOpenChange,
@@ -251,20 +255,26 @@ export function ActivateDialog({ name, hasDraft, ...props }: ConfirmProps & { na
       {...props}
       title={sprintf(
         /* translators: %s: workflow name */
-        __('Activate “%s”?', 'yaymatik'),
+        __('Activate “%s”?', 'yaymatik-automation-for-woocommerce'),
         name,
       )}
       description={
         <>
-          {__('It starts running right away. You can deactivate it at any time.', 'yaymatik')}
+          {__(
+            'It starts running right away. You can deactivate it at any time.',
+            'yaymatik-automation-for-woocommerce',
+          )}
           {hasDraft && (
             <span className="mt-2 block">
-              {__('Your draft changes aren’t included. Update first to include them.', 'yaymatik')}
+              {__(
+                'Your draft changes aren’t included. Update first to include them.',
+                'yaymatik-automation-for-woocommerce',
+              )}
             </span>
           )}
         </>
       }
-      confirmLabel={__('Activate', 'yaymatik')}
+      confirmLabel={__('Activate', 'yaymatik-automation-for-woocommerce')}
     />
   );
 }
@@ -274,7 +284,12 @@ export const cancelledRunsText = (count = 0) =>
   count > 0
     ? sprintf(
         /* translators: %d: number of runs */
-        _n('%d waiting run was cancelled.', '%d waiting runs were cancelled.', count, 'yaymatik'),
+        _n(
+          '%d waiting run was cancelled.',
+          '%d waiting runs were cancelled.',
+          count,
+          'yaymatik-automation-for-woocommerce',
+        ),
         count,
       )
     : undefined;
@@ -294,7 +309,7 @@ export function UpdateDialog({ waitingRuns, ...props }: ConfirmProps & { waiting
   return (
     <ConfirmDialog
       {...props}
-      title={__('Update this workflow?', 'yaymatik')}
+      title={__('Update this workflow?', 'yaymatik-automation-for-woocommerce')}
       description={
         count > 0
           ? sprintf(
@@ -303,16 +318,16 @@ export function UpdateDialog({ waitingRuns, ...props }: ConfirmProps & { waiting
                 'It’s active, so your draft changes take effect right away. %d waiting run will be cancelled. Runs under way finish on the version they started on.',
                 'It’s active, so your draft changes take effect right away. %d waiting runs will be cancelled. Runs under way finish on the version they started on.',
                 count,
-                'yaymatik',
+                'yaymatik-automation-for-woocommerce',
               ),
               count,
             )
           : __(
               'It’s active, so your draft changes take effect right away. Runs under way finish on the version they started on.',
-              'yaymatik',
+              'yaymatik-automation-for-woocommerce',
             )
       }
-      confirmLabel={__('Update', 'yaymatik')}
+      confirmLabel={__('Update', 'yaymatik-automation-for-woocommerce')}
     />
   );
 }
@@ -321,9 +336,12 @@ export function DiscardChangesDialog(props: ConfirmProps) {
   return (
     <ConfirmDialog
       {...props}
-      title={__('Discard draft changes?', 'yaymatik')}
-      description={__('Your draft changes will be deleted. The workflow stays as it was.', 'yaymatik')}
-      confirmLabel={__('Discard changes', 'yaymatik')}
+      title={__('Discard draft changes?', 'yaymatik-automation-for-woocommerce')}
+      description={__(
+        'Your draft changes will be deleted. The workflow stays as it was.',
+        'yaymatik-automation-for-woocommerce',
+      )}
+      confirmLabel={__('Discard changes', 'yaymatik-automation-for-woocommerce')}
       destructive
     />
   );
@@ -335,11 +353,11 @@ function deactivateText(several: boolean, count: number) {
     return several
       ? __(
           'New events won’t start them. Runs under way stop before their next step. You can activate them again at any time.',
-          'yaymatik',
+          'yaymatik-automation-for-woocommerce',
         )
       : __(
           'New events won’t start it. Runs under way stop before their next step. You can activate it again at any time.',
-          'yaymatik',
+          'yaymatik-automation-for-woocommerce',
         );
   }
   return sprintf(
@@ -349,14 +367,14 @@ function deactivateText(several: boolean, count: number) {
           'New events won’t start them. Runs under way stop before their next step. You can activate them again at any time. %d waiting run will be cancelled.',
           'New events won’t start them. Runs under way stop before their next step. You can activate them again at any time. %d waiting runs will be cancelled.',
           count,
-          'yaymatik',
+          'yaymatik-automation-for-woocommerce',
         )
       : /* translators: %d: number of runs */
         _n(
           'New events won’t start it. Runs under way stop before their next step. You can activate it again at any time. %d waiting run will be cancelled.',
           'New events won’t start it. Runs under way stop before their next step. You can activate it again at any time. %d waiting runs will be cancelled.',
           count,
-          'yaymatik',
+          'yaymatik-automation-for-woocommerce',
         ),
     count,
   );
@@ -376,17 +394,17 @@ export function DeactivateDialog(
         count === undefined
           ? sprintf(
               /* translators: %s: workflow name */
-              __('Deactivate “%s”?', 'yaymatik'),
+              __('Deactivate “%s”?', 'yaymatik-automation-for-woocommerce'),
               name,
             )
           : sprintf(
               /* translators: %d: number of workflows */
-              _n('Deactivate %d workflow?', 'Deactivate %d workflows?', count, 'yaymatik'),
+              _n('Deactivate %d workflow?', 'Deactivate %d workflows?', count, 'yaymatik-automation-for-woocommerce'),
               count,
             )
       }
       description={deactivateText(several, waiting)}
-      confirmLabel={__('Deactivate', 'yaymatik')}
+      confirmLabel={__('Deactivate', 'yaymatik-automation-for-woocommerce')}
     />
   );
 }
@@ -401,16 +419,18 @@ export function DeleteBlockedContent({ several = false, message }: { several?: b
       <AlertDialogHeader>
         <AlertDialogTitle>
           {several
-            ? __('There was a problem deleting some workflows', 'yaymatik')
-            : __('There was a problem deleting this workflow', 'yaymatik')}
+            ? __('There was a problem deleting some workflows', 'yaymatik-automation-for-woocommerce')
+            : __('There was a problem deleting this workflow', 'yaymatik-automation-for-woocommerce')}
         </AlertDialogTitle>
         <AlertDialogDescription>
           {message ??
-            (several ? __('Deactivate these workflows before you delete them.', 'yaymatik') : messages.deleteActive)}
+            (several
+              ? __('Deactivate these workflows before you delete them.', 'yaymatik-automation-for-woocommerce')
+              : messages.deleteActive)}
         </AlertDialogDescription>
       </AlertDialogHeader>
       <AlertDialogFooter>
-        <AlertDialogCancel>{__('Back', 'yaymatik')}</AlertDialogCancel>
+        <AlertDialogCancel>{__('Back', 'yaymatik-automation-for-woocommerce')}</AlertDialogCancel>
       </AlertDialogFooter>
     </>
   );
@@ -425,13 +445,13 @@ export function DeleteStepDialog({ count = 1, ...props }: ConfirmProps & { count
         count > 1
           ? sprintf(
               /* translators: %d: number of steps */
-              _n('Delete %d step?', 'Delete %d steps?', count, 'yaymatik'),
+              _n('Delete %d step?', 'Delete %d steps?', count, 'yaymatik-automation-for-woocommerce'),
               count,
             )
-          : __('Delete this step?', 'yaymatik')
+          : __('Delete this step?', 'yaymatik-automation-for-woocommerce')
       }
-      description={__('This can’t be undone.', 'yaymatik')}
-      confirmLabel={__('Delete', 'yaymatik')}
+      description={__('This can’t be undone.', 'yaymatik-automation-for-woocommerce')}
+      confirmLabel={__('Delete', 'yaymatik-automation-for-woocommerce')}
       destructive
     />
   );

@@ -550,6 +550,13 @@ if ( ! function_exists( 'current_user_can' ) ) {
     }
 }
 
+if ( ! function_exists( 'wp_verify_nonce' ) ) {
+    // A valid nonce is `nonce:<action>`.
+    function wp_verify_nonce( $nonce, $action = -1 ) {
+        return 'nonce:' . $action === $nonce ? 1 : false;
+    }
+}
+
 if ( ! function_exists( 'sanitize_email' ) ) {
     function sanitize_email( $email ) {
         return (string) preg_replace( '/[^a-z0-9+_.@-]/i', '', trim( $email ) );

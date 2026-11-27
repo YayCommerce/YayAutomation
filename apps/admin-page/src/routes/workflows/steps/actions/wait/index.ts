@@ -9,13 +9,13 @@ function duration({ delay }: WaitConfig) {
   if (delay.value === null) return '';
   const text = {
     /* translators: %s: number of minutes */
-    minutes: _n('%s minute', '%s minutes', delay.value, 'yaymatik'),
+    minutes: _n('%s minute', '%s minutes', delay.value, 'yaymatik-automation-for-woocommerce'),
     /* translators: %s: number of hours */
-    hours: _n('%s hour', '%s hours', delay.value, 'yaymatik'),
+    hours: _n('%s hour', '%s hours', delay.value, 'yaymatik-automation-for-woocommerce'),
     /* translators: %s: number of days */
-    days: _n('%s day', '%s days', delay.value, 'yaymatik'),
+    days: _n('%s day', '%s days', delay.value, 'yaymatik-automation-for-woocommerce'),
     /* translators: %s: number of weeks */
-    weeks: _n('%s week', '%s weeks', delay.value, 'yaymatik'),
+    weeks: _n('%s week', '%s weeks', delay.value, 'yaymatik-automation-for-woocommerce'),
   }[delay.unit];
   return value(sprintf(text, String(delay.value)));
 }

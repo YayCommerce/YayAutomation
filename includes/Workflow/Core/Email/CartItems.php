@@ -27,9 +27,9 @@ final class CartItems {
         $lines = array_slice( $all, 0, self::MAX_LINES );
         $more  = (int) array_sum( array_map( fn( array $line ) => max( 1, (int) ( $line['quantity'] ?? 1 ) ), array_slice( $all, self::MAX_LINES ) ) );
         /* translators: %d: number of items in the cart lines not listed */
-        $more_text = $more ? sprintf( _n( 'and %d more item', 'and %d more items', $more, 'yaymatik' ), $more ) : '';
+        $more_text = $more ? sprintf( _n( 'and %d more item', 'and %d more items', $more, 'yaymatik-automation-for-woocommerce' ), $more ) : '';
         _prime_post_caches( self::product_ids( $lines ) );
-        $total = __( 'Cart total', 'yaymatik' );
+        $total = __( 'Cart total', 'yaymatik-automation-for-woocommerce' );
         if ( ! $html ) {
             $text = array_map(
                 fn( array $line ) => sprintf( '%s × %d — %s', self::name( $line, self::product( $line ) ), (int) ( $line['quantity'] ?? 0 ), $cart->price( (float) ( $line['line_total'] ?? 0 ), false ) ),
@@ -52,7 +52,7 @@ final class CartItems {
      * @param bool      $html
      */
     public static function button( SavedCart $cart, bool $html ): string {
-        return EmailButton::render( __( 'Restore my cart', 'yaymatik' ), $cart->restore_url(), $html );
+        return EmailButton::render( __( 'Restore my cart', 'yaymatik-automation-for-woocommerce' ), $cart->restore_url(), $html );
     }
 
     /**
@@ -71,7 +71,7 @@ final class CartItems {
             $name  = '<a href="' . $url . '" style="font-weight:bold;text-decoration:none;">' . $name . '</a>';
         }
         /* translators: %d: quantity of a product in the cart */
-        $quantity = sprintf( __( 'Qty: %d', 'yaymatik' ), (int) ( $line['quantity'] ?? 0 ) );
+        $quantity = sprintf( __( 'Qty: %d', 'yaymatik-automation-for-woocommerce' ), (int) ( $line['quantity'] ?? 0 ) );
         return '<tr><td width="' . self::IMAGE . '" style="width:' . self::IMAGE . 'px;padding:0 12px 12px 0;vertical-align:top;">' . $image . '</td>'
             . '<td style="padding:0 12px 12px 0;vertical-align:top;"><p style="margin:0;font-weight:bold;">' . $name . '</p>'
             . '<p style="margin:2px 0 0;font-size:13px;color:#767676;">' . esc_html( $quantity ) . '</p></td>'

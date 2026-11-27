@@ -9,7 +9,7 @@ const VALUE_MARK = '⁡';
 export const missing = (text: string) => `${EMPTY_MARK}${text}${EMPTY_MARK}`;
 
 /** Shown in summaries where a required value is still missing: an italic "Not set". */
-export const PLACEHOLDER = missing(__('Not set', 'yaymatik'));
+export const PLACEHOLDER = missing(__('Not set', 'yaymatik-automation-for-woocommerce'));
 
 /** A configured value in a summary, shown bold; blank → the italic placeholder. */
 export const value = (text: string) => (text.trim() ? `${VALUE_MARK}${text}${VALUE_MARK}` : PLACEHOLDER);

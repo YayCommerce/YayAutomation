@@ -320,7 +320,7 @@ final class Template {
             return '';
         }
         if ( is_bool( $value ) ) {
-            return $value ? __( 'Yes', 'yaymatik' ) : __( 'No', 'yaymatik' );
+            return $value ? __( 'Yes', 'yaymatik-automation-for-woocommerce' ) : __( 'No', 'yaymatik-automation-for-woocommerce' );
         }
         if ( is_scalar( $value ) ) {
             return (string) $value;

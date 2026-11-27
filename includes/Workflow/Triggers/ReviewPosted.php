@@ -19,11 +19,11 @@ class ReviewPosted extends Trigger {
     }
 
     public function label(): string {
-        return __( 'Review posted', 'yaymatik' );
+        return __( 'Review posted', 'yaymatik-automation-for-woocommerce' );
     }
 
     public function description(): string {
-        return __( 'A product review is approved', 'yaymatik' );
+        return __( 'A product review is approved', 'yaymatik-automation-for-woocommerce' );
     }
 
     public function icon(): string {
@@ -39,7 +39,7 @@ class ReviewPosted extends Trigger {
     }
 
     public function summary(): string {
-        return __( 'When a product review is approved', 'yaymatik' );
+        return __( 'When a product review is approved', 'yaymatik-automation-for-woocommerce' );
     }
 
     public function provides(): array {

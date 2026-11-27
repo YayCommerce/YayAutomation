@@ -16,11 +16,11 @@ final class RefundData extends DataItem {
     }
 
     public function label(): string {
-        return __( 'Refund', 'yaymatik' );
+        return __( 'Refund', 'yaymatik-automation-for-woocommerce' );
     }
 
     public function description(): string {
-        return __( 'The refund that started the run: amount, reason and whether it was the full order.', 'yaymatik' );
+        return __( 'The refund that started the run: amount, reason and whether it was the full order.', 'yaymatik-automation-for-woocommerce' );
     }
 
     public function icon(): string {
@@ -30,19 +30,19 @@ final class RefundData extends DataItem {
     protected function define(): array {
         return [
             'amount'  => [
-                'label'      => __( 'Refund amount', 'yaymatik' ),
+                'label'      => __( 'Refund amount', 'yaymatik-automation-for-woocommerce' ),
                 'type'       => self::TYPE_NUMBER,
                 'value_type' => Type::money(),
                 'value'      => fn( \WC_Order_Refund $refund ) => (float) $refund->get_amount(),
                 'display'    => fn( \WC_Order_Refund $refund, bool $html ) => self::price( (float) $refund->get_amount(), (string) $refund->get_currency(), $html ),
             ],
             'reason'  => [
-                'label' => __( 'Refund reason', 'yaymatik' ),
+                'label' => __( 'Refund reason', 'yaymatik-automation-for-woocommerce' ),
                 'type'  => self::TYPE_STRING,
                 'value' => fn( \WC_Order_Refund $refund ) => (string) $refund->get_reason(),
             ],
             'is_full' => [
-                'label' => __( 'Full refund', 'yaymatik' ),
+                'label' => __( 'Full refund', 'yaymatik-automation-for-woocommerce' ),
                 'type'  => self::TYPE_BOOLEAN,
                 'value' => fn( \WC_Order_Refund $refund ) => self::is_full( $refund ),
             ],
@@ -56,7 +56,7 @@ final class RefundData extends DataItem {
                 'text'  => self::price( 20.0, '', false ),
                 'html'  => self::price( 20.0, '', true ),
             ],
-            'reason'  => __( 'Damaged in transit', 'yaymatik' ),
+            'reason'  => __( 'Damaged in transit', 'yaymatik-automation-for-woocommerce' ),
             'is_full' => false,
         ];
     }

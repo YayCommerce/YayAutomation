@@ -74,10 +74,10 @@ function TemplatePreview() {
   };
 
   if (!template) {
-    return <EditorPlaceholder error={new Error(__('Template not found.', 'yaymatik'))} />;
+    return <EditorPlaceholder error={new Error(__('Template not found.', 'yaymatik-automation-for-woocommerce'))} />;
   }
 
-  const useLabel = __('Use template', 'yaymatik');
+  const useLabel = __('Use template', 'yaymatik-automation-for-woocommerce');
 
   return (
     <EditorLayout
@@ -88,7 +88,7 @@ function TemplatePreview() {
               <BreadcrumbLink asChild>
                 <Link to={LIBRARY_PATH} onClick={toLibrary} className="inline-flex items-center gap-1">
                   <ChevronLeft className="size-4" aria-hidden />
-                  {__('Template Library', 'yaymatik')}
+                  {__('Template Library', 'yaymatik-automation-for-woocommerce')}
                 </Link>
               </BreadcrumbLink>
             </BreadcrumbItem>
@@ -137,14 +137,17 @@ function ProductReviewsWarning() {
       <TriangleAlert aria-hidden />
       <AlertDescription className="text-foreground">
         <p>
-          {__('Turn on product reviews. Without them there’s nothing to review.', 'yaymatik')}{' '}
+          {__(
+            'Turn on product reviews. Without them there’s nothing to review.',
+            'yaymatik-automation-for-woocommerce',
+          )}{' '}
           <a
             href={`${window.yayMatikMeta.wp.adminUrl}admin.php?page=wc-settings&tab=products`}
             target="_blank"
             rel="noreferrer"
             className="text-foreground underline"
           >
-            {__('Open WooCommerce settings', 'yaymatik')}
+            {__('Open WooCommerce settings', 'yaymatik-automation-for-woocommerce')}
           </a>
         </p>
       </AlertDescription>
@@ -179,7 +182,7 @@ function TemplateSidePanel({ template, navState }: { template: WorkflowTemplate;
       </div>
 
       <section>
-        <h3 className={groupHeading}>{__('What it does', 'yaymatik')}</h3>
+        <h3 className={groupHeading}>{__('What it does', 'yaymatik-automation-for-woocommerce')}</h3>
         {/* Gap, not `space-y-*`: WP admin's `li { margin-bottom }` beats its zero-specificity margins. */}
         <ol className="flex flex-col gap-2.5">
           {stepsInOrder(template.graph).map((node) => {
@@ -193,7 +196,9 @@ function TemplateSidePanel({ template, navState }: { template: WorkflowTemplate;
                   <span className="block font-medium">
                     {branch && (
                       <span className="text-muted-foreground font-normal">
-                        {branch === 'then' ? __('Yes:', 'yaymatik') : __('No:', 'yaymatik')}{' '}
+                        {branch === 'then'
+                          ? __('Yes:', 'yaymatik-automation-for-woocommerce')
+                          : __('No:', 'yaymatik-automation-for-woocommerce')}{' '}
                       </span>
                     )}
                     {stepDef?.label ?? kindMeta[node.kind].label}
@@ -211,16 +216,16 @@ function TemplateSidePanel({ template, navState }: { template: WorkflowTemplate;
       </section>
 
       <section>
-        <h3 className={groupHeading}>{__('Plugins used', 'yaymatik')}</h3>
+        <h3 className={groupHeading}>{__('Plugins used', 'yaymatik-automation-for-woocommerce')}</h3>
         <ul className="flex flex-col gap-2">
           {pluginsOf(template.graph).map((plugin) => (
             <li key={plugin} className="flex items-center gap-2 rounded-lg border px-2.5 py-2">
               <PluginIcon plugin={plugin} />
               <span className="min-w-0 flex-1 truncate font-medium">{plugins[plugin].label}</span>
               {plugins[plugin].active ? (
-                <Badge variant="success-soft">{__('Installed', 'yaymatik')}</Badge>
+                <Badge variant="success-soft">{__('Installed', 'yaymatik-automation-for-woocommerce')}</Badge>
               ) : (
-                <Badge variant="warning-soft">{__('Not installed', 'yaymatik')}</Badge>
+                <Badge variant="warning-soft">{__('Not installed', 'yaymatik-automation-for-woocommerce')}</Badge>
               )}
             </li>
           ))}
@@ -235,7 +240,7 @@ function TemplateSidePanel({ template, navState }: { template: WorkflowTemplate;
 
       {versions.length > 0 && (
         <section>
-          <h3 className={groupHeading}>{__('Other versions', 'yaymatik')}</h3>
+          <h3 className={groupHeading}>{__('Other versions', 'yaymatik-automation-for-woocommerce')}</h3>
           <ul className="flex flex-col gap-1.5">
             {versions.map((version) => (
               <li key={version.id}>
@@ -257,7 +262,7 @@ function TemplateSidePanel({ template, navState }: { template: WorkflowTemplate;
       {/* Hidden when nothing is missing. */}
       {(setupCoupon || setupTracking || setupReviews || before.length > 0 || setupNodes.length > 0) && (
         <section className="flex flex-col gap-2">
-          <h3 className={groupHeading}>{__('Before you start', 'yaymatik')}</h3>
+          <h3 className={groupHeading}>{__('Before you start', 'yaymatik-automation-for-woocommerce')}</h3>
           {before.map((line, i) => (
             <p key={i} className="text-[13px]">
               {line}
@@ -267,15 +272,18 @@ function TemplateSidePanel({ template, navState }: { template: WorkflowTemplate;
             <p key={nodeId} className="text-warning-foreground bg-warning/20 rounded-md px-2.5 py-1.5 text-[13px]">
               {sprintf(
                 /* translators: %s: step name, e.g. "Send rewards email" */
-                __('Set up %s before you activate.', 'yaymatik'),
+                __('Set up %s before you activate.', 'yaymatik-automation-for-woocommerce'),
                 stepOf(template.graph.nodes.find((node) => node.id === nodeId)!.data)?.label ?? '',
               )}
             </p>
           ))}
           {setupTracking && (
             <CartTrackingWarning
-              message={__('Turn on cart tracking. Without it this workflow never starts.', 'yaymatik')}
-              linkLabel={__('Open Settings', 'yaymatik')}
+              message={__(
+                'Turn on cart tracking. Without it this workflow never starts.',
+                'yaymatik-automation-for-woocommerce',
+              )}
+              linkLabel={__('Open Settings', 'yaymatik-automation-for-woocommerce')}
             />
           )}
           {setupReviews && <ProductReviewsWarning />}
@@ -286,8 +294,8 @@ function TemplateSidePanel({ template, navState }: { template: WorkflowTemplate;
       <p className="bg-primary/8 flex items-start gap-2 rounded-lg px-3 py-2.5 text-[13px]">
         <Info className="text-primary mt-0.5 size-4 shrink-0" aria-hidden />
         {sendsCustomerEmail(template.graph)
-          ? __('Using it creates a draft. Review the emails, then activate it.', 'yaymatik')
-          : __('Using it creates a draft. Review it, then activate it.', 'yaymatik')}
+          ? __('Using it creates a draft. Review the emails, then activate it.', 'yaymatik-automation-for-woocommerce')
+          : __('Using it creates a draft. Review it, then activate it.', 'yaymatik-automation-for-woocommerce')}
       </p>
     </aside>
   );

@@ -12,7 +12,7 @@ export const installFirst = (pluginNames: string[]) =>
   pluginNames.length
     ? sprintf(
         /* translators: %s: plugin name(s), e.g. "WooCommerce" */
-        __('Install %s before activating.', 'yaymatik'),
+        __('Install %s before activating.', 'yaymatik-automation-for-woocommerce'),
         pluginNames.join(', '),
       )
     : null;
@@ -31,8 +31,8 @@ export function useCreateDraft() {
   const createMutation = useCreateWorkflowMutation({
     onSaved: (workflow) => {
       const message = emails.current
-        ? __('Draft created. Review the emails, then activate it.', 'yaymatik')
-        : __('Draft created. Review it, then activate it.', 'yaymatik');
+        ? __('Draft created. Review the emails, then activate it.', 'yaymatik-automation-for-woocommerce')
+        : __('Draft created. Review it, then activate it.', 'yaymatik-automation-for-woocommerce');
       toast.success(message, {
         description: installFirst(missing.current) ?? undefined,
       });

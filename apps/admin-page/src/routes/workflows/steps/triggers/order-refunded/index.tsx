@@ -9,7 +9,12 @@ export const orderRefundedStep = defineStep({
   kind: 'trigger',
   Footer: () => (
     <NoSettings
-      hints={[__('Use Refund › Full refund in a Condition to tell a full refund from a partial one.', 'yaymatik')]}
+      hints={[
+        __(
+          'Use Refund › Full refund in a Condition to tell a full refund from a partial one.',
+          'yaymatik-automation-for-woocommerce',
+        ),
+      ]}
     />
   ),
 });

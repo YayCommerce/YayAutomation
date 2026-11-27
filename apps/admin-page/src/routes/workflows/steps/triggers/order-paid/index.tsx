@@ -9,7 +9,12 @@ export const orderPaidStep = defineStep({
   kind: 'trigger',
   Footer: () => (
     <NoSettings
-      hints={[__('Paid means Processing or Completed. Orders imported already paid don’t start it.', 'yaymatik')]}
+      hints={[
+        __(
+          'Paid means Processing or Completed. Orders imported already paid don’t start it.',
+          'yaymatik-automation-for-woocommerce',
+        ),
+      ]}
     />
   ),
 });
