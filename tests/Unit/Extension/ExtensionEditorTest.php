@@ -26,7 +26,7 @@ final class ExtensionEditorTest extends TestCase {
             [
                 'label'       => 'Mail',
                 'description' => 'Sends.',
-                'fields'      => [
+                'settings'    => [
                     'design_id' => [
                         'type'    => 'select',
                         'label'   => 'Design',
@@ -37,7 +37,7 @@ final class ExtensionEditorTest extends TestCase {
                         'label' => 'Note',
                     ],
                 ],
-                'run'         => fn( array $config, $run ) => $run->done(),
+                'handle'      => fn( array $config, $step ) => $step->done(),
                 'editor'      => $editor + [
                     'field'  => 'design_id',
                     'button' => 'Customize design',

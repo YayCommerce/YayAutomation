@@ -41,7 +41,7 @@ final class MissingPluginTest extends TestCase {
                                     'type'  => 'number',
                                 ],
                             ],
-                            'run'         => fn( array $config, $run ) => $run->done(),
+                            'handle'      => fn( array $config, $step ) => $step->done(),
                         ]
                     );
                 }

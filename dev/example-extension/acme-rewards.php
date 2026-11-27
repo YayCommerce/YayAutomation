@@ -9,7 +9,7 @@
  * Acme Rewards gives customers points (user meta `acme_points`), lets them redeem rewards (post type `acme_reward`)
  * and designs emails in its own editor (post type `acme_design`). A completed order gives its customer
  * floor( total ) points. The YayMatik integration is `register()` and the methods it names: arrays, two
- * `do_action( 'yaymatik_fire', … )` lines and the `$run` object. No YayMatik class is extended and no JS is built.
+ * `do_action( 'yaymatik_fire', … )` lines and the `$step` object. No YayMatik class is extended and no JS is built.
  *
  * @package AcmeRewards
  */
@@ -53,11 +53,6 @@ final class Acme_Rewards {
      * @param \YayMatik\Api\Registrar $registrar
      */
     public function register( $registrar ) {
-        if ( ! $registrar->supports( 'editor_iframe' ) ) {
-            // An older YayMatik: register nothing rather than half.
-            return;
-        }
-
         // 1. Module = this plugin. Every id below starts with "acme_rewards_".
         $module = $registrar->module(
             [
@@ -124,17 +119,17 @@ final class Acme_Rewards {
         $module->trigger(
             'acme_rewards_points_earned',
             [
-                'label'       => __( 'Customer earned points', 'acme-rewards' ),
-                'description' => __( 'Starts when a customer gets reward points.', 'acme-rewards' ),
-                'category'    => 'customer',
-                'provides'    => [ 'customer' ],
-                'facts'       => [
+                'label'        => __( 'Customer earned points', 'acme-rewards' ),
+                'description'  => __( 'Starts when a customer gets reward points.', 'acme-rewards' ),
+                'category'     => 'customer',
+                'provides'     => [ 'customer' ],
+                'facts'        => [
                     'points' => [
                         'label' => __( 'Points earned', 'acme-rewards' ),
                         'type'  => 'number',
                     ],
                 ],
-                'fields'      => [
+                'settings'     => [
                     'min_points' => [
                         'type'    => 'number',
                         'label'   => __( 'Only when at least', 'acme-rewards' ),
@@ -142,8 +137,8 @@ final class Acme_Rewards {
                         'default' => 1,
                     ],
                 ],
-                'matches'     => [ $this, 'matches_min_points' ],
-                'sample'      => [ 'points' => 25 ],
+                'matches'      => [ $this, 'matches_min_points' ],
+                'sample_facts' => [ 'points' => 25 ],
             ]
         );
         $module->trigger(
@@ -165,8 +160,8 @@ final class Acme_Rewards {
                 'label'       => __( 'Add reward points', 'acme-rewards' ),
                 'description' => __( 'Gives the customer reward points.', 'acme-rewards' ),
                 'category'    => 'customer',
-                'requires'    => [ 'customer' ],
-                'fields'      => [
+                'needs'       => [ 'customer' ],
+                'settings'    => [
                     'points' => [
                         'type'     => 'number',
                         'label'    => __( 'Points', 'acme-rewards' ),
@@ -186,7 +181,7 @@ final class Acme_Rewards {
                 'result'      => __( 'New balance: {{ output.balance }}', 'acme-rewards' ),
                 // Adding points fires our trigger: the editor warns when a workflow could start itself again.
                 'emits'       => [ 'acme_rewards_points_earned' ],
-                'run'         => [ $this, 'run_add_points' ],
+                'handle'      => [ $this, 'handle_add_points' ],
             ]
         );
 
@@ -198,7 +193,7 @@ final class Acme_Rewards {
                 'label'       => __( 'Send rewards email', 'acme-rewards' ),
                 'description' => __( 'Sends an email designed in Acme Rewards.', 'acme-rewards' ),
                 'category'    => 'email',
-                'fields'      => [
+                'settings'    => [
                     'subject'   => [
                         'type'      => 'text',
                         'label'     => __( 'Subject', 'acme-rewards' ),
@@ -233,12 +228,12 @@ final class Acme_Rewards {
         $module->template(
             'acme_rewards_welcome_bonus',
             [
-                'name'        => __( 'Welcome bonus points', 'acme-rewards' ),
-                'description' => __( 'Give new customers 100 points and tell them by email.', 'acme-rewards' ),
-                'category'    => 'customer_lifecycle',
-                'created'     => '2026-12-01',
-                'before'      => [ __( 'Pick or design the email in Acme Rewards after you add the template.', 'acme-rewards' ) ],
-                'steps'       => [
+                'label'            => __( 'Welcome bonus points', 'acme-rewards' ),
+                'description'      => __( 'Give new customers 100 points and tell them by email.', 'acme-rewards' ),
+                'library_category' => 'customer_lifecycle',
+                'created'          => '2026-12-01',
+                'before'           => [ __( 'Pick or design the email in Acme Rewards after you add the template.', 'acme-rewards' ) ],
+                'steps'            => [
                     // A core trigger: public and semver'd, like every core step a template may use.
                     [
                         'id'   => 'trigger',
@@ -286,15 +281,18 @@ final class Acme_Rewards {
     /**
      * The "Add reward points" action.
      *
-     * @param array             $config
-     * @param \YayMatik\Api\Run $run
+     * @param array              $config
+     * @param \YayMatik\Api\Step $step
      */
-    public function run_add_points( array $config, $run ) {
-        $user = $run->user();
+    public function handle_add_points( array $config, $step ) {
+        $user = $step->user();
         if ( ! $user ) {
-            return $run->skip( __( 'Guests can’t collect points.', 'acme-rewards' ) );
+            return $step->skip( __( 'Guests can’t collect points.', 'acme-rewards' ) );
         }
-        return $run->done( [ 'balance' => $this->earn( $user->ID, (int) $config['points'] ) ] );
+        if ( $step->is_test() ) {
+            return $step->skip( __( 'A test gives no points.', 'acme-rewards' ) );
+        }
+        return $step->done( [ 'balance' => $this->earn( $user->ID, (int) $config['points'] ) ] );
     }
 
     /**
@@ -376,16 +374,16 @@ final class Acme_Rewards {
     }
 
     /**
-     * Subject + HTML; a real run builds it in a background job, so the customer and order come from $run, never globals.
+     * Subject + HTML; a real run builds it in a background job, so the customer and order come from $step, never globals.
      *
-     * @param array             $config
-     * @param \YayMatik\Api\Run $run
+     * @param array              $config
+     * @param \YayMatik\Api\Step $step
      */
-    public function build_email( array $config, $run ): array {
+    public function build_email( array $config, $step ): array {
         // YayMatik renders its {{ … }} tags in both afterwards. `wrap` false: a whole document of our own.
         return [
             'subject' => $config['subject'],
-            'html'    => $this->render_design( (int) $config['design_id'], $run ),
+            'html'    => $this->render_design( (int) $config['design_id'], $step ),
             'wrap'    => false,
         ];
     }
@@ -492,18 +490,18 @@ final class Acme_Rewards {
     /**
      * Our renderer: a design and the run's customer / order (our own sample in Preview with made-up data).
      *
-     * @param int               $design_id
-     * @param \YayMatik\Api\Run $run
+     * @param int                $design_id
+     * @param \YayMatik\Api\Step $step
      */
-    private function render_design( int $design_id, $run ): string {
-        $user  = $run->user();
-        $order = $run->order();
+    private function render_design( int $design_id, $step ): string {
+        $user  = $step->user();
+        $order = $step->order();
         $name  = $user ? $user->first_name : 'Alex';
         $body  = wpautop( wp_kses_post( (string) get_post_field( 'post_content', $design_id ) ) );
         $extra = $order ? '<p>' . esc_html( sprintf( 'Order #%s', $order->get_order_number() ) ) . '</p>' : '';
         return '<!DOCTYPE html><html><head><meta charset="utf-8"><style>body{font-family:sans-serif;color:#222}</style></head><body>'
             . '<h1>' . esc_html( 'Hi ' . $name ) . '</h1>' . $body . $extra
-            . '<p><a href="' . esc_url( $run->unsubscribe_url() ) . '">Unsubscribe</a></p></body></html>';
+            . '<p><a href="' . esc_url( $step->unsubscribe_url() ) . '">Unsubscribe</a></p></body></html>';
     }
 
     public function add_designer() {

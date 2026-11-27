@@ -89,9 +89,9 @@ final class EmailPreviewTest extends TestCase {
                     'description' => 'Sends.',
                     'email'       => [
                         'recipient' => 'customer',
-                        'build'     => fn( array $config, $run ) => [
+                        'build'     => fn( array $config, $step ) => [
                             'subject' => 'Hi {{ customer.first_name }}',
-                            'html'    => '<html><head><style>p{color:red}</style></head><body><p>' . ( $run->is_preview() ? 'preview' : 'live' ) . '</p></body></html>',
+                            'html'    => '<html><head><style>p{color:red}</style></head><body><p>' . ( $step->is_preview() ? 'preview' : 'live' ) . '</p></body></html>',
                         ],
                     ],
                 ]

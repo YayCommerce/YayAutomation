@@ -39,7 +39,7 @@ trait ExtensionStep {
     }
 
     public function fields(): array {
-        return $this->args['fields'];
+        return $this->args['settings'];
     }
 
     public function summary(): string {

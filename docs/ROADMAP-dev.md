@@ -295,21 +295,22 @@ Shop owners build their own workflows from New Workflow. Why: [decisions CT](wor
 ## v1.1 — Control flow + Yay ecosystem · L+
 
 - **V11.1 For each** — body / done handles, saved cursor per item, limits; container card in the editor. *(§3, §7)*
-- **V11.2 Get data** — Get orders / customers / products / coupons with filters, returning lists.
+- **V11.2 Get data** — Get orders / customers / products / coupons with filters, returning lists. Extension fields that declare their meta key are filterable (D10 in [extensions-roadmap.md](extensions-roadmap.md)).
 - **V11.3 Interval trigger** — every N minutes / hours / days, at a time, on weekdays; reuses M6.1; schedule UI.
 - **V11.4 Call workflow** — action + "Called by workflow" trigger with typed inputs; depth limit. *(§3)*
 - **V11.5 Manual runs** — Manual trigger, Run now, Test run on a picked order; dry run via `simulate()`.
 - **V11.6 More control steps** — Switch, Set variable, Stop, A/B split.
-- **V11.7 Retries** — backoff; replay a failed run from the failed step (button in run detail).
+- **V11.7 Retries** — backoff; replay a failed run from the failed step (button in run detail). `fail( $reason, retry: true )` for passing errors; a replay keeps the step's key (D28, D29).
 - **V11.8 Product items** — the v1.1 list in ROADMAP-v1.0: Branched post-purchase, Nth order reward, alerts, order tags.
 - **V11.9 Yay ecosystem** — six Yay plugins add their steps and templates through the Extension API; each product releases its extension when it is ready ([extensions-roadmap.md](extensions-roadmap.md)). The API side is done (plan 034); YayMatik builds each plugin's extension scaffold and copies it to the plugin's repo; the plugin's team fills it in. *(§5, §8)*
-- **Backlog** — Opt-in mode (consent checkbox) + transactional-only workflows. "Run once per order" through M6's `trigger_claims`: today a status trigger starts again when an order returns to the status (duplicate email / coupon, a second high-value alert). Customer inactive: stop a run when the customer orders during a Wait (`stop_reason`); the v1.0 templates have no Wait. Warn on Activate when another version of the same template workflow is active, or claim per template workflow (e.g. win_back) instead of per workflow. Run limit per workflow. Customer tags. Stock triggers. Workflow run failed trigger. Random split. Multi-currency totals. Milestones: one claim key for a guest who later makes an account. Order note added: a `note` data item (text, type), so emails can insert the note; today the trigger has none. Stop waiting runs (dropped from v1.0 in CT): cancel one person's waiting runs of the chosen workflows; its workflow list loads with the editor, so a workflow made since shows only after a reload.
+- **V11.10 Customer tags** (Free) — Add tag / Remove tag actions, a Tag added trigger, `customer.tags` in conditions, a small manage page, privacy export / erase; accounts and guests by email; stored so segments can query them later (D16). Template 8 joins.
+- **Backlog** — Opt-in mode (consent checkbox) + transactional-only workflows. "Run once per order" through M6's `trigger_claims`: today a status trigger starts again when an order returns to the status (duplicate email / coupon, a second high-value alert). Customer inactive: stop a run when the customer orders during a Wait (`stop_reason`); the v1.0 templates have no Wait. Warn on Activate when another version of the same template workflow is active, or claim per template workflow (e.g. win_back) instead of per workflow. Run limit per workflow. Stock triggers. Workflow run failed trigger. Random split. Multi-currency totals. Milestones: one claim key for a guest who later makes an account. Order note added: a `note` data item (text, type), so emails can insert the note; today the trigger has none. Stop waiting runs (dropped from v1.0 in CT): cancel one person's waiting runs of the chosen workflows; its workflow list loads with the editor, so a workflow made since shows only after a reload.
 
 ## v1.2 — Pro connectors · L+
 
 - **V12.1 Pro modules** — YayMatik Pro registers its modules and multi-plugin templates. *(§8)*
 - **V12.3 Feature directory** — "Install X to use this" in the pickers and the template library. *(§8)*
-- **V12.4 Connector basics** (outside services) — credentials store, connector settings UI.
+- **V12.4 Connector basics** (outside services) — connections (credentials) and remote options as MINOR Extension API additions, connection settings UI (D30).
 - **V12.5 Connectors** — webhook in, HTTP request, Slack, Google Sheets, SMS; CSV source and export.
 - **V12.6 Templates tier 2** — "Show if" on email blocks. *(§6)*
 

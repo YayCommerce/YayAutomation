@@ -63,10 +63,10 @@ WP_CLI::add_wp_hook(
                     [
                         'label'       => 'Late extension action',
                         'description' => 'Does nothing.',
-                        'run'         => fn( array $config, $run ) => $run->done(),
+                        'handle'      => fn( array $config, $step ) => $step->done(),
                     ]
                 );
-                $module->action( 'late_ext_bad', [ 'label' => 'No description, no run' ] );
+                $module->action( 'late_ext_bad', [ 'label' => 'No description, no handle' ] );
             }
         );
     },

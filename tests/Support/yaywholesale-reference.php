@@ -10,7 +10,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-final class YayWholesale_YayMatik {
+final class YayWholesale_Reference_YayMatik {
 
     public static function init() {
         add_action( 'yaymatik_register', [ new self(), 'register' ] );
@@ -59,15 +59,15 @@ final class YayWholesale_YayMatik {
             ]
         );
 
-        // Action with a form YayMatik draws from 'fields'.
+        // Action with a form YayMatik draws from 'settings'.
         $module->action(
             'yaywholesale_set_role',
             [
                 'label'       => __( 'Set wholesale role', 'yaywholesale' ),
                 'description' => __( 'Moves the customer to another wholesale role.', 'yaywholesale' ),
                 'category'    => 'customer',
-                'requires'    => [ 'customer' ],
-                'fields'      => [
+                'needs'    => [ 'customer' ],
+                'settings'      => [
                     'role' => [
                         'type'     => 'select',
                         'label'    => __( 'Role', 'yaywholesale' ),
@@ -80,21 +80,21 @@ final class YayWholesale_YayMatik {
                 'outputs'     => [
                     'role' => [ 'label' => __( 'New role', 'yaywholesale' ), 'type' => 'enum' ],
                 ],
-                'run'         => [ $this, 'run_set_role' ],
+                'handle'         => [ $this, 'handle_set_role' ],
             ]
         );
     }
 
     /** The action: what happens when a workflow reaches "Set wholesale role". */
-    public function run_set_role( array $config, $run ) {
-        $user = $run->user();
+    public function handle_set_role( array $config, $step ) {
+        $user = $step->user();
         if ( ! $user ) {
-            return $run->skip( __( 'Guests can’t have a wholesale role.', 'yaywholesale' ) );
+            return $step->skip( __( 'Guests can’t have a wholesale role.', 'yaywholesale' ) );
         }
 
         update_user_meta( $user->ID, '_yaywholesale_role', $config['role'] );
 
-        return $run->done( [ 'role' => $config['role'] ] );
+        return $step->done( [ 'role' => $config['role'] ] );
     }
 
     /** Value of the "Wholesale role" field. $customer is the same object whatever the trigger. */
