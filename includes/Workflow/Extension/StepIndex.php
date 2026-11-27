@@ -77,17 +77,16 @@ final class StepIndex {
     }
 
     /**
-     * The label of the plugin, seen before and off now, that declared a data key's item or field
-     * (`order.yaypricing_discount_total`, `yaywholesale_request.status`): their ids start with its module id + `_`,
-     * the longest such id when one module id starts another. A key registered now (core's `order.shipping_method`)
-     * belongs to no plugin that is off, whatever its prefix.
+     * The label of the plugin, off now, that declared a data key's item or field; null when none.
      *
      * @param string $key
      */
     public static function inactive_plugin( string $key ): ?string {
+        // A key registered now is core's or an active plugin's, even when an off module's id is its prefix (`order.shipping_method`).
         if ( DataRegistry::field( $key ) ) {
             return null;
         }
+        // Ids of an item or field start with its module id + `_`; the longest such id wins when one module id starts another.
         $ids   = explode( '.', $key, 3 );
         $owner = '';
         foreach ( array_keys( self::stored()['plugins'] + ModuleRegistry::modules() ) as $module ) {
